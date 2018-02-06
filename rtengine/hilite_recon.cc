@@ -1107,9 +1107,16 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
                 float Y = (0.299 * clipfix[0] + 0.587 * clipfix[1] + 0.114 * clipfix[2]);
 
                 float factor = whitept / Y;
-                red[i][j]   = clipfix[0] * factor;
-                green[i][j] = clipfix[1] * factor;
-                blue[i][j]  = clipfix[2] * factor;
+                // red[i][j]   = clipfix[0] * factor;
+                // green[i][j] = clipfix[1] * factor;
+                // blue[i][j]  = clipfix[2] * factor;
+
+                // desaturate
+                float h, s, l;
+                Color::rgb2hslfloat(clipfix[0], clipfix[1], clipfix[2], h, s, l);
+                s /= powf(factor, 1.6);
+                l = Y;
+                Color::hsl2rgbfloat(h, s, l, red[i][j], green[i][j], blue[i][j]);
             } else {//some channels clipped
                 float notclipped[3] = {pixel[0] <= max_f[0] ? 1.f : 0.f, pixel[1] <= max_f[1] ? 1.f : 0.f, pixel[2] <= max_f[2] ? 1.f : 0.f};
 
