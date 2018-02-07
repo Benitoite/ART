@@ -143,6 +143,9 @@ void Imagefloat::setScanline (int row, unsigned char* buffer, int bps, float *mi
     }
 }
 
+
+namespace rtengine { extern void filmlike_clip(float *r, float *g, float *b); }
+
 void Imagefloat::getScanline (int row, unsigned char* buffer, int bps)
 {
 
@@ -160,18 +163,24 @@ void Imagefloat::getScanline (int row, unsigned char* buffer, int bps)
             sbuffer[ix++] = g(row, i) / 65535.f;
             sbuffer[ix++] = b(row, i) / 65535.f;
         }
-    } else if (bps == 16) {
+    } else {
         unsigned short *sbuffer = (unsigned short *)buffer;
         for (int i = 0, ix = 0; i < width; i++) {
-            sbuffer[ix++] = CLIP(r(row, i));
-            sbuffer[ix++] = CLIP(g(row, i));
-            sbuffer[ix++] = CLIP(b(row, i));
-        }
-    } else if (bps == 8) {
-        for (int i = 0, ix = 0; i < width; i++) {
-            buffer[ix++] = rtengine::uint16ToUint8Rounded(CLIP(r(row, i)));
-            buffer[ix++] = rtengine::uint16ToUint8Rounded(CLIP(g(row, i)));
-            buffer[ix++] = rtengine::uint16ToUint8Rounded(CLIP(b(row, i)));
+            float ri = r(row, i);
+            float gi = g(row, i);
+            float bi = b(row, i);
+            if (ri > 65535.f || gi > 65535.f || bi > 65535.f) {
+                filmlike_clip(&ri, &gi, &bi);
+            }
+            if (bps == 16) {
+                sbuffer[ix++] = CLIP(ri);
+                sbuffer[ix++] = CLIP(gi);
+                sbuffer[ix++] = CLIP(bi);
+            } else if (bps == 8) {
+                buffer[ix++] = rtengine::uint16ToUint8Rounded(CLIP(ri));
+                buffer[ix++] = rtengine::uint16ToUint8Rounded(CLIP(gi));
+                buffer[ix++] = rtengine::uint16ToUint8Rounded(CLIP(bi));
+            }
         }
     }
 }

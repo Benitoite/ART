@@ -137,4 +137,11 @@ constexpr std::uint8_t uint16ToUint8Rounded(std::uint16_t i)
     return ((i + 128) - ((i + 128) >> 8)) >> 8;
 }
 
+
+template <typename T>
+constexpr bool OOG(const T &val, const T &low=T(0), const T &high=T(MAXVAL))
+{
+    return (val < low) || (val > high);
+}
+
 }

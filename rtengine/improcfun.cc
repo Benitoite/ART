@@ -50,6 +50,16 @@
 namespace {
 
 using namespace rtengine;
+
+
+inline void putval(float &dst, float val)
+{
+    if (!OOG(dst)) {
+        dst = val;
+    }
+}   
+
+
 // begin of helper function for rgbProc()
 void shadowToneCurve(const LUTf &shtonecurve, float *rtemp, float *gtemp, float *btemp, int istart, int tH, int jstart, int tW, int tileSize) {
 
@@ -57,6 +67,10 @@ void shadowToneCurve(const LUTf &shtonecurve, float *rtemp, float *gtemp, float 
     vfloat cr = F2V(0.299f);
     vfloat cg = F2V(0.587f);
     vfloat cb = F2V(0.114f);
+
+    float tmpr[4];
+    float tmpg[4];
+    float tmpb[4];
 #endif
 
     for (int i = istart, ti = 0; i < tH; i++, ti++) {
@@ -71,9 +85,15 @@ void shadowToneCurve(const LUTf &shtonecurve, float *rtemp, float *gtemp, float 
             //shadow tone curve
             vfloat Yv = cr * rv + cg * gv + cb * bv;
             vfloat tonefactorv = shtonecurve(Yv);
-            STVF(rtemp[ti * tileSize + tj], rv * tonefactorv);
-            STVF(gtemp[ti * tileSize + tj], gv * tonefactorv);
-            STVF(btemp[ti * tileSize + tj], bv * tonefactorv);
+            STVF(tmpr[0], rv * tonefactorv);
+            STVF(tmpg[0], gv * tonefactorv);
+            STVF(tmpb[0], bv * tonefactorv);
+
+            for (int k = 0; k < 4; ++k) {
+                putval(rtemp[ti * tileSize + tj + k], tmpr[k]);
+                putval(gtemp[ti * tileSize + tj + k], tmpg[k]);
+                putval(btemp[ti * tileSize + tj + k], tmpb[k]);
+            }
         }
 #endif
         for (; j < tW; j++, tj++) {
@@ -85,9 +105,9 @@ void shadowToneCurve(const LUTf &shtonecurve, float *rtemp, float *gtemp, float 
             //shadow tone curve
             float Y = (0.299f * r + 0.587f * g + 0.114f * b);
             float tonefactor = shtonecurve[Y];
-            rtemp[ti * tileSize + tj] = rtemp[ti * tileSize + tj] * tonefactor;
-            gtemp[ti * tileSize + tj] = gtemp[ti * tileSize + tj] * tonefactor;
-            btemp[ti * tileSize + tj] = btemp[ti * tileSize + tj] * tonefactor;
+            putval(rtemp[ti * tileSize + tj], rtemp[ti * tileSize + tj] * tonefactor);
+            putval(gtemp[ti * tileSize + tj], gtemp[ti * tileSize + tj] * tonefactor);
+            putval(btemp[ti * tileSize + tj], btemp[ti * tileSize + tj] * tonefactor);
         }
     }
 }
@@ -97,6 +117,10 @@ void highlightToneCurve(const LUTf &hltonecurve, float *rtemp, float *gtemp, flo
 #ifdef __SSE2__
     vfloat threev = F2V(3.f);
     vfloat maxvalfv = F2V(MAXVALF);
+
+    float tmpr[4];
+    float tmpg[4];
+    float tmpb[4];
 #endif
 
     for (int i = istart, ti = 0; i < tH; i++, ti++) {
@@ -121,16 +145,22 @@ void highlightToneCurve(const LUTf &hltonecurve, float *rtemp, float *gtemp, flo
                                         (b < MAXVALF ? hltonecurve[b] : CurveFactory::hlcurve (exp_scale, comp, hlrange, b) ) ) / 3.0;
 
                     // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-                    rtemp[ti * tileSize + tj + k] = r * tonefactor;
-                    gtemp[ti * tileSize + tj + k] = g * tonefactor;
-                    btemp[ti * tileSize + tj + k] = b * tonefactor;
+                    putval(rtemp[ti * tileSize + tj + k], r * tonefactor);
+                    putval(gtemp[ti * tileSize + tj + k], g * tonefactor);
+                    putval(btemp[ti * tileSize + tj + k], b * tonefactor);
                 }
             } else {
                 vfloat tonefactorv = (hltonecurve.cb(rv) + hltonecurve.cb(gv) + hltonecurve.cb(bv)) / threev;
                 // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-                STVF(rtemp[ti * tileSize + tj], rv * tonefactorv);
-                STVF(gtemp[ti * tileSize + tj], gv * tonefactorv);
-                STVF(btemp[ti * tileSize + tj], bv * tonefactorv);
+                STVF(tmpr[0], rv * tonefactorv);
+                STVF(tmpg[0], gv * tonefactorv);
+                STVF(tmpb[0], bv * tonefactorv);
+
+                for (int k = 0; k < 4; ++k) {
+                    putval(rtemp[ti * tileSize + tj + k], tmpr[k]);
+                    putval(gtemp[ti * tileSize + tj + k], tmpg[k]);
+                    putval(btemp[ti * tileSize + tj + k], tmpb[k]);
+                }
             }
         }
 #endif
@@ -147,9 +177,9 @@ void highlightToneCurve(const LUTf &hltonecurve, float *rtemp, float *gtemp, flo
                                 (b < MAXVALF ? hltonecurve[b] : CurveFactory::hlcurve (exp_scale, comp, hlrange, b) ) ) / 3.0;
 
             // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-            rtemp[ti * tileSize + tj] = r * tonefactor;
-            gtemp[ti * tileSize + tj] = g * tonefactor;
-            btemp[ti * tileSize + tj] = b * tonefactor;
+            putval(rtemp[ti * tileSize + tj], r * tonefactor);
+            putval(gtemp[ti * tileSize + tj], g * tonefactor);
+            putval(btemp[ti * tileSize + tj], b * tonefactor);
         }
     }
 }
@@ -224,9 +254,6 @@ void customToneCurve(const ToneCurve &customToneCurve, ToneCurveParams::TcMode c
 
         for (int i = istart, ti = 0; i < tH; i++, ti++) {
             for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                rtemp[ti * tileSize + tj] = CLIP<float> (rtemp[ti * tileSize + tj]);
-                gtemp[ti * tileSize + tj] = CLIP<float> (gtemp[ti * tileSize + tj]);
-                btemp[ti * tileSize + tj] = CLIP<float> (btemp[ti * tileSize + tj]);
                 userToneCurve.Apply(rtemp[ti * tileSize + tj], gtemp[ti * tileSize + tj], btemp[ti * tileSize + tj]);
             }
         }
@@ -3260,7 +3287,7 @@ filmlike_clip_rgb_tone (float *r, float *g, float *b, const float L)
     *b = b_;
 }
 
-static void
+/*static*/ void
 filmlike_clip (float *r, float *g, float *b)
 {
     // This is Adobe's hue-stable film-like curve with a diagonal, ie only used for clipping. Can probably be further optimized.
@@ -3760,9 +3787,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                             filmlike_clip (&r, &g, &b);
                         }
 
-                        rtemp[ti * TS + tj] = r;
-                        gtemp[ti * TS + tj] = g;
-                        btemp[ti * TS + tj] = b;
+                        putval(rtemp[ti * TS + tj], r);
+                        putval(gtemp[ti * TS + tj], g);
+                        putval(btemp[ti * TS + tj], b);
                     }
                 }
 
@@ -3771,30 +3798,43 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
 
                             //brightness/contrast
-                            rtemp[ti * TS + tj] = tonecurve[ rtemp[ti * TS + tj] ];
-                            gtemp[ti * TS + tj] = tonecurve[ gtemp[ti * TS + tj] ];
-                            btemp[ti * TS + tj] = tonecurve[ btemp[ti * TS + tj] ];
+                            float r = tonecurve[ CLIP(rtemp[ti * TS + tj]) ];
+                            float g = tonecurve[ CLIP(gtemp[ti * TS + tj]) ];
+                            float b = tonecurve[ CLIP(btemp[ti * TS + tj]) ];
 
                             int y = CLIP<int> (lumimulf[0] * Color::gamma2curve[rtemp[ti * TS + tj]] + lumimulf[1] * Color::gamma2curve[gtemp[ti * TS + tj]] + lumimulf[2] * Color::gamma2curve[btemp[ti * TS + tj]]);
                             histToneCurveThr[y >> histToneCurveCompression]++;
+
+                            putval(rtemp[ti * TS + tj], r);
+                            putval(gtemp[ti * TS + tj], g);
+                            putval(btemp[ti * TS + tj], b);
                         }
                     }
                 } else {
+                    float tmpr[4];
+                    float tmpg[4];
+                    float tmpb[4];
+                    
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         int j = jstart, tj = 0;
 #ifdef __SSE2__
                         for (; j < tW - 3; j+=4, tj+=4) {
                             //brightness/contrast
-                            STVF(rtemp[ti * TS + tj], tonecurve(LVF(rtemp[ti * TS + tj])));
-                            STVF(gtemp[ti * TS + tj], tonecurve(LVF(gtemp[ti * TS + tj])));
-                            STVF(btemp[ti * TS + tj], tonecurve(LVF(btemp[ti * TS + tj])));
+                            STVF(tmpr[0], tonecurve(LVF(rtemp[ti * TS + tj])));
+                            STVF(tmpg[0], tonecurve(LVF(gtemp[ti * TS + tj])));
+                            STVF(tmpb[0], tonecurve(LVF(btemp[ti * TS + tj])));
+                            for (int k = 0; k < 4; ++k) {
+                                putval(rtemp[ti * TS + tj + k], tmpr[k]);
+                                putval(gtemp[ti * TS + tj + k], tmpg[k]);
+                                putval(btemp[ti * TS + tj + k], tmpb[k]);
+                            }
                         }
 #endif
                         for (; j < tW; j++, tj++) {
                             //brightness/contrast
-                            rtemp[ti * TS + tj] = tonecurve[rtemp[ti * TS + tj]];
-                            gtemp[ti * TS + tj] = tonecurve[gtemp[ti * TS + tj]];
-                            btemp[ti * TS + tj] = tonecurve[btemp[ti * TS + tj]];
+                            putval(rtemp[ti * TS + tj], tonecurve[rtemp[ti * TS + tj]]);
+                            putval(gtemp[ti * TS + tj], tonecurve[gtemp[ti * TS + tj]]);
+                            putval(btemp[ti * TS + tj], tonecurve[btemp[ti * TS + tj]]);
                         }
                     }
                 }
@@ -3842,17 +3882,17 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                             for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                                 // individual R tone curve
                                 if (rCurve) {
-                                    rtemp[ti * TS + tj] = rCurve[ rtemp[ti * TS + tj] ];
+                                    putval(rtemp[ti * TS + tj], rCurve[ rtemp[ti * TS + tj] ]);
                                 }
 
                                 // individual G tone curve
                                 if (gCurve) {
-                                    gtemp[ti * TS + tj] = gCurve[ gtemp[ti * TS + tj] ];
+                                    putval(gtemp[ti * TS + tj], gCurve[ gtemp[ti * TS + tj] ]);
                                 }
 
                                 // individual B tone curve
                                 if (bCurve) {
-                                    btemp[ti * TS + tj] = bCurve[ btemp[ti * TS + tj] ];
+                                    putval(btemp[ti * TS + tj], bCurve[ btemp[ti * TS + tj] ]);
                                 }
                             }
                         }
@@ -3919,18 +3959,22 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                     bool neg = false;
                                     bool more_rgb = false;
                                     //gamut control : Lab values are in gamut
-                                    Color::gamutLchonly (HH, sincosval, Lpro, Chpro, rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], wip, highlight, 0.15f, 0.96f, neg, more_rgb);
+                                    Color::gamutLchonly (HH, sincosval, Lpro, Chpro, r, g, b, wip, highlight, 0.15f, 0.96f, neg, more_rgb);
 #else
                                     //gamut control : Lab values are in gamut
-                                    Color::gamutLchonly (HH, sincosval, Lpro, Chpro, rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], wip, highlight, 0.15f, 0.96f);
+                                    Color::gamutLchonly (HH, sincosval, Lpro, Chpro, r, g, b, wip, highlight, 0.15f, 0.96f);
 #endif
                                     //end of gamut control
                                 } else {
                                     float x_, y_, z_;
                                     //calculate RGB with L_2 and old value of a and b
                                     Color::Lab2XYZ (L_2, a_1, b_1, x_, y_, z_) ;
-                                    Color::xyz2rgb (x_, y_, z_, rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], wip);
+                                    Color::xyz2rgb (x_, y_, z_, r, g, b, wip);
                                 }
+
+                                putval(rtemp[ti * TS + tj], r);
+                                putval(gtemp[ti * TS + tj], g);
+                                putval(btemp[ti * TS + tj], b);
                             }
                         }
                     }

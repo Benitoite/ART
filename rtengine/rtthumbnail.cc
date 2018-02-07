@@ -1234,6 +1234,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
             }
     }
 
+    
     // luminance processing
 //  ipf.EPDToneMap(labView,0,6);
 
@@ -1303,7 +1304,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         ipf.ciecam_02float (cieView, adap, 1, 2, labView, &params, customColCurve1, customColCurve2, customColCurve3, dummy, dummy, CAMBrightCurveJ, CAMBrightCurveQ, CAMMean, 5, sk, execsharp, d, dj, yb, rtt);
         delete cieView;
     }
-
+    
     // color processing
     //ipf.colorCurve (labView, labView);
 
