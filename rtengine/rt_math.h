@@ -139,9 +139,17 @@ constexpr std::uint8_t uint16ToUint8Rounded(std::uint16_t i)
 
 
 template <typename T>
-constexpr bool OOG(const T &val, const T &low=T(0), const T &high=T(MAXVAL))
+constexpr bool OOG(const T &val, const T &high=T(MAXVAL))
 {
-    return (val < low) || (val > high);
+    return (val > high);
+}
+
+template <typename T>
+void setUnlessOOG(T &out, const T &val)
+{
+    if (!OOG(out)) {
+        out = val;
+    }
 }
 
 }

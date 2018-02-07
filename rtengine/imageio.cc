@@ -872,7 +872,7 @@ int ImageIO::loadTIFF (Glib::ustring fname)
         }
     }
 
-    if (sampleFormat & (IIOSF_FLOAT | IIOSF_LOGLUV24 | IIOSF_LOGLUV32)) {
+    if (sampleFormat & (/*IIOSF_FLOAT |*/ IIOSF_LOGLUV24 | IIOSF_LOGLUV32)) {
 #ifdef _DEBUG
 
         if (options.rtSettings.verbose)
@@ -886,6 +886,8 @@ int ImageIO::loadTIFF (Glib::ustring fname)
         float minVal = rtengine::min(minValue[0], minValue[1], minValue[2]);
         float maxVal = rtengine::max(maxValue[0], maxValue[1], maxValue[2]);
         normalizeFloat(minVal, maxVal);
+    } else if (sampleFormat & IIOSF_FLOAT) {
+        normalizeFloat(0.f, 1.f);
     }
 
     TIFFClose(in);
