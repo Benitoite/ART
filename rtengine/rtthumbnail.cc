@@ -1038,11 +1038,11 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
         for (int j = 0; j < rwidth; j++) {
             float red = baseImg->r (i, j) * rmi;
-            baseImg->r (i, j) = CLIP (red);
+            baseImg->r (i, j) = /*CLIP*/ (red);
             float green = baseImg->g (i, j) * gmi;
-            baseImg->g (i, j) = CLIP (green);
+            baseImg->g (i, j) = /*CLIP*/ (green);
             float blue = baseImg->b (i, j) * bmi;
-            baseImg->b (i, j) = CLIP (blue);
+            baseImg->b (i, j) = /*CLIP*/ (blue);
 
         }
     }

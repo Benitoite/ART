@@ -3678,6 +3678,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
         }
 
         float out_rgbx[4 * TS] ALIGNED16; // Line buffer for CLUT
+        float clutr[TS] ALIGNED16;
+        float clutg[TS] ALIGNED16;
+        float clutb[TS] ALIGNED16;
 
         LUTu histToneCurveThr;
 
@@ -4106,9 +4109,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                     bo *= preserv;
                                 }
 
-                                rtemp[ti * TS + tj] = CLIP(ro);
-                                gtemp[ti * TS + tj] = CLIP(go);
-                                btemp[ti * TS + tj] = CLIP(bo);
+                                rtemp[ti * TS + tj] = /*CLIP*/(ro);
+                                gtemp[ti * TS + tj] = /*CLIP*/(go);
+                                btemp[ti * TS + tj] = /*CLIP*/(bo);
                             }
                         }
                     }
@@ -4162,9 +4165,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                     float b = btemp[ti * TS + tj];
                                     float ro, go, bo;
                                     labtoning (r, g, b, ro, go, bo, algm, metchrom, twoc, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, clToningcurve, cl2Toningcurve, iplow, iphigh, wp, wip);
-                                    rtemp[ti * TS + tj] = CLIP (ro); //I used CLIP because there is a little bug in gamutLchonly that return 65536.ii intead of 65535 ==> crash
-                                    gtemp[ti * TS + tj] = CLIP (go);
-                                    btemp[ti * TS + tj] = CLIP (bo);
+                                    rtemp[ti * TS + tj] = /*CLIP*/ (ro); //I used CLIP because there is a little bug in gamutLchonly that return 65536.ii intead of 65535 ==> crash
+                                    gtemp[ti * TS + tj] = /*CLIP*/ (go);
+                                    btemp[ti * TS + tj] = /*CLIP*/ (bo);
                                 }
                             }
                         }
@@ -4411,28 +4414,32 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                 Color::rgbxyz (sourceR, sourceG, sourceB, x, y, z, v_work2xyz);
                                 Color::xyz2rgb (x, y, z, sourceR, sourceG, sourceB, v_xyz2clut);
 
-                                STVF (rtemp[ti * TS + tj], sourceR);
-                                STVF (gtemp[ti * TS + tj], sourceG);
-                                STVF (btemp[ti * TS + tj], sourceB);
+                                STVF (clutr[tj], sourceR);
+                                STVF (clutg[tj], sourceG);
+                                STVF (clutb[tj], sourceB);
                             }
 
 #endif
 
                             for (; j < tW; j++, tj++) {
-                                float &sourceR = rtemp[ti * TS + tj];
-                                float &sourceG = gtemp[ti * TS + tj];
-                                float &sourceB = btemp[ti * TS + tj];
+                                float sourceR = rtemp[ti * TS + tj];
+                                float sourceG = gtemp[ti * TS + tj];
+                                float sourceB = btemp[ti * TS + tj];
 
                                 float x, y, z;
                                 Color::rgbxyz ( sourceR, sourceG, sourceB, x, y, z, wprof );
-                                Color::xyz2rgb (x, y, z, sourceR, sourceG, sourceB, xyz2clut);
+                                Color::xyz2rgb (x, y, z, clutr[tj], clutg[tj], clutb[tj], xyz2clut);
                             }
+                        } else {
+                            memcpy(clutr, &rtemp[ti * TS], sizeof(float) * TS);
+                            memcpy(clutg, &gtemp[ti * TS], sizeof(float) * TS);
+                            memcpy(clutb, &btemp[ti * TS], sizeof(float) * TS);
                         }
 
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                            float &sourceR = rtemp[ti * TS + tj];
-                            float &sourceG = gtemp[ti * TS + tj];
-                            float &sourceB = btemp[ti * TS + tj];
+                            float &sourceR = clutr[tj];
+                            float &sourceG = clutg[tj];
+                            float &sourceB = clutb[tj];
 
                             // Apply gamma sRGB (default RT)
                             sourceR = Color::gamma_srgbclipped (sourceR);
@@ -4444,16 +4451,16 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                         hald_clut->getRGB (
                             film_simulation_strength,
                             std::min (TS, tW - jstart),
-                            rtemp + line_offset,
-                            gtemp + line_offset,
-                            btemp + line_offset,
+                            clutr,
+                            clutg,
+                            clutb,
                             out_rgbx
                         );
 
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                            float &sourceR = rtemp[ti * TS + tj];
-                            float &sourceG = gtemp[ti * TS + tj];
-                            float &sourceB = btemp[ti * TS + tj];
+                            float &sourceR = clutr[tj];
+                            float &sourceG = clutg[tj];
+                            float &sourceB = clutb[tj];
 
                             // Apply inverse gamma sRGB
                             sourceR = Color::igamma_srgb (out_rgbx[tj * 4 + 0]);
@@ -4469,9 +4476,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
 #ifdef __SSE2__
 
                             for (; j < tW - 3; j += 4, tj += 4) {
-                                vfloat sourceR = LVF (rtemp[ti * TS + tj]);
-                                vfloat sourceG = LVF (gtemp[ti * TS + tj]);
-                                vfloat sourceB = LVF (btemp[ti * TS + tj]);
+                                vfloat sourceR = LVF (clutr[tj]);
+                                vfloat sourceG = LVF (clutg[tj]);
+                                vfloat sourceB = LVF (clutb[tj]);
 
                                 vfloat x;
                                 vfloat y;
@@ -4479,21 +4486,29 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                 Color::rgbxyz (sourceR, sourceG, sourceB, x, y, z, v_clut2xyz);
                                 Color::xyz2rgb (x, y, z, sourceR, sourceG, sourceB, v_xyz2work);
 
-                                STVF (rtemp[ti * TS + tj], sourceR);
-                                STVF (gtemp[ti * TS + tj], sourceG);
-                                STVF (btemp[ti * TS + tj], sourceB);
+                                STVF (clutr[tj], sourceR);
+                                STVF (clutg[tj], sourceG);
+                                STVF (clutb[tj], sourceB);
                             }
 
 #endif
 
                             for (; j < tW; j++, tj++) {
-                                float &sourceR = rtemp[ti * TS + tj];
-                                float &sourceG = gtemp[ti * TS + tj];
-                                float &sourceB = btemp[ti * TS + tj];
+                                float &sourceR = clutr[tj];
+                                float &sourceG = clutg[tj];
+                                float &sourceB = clutb[tj];
 
                                 float x, y, z;
                                 Color::rgbxyz (sourceR, sourceG, sourceB, x, y, z, clut2xyz);
                                 Color::xyz2rgb ( x, y, z, sourceR, sourceG, sourceB, wiprof );
+                            }
+                        }
+
+                        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+                            if (!OOG(rtemp[ti * TS + tj]) || !OOG(gtemp[ti * TS + tj]) || !OOG(btemp[ti * TS + tj])) {
+                                rtemp[ti * TS + tj] = clutr[tj];
+                                gtemp[ti * TS + tj] = clutg[tj];
+                                btemp[ti * TS + tj] = clutb[tj];
                             }
                         }
                     }
@@ -4623,7 +4638,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                 for (int j = 0; j < tW; j++) {
 
                     //mix channel
-                    tmpImage->r (i, j) = tmpImage->g (i, j) = tmpImage->b (i, j) = CLIP ((bwr * tmpImage->r (i, j) + bwg * tmpImage->g (i, j) + bwb * tmpImage->b (i, j)) * kcorec);
+                    tmpImage->r (i, j) = tmpImage->g (i, j) = tmpImage->b (i, j) = /*CLIP*/ ((bwr * tmpImage->r (i, j) + bwg * tmpImage->g (i, j) + bwb * tmpImage->b (i, j)) * kcorec);
 
 #ifndef __SSE2__
 
@@ -4719,9 +4734,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                 bo *= preserv;
                             }
 
-                            tmpImage->r(i, j) = CLIP(ro);
-                            tmpImage->g(i, j) = CLIP(go);
-                            tmpImage->b(i, j) = CLIP(bo);
+                            tmpImage->r(i, j) = /*CLIP*/(ro);
+                            tmpImage->g(i, j) = /*CLIP*/(go);
+                            tmpImage->b(i, j) = /*CLIP*/(bo);
                         }
                     }
                 }
@@ -4828,9 +4843,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                             float b = tmpImage->b (i, j);
                             float ro, bo, go;
                             labtoning (r, g, b, ro, go, bo, algm, metchrom,  twoc, satLimit, satLimitOpacity, ctColorCurve,  ctOpacityCurve, clToningcurve, cl2Toningcurve,  iplow, iphigh,  wp,  wip);
-                            tmpImage->r (i, j) = CLIP (ro);
-                            tmpImage->g (i, j) = CLIP (go);
-                            tmpImage->b (i, j) = CLIP (bo);
+                            tmpImage->r (i, j) = /*CLIP*/ (ro);
+                            tmpImage->g (i, j) = /*CLIP*/ (go);
+                            tmpImage->b (i, j) = /*CLIP*/ (bo);
 
                         }
                     }
@@ -5074,9 +5089,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             r += corr;
         }
 
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     {
@@ -5088,9 +5103,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             g += corr;
         }
 
-        r = CLIP(r);
-        b = CLIP(b);
-        g = CLIP(g);
+        // r = CLIP(r);
+        // b = CLIP(b);
+        // g = CLIP(g);
     }
 
 
@@ -5104,9 +5119,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             b += corr;
         }
 
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     // mid tones
@@ -5137,9 +5152,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             g -= 20000.f * RedM;
             b -= 20000.f * RedM;
         }
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     {
@@ -5154,9 +5169,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             g += 10000.f * GreenM;
             b -= 20000.f * GreenM;
         }
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     {
@@ -5171,9 +5186,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             g -= 20000.f * BlueM;
             b += 10000.f * BlueM;
         }
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     //high tones
@@ -5198,9 +5213,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             b -= corr;
         }
 
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     {
@@ -5213,9 +5228,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             b -= corr;
         }
 
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     {
@@ -5228,9 +5243,9 @@ void ImProcFunctions::toningsmh(float r, float g, float b, float &ro, float &go,
             g -= corr;
         }
 
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     ro = r;
@@ -5287,24 +5302,24 @@ void ImProcFunctions::toning2col (float r, float g, float b, float &ro, float &g
             b -= factor * krl;
         }
 
-        g = CLIP(g);
-        b = CLIP(b);
+        // g = CLIP(g);
+        // b = CLIP(b);
 
         if (kgl > 0.f) {
             r -= factor * kgl;
             b -= factor * kgl;
         }
 
-        r = CLIP(r);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // b = CLIP(b);
 
         if (kbl > 0.f) {
             r -= factor * kbl;
             g -= factor * kbl;
         }
 
-        r = CLIP(r);
-        g = CLIP(g);
+        // r = CLIP(r);
+        // g = CLIP(g);
     }
 
     //high tones
@@ -5331,9 +5346,9 @@ void ImProcFunctions::toning2col (float r, float g, float b, float &ro, float &g
         g += factor * (kgh > 0.f ? kgh : 0.f);
         b += factor * (kbh > 0.f ? kbh : 0.f);
 
-        r = CLIP(r);
-        g = CLIP(g);
-        b = CLIP(b);
+        // r = CLIP(r);
+        // g = CLIP(g);
+        // b = CLIP(b);
     }
 
     float preserv = 1.f;
@@ -5342,9 +5357,9 @@ void ImProcFunctions::toning2col (float r, float g, float b, float &ro, float &g
         preserv = lumbefore / lumafter;
     }
 
-    ro = CLIP(r * preserv);
-    go = CLIP(g * preserv);
-    bo = CLIP(b * preserv);
+    ro = /*CLIP*/(r * preserv);
+    go = /*CLIP*/(g * preserv);
+    bo = /*CLIP*/(b * preserv);
 }
 
 /**
