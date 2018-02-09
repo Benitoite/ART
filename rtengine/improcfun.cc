@@ -4447,7 +4447,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                             sourceB = Color::gamma_srgbclipped (sourceB);
                         }
 
-                        const std::size_t line_offset = ti * TS;
                         hald_clut->getRGB (
                             film_simulation_strength,
                             std::min (TS, tW - jstart),
