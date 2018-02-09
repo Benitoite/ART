@@ -1756,7 +1756,7 @@ void Color::RGB2Lab(float *R, float *G, float *B, float *L, float *a, float *b, 
     vfloat c200v = F2V(200.f);
 #endif
     int i = 0;
-#if 0 //def __SSE2__
+#ifdef __SSE2__
     for(;i < width - 3; i+=4) {
         const vfloat rv = LVFU(R[i]);
         const vfloat gv = LVFU(G[i]);
