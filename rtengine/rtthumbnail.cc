@@ -314,7 +314,7 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, RawMetaDataLocation &rml
 
 } // namespace
 
-Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataLocation& rml, eSensorType &sensorType, int &w, int &h, int fixwh, bool rotate, bool inspectorMode)
+Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataLocation& rml, eSensorType &sensorType, int &w, int &h, int fixwh, bool rotate, bool inspectorMode, bool forHistogramMatching)
 {
     Thumbnail* tpp = new Thumbnail ();
     tpp->isRaw = 1;
@@ -323,7 +323,7 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
     tpp->colorMatrix[1][1] = 1.0;
     tpp->colorMatrix[2][2] = 1.0;
 
-    if (inspectorMode && settings->thumbnail_inspector_raw) {
+    if (inspectorMode && !forHistogramMatching && settings->thumbnail_inspector_raw) {
         Image8 *img = load_inspector_mode(fname, rml, sensorType, w, h);
         if (!img) {
             delete tpp;
