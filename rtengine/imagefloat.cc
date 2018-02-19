@@ -57,35 +57,38 @@ void Imagefloat::setScanline (int row, unsigned char* buffer, int bps, float *mi
         float* sbuffer = (float*) buffer;
 
         for (int i = 0; i < width; i++) {
-            r(row, i) = sbuffer[ix];
+            r(row, i) = 65535.f * sbuffer[ix];
 
             if (minValue) {
                 if (sbuffer[ix] < minValue[0]) {
                     minValue[0] = sbuffer[ix];
                 } else if (sbuffer[ix] > maxValue[0]) {
                     maxValue[0] = sbuffer[ix];
-                } ++ix;
+                }
             }
+            ++ix;
 
-            g(row, i) = sbuffer[ix];
+            g(row, i) = 65535.f * sbuffer[ix];
 
             if (minValue) {
                 if (sbuffer[ix] < minValue[1]) {
                     minValue[1] = sbuffer[ix];
                 } else if (sbuffer[ix] > maxValue[1]) {
                     maxValue[1] = sbuffer[ix];
-                } ++ix;
+                }
             }
+            ++ix;
 
-            b(row, i) = sbuffer[ix];
+            b(row, i) = 65535.f * sbuffer[ix];
 
             if (minValue) {
                 if (sbuffer[ix] < minValue[2]) {
                     minValue[2] = sbuffer[ix];
                 } else if (sbuffer[ix] > maxValue[2]) {
                     maxValue[2] = sbuffer[ix];
-                } ++ix;
+                }
             }
+            ++ix;
         }
 
         break;
@@ -542,7 +545,7 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform)
     }
 }
 
-// Parallized transformation; create transform with cmsFLAGS_NOCACHE!
+// Parallelized transformation; create transform with cmsFLAGS_NOCACHE!
 void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const LabImage &labImage, int cx, int cy)
 {
     // LittleCMS cannot parallelize planar Lab float images
