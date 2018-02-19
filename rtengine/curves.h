@@ -51,9 +51,12 @@ inline void setLutVal(const LUTf &lut, float &val)
 {
     if (!OOG(val)) {
         val = lut[std::max(val, 0.f)];
+    } else if (val < 0.f) {
+        float m = lut[0.f];
+        val += m;
     } else {
         float m = lut[MAXVALF];
-        val += (m - val);
+        val += (m - MAXVALF);
     }
 }
 
@@ -61,8 +64,8 @@ inline void setLutVal(float &val, float lutval, float maxval)
 {
     if (!OOG(val)) {
         val = lutval;
-    } else {
-        val += (maxval - val);
+    } else if (val > 0.f) {
+        val += maxval - MAXVALF;
     }
 }
 
