@@ -1105,6 +1105,8 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
             if (pixel[0] > max_f[0] && pixel[1] > max_f[1] && pixel[2] > max_f[2]) {
                 //all channels clipped
                 float Y = (0.299 * clipfix[0] + 0.587 * clipfix[1] + 0.114 * clipfix[2]);
+                float prev_Y = (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
+                float max_Y = (0.299 * max_f[0] + 0.587 * max_f[1] + 0.114 * max_f[2]);
 
                 float factor = whitept / Y;
                 // red[i][j]   = clipfix[0] * factor;
@@ -1115,36 +1117,36 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
                 float h, s, l;
                 Color::rgb2hslfloat(clipfix[0], clipfix[1], clipfix[2], h, s, l);
                 s /= powf(factor, 1.6);
-                l = Y;
+                l = prev_Y / max_Y;
                 Color::hsl2rgbfloat(h, s, l, red[i][j], green[i][j], blue[i][j]);
             } else {//some channels clipped
                 float notclipped[3] = {pixel[0] <= max_f[0] ? 1.f : 0.f, pixel[1] <= max_f[1] ? 1.f : 0.f, pixel[2] <= max_f[2] ? 1.f : 0.f};
 
                 if (notclipped[0] == 0.f) { //red clipped
-                    red[i][j]  = max(red[i][j], (clipfix[0] * ((notclipped[1] * pixel[1] + notclipped[2] * pixel[2]) /
+                    red[i][j]  = /*max*/(/*red[i][j],*/ (clipfix[0] * ((notclipped[1] * pixel[1] + notclipped[2] * pixel[2]) /
                                                  (notclipped[1] * clipfix[1] + notclipped[2] * clipfix[2] + epsilon))));
                 }
 
                 if (notclipped[1] == 0.f) { //green clipped
-                    green[i][j] = max(green[i][j], (clipfix[1] * ((notclipped[2] * pixel[2] + notclipped[0] * pixel[0]) /
+                    green[i][j] = /*max*/(/*green[i][j],*/ (clipfix[1] * ((notclipped[2] * pixel[2] + notclipped[0] * pixel[0]) /
                                                     (notclipped[2] * clipfix[2] + notclipped[0] * clipfix[0] + epsilon))));
                 }
 
                 if (notclipped[2] == 0.f) { //blue clipped
-                    blue[i][j]  = max(blue[i][j], (clipfix[2] * ((notclipped[0] * pixel[0] + notclipped[1] * pixel[1]) /
+                    blue[i][j]  = /*max*/(/*blue[i][j],*/ (clipfix[2] * ((notclipped[0] * pixel[0] + notclipped[1] * pixel[1]) /
                                                    (notclipped[0] * clipfix[0] + notclipped[1] * clipfix[1] + epsilon))));
                 }
-            }
+           }
 
-            Y = (0.299 * red[i][j] + 0.587 * green[i][j] + 0.114 * blue[i][j]);
+            // Y = (0.299 * red[i][j] + 0.587 * green[i][j] + 0.114 * blue[i][j]);
 
-            if (Y > whitept) {
-                float factor = whitept / Y;
+            // if (Y > whitept) {
+            //     float factor = whitept / Y;
 
-                red[i][j]   *= factor;
-                green[i][j] *= factor;
-                blue[i][j]  *= factor;
-            }
+            //     red[i][j]   *= factor;
+            //     green[i][j] *= factor;
+            //     blue[i][j]  *= factor;
+            // }
         }
     }
 
