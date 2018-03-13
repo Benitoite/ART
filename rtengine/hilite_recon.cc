@@ -28,6 +28,8 @@
 #include "rawimagesource.h"
 #include "rt_math.h"
 #include "opthelper.h"
+#include "gauss.h"
+
 namespace rtengine
 {
 
@@ -412,6 +414,8 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
     constexpr float itrans[ColorCount][ColorCount] =
     { { 1.f, 0.8660254f, -0.5f }, { 1.f, -0.8660254f, -0.5f }, { 1.f, 0.f, 1.f } };
 
+    std::vector<bool> recovered(width * height);
+
     if(settings->verbose)
         for(int c = 0; c < 3; c++) {
             printf("chmax[%d] : %f\tclmax[%d] : %f\tratio[%d] : %f\n", c, chmax[c], c, clmax[c], c, chmax[c] / clmax[c]);
@@ -566,7 +570,7 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
     //blur highlight data
     boxblur2(hilite_full[3], hilite_full4, temp, height, width, 1);
 
-    temp.free(); // free temporary buffer
+    //temp.free(); // free temporary buffer
 
     if(plistener) {
         progress += 0.05;
@@ -1105,9 +1109,6 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
             if (pixel[0] > max_f[0] && pixel[1] > max_f[1] && pixel[2] > max_f[2]) {
                 //all channels clipped
                 float Y = (0.299 * clipfix[0] + 0.587 * clipfix[1] + 0.114 * clipfix[2]);
-                float prev_Y = (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
-                float max_Y = (0.299 * max_f[0] + 0.587 * max_f[1] + 0.114 * max_f[2]);
-
                 float factor = whitept / Y;
                 // red[i][j]   = clipfix[0] * factor;
                 // green[i][j] = clipfix[1] * factor;
@@ -1115,9 +1116,9 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
 
                 // desaturate
                 float h, s, l;
-                Color::rgb2hslfloat(clipfix[0], clipfix[1], clipfix[2], h, s, l);
+                Color::rgb2hslfloat(clipfix[0] * factor, clipfix[1] * factor, clipfix[2] * factor, h, s, l);
                 s /= powf(factor, 1.6);
-                l = prev_Y / max_Y;
+                l = min(l * factor, 1.f);
                 Color::hsl2rgbfloat(h, s, l, red[i][j], green[i][j], blue[i][j]);
             } else {//some channels clipped
                 float notclipped[3] = {pixel[0] <= max_f[0] ? 1.f : 0.f, pixel[1] <= max_f[1] ? 1.f : 0.f, pixel[2] <= max_f[2] ? 1.f : 0.f};
@@ -1138,15 +1139,38 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
                 }
            }
 
-            // Y = (0.299 * red[i][j] + 0.587 * green[i][j] + 0.114 * blue[i][j]);
+            Y = (0.299 * red[i][j] + 0.587 * green[i][j] + 0.114 * blue[i][j]);
 
-            // if (Y > whitept) {
-            //     float factor = whitept / Y;
+            if (Y > whitept) {
+                float factor = whitept / Y;
 
-            //     red[i][j]   *= factor;
-            //     green[i][j] *= factor;
-            //     blue[i][j]  *= factor;
-            // }
+                red[i][j]   *= factor;
+                green[i][j] *= factor;
+                blue[i][j]  *= factor;
+            }
+
+            recovered[i * width + j] = true;
+        }
+    }
+
+    {
+        for (int c = 0; c < 3; ++c) {
+            float **color = c == 0 ? red : c == 1 ? green : blue;
+#ifdef _OPENMP
+            #pragma omp parallel
+#endif
+            gaussianBlur(color, temp, width, height, 3.f);
+
+#ifdef _OPENMP
+            #pragma omp parallel for
+#endif
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    if (recovered[i * width + j]) {
+                        color[i][j] = temp[i][j];
+                    }
+                }
+            }
         }
     }
 
