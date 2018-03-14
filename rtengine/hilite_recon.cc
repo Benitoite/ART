@@ -1159,7 +1159,7 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
 #ifdef _OPENMP
             #pragma omp parallel
 #endif
-            gaussianBlur(color, temp, width, height, 3.f);
+            gaussianBlur(color, temp, width, height, 1.2f);
 
 #ifdef _OPENMP
             #pragma omp parallel for
