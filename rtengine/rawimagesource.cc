@@ -764,6 +764,8 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
             //process all highlight recovery other than "Color"
             if (doHr) {
                 hlRecovery (hrp.method, line_red, line_grn, line_blue, imwidth, hlmax);
+            } else if (!hrp.hrenabled) {
+                clipHighlights(line_red, line_grn, line_blue, imwidth);
             }
 
             if(d1x) {
@@ -4517,6 +4519,19 @@ void RawImageSource::hlRecovery (const std::string &method, float* red, float* g
         HLRecovery_blend(red, green, blue, width, 65535.0, hlmax);
     }
 
+}
+
+
+void RawImageSource::clipHighlights(float *red, float *green, float *blue, int width)
+{
+    const float maxval = 65535.0f;
+    
+    for (int i = 0; i < width; i++) {
+        const float clip = max(red[i], green[i], blue[i]);
+        if (clip > maxval) {
+            red[i] = green[i] = blue[i] = clip;
+        }
+    }
 }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

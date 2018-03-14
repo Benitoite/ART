@@ -1098,6 +1098,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
 
     // apply white balance and raw white point (simulated)
+    const float maxval = 65535.f;
     for (int i = 0; i < rheight; i++) {
 #ifdef _OPENMP
         #pragma omp simd
@@ -1110,7 +1111,10 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
             baseImg->g (i, j) = /*CLIP*/ (green);
             float blue = baseImg->b (i, j) * bmi;
             baseImg->b (i, j) = /*CLIP*/ (blue);
-
+            const float clip = max(red, green, blue);
+            if (clip > maxval) {
+                baseImg->r(i, j) = baseImg->g(i, j) = baseImg->b(i, j) = clip;
+            }
         }
     }
 
