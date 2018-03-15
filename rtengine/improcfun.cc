@@ -333,6 +333,7 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
         cmsUInt32Number flags;
         cmsHPROFILE iprof  = cmsCreateLab4Profile (nullptr);
         cmsHPROFILE gamutprof = nullptr;
+        cmsUInt32Number gamutbpc = 0;
 
         bool softProofCreated = false;
 
@@ -377,6 +378,9 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
 
                 if (gamutCheck) {
                     gamutprof = oprof;
+                    if (params->icm.outputBPC) {
+                        gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
+                    }
                 }
             }
         } else if (gamutCheck) {
@@ -391,6 +395,9 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
             //     softProofCreated = true;
             // }
             gamutprof = monitor;
+            if (settings->monitorBPC) {
+                gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
+            }
         }
 
         if (!softProofCreated) {
@@ -407,14 +414,14 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
             if (cmsIsMatrixShaper(gamutprof)) {
                 cmsHPROFILE aces = ICCStore::getInstance()->getProfile("ACES");
                 if (aces) {
-                    gw_lab2refTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, aces, TYPE_RGB_FLT, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
-                    gw_lab2softproofTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, gamutprof, TYPE_RGB_FLT, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
-                    gw_softproof2refTransform = cmsCreateTransform(gamutprof, TYPE_RGB_FLT, aces, TYPE_RGB_FLT, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+                    gw_lab2refTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, aces, TYPE_RGB_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+                    gw_lab2softproofTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, gamutprof, TYPE_RGB_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+                    gw_softproof2refTransform = cmsCreateTransform(gamutprof, TYPE_RGB_FLT, aces, TYPE_RGB_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE | gamutbpc);
                 }
             } else {
                 gw_lab2refTransform = nullptr;
-                gw_lab2softproofTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, gamutprof, TYPE_RGB_FLT, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
-                gw_softproof2refTransform = cmsCreateTransform(gamutprof, TYPE_RGB_FLT, iprof, TYPE_Lab_FLT, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+                gw_lab2softproofTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, gamutprof, TYPE_RGB_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+                gw_softproof2refTransform = cmsCreateTransform(gamutprof, TYPE_RGB_FLT, iprof, TYPE_Lab_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE | gamutbpc);
             }
 
             if (!gw_softproof2refTransform) {
