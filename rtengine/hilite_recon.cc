@@ -1110,34 +1110,25 @@ void RawImageSource :: HLRecovery_inpaint (float** red, float** green, float** b
                 //all channels clipped
                 float Y = (0.299 * clipfix[0] + 0.587 * clipfix[1] + 0.114 * clipfix[2]);
                 float factor = whitept / Y;
-                // red[i][j]   = clipfix[0] * factor;
-                // green[i][j] = clipfix[1] * factor;
-                // blue[i][j]  = clipfix[2] * factor;
-
-                // desaturate
-                float h, s, l;
-                Color::rgb2hslfloat(clipfix[0] * factor, clipfix[1] * factor, clipfix[2] * factor, h, s, l);
-                s /= factor;
-                l = min(l * factor, 1.f);
-                Color::hsl2rgbfloat(h, s, l, red[i][j], green[i][j], blue[i][j]);
-                red[i][j] = CLIP(red[i][j]);
-                green[i][j] = CLIP(green[i][j]);
-                blue[i][j] = CLIP(blue[i][j]);
+                red[i][j]   = CLIP(clipfix[0] * factor);
+                green[i][j] = CLIP(clipfix[1] * factor);
+                blue[i][j]  = CLIP(clipfix[2] * factor);
+                
             } else {//some channels clipped
                 float notclipped[3] = {pixel[0] <= max_f[0] ? 1.f : 0.f, pixel[1] <= max_f[1] ? 1.f : 0.f, pixel[2] <= max_f[2] ? 1.f : 0.f};
 
                 if (notclipped[0] == 0.f) { //red clipped
-                    red[i][j]  = CLIP/*max*/(/*red[i][j],*/ (clipfix[0] * ((notclipped[1] * pixel[1] + notclipped[2] * pixel[2]) /
+                    red[i][j]  = CLIP((clipfix[0] * ((notclipped[1] * pixel[1] + notclipped[2] * pixel[2]) /
                                                  (notclipped[1] * clipfix[1] + notclipped[2] * clipfix[2] + epsilon))));
                 }
 
                 if (notclipped[1] == 0.f) { //green clipped
-                    green[i][j] = CLIP/*max*/(/*green[i][j],*/ (clipfix[1] * ((notclipped[2] * pixel[2] + notclipped[0] * pixel[0]) /
+                    green[i][j] = CLIP((clipfix[1] * ((notclipped[2] * pixel[2] + notclipped[0] * pixel[0]) /
                                                     (notclipped[2] * clipfix[2] + notclipped[0] * clipfix[0] + epsilon))));
                 }
 
                 if (notclipped[2] == 0.f) { //blue clipped
-                    blue[i][j]  = CLIP/*max*/(/*blue[i][j],*/ (clipfix[2] * ((notclipped[0] * pixel[0] + notclipped[1] * pixel[1]) /
+                    blue[i][j]  = CLIP((clipfix[2] * ((notclipped[0] * pixel[0] + notclipped[1] * pixel[1]) /
                                                    (notclipped[0] * clipfix[0] + notclipped[1] * clipfix[1] + epsilon))));
                 }
            }
