@@ -1103,18 +1103,22 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 #ifdef _OPENMP
         #pragma omp simd
 #endif
-
         for (int j = 0; j < rwidth; j++) {
             float red = baseImg->r (i, j) * rmi;
-            baseImg->r (i, j) = /*CLIP*/ (red);
             float green = baseImg->g (i, j) * gmi;
-            baseImg->g (i, j) = /*CLIP*/ (green);
             float blue = baseImg->b (i, j) * bmi;
-            baseImg->b (i, j) = /*CLIP*/ (blue);
-            const float clip = max(red, green, blue);
-            if (clip > maxval) {
-                baseImg->r(i, j) = baseImg->g(i, j) = baseImg->b(i, j) = clip;
+
+            // quick highlight recovery
+            if (params.toneCurve.hrenabled) {
+                RawImageSource::HLRecovery_Luminance(&red, &green, &blue, &red, &green, &blue, 1, maxval);
+                baseImg->r(i, j) = red;
+                baseImg->g(i, j) = green;
+                baseImg->b(i, j) = blue;
             }
+
+            baseImg->r (i, j) = CLIP(red);
+            baseImg->g (i, j) = CLIP(green);
+            baseImg->b (i, j) = CLIP(blue);
         }
     }
 
