@@ -307,6 +307,7 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
         cmsHPROFILE iprof  = cmsCreateLab4Profile (nullptr);
         cmsHPROFILE gamutprof = nullptr;
         cmsUInt32Number gamutbpc = 0;
+        RenderingIntent gamutintent = RI_RELATIVE;
 
         bool softProofCreated = false;
 
@@ -354,6 +355,7 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
                     if (params->icm.outputBPC) {
                         gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
                     }
+                    gamutintent = outIntent;
                 }
             }
         } else if (gamutCheck) {
@@ -371,6 +373,7 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
             if (settings->monitorBPC) {
                 gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
             }
+            gamutintent = monitorIntent;
         }
 
         if (!softProofCreated) {
@@ -384,7 +387,7 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
         }
 
         if (gamutCheck) {
-            gamutWarning.reset(new GamutWarning(iprof, gamutprof, gamutbpc));
+            gamutWarning.reset(new GamutWarning(iprof, gamutprof, gamutintent, gamutbpc));
         }
 
         cmsCloseProfile (iprof);
