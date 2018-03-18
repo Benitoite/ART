@@ -27,6 +27,8 @@
 #include <netinet/in.h>
 #endif
 
+#include <iostream>
+
 #include "iccstore.h"
 
 #include "iccmatrices.h"
@@ -34,6 +36,8 @@
 
 #include "../rtgui/options.h"
 #include "../rtgui/threadutils.h"
+
+#include "cJSON.h"
 
 namespace rtengine
 {
@@ -274,7 +278,7 @@ public:
 
         for (int i = 0; i < N; ++i) {
             wProfiles[wpnames[i]] = createFromMatrix(wprofiles[i]);
-            wProfilesGamma[wpnames[i]] = createFromMatrix(wprofiles[i], true);
+            // wProfilesGamma[wpnames[i]] = createFromMatrix(wprofiles[i], true);
             wMatrices[wpnames[i]] = wprofiles[i];
             iwMatrices[wpnames[i]] = iwprofiles[i];
         }
@@ -287,11 +291,11 @@ public:
                 cmsCloseProfile(p.second);
             }
         }
-        for (auto &p : wProfilesGamma) {
-            if (p.second) {
-                cmsCloseProfile(p.second);
-            }
-        }
+        // for (auto &p : wProfilesGamma) {
+        //     if (p.second) {
+        //         cmsCloseProfile(p.second);
+        //     }
+        // }
         for (auto &p : fileProfiles) {
             if(p.second) {
                 cmsCloseProfile(p.second);
@@ -336,6 +340,9 @@ public:
 
         defaultMonitorProfile = settings->monitorProfile;
 
+        loadWorkingSpaces(rtICCDir);
+        loadWorkingSpaces(userICCDir);
+        
         // initialize the alarm colours for lcms gamut checking -- we use bright green
         cmsUInt16Number cms_alarm_codes[cmsMAXCHANNELS] = { 0, 65535, 65535 };
         cmsSetAlarmCodes(cms_alarm_codes);
@@ -351,16 +358,16 @@ public:
                 : wProfiles.find("sRGB")->second;
     }
 
-    cmsHPROFILE workingSpaceGamma(const Glib::ustring& name) const
-    {
+    // cmsHPROFILE workingSpaceGamma(const Glib::ustring& name) const
+    // {
 
-        const ProfileMap::const_iterator r = wProfilesGamma.find(name);
+    //     const ProfileMap::const_iterator r = wProfilesGamma.find(name);
 
-        return
-            r != wProfilesGamma.end()
-                ? r->second
-                : wProfilesGamma.find("sRGB")->second;
-    }
+    //     return
+    //         r != wProfilesGamma.end()
+    //             ? r->second
+    //             : wProfilesGamma.find("sRGB")->second;
+    // }
 
     TMatrix workingSpaceMatrix(const Glib::ustring& name) const
     {
@@ -584,16 +591,170 @@ public:
         defaultMonitorProfile = name;
     }
 
+    std::vector<Glib::ustring> getWorkingProfiles()
+    {
+        std::vector<Glib::ustring> res;
+
+        // for (unsigned int i = 0; i < sizeof(wpnames) / sizeof(wpnames[0]); i++) {
+        //     res.push_back(wpnames[i]);
+        // }
+        for (const auto &p : wProfiles) {
+            res.push_back(p.first);
+        }
+        
+        return res;
+    }
+
 private:
+    bool loadWorkingSpaces(const Glib::ustring &path)
+    {
+        Glib::ustring fileName = Glib::build_filename(path, "workingspaces.json");
+        FILE* const f = g_fopen(fileName.c_str(), "r");
+
+        if (settings->verbose) {
+            std::cout << "trying to load extra working spaces from " << fileName << std::flush;
+        }
+        
+        if (!f) {
+            if (settings->verbose) {
+                std::cout << " FAIL" << std::endl;
+            }
+            return false;
+        }
+
+        fseek(f, 0, SEEK_END);
+        long length = ftell(f);
+        if (length <= 0) {
+            if (settings->verbose) {
+                std::cout << " FAIL" << std::endl;
+            }
+            fclose(f);
+            return false;
+        }
+        
+        char *buf = new char[length + 1];
+        fseek(f, 0, SEEK_SET);
+        length = fread(buf, 1, length, f);
+        buf[length] = 0;
+            
+        fclose(f);
+
+        cJSON_Minify(buf);
+        cJSON *root = cJSON_Parse(buf);
+
+        if (!root) {
+            if (settings->verbose) {
+                std::cout << " FAIL" << std::endl;
+            }
+            return false;
+        }
+
+        delete[] buf;
+
+        cJSON *js = cJSON_GetObjectItem(root, "working_spaces");
+        if (!js) {
+            goto parse_error;
+        }
+            
+        for (js = js->child; js != nullptr; js = js->next) {
+            cJSON *ji = cJSON_GetObjectItem(js, "name");
+            std::unique_ptr<PMatrix> m(new PMatrix);
+            std::string name;
+            
+            if (!ji || ji->type != cJSON_String) {
+                goto parse_error;
+            }
+
+            name = ji->valuestring;
+
+            if (wProfiles.find(name) != wProfiles.end()) {
+                continue; // already there -- ignore
+            }
+
+            ji = cJSON_GetObjectItem(js, "matrix");
+            if (!ji || ji->type != cJSON_Array) {
+                goto parse_error;
+            }
+
+            ji = ji->child;
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j, ji = ji->next) {
+                    if (!ji || ji->type != cJSON_Number) {
+                        goto parse_error;
+                    }
+                    m->matrix[i][j] = ji->valuedouble;
+                }
+            }
+
+            if (ji) {
+                goto parse_error;
+            }
+
+            pMatrices.emplace_back(std::move(m));
+            TMatrix w = pMatrices.back()->matrix;
+            wMatrices[name] = w;
+            pMatrices.emplace_back(new PMatrix());
+
+            std::array<std::array<double, 3>, 3> f = {}, b = {};
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    f[i][j] = w[i][j];
+                }
+            }
+            rtengine::invertMatrix(f, b);
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    pMatrices.back()->matrix[i][j] = b[i][j];
+                }
+            }
+            TMatrix iw = pMatrices.back()->matrix;
+            iwMatrices[name] = iw;
+            wProfiles[name] = createFromMatrix(w);
+
+            if (settings->verbose) {
+                std::cout << "Added working space: " << name << std::endl;
+                std::cout << "  matrix: [";
+                for (int i = 0; i < 3; ++i) {
+                    std::cout << " [";
+                    for (int j = 0; j < 3; ++j) {
+                        std::cout << " " << w[i][j];
+                    }
+                    std::cout << "]";
+                }
+                std::cout << " ]" << std::endl;
+            }
+        }
+
+        cJSON_Delete(root);
+        if (settings->verbose) {
+            std::cout << " OK" << std::endl;
+        }
+        return true;
+
+      parse_error:
+        if (settings->verbose) {
+            std::cout << " ERROR in parsing " << fileName << std::endl;
+        }
+        
+        cJSON_Delete(root);
+        return false;
+    }
+
     using ProfileMap = std::map<Glib::ustring, cmsHPROFILE>;
     using MatrixMap = std::map<Glib::ustring, TMatrix>;
     using ContentMap = std::map<Glib::ustring, ProfileContent>;
     using NameMap = std::map<Glib::ustring, Glib::ustring>;
 
     ProfileMap wProfiles;
-    ProfileMap wProfilesGamma;
+    // ProfileMap wProfilesGamma;
     MatrixMap wMatrices;
     MatrixMap iwMatrices;
+
+    struct PMatrix {
+        double matrix[3][3];
+        PMatrix(): matrix{} {}
+    };
+    std::vector<std::unique_ptr<PMatrix>> pMatrices;
 
     // These contain profiles from user/system directory(supplied on init)
     Glib::ustring profilesDir;
@@ -632,10 +793,10 @@ cmsHPROFILE rtengine::ICCStore::workingSpace(const Glib::ustring& name) const
     return implementation->workingSpace(name);
 }
 
-cmsHPROFILE rtengine::ICCStore::workingSpaceGamma(const Glib::ustring& name) const
-{
-    return implementation->workingSpaceGamma(name);
-}
+// cmsHPROFILE rtengine::ICCStore::workingSpaceGamma(const Glib::ustring& name) const
+// {
+//     return implementation->workingSpaceGamma(name);
+// }
 
 rtengine::TMatrix rtengine::ICCStore::workingSpaceMatrix(const Glib::ustring& name) const
 {
@@ -738,14 +899,7 @@ rtengine::ICCStore::~ICCStore() = default;
 
 std::vector<Glib::ustring> rtengine::ICCStore::getWorkingProfiles()
 {
-
-    std::vector<Glib::ustring> res;
-
-    for (unsigned int i = 0; i < sizeof(wpnames) / sizeof(wpnames[0]); i++) {
-        res.push_back(wpnames[i]);
-    }
-
-    return res;
+    return implementation->getWorkingProfiles();
 }
 
 std::vector<Glib::ustring> rtengine::ICCStore::getGamma()

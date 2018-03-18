@@ -4,6 +4,7 @@
 #include <limits>
 #include <cmath>
 #include <cstdint>
+#include <array>
 
 namespace rtengine
 {
@@ -150,6 +151,33 @@ void setUnlessOOG(T &out, const T &val)
     if (!OOG(out)) {
         out = val;
     }
+}
+
+
+template <typename T>
+bool invertMatrix(const std::array<std::array<T, 3>, 3> &in, std::array<std::array<T, 3>, 3> &out)
+{
+    const T res00 = in[1][1] * in[2][2] - in[2][1] * in[1][2];
+    const T res10 = in[2][0] * in[1][2] - in[1][0] * in[2][2];
+    const T res20 = in[1][0] * in[2][1] - in[2][0] * in[1][1];
+
+    const T det = in[0][0] * res00 + in[0][1] * res10 + in[0][2] * res20;
+
+    if (std::abs(det) < 1.0e-10) {
+        return false;
+    }
+
+    out[0][0] = res00 / det;
+    out[0][1] = (in[2][1] * in[0][2] - in[0][1] * in[2][2]) / det;
+    out[0][2] = (in[0][1] * in[1][2] - in[1][1] * in[0][2]) / det;
+    out[1][0] = res10 / det;
+    out[1][1] = (in[0][0] * in[2][2] - in[2][0] * in[0][2]) / det;
+    out[1][2] = (in[1][0] * in[0][2] - in[0][0] * in[1][2]) / det;
+    out[2][0] = res20 / det;
+    out[2][1] = (in[2][0] * in[0][1] - in[0][0] * in[2][1]) / det;
+    out[2][2] = (in[0][0] * in[1][1] - in[1][0] * in[0][1]) / det;
+
+    return true;
 }
 
 
