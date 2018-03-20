@@ -606,6 +606,101 @@ public:
     }
 
 private:
+    using CVector = std::array<double, 3>;
+    using CMatrix = std::array<CVector, 3>;
+    struct PMatrix {
+        double matrix[3][3];
+        PMatrix(): matrix{} {}
+        PMatrix(const CMatrix &m)
+        {
+            set(m);
+        }
+
+        CMatrix toMatrix() const
+        {
+            CMatrix ret;
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    ret[i][j] = matrix[i][j];
+                }
+            }
+            return ret;
+        }
+
+        void set(const CMatrix &m)
+        {
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    matrix[i][j] = m[i][j];
+                }
+            }
+        }
+    };
+
+    bool computeWorkingSpaceMatrix(const Glib::ustring &path, const Glib::ustring &filename, PMatrix &out)
+    {
+        Glib::ustring fullpath = filename;
+        if (!Glib::path_is_absolute(fullpath)) {
+            fullpath = Glib::build_filename(path, filename);
+        }
+        ProfileContent content(fullpath);
+        cmsHPROFILE prof = content.toProfile();
+        if (!prof) {
+            return false;
+        }
+        if (cmsGetColorSpace(prof) != cmsSigRgbData) {
+            cmsCloseProfile(prof);
+            return false;
+        }
+        if (!cmsIsMatrixShaper(prof)) {
+            cmsCloseProfile(prof);
+            return false;
+        }
+        cmsCIEXYZ *white = static_cast<cmsCIEXYZ *>(cmsReadTag(prof, cmsSigMediaWhitePointTag));
+        cmsCIEXYZ *red = static_cast<cmsCIEXYZ *>(cmsReadTag(prof, cmsSigRedMatrixColumnTag));
+        cmsCIEXYZ *green  = static_cast<cmsCIEXYZ *>(cmsReadTag(prof, cmsSigGreenMatrixColumnTag));
+        cmsCIEXYZ *blue  = static_cast<cmsCIEXYZ *>(cmsReadTag(prof, cmsSigBlueMatrixColumnTag));
+
+        if (!white || !red || !green || !blue) {
+            cmsCloseProfile(prof);
+            return false;
+        }
+
+        // do the Bradford adaptation to D50
+        // matrices from Bruce Lindbloom's webpage
+        static constexpr CMatrix bradford_MA = {
+            CVector({0.8951000,  0.2664000, -0.1614000}),
+            CVector({-0.7502000,  1.7135000,  0.0367000}),
+            CVector({0.0389000, -0.0685000,  1.0296000})
+        };
+        static constexpr CMatrix bradford_MA_inv = {
+            CVector({0.9869929, -0.1470543,  0.1599627}),
+            CVector({0.4323053,  0.5183603,  0.0492912}),
+            CVector({-0.0085287,  0.0400428,  0.9684867})
+        };
+        static constexpr CVector bradford_MA_dot_D50 = {
+            0.99628443, 1.02042736, 0.81864437
+        };
+
+        CVector srcw = dotProduct(bradford_MA, CVector({ white->X, white->Y, white->Z }));
+        CMatrix m = {
+            CVector({ bradford_MA_dot_D50[0]/srcw[0], 0.0, 0.0 }),
+            CVector({ 0.0, bradford_MA_dot_D50[1]/srcw[1], 0.0 }),
+            CVector({ 0.0, 0.0, bradford_MA_dot_D50[2]/srcw[2] })
+        };
+        CMatrix adapt = dotProduct(dotProduct(bradford_MA_inv, m), bradford_MA);
+
+        m[0][0] = red->X; m[0][1] = green->X; m[0][2] = blue->X;
+        m[1][0] = red->Y; m[1][1] = green->Y; m[1][2] = blue->Y;
+        m[2][0] = red->Z; m[2][1] = green->Z; m[2][2] = blue->Z;
+
+        m = dotProduct(adapt, m);
+        out.set(m);
+        
+        cmsCloseProfile(prof);
+        return true;
+    }
+    
     bool loadWorkingSpaces(const Glib::ustring &path)
     {
         Glib::ustring fileName = Glib::build_filename(path, "workingspaces.json");
@@ -671,57 +766,71 @@ private:
                 continue; // already there -- ignore
             }
 
+            bool found_matrix = false;
+            
             ji = cJSON_GetObjectItem(js, "matrix");
-            if (!ji || ji->type != cJSON_Array) {
-                goto parse_error;
-            }
-
-            ji = ji->child;
-            for (int i = 0; i < 3; ++i) {
-                for (int j = 0; j < 3; ++j, ji = ji->next) {
-                    if (!ji || ji->type != cJSON_Number) {
-                        goto parse_error;
-                    }
-                    m->matrix[i][j] = ji->valuedouble;
-                }
-            }
-
             if (ji) {
-                goto parse_error;
+                if (ji->type != cJSON_Array) {
+                    goto parse_error;
+                }
+
+                ji = ji->child;
+                for (int i = 0; i < 3; ++i) {
+                    for (int j = 0; j < 3; ++j, ji = ji->next) {
+                        if (!ji || ji->type != cJSON_Number) {
+                            goto parse_error;
+                        }
+                        m->matrix[i][j] = ji->valuedouble;
+                    }
+                }
+
+                if (ji) {
+                    goto parse_error;
+                }
+                found_matrix = true;
+            } else {
+                ji = cJSON_GetObjectItem(js, "file");
+                if (!ji || ji->type != cJSON_String) {
+                    goto parse_error;
+                }
+                found_matrix = computeWorkingSpaceMatrix(path, ji->valuestring, *m);
+            }
+
+            if (!found_matrix) {
+                if (settings->verbose) {
+                    std::cout << "Could not find suitable matrix for working space: " << name << std::endl;
+                }
+                continue;
             }
 
             pMatrices.emplace_back(std::move(m));
             TMatrix w = pMatrices.back()->matrix;
-            wMatrices[name] = w;
-            pMatrices.emplace_back(new PMatrix());
 
-            std::array<std::array<double, 3>, 3> f = {}, b = {};
-            for (int i = 0; i < 3; ++i) {
-                for (int j = 0; j < 3; ++j) {
-                    f[i][j] = w[i][j];
+            CMatrix b = {};
+            if (!rtengine::invertMatrix(pMatrices.back()->toMatrix(), b)) {
+                if (settings->verbose) {
+                    std::cout << "Matrix for working space: " << name << " is not invertible, skipping" << std::endl;
                 }
-            }
-            rtengine::invertMatrix(f, b);
-            for (int i = 0; i < 3; ++i) {
-                for (int j = 0; j < 3; ++j) {
-                    pMatrices.back()->matrix[i][j] = b[i][j];
-                }
-            }
-            TMatrix iw = pMatrices.back()->matrix;
-            iwMatrices[name] = iw;
-            wProfiles[name] = createFromMatrix(w);
+                pMatrices.pop_back();
+            } else {
+                wMatrices[name] = w;
+                pMatrices.emplace_back(new PMatrix(b));
+                TMatrix iw = pMatrices.back()->matrix;
+                iwMatrices[name] = iw;
+                wProfiles[name] = createFromMatrix(w);
 
-            if (settings->verbose) {
-                std::cout << "Added working space: " << name << std::endl;
-                std::cout << "  matrix: [";
-                for (int i = 0; i < 3; ++i) {
-                    std::cout << " [";
-                    for (int j = 0; j < 3; ++j) {
-                        std::cout << " " << w[i][j];
+                if (settings->verbose) {
+                    std::cout << "Added working space: " << name << std::endl;
+                    std::cout << "  matrix: [";
+                    for (int i = 0; i < 3; ++i) {
+                        std::cout << " [";
+                        for (int j = 0; j < 3; ++j) {
+                            std::cout << " " << w[i][j];
+                        }
+                        std::cout << "]";
                     }
-                    std::cout << "]";
+                    std::cout << " ]" << std::endl;
                 }
-                std::cout << " ]" << std::endl;
             }
         }
 
@@ -750,10 +859,6 @@ private:
     MatrixMap wMatrices;
     MatrixMap iwMatrices;
 
-    struct PMatrix {
-        double matrix[3][3];
-        PMatrix(): matrix{} {}
-    };
     std::vector<std::unique_ptr<PMatrix>> pMatrices;
 
     // These contain profiles from user/system directory(supplied on init)

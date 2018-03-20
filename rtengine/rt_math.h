@@ -181,4 +181,39 @@ bool invertMatrix(const std::array<std::array<T, 3>, 3> &in, std::array<std::arr
 }
 
 
+template <typename T>
+std::array<std::array<T, 3>, 3> dotProduct(const std::array<std::array<T, 3>, 3> &a, const std::array<std::array<T, 3>, 3> &b)
+{
+    std::array<std::array<T, 3>, 3> res;
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            res[i][j] = 0;
+
+            for (int k = 0; k < 3; ++k) {
+                res[i][j] += a[i][k] * b[k][j];
+            }
+        }
+    }
+
+    return res;
+}
+
+
+template <typename T>
+std::array<T, 3> dotProduct(const std::array<std::array<T, 3>, 3> &a, const std::array<T, 3> &b)
+{
+    std::array<T, 3> res;
+
+    for (int i = 0; i < 3; ++i) {
+        res[i] = 0;
+        for (int k = 0; k < 3; ++k) {
+            res[i] += a[i][k] * b[k];
+        }
+    }
+
+    return res;
+}
+
+
 }
