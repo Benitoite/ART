@@ -1,12 +1,20 @@
-RAWTHERAPEE 5.4-RC1 RELEASE NOTES
----------------------------------
-This is RawTherapee 5.4 Release Candidate 1, released on 2018-02-05.
+RAWTHERAPEE 5.4-dev RELEASE NOTES
+
+This is a development version of RawTherapee. We update the code almost daily. Every few months, once enough changes have accumulated and the code is stabilized, we make a new official release. Every code change between these releases is known as a "development" version, and this is one of them.
 
 Start by reading the "Getting Started" article on RawPedia:
 http://rawpedia.rawtherapee.com/
 
-News Relevant to Photographers
-------------------------------
+While we only commit tested and relatively stable code and so the development versions should be fairly stable, you should be aware that:
+- Development versions only had limited testing, so there may be bugs unknown to us.
+- You should report these bugs so that they get fixed for the next stable release. See
+  www.rawpedia.rawtherapee.com/How_to_write_useful_bug_reports
+- The way new tools work in the development versions is likely to change as we tweak and tune them, so your processing profiles may produce different results when used in a future stable version.
+- Bugs present in the stable versions get fixed in the development versions, and make it into the next stable version when we make a new official release. That means that in some ways the development versions can be "more stable" than the latest stable release. At the same time, new features may introduce new bugs. This is a trade-off you should be aware of.
+
+
+NEWS RELEVANT TO PHOTOGRAPHERS
+
 RawTherapee supports most raw formats, including Pentax and Sony Pixel Shift, Canon Dual-Pixel, and those from Foveon and X-Trans sensors.
 If you're wondering whether it supports your camera's raw format, first download RawTherapee and try for yourself. If a raw format is not supported it will either not open, or the preview in the Editor tab will appear black, white, or have a strong color cast - usually magenta. In that case, read the "Adding Support for New Raw Formats" RawPedia article.
 
@@ -17,38 +25,19 @@ In order to use RawTherapee efficiently you should know that:
 - All curves support the Shift and Ctrl keys while dragging a point. Shift+drag makes the point snap to a meaningful axis (top, bottom, diagonal, other), while Ctrl+drag makes your mouse movement super-fine for precise point positioning.
 - There are many keyboard shortcuts which make working with RawTherapee much faster and give you greater control. Make sure you familiarize yourself with them on RawPedia's "Keyboard Shortcuts" page!
 
-New features since 5.3:
-- New default processing profiles, now the default look for raw photos closely matches the out-of-camera look with regard to tones and includes lens distortion and vignetting correction.
-- New histogram matching tool, to have RawTherapee automatically adjust the image for you to match the out-of-camera look with a single click of a button.
-- New HDR Tone Mapping tool to compress the light in scenes with a high dynamic range, allowing you to show details in both shadows and highlights in a realistic way.
-- New Local Contrast tool to boost clarity using a simple interface.
-- New color toning method L*a*b* Color Correction Grid.
-- New RCD demosaicing algorithm to minimize artifacts even with artificial lighting and strong chromatic aberration.
-- Added support for showing out-of-gamut areas based on the output profile.
-- Added support for reading and writing metadata and ICC profiles to and from PNG images.
-- Added support for processing Sony Pixel Shift ARQ raw files - make sure that the ARQ extension is enabled in Preferences > File Browser > Parsed Extensions.
-- Create Sony ARQ raw files using https://github.com/agriggio/make_arq
-- Added support for saving 32-bit floating-point TIFFs clamped to [0;1].
-- Added profiled chromatic aberration correction support using Lensfun.
-- More tools now have an on/off switch.
-- The user interface is cleaner, with all power-house tools moved into a new "Advanced" tab to prevent slider-shock to newcomers.
-- The Metadata tab now lets you choose whether you want to copy metadata unchanged, edit metadata or strip metadata when saving images. Now you can also make metadata changes in batch mode.
-- The choice of whether the main histogram should display information using the working profile or the output profile is now available from the Editor tab's top toolbar.
-- The Crop tool's aspect ratio now defaults to that of the image, and RawTherapee automatically zooms-to-fit the crop once it's placed.
-- RGB input-type ICC profiles can now be used as output profiles.
-- The saved reference image for profiling (created from within the Color Management tool) now contains metadata.
-- PNG and compressed TIFF images make use of better compression.
-- Shortcut key changes: Zoom-to-fit the crop using "f", fit the whole image using "Alt+f".
-
-There were several hundred commits optimizing processing speed and memory usage as well as bug fixes and code refactoring, though the details of these are too arcane to list here. The effort involved thousands of developer-hours.
+New features since 5.4:
+- TODO.
 
 RawTherapee and other open-source projects require access to sample raw files from various camera makes and models in order to support those raw formats correctly.
 You can help by submitting raw files to RPU:
 https://raw.pixls.us/
 
-News Relevant to Package Maintainers
-------------------------------------
+
+
+NEWS RELEVANT TO PACKAGE MAINTAINERS
+
 In general:
+- To get the source code, either clone from git or use the tarball from http://rawtherapee.com/shared/source/ . Do not use the auto-generated GitHub release tarballs.
 - Requires GTK+ version >=3.16, though >=3.22.24 is recommended.
 - RawTherapee 5 requires GCC-4.9 or higher, or Clang.
 - Do not use -ffast-math, it will not make RawTherapee faster but will introduce artifacts.
@@ -56,27 +45,40 @@ In general:
 - For stable releases use -DCACHE_NAME_SUFFIX=""
 - For development builds and release-candidates use -DCACHE_NAME_SUFFIX="5-dev"
 
-News Relevant to Developers
----------------------------
+Changes since 5.4:
+- TODO.
+
+
+
+NEWS RELEVANT TO DEVELOPERS
+
 See CONTRIBUTING.md
 
+
+
 DOCUMENTATION
--------------
-http://rawtherapee.com/blog/documentation
+
 http://rawpedia.rawtherapee.com/
+http://rawtherapee.com/blog/documentation
+
+
 
 REPORTING BUGS
---------------
+
 If you found a problem, don't keep it to yourself. Read the "How to write useful bug reports" article to get the problem fixed:
 http://rawpedia.rawtherapee.com/How_to_write_useful_bug_reports
 
+
+
 FORUM
------
+
 RawTherapee shares a forum with users and developers of other Free/Libre/Open Source Software:
 https://discuss.pixls.us/c/software/rawtherapee
 
+
+
 LIVE CHAT WITH USERS AND DEVELOPERS
------------------------------------
+
 Network: freenode
 Server: chat.freenode.net
 Channel: #rawtherapee
@@ -85,12 +87,16 @@ You can use freenode webchat to communicate without installing anything:
 http://webchat.freenode.net/?randomnick=1&channels=rawtherapee&prompt=1
 More information here: http://rawpedia.rawtherapee.com/IRC
 
+
+
 SOCIAL NETWORKS
----------------
+
 Google+
 https://plus.google.com/+RawTherapee
 
+
+
 REVISION HISTORY
-----------------
+
 The complete changelog is available at:
 https://github.com/Beep6581/RawTherapee/commits/
