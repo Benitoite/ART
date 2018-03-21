@@ -665,6 +665,7 @@ Gtk::Widget* Preferences::getPerformancePanel ()
     thumbnailInspectorMode = Gtk::manage(new Gtk::ComboBoxText());
     thumbnailInspectorMode->append(M("PREFERENCES_THUMBNAIL_INSPECTOR_JPEG"));
     thumbnailInspectorMode->append(M("PREFERENCES_THUMBNAIL_INSPECTOR_RAW"));
+    thumbnailInspectorMode->append(M("PREFERENCES_THUMBNAIL_INSPECTOR_RAW_IF_NO_JPEG_FULLSIZE"));
     insphb->pack_start(*Gtk::manage(new Gtk::Label(M("PREFERENCES_THUMBNAIL_INSPECTOR_MODE") + ": ")), Gtk::PACK_SHRINK, 4);
     insphb->pack_start(*thumbnailInspectorMode);
     inspectorvb->pack_start(*insphb);
@@ -1864,7 +1865,7 @@ void Preferences::storePreferences ()
     moptions.rgbDenoiseThreadLimit = rgbDenoiseTreadLimitSB->get_value_as_int();
     moptions.clutCacheSize = clutCacheSizeSB->get_value_as_int();
     moptions.maxInspectorBuffers = maxInspectorBuffersSB->get_value_as_int();
-    moptions.rtSettings.thumbnail_inspector_raw = thumbnailInspectorMode->get_active_row_number() == 1;
+    moptions.rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(thumbnailInspectorMode->get_active_row_number());
 
 // Sounds only on Windows and Linux
 #if defined(WIN32) || defined(__linux__)
@@ -2084,7 +2085,7 @@ void Preferences::fillPreferences ()
     rgbDenoiseTreadLimitSB->set_value (moptions.rgbDenoiseThreadLimit);
     clutCacheSizeSB->set_value (moptions.clutCacheSize);
     maxInspectorBuffersSB->set_value (moptions.maxInspectorBuffers);
-    thumbnailInspectorMode->set_active(moptions.rtSettings.thumbnail_inspector_raw ? 1 : 0);
+    thumbnailInspectorMode->set_active(int(moptions.rtSettings.thumbnail_inspector_mode));
 
     darkFrameDir->set_current_folder ( moptions.rtSettings.darkFramesPath );
     darkFrameChanged ();

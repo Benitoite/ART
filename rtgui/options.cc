@@ -594,7 +594,7 @@ void Options::setDefaults ()
     cropGuides = CROP_GUIDE_FULL;
     cropAutoFit = false;
 
-    rtSettings.thumbnail_inspector_raw = false;
+    rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
 }
 
 Options* Options::copyFrom (Options* other)
@@ -1073,8 +1073,8 @@ void Options::readFromFile (Glib::ustring fname)
                     serializeTiffRead = keyFile.get_boolean ("Performance", "SerializeTiffRead");
                 }
 
-                if (keyFile.has_key("Performance", "ThumbnailInspectorRaw")) {
-                    rtSettings.thumbnail_inspector_raw = keyFile.get_boolean("Performance", "ThumbnailInspectorRaw");
+                if (keyFile.has_key("Performance", "ThumbnailInspectorMode")) {
+                    rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(keyFile.get_integer("Performance", "ThumbnailInspectorMode"));
                 }
             }
 
@@ -1856,7 +1856,7 @@ void Options::saveToFile (Glib::ustring fname)
         keyFile.set_integer ("Performance", "PreviewDemosaicFromSidecar", prevdemo);
         keyFile.set_boolean ("Performance", "Daubechies", rtSettings.daubech);
         keyFile.set_boolean ("Performance", "SerializeTiffRead", serializeTiffRead);
-        keyFile.set_boolean("Performance", "ThumbnailInspectorRaw", rtSettings.thumbnail_inspector_raw);
+        keyFile.set_integer("Performance", "ThumbnailInspectorMode", int(rtSettings.thumbnail_inspector_mode));
 
         keyFile.set_string  ("Output", "Format", saveFormat.format);
         keyFile.set_integer ("Output", "JpegQuality", saveFormat.jpegQuality);

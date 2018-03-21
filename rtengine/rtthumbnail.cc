@@ -39,6 +39,7 @@
 #include "settings.h"
 #include <locale.h>
 #include "StopWatch.h"
+#include "median.h"
 
 namespace
 {
@@ -303,9 +304,18 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, RawMetaDataLocation &rml
 #endif
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            img->r(y, x) = Color::gamma_srgbclipped(tmp.r(y, x)) * f;
-            img->g(y, x) = Color::gamma_srgbclipped(tmp.g(y, x)) * f;
-            img->b(y, x) = Color::gamma_srgbclipped(tmp.b(y, x)) * f;
+            float r = tmp.r(y, x);
+            float g = tmp.g(y, x);
+            float b = tmp.b(y, x);
+            // avoid magenta highlights
+            if (r > MAXVALF && b > MAXVALF) {
+                float v = CLIP((r + g + b) / 3.f) * f;
+                img->r(y, x) = img->g(y, x) = img->b(y, x) = v;
+            } else {
+                img->r(y, x) = Color::gamma_srgbclipped(r) * f;
+                img->g(y, x) = Color::gamma_srgbclipped(g) * f;
+                img->b(y, x) = Color::gamma_srgbclipped(b) * f;
+            }
         }
     }
 
@@ -323,7 +333,7 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
     tpp->colorMatrix[1][1] = 1.0;
     tpp->colorMatrix[2][2] = 1.0;
 
-    if (inspectorMode && !forHistogramMatching && settings->thumbnail_inspector_raw) {
+    if (inspectorMode && !forHistogramMatching && settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
         Image8 *img = load_inspector_mode(fname, rml, sensorType, w, h);
         if (!img) {
             delete tpp;
@@ -386,6 +396,22 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
         w = img->getWidth();
         h = img->getHeight();
         tpp->scale = 1.;
+
+        if (!forHistogramMatching && settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW_IF_NOT_JPEG_FULLSIZE && float(std::max(w, h))/float(std::max(ri->get_width(), ri->get_height())) < 0.9f) {
+            delete img;
+            delete ri;
+            
+            img = load_inspector_mode(fname, rml, sensorType, w, h);
+            if (!img) {
+                delete tpp;
+                return nullptr;
+            }
+
+            tpp->scale = 1.;
+            tpp->thumbImg = img;
+            
+            return tpp;
+        }
     } else {
         if (fixwh == 1) {
             w = h * img->getWidth() / img->getHeight();
