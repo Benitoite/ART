@@ -1461,6 +1461,7 @@ private:
             params.sharpening = params.prsharpening;
         } else {
             params.sharpening.radius *= scale_factor;
+            params.sharpening.deconvradius *= scale_factor;
         }
 
         params.impulseDenoise.thresh *= scale_factor;
