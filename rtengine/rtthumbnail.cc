@@ -1124,7 +1124,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
 
     // apply white balance and raw white point (simulated)
-    const float maxval = 65535.f;
     for (int i = 0; i < rheight; i++) {
 #ifdef _OPENMP
         #pragma omp simd
@@ -1134,17 +1133,14 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
             float green = baseImg->g (i, j) * gmi;
             float blue = baseImg->b (i, j) * bmi;
 
-            // quick highlight recovery
-            if (params.toneCurve.hrenabled) {
-                RawImageSource::HLRecovery_Luminance(&red, &green, &blue, &red, &green, &blue, 1, maxval);
-                baseImg->r(i, j) = red;
-                baseImg->g(i, j) = green;
-                baseImg->b(i, j) = blue;
+            // avoid magenta highlights if highlight recovery is enabled
+            if (params.toneCurve.hrenabled && red > MAXVALF && blue > MAXVALF) {
+                baseImg->r(i, j) = baseImg->g(i, j) = baseImg->b(i, j) = CLIP((red + green + blue) / 3.f);
+            } else {
+                baseImg->r(i, j) = CLIP(red);
+                baseImg->g(i, j) = CLIP(green);
+                baseImg->b(i, j) = CLIP(blue);
             }
-
-            baseImg->r (i, j) = CLIP(red);
-            baseImg->g (i, j) = CLIP(green);
-            baseImg->b (i, j) = CLIP(blue);
         }
     }
 
