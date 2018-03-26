@@ -55,9 +55,9 @@ public:
     ,verbose(0)
     ,use_auto_wb(0),use_camera_wb(0),use_camera_matrix(1)
     ,output_color(1),output_bps(8),output_tiff(0),med_passes(0),no_auto_bright(0)
-    ,RT_whitelevel_from_constant(0)
-    ,RT_blacklevel_from_constant(0)
-    ,RT_matrix_from_constant(0)
+    ,RT_whitelevel_from_constant(ThreeValBool::X)
+    ,RT_blacklevel_from_constant(ThreeValBool::X)
+    ,RT_matrix_from_constant(ThreeValBool::X)
     ,RT_from_adobe_dng_converter(false)
 	,getbithuff(this,ifp,zero_after_ff)
     {
@@ -149,9 +149,10 @@ protected:
     int output_color, output_bps, output_tiff, med_passes;
     int no_auto_bright;
     unsigned greybox[4] ;
-    int RT_whitelevel_from_constant;
-    int RT_blacklevel_from_constant;
-    int RT_matrix_from_constant;
+    enum class ThreeValBool { X = -1, F, T };
+    ThreeValBool RT_whitelevel_from_constant;
+    ThreeValBool RT_blacklevel_from_constant;
+    ThreeValBool RT_matrix_from_constant;
     bool RT_from_adobe_dng_converter;
 
     float cam_mul[4], pre_mul[4], cmatrix[3][4], rgb_cam[3][4];

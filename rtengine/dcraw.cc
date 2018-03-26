@@ -6324,15 +6324,18 @@ guess_cfa_pc:
 			  cblack[6+c] = getreal(type);
 		}
 		black = 0;
+                RT_blacklevel_from_constant = ThreeValBool::F;
 		break;
       case 50715:			/* BlackLevelDeltaH */
       case 50716:			/* BlackLevelDeltaV */
 	for (num=i=0; i < (len & 0xffff); i++)
 	  num += getreal(type);
 	black += num/len + 0.5;
+        RT_blacklevel_from_constant = ThreeValBool::F;
 	break;
       case 50717:			/* WhiteLevel */
 	maximum = getint(type);
+        RT_whitelevel_from_constant = ThreeValBool::F;
 	break;
       case 50718:			/* DefaultScale */
 	pixel_aspect  = getreal(type);
