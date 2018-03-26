@@ -1539,7 +1539,7 @@ int RawImageSource::load (const Glib::ustring &fname, bool firstFrameOnly)
 
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) {
-            imatrices.rgb_cam[i][j] = ri->get_rgb_cam(i, j);
+            imatrices.rgb_cam[i][j] = ri->get_colors() == 1 ? (i == j) : ri->get_rgb_cam(i, j);
         }
 
     // compute inverse of the color transformation matrix
