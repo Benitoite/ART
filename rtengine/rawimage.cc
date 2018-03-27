@@ -1062,10 +1062,13 @@ DCraw::dcraw_coeff_overrides(const char make[], const char model[], const int is
 
     *black_level = -1;
     *white_level = -1;
-    if (RT_blacklevel_from_constant == ThreeValBool::F) {
+
+    const bool is_pentax_dng = dng_version && !strncmp(RT_software.c_str(), "PENTAX", 6);
+    
+    if (RT_blacklevel_from_constant == ThreeValBool::F && !is_pentax_dng) {
         *black_level = black;
     }
-    if (RT_whitelevel_from_constant == ThreeValBool::F) {
+    if (RT_whitelevel_from_constant == ThreeValBool::F && !is_pentax_dng) {
         *white_level = maximum;
     }
     memset(trans, 0, sizeof(*trans) * 12);
@@ -1075,10 +1078,10 @@ DCraw::dcraw_coeff_overrides(const char make[], const char model[], const int is
     // from file, but then we will not provide any black level in the tables. This case is mainly just
     // to avoid loading table values if we have loaded a DNG conversion of a raw file (which already
     // have constants stored in the file).
-    if (RT_whitelevel_from_constant == ThreeValBool::X) {
+    if (RT_whitelevel_from_constant == ThreeValBool::X || is_pentax_dng) {
         RT_whitelevel_from_constant = ThreeValBool::T;
     }
-    if (RT_blacklevel_from_constant == ThreeValBool::X) {
+    if (RT_blacklevel_from_constant == ThreeValBool::X || is_pentax_dng) {
         RT_blacklevel_from_constant = ThreeValBool::T;
     }
     if (RT_matrix_from_constant == ThreeValBool::X) {

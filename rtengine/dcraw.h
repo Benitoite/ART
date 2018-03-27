@@ -58,7 +58,6 @@ public:
     ,RT_whitelevel_from_constant(ThreeValBool::X)
     ,RT_blacklevel_from_constant(ThreeValBool::X)
     ,RT_matrix_from_constant(ThreeValBool::X)
-    ,RT_from_adobe_dng_converter(false)
 	,getbithuff(this,ifp,zero_after_ff)
     {
         memset(&hbd, 0, sizeof(hbd));
@@ -153,7 +152,7 @@ protected:
     ThreeValBool RT_whitelevel_from_constant;
     ThreeValBool RT_blacklevel_from_constant;
     ThreeValBool RT_matrix_from_constant;
-    bool RT_from_adobe_dng_converter;
+    std::string RT_software;
 
     float cam_mul[4], pre_mul[4], cmatrix[3][4], rgb_cam[3][4];
 
