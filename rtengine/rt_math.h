@@ -215,5 +215,4 @@ std::array<T, 3> dotProduct(const std::array<std::array<T, 3>, 3> &a, const std:
     return res;
 }
 
-
 }
