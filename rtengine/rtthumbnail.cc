@@ -1132,7 +1132,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
             float red = baseImg->r (i, j) * rmi;
             float green = baseImg->g (i, j) * gmi;
             float blue = baseImg->b (i, j) * bmi;
-
+            
             // avoid magenta highlights if highlight recovery is enabled
             if (params.toneCurve.hrenabled && red > MAXVALF && blue > MAXVALF) {
                 baseImg->r(i, j) = baseImg->g(i, j) = baseImg->b(i, j) = CLIP((red + green + blue) / 3.f);
