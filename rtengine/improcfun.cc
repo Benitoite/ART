@@ -3750,13 +3750,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                     }
                 }
 
-                highlightToneCurve(hltonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS, exp_scale, comp, hlrange);
-                shadowToneCurve(shtonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
-
-                if (dcpProf) {
-                    dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, asIn);
-                }
-
                 for (int i = istart, ti = 0; i < tH; i++, ti++) {
                     for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                         // clip out of gamut colors, without distorting colour too bad
@@ -3772,6 +3765,29 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                         btemp[ti * TS + tj] = b;
                     }
                 }
+
+                highlightToneCurve(hltonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS, exp_scale, comp, hlrange);
+                shadowToneCurve(shtonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
+
+                if (dcpProf) {
+                    dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, asIn);
+                }
+
+                // for (int i = istart, ti = 0; i < tH; i++, ti++) {
+                //     for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+                //         // clip out of gamut colors, without distorting colour too bad
+                //         float r = std::max(rtemp[ti * TS + tj], 0.f);
+                //         float g = std::max(gtemp[ti * TS + tj], 0.f);
+                //         float b = std::max(btemp[ti * TS + tj], 0.f);
+
+                //         if (OOG(r) || OOG(g) || OOG(b)) {
+                //             filmlike_clip (&r, &g, &b);
+                //         }
+                //         rtemp[ti * TS + tj] = r;
+                //         gtemp[ti * TS + tj] = g;
+                //         btemp[ti * TS + tj] = b;
+                //     }
+                // }
 
                 if (histToneCurveThr) {
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
