@@ -3805,9 +3805,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                         }
                     }
                 } else {
-                    vfloat tmpr;
-                    vfloat tmpg;
-                    vfloat tmpb;
+                    float tmpr[4] ALIGNED16;
+                    float tmpg[4] ALIGNED16;
+                    float tmpb[4] ALIGNED16;
                     
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         int j = jstart, tj = 0;
