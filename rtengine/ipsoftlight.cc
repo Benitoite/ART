@@ -38,14 +38,14 @@ void ImProcFunctions::softLight(float *red, float *green, float *blue, int istar
     const auto apply =
         [=](float x) -> float
         {
-            if (x > 0.f) {
-                float v = (x <= MAXVALF ? Color::gamma_srgb(x) / MAXVALF : Color::gamma2(x / MAXVALF));
+            if (!OOG(x)) {
+                float v = Color::gamma_srgb(x) / MAXVALF;
                 // Pegtop's formula from
                 // https://en.wikipedia.org/wiki/Blend_modes#Soft_Light
                 float v2 = v * v;
                 float v22 = v2 * 2.f;
                 v = v2 + v22 - v22 * v;
-                x = blend * (v <= 1.f ? Color::igamma_srgb(v * MAXVALF) : Color::igamma2(v) * MAXVALF) + orig * x;
+                x = blend * Color::igamma_srgb(v * MAXVALF) + orig * x;
             }
             return x;
         };
@@ -54,14 +54,18 @@ void ImProcFunctions::softLight(float *red, float *green, float *blue, int istar
     #pragma omp parallel if (multiThread)
 #endif
     {
-        int i, ti;
-        for (i = istart, ti = 0; i < tH; i++, ti++) {
+        int ti = 0;
+#ifdef _OPENMP
+        #pragma omp for
+#endif
+        for (int i = istart; i < tH; i++) {
             for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                 const int idx = ti * TS + tj;
                 red[idx] = apply(red[idx]);
                 green[idx] = apply(green[idx]);
                 blue[idx] = apply(blue[idx]);
             }
+            ++ti;
         }
     }
 }
