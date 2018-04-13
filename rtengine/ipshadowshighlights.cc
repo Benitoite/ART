@@ -40,18 +40,18 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
     const float sigma = params->sh.radius * 5.f / scale;
 
     const auto apply =
-        [&](int amount, int tonalwidth, bool up) -> void
+        [&](int amount, int tonalwidth, bool hl) -> void
         {
             // first highlights
             const float thresh = tonalwidth * 327.68f;
-            const float scale = up ? (thresh > 0.f ? 0.9f / thresh : 1.f) : thresh * 0.9f;
+            const float scale = hl ? (thresh > 0.f ? 0.9f / thresh : 1.f) : thresh * 0.9f;
 #ifdef _OPENMP
             #pragma omp parallel for if (multiThread)
 #endif
             for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
                     float l = lab->L[y][x];
-                    if (up) {
+                    if (hl) {
                         mask[y][x] = (l > thresh) ? 1.f : std::pow(l * scale, 4);
                     } else {
                         mask[y][x] = l <= thresh ? 1.f : std::pow(scale / l, 4);
@@ -66,7 +66,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
             }
 
             const float base = std::pow(4.f, float(amount)/100.f);
-            const float gamma = up ? base : 1.f / base;
+            const float gamma = hl ? base : 1.f / base;
 
             LUTf f(32768);
 #ifdef _OPENMP
@@ -83,8 +83,17 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                 for (int x = 0; x < width; ++x) {
                     float l = lab->L[y][x];
                     float blend = mask[y][x];
+                    float orig = 1.f - blend;
                     if (l >= 0.f && l < 32768.f) {
-                        lab->L[y][x] = f[l] * blend + l * (1.f - blend);
+                        lab->L[y][x] = f[l] * blend + l * orig;
+                        if (!hl && l > 1.f) {
+                            // when pushing shadows, scale also the chromaticity
+                            float s = max(lab->L[y][x] / l * 0.5f, 1.f) * blend;
+                            float a = lab->a[y][x];
+                            float b = lab->b[y][x];
+                            lab->a[y][x] = a * s + a * orig;
+                            lab->b[y][x] = b * s + b * orig;
+                        }
                     }
                 }
             }
