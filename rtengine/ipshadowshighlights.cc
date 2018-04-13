@@ -43,18 +43,27 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
         [&](int amount, int tonalwidth, bool up) -> void
         {
             // first highlights
-            const float tresh = tonalwidth * 327.68f;
-            const float one = up ? 1.f : 0.f;
-            const float zero = up ? 0.f : 1.f;
+            const float thresh = tonalwidth * 327.68f;
+            const float scale = up ? (thresh > 0.f ? 0.9f / thresh : 1.f) : thresh * 0.9f;
 #ifdef _OPENMP
             #pragma omp parallel for if (multiThread)
 #endif
             for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
-                    mask[y][x] = lab->L[y][x] > tresh ? one : zero;
+                    float l = lab->L[y][x];
+                    if (up) {
+                        mask[y][x] = (l > thresh) ? 1.f : std::pow(l * scale, 4);
+                    } else {
+                        mask[y][x] = l <= thresh ? 1.f : std::pow(scale / l, 4);
+                    }
                 }
             }
-            gaussianBlur(mask, mask, width, height, sigma);
+#ifdef _OPENMP
+            #pragma omp parallel
+#endif
+            {
+                gaussianBlur(mask, mask, width, height, sigma);
+            }
 
             const float base = std::pow(4.f, float(amount)/100.f);
             const float gamma = up ? base : 1.f / base;
