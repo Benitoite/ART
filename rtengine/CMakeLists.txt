@@ -121,6 +121,7 @@ set(RTENGINESOURCEFILES
     pdaflinesfilter.cc
     gamutwarning.cc
     ipsoftlight.cc
+    ipshadowshighlights.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)
