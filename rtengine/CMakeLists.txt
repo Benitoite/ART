@@ -120,6 +120,7 @@ set(RTENGINESOURCEFILES
     histmatching.cc
     pdaflinesfilter.cc
     gamutwarning.cc
+    xtrans_demosaic.cc
     ipsoftlight.cc
     ipshadowshighlights.cc
     )
