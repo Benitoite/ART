@@ -516,11 +516,11 @@ int main (int argc, char **argv)
 
     Glib::ustring fatalError;
 
-    try {
-        Options::load();
-    } catch (Options::Error &e) {
-        fatalError = e.get_msg();
-    }
+    // try {
+    //     Options::load();
+    // } catch (Options::Error &e) {
+    //     fatalError = e.get_msg();
+    // }
 
 
 #ifdef WIN32
@@ -599,6 +599,12 @@ int main (int argc, char **argv)
     }
 
 #endif
+
+    try {
+        Options::load();
+    } catch (Options::Error &e) {
+        fatalError = e.get_msg();
+    }    
 
     if (gimpPlugin) {
         if (!Glib::file_test (argv1, Glib::FILE_TEST_EXISTS) || Glib::file_test (argv1, Glib::FILE_TEST_IS_DIR)) {
