@@ -66,7 +66,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                 gaussianBlur(mask, mask, width, height, sigma);
             }
 
-            const float base = std::pow(4.f, float(amount)/100.f);
+            const float base = std::pow(hl ? 10.f : 4.f, float(amount)/100.f);
             const float gamma = hl ? base : 1.f / base;
 
             const float contrast = std::pow(2.f, float(amount)/100.f);
