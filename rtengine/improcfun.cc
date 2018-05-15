@@ -5751,8 +5751,9 @@ void ImProcFunctions::colorToningLabGrid(LabImage *lab, int xstart, int xend, in
 #endif
     for (int y = ystart; y < yend; ++y) {
         for (int x = xstart; x < xend; ++x) {
-            lab->a[y][x] += lab->L[y][x] * a_scale + a_base;
-            lab->b[y][x] += lab->L[y][x] * b_scale + b_base;
+            float l = 32768.f * std::pow(lab->L[y][x] / 32768.f, 1.f/2.2f);
+            lab->a[y][x] += l * a_scale + a_base;
+            lab->b[y][x] += l * b_scale + b_base;
         }
     }
 }
