@@ -1007,6 +1007,7 @@ void ColorToningParams::getCurves(ColorGradientCurve& colorCurveLUT, OpacityCurv
 
 SharpeningParams::SharpeningParams() :
     enabled(false),
+    contrast(0.0),
     radius(0.5),
     amount(200),
     threshold(20, 80, 2000, 1200, false),
@@ -1027,6 +1028,7 @@ bool SharpeningParams::operator ==(const SharpeningParams& other) const
 {
     return
         enabled == other.enabled
+        && contrast == other.contrast
         && radius == other.radius
         && amount == other.amount
         && threshold == other.threshold
@@ -1073,6 +1075,7 @@ SharpenMicroParams::SharpenMicroParams() :
     enabled(false),
     matrix(false),
     amount(20.0),
+    contrast(20.0),
     uniformity(50.0)
 {
 }
@@ -1083,6 +1086,7 @@ bool SharpenMicroParams::operator ==(const SharpenMicroParams& other) const
         enabled == other.enabled
         && matrix == other.matrix
         && amount == other.amount
+        && contrast == other.contrast
         && uniformity == other.uniformity;
 }
 
@@ -2615,6 +2619,7 @@ void ProcParams::setDefaults ()
     sharpening = SharpeningParams();
 
     prsharpening = SharpeningParams();
+    prsharpening.contrast = 0.0;
     prsharpening.method = "rld";
     prsharpening.deconvamount = 100;
     prsharpening.deconvradius = 0.45;
@@ -2872,6 +2877,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Sharpening
         saveToKeyfile(!pedited || pedited->sharpening.enabled, "Sharpening", "Enabled", sharpening.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->sharpening.contrast, "Sharpening", "Contrast", sharpening.contrast, keyFile);
         saveToKeyfile(!pedited || pedited->sharpening.method, "Sharpening", "Method", sharpening.method, keyFile);
         saveToKeyfile(!pedited || pedited->sharpening.radius, "Sharpening", "Radius", sharpening.radius, keyFile);
         saveToKeyfile(!pedited || pedited->sharpening.amount, "Sharpening", "Amount", sharpening.amount, keyFile);
@@ -2906,6 +2912,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->sharpenMicro.enabled, "SharpenMicro", "Enabled", sharpenMicro.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->sharpenMicro.matrix, "SharpenMicro", "Matrix", sharpenMicro.matrix, keyFile);
         saveToKeyfile(!pedited || pedited->sharpenMicro.amount, "SharpenMicro", "Strength", sharpenMicro.amount, keyFile);
+        saveToKeyfile(!pedited || pedited->sharpenMicro.contrast, "SharpenMicro", "Contrast", sharpenMicro.contrast, keyFile);
         saveToKeyfile(!pedited || pedited->sharpenMicro.uniformity, "SharpenMicro", "Uniformity", sharpenMicro.uniformity, keyFile);
 
 // WB
@@ -3110,6 +3117,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Post resize sharpening
         saveToKeyfile(!pedited || pedited->prsharpening.enabled, "PostResizeSharpening", "Enabled", prsharpening.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->prsharpening.contrast, "PostResizeSharpening", "Contrast", prsharpening.contrast, keyFile);
         saveToKeyfile(!pedited || pedited->prsharpening.method, "PostResizeSharpening", "Method", prsharpening.method, keyFile);
         saveToKeyfile(!pedited || pedited->prsharpening.radius, "PostResizeSharpening", "Radius", prsharpening.radius, keyFile);
         saveToKeyfile(!pedited || pedited->prsharpening.amount, "PostResizeSharpening", "Amount", prsharpening.amount, keyFile);
@@ -3692,6 +3700,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group ("Sharpening")) {
             assignFromKeyfile(keyFile, "Sharpening", "Enabled", pedited, sharpening.enabled, pedited->sharpening.enabled);
+            assignFromKeyfile(keyFile, "Sharpening", "Contrast", pedited, sharpening.contrast, pedited->sharpening.contrast);
             assignFromKeyfile(keyFile, "Sharpening", "Radius", pedited, sharpening.radius, pedited->sharpening.radius);
             assignFromKeyfile(keyFile, "Sharpening", "Amount", pedited, sharpening.amount, pedited->sharpening.amount);
 
@@ -3735,6 +3744,14 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "SharpenMicro", "Enabled", pedited, sharpenMicro.enabled, pedited->sharpenMicro.enabled);
             assignFromKeyfile(keyFile, "SharpenMicro", "Matrix", pedited, sharpenMicro.matrix, pedited->sharpenMicro.matrix);
             assignFromKeyfile(keyFile, "SharpenMicro", "Strength", pedited, sharpenMicro.amount, pedited->sharpenMicro.amount);
+            if (ppVersion >= 334) {
+                assignFromKeyfile(keyFile, "SharpenMicro", "Contrast", pedited, sharpenMicro.contrast, pedited->sharpenMicro.contrast);
+            } else {
+                sharpenMicro.contrast = 0;
+                if (pedited) {
+                    pedited->sharpenMicro.contrast = true;
+                }
+            }
             assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", pedited, sharpenMicro.uniformity, pedited->sharpenMicro.uniformity);
         }
 
@@ -4091,6 +4108,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group ("PostResizeSharpening")) {
             assignFromKeyfile(keyFile, "PostResizeSharpening", "Enabled", pedited, prsharpening.enabled, pedited->prsharpening.enabled);
+            assignFromKeyfile(keyFile, "PostResizeSharpening", "Contrast", pedited, prsharpening.contrast, pedited->prsharpening.contrast);
             assignFromKeyfile(keyFile, "PostResizeSharpening", "Radius", pedited, prsharpening.radius, pedited->prsharpening.radius);
             assignFromKeyfile(keyFile, "PostResizeSharpening", "Amount", pedited, prsharpening.amount, pedited->prsharpening.amount);
 
