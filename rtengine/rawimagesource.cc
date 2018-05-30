@@ -2073,6 +2073,8 @@ void RawImageSource::demosaic(const RAWParams &raw)
             ahd_demosaic ();
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::AMAZE) ) {
             amaze_demosaic_RT (0, 0, W, H, rawData, red, green, blue);
+        } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::AMAZEVNG4) ) {
+            amaze_vng4_demosaic_RT (W, H, rawData, red, green, blue);
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::PIXELSHIFT) ) {
             pixelshift(0, 0, W, H, raw.bayersensor, currFrame, ri->get_maker(), ri->get_model(), raw.expos);
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::DCB) ) {

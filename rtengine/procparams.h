@@ -1246,7 +1246,8 @@ struct RAWParams {
             FAST,
             MONO,
             NONE,
-            PIXELSHIFT
+            PIXELSHIFT,
+            AMAZEVNG4
         };
 
         enum class PSMotionCorrectionMethod {
