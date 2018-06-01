@@ -33,7 +33,6 @@
 #include "../rtgui/version.h"
 
 using namespace std;
-extern Options options;
 
 namespace
 {
@@ -2376,6 +2375,7 @@ RAWParams::BayerSensor::BayerSensor() :
     greenthresh(0),
     dcb_iterations(2),
     lmmse_iterations(2),
+    dualDemosaicContrast(20),
     pixelShiftMotionCorrectionMethod(PSMotionCorrectionMethod::AUTO),
     pixelShiftEperIso(0.0),
     pixelShiftSigma(1.0),
@@ -2411,6 +2411,7 @@ bool RAWParams::BayerSensor::operator ==(const BayerSensor& other) const
         && greenthresh == other.greenthresh
         && dcb_iterations == other.dcb_iterations
         && lmmse_iterations == other.lmmse_iterations
+        && dualDemosaicContrast == other.dualDemosaicContrast
         && pixelShiftMotionCorrectionMethod == other.pixelShiftMotionCorrectionMethod
         && pixelShiftEperIso == other.pixelShiftEperIso
         && pixelShiftSigma == other.pixelShiftSigma
@@ -3358,6 +3359,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->raw.bayersensor.dcbIterations, "RAW Bayer", "DCBIterations", raw.bayersensor.dcb_iterations, keyFile);
         saveToKeyfile(!pedited || pedited->raw.bayersensor.dcbEnhance, "RAW Bayer", "DCBEnhance", raw.bayersensor.dcb_enhance, keyFile);
         saveToKeyfile(!pedited || pedited->raw.bayersensor.lmmseIterations, "RAW Bayer", "LMMSEIterations", raw.bayersensor.lmmse_iterations, keyFile);
+        saveToKeyfile(!pedited || pedited->raw.bayersensor.dualDemosaicContrast, "RAW Bayer", "DualDemosaicContrast", raw.bayersensor.dualDemosaicContrast, keyFile);
         saveToKeyfile(!pedited || pedited->raw.bayersensor.pixelShiftMotionCorrectionMethod, "RAW Bayer", "PixelShiftMotionCorrectionMethod", toUnderlying(raw.bayersensor.pixelShiftMotionCorrectionMethod), keyFile);
         saveToKeyfile(!pedited || pedited->raw.bayersensor.pixelShiftEperIso, "RAW Bayer", "PixelShiftEperIso", raw.bayersensor.pixelShiftEperIso, keyFile);
         saveToKeyfile(!pedited || pedited->raw.bayersensor.pixelShiftSigma, "RAW Bayer", "PixelShiftSigma", raw.bayersensor.pixelShiftSigma, keyFile);
@@ -4688,6 +4690,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "RAW Bayer", "DCBIterations", pedited, raw.bayersensor.dcb_iterations, pedited->raw.bayersensor.dcbIterations);
             assignFromKeyfile(keyFile, "RAW Bayer", "DCBEnhance", pedited, raw.bayersensor.dcb_enhance, pedited->raw.bayersensor.dcbEnhance);
             assignFromKeyfile(keyFile, "RAW Bayer", "LMMSEIterations", pedited, raw.bayersensor.lmmse_iterations, pedited->raw.bayersensor.lmmseIterations);
+            assignFromKeyfile(keyFile, "RAW Bayer", "DualDemosaicContrast", pedited, raw.bayersensor.dualDemosaicContrast, pedited->raw.bayersensor.dualDemosaicContrast);
 
             if (keyFile.has_key ("RAW Bayer", "PixelShiftMotionCorrectionMethod")) {
                 raw.bayersensor.pixelShiftMotionCorrectionMethod = (RAWParams::BayerSensor::PSMotionCorrectionMethod)keyFile.get_integer ("RAW Bayer", "PixelShiftMotionCorrectionMethod");

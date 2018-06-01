@@ -1275,6 +1275,7 @@ struct RAWParams {
         int greenthresh;
         int dcb_iterations;
         int lmmse_iterations;
+        double dualDemosaicContrast;
         PSMotionCorrectionMethod pixelShiftMotionCorrectionMethod;
         double pixelShiftEperIso;
         double pixelShiftSigma;
