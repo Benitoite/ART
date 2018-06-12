@@ -1842,7 +1842,7 @@ BlackWhiteParams::BlackWhiteParams() :
     enabledcc(true),
     enabled(false),
     filter("None"),
-    setting("NormalContrast"),
+    setting("RGB-Rel"),
     method("Desaturation"),
     mixerRed(33),
     mixerOrange(33),
@@ -4741,9 +4741,9 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 if (keyFile.has_key("RAW Bayer", "pixelShiftLmmse")) {
                     bool useLmmse = keyFile.get_boolean ("RAW Bayer", "pixelShiftLmmse");
                     if (useLmmse) {
-                        raw.bayersensor.pixelShiftDemosaicMethod = raw.bayersensor.getPSDemosaicMethodString(raw.bayersensor.PSDemosaicMethod::LMMSE);
+                        raw.bayersensor.pixelShiftDemosaicMethod = raw.bayersensor.getPSDemosaicMethodString(RAWParams::BayerSensor::PSDemosaicMethod::LMMSE);
                     } else {
-                        raw.bayersensor.pixelShiftDemosaicMethod = raw.bayersensor.getPSDemosaicMethodString(raw.bayersensor.PSDemosaicMethod::AMAZE);
+                        raw.bayersensor.pixelShiftDemosaicMethod = raw.bayersensor.getPSDemosaicMethodString(RAWParams::BayerSensor::PSDemosaicMethod::AMAZE);
                     }
                     if (pedited) {
                         pedited->raw.bayersensor.pixelShiftDemosaicMethod = true;
