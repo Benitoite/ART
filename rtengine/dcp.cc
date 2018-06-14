@@ -1806,7 +1806,7 @@ void DCPStore::init(const Glib::ustring& rt_profile_dir, bool loadAll)
 
     while (!dirs.empty()) {
         // Process directory
-        Glib::ustring dirname = dirs.back();
+        const Glib::ustring dirname = dirs.back();
         dirs.pop_back();
 
         std::unique_ptr<Glib::Dir> dir;
