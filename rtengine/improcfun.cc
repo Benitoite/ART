@@ -5748,14 +5748,20 @@ void ImProcFunctions::colorToningLabGrid(LabImage *lab, int xstart, int xend, in
     float b_scale = (params->colorToning.labgridBHigh - params->colorToning.labgridBLow) / factor / scaling;
     float b_base = params->colorToning.labgridBLow / scaling;
 
+    const auto blend =
+        [](float ab) -> float
+        {
+            return 2.f/(1.f+xexpf(-0.8f*(std::abs(ab/420.f)))) - 1.f;
+        };
+
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
 #endif
     for (int y = ystart; y < yend; ++y) {
         for (int x = xstart; x < xend; ++x) {
             float l = 32768.f * std::pow(lab->L[y][x] / 32768.f, 1.f/2.2f);
-            lab->a[y][x] += l * a_scale + a_base;
-            lab->b[y][x] += l * b_scale + b_base;
+            lab->a[y][x] += blend(lab->a[y][x]) * (l * a_scale + a_base);
+            lab->b[y][x] += blend(lab->b[y][x]) * (l * b_scale + b_base);
         }
     }
 }
