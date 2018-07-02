@@ -150,7 +150,7 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
     int step = std::max(int(mapping.size())/npoints, 1);
     int end = mapping.size();
     if (idx <= end / 3) {
-        doit(start, idx, idx > step ? idx / 2 : idx + 1, true);
+        doit(start, idx, idx / 2, true);
         doit(idx, end, (end - idx) / 3, false);
     } else {
         doit(start, idx, idx > step ? step : idx / 2, true);
