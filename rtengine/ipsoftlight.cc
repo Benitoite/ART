@@ -26,6 +26,25 @@
 
 namespace rtengine {
 
+namespace {
+
+inline float sl(float blend, float x)
+{
+    if (!OOG(x)) {
+        const float orig = 1.f - blend;
+        float v = Color::gamma_srgb(x) / MAXVALF;
+        // Pegtop's formula from
+        // https://en.wikipedia.org/wiki/Blend_modes#Soft_Light
+        float v2 = v * v;
+        float v22 = v2 * 2.f;
+        v = v2 + v22 - v22 * v;
+        x = blend * Color::igamma_srgb(v * MAXVALF) + orig * x;
+    }
+    return x;
+}
+
+} // namespace
+
 void ImProcFunctions::softLight(float *red, float *green, float *blue, int istart, int jstart, int tW, int tH, int TS)
 {
     if (!params->softlight.enabled || !params->softlight.strength) {
@@ -33,22 +52,9 @@ void ImProcFunctions::softLight(float *red, float *green, float *blue, int istar
     }
 
     const float blend = params->softlight.strength / 100.f;
-    const float orig = 1.f - blend;
+    //const float orig = 1.f - blend;
 
-    const auto apply =
-        [=](float x) -> float
-        {
-            if (!OOG(x)) {
-                float v = Color::gamma_srgb(x) / MAXVALF;
-                // Pegtop's formula from
-                // https://en.wikipedia.org/wiki/Blend_modes#Soft_Light
-                float v2 = v * v;
-                float v22 = v2 * 2.f;
-                v = v2 + v22 - v22 * v;
-                x = blend * Color::igamma_srgb(v * MAXVALF) + orig * x;
-            }
-            return x;
-        };
+    const auto apply = [=](float x) -> float { return sl(blend, x); };
 
 #ifdef _OPENMP
     #pragma omp parallel if (multiThread)
@@ -68,6 +74,32 @@ void ImProcFunctions::softLight(float *red, float *green, float *blue, int istar
             ++ti;
         }
     }
+}
+
+
+void ImProcFunctions::softLight(LabImage *lab)
+{
+    if (!params->softlight.enabled || !params->softlight.strength) {
+        return;
+    }
+
+    Imagefloat working(lab->W, lab->H);
+    lab2rgb(*lab, working, params->icm.working);
+
+    const float blend = params->softlight.strength / 100.f;
+
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for (int y = 0; y < working.getHeight(); ++y) {
+        for (int x = 0; x < working.getWidth(); ++x) {
+            working.r(y, x) = sl(blend, working.r(y, x));
+            working.g(y, x) = sl(blend, working.g(y, x));
+            working.b(y, x) = sl(blend, working.b(y, x));
+        }
+    }
+    
+    rgb2lab(working, *lab, params->icm.working);
 }
 
 } // namespace rtengine
