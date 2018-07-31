@@ -477,7 +477,7 @@ double DiagonalCurve::getVal (double t) const
         if (it+1 < poly_x.end() && t - *it > *(it+1) - t) {
             ++d;
         }
-        return *(poly_y.begin() + d);
+        return LIM01(*(poly_y.begin() + d));
         break;
     }
 

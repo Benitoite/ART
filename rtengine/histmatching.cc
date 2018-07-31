@@ -117,8 +117,9 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
 
     auto coord = [](int v) -> double { return double(v)/255.0; };
     auto doit =
-        [&](int start, int stop, int step, bool addstart) -> void
+        [&](int start, int stop, int step, bool addstart, int maxdelta=0) -> void
         {
+            if (!maxdelta) maxdelta = step * 2;
             int prev = start;
             if (addstart && mapping[start] >= 0) {
                 curve.push_back(coord(start));
@@ -131,7 +132,7 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
                 }
                 bool change = i > 0 && v != mapping[i-1];
                 int diff = i - prev;
-                if ((change && std::abs(diff - step) <= 1) || diff > step * 2) {
+                if ((change && std::abs(diff - step) <= 1) || diff > maxdelta) {
                     curve.push_back(coord(i));
                     curve.push_back(coord(v));
                     prev = i;
@@ -152,10 +153,11 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
     int end = mapping.size();
     if (idx <= end / 3) {
         doit(start, idx, idx / 2, true);
-        doit(idx, end, (end - idx) / 3, false);
+        int step = (end - idx) / 3;
+        doit(idx, end, step, false, step);
     } else {
         doit(start, idx, idx > step ? step : idx / 2, true);
-        doit(idx, int(mapping.size()), step, idx - step > step / 2 && std::abs(curve[curve.size()-2] - coord(idx)) > 0.01);
+        doit(idx, end, step, idx - step > step / 2 && std::abs(curve[curve.size()-2] - coord(idx)) > 0.01);
     }
     
     if (curve.size() > 2 && (1 - curve[curve.size()-2] <= step / (256.0 * 3))) {
