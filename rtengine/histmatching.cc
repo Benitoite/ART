@@ -153,7 +153,7 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
     int end = mapping.size();
     if (idx <= end / 3) {
         doit(start, idx, idx / 2, true);
-        int step = (end - idx) / 3;
+        int step = (end - idx) / 4;
         doit(idx, end, step, false, step);
     } else {
         doit(start, idx, idx > step ? step : idx / 2, true);
