@@ -222,7 +222,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
     neutral.icm = cp;
     neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
     neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
-    neutral.icm.outputProfile = "sRGB";
+    neutral.icm.outputProfile = ColorManagementParams::NoICMString;
     
     std::unique_ptr<IImage8> source;
     {
