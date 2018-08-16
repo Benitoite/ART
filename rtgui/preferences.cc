@@ -692,7 +692,7 @@ Gtk::Widget* Preferences::getPerformancePanel ()
     Gtk::Frame* fdenoise = Gtk::manage ( new Gtk::Frame (M ("PREFERENCES_NOISE")) );
     Gtk::VBox* vbdenoise = Gtk::manage ( new Gtk::VBox (Gtk::PACK_SHRINK, 4) );
 
-    Gtk::Label* lreloadneeded2 = Gtk::manage (new Gtk::Label (M ("PREFERENCES_IMG_RELOAD_NEEDED"), Gtk::ALIGN_START));
+//    Gtk::Label* lreloadneeded2 = Gtk::manage (new Gtk::Label (M ("PREFERENCES_IMG_RELOAD_NEEDED"), Gtk::ALIGN_START));
     Gtk::HBox* threadLimitHB = Gtk::manage (new Gtk::HBox (Gtk::PACK_SHRINK, 4));
     threadLimitHB->set_tooltip_text (M ("PREFERENCES_RGBDTL_TOOLTIP"));
     Gtk::Label* RGBDTLl = Gtk::manage ( new Gtk::Label (M ("PREFERENCES_RGBDTL_LABEL") + ":", Gtk::ALIGN_START));
@@ -758,8 +758,8 @@ Gtk::Widget* Preferences::getPerformancePanel ()
     colon->attach (*dnwavlab, 0, 1, 5, 6, Gtk::FILL, Gtk::SHRINK, 2, 2);
     colon->attach (*dnwavlev, 1, 2, 5, 6, Gtk::EXPAND | Gtk::FILL | Gtk::SHRINK, Gtk::SHRINK, 2, 2);
 
-    vbdenoise->pack_start (*lreloadneeded2, Gtk::PACK_SHRINK);
-    vbdenoise->pack_start (*colon, Gtk::PACK_SHRINK);
+//    vbdenoise->pack_start (*lreloadneeded2, Gtk::PACK_SHRINK);
+//    vbdenoise->pack_start (*colon, Gtk::PACK_SHRINK);
     vbdenoise->pack_start (*threadLimitHB, Gtk::PACK_SHRINK);
     // <--- To be hard-coded and removed once tested
     cbdaubech = Gtk::manage (new Gtk::CheckButton (M ("PREFERENCES_DAUB_LABEL"), Gtk::ALIGN_START));
