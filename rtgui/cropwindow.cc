@@ -754,10 +754,6 @@ void CropWindow::buttonRelease (int button, int num, int bstate, int x, int y)
         }
 
         iarea->setToolHand ();
-
-        if (pmhlistener) {
-            pmhlistener->toggleFreeze();
-        }
     }
 
     state = SNormal;
@@ -1053,12 +1049,14 @@ void CropWindow::pointerMoved (int bstate, int x, int y)
             int rval = pix[0];
             int gval = pix[1];
             int bval = pix[2];
+            bool isRaw = false;
             if (vx < imwidth && vy < imheight) {
                 rtengine::StagedImageProcessor* ipc = iarea->getImProcCoordinator();
                 if(ipc) {
                     procparams::ProcParams params;
                     ipc->getParams(&params);
-                    if(params.raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::NONE) || params.raw.xtranssensor.method == RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::NONE)) {
+                    isRaw = params.raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::NONE) || params.raw.xtranssensor.method == RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::NONE);
+                    if(isRaw) {
                         ImageSource *isrc = static_cast<ImageSource*>(ipc->getInitialImage());
                         isrc->getRawValues(mx, my, params.coarse.rotate, rval, gval, bval);
                     }
@@ -1066,7 +1064,7 @@ void CropWindow::pointerMoved (int bstate, int x, int y)
 
                 // Updates the Navigator
                 // TODO: possible double color conversion if rval, gval, bval come from cropHandler.cropPixbuftrue ? see issue #4583
-                pmlistener->pointerMoved (true, cropHandler.colorParams.outputProfile, cropHandler.colorParams.workingProfile, mx, my, rval, gval, bval);
+                pmlistener->pointerMoved (true, cropHandler.colorParams.outputProfile, cropHandler.colorParams.workingProfile, mx, my, rval, gval, bval, isRaw);
 
                 if (pmhlistener) {
                     // Updates the HistogramRGBArea
@@ -1251,7 +1249,7 @@ void CropWindow::updateCursor (int x, int y)
                 if (onArea (CropObserved, x, y)) {
                     newType = CSMove;
                 } else {
-                    newType = CSOpenHand;
+                    newType = CSCrosshair;
                 }
             } else if (tm == TMSpotWB) {
                 newType = CSSpotWB;
@@ -1284,7 +1282,7 @@ void CropWindow::updateCursor (int x, int y)
     } else if (state == SCropMove || state == SCropWinMove || state == SObservedMove) {
         newType = CSMove;
     } else if (state == SHandMove || state == SCropImgMove) {
-        newType = CSClosedHand;
+        newType = CSHandClosed;
     } else if (state == SResizeW1 || state == SResizeW2) {
         newType = CSResizeWidth;
     } else if (state == SResizeH1 || state == SResizeH2) {
@@ -1379,7 +1377,7 @@ void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
                 break;
             }
         }
-        bool useBgColor = (state == SNormal);
+        bool useBgColor = (state == SNormal || state == SDragPicker || state == SDeletePicker);
     
         if (cropHandler.cropPixbuf) {
             imgW = cropHandler.cropPixbuf->get_width ();
