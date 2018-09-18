@@ -729,9 +729,14 @@ struct EPDParams {
 // Fattal02 Tone-Mapping parameters
 struct FattalToneMappingParams {
     bool enabled;
+    enum { DR_COMP_FATTAL, DR_COMP_GAMMA };
+    int method;
     int threshold;
     int amount;
     int anchor;
+    double power;
+    double slope;
+    double offset;
 
     FattalToneMappingParams();
 

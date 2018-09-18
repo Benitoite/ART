@@ -283,9 +283,13 @@ void ParamsEdited::set(bool v)
     epd.scale               = v;
     epd.reweightingIterates = v;
     fattal.enabled   = v;
+    fattal.method   = v;
     fattal.threshold = v;
     fattal.amount    = v;
     fattal.anchor    = v;
+    fattal.power = v;
+    fattal.slope = v;
+    fattal.offset = v;
     sh.enabled       = v;
     sh.highlights    = v;
     sh.htonalwidth   = v;
@@ -841,9 +845,13 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         epd.reweightingIterates = epd.reweightingIterates && p.epd.reweightingIterates == other.epd.reweightingIterates;
 
         fattal.enabled = fattal.enabled && p.fattal.enabled == other.fattal.enabled;
+        fattal.method = fattal.method && p.fattal.method == other.fattal.method;
         fattal.threshold = fattal.threshold && p.fattal.threshold == other.fattal.threshold;
         fattal.amount = fattal.amount && p.fattal.amount == other.fattal.amount;
         fattal.anchor = fattal.anchor && p.fattal.anchor == other.fattal.anchor;
+        fattal.power = fattal.power && p.fattal.power == other.fattal.power;
+        fattal.slope = fattal.slope && p.fattal.slope == other.fattal.slope;
+        fattal.offset = fattal.offset && p.fattal.offset == other.fattal.offset;
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
         sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
@@ -2080,6 +2088,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.fattal.enabled = mods.fattal.enabled;
     }
 
+    if (fattal.method) {
+        toEdit.fattal.method = mods.fattal.method;
+    }
+
     if (fattal.threshold) {
         toEdit.fattal.threshold = mods.fattal.threshold;
     }
@@ -2092,6 +2104,18 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.fattal.anchor = mods.fattal.anchor;
     }
 
+    if (fattal.power) {
+        toEdit.fattal.power = mods.fattal.power;
+    }
+
+    if (fattal.slope) {
+        toEdit.fattal.slope = mods.fattal.slope;
+    }
+
+    if (fattal.offset) {
+        toEdit.fattal.offset = mods.fattal.offset;
+    }
+    
     if (sh.enabled) {
         toEdit.sh.enabled         = mods.sh.enabled;
     }

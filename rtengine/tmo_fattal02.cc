@@ -1060,11 +1060,45 @@ inline int find_fast_dim (int dim)
     return dim;
 }
 
+
+void gamma_compress(Imagefloat *rgb, float power, float slope, float offset, bool multithread)
+{
+    int w = rgb->getWidth();
+    int h = rgb->getHeight();
+
+    const auto apply =
+        [=](float x) -> float
+        {
+            x = (x / 65535.0) * slope + offset;
+            if (x >= 0) {
+                return powf(x, power) * 65535.0;
+            } else {
+                return x * fabs(offset) * 65535.0;
+            }
+        };
+
+#ifdef _OPENMP
+    #pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            rgb->r(y, x) = apply(rgb->r(y, x));
+            rgb->g(y, x) = apply(rgb->g(y, x));
+            rgb->b(y, x) = apply(rgb->b(y, x));
+        }
+    }
+}
+
 } // namespace
 
 
-void ImProcFunctions::ToneMapFattal02 (Imagefloat *rgb)
+void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
 {
+    if (params->fattal.method == rtengine::procparams::FattalToneMappingParams::DR_COMP_GAMMA) {
+        gamma_compress(rgb, params->fattal.power, params->fattal.slope, params->fattal.offset, multiThread);
+        return;
+    }
+    
     BENCHFUN
     const int detail_level = 3;
 

@@ -391,9 +391,13 @@ class FattalToneMappingParamsEdited
 {
 public:
     bool enabled;
+    bool method;
     bool threshold;
     bool amount;
     bool anchor;
+    bool power;
+    bool slope;
+    bool offset;
 };
 
 

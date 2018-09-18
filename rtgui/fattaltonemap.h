@@ -26,11 +26,23 @@
 class FattalToneMapping: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
 {
 protected:
+    MyComboBoxText *method;
+    
+    Gtk::VBox *fattalbox;
     Adjuster *threshold;
     Adjuster *amount;
     Adjuster *anchor;
 
+    Gtk::VBox *gammabox;
+    Adjuster *power;
+    Adjuster *slope;
+    Adjuster *offset;
+
     rtengine::ProcEvent EvTMFattalAnchor;
+    rtengine::ProcEvent EvDRCompMethod;
+    rtengine::ProcEvent EvDRCompPower;
+    rtengine::ProcEvent EvDRCompSlope;
+    rtengine::ProcEvent EvDRCompOffset;
     
 public:
 
@@ -44,5 +56,7 @@ public:
     void adjusterChanged (Adjuster* a, double newval);
     void enabledChanged  ();
     void setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool anchorAdd);
+
+    void method_changed();
 };
 
