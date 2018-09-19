@@ -192,7 +192,7 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
     wTRCHBox->pack_start(*wtrclab, Gtk::PACK_SHRINK);
     wTRC = Gtk::manage(new MyComboBoxText());
     wTRCHBox->pack_start(*wTRC, Gtk::PACK_EXPAND_WIDGET);
-    wProfVBox->pack_start(*wTRCHBox, Gtk::PACK_EXPAND_WIDGET);
+    // wProfVBox->pack_start(*wTRCHBox, Gtk::PACK_EXPAND_WIDGET);
     wTRC->append(M("TP_ICM_WORKING_TRC_NONE"));
     wTRC->append(M("TP_ICM_WORKING_TRC_CUSTOM"));
 
@@ -202,11 +202,11 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
 
     wGamma = Gtk::manage(new Adjuster(M("TP_ICM_WORKING_TRC_GAMMA"), 0.40, 15.0, 0.001, 2.4));
     wSlope = Gtk::manage(new Adjuster(M("TP_ICM_WORKING_TRC_SLOPE"), 0., 150., 0.01, 12.92310));
-    wProfVBox->pack_start(*wGamma, Gtk::PACK_SHRINK);
-    wGamma->show();
+    // wProfVBox->pack_start(*wGamma, Gtk::PACK_SHRINK);
+    // wGamma->show();
 
-    wProfVBox->pack_start(*wSlope, Gtk::PACK_SHRINK);
-    wSlope->show();
+    // wProfVBox->pack_start(*wSlope, Gtk::PACK_SHRINK);
+    // wSlope->show();
 
 
     wGamma->setAdjusterListener(this);
