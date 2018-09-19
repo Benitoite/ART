@@ -315,6 +315,7 @@ WhiteBalance::WhiteBalance () : FoldableToolPanel(this, "whitebalance", M("TP_WB
 
     temp = Gtk::manage (new Adjuster (M("TP_WBALANCE_TEMPERATURE"), MINTEMP, MAXTEMP, 5, CENTERTEMP, itempL, itempR, &wbSlider2Temp, &wbTemp2Slider));
     green = Gtk::manage (new Adjuster (M("TP_WBALANCE_GREEN"), MINGREEN, MAXGREEN, 0.001, 1.0, igreenL, igreenR));
+    green->setLogScale(10, 1);
     equal = Gtk::manage (new Adjuster (M("TP_WBALANCE_EQBLUERED"), MINEQUAL, MAXEQUAL, 0.001, 1.0, iblueredL, iblueredR));
     tempBias = Gtk::manage (new Adjuster(M("TP_WBALANCE_TEMPBIAS"), -0.5, 0.5, 0.01, 0.0, itempbiasL, itempbiasR));
     cache_customTemp (0);
@@ -689,6 +690,8 @@ void WhiteBalance::read (const ProcParams* pp, const ParamsEdited* pedited)
         set_inconsistent(multiImage && !pedited->wb.enabled);
     }
 
+    green->setLogScale(10, green->getValue());
+    
     methconn.block (false);
     enableListener ();
 }
