@@ -47,7 +47,8 @@ Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep
     imageIcon1 = imgIcon1;
 
     logBase = 0;
-    logCenter = 0;
+    logPivot = 0;
+    logAnchorMiddle = false;
 
     if (imageIcon1) {
         setExpandAlignProperties(imageIcon1, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
@@ -618,14 +619,28 @@ inline double Adjuster::getSliderValue()
 {
     double val = slider->get_value();
     if (logBase) {
-        if (val >= logCenter) {
-            double range = vMax - logCenter;
-            double x = (val - logCenter) / range;
-            val = logCenter + (pow(logBase, x) - 1.0) / (logBase - 1.0) * range;
+        if (logAnchorMiddle) {
+            double mid = (vMax - vMin) / 2;
+            double mmid = vMin + mid;
+            if (val >= mmid) {
+                double range = vMax - mmid;
+                double x = (val - mmid) / range;
+                val = logPivot + (pow(logBase, x) - 1.0) / (logBase - 1.0) * (vMax - logPivot);
+            } else {
+                double range = mmid - vMin;
+                double x = (mmid - val) / range;
+                val = logPivot - (pow(logBase, x) - 1.0) / (logBase - 1.0) * (logPivot - vMin);
+            }
         } else {
-            double range = logCenter - vMin;
-            double x = (logCenter - val) / range;
-            val = logCenter - (pow(logBase, x) - 1.0) / (logBase - 1.0) * range;
+            if (val >= logPivot) {
+                double range = vMax - logPivot;
+                double x = (val - logPivot) / range;
+                val = logPivot + (pow(logBase, x) - 1.0) / (logBase - 1.0) * range;
+            } else {
+                double range = logPivot - vMin;
+                double x = (logPivot - val) / range;
+                val = logPivot - (pow(logBase, x) - 1.0) / (logBase - 1.0) * range;
+            }
         }
     }
     return val;
@@ -635,28 +650,42 @@ inline double Adjuster::getSliderValue()
 inline void Adjuster::setSliderValue(double val)
 {
     if (logBase) {
-        if (val >= logCenter) {
-            double range = vMax - logCenter;
-            double x = (val - logCenter) / range;
-            val = logCenter + log(x * (logBase - 1.0) + 1.0) / log(logBase) * range;
+        if (logAnchorMiddle) {
+            double mid = (vMax - vMin) / 2;
+            if (val >= logPivot) {
+                double range = vMax - logPivot;
+                double x = (val - logPivot) / range;
+                val = (vMin + mid) + log(x * (logBase - 1.0) + 1.0) / log(logBase) * mid;
+            } else {
+                double range = logPivot - vMin;
+                double x = (logPivot - val) / range;
+                val = (vMin + mid) - log(x * (logBase - 1.0) + 1.0) / log(logBase) * mid;
+            }
         } else {
-            double range = logCenter - vMin;
-            double x = (logCenter - val) / range;
-            val = logCenter - log(x * (logBase - 1.0) + 1.0) / log(logBase) * range;
-        }        
+            if (val >= logPivot) {
+                double range = vMax - logPivot;
+                double x = (val - logPivot) / range;
+                val = logPivot + log(x * (logBase - 1.0) + 1.0) / log(logBase) * range;
+            } else {
+                double range = logPivot - vMin;
+                double x = (logPivot - val) / range;
+                val = logPivot - log(x * (logBase - 1.0) + 1.0) / log(logBase) * range;
+            }
+        }
     }
     slider->set_value(val);
 }
 
 
-void Adjuster::setLogScale(double base, double center)
+void Adjuster::setLogScale(double base, double pivot, bool anchorMiddle)
 {
     spinChange.block (true);
     sliderChange.block (true);
 
     double cur = getSliderValue();
     logBase = base;
-    logCenter = center;
+    logPivot = pivot;
+    logAnchorMiddle = anchorMiddle;
     setSliderValue(cur);
     
     sliderChange.block (false);

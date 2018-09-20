@@ -72,7 +72,8 @@ protected:
     double vStep;
 
     double logBase;
-    double logCenter;
+    double logPivot;
+    bool logAnchorMiddle;
 
     double shapeValue (double a);
     void   refreshLabelStyle ();
@@ -180,7 +181,7 @@ public:
     void trimValue (float &val);
     void trimValue (int &val);
 
-    void setLogScale(double base, double center);
+    void setLogScale(double base, double pivot, bool anchorMiddle=false);
 };
 
 #endif
