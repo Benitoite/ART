@@ -132,6 +132,10 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
     saturation = Gtk::manage (new Adjuster (M("TP_EXPOSURE_SATURATION"), -100, 100, 1, 0));
     pack_start (*saturation);
 
+    brightness->setLogScale(2, 0, true);
+    contrast->setLogScale(2, 0, true);
+    saturation->setLogScale(2, 0, true);
+
 //----------- Curve 1 ------------------------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
