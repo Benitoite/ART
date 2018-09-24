@@ -77,7 +77,7 @@
 #include "colortoning.h"
 #include "filmsimulation.h"
 #include "prsharpening.h"
-#include "fattaltonemap.h"
+#include "drcompression.h"
 #include "localcontrast.h"
 #include "softlight.h"
 #include "guiutils.h"
@@ -149,7 +149,7 @@ protected:
     RAWExposure* rawexposure;
     BayerRAWExposure* bayerrawexposure;
     XTransRAWExposure* xtransrawexposure;
-    FattalToneMapping *fattal;
+    DRCompression *drcomp;
     MetaDataPanel* metadata;
 
     std::vector<PParamsChangeListener*> paramcListeners;

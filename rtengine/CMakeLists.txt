@@ -119,6 +119,7 @@ set(RTENGINESOURCEFILES
     utils.cc
     rtlensfun.cc
     tmo_fattal02.cc
+    ipdrcompression.cc
     iplocalcontrast.cc
     histmatching.cc
     pdaflinesfilter.cc

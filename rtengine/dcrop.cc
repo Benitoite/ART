@@ -690,26 +690,26 @@ void Crop::update(int todo)
     // has to be called after setCropSizes! Tools prior to this point can't handle the Edit mechanism, but that shouldn't be a problem.
     createBuffer(cropw, croph);
 
-    std::unique_ptr<Imagefloat> fattalCrop;
+    std::unique_ptr<Imagefloat> drCompCrop;
 
-    if ((todo & M_HDR) && params.fattal.enabled) {
+    if ((todo & M_HDR) && params.drcomp.enabled) {
         Imagefloat *f = origCrop;
         int fw = skips(parent->fw, skip);
         int fh = skips(parent->fh, skip);
         bool need_cropping = false;
-        bool need_fattal = true;
+        bool need_drcomp = true;
 
         if (trafx || trafy || trafw != fw || trafh != fh) {
             need_cropping = true;
 
             // fattal needs to work on the full image. So here we get the full
             // image from imgsrc, and replace the denoised crop in case
-            if (!params.dirpyrDenoise.enabled && skip == 1 && parent->fattal_11_dcrop_cache) {
-                f = parent->fattal_11_dcrop_cache;
-                need_fattal = false;
+            if (!params.dirpyrDenoise.enabled && skip == 1 && parent->drcomp_11_dcrop_cache) {
+                f = parent->drcomp_11_dcrop_cache;
+                need_drcomp = false;
             } else {
                 f = new Imagefloat(fw, fh);
-                fattalCrop.reset(f);
+                drCompCrop.reset(f);
                 PreviewProps pp(0, 0, parent->fw, parent->fh, skip);
                 int tr = getCoarseBitMask(params.coarse);
                 parent->imgsrc->getImage(parent->currWB, tr, f, pp, params.toneCurve, params.raw);
@@ -734,14 +734,14 @@ void Crop::update(int todo)
                         }
                     }
                 } else if (skip == 1) {
-                    parent->fattal_11_dcrop_cache = f; // cache this globally
-                    fattalCrop.release();
+                    parent->drcomp_11_dcrop_cache = f; // cache this globally
+                    drCompCrop.release();
                 }
             }
         }
 
-        if (need_fattal) {
-            parent->ipf.ToneMapFattal02(f);
+        if (need_drcomp) {
+            parent->ipf.dynamicRangeCompression(f);
         }
 
         // crop back to the size expected by the rest of the pipeline

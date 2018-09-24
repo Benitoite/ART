@@ -1473,19 +1473,18 @@ bool EPDParams::operator !=(const EPDParams& other) const
     return !(*this == other);
 }
 
-FattalToneMappingParams::FattalToneMappingParams() :
+DRCompressionParams::DRCompressionParams() :
     enabled(false),
-    method(FattalToneMappingParams::DR_COMP_FATTAL),
+    method(DRCompressionParams::DR_COMP_FATTAL),
     threshold(0),
     amount(30),
     anchor(50),
     power(1.0),
-    slope(1.0),
-    offset(0.0)
+    slope(1.0)
 {
 }
 
-bool FattalToneMappingParams::operator ==(const FattalToneMappingParams& other) const
+bool DRCompressionParams::operator ==(const DRCompressionParams& other) const
 {
     return
         enabled == other.enabled
@@ -1493,11 +1492,10 @@ bool FattalToneMappingParams::operator ==(const FattalToneMappingParams& other) 
         && amount == other.amount
         && anchor == other.anchor
         && power == other.power
-        && slope == other.slope
-        && offset == other.offset;
+        && slope == other.slope;
 }
 
-bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) const
+bool DRCompressionParams::operator !=(const DRCompressionParams& other) const
 {
     return !(*this == other);
 }
@@ -2688,7 +2686,7 @@ void ProcParams::setDefaults()
 
     epd = EPDParams();
 
-    fattal = FattalToneMappingParams();
+    drcomp = DRCompressionParams();
 
     sh = SHParams();
 
@@ -3083,14 +3081,13 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->epd.reweightingIterates, "EPD", "ReweightingIterates", epd.reweightingIterates, keyFile);
 
 // Fattal
-        saveToKeyfile(!pedited || pedited->fattal.enabled, "FattalToneMapping", "Enabled", fattal.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.enabled, "FattalToneMapping", "Method", fattal.method, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.threshold, "FattalToneMapping", "Threshold", fattal.threshold, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.amount, "FattalToneMapping", "Amount", fattal.amount, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.anchor, "FattalToneMapping", "Anchor", fattal.anchor, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.power, "FattalToneMapping", "Power", fattal.power, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.slope, "FattalToneMapping", "Slope", fattal.slope, keyFile);
-        saveToKeyfile(!pedited || pedited->fattal.offset, "FattalToneMapping", "Offset", fattal.offset, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.enabled, "DynamicRangeCompression", "Enabled", drcomp.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.enabled, "DynamicRangeCompression", "Method", drcomp.method, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.threshold, "DynamicRangeCompression", "Threshold", drcomp.threshold, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.amount, "DynamicRangeCompression", "Amount", drcomp.amount, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.anchor, "DynamicRangeCompression", "Anchor", drcomp.anchor, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.power, "DynamicRangeCompression", "Power", drcomp.power, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.slope, "DynamicRangeCompression", "Slope", drcomp.slope, keyFile);
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
@@ -4017,15 +4014,17 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "EPD", "ReweightingIterates", pedited, epd.reweightingIterates, pedited->epd.reweightingIterates);
         }
 
-        if (keyFile.has_group("FattalToneMapping")) {
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Enabled", pedited, fattal.enabled, pedited->fattal.enabled);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Method", pedited, fattal.method, pedited->fattal.method);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Threshold", pedited, fattal.threshold, pedited->fattal.threshold);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Amount", pedited, fattal.amount, pedited->fattal.amount);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Anchor", pedited, fattal.anchor, pedited->fattal.anchor);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Power", pedited, fattal.power, pedited->fattal.power);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Slope", pedited, fattal.slope, pedited->fattal.slope);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Offset", pedited, fattal.offset, pedited->fattal.offset);
+        {
+            const char *drcomp_group = (ppVersion < 344) ? "FattalToneMapping" : "DynamicRangeCompression";
+            if (keyFile.has_group(drcomp_group)) {
+                assignFromKeyfile(keyFile, drcomp_group, "Enabled", pedited, drcomp.enabled, pedited->drcomp.enabled);
+                assignFromKeyfile(keyFile, drcomp_group, "Method", pedited, drcomp.method, pedited->drcomp.method);
+                assignFromKeyfile(keyFile, drcomp_group, "Threshold", pedited, drcomp.threshold, pedited->drcomp.threshold);
+                assignFromKeyfile(keyFile, drcomp_group, "Amount", pedited, drcomp.amount, pedited->drcomp.amount);
+                assignFromKeyfile(keyFile, drcomp_group, "Anchor", pedited, drcomp.anchor, pedited->drcomp.anchor);
+                assignFromKeyfile(keyFile, drcomp_group, "Power", pedited, drcomp.power, pedited->drcomp.power);
+                assignFromKeyfile(keyFile, drcomp_group, "Slope", pedited, drcomp.slope, pedited->drcomp.slope);
+            }
         }
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {
@@ -4998,7 +4997,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && impulseDenoise == other.impulseDenoise
         && dirpyrDenoise == other.dirpyrDenoise
         && epd == other.epd
-        && fattal == other.fattal
+        && drcomp == other.drcomp
         && defringe == other.defringe
         && sh == other.sh
         && crop == other.crop

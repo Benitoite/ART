@@ -17,7 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "fattaltonemap.h"
+#include "drcompression.h"
 #include "eventmapper.h"
 #include <iomanip>
 #include <cmath>
@@ -25,7 +25,7 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-FattalToneMapping::FattalToneMapping(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTAL_LABEL"), true, true)
+DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTAL_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvTMFattalAnchor = m->newEvent(HDR, "HISTORY_MSG_TM_FATTAL_ANCHOR");
@@ -69,54 +69,48 @@ FattalToneMapping::FattalToneMapping(): FoldableToolPanel(this, "fattal", M("TP_
     gammabox = Gtk::manage(new Gtk::VBox());
     power = Gtk::manage(new Adjuster (M("TP_DR_COMP_POWER"), 0.0, 2.0, 0.005, 1.));
     slope = Gtk::manage(new Adjuster (M("TP_DR_COMP_SLOPE"), 0.001, 2.0, 0.005, 1.0));
-    offset = Gtk::manage(new Adjuster (M("TP_DR_COMP_OFFSET"), -0.002, 0.002, 0.0001, 0.0));
 
     power->setAdjusterListener(this);
     slope->setAdjusterListener(this);
-    offset->setAdjusterListener(this);
 
     gammabox->show();
     power->show();
     slope->show();
-    offset->show();
 
     gammabox->pack_start(*power);
     gammabox->pack_start(*slope);
-    gammabox->pack_start(*offset);
 
     pack_start(*gammabox);
 
-    method->signal_changed().connect(sigc::mem_fun(*this, &FattalToneMapping::method_changed));
+    method->signal_changed().connect(sigc::mem_fun(*this, &DRCompression::method_changed));
 }
 
-void FattalToneMapping::read(const ProcParams *pp, const ParamsEdited *pedited)
+void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
 {
     disableListener();
 
     if (pedited) {
-        threshold->setEditedState(pedited->fattal.threshold ? Edited : UnEdited);
-        amount->setEditedState(pedited->fattal.amount ? Edited : UnEdited);
-        anchor->setEditedState(pedited->fattal.anchor ? Edited : UnEdited);
-        power->setEditedState(pedited->fattal.power ? Edited : UnEdited);
-        slope->setEditedState(pedited->fattal.slope ? Edited : UnEdited);
-        offset->setEditedState(pedited->fattal.offset ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->fattal.enabled);
+        threshold->setEditedState(pedited->drcomp.threshold ? Edited : UnEdited);
+        amount->setEditedState(pedited->drcomp.amount ? Edited : UnEdited);
+        anchor->setEditedState(pedited->drcomp.anchor ? Edited : UnEdited);
+        power->setEditedState(pedited->drcomp.power ? Edited : UnEdited);
+        slope->setEditedState(pedited->drcomp.slope ? Edited : UnEdited);
+        set_inconsistent(multiImage && !pedited->drcomp.enabled);
     }
 
-    setEnabled(pp->fattal.enabled);
-    threshold->setValue(pp->fattal.threshold);
-    amount->setValue(pp->fattal.amount);
-    anchor->setValue(pp->fattal.anchor);
+    setEnabled(pp->drcomp.enabled);
+    threshold->setValue(pp->drcomp.threshold);
+    amount->setValue(pp->drcomp.amount);
+    anchor->setValue(pp->drcomp.anchor);
 
-    power->setValue(pp->fattal.power);
-    slope->setValue(pp->fattal.slope);
-    offset->setValue(pp->fattal.offset);
+    power->setValue(pp->drcomp.power);
+    slope->setValue(pp->drcomp.slope);
 
-    if (pedited && !pedited->fattal.method) {
+    if (pedited && !pedited->drcomp.method) {
         method->set_active(2);
     } else {
-        method->set_active(pp->fattal.method);
-        if (pp->fattal.method == rtengine::procparams::FattalToneMappingParams::DR_COMP_FATTAL) {
+        method->set_active(pp->drcomp.method);
+        if (pp->drcomp.method == rtengine::procparams::DRCompressionParams::DR_COMP_FATTAL) {
             fattalbox->show();
             gammabox->hide();
         } else {
@@ -128,49 +122,45 @@ void FattalToneMapping::read(const ProcParams *pp, const ParamsEdited *pedited)
     enableListener();
 }
 
-void FattalToneMapping::write(ProcParams *pp, ParamsEdited *pedited)
+void DRCompression::write(ProcParams *pp, ParamsEdited *pedited)
 {
-    pp->fattal.threshold = threshold->getValue();
-    pp->fattal.amount = amount->getValue();
-    pp->fattal.anchor = anchor->getValue();
-    pp->fattal.enabled = getEnabled();
-    pp->fattal.power = power->getValue();
-    pp->fattal.slope = slope->getValue();
-    pp->fattal.offset = offset->getValue();
+    pp->drcomp.threshold = threshold->getValue();
+    pp->drcomp.amount = amount->getValue();
+    pp->drcomp.anchor = anchor->getValue();
+    pp->drcomp.enabled = getEnabled();
+    pp->drcomp.power = power->getValue();
+    pp->drcomp.slope = slope->getValue();
     if (method->get_active_row_number() != 2) {
-        pp->fattal.method = method->get_active_row_number();
+        pp->drcomp.method = method->get_active_row_number();
     }
 
     if(pedited) {
-        pedited->fattal.threshold = threshold->getEditedState();
-        pedited->fattal.amount = amount->getEditedState();
-        pedited->fattal.anchor = anchor->getEditedState();
-        pedited->fattal.enabled = !get_inconsistent();
-        pedited->fattal.power = power->getEditedState();
-        pedited->fattal.slope = slope->getEditedState();
-        pedited->fattal.offset = offset->getEditedState();
-        pedited->fattal.method = method->get_active_row_number() != 2;
+        pedited->drcomp.threshold = threshold->getEditedState();
+        pedited->drcomp.amount = amount->getEditedState();
+        pedited->drcomp.anchor = anchor->getEditedState();
+        pedited->drcomp.enabled = !get_inconsistent();
+        pedited->drcomp.power = power->getEditedState();
+        pedited->drcomp.slope = slope->getEditedState();
+        pedited->drcomp.method = method->get_active_row_number() != 2;
     }
 }
 
-void FattalToneMapping::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void DRCompression::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
 {
-    threshold->setDefault(defParams->fattal.threshold);
-    amount->setDefault(defParams->fattal.amount);
-    anchor->setDefault(defParams->fattal.anchor);
+    threshold->setDefault(defParams->drcomp.threshold);
+    amount->setDefault(defParams->drcomp.amount);
+    anchor->setDefault(defParams->drcomp.anchor);
 
-    power->setDefault(defParams->fattal.power);
-    slope->setDefault(defParams->fattal.slope);
-    offset->setDefault(defParams->fattal.offset);
+    power->setDefault(defParams->drcomp.power);
+    slope->setDefault(defParams->drcomp.slope);
     
     if(pedited) {
-        threshold->setDefaultEditedState(pedited->fattal.threshold ? Edited : UnEdited);
-        amount->setDefaultEditedState(pedited->fattal.amount ? Edited : UnEdited);
-        anchor->setDefaultEditedState(pedited->fattal.anchor ? Edited : UnEdited);
+        threshold->setDefaultEditedState(pedited->drcomp.threshold ? Edited : UnEdited);
+        amount->setDefaultEditedState(pedited->drcomp.amount ? Edited : UnEdited);
+        anchor->setDefaultEditedState(pedited->drcomp.anchor ? Edited : UnEdited);
 
-        power->setDefaultEditedState(pedited->fattal.power ? Edited : UnEdited);
-        slope->setDefaultEditedState(pedited->fattal.slope ? Edited : UnEdited);
-        offset->setDefaultEditedState(pedited->fattal.offset ? Edited : UnEdited);
+        power->setDefaultEditedState(pedited->drcomp.power ? Edited : UnEdited);
+        slope->setDefaultEditedState(pedited->drcomp.slope ? Edited : UnEdited);
     } else {
         threshold->setDefaultEditedState(Irrelevant);
         amount->setDefaultEditedState(Irrelevant);
@@ -178,11 +168,10 @@ void FattalToneMapping::setDefaults(const ProcParams *defParams, const ParamsEdi
 
         power->setDefaultEditedState(Irrelevant);
         slope->setDefaultEditedState(Irrelevant);
-        offset->setDefaultEditedState(Irrelevant);
     }
 }
 
-void FattalToneMapping::adjusterChanged(Adjuster* a, double newval)
+void DRCompression::adjusterChanged(Adjuster* a, double newval)
 {
     if(listener && getEnabled()) {
         if(a == threshold) {
@@ -195,13 +184,11 @@ void FattalToneMapping::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDRCompPower, a->getTextValue());
         } else if (a == slope) {
             listener->panelChanged(EvDRCompSlope, a->getTextValue());
-        } else if (a == offset) {
-            listener->panelChanged(EvDRCompOffset, a->getTextValue());
         }
     }
 }
 
-void FattalToneMapping::enabledChanged ()
+void DRCompression::enabledChanged ()
 {
     if (listener) {
         if (get_inconsistent()) {
@@ -214,7 +201,7 @@ void FattalToneMapping::enabledChanged ()
     }
 }
 
-void FattalToneMapping::setBatchMode(bool batchMode)
+void DRCompression::setBatchMode(bool batchMode)
 {
     ToolPanel::setBatchMode(batchMode);
 
@@ -224,12 +211,11 @@ void FattalToneMapping::setBatchMode(bool batchMode)
 
     power->showEditedCB();
     slope->showEditedCB();
-    offset->showEditedCB();
     
     method->append(M("GENERAL_UNCHANGED"));
 }
 
-void FattalToneMapping::setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool anchorAdd)
+void DRCompression::setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool anchorAdd)
 {
     amount->setAddMode(amountAdd);
     threshold->setAddMode(thresholdAdd);
@@ -237,7 +223,7 @@ void FattalToneMapping::setAdjusterBehavior(bool amountAdd, bool thresholdAdd, b
 }
 
 
-void FattalToneMapping::method_changed()
+void DRCompression::method_changed()
 {
     if (!batchMode) {
         fattalbox->show();

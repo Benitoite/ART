@@ -387,7 +387,7 @@ public:
 };
 
 
-class FattalToneMappingParamsEdited
+class DRCompressionParamsEdited
 {
 public:
     bool enabled;
@@ -397,7 +397,6 @@ public:
     bool anchor;
     bool power;
     bool slope;
-    bool offset;
 };
 
 
@@ -845,7 +844,7 @@ public:
     DefringeParamsEdited          defringe;
     DirPyrDenoiseParamsEdited     dirpyrDenoise;
     EPDParamsEdited               epd;
-    FattalToneMappingParamsEdited fattal;
+    DRCompressionParamsEdited     drcomp;
     ImpulseDenoiseParamsEdited    impulseDenoise;
     SHParamsEdited                sh;
     CropParamsEdited              crop;

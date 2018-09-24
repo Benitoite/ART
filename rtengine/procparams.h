@@ -726,8 +726,8 @@ struct EPDParams {
     bool operator !=(const EPDParams& other) const;
 };
 
-// Fattal02 Tone-Mapping parameters
-struct FattalToneMappingParams {
+
+struct DRCompressionParams {
     bool enabled;
     enum { DR_COMP_FATTAL, DR_COMP_GAMMA };
     int method;
@@ -736,12 +736,11 @@ struct FattalToneMappingParams {
     int anchor;
     double power;
     double slope;
-    double offset;
 
-    FattalToneMappingParams();
+    DRCompressionParams();
 
-    bool operator ==(const FattalToneMappingParams& other) const;
-    bool operator !=(const FattalToneMappingParams& other) const;
+    bool operator ==(const DRCompressionParams& other) const;
+    bool operator !=(const DRCompressionParams& other) const;
 };
 
 /**
@@ -1419,7 +1418,7 @@ public:
     ImpulseDenoiseParams    impulseDenoise;  ///< Impulse denoising parameters
     DirPyrDenoiseParams     dirpyrDenoise;   ///< Directional Pyramid denoising parameters
     EPDParams               epd;             ///< Edge Preserving Decomposition parameters
-    FattalToneMappingParams fattal;          ///< Fattal02 tone mapping
+    DRCompressionParams     drcomp;          ///< Dynamic Range Compression
     SHParams                sh;              ///< Shadow/highlight enhancement parameters
     CropParams              crop;            ///< Crop parameters
     CoarseTransformParams   coarse;          ///< Coarse transformation (90, 180, 270 deg rotation, h/v flipping) parameters

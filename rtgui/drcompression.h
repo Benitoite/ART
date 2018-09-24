@@ -23,7 +23,7 @@
 #include "adjuster.h"
 #include "toolpanel.h"
 
-class FattalToneMapping: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class DRCompression: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
 {
 protected:
     MyComboBoxText *method;
@@ -36,7 +36,6 @@ protected:
     Gtk::VBox *gammabox;
     Adjuster *power;
     Adjuster *slope;
-    Adjuster *offset;
 
     rtengine::ProcEvent EvTMFattalAnchor;
     rtengine::ProcEvent EvDRCompMethod;
@@ -46,7 +45,7 @@ protected:
     
 public:
 
-    FattalToneMapping();
+    DRCompression();
 
     void read           (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr);
     void write          (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr);

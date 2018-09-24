@@ -1061,56 +1061,23 @@ inline int find_fast_dim (int dim)
 }
 
 
-void gamma_compress(Imagefloat *rgb, float power, float slope, float offset, bool multithread)
-{
-    int w = rgb->getWidth();
-    int h = rgb->getHeight();
-
-    const auto apply =
-        [=](float x) -> float
-        {
-            x = (x / 65535.0) * slope + offset;
-            if (x >= 0) {
-                return powf(x, power) * 65535.0;
-            } else {
-                return x * fabs(offset) * 65535.0;
-            }
-        };
-
-#ifdef _OPENMP
-    #pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            rgb->r(y, x) = apply(rgb->r(y, x));
-            rgb->g(y, x) = apply(rgb->g(y, x));
-            rgb->b(y, x) = apply(rgb->b(y, x));
-        }
-    }
-}
-
 } // namespace
 
 
 void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
 {
-    if (params->fattal.method == rtengine::procparams::FattalToneMappingParams::DR_COMP_GAMMA) {
-        gamma_compress(rgb, params->fattal.power, params->fattal.slope, params->fattal.offset, multiThread);
-        return;
-    }
-    
     BENCHFUN
     const int detail_level = 3;
 
     float alpha = 1.f;
 
-    if (params->fattal.threshold < 0) {
-        alpha += (params->fattal.threshold * 0.9f) / 100.f;
-    } else if (params->fattal.threshold > 0) {
-        alpha += params->fattal.threshold / 100.f;
+    if (params->drcomp.threshold < 0) {
+        alpha += (params->drcomp.threshold * 0.9f) / 100.f;
+    } else if (params->drcomp.threshold > 0) {
+        alpha += params->drcomp.threshold / 100.f;
     }
 
-    float beta = 1.f - (params->fattal.amount * 0.3f) / 100.f;
+    float beta = 1.f - (params->drcomp.amount * 0.3f) / 100.f;
 
     // sanity check
     if (alpha <= 0 || beta <= 0) {
@@ -1138,7 +1105,7 @@ void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
     }
 
     float oldMedian;
-    const float percentile = float(LIM(params->fattal.anchor, 1, 100)) / 100.f;
+    const float percentile = float(LIM(params->drcomp.anchor, 1, 100)) / 100.f;
     findMinMaxPercentile (Yr.data(), Yr.getRows() * Yr.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
     // median filter on the deep shadows, to avoid boosting noise
     // because w2 >= w and h2 >= h, we can use the L buffer as temporary buffer for Median_Denoise()

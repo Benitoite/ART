@@ -282,14 +282,13 @@ void ParamsEdited::set(bool v)
     epd.edgeStopping        = v;
     epd.scale               = v;
     epd.reweightingIterates = v;
-    fattal.enabled   = v;
-    fattal.method   = v;
-    fattal.threshold = v;
-    fattal.amount    = v;
-    fattal.anchor    = v;
-    fattal.power = v;
-    fattal.slope = v;
-    fattal.offset = v;
+    drcomp.enabled   = v;
+    drcomp.method   = v;
+    drcomp.threshold = v;
+    drcomp.amount    = v;
+    drcomp.anchor    = v;
+    drcomp.power = v;
+    drcomp.slope = v;
     sh.enabled       = v;
     sh.highlights    = v;
     sh.htonalwidth   = v;
@@ -844,14 +843,13 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         epd.scale = epd.scale && p.epd.scale == other.epd.scale;
         epd.reweightingIterates = epd.reweightingIterates && p.epd.reweightingIterates == other.epd.reweightingIterates;
 
-        fattal.enabled = fattal.enabled && p.fattal.enabled == other.fattal.enabled;
-        fattal.method = fattal.method && p.fattal.method == other.fattal.method;
-        fattal.threshold = fattal.threshold && p.fattal.threshold == other.fattal.threshold;
-        fattal.amount = fattal.amount && p.fattal.amount == other.fattal.amount;
-        fattal.anchor = fattal.anchor && p.fattal.anchor == other.fattal.anchor;
-        fattal.power = fattal.power && p.fattal.power == other.fattal.power;
-        fattal.slope = fattal.slope && p.fattal.slope == other.fattal.slope;
-        fattal.offset = fattal.offset && p.fattal.offset == other.fattal.offset;
+        drcomp.enabled = drcomp.enabled && p.drcomp.enabled == other.drcomp.enabled;
+        drcomp.method = drcomp.method && p.drcomp.method == other.drcomp.method;
+        drcomp.threshold = drcomp.threshold && p.drcomp.threshold == other.drcomp.threshold;
+        drcomp.amount = drcomp.amount && p.drcomp.amount == other.drcomp.amount;
+        drcomp.anchor = drcomp.anchor && p.drcomp.anchor == other.drcomp.anchor;
+        drcomp.power = drcomp.power && p.drcomp.power == other.drcomp.power;
+        drcomp.slope = drcomp.slope && p.drcomp.slope == other.drcomp.slope;
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
         sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
@@ -2084,38 +2082,34 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.epd.reweightingIterates    = mods.epd.reweightingIterates;
     }
 
-    if (fattal.enabled) {
-        toEdit.fattal.enabled = mods.fattal.enabled;
+    if (drcomp.enabled) {
+        toEdit.drcomp.enabled = mods.drcomp.enabled;
     }
 
-    if (fattal.method) {
-        toEdit.fattal.method = mods.fattal.method;
+    if (drcomp.method) {
+        toEdit.drcomp.method = mods.drcomp.method;
     }
 
-    if (fattal.threshold) {
-        toEdit.fattal.threshold = mods.fattal.threshold;
+    if (drcomp.threshold) {
+        toEdit.drcomp.threshold = mods.drcomp.threshold;
     }
 
-    if (fattal.amount) {
-        toEdit.fattal.amount = mods.fattal.amount;
+    if (drcomp.amount) {
+        toEdit.drcomp.amount = mods.drcomp.amount;
     }
 
-    if (fattal.anchor) {
-        toEdit.fattal.anchor = mods.fattal.anchor;
+    if (drcomp.anchor) {
+        toEdit.drcomp.anchor = mods.drcomp.anchor;
     }
 
-    if (fattal.power) {
-        toEdit.fattal.power = mods.fattal.power;
+    if (drcomp.power) {
+        toEdit.drcomp.power = mods.drcomp.power;
     }
 
-    if (fattal.slope) {
-        toEdit.fattal.slope = mods.fattal.slope;
+    if (drcomp.slope) {
+        toEdit.drcomp.slope = mods.drcomp.slope;
     }
 
-    if (fattal.offset) {
-        toEdit.fattal.offset = mods.fattal.offset;
-    }
-    
     if (sh.enabled) {
         toEdit.sh.enabled         = mods.sh.enabled;
     }
