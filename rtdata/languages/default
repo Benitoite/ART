@@ -1584,7 +1584,7 @@ TP_DISTORTION_AMOUNT;Amount
 TP_DISTORTION_AUTO_TIP;Automatically corrects lens distortion in raw files by matching it against the embedded JPEG image if one exists and has had its lens disortion auto-corrected by the camera.
 TP_DISTORTION_LABEL;Distortion Correction
 TP_DR_COMP_METHOD_FATTAL;HDR Tone Mapping
-TP_DR_COMP_METHOD_GAMMA;Gamma compression
+TP_DR_COMP_METHOD_GAMMA;Gamma encoding
 TP_DR_COMP_OFFSET;Offset
 TP_DR_COMP_POWER;Power
 TP_DR_COMP_SLOPE;Slope
