@@ -49,6 +49,7 @@ class Thumbnail
 
     rtengine::procparams::ProcParams      pparams;
     bool            pparamsValid;
+    bool            needsReProcessing;
     bool            imageLoading;
 
     // these are the data of the result image of the last getthumbnailimage  call (for caching purposes)
@@ -80,7 +81,7 @@ public:
     Thumbnail (CacheManager* cm, const Glib::ustring& fname, const std::string& md5);
     ~Thumbnail ();
 
-    bool              hasProcParams () const;
+    bool              hasProcParams ();
     const rtengine::procparams::ProcParams& getProcParams ();
     const rtengine::procparams::ProcParams& getProcParamsU ();  // Unprotected version
 
@@ -93,21 +94,21 @@ public:
 
     void              notifylisterners_procParamsChanged(int whoChangedIt);
 
-    bool              isQuick() const
+    bool              isQuick()
     {
         return cfs.thumbImgType == CacheImageData::QUICK_THUMBNAIL;
     }
-    bool              isPParamsValid() const
+    bool              isPParamsValid()
     {
         return pparamsValid;
     }
-    bool              isRecentlySaved () const;
+    bool              isRecentlySaved ();
     void              imageDeveloped ();
     void              imageEnqueued ();
     void              imageRemovedFromQueue ();
-    bool              isEnqueued () const;
-    bool              isPixelShift () const;
-    bool              isHDR () const;
+    bool              isEnqueued ();
+    bool              isPixelShift ();
+    bool              isHDR ();
 
 //        unsigned char*  getThumbnailImage (int &w, int &h, int fixwh=1); // fixwh = 0: fix w and calculate h, =1: fix h and calculate w
     rtengine::IImage8* processThumbImage    (const rtengine::procparams::ProcParams& pparams, int h, double& scale);
@@ -115,9 +116,9 @@ public:
     void            getThumbnailSize        (int &w, int &h, const rtengine::procparams::ProcParams *pparams = nullptr);
     void            getFinalSize            (const rtengine::procparams::ProcParams& pparams, int& w, int& h);
 
-    const Glib::ustring&  getExifString () const;
-    const Glib::ustring&  getDateTimeString () const;
-    void                  getCamWB  (double& temp, double& green) const
+    const Glib::ustring&  getExifString ();
+    const Glib::ustring&  getDateTimeString ();
+    void                  getCamWB  (double& temp, double& green)
     {
         if (tpp) {
             tpp->getCamWB  (temp, green);
@@ -142,7 +143,7 @@ public:
     }
 
     ThFileType      getType ();
-    Glib::ustring   getFileName () const
+    Glib::ustring   getFileName ()
     {
         return fname;
     }
@@ -154,12 +155,12 @@ public:
     {
         return &cfs;
     }
-    std::string     getMD5   () const
+    std::string     getMD5   ()
     {
         return cfs.md5;
     }
 
-    int             getRank  () const
+    int             getRank  ()
     {
         return pparams.rank;
     }
@@ -171,7 +172,7 @@ public:
         }
     }
 
-    int             getColorLabel  () const
+    int             getColorLabel  ()
     {
         return pparams.colorlabel;
     }
@@ -183,7 +184,7 @@ public:
         }
     }
 
-    int             getStage () const
+    int             getStage ()
     {
         return pparams.inTrash;
     }
