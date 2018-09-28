@@ -1069,13 +1069,12 @@ void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
     BENCHFUN
     const int detail_level = 3;
 
-    float alpha = 1.f;
-
-    if (params->drcomp.threshold < 0) {
-        alpha += (params->drcomp.threshold * 0.9f) / 100.f;
-    } else if (params->drcomp.threshold > 0) {
-        alpha += params->drcomp.threshold / 100.f;
-    }
+    float alpha = 4.f + SGN(params->drcomp.threshold) * std::pow(std::abs(params->drcomp.threshold) / 100.f, 2.5f) * 3.f;
+    // if (params->drcomp.threshold < 0) {
+    //     alpha += (params->drcomp.threshold * 0.9f) / 100.f;
+    // } else if (params->drcomp.threshold > 0) {
+    //     alpha += params->drcomp.threshold / 100.f;
+    // }
 
     float beta = 1.f - (params->drcomp.amount * 0.3f) / 100.f;
 
