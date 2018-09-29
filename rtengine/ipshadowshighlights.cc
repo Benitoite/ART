@@ -36,8 +36,28 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 
     array2D<float> mask(width, height);
     const float sigma = params->sh.radius * 5.f / scale;
-    LUTf f(32768);
+    //LUTf f(32768);
+    LUTf f(65536);
 
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
+
+    const auto rgb2lab =
+        [&](float R, float G, float B, float &l, float &a, float &b) -> void
+        {
+            float x, y, z;
+            Color::rgbxyz(R, G, B, x, y, z, ws);
+            Color::XYZ2Lab(x, y, z, l, a, b);
+        };
+
+    const auto lab2rgb =
+        [&](float l, float a, float b, float &R, float &G, float &B) -> void
+        {
+            float x, y, z;
+            Color::Lab2XYZ(l, a, b, x, y, z);
+            Color::xyz2rgb(x, y, z, R, G, B, iws);
+        };
+    
     const auto apply =
         [&](int amount, int tonalwidth, bool hl) -> void
         {
@@ -83,32 +103,53 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 #ifdef _OPENMP
                 #pragma omp parallel for if (multiThread)
 #endif
-                for (int l = 0; l < 32768; ++l) {
+                // for (int l = 0; l < 32768; ++l) {
+                //     auto base = pow_F(l / 32768.f, gamma);
+                //     // get a bit more contrast in the shadows
+                //     base = sh_contrast.getVal(base);
+                //     f[l] = base * 32768.f;
+                // }
+                for (int c = 0; c < 65536; ++c) {
+                    float l, a, b;
+                    float R = c, G = c, B = c;
+                    rgb2lab(R, G, B, l, a, b);
                     auto base = pow_F(l / 32768.f, gamma);
                     // get a bit more contrast in the shadows
                     base = sh_contrast.getVal(base);
-                    f[l] = base * 32768.f;
+                    //f[l] = base * 32768.f;
+                    l = base * 32768.f;
+                    lab2rgb(l, a, b, R, G, B);
+                    f[c] = G;
                 }
             } else {
-#ifdef __SSE2__
-                vfloat c32768v = F2V(32768.f);
-                vfloat lv = _mm_setr_ps(0,1,2,3);
-                vfloat fourv = F2V(4.f);
-                vfloat gammav = F2V(gamma);
-                for (int l = 0; l < 32768; l += 4) {
-                    vfloat basev = pow_F(lv / c32768v, gammav);
-                    STVFU(f[l], basev * c32768v);
-                    lv += fourv;
-                }
-#else
+// #ifdef __SSE2__
+//                 vfloat c32768v = F2V(32768.f);
+//                 vfloat lv = _mm_setr_ps(0,1,2,3);
+//                 vfloat fourv = F2V(4.f);
+//                 vfloat gammav = F2V(gamma);
+//                 for (int l = 0; l < 32768; l += 4) {
+//                     vfloat basev = pow_F(lv / c32768v, gammav);
+//                     STVFU(f[l], basev * c32768v);
+//                     lv += fourv;
+//                 }
+// #else
 #ifdef _OPENMP
                 #pragma omp parallel for if (multiThread)
 #endif
-                for (int l = 0; l < 32768; ++l) {
+                for (int c = 0; c < 65536; ++c) {
+                    float l, a, b;
+                    float R = c, G = c, B = c;
+                    rgb2lab(R, G, B, l, a, b);
                     auto base = pow_F(l / 32768.f, gamma);
-                    f[l] = base * 32768.f;
+                    l = base * 32768.f;
+                    lab2rgb(l, a, b, R, G, B);
+                    f[c] = G;
                 }
-#endif
+                // for (int l = 0; l < 32768; ++l) {
+                //     auto base = pow_F(l / 32768.f, gamma);
+                //     f[l] = base * 32768.f;
+                // }
+// #endif
             }
 
 #ifdef _OPENMP
@@ -116,20 +157,28 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 #endif
             for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
-                    float l = lab->L[y][x];
+                    // float l = lab->L[y][x];
                     float blend = mask[y][x];
                     float orig = 1.f - blend;
-                    if (l >= 0.f && l < 32768.f) {
-                        lab->L[y][x] = f[l] * blend + l * orig;
-                        if (!hl && l > 1.f) {
-                            // when pushing shadows, scale also the chromaticity
-                            float s = max(lab->L[y][x] / l * 0.5f, 1.f) * blend;
-                            float a = lab->a[y][x];
-                            float b = lab->b[y][x];
-                            lab->a[y][x] = a * s + a * orig;
-                            lab->b[y][x] = b * s + b * orig;
+                    if (lab->L[y][x] >= 0.f && lab->L[y][x] < 32768.f) {
+                        float rgb[3];
+                        lab2rgb(lab->L[y][x], lab->a[y][x], lab->b[y][x], rgb[0], rgb[1], rgb[2]);
+                        for (int i = 0; i < 3; ++i) {
+                            rgb[i] = f[rgb[i]] * blend + rgb[i] * orig;
                         }
+                        rgb2lab(rgb[0], rgb[1], rgb[2], lab->L[y][x], lab->a[y][x], lab->b[y][x]);
                     }
+                    // if (l >= 0.f && l < 32768.f) {
+                    //     lab->L[y][x] = f[l] * blend + l * orig;
+                    //     if (!hl && l > 1.f) {
+                    //         // when pushing shadows, scale also the chromaticity
+                    //         float s = max(lab->L[y][x] / l * 0.5f, 1.f) * blend;
+                    //         float a = lab->a[y][x];
+                    //         float b = lab->b[y][x];
+                    //         lab->a[y][x] = a * s + a * orig;
+                    //         lab->b[y][x] = b * s + b * orig;
+                    //     }
+                    // }
                 }
             }
         };
