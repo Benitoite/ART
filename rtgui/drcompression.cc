@@ -46,7 +46,7 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
 
     fattalbox = Gtk::manage(new Gtk::VBox());
     amount = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_AMOUNT"), 1., 100., 1., 30.));
-    threshold = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_THRESHOLD"), -100., 100., 1., 0.0));
+    threshold = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_THRESHOLD"), -100., 300., 1., 0.0));
     Gtk::Image *al = Gtk::manage(new RTImage("circle-black-small.png"));
     Gtk::Image *ar = Gtk::manage(new RTImage("circle-white-small.png"));
     anchor = Gtk::manage(new Adjuster(M("TP_TM_FATTAL_ANCHOR"), 1, 100, 1, 50, al, ar));
@@ -54,6 +54,8 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
     amount->setAdjusterListener(this);
     threshold->setAdjusterListener(this);
     anchor->setAdjusterListener(this);
+
+    threshold->setLogScale(10, 0);
 
     fattalbox->show();
     amount->show();

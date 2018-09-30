@@ -1073,7 +1073,7 @@ void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
     if (params->drcomp.threshold < 0) {
         alpha += (params->drcomp.threshold * 0.9f) / 100.f;
     } else if (params->drcomp.threshold > 0) {
-        alpha += std::pow(std::abs(params->drcomp.threshold) / 100.f, 2.5f) * 3.f; //params->drcomp.threshold / 100.f;
+        alpha += params->drcomp.threshold / 100.f;
     }
 
     float beta = 1.f - (params->drcomp.amount * 0.3f) / 100.f;
