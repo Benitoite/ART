@@ -46,10 +46,10 @@ void guidedFilter(T **guide, T **src, T **dst, int W, int H, int r, float epsilo
     array2D<float> meanp(ww, hh);
     boxblur(src, meanp, r1, r1, ww, hh);
 
-    enum Op { MUL, DIV, ADD, SUB };
+    enum Op { MUL, DIV, ADD, SUB, ADDMUL, SUBMUL };
 
     const auto apply =
-        [=](Op op, T **a, T **b, T **res, int w, int h) -> void
+        [=](Op op, int w, int h, T **res, T **a, T **b, T **c=nullptr) -> void
         {
 #ifdef _OPENMP
             #pragma omp parallel for if (multithread)
@@ -72,6 +72,11 @@ void guidedFilter(T **guide, T **src, T **dst, int W, int H, int r, float epsilo
                     case SUB:
                         r = aa - bb;
                         break;
+                    case ADDMUL:
+                        r = aa * bb + c[y][x];
+                        break;
+                    case SUBMUL:
+                        r = c[y][x] - (aa * bb);
                     default:
                         assert(false);
                         r = 0;
@@ -83,27 +88,24 @@ void guidedFilter(T **guide, T **src, T **dst, int W, int H, int r, float epsilo
         };
 
     array2D<float> corrI(ww, hh);
-    apply(MUL, guide1, guide1, corrI, ww, hh);
+    apply(MUL, ww, hh, corrI, guide1, guide1);
     boxblur(corrI, corrI, r1, r1, ww, hh);
 
     array2D<float> corrIp(ww, hh);
-    apply(MUL, guide1, src1, corrIp, ww, hh);
+    apply(MUL, ww, hh, corrIp, guide1, src1);
     boxblur(corrIp, corrIp, r1, r1, ww, hh);
 
     array2D<float> varI(ww, hh);
-    apply(MUL, meanI, meanI, varI, ww, hh);
-    apply(SUB, corrI, varI, varI, ww, hh);
+    apply(SUBMUL, ww, hh, varI, meanI, meanI, corrI);
     
     array2D<float> covIp(ww, hh);
-    apply(MUL, meanI, meanp, covIp, ww, hh);
-    apply(SUB, corrIp, covIp, covIp, ww, hh);
+    apply(SUBMUL, ww, hh, covIp, meanI, meanp, corrIp);
 
     T **a = covIp;
-    apply(DIV, covIp, varI, a, ww, hh);
+    apply(DIV, ww, hh, a, covIp, varI);
 
     T **b = meanp;
-    apply(MUL, a, meanI, meanI, ww, hh);
-    apply(SUB, meanp, meanI, b, ww, hh);
+    apply(SUBMUL, ww, hh, b, a, meanI, meanp);
 
     boxblur(a, a, r1, r1, ww, hh);
     boxblur(b, b, r1, r1, ww, hh);
@@ -114,8 +116,7 @@ void guidedFilter(T **guide, T **src, T **dst, int W, int H, int r, float epsilo
     array2D<float> bb(W, H);
     rescaleBilinear(b, ww, hh, bb, W, H, multithread);
 
-    apply(MUL, aa, guide, dst, W, H);
-    apply(ADD, dst, bb, dst, W, H);
+    apply(ADDMUL, W, H, dst, aa, guide, bb);
 }
 
 } // namespace rtengine
