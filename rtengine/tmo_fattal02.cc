@@ -137,10 +137,10 @@ public:
         return const_cast<Array2Df &> (*this).data();
     }
 
-    operator float **() const
-    {
-        return static_cast<float **>(const_cast<Array2Df &>(*this));
-    }
+    // operator float **() const
+    // {
+    //     return static_cast<float **>(const_cast<Array2Df &>(*this));
+    // }
 };
 
 // upper bound on image dimension used in tmo_fattal02 -- see the comment there

@@ -93,7 +93,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                 //gaussianBlur(mask, mask, width, height, sigma);
             }
 
-            guidedFilter(L, mask, mask, sigma, 0.01, multiThread, 1);
+            guidedFilter(L, mask, mask, sigma, 0.01, multiThread, 4);
 
             const float base = std::pow(4.f, float(amount)/100.f);
             const float gamma = hl ? base : 1.f / base;
@@ -162,11 +162,11 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
         };
 
     if (params->sh.highlights > 0) {
-        apply(params->sh.highlights, params->sh.htonalwidth, true);
+        apply(params->sh.highlights / 2, params->sh.htonalwidth, true);
     }
 
     if (params->sh.shadows > 0) {
-        apply(params->sh.shadows, params->sh.stonalwidth, false);
+        apply(params->sh.shadows / 2, params->sh.stonalwidth, false);
     }
 }
 

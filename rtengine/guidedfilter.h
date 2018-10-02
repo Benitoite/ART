@@ -30,9 +30,9 @@ inline void guidedFilter(const array2D<float> &guide, const array2D<float> &src,
 {
     const int W = src.width();
     const int H = src.height();
-    
+
     const auto dbgsave =
-        [](array2D<float> &img, const char *out) -> void
+        [](const array2D<float> &img, const char *out) -> void
         {
 #if 0
             Imagefloat im(img.width(), img.height());
@@ -104,6 +104,11 @@ inline void guidedFilter(const array2D<float> &guide, const array2D<float> &src,
     rescaleBilinear(guide, guide1, multithread);
     rescaleBilinear(src, src1, multithread);
 
+    dbgsave(guide, "/tmp/guide.tif");
+    dbgsave(src, "/tmp/src.tif");
+    dbgsave(guide1, "/tmp/guide1.tif");
+    dbgsave(src1, "/tmp/src1.tif");
+
     float r1 = float(r) / subsampling;
 
     array2D<float> N(ww, hh);
@@ -125,7 +130,7 @@ inline void guidedFilter(const array2D<float> &guide, const array2D<float> &src,
 
 
     array2D<float> meanp(ww, hh);
-    boxblur<float, float>(const_cast<array2D<float> &>(src), meanp, r1, r1, ww, hh);
+    boxblur<float, float>(src1, meanp, r1, r1, ww, hh);
     apply(DIV, meanp, meanp, N);
     dbgsave(meanp, "/tmp/meanp.tif");
 
