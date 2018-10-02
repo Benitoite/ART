@@ -22,6 +22,7 @@
 #include "gauss.h"
 #include "sleef.c"
 #include "opthelper.h"
+#include "guidedfilter.h"
 
 namespace rtengine {
 
@@ -35,8 +36,8 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
     const int height = lab->H;
 
     array2D<float> mask(width, height);
+    array2D<float> L(width, height);
     const float sigma = params->sh.radius * 5.f / scale;
-    //LUTf f(32768);
     LUTf f(65536);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -77,14 +78,22 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                         float l = lab->L[y][x];
                         if (hl) {
                             mask[y][x] = (l > thresh) ? 1.f : pow4(l * scale);
+                            L[y][x] = 1.f - (l / 32768.f);
                         } else {
                             mask[y][x] = l <= thresh ? 1.f : pow4(scale / l);
+                            L[y][x] = l / 32768.f;
                         }
+                        // if (L[y][x] < 0.f || L[y][x] > 1.f) {
+                        //     std::cerr << "BAD GUIDE!" << std::endl;
+                        //     abort();
+                        // }
                     }
                 }
 
-                gaussianBlur(mask, mask, width, height, sigma);
+                //gaussianBlur(mask, mask, width, height, sigma);
             }
+
+            guidedFilter(L, mask, mask, sigma, 0.01, multiThread, 1);
 
             const float base = std::pow(4.f, float(amount)/100.f);
             const float gamma = hl ? base : 1.f / base;
@@ -103,12 +112,6 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 #ifdef _OPENMP
                 #pragma omp parallel for if (multiThread)
 #endif
-                // for (int l = 0; l < 32768; ++l) {
-                //     auto base = pow_F(l / 32768.f, gamma);
-                //     // get a bit more contrast in the shadows
-                //     base = sh_contrast.getVal(base);
-                //     f[l] = base * 32768.f;
-                // }
                 for (int c = 0; c < 65536; ++c) {
                     float l, a, b;
                     float R = c, G = c, B = c;
@@ -116,23 +119,11 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                     auto base = pow_F(l / 32768.f, gamma);
                     // get a bit more contrast in the shadows
                     base = sh_contrast.getVal(base);
-                    //f[l] = base * 32768.f;
                     l = base * 32768.f;
                     lab2rgb(l, a, b, R, G, B);
                     f[c] = G;
                 }
             } else {
-// #ifdef __SSE2__
-//                 vfloat c32768v = F2V(32768.f);
-//                 vfloat lv = _mm_setr_ps(0,1,2,3);
-//                 vfloat fourv = F2V(4.f);
-//                 vfloat gammav = F2V(gamma);
-//                 for (int l = 0; l < 32768; l += 4) {
-//                     vfloat basev = pow_F(lv / c32768v, gammav);
-//                     STVFU(f[l], basev * c32768v);
-//                     lv += fourv;
-//                 }
-// #else
 #ifdef _OPENMP
                 #pragma omp parallel for if (multiThread)
 #endif
@@ -145,11 +136,6 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                     lab2rgb(l, a, b, R, G, B);
                     f[c] = G;
                 }
-                // for (int l = 0; l < 32768; ++l) {
-                //     auto base = pow_F(l / 32768.f, gamma);
-                //     f[l] = base * 32768.f;
-                // }
-// #endif
             }
 
 #ifdef _OPENMP
@@ -158,7 +144,10 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
             for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
                     // float l = lab->L[y][x];
-                    float blend = mask[y][x];
+                    float blend = LIM01(mask[y][x]);
+                    if (blend < 0.f || blend > 1.f) {
+                        abort();
+                    }
                     float orig = 1.f - blend;
                     if (lab->L[y][x] >= 0.f && lab->L[y][x] < 32768.f) {
                         float rgb[3];
@@ -168,17 +157,6 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                         }
                         rgb2lab(rgb[0], rgb[1], rgb[2], lab->L[y][x], lab->a[y][x], lab->b[y][x]);
                     }
-                    // if (l >= 0.f && l < 32768.f) {
-                    //     lab->L[y][x] = f[l] * blend + l * orig;
-                    //     if (!hl && l > 1.f) {
-                    //         // when pushing shadows, scale also the chromaticity
-                    //         float s = max(lab->L[y][x] / l * 0.5f, 1.f) * blend;
-                    //         float a = lab->a[y][x];
-                    //         float b = lab->b[y][x];
-                    //         lab->a[y][x] = a * s + a * orig;
-                    //         lab->b[y][x] = b * s + b * orig;
-                    //     }
-                    // }
                 }
             }
         };

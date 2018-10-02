@@ -136,6 +136,11 @@ public:
     {
         return const_cast<Array2Df &> (*this).data();
     }
+
+    operator float **() const
+    {
+        return static_cast<float **>(const_cast<Array2Df &>(*this));
+    }
 };
 
 // upper bound on image dimension used in tmo_fattal02 -- see the comment there
@@ -941,16 +946,12 @@ void solve_pde_fft (Array2Df *F, Array2Df *U, Array2Df *buf, bool multithread)/*
 
 inline void rescale_bilinear (const Array2Df &src, Array2Df &dst, bool multithread)
 {
-    rescaleBilinear(static_cast<float **>(src), src.getCols(), src.getRows(),
-                    static_cast<float **>(dst), dst.getCols(), dst.getRows(),
-                    multithread);
+    rescaleBilinear(src, dst, multithread);
 }
 
 inline void rescale_nearest (const Array2Df &src, Array2Df &dst, bool multithread)
 {
-    rescaleNearest(static_cast<float **>(src), src.getCols(), src.getRows(),
-                   static_cast<float **>(dst), dst.getCols(), dst.getRows(),
-                   multithread);
+    rescaleNearest(src, dst, multithread);
 }
 
 

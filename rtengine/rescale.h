@@ -20,11 +20,15 @@
 
 #pragma once
 
+#include "array2D.h"
+
 namespace rtengine {
 
-template <class T>
-float getBilinearValue(T **src, int W, int H, float x, float y)
+inline float getBilinearValue(const array2D<float> &src, float x, float y)
 {
+    const int W = src.width();
+    const int H = src.height();
+    
     // Get integer and fractional parts of numbers
     int xi = x;
     int yi = y;
@@ -46,9 +50,13 @@ float getBilinearValue(T **src, int W, int H, float x, float y)
 }
 
 
-template <class T1, class T2>
-void rescaleBilinear(T1 **src, int Ws, int Hs, T2 **dst, int Wd, int Hd, bool multithread)
+inline void rescaleBilinear(const array2D<float> &src, array2D<float> &dst, bool multithread)
 {
+    const int Ws = src.width();
+    const int Hs = src.height();
+    const int Wd = dst.width();
+    const int Hd = dst.height();
+    
     float col_scale = float (Ws) / float (Wd);
     float row_scale = float (Hs) / float (Hd);
 
@@ -60,19 +68,18 @@ void rescaleBilinear(T1 **src, int Ws, int Hs, T2 **dst, int Wd, int Hd, bool mu
         float ymrs = y * row_scale;
 
         for (int x = 0; x < Wd; ++x) {
-            dst[y][x] = getBilinearValue(src, Ws, Hs, x * col_scale, ymrs);
+            dst[y][x] = getBilinearValue(src, x * col_scale, ymrs);
         }
     }
 }
 
 
-template <class T1, class T2>
-void rescaleNearest(T1 **src, int Ws, int Hs, T2 **dst, int Wd, int Hd, bool multithread)
+inline void rescaleNearest(const array2D<float> &src, array2D<float> &dst, bool multithread)
 {
-    const int width = Ws;
-    const int height = Hs;
-    const int nw = Wd;
-    const int nh = Hd;
+    const int width = src.width();
+    const int height = src.height();
+    const int nw = dst.width();
+    const int nh = dst.height();
 
 #ifdef _OPENMP
     #pragma omp parallel for if (multithread)
