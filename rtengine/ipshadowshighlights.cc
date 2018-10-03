@@ -133,7 +133,6 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
             for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
                     float blend = LIM01(mask[y][x]);
-                    if (blend < 0.f || blend > 1.f) {
                         abort();
                     }
                     float orig = 1.f - blend;

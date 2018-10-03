@@ -183,7 +183,7 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
     f_upsample(meanA, meana);
     DEBUG_DUMP(meanA);
 
-    array2D<float> meanB(W, H);
+    array2D<float> &meanB = q;
     f_upsample(meanB, meanb);
     DEBUG_DUMP(meanB);
 
