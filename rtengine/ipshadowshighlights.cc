@@ -82,7 +82,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                 }
             }
 
-            guidedFilter(L, mask, mask, sigma, 0.01, multiThread, 4);
+            guidedFilter(L, mask, mask, sigma, 0.075, multiThread, 4);
 
             const float base = std::pow(4.f, float(amount)/100.f);
             const float gamma = hl ? base : 1.f / base;
