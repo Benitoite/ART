@@ -37,7 +37,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 
     array2D<float> mask(width, height);
     array2D<float> L(width, height);
-    const float sigma = float(params->sh.radius) / 500.f * min(width-1, height-1);
+    const float radius = float(params->sh.radius) * 10 / scale; 
     LUTf f(65536);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -82,7 +82,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                 }
             }
 
-            guidedFilter(L, mask, mask, sigma, 0.075, multiThread, 4);
+            guidedFilter(L, mask, mask, radius, 0.075, multiThread, 4);
 
             const float base = std::pow(4.f, float(amount)/100.f);
             const float gamma = hl ? base : 1.f / base;
