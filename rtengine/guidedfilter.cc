@@ -145,29 +145,29 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
     f_mean(meanp, p1, r1);
     DEBUG_DUMP(meanp);
 
-    array2D<float> corrI(w, h);
-    apply(MUL, corrI, I1, I1);
-    f_mean(corrI, corrI, r1);
-    DEBUG_DUMP(corrI);
-
-    array2D<float> corrIp(w, h);
+    array2D<float> &corrIp = p1;
     apply(MUL, corrIp, I1, p1);
     f_mean(corrIp, corrIp, r1);
     DEBUG_DUMP(corrIp);
 
-    array2D<float> varI(w, h);
+    array2D<float> &corrI = I1;
+    apply(MUL, corrI, I1, I1);
+    f_mean(corrI, corrI, r1);
+    DEBUG_DUMP(corrI);
+
+    array2D<float> &varI = corrI;
     apply(SUBMUL, varI, meanI, meanI, corrI);
     DEBUG_DUMP(varI);
 
-    array2D<float> covIp(w, h);
+    array2D<float> &covIp = corrIp;
     apply(SUBMUL, covIp, meanI, meanp, corrIp);
     DEBUG_DUMP(covIp);
 
-    array2D<float> a(w, h);
+    array2D<float> &a = varI;
     apply(DIVEPSILON, a, covIp, varI);
     DEBUG_DUMP(a);
 
-    array2D<float> b(w, h);
+    array2D<float> &b = covIp;
     apply(SUBMUL, b, a, meanI, meanp);
     DEBUG_DUMP(b);
 
