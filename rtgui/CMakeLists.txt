@@ -291,7 +291,8 @@ target_link_libraries(rth-cli rtengine
     ${LENSFUN_LIBRARIES}
     )
 
-add_executable(test-guided test_guidedfilter.cpp
+add_executable(test-guided     EXCLUDE_FROM_ALL
+    test_guidedfilter.cpp
     alignedmalloc.cc
     edit.cc
     multilangmgr.cc
