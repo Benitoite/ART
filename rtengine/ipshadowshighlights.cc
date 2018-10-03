@@ -150,7 +150,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
         };
 
     if (params->sh.highlights > 0) {
-        apply(params->sh.highlights * 0.6, params->sh.htonalwidth, true);
+        apply(params->sh.highlights * 0.7, params->sh.htonalwidth, true);
     }
 
     if (params->sh.shadows > 0) {
