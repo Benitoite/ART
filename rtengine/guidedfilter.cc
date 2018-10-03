@@ -18,6 +18,16 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * This is a Fast Guided Filter implementation, derived directly from the
+ * pseudo-code of the paper:
+ *
+ * Fast Guided Filter
+ * by Kaiming He, Jian Sun
+ *
+ * available at https://arxiv.org/abs/1505.00996
+ */
+
 #include "guidedfilter.h"
 #include "boxblur.h"
 #include "rescale.h"
@@ -47,7 +57,7 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
     const int W = src.width();
     const int H = src.height();
 
-    enum Op { MUL, DIV, ADD, SUB, ADDMUL, SUBMUL };
+    enum Op { MUL, DIVEPSILON, ADD, SUB, ADDMUL, SUBMUL };
 
     const auto apply =
         [=](Op op, array2D<float> &res, const array2D<float> &a, const array2D<float> &b, const array2D<float> &c=array2D<float>()) -> void
@@ -67,7 +77,7 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
                     case MUL:
                         r = aa * bb;
                         break;
-                    case DIV:
+                    case DIVEPSILON:
                         r = aa / (bb + epsilon);
                         break;
                     case ADD:
@@ -92,68 +102,93 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
             }
         };
 
-    const int ww = W / subsampling;
-    const int hh = H / subsampling;
+    // use the terminology of the paper (Algorithm 2)
+    const array2D<float> &I = guide;
+    const array2D<float> &p = src;
+    array2D<float> &q = dst;
 
-    array2D<float> guide1(ww, hh);
-    array2D<float> src1(ww, hh);
+    const auto f_mean =
+        [](array2D<float> &d, array2D<float> &s, int rad) -> void
+        {
+            boxblur<float, float>(s, d, rad, rad, s.width(), s.height());
+        };
 
-    rescaleBilinear(guide, guide1, multithread);
-    rescaleBilinear(src, src1, multithread);
+    const auto f_subsample =
+        [=](array2D<float> &d, const array2D<float> &s) -> void
+        {
+            rescaleBilinear(s, d, multithread);
+        };
 
-    DEBUG_DUMP(guide);
-    DEBUG_DUMP(src);
-    DEBUG_DUMP(guide1);
-    DEBUG_DUMP(src1);
+    const auto f_upsample = f_subsample;
+    
+    const int w = W / subsampling;
+    const int h = H / subsampling;
+
+    array2D<float> I1(w, h);
+    array2D<float> p1(w, h);
+
+    f_subsample(I1, I);
+    f_subsample(p1, p);
+
+    DEBUG_DUMP(I);
+    DEBUG_DUMP(p);
+    DEBUG_DUMP(I1);
+    DEBUG_DUMP(p1);
 
     float r1 = float(r) / subsampling;
 
-    array2D<float> meanI(ww, hh);
-    boxblur<float, float>(guide1, meanI, r1, r1, ww, hh);
+    array2D<float> meanI(w, h);
+    f_mean(meanI, I1, r1);
     DEBUG_DUMP(meanI);
 
-
-    array2D<float> meanp(ww, hh);
-    boxblur<float, float>(src1, meanp, r1, r1, ww, hh);
+    array2D<float> meanp(w, h);
+    f_mean(meanp, p1, r1);
     DEBUG_DUMP(meanp);
 
-    array2D<float> meanIp(ww, hh);
-    apply(MUL, meanIp, guide1, src1);
-    boxblur<float, float>(meanIp, meanIp, r1, r1, ww, hh);
-    DEBUG_DUMP(meanIp);
+    array2D<float> corrI(w, h);
+    apply(MUL, corrI, I1, I1);
+    f_mean(corrI, corrI, r1);
+    DEBUG_DUMP(corrI);
 
-    array2D<float> covIp(ww, hh);
-    apply(SUBMUL, covIp, meanI, meanp, meanIp);
+    array2D<float> corrIp(w, h);
+    apply(MUL, corrIp, I1, p1);
+    f_mean(corrIp, corrIp, r1);
+    DEBUG_DUMP(corrIp);
+
+    array2D<float> varI(w, h);
+    apply(SUBMUL, varI, meanI, meanI, corrI);
+    DEBUG_DUMP(varI);
+
+    array2D<float> covIp(w, h);
+    apply(SUBMUL, covIp, meanI, meanp, corrIp);
     DEBUG_DUMP(covIp);
 
-    array2D<float> meanII(ww, hh);
-    apply(MUL, meanII, guide1, guide1);
-    boxblur<float, float>(meanII, meanII, r1, r1, ww, hh);
-    DEBUG_DUMP(meanII);
-
-    array2D<float> varI(ww, hh);
-    apply(SUBMUL, varI, meanI, meanI, meanII);
-    DEBUG_DUMP(varI);
-    
-    array2D<float> a(ww, hh);
-    apply(DIV, a, covIp, varI);
-    boxblur<float, float>(a, a, r1, r1, ww, hh);
+    array2D<float> a(w, h);
+    apply(DIVEPSILON, a, covIp, varI);
     DEBUG_DUMP(a);
 
-    array2D<float> b(ww, hh);
+    array2D<float> b(w, h);
     apply(SUBMUL, b, a, meanI, meanp);
-    boxblur<float, float>(b, b, r1, r1, ww, hh);
     DEBUG_DUMP(b);
-    
-    array2D<float> aa(W, H);
-    rescaleBilinear(a, aa, multithread);
-    DEBUG_DUMP(aa);
-    
-    array2D<float> bb(W, H);
-    rescaleBilinear(b, bb, multithread);
-    DEBUG_DUMP(bb);
 
-    apply(ADDMUL, dst, aa, guide, bb);
+    array2D<float> &meana = a;
+    f_mean(meana, a, r1);
+    DEBUG_DUMP(meana);
+
+    array2D<float> &meanb = b;
+    f_mean(meanb, b, r1);
+    DEBUG_DUMP(meanb);
+
+    array2D<float> meanA(W, H);
+    f_upsample(meanA, meana);
+    DEBUG_DUMP(meanA);
+
+    array2D<float> meanB(W, H);
+    f_upsample(meanB, meanb);
+    DEBUG_DUMP(meanB);
+
+    apply(ADDMUL, q, meanA, I, meanB);
+    DEBUG_DUMP(q);
 }
 
 } // namespace rtengine
