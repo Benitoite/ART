@@ -37,7 +37,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 
     array2D<float> mask(width, height);
     array2D<float> L(width, height);
-    const float sigma = min(float(params->sh.radius * 5.f / scale), float(width-1), float(height-1));
+    const float sigma = float(params->sh.radius) / 500.f * min(width-1, height-1);
     LUTf f(65536);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -66,31 +66,20 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
             const float scale = hl ? (thresh > 0.f ? 0.9f / thresh : 1.f) : thresh * 0.9f;
 
 #ifdef _OPENMP
-            #pragma omp parallel if (multiThread)
+            #pragma omp parallel for if (multiThread)
 #endif
-            {
-
-#ifdef _OPENMP
-                #pragma omp for
-#endif
-                for (int y = 0; y < height; ++y) {
-                    for (int x = 0; x < width; ++x) {
-                        float l = lab->L[y][x];
-                        if (hl) {
-                            mask[y][x] = (l > thresh) ? 1.f : pow4(l * scale);
-                            L[y][x] = 1.f - (l / 32768.f);
-                        } else {
-                            mask[y][x] = l <= thresh ? 1.f : pow4(scale / l);
-                            L[y][x] = l / 32768.f;
-                        }
-                        // if (L[y][x] < 0.f || L[y][x] > 1.f) {
-                        //     std::cerr << "BAD GUIDE!" << std::endl;
-                        //     abort();
-                        // }
+            for (int y = 0; y < height; ++y) {
+                for (int x = 0; x < width; ++x) {
+                    float l = lab->L[y][x];
+                    float l1 = l / 32768.f;
+                    if (hl) {
+                        mask[y][x] = (l > thresh) ? 1.f : pow4(l * scale);
+                        L[y][x] = 1.f - l1;
+                    } else {
+                        mask[y][x] = l <= thresh ? 1.f : pow4(scale / l);
+                        L[y][x] = l1;
                     }
                 }
-
-                //gaussianBlur(mask, mask, width, height, sigma);
             }
 
             guidedFilter(L, mask, mask, sigma, 0.01, multiThread, 4);
@@ -143,7 +132,6 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 #endif
             for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
-                    // float l = lab->L[y][x];
                     float blend = LIM01(mask[y][x]);
                     if (blend < 0.f || blend > 1.f) {
                         abort();
@@ -162,11 +150,11 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
         };
 
     if (params->sh.highlights > 0) {
-        apply(params->sh.highlights / 2, params->sh.htonalwidth, true);
+        apply(params->sh.highlights * 0.6, params->sh.htonalwidth, true);
     }
 
     if (params->sh.shadows > 0) {
-        apply(params->sh.shadows / 2, params->sh.stonalwidth, false);
+        apply(params->sh.shadows * 0.6, params->sh.stonalwidth, false);
     }
 }
 
