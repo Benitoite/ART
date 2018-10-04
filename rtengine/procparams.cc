@@ -2381,7 +2381,7 @@ bool SoftLightParams::operator !=(const SoftLightParams& other) const
 
 DehazeParams::DehazeParams() :
     enabled(false),
-    strength(30)
+    strength(50)
 {
 }
 

@@ -31,13 +31,33 @@
 #include "improcfun.h"
 #include "guidedfilter.h"
 #include "rt_math.h"
+#include <iostream>
+
+extern Options options;
 
 namespace rtengine {
 
 namespace {
 
+#if 0
+#  define DEBUG_DUMP(arr)                                                 \
+    do {                                                                \
+        Imagefloat im(arr.width(), arr.height());                      \
+        const char *out = "/tmp/" #arr ".tif";                     \
+        for (int y = 0; y < im.getHeight(); ++y) {                      \
+            for (int x = 0; x < im.getWidth(); ++x) {                   \
+                im.r(y, x) = im.g(y, x) = im.b(y, x) = arr[y][x] * 65535.f; \
+            }                                                           \
+        }                                                               \
+        im.saveTIFF(out, 16);                                           \
+    } while (false)
+#else
+#  define DEBUG_DUMP(arr)
+#endif
+
+
 std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
-                                     int patchsize, float *scale=nullptr)
+                                     int patchsize, float *ambient=nullptr)
 {
     const int w = src.getWidth();
     const int h = src.getHeight();
@@ -46,21 +66,22 @@ std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
     int maxx = 0, maxy = 0;
 
     for (int y = 0; y < src.getHeight(); y += patchsize) {
+        int pH = std::min(y+patchsize, h);
         for (int x = 0; x < src.getWidth(); x += patchsize) {
             float val = RT_INFINITY_F;
-            int ysz = std::min(y+patchsize, h) - y;
+            int pW = std::min(x+patchsize, w);
 #ifdef _OPENMP
-            #pragma omp parallel for
+            #pragma omp parallel for shared(val)
 #endif
-            for (int yy = 0; yy < ysz; ++yy) {
-                for (int xx = 0; x+xx < std::min(x+patchsize, w); ++xx) {
-                    float r = src.r(y+yy, x+xx) / 65535.f;
-                    float g = src.g(y+yy, x+xx) / 65535.f;
-                    float b = src.b(y+yy, x+xx) / 65535.f;
-                    if (scale) {
-                        r /= scale[0];
-                        g /= scale[1];
-                        b /= scale[2];
+            for (int yy = y; yy < pH; ++yy) {
+                for (int xx = x; xx < pW; ++xx) {
+                    float r = src.r(yy, xx) / 65535.f;
+                    float g = src.g(yy, xx) / 65535.f;
+                    float b = src.b(yy, xx) / 65535.f;
+                    if (ambient) {
+                        r /= ambient[0];
+                        g /= ambient[1];
+                        b /= ambient[2];
                     }
                     val = min(val, r, g, b);
                 }
@@ -73,9 +94,9 @@ std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
 #ifdef _OPENMP
             #pragma omp parallel for
 #endif
-            for (int yy = 0; yy < ysz; ++yy) {
-                for (int xx = 0; x+xx < std::min(x+patchsize, w); ++xx) {
-                    dst[y+yy][x+xx] = val;
+            for (int yy = y; yy < pH; ++yy) {
+                for (int xx = x; xx < pW; ++xx) {
+                    dst[yy][xx] = val;
                 }
             }
         }
@@ -96,21 +117,34 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     const int W = img->getWidth();
     const int H = img->getHeight();
     const float strength = LIM01(float(params->dehaze.strength) / 100.f);
+
+    if (options.rtSettings.verbose) {
+        std::cout << "dehaze: strength = " << strength << std::endl;
+    }
     
     array2D<float> dark(W, H);
-    const int patchsize = W / 50;
+    const int patchsize = std::max(W / 50, 2);
     auto p = get_dark_channel(*img, dark, patchsize);
     float ambient[3];
     float maxl = -RT_INFINITY_F;
 
+    DEBUG_DUMP(dark);
+
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     
+    const int pW = std::min(p.first+patchsize, W);
+    const int pH = std::min(p.second+patchsize, H);
 
+    if (options.rtSettings.verbose) {
+        std::cout << "dehaze: computing ambient light from patch at "
+                  << p.first << ", " << p.second << std::endl;
+    }
+    
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (int y = p.second; y < std::min(p.second+patchsize, H); ++y) {
-        for (int x = p.first; x < std::min(p.first+patchsize, H); ++x) {
+    for (int y = p.second; y < pH; ++y) {
+        for (int x = p.first; x < pW; ++x) {
             float r = img->r(y, x) / 65535.f;
             float g = img->g(y, x) / 65535.f;
             float b = img->b(y, x) / 65535.f;
@@ -124,7 +158,23 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
+    if (options.rtSettings.verbose) {
+        std::cout << "dehaze: ambient light is "
+                  << ambient[0] << ", " << ambient[1] << ", " << ambient[2]
+                  << std::endl;
+    }
+    
+    if (min(ambient[0], ambient[1], ambient[2]) < 0.1f) {
+        if (options.rtSettings.verbose) {
+            std::cout << "dehaze: no haze detected" << std::endl;
+        }
+        return; // probably no haze at all
+    }
+
+    array2D<float> &t_tilde = dark;
     get_dark_channel(*img, dark, patchsize, ambient);
+    DEBUG_DUMP(t_tilde);
+    
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
@@ -146,8 +196,11 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     const int radius = patchsize * 4;
     const float epsilon = 0.05;
-    array2D<float> &t = dark;
-    guidedFilter(Y, t, t, radius, epsilon, true);
+    array2D<float> &t = t_tilde;
+    
+    guidedFilter(Y, t_tilde, t, radius, epsilon, true);
+
+    DEBUG_DUMP(t);
 
     const float t0 = 0.1;
 #ifdef _OPENMP
