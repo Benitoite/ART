@@ -339,6 +339,7 @@ public:
     void Badpixelscam(CieImage * ncie, double radius, int thresh, int mode, float chrom, bool hotbad);
     void BadpixelsLab(LabImage * lab, double radius, int thresh, float chrom);
 
+    void dehaze(Imagefloat *rgb);
     void dynamicRangeCompression(Imagefloat *rgb);
     void ToneMapFattal02(Imagefloat *rgb);
     void localContrast(LabImage *lab);

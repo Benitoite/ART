@@ -692,7 +692,7 @@ void Crop::update(int todo)
 
     std::unique_ptr<Imagefloat> drCompCrop;
 
-    if ((todo & M_HDR) && params.drcomp.enabled) {
+    if ((todo & M_HDR) && (params.drcomp.enabled || params.dehaze.enabled)) {
         Imagefloat *f = origCrop;
         int fw = skips(parent->fw, skip);
         int fh = skips(parent->fh, skip);
@@ -741,6 +741,7 @@ void Crop::update(int todo)
         }
 
         if (need_drcomp) {
+            parent->ipf.dehaze(f);
             parent->ipf.dynamicRangeCompression(f);
         }
 

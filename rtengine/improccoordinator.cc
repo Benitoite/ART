@@ -413,12 +413,13 @@ void ImProcCoordinator::updatePreviewImage(int todo, Crop* cropCall)
 
     readyphase++;
 
-    if ((todo & M_HDR) && params.drcomp.enabled) {
+    if ((todo & M_HDR) && (params.drcomp.enabled || params.dehaze.enabled)) {
         if (drcomp_11_dcrop_cache) {
             delete drcomp_11_dcrop_cache;
             drcomp_11_dcrop_cache = nullptr;
         }
 
+        ipf.dehaze(orig_prev);
         ipf.dynamicRangeCompression(orig_prev);
 
         if (oprevi != orig_prev) {

@@ -2378,6 +2378,26 @@ bool SoftLightParams::operator !=(const SoftLightParams& other) const
     return !(*this == other);
 }
 
+
+DehazeParams::DehazeParams() :
+    enabled(false),
+    strength(30)
+{
+}
+
+bool DehazeParams::operator ==(const DehazeParams& other) const
+{
+    return
+        enabled == other.enabled
+        && strength == other.strength;
+}
+
+bool DehazeParams::operator !=(const DehazeParams& other) const
+{
+    return !(*this == other);
+}
+
+
 RAWParams::BayerSensor::BayerSensor() :
     method(getMethodString(Method::AMAZE)),
     border(4),
@@ -2732,6 +2752,8 @@ void ProcParams::setDefaults()
 
     softlight = SoftLightParams();
 
+    dehaze = DehazeParams();
+
     raw = RAWParams();
 
     metadata = MetaDataParams();
@@ -3041,6 +3063,10 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->defringe.radius, "Defringing", "Radius", defringe.radius, keyFile);
         saveToKeyfile(!pedited || pedited->defringe.threshold, "Defringing", "Threshold", defringe.threshold, keyFile);
         saveToKeyfile(!pedited || pedited->defringe.huecurve, "Defringing", "HueCurve", defringe.huecurve, keyFile);
+
+// Dehaze
+        saveToKeyfile(!pedited || pedited->dehaze.enabled, "Dehaze", "Enabled", dehaze.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->dehaze.strength, "Dehaze", "Strength", dehaze.strength, keyFile);        
 
 // Directional pyramid denoising
         saveToKeyfile(!pedited || pedited->dirpyrDenoise.enabled, "Directional Pyramid Denoising", "Enabled", dirpyrDenoise.enabled, keyFile);
@@ -4632,6 +4658,11 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "SoftLight", "Strength", pedited, softlight.strength, pedited->softlight.strength);
         }
 
+        if (keyFile.has_group("Dehaze")) {
+            assignFromKeyfile(keyFile, "Dehaze", "Enabled", pedited, dehaze.enabled, pedited->dehaze.enabled);
+            assignFromKeyfile(keyFile, "Dehaze", "Strength", pedited, dehaze.strength, pedited->dehaze.strength);
+        }
+        
         if (keyFile.has_group("Film Simulation")) {
             assignFromKeyfile(keyFile, "Film Simulation", "Enabled", pedited, filmSimulation.enabled, pedited->filmSimulation.enabled);
             assignFromKeyfile(keyFile, "Film Simulation", "ClutFilename", pedited, filmSimulation.clutFilename, pedited->filmSimulation.clutFilename);

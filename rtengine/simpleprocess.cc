@@ -854,6 +854,7 @@ private:
 
         ipf.firstAnalysis (baseImg, params, hist16);
 
+        ipf.dehaze(baseImg);
         ipf.dynamicRangeCompression(baseImg);
 
         // perform transform (excepted resizing)

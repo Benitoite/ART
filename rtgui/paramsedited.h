@@ -727,6 +727,14 @@ public:
     bool strength;
 };
 
+class DehazeParamsEdited
+{
+public:
+    bool enabled;
+    bool strength;
+};
+
+
 class RAWParamsEdited
 {
 
@@ -868,6 +876,7 @@ public:
     HSVEqualizerParamsEdited      hsvequalizer;
     FilmSimulationParamsEdited    filmSimulation;
     SoftLightParamsEdited         softlight;
+    DehazeParamsEdited            dehaze;
     MetaDataParamsEdited          metadata;
     bool                          exif;
     bool                          iptc;
