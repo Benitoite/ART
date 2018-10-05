@@ -75,9 +75,9 @@ std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
 #endif
             for (int yy = y; yy < pH; ++yy) {
                 for (int xx = x; xx < pW; ++xx) {
-                    float r = src.r(yy, xx) / 65535.f;
-                    float g = src.g(yy, xx) / 65535.f;
-                    float b = src.b(yy, xx) / 65535.f;
+                    float r = src.r(yy, xx);
+                    float g = src.g(yy, xx);
+                    float b = src.b(yy, xx);
                     if (ambient) {
                         r /= ambient[0];
                         g /= ambient[1];
@@ -95,9 +95,7 @@ std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
             #pragma omp parallel for
 #endif
             for (int yy = y; yy < pH; ++yy) {
-                for (int xx = x; xx < pW; ++xx) {
-                    dst[yy][xx] = val;
-                }
+                std::fill(dst[yy]+x, dst[yy]+pW, val);
             }
         }
     }
@@ -113,6 +111,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     if (!params->dehaze.enabled) {
         return;
     }
+
+    img->normalizeFloatTo1();
     
     const int W = img->getWidth();
     const int H = img->getHeight();
@@ -145,9 +145,9 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 #endif
     for (int y = p.second; y < pH; ++y) {
         for (int x = p.first; x < pW; ++x) {
-            float r = img->r(y, x) / 65535.f;
-            float g = img->g(y, x) / 65535.f;
-            float b = img->b(y, x) / 65535.f;
+            float r = img->r(y, x);
+            float g = img->g(y, x);
+            float b = img->b(y, x);
             float l = Color::rgbLuminance(r, g, b, ws);
             if (l > maxl) {
                 ambient[0] = r;
@@ -168,6 +168,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         if (options.rtSettings.verbose) {
             std::cout << "dehaze: no haze detected" << std::endl;
         }
+        img->normalizeFloatTo65535();
         return; // probably no haze at all
     }
 
@@ -190,7 +191,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws) / 65535.f;
+            Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
         }
     }
 
@@ -209,14 +210,16 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
             float mt = std::max(t[y][x], t0);
-            float r = (img->r(y, x) / 65535.f - ambient[0]) / mt + ambient[0];
-            float g = (img->g(y, x) / 65535.f - ambient[1]) / mt + ambient[1];
-            float b = (img->b(y, x) / 65535.f - ambient[2]) / mt + ambient[2];
-            img->r(y, x) = r * 65535.f;
-            img->g(y, x) = g * 65535.f;
-            img->b(y, x) = b * 65535.f;
+            float r = (img->r(y, x) - ambient[0]) / mt + ambient[0];
+            float g = (img->g(y, x) - ambient[1]) / mt + ambient[1];
+            float b = (img->b(y, x) - ambient[2]) / mt + ambient[2];
+            img->r(y, x) = r;
+            img->g(y, x) = g;
+            img->b(y, x) = b;
         }
     }
+
+    img->normalizeFloatTo65535();
 }
 
 
