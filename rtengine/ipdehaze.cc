@@ -56,24 +56,24 @@ namespace {
 #endif
 
 
-std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
-                                     int patchsize, float *ambient=nullptr)
+int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
+                     int patchsize, float *ambient=nullptr)
 {
     const int w = src.getWidth();
     const int h = src.getHeight();
 
-    float maxval = -RT_INFINITY_F;
-    int maxx = 0, maxy = 0;
+    int npatches = 0;
 
     for (int y = 0; y < src.getHeight(); y += patchsize) {
         int pH = std::min(y+patchsize, h);
-        for (int x = 0; x < src.getWidth(); x += patchsize) {
+        for (int x = 0; x < src.getWidth(); x += patchsize, ++npatches) {
             float val = RT_INFINITY_F;
             int pW = std::min(x+patchsize, w);
 #ifdef _OPENMP
             #pragma omp parallel for shared(val)
 #endif
             for (int yy = y; yy < pH; ++yy) {
+                float yval = RT_INFINITY_F;
                 for (int xx = x; xx < pW; ++xx) {
                     float r = src.r(yy, xx);
                     float g = src.g(yy, xx);
@@ -83,13 +83,9 @@ std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
                         g /= ambient[1];
                         b /= ambient[2];
                     }
-                    val = min(val, r, g, b);
+                    yval = min(yval, r, g, b);
                 }
-            }
-            if (val > maxval) {
-                maxval = val;
-                maxx = x;
-                maxy = y;
+                val = min(val, yval);
             }
 #ifdef _OPENMP
             #pragma omp parallel for
@@ -100,7 +96,87 @@ std::pair<int, int> get_dark_channel(const Imagefloat &src, array2D<float> &dst,
         }
     }
 
-    return std::make_pair(maxx, maxy);
+    return npatches;
+}
+
+
+int estimate_ambient_light(const Imagefloat *img, const array2D<float> &dark, const array2D<float> &Y, int patchsize, int npatches, float ambient[3])
+{
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+
+    float lim = RT_INFINITY_F;
+    {
+        std::vector<float> p;
+        p.reserve(npatches);
+        for (int y = 0; y < H; y += patchsize) {
+            for (int x = 0; x < W; x += patchsize) {
+                p.push_back(dark[y][x]);
+            }
+        }
+        std::sort(p.begin(), p.end());
+        lim = p[p.size() * 0.95];
+    }
+
+    std::vector<std::pair<int, int>> patches;
+    patches.reserve(npatches);
+
+    for (int y = 0; y < H; y += patchsize) {
+        for (int x = 0; x < W; x += patchsize) {
+            if (dark[y][x] >= lim) {
+                patches.push_back(std::make_pair(x, y));
+            }
+        }
+    }
+
+    if (options.rtSettings.verbose) {
+        std::cout << "dehaze: computing ambient light from " << patches.size()
+                  << " patches" << std::endl;
+    }
+
+    {
+        std::vector<float> l;
+        
+        for (auto &p : patches) {
+            const int pW = std::min(p.first+patchsize, W);
+            const int pH = std::min(p.second+patchsize, H);
+            
+            for (int y = p.second; y < pH; ++y) {
+                for (int x = p.first; x < pW; ++x) {
+                    l.push_back(Y[y][x]);
+                }
+            }
+        }
+
+        std::sort(l.begin(), l.end());
+        lim = l[l.size()*0.95];
+    }
+
+    double rr = 0, gg = 0, bb = 0;
+    int n = 0;
+    for (auto &p : patches) {
+        const int pW = std::min(p.first+patchsize, W);
+        const int pH = std::min(p.second+patchsize, H);
+            
+        for (int y = p.second; y < pH; ++y) {
+            for (int x = p.first; x < pW; ++x) {
+                if (Y[y][x] >= lim) {
+                    float r = img->r(y, x);
+                    float g = img->g(y, x);
+                    float b = img->b(y, x);
+                    rr += r;
+                    gg += g;
+                    bb += b;
+                    ++n;
+                }
+            }
+        }
+    }
+    ambient[0] = rr / n;
+    ambient[1] = gg / n;
+    ambient[2] = bb / n;
+
+    return n;
 }
 
 } // namespace
@@ -116,55 +192,41 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     
     const int W = img->getWidth();
     const int H = img->getHeight();
-    const float strength = LIM01(float(params->dehaze.strength) / 100.f);
+    const float strength = LIM01(float(params->dehaze.strength) / 100.f * 0.8f);
 
     if (options.rtSettings.verbose) {
         std::cout << "dehaze: strength = " << strength << std::endl;
     }
     
     array2D<float> dark(W, H);
-    const int patchsize = std::max(W / 50, 2);
-    auto p = get_dark_channel(*img, dark, patchsize);
-    float ambient[3];
-    float maxl = -RT_INFINITY_F;
-
+    const int patchsize = std::max(W / 40, 2);
+    int npatches = get_dark_channel(*img, dark, patchsize);
     DEBUG_DUMP(dark);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    
-    const int pW = std::min(p.first+patchsize, W);
-    const int pH = std::min(p.second+patchsize, H);
-
-    if (options.rtSettings.verbose) {
-        std::cout << "dehaze: computing ambient light from patch at "
-                  << p.first << ", " << p.second << std::endl;
-    }
-    
+    array2D<float> Y(W, H);
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (int y = p.second; y < pH; ++y) {
-        for (int x = p.first; x < pW; ++x) {
-            float r = img->r(y, x);
-            float g = img->g(y, x);
-            float b = img->b(y, x);
-            float l = Color::rgbLuminance(r, g, b, ws);
-            if (l > maxl) {
-                ambient[0] = r;
-                ambient[1] = g;
-                ambient[2] = b;
-                maxl = l;
-            }
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
         }
     }
+    
+    float ambient[3];
+    int n = estimate_ambient_light(img, dark, Y, patchsize, npatches, ambient);
+    float ambient_Y = Color::rgbLuminance(ambient[0], ambient[1], ambient[2], ws);
 
     if (options.rtSettings.verbose) {
         std::cout << "dehaze: ambient light is "
                   << ambient[0] << ", " << ambient[1] << ", " << ambient[2]
+                  << " (average of " << n << ")"
                   << std::endl;
+        std::cout << "        ambient luminance is " << ambient_Y << std::endl;
     }
-    
-    if (min(ambient[0], ambient[1], ambient[2]) < 0.1f) {
+
+    if (min(ambient[0], ambient[1], ambient[2]) < 0.01f) {
         if (options.rtSettings.verbose) {
             std::cout << "dehaze: no haze detected" << std::endl;
         }
@@ -185,25 +247,15 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    array2D<float> Y(W, H);
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
-        }
-    }
-
-    const int radius = patchsize * 4;
-    const float epsilon = 0.05;
+    const int radius = patchsize * 2;
+    const float epsilon = 1e-7;
     array2D<float> &t = t_tilde;
     
     guidedFilter(Y, t_tilde, t, radius, epsilon, true);
 
     DEBUG_DUMP(t);
 
-    const float t0 = 0.1;
+    const float t0 = 0.01;
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
