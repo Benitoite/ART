@@ -210,14 +210,14 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     
     const int W = img->getWidth();
     const int H = img->getHeight();
-    const float strength = LIM01(float(params->dehaze.strength) / 100.f * 0.8f);
+    const float strength = LIM01(float(params->dehaze.strength) / 100.f * 0.9f);
 
     if (options.rtSettings.verbose) {
         std::cout << "dehaze: strength = " << strength << std::endl;
     }
     
     array2D<float> dark(W, H);
-    const int patchsize = std::max(W / 60, 2);
+    const int patchsize = std::max(W / 40, 2);
     int npatches = get_dark_channel(*img, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
@@ -258,7 +258,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    const int radius = patchsize * 2;
+    const int radius = patchsize * 5;
     const float epsilon = 1e-7;
     array2D<float> &t = t_tilde;
     
