@@ -31,6 +31,7 @@
 #include "improcfun.h"
 #include "guidedfilter.h"
 #include "rt_math.h"
+#include "rt_algo.h"
 #include <iostream>
 
 extern Options options;
@@ -57,7 +58,7 @@ namespace {
 
 
 int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
-                     int patchsize, float *ambient=nullptr)
+                     int patchsize, float *ambient, bool multithread)
 {
     const int w = src.getWidth();
     const int h = src.getHeight();
@@ -70,7 +71,7 @@ int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
             float val = RT_INFINITY_F;
             int pW = std::min(x+patchsize, w);
 #ifdef _OPENMP
-            #pragma omp parallel for shared(val)
+            #pragma omp parallel for shared(val) if (multithread)
 #endif
             for (int yy = y; yy < pH; ++yy) {
                 float yval = RT_INFINITY_F;
@@ -88,7 +89,7 @@ int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
                 val = min(val, yval);
             }
 #ifdef _OPENMP
-            #pragma omp parallel for
+            #pragma omp parallel for if (multithread)
 #endif
             for (int yy = y; yy < pH; ++yy) {
                 std::fill(dst[yy]+x, dst[yy]+pW, val);
@@ -179,6 +180,23 @@ int estimate_ambient_light(const Imagefloat *img, const array2D<float> &dark, co
     return n;
 }
 
+
+void get_luminance(Imagefloat *img, array2D<float> &Y, TMatrix ws, bool multithread)
+{
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+    
+#ifdef _OPENMP
+    #pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
+        }
+    }
+}
+
+
 } // namespace
 
 
@@ -199,20 +217,13 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
     
     array2D<float> dark(W, H);
-    const int patchsize = std::max(W / 40, 2);
-    int npatches = get_dark_channel(*img, dark, patchsize);
+    const int patchsize = std::max(W / 60, 2);
+    int npatches = get_dark_channel(*img, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     array2D<float> Y(W, H);
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
-        }
-    }
+    get_luminance(img, Y, ws, multiThread);
     
     float ambient[3];
     int n = estimate_ambient_light(img, dark, Y, patchsize, npatches, ambient);
@@ -235,11 +246,11 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
 
     array2D<float> &t_tilde = dark;
-    get_dark_channel(*img, dark, patchsize, ambient);
+    get_dark_channel(*img, dark, patchsize, ambient, multiThread);
     DEBUG_DUMP(t_tilde);
     
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for if (multiThread)
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
@@ -251,13 +262,13 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     const float epsilon = 1e-7;
     array2D<float> &t = t_tilde;
     
-    guidedFilter(Y, t_tilde, t, radius, epsilon, true);
+    guidedFilter(Y, t_tilde, t, radius, epsilon, multiThread);
 
     DEBUG_DUMP(t);
 
     const float t0 = 0.01;
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for if (multiThread)
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
@@ -271,7 +282,29 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    img->normalizeFloatTo65535();
+    float oldmed;
+    findMinMaxPercentile(Y, Y.width() * Y.height(), 0.5, oldmed, 0.5, oldmed, multiThread);
+
+    get_luminance(img, Y, ws, multiThread);
+    float newmed;
+
+    findMinMaxPercentile(Y, Y.width() * Y.height(), 0.5, newmed, 0.5, newmed, multiThread);
+
+    if (newmed > 1e-5f) {
+        const float f = oldmed / newmed;
+#ifdef _OPENMP
+        #pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                img->r(y, x) *= f;
+                img->g(y, x) *= f;
+                img->b(y, x) *= f;
+            }
+        }
+    }
+
+    img->normalizeFloatTo65535();    
 }
 
 
