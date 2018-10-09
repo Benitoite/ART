@@ -33,6 +33,7 @@
 #include "rt_math.h"
 #include "rt_algo.h"
 #include <iostream>
+#include <queue>
 
 extern Options options;
 
@@ -65,14 +66,14 @@ int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
 
     int npatches = 0;
 
+#ifdef _OPENMP
+    #pragma omp parallel for if (multithread)
+#endif
     for (int y = 0; y < src.getHeight(); y += patchsize) {
         int pH = std::min(y+patchsize, h);
         for (int x = 0; x < src.getWidth(); x += patchsize, ++npatches) {
             float val = RT_INFINITY_F;
             int pW = std::min(x+patchsize, w);
-#ifdef _OPENMP
-            #pragma omp parallel for shared(val) if (multithread)
-#endif
             for (int yy = y; yy < pH; ++yy) {
                 float yval = RT_INFINITY_F;
                 for (int xx = x; xx < pW; ++xx) {
@@ -88,9 +89,6 @@ int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
                 }
                 val = min(val, yval);
             }
-#ifdef _OPENMP
-            #pragma omp parallel for if (multithread)
-#endif
             for (int yy = y; yy < pH; ++yy) {
                 std::fill(dst[yy]+x, dst[yy]+pW, val);
             }
@@ -106,17 +104,25 @@ int estimate_ambient_light(const Imagefloat *img, const array2D<float> &dark, co
     const int W = img->getWidth();
     const int H = img->getHeight();
 
+    const auto get_percentile =
+        [](std::priority_queue<float> &q, float prcnt) -> float
+        {
+            size_t n = LIM<size_t>(q.size() * prcnt, 1, q.size());
+            while (q.size() > n) {
+                q.pop();
+            }
+            return q.top();
+        };
+    
     float lim = RT_INFINITY_F;
     {
-        std::vector<float> p;
-        p.reserve(npatches);
+        std::priority_queue<float> p;
         for (int y = 0; y < H; y += patchsize) {
             for (int x = 0; x < W; x += patchsize) {
-                p.push_back(dark[y][x]);
+                p.push(dark[y][x]);
             }
         }
-        std::sort(p.begin(), p.end());
-        lim = p[p.size() * 0.95];
+        lim = get_percentile(p, 0.95);
     }
 
     std::vector<std::pair<int, int>> patches;
@@ -136,7 +142,7 @@ int estimate_ambient_light(const Imagefloat *img, const array2D<float> &dark, co
     }
 
     {
-        std::vector<float> l;
+        std::priority_queue<float> l;
         
         for (auto &p : patches) {
             const int pW = std::min(p.first+patchsize, W);
@@ -144,13 +150,12 @@ int estimate_ambient_light(const Imagefloat *img, const array2D<float> &dark, co
             
             for (int y = p.second; y < pH; ++y) {
                 for (int x = p.first; x < pW; ++x) {
-                    l.push_back(Y[y][x]);
+                    l.push(Y[y][x]);
                 }
             }
         }
 
-        std::sort(l.begin(), l.end());
-        lim = l[l.size()*0.95];
+        lim = get_percentile(l, 0.95);
     }
 
     double rr = 0, gg = 0, bb = 0;
