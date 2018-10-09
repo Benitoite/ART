@@ -263,7 +263,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    const int radius = patchsize * 5;
+    const int radius = patchsize * 3;
     const float epsilon = 1e-7;
     array2D<float> &t = t_tilde;
     
