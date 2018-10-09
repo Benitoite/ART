@@ -92,6 +92,22 @@ int get_dark_channel(const Imagefloat &src, array2D<float> &dst,
             for (int yy = y; yy < pH; ++yy) {
                 std::fill(dst[yy]+x, dst[yy]+pW, val);
             }
+            for (int yy = y; yy < pH; ++yy) {
+                for (int xx = x; xx < pW; ++xx) {
+                    float r = src.r(yy, xx);
+                    float g = src.g(yy, xx);
+                    float b = src.b(yy, xx);
+                    if (ambient) {
+                        r /= ambient[0];
+                        g /= ambient[1];
+                        b /= ambient[2];
+                    }
+                    float l = min(r, g, b);
+                    if (l >= 2.f * val) {
+                        dst[yy][xx] = l;
+                    }
+                }
+            }
         }
     }
 
@@ -222,7 +238,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
     
     array2D<float> dark(W, H);
-    const int patchsize = std::max(W / 40, 2);
+    const int patchsize = std::max(W / 200, 2);
     int npatches = get_dark_channel(*img, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
@@ -263,8 +279,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    const int radius = patchsize * 3;
-    const float epsilon = 1e-7;
+    const int radius = patchsize * 2;
+    const float epsilon = 2.5e-4;
     array2D<float> &t = t_tilde;
     
     guidedFilter(Y, t_tilde, t, radius, epsilon, multiThread);
