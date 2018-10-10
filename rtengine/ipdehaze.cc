@@ -312,20 +312,23 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     findMinMaxPercentile(Y, Y.width() * Y.height(), 0.5, newmed, 0.5, newmed, multiThread);
 
     if (newmed > 1e-5f) {
-        const float f = oldmed / newmed;
+        const float f1 = oldmed / newmed;
+        const float f = f1 * 65535.f;
 #ifdef _OPENMP
         #pragma omp parallel for if (multiThread)
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                img->r(y, x) *= f;
-                img->g(y, x) *= f;
-                img->b(y, x) *= f;
+                float r = img->r(y, x);
+                float g = img->g(y, x);
+                float b = img->b(y, x);
+                float h, s, l;
+                Color::rgb2hslfloat(r * f, g * f, b * f, h, s, l);
+                s = LIM01(s / f1);
+                Color::hsl2rgbfloat(h, s, l, img->r(y, x), img->g(y, x), img->b(y, x));
             }
         }
     }
-
-    img->normalizeFloatTo65535();    
 }
 
 
