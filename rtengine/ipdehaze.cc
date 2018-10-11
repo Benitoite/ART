@@ -328,7 +328,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     if (newmed > 1e-5f) {
         const float f1 = oldmed / newmed;
-        const float f = f1 * 65535.f;
+        const float f = /* f1 * */ 65535.f;
 #ifdef _OPENMP
         #pragma omp parallel for if (multiThread)
 #endif
