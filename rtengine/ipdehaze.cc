@@ -343,6 +343,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
                 Color::hsl2rgbfloat(h, s, l, img->r(y, x), img->g(y, x), img->b(y, x));
             }
         }
+    } else {
+        img->normalizeFloatTo65535();
     }
 }
 
