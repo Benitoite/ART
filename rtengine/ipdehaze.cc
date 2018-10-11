@@ -218,6 +218,59 @@ void get_luminance(Imagefloat *img, array2D<float> &Y, TMatrix ws, bool multithr
 }
 
 
+void apply_contrast(array2D<float> &dark, int contrast, double scale, bool multithread)
+{
+    if (contrast) {
+        const int W = dark.width();
+        const int H = dark.height();
+        
+        double tot = 0.0;
+#ifdef _OPENMP
+        #pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            double ytot = 0.0;
+            for (int x = 0; x < W; ++x) {
+                ytot += dark[y][x];
+            }
+#ifdef _OPENMP
+            #pragma omp critical
+#endif
+            {
+                tot += ytot;
+            }
+        }
+
+        float avg = tot / (W * H);
+
+        std::vector<double> pts = {
+            DCT_NURBS,
+            0, //black point.  Value in [0 ; 1] range
+            0, //black point.  Value in [0 ; 1] range
+
+            avg - avg * (0.6 - contrast / 250.0), //toe point
+            avg - avg * (0.6 + contrast / 250.0), //value at toe point
+
+            avg + (1 - avg) * (0.6 - contrast / 250.0), //shoulder point
+            avg + (1 - avg) * (0.6 + contrast / 250.0), //value at shoulder point
+
+            1., // white point
+            1. // value at white point
+        };
+
+        const DiagonalCurve curve(pts, CURVES_MIN_POLY_POINTS / scale);
+
+#ifdef _OPENMP
+        #pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                dark[y][x] = curve.getVal(dark[y][x]);
+            }
+        }
+    }
+}
+
 } // namespace
 
 
@@ -268,6 +321,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     array2D<float> &t_tilde = dark;
     get_dark_channel(*img, dark, patchsize, ambient, multiThread);
+    apply_contrast(dark, params->dehaze.depth, scale, multiThread);
     DEBUG_DUMP(t_tilde);
 
     if (!params->dehaze.showDepthMap) {
@@ -281,7 +335,13 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    const int radius = patchsize * 2;
+    float mult = 2.f;
+    if (params->dehaze.detail > 0) {
+        mult /= (params->dehaze.detail / 10.f);
+    } else {
+        mult -= params->dehaze.detail / 10.f;
+    }
+    const int radius = max(int(patchsize * mult), 1);
     const float epsilon = 2.5e-4;
     array2D<float> &t = t_tilde;
     

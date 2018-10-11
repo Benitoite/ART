@@ -572,6 +572,8 @@ void ParamsEdited::set(bool v)
     dehaze.enabled = v;
     dehaze.strength = v;
     dehaze.showDepthMap = v;
+    dehaze.depth = v;
+    dehaze.detail = v;
     metadata.mode = v;
 
     exif = v;
@@ -1131,6 +1133,8 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         dehaze.enabled = dehaze.enabled && p.dehaze.enabled == other.dehaze.enabled;
         dehaze.strength = dehaze.strength && p.dehaze.strength == other.dehaze.strength;
         dehaze.showDepthMap = dehaze.showDepthMap && p.dehaze.showDepthMap == other.dehaze.showDepthMap;
+        dehaze.depth = dehaze.depth && p.dehaze.depth == other.dehaze.depth;
+        dehaze.detail = dehaze.detail && p.dehaze.detail == other.dehaze.detail;
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
 //      How the hell can we handle that???
@@ -3149,6 +3153,14 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.dehaze.showDepthMap     = mods.dehaze.showDepthMap;
     }
 
+    if (dehaze.depth) {
+        toEdit.dehaze.depth     = mods.dehaze.depth;
+    }
+
+    if (dehaze.detail) {
+        toEdit.dehaze.detail     = mods.dehaze.detail;
+    }
+    
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;
     }
