@@ -2381,7 +2381,8 @@ bool SoftLightParams::operator !=(const SoftLightParams& other) const
 
 DehazeParams::DehazeParams() :
     enabled(false),
-    strength(50)
+    strength(50),
+    showDepthMap(false)
 {
 }
 
@@ -2389,7 +2390,8 @@ bool DehazeParams::operator ==(const DehazeParams& other) const
 {
     return
         enabled == other.enabled
-        && strength == other.strength;
+        && strength == other.strength
+        && showDepthMap == other.showDepthMap;
 }
 
 bool DehazeParams::operator !=(const DehazeParams& other) const
@@ -3067,6 +3069,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 // Dehaze
         saveToKeyfile(!pedited || pedited->dehaze.enabled, "Dehaze", "Enabled", dehaze.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->dehaze.strength, "Dehaze", "Strength", dehaze.strength, keyFile);        
+        saveToKeyfile(!pedited || pedited->dehaze.showDepthMap, "Dehaze", "ShowDepthMap", dehaze.showDepthMap, keyFile);        
 
 // Directional pyramid denoising
         saveToKeyfile(!pedited || pedited->dirpyrDenoise.enabled, "Directional Pyramid Denoising", "Enabled", dirpyrDenoise.enabled, keyFile);
@@ -4661,6 +4664,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
         if (keyFile.has_group("Dehaze")) {
             assignFromKeyfile(keyFile, "Dehaze", "Enabled", pedited, dehaze.enabled, pedited->dehaze.enabled);
             assignFromKeyfile(keyFile, "Dehaze", "Strength", pedited, dehaze.strength, pedited->dehaze.strength);
+            assignFromKeyfile(keyFile, "Dehaze", "ShowDepthMap", pedited, dehaze.showDepthMap, pedited->dehaze.showDepthMap);
         }
         
         if (keyFile.has_group("Film Simulation")) {

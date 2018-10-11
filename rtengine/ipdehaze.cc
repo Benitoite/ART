@@ -231,7 +231,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     
     const int W = img->getWidth();
     const int H = img->getHeight();
-    const float strength = LIM01(float(params->dehaze.strength) / 100.f * 0.9f);
+    float strength = LIM01(float(params->dehaze.strength) / 100.f * 0.9f);
 
     if (options.rtSettings.verbose) {
         std::cout << "dehaze: strength = " << strength << std::endl;
@@ -269,13 +269,15 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     array2D<float> &t_tilde = dark;
     get_dark_channel(*img, dark, patchsize, ambient, multiThread);
     DEBUG_DUMP(t_tilde);
-    
+
+    if (!params->dehaze.showDepthMap) {
 #ifdef _OPENMP
-    #pragma omp parallel for if (multiThread)
+        #pragma omp parallel for if (multiThread)
 #endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            dark[y][x] = 1.f - strength * dark[y][x];
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                dark[y][x] = 1.f - strength * dark[y][x];
+            }
         }
     }
 
@@ -286,6 +288,19 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     guidedFilter(Y, t_tilde, t, radius, epsilon, multiThread);
 
     DEBUG_DUMP(t);
+
+    
+    if (params->dehaze.showDepthMap) {
+#ifdef _OPENMP
+        #pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                img->r(y, x) = img->g(y, x) = img->b(y, x) = t[y][x] * 65535.f;
+            }
+        }
+        return;
+    }
 
     const float t0 = 0.01;
 #ifdef _OPENMP

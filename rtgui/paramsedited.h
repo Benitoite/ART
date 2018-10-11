@@ -732,6 +732,7 @@ class DehazeParamsEdited
 public:
     bool enabled;
     bool strength;
+    bool showDepthMap;
 };
 
 
