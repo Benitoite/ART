@@ -291,7 +291,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
     
     array2D<float> dark(W, H);
-    const int patchsize = std::max(W / 200, 2);
+    const int patchsize = std::max(W / (200 + max(params->dehaze.detail, 0)), 2);
     int npatches = get_dark_channel(*img, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
@@ -337,7 +337,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     float mult = 2.f;
     if (params->dehaze.detail > 0) {
-        mult /= (params->dehaze.detail / 10.f);
+        mult -= (params->dehaze.detail / 100.f) * 1.9f;
     } else {
         mult -= params->dehaze.detail / 10.f;
     }
