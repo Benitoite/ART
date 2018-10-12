@@ -89,11 +89,11 @@ int get_dark_channel(const array2D<float> &R, const array2D<float> &G, const arr
                 }
                 val = min(val, yval);
             }
-            val = max(val, 0.f);
+            val = LIM01(val);
             for (int yy = y; yy < pH; ++yy) {
                 std::fill(dst[yy]+x, dst[yy]+pW, val);
             }
-//            float val2 = RT_INFINITY_F;
+            float val2 = RT_INFINITY_F;
             for (int yy = y; yy < pH; ++yy) {
                 for (int xx = x; xx < pW; ++xx) {
                     float r = R[yy][xx];
@@ -106,20 +106,21 @@ int get_dark_channel(const array2D<float> &R, const array2D<float> &G, const arr
                     }
                     float l = min(r, g, b);
                     if (l >= 2.f * val) {
-//                        val2 = min(val2, l);
-                        dst[yy][xx] = l;//-1;
+                        val2 = min(val2, l);
+                        dst[yy][xx] = -1;
                     }
                 }
             }
-            // if (1) {//val2 < RT_INFINITY_F) {
-            //     for (int yy = y; yy < pH; ++yy) {
-            //         for (int xx = x; xx < pW; ++xx) {
-            //             if (dst[yy][xx] < 0.f) {
-            //                 dst[yy][xx] = val2;
-            //             }
-            //         }
-            //     }
-            // }
+            if (val2 < RT_INFINITY_F) {
+                val2 = LIM01(val2);
+                for (int yy = y; yy < pH; ++yy) {
+                    for (int xx = x; xx < pW; ++xx) {
+                        if (dst[yy][xx] < 0.f) {
+                            dst[yy][xx] = val2;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -230,41 +231,25 @@ void get_luminance(Imagefloat *img, array2D<float> &Y, TMatrix ws, bool multithr
 }
 
 
-void apply_contrast(array2D<float> &dark, int contrast, double scale, bool multithread)
+void apply_contrast(array2D<float> &dark, float ambient, int contrast, double scale, bool multithread)
 {
     if (contrast) {
         const int W = dark.width();
         const int H = dark.height();
         
-        double tot = 0.0;
-#ifdef _OPENMP
-        #pragma omp parallel for if (multithread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            double ytot = 0.0;
-            for (int x = 0; x < W; ++x) {
-                ytot += dark[y][x];
-            }
-#ifdef _OPENMP
-            #pragma omp critical
-#endif
-            {
-                tot += ytot;
-            }
-        }
-
-        float avg = tot / (W * H);
+        float avg = ambient * 0.25f;
+        float c = contrast * 0.3f;
 
         std::vector<double> pts = {
             DCT_NURBS,
             0, //black point.  Value in [0 ; 1] range
             0, //black point.  Value in [0 ; 1] range
 
-            avg - avg * (0.6 - contrast / 250.0), //toe point
-            avg - avg * (0.6 + contrast / 250.0), //value at toe point
+            avg - avg * (0.6 - c / 250.0), //toe point
+            avg - avg * (0.6 + c / 250.0), //value at toe point
 
-            avg + (1 - avg) * (0.6 - contrast / 250.0), //shoulder point
-            avg + (1 - avg) * (0.6 + contrast / 250.0), //value at shoulder point
+            avg + (1 - avg) * (0.6 - c / 250.0), //shoulder point
+            avg + (1 - avg) * (0.6 + c / 250.0), //value at shoulder point
 
             1., // white point
             1. // value at white point
@@ -331,11 +316,11 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     array2D<float> R(W, H);
     array2D<float> G(W, H);
     array2D<float> B(W, H);
-    extract_channels(img, Y, R, G, B, max(int(20 / scale), 1), 1e-1, multiThread);
+    int patchsize = max(int(20 / scale), 2);
+    extract_channels(img, Y, R, G, B, patchsize, 1e-1, multiThread);
     
     array2D<float> dark(W, H);
-    //const int patchsize = std::max(W / (200 + max(params->dehaze.detail, 0)), 2);
-    const int patchsize = std::max(W / 20, 2);//(200 + max(params->dehaze.detail, 0)), 2);
+    patchsize = std::max(W / (200 + max(params->dehaze.detail, 0)), 2);
     int npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
@@ -361,7 +346,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     array2D<float> &t_tilde = dark;
     get_dark_channel(R, G, B, dark, patchsize, ambient, multiThread);
-    apply_contrast(dark, params->dehaze.depth, scale, multiThread);
+    apply_contrast(dark, ambient_Y, params->dehaze.depth, scale, multiThread);
     DEBUG_DUMP(t_tilde);
 
     if (!params->dehaze.showDepthMap) {
@@ -385,6 +370,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     const float epsilon = 2.5e-4;
     array2D<float> &t = t_tilde;
 
+    if (!params->dehaze.showDepthMap)
     guidedFilter(Y, t_tilde, t, radius, epsilon, multiThread);
 
     DEBUG_DUMP(t);
@@ -402,16 +388,25 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         return;
     }
 
-    const float t0 = 1e-5;//0.01;
+    const float t0 = 0.1;
+    const float teps = 1e-3;
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            float mt = std::max(t[y][x], t0);
-            float r = (img->r(y, x) - ambient[0]) / mt + ambient[0];
-            float g = (img->g(y, x) - ambient[1]) / mt + ambient[1];
-            float b = (img->b(y, x) - ambient[2]) / mt + ambient[2];
+            float rgb[3] = { img->r(y, x), img->g(y, x), img->b(y, x) };
+            float tl = 1.f - min(rgb[0]/ambient[0], rgb[1]/ambient[1], rgb[2]/ambient[2]);
+            float tu = t0 - teps;
+            for (int c = 0; c < 3; ++c) {
+                if (ambient[c] < 1) {
+                    tu = max(tu, (rgb[c] - ambient[c])/(1.f - ambient[c]));
+                }
+            }
+            float mt = max(t[y][x], t0, tl + teps, tu + teps);
+            float r = (rgb[0] - ambient[0]) / mt + ambient[0];
+            float g = (rgb[1] - ambient[1]) / mt + ambient[1];
+            float b = (rgb[2] - ambient[2]) / mt + ambient[2];
             img->r(y, x) = r;
             img->g(y, x) = g;
             img->b(y, x) = b;
@@ -426,9 +421,9 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     findMinMaxPercentile(Y, Y.width() * Y.height(), 0.5, newmed, 0.5, newmed, multiThread);
 
-    if (0) {//newmed > 1e-5f) {
+    if (newmed > 1e-5f) {
         const float f1 = oldmed / newmed;
-        const float f = /* f1 * */ 65535.f;
+        const float f = f1 * 65535.f;
 #ifdef _OPENMP
         #pragma omp parallel for if (multiThread)
 #endif
