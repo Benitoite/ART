@@ -320,7 +320,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     extract_channels(img, Y, R, G, B, patchsize, 1e-1, multiThread);
     
     array2D<float> dark(W, H);
-    patchsize = std::max(W / (200 + max(params->dehaze.detail, 0)), 2);
+    patchsize = std::max(W / (200 + params->dehaze.detail * (SGN(params->dehaze.detail) > 0 ? 4 : 1)), 2);
     int npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
@@ -407,6 +407,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
             float r = (rgb[0] - ambient[0]) / mt + ambient[0];
             float g = (rgb[1] - ambient[1]) / mt + ambient[1];
             float b = (rgb[2] - ambient[2]) / mt + ambient[2];
+
             img->r(y, x) = r;
             img->g(y, x) = g;
             img->b(y, x) = b;
