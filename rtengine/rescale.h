@@ -74,25 +74,28 @@ inline void rescaleBilinear(const array2D<float> &src, array2D<float> &dst, bool
 }
 
 
-inline void rescaleNearest(const array2D<float> &src, array2D<float> &dst, bool multithread)
+template <class T>
+inline void rescaleNearest(T *const *const src, int sW, int sH, T **dst, int dW, int dH, bool multithread)
 {
-    const int width = src.width();
-    const int height = src.height();
-    const int nw = dst.width();
-    const int nh = dst.height();
-
 #ifdef _OPENMP
     #pragma omp parallel for if (multithread)
 #endif
 
-    for (int y = 0; y < nh; ++y) {
-        int sy = y * height / nh;
+    for (int y = 0; y < dH; ++y) {
+        int sy = y * sH / dH;
 
-        for (int x = 0; x < nw; ++x) {
-            int sx = x * width / nw;
+        for (int x = 0; x < dW; ++x) {
+            int sx = x * sW / dW;
             dst[y][x] = src[sy][sx];
         }
     }
+}
+
+
+template <class T>
+inline void rescaleNearest(const array2D<T> &src, array2D<T> &dst, bool multithread)
+{
+    rescaleNearest(static_cast<T **>(const_cast<array2D<T> &>(src)), src.width(), src.height(), static_cast<T **>(dst), dst.width(), dst.height(), multithread);
 }
 
 

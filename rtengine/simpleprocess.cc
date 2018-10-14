@@ -29,6 +29,7 @@
 #include "rawimagesource.h"
 #include "../rtgui/multilangmgr.h"
 #include "mytime.h"
+#include "rescale.h"
 #undef THREAD_PRIORITY_NORMAL
 
 namespace rtengine
@@ -264,6 +265,9 @@ private:
         autoNR = (float) settings->nrauto;//
         autoNRmax = (float) settings->nrautomax;//
 
+        int imw, imh;
+        double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
+
         if (settings->leveldnti == 0) {
             tilesize = 1024;
             overlap = 128;
@@ -336,8 +340,20 @@ private:
                 #pragma omp parallel
                 {
                     Imagefloat *origCropPart;//init auto noise
-                    origCropPart = new Imagefloat (crW, crH);//allocate memory
-                    Imagefloat *provicalc = new Imagefloat ((crW + 1) / 2, (crH + 1) / 2); //for denoise curves
+                    std::unique_ptr<Imagefloat> orig(new Imagefloat (crW, crH));
+                    std::unique_ptr<Imagefloat> resized(nullptr);
+                    std::unique_ptr<Imagefloat> calc(nullptr);
+                    if (scale_factor > 1.0) {
+                        resized.reset(new Imagefloat(int(ceil(orig->getWidth() * scale_factor)), int(ceil(orig->getHeight() * scale_factor))));
+                        calc.reset(new Imagefloat((resized->getWidth() + 1) / 2, (resized->getHeight() + 1) / 2));
+                        origCropPart = resized.get();
+                    } else {
+                        calc.reset(new Imagefloat((crW + 1) / 2, (crH + 1) / 2));
+                        origCropPart = orig.get();
+                    }
+                    Imagefloat *provicalc = calc.get();
+                    //Imagefloat *provicalc = new Imagefloat ((crW + 1) / 2, (crH + 1) / 2); //for denoise curves
+                    //Imagefloat *provicalc = new Imagefloat(int(ceil(crW / (2 * scale_factor))), int(ceil(crH / (2 * scale_factor))));
                     int skipP = 1;
                     #pragma omp for schedule(dynamic) collapse(2) nowait
 
@@ -346,12 +362,19 @@ private:
                             int beg_tileW = wcr * tileWskip + tileWskip / 2.f - crW / 2.f;
                             int beg_tileH = hcr * tileHskip + tileHskip / 2.f - crH / 2.f;
                             PreviewProps ppP (beg_tileW, beg_tileH, crW, crH, skipP);
-                            imgsrc->getImage (currWB, tr, origCropPart, ppP, params.toneCurve, params.raw );
+                            imgsrc->getImage (currWB, tr, orig.get(), ppP, params.toneCurve, params.raw );
                             //baseImg->getStdImage(currWB, tr, origCropPart, ppP, true, params.toneCurve);
 
                             // we only need image reduced to 1/4 here
-                            for (int ii = 0; ii < crH; ii += 2) {
-                                for (int jj = 0; jj < crW; jj += 2) {
+                            if (resized.get()) {
+                                int pW = resized->getWidth();
+                                int pH = resized->getHeight();
+                                rescaleNearest(orig->r.ptrs, crW, crH, resized->r.ptrs, pW, pH, false);
+                                rescaleNearest(orig->g.ptrs, crW, crH, resized->g.ptrs, pW, pH, false);
+                                rescaleNearest(orig->b.ptrs, crW, crH, resized->b.ptrs, pW, pH, false);
+                            }
+                            for (int ii = 0; ii < origCropPart->getHeight(); ii += 2) {
+                                for (int jj = 0; jj < origCropPart->getWidth(); jj += 2) {
                                     provicalc->r (ii >> 1, jj >> 1) = origCropPart->r (ii, jj);
                                     provicalc->g (ii >> 1, jj >> 1) = origCropPart->g (ii, jj);
                                     provicalc->b (ii >> 1, jj >> 1) = origCropPart->b (ii, jj);
@@ -430,8 +453,8 @@ private:
                         }
                     }
 
-                    delete provicalc;
-                    delete origCropPart;
+                    // delete provicalc;
+                    // delete origCropPart;
                 }
 
                 int liss = settings->leveldnliss; //smooth result around mean
@@ -558,21 +581,40 @@ private:
                 #pragma omp parallel
                 {
                     Imagefloat *origCropPart;//init auto noise
-                    origCropPart = new Imagefloat (crW, crH);//allocate memory
-                    Imagefloat *provicalc = new Imagefloat ((crW + 1) / 2, (crH + 1) / 2); //for denoise curves
+                    std::unique_ptr<Imagefloat> orig(new Imagefloat (crW, crH));
+                    std::unique_ptr<Imagefloat> resized(nullptr);
+                    std::unique_ptr<Imagefloat> calc(nullptr);
+                    if (scale_factor > 1.0) {
+                        resized.reset(new Imagefloat(int(ceil(orig->getWidth() * scale_factor)), int(ceil(orig->getHeight() * scale_factor))));
+                        calc.reset(new Imagefloat((resized->getWidth() + 1) / 2, (resized->getHeight() + 1) / 2));
+                        origCropPart = resized.get();
+                    } else {
+                        calc.reset(new Imagefloat((crW + 1) / 2, (crH + 1) / 2));
+                        origCropPart = orig.get();
+                    }
+                    //Imagefloat *provicalc = new Imagefloat ((crW + 1) / 2, (crH + 1) / 2); //for denoise curves
+                    //Imagefloat *provicalc = new Imagefloat(int(ceil(crW / (2 * scale_factor))), int(ceil(crH / (2 * scale_factor))));
+                    Imagefloat *provicalc = calc.get();
 
                     #pragma omp for schedule(dynamic) collapse(2) nowait
 
                     for (int wcr = 0; wcr <= 2; wcr++) {
                         for (int hcr = 0; hcr <= 2; hcr++) {
                             PreviewProps ppP (coordW[wcr], coordH[hcr], crW, crH, 1);
-                            imgsrc->getImage (currWB, tr, origCropPart, ppP, params.toneCurve, params.raw);
+                            imgsrc->getImage (currWB, tr, orig.get(), ppP, params.toneCurve, params.raw);
                             //baseImg->getStdImage(currWB, tr, origCropPart, ppP, true, params.toneCurve);
 
 
                             // we only need image reduced to 1/4 here
-                            for (int ii = 0; ii < crH; ii += 2) {
-                                for (int jj = 0; jj < crW; jj += 2) {
+                            if (resized.get()) {
+                                int pW = resized->getWidth();
+                                int pH = resized->getHeight();
+                                rescaleNearest(orig->r.ptrs, crW, crH, resized->r.ptrs, pW, pH, false);
+                                rescaleNearest(orig->g.ptrs, crW, crH, resized->g.ptrs, pW, pH, false);
+                                rescaleNearest(orig->b.ptrs, crW, crH, resized->b.ptrs, pW, pH, false);
+                            }
+                            for (int ii = 0; ii < origCropPart->getHeight(); ii += 2) {
+                                for (int jj = 0; jj < origCropPart->getWidth(); jj += 2) {
                                     provicalc->r (ii >> 1, jj >> 1) = origCropPart->r (ii, jj);
                                     provicalc->g (ii >> 1, jj >> 1) = origCropPart->g (ii, jj);
                                     provicalc->b (ii >> 1, jj >> 1) = origCropPart->b (ii, jj);
@@ -597,8 +639,8 @@ private:
                         }
                     }
 
-                    delete provicalc;
-                    delete origCropPart;
+                    // delete provicalc;
+                    // delete origCropPart;
                 }
                 float chM = 0.f;
                 float MaxR = 0.f;
@@ -1383,14 +1425,10 @@ private:
     void stage_early_resize()
     {
         procparams::ProcParams& params = job->pparams;
-        //ImProcFunctions ipf (&params, true);
         ImProcFunctions &ipf = * (ipf_p.get());
 
         int imw, imh;
         double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
-
-        std::unique_ptr<LabImage> tmplab (new LabImage (fw, fh));
-        ipf.rgb2lab (*baseImg, *tmplab, params.icm.workingProfile);
 
         if (params.crop.enabled) {
             int cx = params.crop.x;
@@ -1398,36 +1436,34 @@ private:
             int cw = params.crop.w;
             int ch = params.crop.h;
 
-            std::unique_ptr<LabImage> cropped (new LabImage (cw, ch));
+            Imagefloat *cropped = new Imagefloat(cw, ch);
 
             for (int row = 0; row < ch; row++) {
                 for (int col = 0; col < cw; col++) {
-                    cropped->L[row][col] = tmplab->L[row + cy][col + cx];
-                    cropped->a[row][col] = tmplab->a[row + cy][col + cx];
-                    cropped->b[row][col] = tmplab->b[row + cy][col + cx];
+                    cropped->r(row, col) = baseImg->r(row + cy, col + cx);
+                    cropped->g(row, col) = baseImg->g(row + cy, col + cx);
+                    cropped->b(row, col) = baseImg->b(row + cy, col + cx);
                 }
             }
 
-            tmplab = std::move (cropped);
+            delete baseImg;
+            baseImg = cropped;
         }
 
         assert (params.resize.enabled);
 
         // resize image
         if (params.resize.allowUpscaling || (imw <= fw && imh <= fh)) {
-            std::unique_ptr<LabImage> resized (new LabImage (imw, imh));
-            ipf.Lanczos (tmplab.get(), resized.get(), scale_factor);
-            tmplab = std::move (resized);
+            Imagefloat *resized = new Imagefloat(imw, imh);
+            ipf.Lanczos(baseImg, resized, scale_factor);
+            delete baseImg;
+            baseImg = resized;
         }
 
         adjust_procparams (scale_factor);
 
         fw = imw;
         fh = imh;
-
-        delete baseImg;
-        baseImg = new Imagefloat (fw, fh);
-        ipf.lab2rgb (*tmplab, *baseImg, params.icm.workingProfile);
     }
 
     void adjust_procparams (double scale_factor)
@@ -1454,7 +1490,7 @@ private:
         params.wavelet.strength *= scale_factor;
         double noise_factor = (1.0 - scale_factor);
         params.dirpyrDenoise.luma *= noise_factor; // * scale_factor;
-        //params.dirpyrDenoise.Ldetail += (100 - params.dirpyrDenoise.Ldetail) * scale_factor;
+        params.dirpyrDenoise.Ldetail += (100 - params.dirpyrDenoise.Ldetail) * scale_factor;
         auto &lcurve = params.dirpyrDenoise.lcurve;
 
         for (size_t i = 2; i < lcurve.size(); i += 4) {
