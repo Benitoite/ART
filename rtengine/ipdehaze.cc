@@ -93,34 +93,34 @@ int get_dark_channel(const array2D<float> &R, const array2D<float> &G, const arr
             for (int yy = y; yy < pH; ++yy) {
                 std::fill(dst[yy]+x, dst[yy]+pW, val);
             }
-            float val2 = RT_INFINITY_F;
-            for (int yy = y; yy < pH; ++yy) {
-                for (int xx = x; xx < pW; ++xx) {
-                    float r = R[yy][xx];
-                    float g = G[yy][xx];
-                    float b = B[yy][xx];
-                    if (ambient) {
-                        r /= ambient[0];
-                        g /= ambient[1];
-                        b /= ambient[2];
-                    }
-                    float l = min(r, g, b);
-                    if (l >= 2.f * val) {
-                        val2 = min(val2, l);
-                        dst[yy][xx] = -1;
-                    }
-                }
-            }
-            if (val2 < RT_INFINITY_F) {
-                val2 = LIM01(val2);
-                for (int yy = y; yy < pH; ++yy) {
-                    for (int xx = x; xx < pW; ++xx) {
-                        if (dst[yy][xx] < 0.f) {
-                            dst[yy][xx] = val2;
-                        }
-                    }
-                }
-            }
+            // float val2 = RT_INFINITY_F;
+            // for (int yy = y; yy < pH; ++yy) {
+            //     for (int xx = x; xx < pW; ++xx) {
+            //         float r = R[yy][xx];
+            //         float g = G[yy][xx];
+            //         float b = B[yy][xx];
+            //         if (ambient) {
+            //             r /= ambient[0];
+            //             g /= ambient[1];
+            //             b /= ambient[2];
+            //         }
+            //         float l = min(r, g, b);
+            //         if (l >= 2.f * val) {
+            //             val2 = min(val2, l);
+            //             dst[yy][xx] = -1;
+            //         }
+            //     }
+            // }
+            // if (val2 < RT_INFINITY_F) {
+            //     val2 = LIM01(val2);
+            //     for (int yy = y; yy < pH; ++yy) {
+            //         for (int xx = x; xx < pW; ++xx) {
+            //             if (dst[yy][xx] < 0.f) {
+            //                 dst[yy][xx] = val2;
+            //             }
+            //         }
+            //     }
+            // }
         }
     }
 
@@ -231,30 +231,40 @@ void get_luminance(Imagefloat *img, array2D<float> &Y, TMatrix ws, bool multithr
 }
 
 
-void apply_contrast(array2D<float> &dark, float ambient, int contrast, double scale, bool multithread)
+void apply_contrast(array2D<float> &dark, int contrast, double scale, bool multithread)
 {
-    if (contrast) {
-        const int W = dark.width();
-        const int H = dark.height();
+    const int W = dark.width();
+    const int H = dark.height();
         
-        float avg = ambient * 0.25f;
-        float c = contrast * 0.3f;
+    if (contrast) {
+        float pivot = 0.1f;
+        float c = contrast / 100.f;
+
+        // y - ya = (yb - ya) / (xb - xa) (x - xa)
+        // y = (yb - ya) / (xb - xa) (x - xa) + ya
+        // a = (pivot/2, pivot/2)    b = (pivot, 0)
+        // y = (0 - pivot/2) / (pivot - pivot/2) (x - pivot/2) + pivot/2
+        // y = -x + pivot
+        // y = -(pivot/2 + 0.9*pivot/2 * (contrast / 100)) + pivot
+
+        // y = -x + pivot + (1 - pivot) / 2
+        // y = -(pivot - (1 - pivot)/2 * 0.9 * c) + pivot + (1 - pivot)/2
 
         std::vector<double> pts = {
-            DCT_NURBS,
-            0, //black point.  Value in [0 ; 1] range
-            0, //black point.  Value in [0 ; 1] range
+            DCT_Spline,
+            0,
+            0,
 
-            avg - avg * (0.6 - c / 250.0), //toe point
-            avg - avg * (0.6 + c / 250.0), //value at toe point
+            pivot / 2.f,
+            -(pivot/2 + pivot/2 * 0.6 * c) + pivot,
 
-            avg + (1 - avg) * (0.6 - c / 250.0), //shoulder point
-            avg + (1 - avg) * (0.6 + c / 250.0), //value at shoulder point
+            pivot + (1 - pivot) / 2,
+            -(pivot - (1 - pivot) / 2 * 0.6 * c) + pivot + (1 - pivot) / 2,
 
-            1., // white point
-            1. // value at white point
+            1.,
+            1.
         };
-
+        
         const DiagonalCurve curve(pts, CURVES_MIN_POLY_POINTS / scale);
 
 #ifdef _OPENMP
@@ -285,9 +295,9 @@ void extract_channels(Imagefloat *img, const array2D<float> &Y, array2D<float> &
         }
     }
 
-    guidedFilter(Y, r, r, radius, epsilon, multithread);
-    guidedFilter(Y, g, g, radius, epsilon, multithread);
-    guidedFilter(Y, b, b, radius, epsilon, multithread);
+    guidedFilter(Y, r, r, radius, epsilon, multithread, radius / 2);
+    guidedFilter(Y, g, g, radius, epsilon, multithread, radius / 2);
+    guidedFilter(Y, b, b, radius, epsilon, multithread, radius / 2);
 }
 
 } // namespace
@@ -314,7 +324,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     array2D<float> dark(W, H);
     get_luminance(img, Y, ws, multiThread);
 
-    int patchsize = max(int(20 / scale), 2);
+    int patchsize = max(int(5 / scale), 2);
     int npatches = 0;
     float ambient[3];
     float ambient_Y;
@@ -356,7 +366,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         return; // probably no haze at all
     }
 
-    apply_contrast(dark, ambient_Y, params->dehaze.depth, scale, multiThread);
+    apply_contrast(dark, params->dehaze.depth, scale, multiThread);
     DEBUG_DUMP(t_tilde);
 
     if (!params->dehaze.showDepthMap) {
@@ -370,19 +380,19 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    float mult = 2.f;
-    if (params->dehaze.detail > 0) {
-        mult -= (params->dehaze.detail / 100.f) * 1.9f;
-    } else {
-        mult -= params->dehaze.detail / 10.f;
-    }
-    const int radius = max(int(patchsize * mult), 1);
-    const float epsilon = 2.5e-4;
+    // float mult = 2.f;
+    // if (params->dehaze.detail > 0) {
+    //     mult -= (params->dehaze.detail / 100.f) * 1.9f;
+    // } else {
+    //     mult -= params->dehaze.detail / 10.f;
+    // }
+    const int radius = patchsize * 3;//max(int(patchsize * mult), 1);
+    const float epsilon = 1e-6;
     array2D<float> &t = t_tilde;
 
     {
-        array2D<float> guide(W, H, img->b.ptrs, ARRAY2D_BYREFERENCE);
-        guidedFilter(guide, t_tilde, t, radius, epsilon, multiThread);
+        array2D<float> guideB(W, H, img->b.ptrs, ARRAY2D_BYREFERENCE);
+        guidedFilter(guideB, t_tilde, t, radius, epsilon, multiThread, radius / 3);
     }
 
     DEBUG_DUMP(t);
@@ -434,7 +444,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     findMinMaxPercentile(Y, Y.width() * Y.height(), 0.5, newmed, 0.5, newmed, multiThread);
 
-    if (newmed > 1e-5f) {
+    if (0 && newmed > 1e-5f) {
         const float f1 = oldmed / newmed;
         const float f = f1 * 65535.f;
 #ifdef _OPENMP
