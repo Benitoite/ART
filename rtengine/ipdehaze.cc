@@ -311,35 +311,41 @@ void ImProcFunctions::dehaze(Imagefloat *img)
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     array2D<float> Y(W, H);
+    array2D<float> dark(W, H);
     get_luminance(img, Y, ws, multiThread);
 
-    array2D<float> R(W, H);
-    array2D<float> G(W, H);
-    array2D<float> B(W, H);
     int patchsize = max(int(20 / scale), 2);
-    extract_channels(img, Y, R, G, B, patchsize, 1e-1, multiThread);
-    
-    array2D<float> dark(W, H);
+    int npatches = 0;
+    float ambient[3];
+    float ambient_Y;
+    array2D<float> &t_tilde = dark;
+
     {
+        array2D<float> R(W, H);
+        array2D<float> G(W, H);
+        array2D<float> B(W, H);
+        extract_channels(img, Y, R, G, B, patchsize, 1e-1, multiThread);
+    
         int adjust = params->dehaze.detail;
         if (adjust > 0) {
             adjust = int(SQR(float(adjust / 100.f)) * 400.f);
         }
         patchsize = max(max(W, H) / (200 + adjust), 2);
-    }
-    int npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, multiThread);
-    DEBUG_DUMP(dark);
+        npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, multiThread);
+        DEBUG_DUMP(dark);
 
-    float ambient[3];
-    int n = estimate_ambient_light(R, G, B, dark, Y, patchsize, npatches, ambient);
-    float ambient_Y = Color::rgbLuminance(ambient[0], ambient[1], ambient[2], ws);
+        int n = estimate_ambient_light(R, G, B, dark, Y, patchsize, npatches, ambient);
+        ambient_Y = Color::rgbLuminance(ambient[0], ambient[1], ambient[2], ws);
 
-    if (options.rtSettings.verbose) {
-        std::cout << "dehaze: ambient light is "
-                  << ambient[0] << ", " << ambient[1] << ", " << ambient[2]
-                  << " (average of " << n << ")"
-                  << std::endl;
-        std::cout << "        ambient luminance is " << ambient_Y << std::endl;
+        if (options.rtSettings.verbose) {
+            std::cout << "dehaze: ambient light is "
+                      << ambient[0] << ", " << ambient[1] << ", " << ambient[2]
+                      << " (average of " << n << ")"
+                      << std::endl;
+            std::cout << "        ambient luminance is " << ambient_Y << std::endl;
+        }
+
+        get_dark_channel(R, G, B, dark, patchsize, ambient, multiThread);
     }
 
     if (min(ambient[0], ambient[1], ambient[2]) < 0.01f) {
@@ -350,8 +356,6 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         return; // probably no haze at all
     }
 
-    array2D<float> &t_tilde = dark;
-    get_dark_channel(R, G, B, dark, patchsize, ambient, multiThread);
     apply_contrast(dark, ambient_Y, params->dehaze.depth, scale, multiThread);
     DEBUG_DUMP(t_tilde);
 
@@ -377,16 +381,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     array2D<float> &t = t_tilde;
 
     {
-        float **ptrs = nullptr;
-        float c = max(ambient[0], ambient[1], ambient[2]);
-        if (c == ambient[0]) {
-            ptrs = img->r.ptrs;
-        } else if (c == ambient[2]) {
-            ptrs = img->b.ptrs;
-        } else {
-            ptrs = img->g.ptrs;
-        }
-        array2D<float> guide(W, H, ptrs, ARRAY2D_BYREFERENCE);
+        array2D<float> guide(W, H, img->b.ptrs, ARRAY2D_BYREFERENCE);
         guidedFilter(guide, t_tilde, t, radius, epsilon, multiThread);
     }
 
