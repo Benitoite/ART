@@ -70,10 +70,10 @@ int get_dark_channel(const array2D<float> &R, const array2D<float> &G, const arr
     #pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < H; y += patchsize) {
-        int pH = std::min(y+patchsize, H);
+        int pH = min(y+patchsize, H);
         for (int x = 0; x < W; x += patchsize, ++npatches) {
             float val = RT_INFINITY_F;
-            int pW = std::min(x+patchsize, W);
+            int pW = min(x+patchsize, W);
             for (int yy = y; yy < pH; ++yy) {
                 float yval = RT_INFINITY_F;
                 for (int xx = x; xx < pW; ++xx) {
@@ -174,8 +174,8 @@ int estimate_ambient_light(const array2D<float> &R, const array2D<float> &G, con
         std::priority_queue<float> l;
         
         for (auto &p : patches) {
-            const int pW = std::min(p.first+patchsize, W);
-            const int pH = std::min(p.second+patchsize, H);
+            const int pW = min(p.first+patchsize, W);
+            const int pH = min(p.second+patchsize, H);
             
             for (int y = p.second; y < pH; ++y) {
                 for (int x = p.first; x < pW; ++x) {
@@ -190,8 +190,8 @@ int estimate_ambient_light(const array2D<float> &R, const array2D<float> &G, con
     double rr = 0, gg = 0, bb = 0;
     int n = 0;
     for (auto &p : patches) {
-        const int pW = std::min(p.first+patchsize, W);
-        const int pH = std::min(p.second+patchsize, H);
+        const int pW = min(p.first+patchsize, W);
+        const int pH = min(p.second+patchsize, H);
             
         for (int y = p.second; y < pH; ++y) {
             for (int x = p.first; x < pW; ++x) {
@@ -320,7 +320,13 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     extract_channels(img, Y, R, G, B, patchsize, 1e-1, multiThread);
     
     array2D<float> dark(W, H);
-    patchsize = std::max(W / (200 + params->dehaze.detail * (SGN(params->dehaze.detail) > 0 ? 4 : 1)), 2);
+    {
+        int adjust = params->dehaze.detail;
+        if (adjust > 0) {
+            adjust = int(SQR(float(adjust / 100.f)) * 400.f);
+        }
+        patchsize = max(max(W, H) / (200 + adjust), 2);
+    }
     int npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, multiThread);
     DEBUG_DUMP(dark);
 
@@ -370,8 +376,19 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     const float epsilon = 2.5e-4;
     array2D<float> &t = t_tilde;
 
-    if (!params->dehaze.showDepthMap)
-    guidedFilter(Y, t_tilde, t, radius, epsilon, multiThread);
+    {
+        float **ptrs = nullptr;
+        float c = max(ambient[0], ambient[1], ambient[2]);
+        if (c == ambient[0]) {
+            ptrs = img->r.ptrs;
+        } else if (c == ambient[2]) {
+            ptrs = img->b.ptrs;
+        } else {
+            ptrs = img->g.ptrs;
+        }
+        array2D<float> guide(W, H, ptrs, ARRAY2D_BYREFERENCE);
+        guidedFilter(guide, t_tilde, t, radius, epsilon, multiThread);
+    }
 
     DEBUG_DUMP(t);
 
