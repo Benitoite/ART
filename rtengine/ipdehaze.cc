@@ -237,7 +237,17 @@ void apply_contrast(array2D<float> &dark, int contrast, double scale, bool multi
     const int H = dark.height();
         
     if (contrast) {
-        float pivot = 0.1f;
+        float avg = 0.f;
+        const float N = W * H;
+#ifdef _OPENMP
+        #pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                avg += dark[y][x] / N;
+            }
+        }
+        float pivot = avg;
         float c = contrast / 100.f;
 
         // y - ya = (yb - ya) / (xb - xa) (x - xa)
@@ -336,11 +346,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         array2D<float> B(W, H);
         extract_channels(img, Y, R, G, B, patchsize, 1e-1, multiThread);
     
-        int adjust = params->dehaze.detail;
-        if (adjust > 0) {
-            adjust = int(SQR(float(adjust / 100.f)) * 400.f);
-        }
-        patchsize = max(max(W, H) / (200 + adjust), 2);
+        patchsize = max(max(W, H) / 600, 2);
         npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, multiThread);
         DEBUG_DUMP(dark);
 
@@ -380,13 +386,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    // float mult = 2.f;
-    // if (params->dehaze.detail > 0) {
-    //     mult -= (params->dehaze.detail / 100.f) * 1.9f;
-    // } else {
-    //     mult -= params->dehaze.detail / 10.f;
-    // }
-    const int radius = patchsize * 3;//max(int(patchsize * mult), 1);
+    const int radius = patchsize * 3;
     const float epsilon = 1e-6;
     array2D<float> &t = t_tilde;
 
