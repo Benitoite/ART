@@ -37,7 +37,7 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
     strength->setAdjusterListener(this);
     strength->show();
 
-    depth = Gtk::manage(new Adjuster(M("TP_DEHAZE_DEPTH"), -100., 100., 1., 0.));
+    depth = Gtk::manage(new Adjuster(M("TP_DEHAZE_DEPTH"), 0., 100., 1., 25.));
     depth->setAdjusterListener(this);
     depth->show();
 

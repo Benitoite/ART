@@ -2383,7 +2383,7 @@ DehazeParams::DehazeParams() :
     enabled(false),
     strength(50),
     showDepthMap(false),
-    depth(0)
+    depth(25)
 {
 }
 
