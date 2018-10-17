@@ -85,10 +85,10 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
 
             guidedFilter(L, mask, mask, radius, 0.075, multiThread, 4);
 
-            const float base = std::pow(4.f, float(amount)/100.f);
-            const float gamma = hl ? base : 1.f / base;
+            const float base = std::pow(4.f, float(std::abs(amount))/100.f);
+            const float gamma = (hl == (amount >= 0)) ? base : 1.f / base;
 
-            const float contrast = std::pow(2.f, float(amount)/100.f);
+            const float contrast = std::pow(2.f, float(std::abs(amount))/100.f);
             DiagonalCurve sh_contrast({
                     DCT_NURBS,
                     0, 0,
@@ -182,11 +182,11 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
             }
         };
 
-    if (params->sh.highlights > 0) {
+    if (params->sh.highlights) {
         apply(params->sh.highlights * 0.7, params->sh.htonalwidth, true);
     }
 
-    if (params->sh.shadows > 0) {
+    if (params->sh.shadows) {
         apply(params->sh.shadows * 0.6, params->sh.stonalwidth, false);
     }
 }
