@@ -1013,11 +1013,9 @@ void DirPyrDenoise::setDefaults (const ProcParams* defParams, const ParamsEdited
     }
 }
 
-void DirPyrDenoise::adjusterChanged (Adjuster* a, double newval)
+void DirPyrDenoise::adjusterChanged(Adjuster* a, double newval)
 {
-
-    Glib::ustring costr;
-    costr = Glib::ustring::format (std::setw(3), std::fixed, std::setprecision(2), a->getValue());
+    const Glib::ustring costr = Glib::ustring::format (std::setw(3), std::fixed, std::setprecision(2), a->getValue());
 
     if (listener && getEnabled()) {
         if (a == Ldetail) {
@@ -1036,6 +1034,10 @@ void DirPyrDenoise::adjusterChanged (Adjuster* a, double newval)
             listener->panelChanged (EvDPDNpasses, costr);
         }
     }
+}
+
+void DirPyrDenoise::adjusterAutoToggled(Adjuster* a, bool newval)
+{
 }
 
 void DirPyrDenoise::enabledChanged ()

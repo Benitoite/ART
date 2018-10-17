@@ -6,8 +6,8 @@
 
 /*
   Log of version changes
-   344  2018-09-24
-        FattalToneMapping renamed to DynamicRangeCompression
+   344  2018-10-04
+        added Lab/RGB color space selection for shadows/highlights
    343  2018-09-06
         raw auto ca correction avoid colour shift
    342  2018-09-05

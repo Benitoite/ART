@@ -421,26 +421,51 @@ bool Thumbnail::hasProcParams ()
 
 void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoChangedIt, bool updateCacheNow)
 {
+    const bool needsReprocessing =
+           pparams.toneCurve != pp.toneCurve
+        || pparams.labCurve != pp.labCurve
+        || pparams.localContrast != pp.localContrast
+        || pparams.rgbCurves != pp.rgbCurves
+        || pparams.colorToning != pp.colorToning
+        || pparams.vibrance != pp.vibrance
+        || pparams.wb != pp.wb
+        || pparams.colorappearance != pp.colorappearance
+        || pparams.epd != pp.epd
+        || pparams.drcomp != pp.drcomp
+        || pparams.sh != pp.sh
+        || pparams.crop != pp.crop
+        || pparams.coarse != pp.coarse
+        || pparams.commonTrans != pp.commonTrans
+        || pparams.rotate != pp.rotate
+        || pparams.distortion != pp.distortion
+        || pparams.lensProf != pp.lensProf
+        || pparams.perspective != pp.perspective
+        || pparams.gradient != pp.gradient
+        || pparams.pcvignette != pp.pcvignette
+        || pparams.cacorrection != pp.cacorrection
+        || pparams.vignetting != pp.vignetting
+        || pparams.chmixer != pp.chmixer
+        || pparams.blackwhite != pp.blackwhite
+        || pparams.icm != pp.icm
+        || pparams.hsvequalizer != pp.hsvequalizer
+        || pparams.filmSimulation != pp.filmSimulation
+        || pparams.softlight != pp.softlight
+        || pparams.dehaze != pp.dehaze;
 
     {
         MyMutex::MyLock lock(mutex);
 
-        if (pparams.sharpening.threshold.isDouble() != pp.sharpening.threshold.isDouble()) {
-            printf("WARNING: Sharpening different!\n");
-        }
-
-        if (pparams.vibrance.psthreshold.isDouble() != pp.vibrance.psthreshold.isDouble()) {
-            printf("WARNING: Vibrance different!\n");
-        }
-
         if (pparams != pp) {
             cfs.recentlySaved = false;
+        } else if (pparamsValid && !updateCacheNow) {
+            // nothing to do
+            return;
         }
 
         // do not update rank, colorlabel and inTrash
-        int rank = getRank();
-        int colorlabel = getColorLabel();
-        int inTrash = getStage();
+        const int rank = getRank();
+        const int colorlabel = getColorLabel();
+        const int inTrash = getStage();
 
         if (pe) {
             pe->combine(pparams, pp, true);
@@ -449,20 +474,20 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         }
 
         pparamsValid = true;
-        needsReProcessing = true;
 
         setRank(rank);
         setColorLabel(colorlabel);
         setStage(inTrash);
 
         if (updateCacheNow) {
-            updateCache ();
+            updateCache();
         }
-
     } // end of mutex lock
 
-    for (size_t i = 0; i < listeners.size(); i++) {
-        listeners[i]->procParamsChanged (this, whoChangedIt);
+    if (needsReprocessing) {
+        for (size_t i = 0; i < listeners.size(); i++) {
+            listeners[i]->procParamsChanged (this, whoChangedIt);
+        }
     }
 }
 

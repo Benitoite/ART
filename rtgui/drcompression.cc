@@ -190,6 +190,10 @@ void DRCompression::adjusterChanged(Adjuster* a, double newval)
     }
 }
 
+void DRCompression::adjusterAutoToggled(Adjuster* a, bool newval)
+{
+}
+
 void DRCompression::enabledChanged ()
 {
     if (listener) {

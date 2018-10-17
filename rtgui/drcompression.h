@@ -53,6 +53,7 @@ public:
     void setBatchMode   (bool batchMode);
 
     void adjusterChanged (Adjuster* a, double newval);
+    void adjusterAutoToggled(Adjuster* a, bool newval);
     void enabledChanged  ();
     void setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool anchorAdd);
 
