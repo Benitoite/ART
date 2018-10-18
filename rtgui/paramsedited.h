@@ -736,6 +736,19 @@ public:
     bool depth;
 };
 
+struct GuidedFilterParamsEdited {
+    bool enabled;
+    bool smoothingRadius;
+    bool smoothingEpsilon;
+    bool smoothingIterations;
+    bool smoothingLumaBlend;
+    bool smoothingChromaBlend;
+    bool decompRadius;
+    bool decompEpsilon;
+    bool decompBaseCurve;
+    bool decompDetailBoost;
+};
+
 
 class RAWParamsEdited
 {
@@ -879,6 +892,7 @@ public:
     FilmSimulationParamsEdited    filmSimulation;
     SoftLightParamsEdited         softlight;
     DehazeParamsEdited            dehaze;
+    GuidedFilterParamsEdited      guidedfilter;
     MetaDataParamsEdited          metadata;
     bool                          exif;
     bool                          iptc;

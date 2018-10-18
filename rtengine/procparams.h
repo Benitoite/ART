@@ -1244,6 +1244,25 @@ struct DehazeParams {
 };
 
 
+struct GuidedFilterParams {
+    bool enabled;
+    int smoothingRadius;
+    double smoothingEpsilon;
+    int smoothingIterations;
+    int smoothingLumaBlend;
+    int smoothingChromaBlend;
+    int decompRadius;
+    double decompEpsilon;
+    int decompDetailBoost;
+    std::vector<double> decompBaseCurve;
+
+    GuidedFilterParams();
+
+    bool operator==(const GuidedFilterParams &other) const;
+    bool operator!=(const GuidedFilterParams &other) const;
+};
+
+
 /**
   * Parameters for RAW demosaicing, common to all sensor type
   */
@@ -1456,6 +1475,7 @@ public:
     FilmSimulationParams    filmSimulation;  ///< film simulation parameters
     SoftLightParams         softlight;       ///< softlight parameters
     DehazeParams            dehaze;          ///< dehaze parameters
+    GuidedFilterParams      guidedfilter;
     int                     rank;            ///< Custom image quality ranking
     int                     colorlabel;      ///< Custom color label
     bool                    inTrash;         ///< Marks deleted image

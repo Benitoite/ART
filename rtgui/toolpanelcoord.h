@@ -81,6 +81,7 @@
 #include "localcontrast.h"
 #include "softlight.h"
 #include "dehaze.h"
+#include "guidedfilter.h"
 #include "guiutils.h"
 
 class ImageEditorCoordinator;
@@ -152,6 +153,7 @@ protected:
     XTransRAWExposure* xtransrawexposure;
     DRCompression *drcomp;
     MetaDataPanel* metadata;
+    GuidedFilter *guidedfilter;
 
     std::vector<PParamsChangeListener*> paramcListeners;
 

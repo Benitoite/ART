@@ -1458,7 +1458,8 @@ void ImProcCoordinator::process()
             || params.retinex != nextParams.retinex
             || params.wavelet != nextParams.wavelet
             || params.dirpyrequalizer != nextParams.dirpyrequalizer
-            || params.dehaze != nextParams.dehaze;
+            || params.dehaze != nextParams.dehaze
+            || params.guidedfilter != nextParams.guidedfilter;
 
         params = nextParams;
         int change = changeSinceLast;

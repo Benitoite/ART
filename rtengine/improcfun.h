@@ -347,6 +347,7 @@ public:
     void shadowsHighlights(LabImage *lab);
     void softLight(float *red, float *green, float *blue, int istart, int jstart, int tW, int tH, int TS);
     void softLight(LabImage *lab);
+    void guidedFilter(LabImage *lab);
 
     Image8*     lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm, bool consider_histogram_settings = true);
     Imagefloat*    lab2rgbOut(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm);

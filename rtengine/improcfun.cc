@@ -3613,6 +3613,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
         delete vCurve;
     }
 
+    guidedFilter(lab);
     shadowsHighlights(lab);
 
     if (params->localContrast.enabled) {

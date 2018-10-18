@@ -71,6 +71,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     retinex     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RETINEX")));
     colorappearance = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_COLORAPP")));
     wavelet     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EQUALIZER")));
+    guidedfilter = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_GUIDED_FILTER")));
 
     // Color-Related Settings
     icm         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_ICMSETTINGS")));
@@ -209,6 +210,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[5]->pack_start (*retinex, Gtk::PACK_SHRINK, 2);
     vboxes[5]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
     vboxes[5]->pack_start (*wavelet, Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start (*guidedfilter, Gtk::PACK_SHRINK, 2);
 
     //META
     vboxes[6]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
@@ -335,6 +337,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     retinexConn     = retinex->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
     colorappearanceConn = colorappearance->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
     waveletConn = wavelet->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
+    guidedfilterConn = guidedfilter->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
 
     // Color-related Settings:
     icmConn         = icm->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
@@ -558,12 +561,14 @@ void PartialPasteDlg::advancedToggled ()
     ConnectionBlocker retinexBlocker(retinexConn);
     ConnectionBlocker colorappearanceBlocker(colorappearanceConn);
     ConnectionBlocker waveletBlocker(waveletConn);
+    ConnectionBlocker guidedfilterBlocker(guidedfilterConn);
 
     advanced->set_inconsistent (false);
 
     retinex->set_active (advanced->get_active ());
     colorappearance->set_active (advanced->get_active ());
     wavelet->set_active (advanced->get_active ());
+    guidedfilter->set_active(advanced->get_active());
 }
 
 void PartialPasteDlg::colorToggled ()
@@ -737,6 +742,10 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!wavelet->get_active ()) {
         filterPE.wavelet = falsePE.wavelet;
+    }
+
+    if (!guidedfilter->get_active()) {
+        filterPE.guidedfilter = falsePE.guidedfilter;
     }
 
     if (!icm->get_active ()) {

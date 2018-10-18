@@ -83,7 +83,7 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
                 }
             }
 
-            guidedFilter(L, mask, mask, radius, 0.075, multiThread, 4);
+            rtengine::guidedFilter(L, mask, mask, radius, 0.075, multiThread, 4);
 
             const float base = std::pow(4.f, float(std::abs(amount))/100.f);
             const float gamma = (hl == (amount >= 0)) ? base : 1.f / base;

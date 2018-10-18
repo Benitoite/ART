@@ -573,6 +573,16 @@ void ParamsEdited::set(bool v)
     dehaze.strength = v;
     dehaze.showDepthMap = v;
     dehaze.depth = v;
+    guidedfilter.enabled = v;
+    guidedfilter.smoothingRadius = v;
+    guidedfilter.smoothingEpsilon = v;
+    guidedfilter.smoothingIterations = v;
+    guidedfilter.smoothingLumaBlend = v;
+    guidedfilter.smoothingChromaBlend = v;
+    guidedfilter.decompRadius = v;
+    guidedfilter.decompEpsilon = v;
+    guidedfilter.decompBaseCurve = v;
+    guidedfilter.decompDetailBoost = v;
     metadata.mode = v;
 
     exif = v;
@@ -1133,6 +1143,20 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         dehaze.strength = dehaze.strength && p.dehaze.strength == other.dehaze.strength;
         dehaze.showDepthMap = dehaze.showDepthMap && p.dehaze.showDepthMap == other.dehaze.showDepthMap;
         dehaze.depth = dehaze.depth && p.dehaze.depth == other.dehaze.depth;
+
+#define SETVAL_(name) name = name && p. name == other. name
+        SETVAL_(guidedfilter.enabled);
+        SETVAL_(guidedfilter.smoothingRadius);
+        SETVAL_(guidedfilter.smoothingEpsilon);
+        SETVAL_(guidedfilter.smoothingIterations);
+        SETVAL_(guidedfilter.smoothingLumaBlend);
+        SETVAL_(guidedfilter.smoothingChromaBlend);
+        SETVAL_(guidedfilter.decompRadius);
+        SETVAL_(guidedfilter.decompEpsilon);
+        SETVAL_(guidedfilter.decompBaseCurve);
+        SETVAL_(guidedfilter.decompDetailBoost);
+#undef SETVAL_
+
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
 //      How the hell can we handle that???
@@ -3154,6 +3178,19 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     if (dehaze.depth) {
         toEdit.dehaze.depth     = mods.dehaze.depth;
     }
+
+#define SETVAL_(name) do { if (name) toEdit. name = mods. name; } while (false)
+    SETVAL_(guidedfilter.enabled);
+    SETVAL_(guidedfilter.smoothingRadius);
+    SETVAL_(guidedfilter.smoothingEpsilon);
+    SETVAL_(guidedfilter.smoothingIterations);
+    SETVAL_(guidedfilter.smoothingLumaBlend);
+    SETVAL_(guidedfilter.smoothingChromaBlend);
+    SETVAL_(guidedfilter.decompRadius);
+    SETVAL_(guidedfilter.decompEpsilon);
+    SETVAL_(guidedfilter.decompBaseCurve);
+    SETVAL_(guidedfilter.decompDetailBoost);
+#undef SETVAL_
 
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;

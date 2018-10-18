@@ -2402,6 +2402,43 @@ bool DehazeParams::operator !=(const DehazeParams& other) const
 }
 
 
+GuidedFilterParams::GuidedFilterParams():
+    enabled(false),
+    smoothingRadius(0),
+    smoothingEpsilon(0.02),
+    smoothingIterations(1),
+    smoothingLumaBlend(100),
+    smoothingChromaBlend(100),
+    decompRadius(0),
+    decompEpsilon(0.02),
+    decompDetailBoost(0),
+    decompBaseCurve({ DCT_Linear })
+{
+}
+
+
+bool GuidedFilterParams::operator==(const GuidedFilterParams &other) const
+{
+    return
+        enabled == other.enabled
+        && smoothingRadius == other.smoothingRadius
+        && smoothingEpsilon == other.smoothingEpsilon
+        && smoothingIterations == other.smoothingIterations
+        && smoothingLumaBlend == other.smoothingLumaBlend
+        && smoothingChromaBlend == other.smoothingChromaBlend
+        && decompRadius == other.decompRadius
+        && decompEpsilon == other.decompEpsilon
+        && decompBaseCurve == other.decompBaseCurve
+        && decompDetailBoost == other.decompDetailBoost;
+}
+
+
+bool GuidedFilterParams::operator!=(const GuidedFilterParams &other) const
+{
+    return !(*this == other);
+}
+
+
 RAWParams::BayerSensor::BayerSensor() :
     method(getMethodString(Method::AMAZE)),
     border(4),
@@ -2757,6 +2794,8 @@ void ProcParams::setDefaults()
     softlight = SoftLightParams();
 
     dehaze = DehazeParams();
+
+    guidedfilter = GuidedFilterParams();
 
     raw = RAWParams();
 
@@ -3131,6 +3170,21 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->sh.stonalwidth, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
         saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
         saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
+
+// Guided filter
+        {
+            const char *section = "Guided Filter";
+            saveToKeyfile(!pedited || pedited->guidedfilter.enabled, section, "Enabled", guidedfilter.enabled, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingRadius, section, "SmoothingRadius", guidedfilter.smoothingRadius, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingEpsilon, section, "SmoothingEpsilon", guidedfilter.smoothingEpsilon, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingIterations, section, "SmoothingIterations", guidedfilter.smoothingIterations, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingLumaBlend, section, "SmoothingLumaBlend", guidedfilter.smoothingLumaBlend, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingChromaBlend, section, "SmoothingChromaBlend", guidedfilter.smoothingChromaBlend, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.decompRadius, section, "DecompRadius", guidedfilter.decompRadius, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.decompEpsilon, section, "DecompEpsilon", guidedfilter.decompEpsilon, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.decompBaseCurve, section, "DecompBaseCurve", guidedfilter.decompBaseCurve, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.decompDetailBoost, section, "DecompDetailBoost", guidedfilter.decompDetailBoost, keyFile);
+        }
 
 // Crop
         saveToKeyfile(!pedited || pedited->crop.enabled, "Crop", "Enabled", crop.enabled, keyFile);
@@ -4095,6 +4149,20 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     pedited->localContrast.radius = true;
                 }
             }
+        }
+
+        if (keyFile.has_group("Guided Filter")) {
+            const char *section = "Guided Filter";
+            assignFromKeyfile(keyFile, section, "Enabled", pedited, guidedfilter.enabled, pedited->guidedfilter.enabled);
+            assignFromKeyfile(keyFile, section, "SmoothingRadius", pedited, guidedfilter.smoothingRadius, pedited->guidedfilter.smoothingRadius);
+            assignFromKeyfile(keyFile, section, "SmoothingEpsilon", pedited, guidedfilter.smoothingEpsilon, pedited->guidedfilter.smoothingEpsilon);
+            assignFromKeyfile(keyFile, section, "SmoothingIterations", pedited, guidedfilter.smoothingIterations, pedited->guidedfilter.smoothingIterations);
+            assignFromKeyfile(keyFile, section, "SmoothingLumaBlend", pedited, guidedfilter.smoothingLumaBlend, pedited->guidedfilter.smoothingLumaBlend);
+            assignFromKeyfile(keyFile, section, "SmoothingChromaBlend", pedited, guidedfilter.smoothingChromaBlend, pedited->guidedfilter.smoothingChromaBlend);
+            assignFromKeyfile(keyFile, section, "DecompRadius", pedited, guidedfilter.decompRadius, pedited->guidedfilter.decompRadius);
+            assignFromKeyfile(keyFile, section, "DecompEpsilon", pedited, guidedfilter.decompEpsilon, pedited->guidedfilter.decompEpsilon);
+            assignFromKeyfile(keyFile, section, "DecompBaseCurve", pedited, guidedfilter.decompBaseCurve, pedited->guidedfilter.decompBaseCurve);
+            assignFromKeyfile(keyFile, section, "DecompDetailBoost", pedited, guidedfilter.decompDetailBoost, pedited->guidedfilter.decompDetailBoost);
         }
 
         if (keyFile.has_group("Crop")) {
