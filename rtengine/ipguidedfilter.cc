@@ -121,9 +121,18 @@ void guided_smoothing(LabImage *lab, array2D<float> &R, array2D<float> &G, array
 void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, array2D<float> &B, const GuidedFilterParams &gf, double scale, bool multithread)
 {
     if (gf.decompRadius > 0) {
-        StandardToneCurve curve;
-        DiagonalCurve baseCurve(gf.decompBaseCurve);
-        curve.Set(baseCurve, Color::sRGBGammaCurve);
+        LUTf curve(65536);
+        {
+            DiagonalCurve baseCurve(gf.decompBaseCurve);
+            constexpr float base = 100.f;
+            for (int i = 0; i < 65536; ++i) {
+                float x = float(i)/65535.f;
+                x = std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
+                float y = baseCurve.getVal(x);
+                y = (std::pow(base, y) - 1.0f) / (base - 1.0f);
+                curve[i] = y * 65535.f;
+            }
+        }
 
         const int W = lab->W;
         const int H = lab->H;
@@ -146,7 +155,7 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
                         float base = tmp[y][x];
                         float detail = chan[y][x] - base;
                         base *= 65535.f;
-                        curves::setLutVal(curve.lutToneCurve, base);
+                        curves::setLutVal(curve, base);
                         chan[y][x] = base / 65535.f + boost * detail;
                     }
                 }

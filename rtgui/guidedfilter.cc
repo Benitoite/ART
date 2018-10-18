@@ -50,8 +50,8 @@ GuidedFilter::GuidedFilter(): FoldableToolPanel(this, "guidedfilter", M("TP_GUID
     smoothingRadius->setAdjusterListener(this);
     smoothing->pack_start(*smoothingRadius);
     
-    smoothingEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1e-5, 0.1, 1e-5, 0.02));
-    smoothingEpsilon->setLogScale(1e4, 1e-5);
+    smoothingEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1e-6, 0.1, 1e-6, 0.02));
+    smoothingEpsilon->setLogScale(1e4, 1e-6);
     smoothingEpsilon->setAdjusterListener(this);
     smoothing->pack_start(*smoothingEpsilon);
     
@@ -72,8 +72,8 @@ GuidedFilter::GuidedFilter(): FoldableToolPanel(this, "guidedfilter", M("TP_GUID
     decompRadius->setAdjusterListener(this);
     decomp->pack_start(*decompRadius);
 
-    decompEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1e-5, 0.1, 1e-5, 0.02));
-    decompEpsilon->setLogScale(1e4, 1e-5);
+    decompEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1e-6, 0.1, 1e-6, 0.02));
+    decompEpsilon->setLogScale(1e4, 1e-6);
     decompEpsilon->setAdjusterListener(this);
     decomp->pack_start(*decompEpsilon);
     
