@@ -1254,7 +1254,8 @@ struct GuidedFilterParams {
     int decompRadius;
     double decompEpsilon;
     int decompDetailBoost;
-    std::vector<double> decompBaseCurve;
+    std::vector<double> decompBaseCurve1;
+    std::vector<double> decompBaseCurve2;
 
     GuidedFilterParams();
 

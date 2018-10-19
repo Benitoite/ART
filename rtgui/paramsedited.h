@@ -745,7 +745,8 @@ struct GuidedFilterParamsEdited {
     bool smoothingChromaBlend;
     bool decompRadius;
     bool decompEpsilon;
-    bool decompBaseCurve;
+    bool decompBaseCurve1;
+    bool decompBaseCurve2;
     bool decompDetailBoost;
 };
 

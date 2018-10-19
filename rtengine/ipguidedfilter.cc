@@ -90,13 +90,12 @@ void guided_smoothing(LabImage *lab, array2D<float> &R, array2D<float> &G, array
         const int W = lab->W;
         const int H = lab->H;
         int r = max(int(gf.smoothingRadius / scale), 1);
-        array2D<float> L(W, H, lab->L);//, ARRAY2D_BYREFERENCE);
+        const float epsilon = std::pow(2.f, 2 * (gf.smoothingEpsilon - 10.f)) / 2.f;
         
         for (int i = 0; i < gf.smoothingIterations; ++i) {
-            guidedFilter(L, L, L, r, gf.smoothingEpsilon, multithread);
-            guidedFilter(L, R, R, r, gf.smoothingEpsilon, multithread);
-            guidedFilter(L, G, G, r, gf.smoothingEpsilon, multithread);
-            guidedFilter(L, B, B, r, gf.smoothingEpsilon, multithread);
+            guidedFilter(G, R, R, r, epsilon, multithread);
+            guidedFilter(G, B, B, r, epsilon, multithread);
+            guidedFilter(G, G, G, r, epsilon, multithread);
         }
 
         float l_blend = LIM01(gf.smoothingLumaBlend / 100.f);
@@ -125,13 +124,18 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
     if (gf.decompRadius > 0) {
         LUTf curve(65536);
         {
-            DiagonalCurve baseCurve(gf.decompBaseCurve);
+            DiagonalCurve baseCurve1(gf.decompBaseCurve1);
+            DiagonalCurve baseCurve2(gf.decompBaseCurve2);
             constexpr float base = 100.f;
             for (int i = 0; i < 65536; ++i) {
                 float x = float(i)/65535.f;
                 x = std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
-                float y = baseCurve.getVal(x);
+                float y = baseCurve1.getVal(x);
                 y = (std::pow(base, y) - 1.0f) / (base - 1.0f);
+                x = y;
+                x = std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
+                y = baseCurve2.getVal(x);
+                y = (std::pow(base, y) - 1.0f) / (base - 1.0f);                
                 curve[i] = y * 65535.f;
             }
         }
@@ -142,11 +146,12 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
         
         const int r = max(int(gf.decompRadius / scale), 1);
         const float boost = gf.decompDetailBoost >= 0 ? 1.f + gf.decompDetailBoost : -1.f/gf.decompDetailBoost;
-
+        const float epsilon = std::pow(2.f, 2 * (gf.decompEpsilon - 10.f)) / 2.f;
+        
         const auto apply =
             [&](array2D<float> &chan) -> void
             {
-                guidedFilter(chan, chan, tmp, r, gf.decompEpsilon, multithread);
+                guidedFilter(chan, chan, tmp, r, epsilon, multithread);
 
 #ifdef _OPENMP
                 #pragma omp parallel for if (multithread)
@@ -157,7 +162,7 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
                         float detail = chan[y][x] - base;
                         base *= 65535.f;
                         curves::setLutVal(curve, base);
-                        chan[y][x] = base / 65535.f + boost * detail;
+                        chan[y][x] = max(base / 65535.f + boost * detail, 1e-5f);
                     }
                 }
             };

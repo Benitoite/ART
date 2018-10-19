@@ -2405,14 +2405,15 @@ bool DehazeParams::operator !=(const DehazeParams& other) const
 GuidedFilterParams::GuidedFilterParams():
     enabled(false),
     smoothingRadius(0),
-    smoothingEpsilon(0.02),
+    smoothingEpsilon(10.0),
     smoothingIterations(1),
     smoothingLumaBlend(100),
     smoothingChromaBlend(100),
     decompRadius(0),
-    decompEpsilon(0.02),
+    decompEpsilon(1.0),
     decompDetailBoost(0),
-    decompBaseCurve({ DCT_Linear })
+    decompBaseCurve1({ DCT_Linear }),
+    decompBaseCurve2({ DCT_Linear })
 {
 }
 
@@ -2428,7 +2429,8 @@ bool GuidedFilterParams::operator==(const GuidedFilterParams &other) const
         && smoothingChromaBlend == other.smoothingChromaBlend
         && decompRadius == other.decompRadius
         && decompEpsilon == other.decompEpsilon
-        && decompBaseCurve == other.decompBaseCurve
+        && decompBaseCurve1 == other.decompBaseCurve1
+        && decompBaseCurve2 == other.decompBaseCurve2
         && decompDetailBoost == other.decompDetailBoost;
 }
 
@@ -3182,7 +3184,8 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
             saveToKeyfile(!pedited || pedited->guidedfilter.smoothingChromaBlend, section, "SmoothingChromaBlend", guidedfilter.smoothingChromaBlend, keyFile);
             saveToKeyfile(!pedited || pedited->guidedfilter.decompRadius, section, "DecompRadius", guidedfilter.decompRadius, keyFile);
             saveToKeyfile(!pedited || pedited->guidedfilter.decompEpsilon, section, "DecompEpsilon", guidedfilter.decompEpsilon, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.decompBaseCurve, section, "DecompBaseCurve", guidedfilter.decompBaseCurve, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.decompBaseCurve1, section, "DecompBaseCurve1", guidedfilter.decompBaseCurve1, keyFile);
+            saveToKeyfile(!pedited || pedited->guidedfilter.decompBaseCurve2, section, "DecompBaseCurve2", guidedfilter.decompBaseCurve2, keyFile);
             saveToKeyfile(!pedited || pedited->guidedfilter.decompDetailBoost, section, "DecompDetailBoost", guidedfilter.decompDetailBoost, keyFile);
         }
 
@@ -4161,7 +4164,8 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, section, "SmoothingChromaBlend", pedited, guidedfilter.smoothingChromaBlend, pedited->guidedfilter.smoothingChromaBlend);
             assignFromKeyfile(keyFile, section, "DecompRadius", pedited, guidedfilter.decompRadius, pedited->guidedfilter.decompRadius);
             assignFromKeyfile(keyFile, section, "DecompEpsilon", pedited, guidedfilter.decompEpsilon, pedited->guidedfilter.decompEpsilon);
-            assignFromKeyfile(keyFile, section, "DecompBaseCurve", pedited, guidedfilter.decompBaseCurve, pedited->guidedfilter.decompBaseCurve);
+            assignFromKeyfile(keyFile, section, "DecompBaseCurve1", pedited, guidedfilter.decompBaseCurve1, pedited->guidedfilter.decompBaseCurve1);
+            assignFromKeyfile(keyFile, section, "DecompBaseCurve2", pedited, guidedfilter.decompBaseCurve2, pedited->guidedfilter.decompBaseCurve2);
             assignFromKeyfile(keyFile, section, "DecompDetailBoost", pedited, guidedfilter.decompDetailBoost, pedited->guidedfilter.decompDetailBoost);
         }
 

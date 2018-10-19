@@ -39,8 +39,8 @@ private:
     Adjuster *decompEpsilon;
     Adjuster *decompDetailBoost;
     
-    CurveEditorGroup *curveEditorG;
-    DiagonalCurveEditor *decompBaseCurve;
+    DiagonalCurveEditor *decompBaseCurve1;
+    DiagonalCurveEditor *decompBaseCurve2;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvSmoothingRadius;
@@ -51,7 +51,8 @@ private:
     rtengine::ProcEvent EvDecompRadius;
     rtengine::ProcEvent EvDecompEpsilon;
     rtengine::ProcEvent EvDecompDetailBoost;
-    rtengine::ProcEvent EvDecompBaseCurve;
+    rtengine::ProcEvent EvDecompBaseCurve1;
+    rtengine::ProcEvent EvDecompBaseCurve2;
     
 public:
 
@@ -65,8 +66,7 @@ public:
     void adjusterChanged(Adjuster *a, double newval);
     void enabledChanged();
     void adjusterAutoToggled(Adjuster *a, bool newval) {}
-    void curveChanged();
-    void setEditProvider(EditDataProvider *provider);
+    void curveChanged(CurveEditor *ce);
     void autoOpenCurve();
 };
 

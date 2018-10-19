@@ -581,7 +581,8 @@ void ParamsEdited::set(bool v)
     guidedfilter.smoothingChromaBlend = v;
     guidedfilter.decompRadius = v;
     guidedfilter.decompEpsilon = v;
-    guidedfilter.decompBaseCurve = v;
+    guidedfilter.decompBaseCurve1 = v;
+    guidedfilter.decompBaseCurve2 = v;
     guidedfilter.decompDetailBoost = v;
     metadata.mode = v;
 
@@ -1153,7 +1154,8 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(guidedfilter.smoothingChromaBlend);
         SETVAL_(guidedfilter.decompRadius);
         SETVAL_(guidedfilter.decompEpsilon);
-        SETVAL_(guidedfilter.decompBaseCurve);
+        SETVAL_(guidedfilter.decompBaseCurve1);
+        SETVAL_(guidedfilter.decompBaseCurve2);
         SETVAL_(guidedfilter.decompDetailBoost);
 #undef SETVAL_
 
@@ -3188,7 +3190,8 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(guidedfilter.smoothingChromaBlend);
     SETVAL_(guidedfilter.decompRadius);
     SETVAL_(guidedfilter.decompEpsilon);
-    SETVAL_(guidedfilter.decompBaseCurve);
+    SETVAL_(guidedfilter.decompBaseCurve1);
+    SETVAL_(guidedfilter.decompBaseCurve2);
     SETVAL_(guidedfilter.decompDetailBoost);
 #undef SETVAL_
 

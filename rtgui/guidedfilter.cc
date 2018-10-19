@@ -37,7 +37,8 @@ GuidedFilter::GuidedFilter(): FoldableToolPanel(this, "guidedfilter", M("TP_GUID
     EvDecompRadius = m->newEvent(RGBCURVE, "HISTORY_MSG_GUIDED_FILTER_DECOMP_RADIUS");
     EvDecompEpsilon = m->newEvent(RGBCURVE, "HISTORY_MSG_GUIDED_FILTER_DECOMP_EPSILON");
     EvDecompDetailBoost = m->newEvent(RGBCURVE, "HISTORY_MSG_GUIDED_FILTER_DECOMP_DETAIL_BOOST");
-    EvDecompBaseCurve = m->newEvent(RGBCURVE, "HISTORY_MSG_GUIDED_FILTER_DECOMP_BASE_CURVE");
+    EvDecompBaseCurve1 = m->newEvent(RGBCURVE, "HISTORY_MSG_GUIDED_FILTER_DECOMP_BASE_CURVE_1");
+    EvDecompBaseCurve2 = m->newEvent(RGBCURVE, "HISTORY_MSG_GUIDED_FILTER_DECOMP_BASE_CURVE_2");
 
     MyExpander *smoothingExp = Gtk::manage(new MyExpander(false, M("TP_GUIDED_FILTER_SMOOTHING")));
     ToolParamBlock *smoothing = Gtk::manage(new ToolParamBlock());
@@ -50,8 +51,7 @@ GuidedFilter::GuidedFilter(): FoldableToolPanel(this, "guidedfilter", M("TP_GUID
     smoothingRadius->setAdjusterListener(this);
     smoothing->pack_start(*smoothingRadius);
     
-    smoothingEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1e-6, 0.1, 1e-6, 0.02));
-    smoothingEpsilon->setLogScale(1e4, 1e-6);
+    smoothingEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1.0, 20.0, 0.1, 10.0));
     smoothingEpsilon->setAdjusterListener(this);
     smoothing->pack_start(*smoothingEpsilon);
     
@@ -72,29 +72,36 @@ GuidedFilter::GuidedFilter(): FoldableToolPanel(this, "guidedfilter", M("TP_GUID
     decompRadius->setAdjusterListener(this);
     decomp->pack_start(*decompRadius);
 
-    decompEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1e-6, 0.1, 1e-6, 0.02));
-    decompEpsilon->setLogScale(1e4, 1e-6);
+    decompEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1.0, 20.0, 0.1, 1.0));
     decompEpsilon->setAdjusterListener(this);
     decomp->pack_start(*decompEpsilon);
     
-    decompDetailBoost = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_DECOMP_DETAIL_BOOST"), -10.0, 10.0, 0.01, 0));
-    decompDetailBoost->setLogScale(10, 0, true);
+    decompDetailBoost = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_DECOMP_DETAIL_BOOST"), -10.0, 30.0, 0.01, 0));
+    decompDetailBoost->setLogScale(10, 10, true);
     decompDetailBoost->setAdjusterListener(this);
     decomp->pack_start(*decompDetailBoost);
     
-    curveEditorG = new CurveEditorGroup(options.lastToneCurvesDir, M("TP_GUIDED_FILTER_DECOMP_BASE_CURVE"));
+    CurveEditorGroup *curveEditorG = Gtk::manage(new CurveEditorGroup(options.lastToneCurvesDir, M("TP_GUIDED_FILTER_DECOMP_BASE_CURVE_1")));
     curveEditorG->setCurveListener(this);
-
-    decompBaseCurve = static_cast<DiagonalCurveEditor *>(curveEditorG->addCurve(CT_Diagonal, ""));
+    decompBaseCurve1 = static_cast<DiagonalCurveEditor *>(curveEditorG->addCurve(CT_Diagonal, ""));
     std::vector<GradientMilestone> bottomMilestones;
     bottomMilestones.push_back(GradientMilestone(0., 0., 0., 0.));
     bottomMilestones.push_back(GradientMilestone(1., 1., 1., 1.));    
-    decompBaseCurve->setBottomBarBgGradient(bottomMilestones);
-    decompBaseCurve->setLeftBarBgGradient(bottomMilestones);
+    decompBaseCurve1->setBottomBarBgGradient(bottomMilestones);
+    decompBaseCurve1->setLeftBarBgGradient(bottomMilestones);
     curveEditorG->curveListComplete();
-
     decomp->pack_start(*curveEditorG, Gtk::PACK_SHRINK, 2);
 
+    curveEditorG = Gtk::manage(new CurveEditorGroup(options.lastToneCurvesDir, M("TP_GUIDED_FILTER_DECOMP_BASE_CURVE_2")));
+    curveEditorG->setCurveListener(this);
+    decompBaseCurve2 = static_cast<DiagonalCurveEditor *>(curveEditorG->addCurve(CT_Diagonal, ""));
+    decompBaseCurve2->setBottomBarBgGradient(bottomMilestones);
+    decompBaseCurve2->setLeftBarBgGradient(bottomMilestones);
+    curveEditorG->curveListComplete();
+    decomp->pack_start(*curveEditorG, Gtk::PACK_SHRINK, 2);
+
+    setMulti(true);
+    
     smoothingExp->add(*smoothing, false);
     smoothingExp->setLevel(2);
     decompExp->add(*decomp, false);
@@ -129,7 +136,8 @@ void GuidedFilter::read(const ProcParams *pp, const ParamsEdited *pedited)
         decompRadius->setEditedState(pedited->guidedfilter.decompRadius ? Edited : UnEdited);
         decompEpsilon->setEditedState(pedited->guidedfilter.decompEpsilon ? Edited : UnEdited);
         decompDetailBoost->setEditedState(pedited->guidedfilter.decompDetailBoost ? Edited : UnEdited);    
-        decompBaseCurve->setUnChanged(!pedited->guidedfilter.decompBaseCurve);
+        decompBaseCurve1->setUnChanged(!pedited->guidedfilter.decompBaseCurve1);
+        decompBaseCurve2->setUnChanged(!pedited->guidedfilter.decompBaseCurve2);
     }
 
     setEnabled(pp->guidedfilter.enabled);
@@ -141,7 +149,8 @@ void GuidedFilter::read(const ProcParams *pp, const ParamsEdited *pedited)
     decompRadius->setValue(pp->guidedfilter.decompRadius);
     decompEpsilon->setValue(pp->guidedfilter.decompEpsilon);
     decompDetailBoost->setValue(pp->guidedfilter.decompDetailBoost);    
-    decompBaseCurve->setCurve(pp->guidedfilter.decompBaseCurve);
+    decompBaseCurve1->setCurve(pp->guidedfilter.decompBaseCurve1);
+    decompBaseCurve2->setCurve(pp->guidedfilter.decompBaseCurve2);
 
     enableListener();
 }
@@ -158,7 +167,8 @@ void GuidedFilter::write(ProcParams *pp, ParamsEdited *pedited)
     pp->guidedfilter.decompRadius = decompRadius->getValue();
     pp->guidedfilter.decompEpsilon = decompEpsilon->getValue();
     pp->guidedfilter.decompDetailBoost = decompDetailBoost->getValue();
-    pp->guidedfilter.decompBaseCurve = decompBaseCurve->getCurve();
+    pp->guidedfilter.decompBaseCurve1 = decompBaseCurve1->getCurve();
+    pp->guidedfilter.decompBaseCurve2 = decompBaseCurve2->getCurve();
 
     if (pedited) {
         pedited->guidedfilter.enabled = !get_inconsistent();
@@ -170,7 +180,8 @@ void GuidedFilter::write(ProcParams *pp, ParamsEdited *pedited)
         pedited->guidedfilter.decompRadius = decompRadius->getEditedState();
         pedited->guidedfilter.decompEpsilon = decompEpsilon->getEditedState();
         pedited->guidedfilter.decompDetailBoost = decompDetailBoost->getEditedState();
-        pedited->guidedfilter.decompBaseCurve = !decompBaseCurve->isUnChanged();
+        pedited->guidedfilter.decompBaseCurve1 = !decompBaseCurve1->isUnChanged();
+        pedited->guidedfilter.decompBaseCurve2 = !decompBaseCurve2->isUnChanged();
     }
 }
 
@@ -244,23 +255,22 @@ void GuidedFilter::enabledChanged ()
 }
 
 
-void GuidedFilter::curveChanged()
+void GuidedFilter::curveChanged(CurveEditor *ce)
 {
     if (listener && getEnabled()) {
-        listener->panelChanged(EvDecompBaseCurve, M("HISTORY_CUSTOMCURVE"));
+        if (ce == decompBaseCurve1) {
+            listener->panelChanged(EvDecompBaseCurve1, M("HISTORY_CUSTOMCURVE"));
+        } else if (ce == decompBaseCurve2) {
+            listener->panelChanged(EvDecompBaseCurve2, M("HISTORY_CUSTOMCURVE"));
+        }
     }
 }
 
 
 void GuidedFilter::autoOpenCurve()
 {
-    decompBaseCurve->openIfNonlinear();
-}
-
-
-void GuidedFilter::setEditProvider(EditDataProvider *provider)
-{
-    decompBaseCurve->setEditProvider(provider);
+    decompBaseCurve1->openIfNonlinear();
+    decompBaseCurve2->openIfNonlinear();
 }
 
 
