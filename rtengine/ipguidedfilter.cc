@@ -90,11 +90,13 @@ void guided_smoothing(LabImage *lab, array2D<float> &R, array2D<float> &G, array
         const int W = lab->W;
         const int H = lab->H;
         int r = max(int(gf.smoothingRadius / scale), 1);
-        int s = LIM(r / 2, 1, 4);
+        array2D<float> L(W, H, lab->L);//, ARRAY2D_BYREFERENCE);
+        
         for (int i = 0; i < gf.smoothingIterations; ++i) {
-            guidedFilter(R, R, R, r, gf.smoothingEpsilon, multithread, s);
-            guidedFilter(G, G, G, r, gf.smoothingEpsilon, multithread, s);
-            guidedFilter(B, B, B, r, gf.smoothingEpsilon, multithread, s);
+            guidedFilter(L, L, L, r, gf.smoothingEpsilon, multithread);
+            guidedFilter(L, R, R, r, gf.smoothingEpsilon, multithread);
+            guidedFilter(L, G, G, r, gf.smoothingEpsilon, multithread);
+            guidedFilter(L, B, B, r, gf.smoothingEpsilon, multithread);
         }
 
         float l_blend = LIM01(gf.smoothingLumaBlend / 100.f);
@@ -139,13 +141,12 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
         array2D<float> tmp(W, H);
         
         const int r = max(int(gf.decompRadius / scale), 1);
-        const int s = LIM(r / 2, 1, 4);
         const float boost = gf.decompDetailBoost >= 0 ? 1.f + gf.decompDetailBoost : -1.f/gf.decompDetailBoost;
 
         const auto apply =
             [&](array2D<float> &chan) -> void
             {
-                guidedFilter(chan, chan, tmp, r, gf.decompEpsilon, multithread, s);
+                guidedFilter(chan, chan, tmp, r, gf.decompEpsilon, multithread);
 
 #ifdef _OPENMP
                 #pragma omp parallel for if (multithread)
