@@ -137,9 +137,9 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
                 float y = baseCurve1.getVal(x);
                 y = (std::pow(base, y) - 1.0f) / (base - 1.0f);
                 x = y;
-                x = std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
+                // x = std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
                 y = baseCurve2.getVal(x);
-                y = (std::pow(base, y) - 1.0f) / (base - 1.0f);                
+                // y = (std::pow(base, y) - 1.0f) / (base - 1.0f);                
                 curve[i] = y * 65535.f;
             }
         }
