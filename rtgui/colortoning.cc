@@ -419,7 +419,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionSelected = 0;
     {
         auto n = labRegionList->append("1");
-        labRegionList->set_text(n, 1, "A=0, B=0, S=0, L=0");
+        labRegionList->set_text(n, 1, "a=0 b=0 s=0 l=0");
     }
     
     labRegionEditorG->curveListComplete();
@@ -500,6 +500,14 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
     clshape->setCurve (pp->colorToning.clcurve);
     cl2shape->setCurve (pp->colorToning.cl2curve);
 
+    labRegionData = pp->colorToning.labregions;
+    if (labRegionData.empty()) {
+        labRegionData.emplace_back(ColorToningParams::LabCorrectionRegion());
+    }
+    labRegionSelected = 0;
+    labRegionPopulateList();
+    labRegionShow(labRegionSelected);
+
     if (pedited) {
         redlow->setEditedState (pedited->colorToning.redlow ? Edited : UnEdited);
         greenlow->setEditedState (pedited->colorToning.greenlow ? Edited : UnEdited);
@@ -524,6 +532,8 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
         lumamode->set_inconsistent (!pedited->colorToning.lumamode);
 
         labgrid->setEdited(pedited->colorToning.labgridALow || pedited->colorToning.labgridBLow || pedited->colorToning.labgridAHigh || pedited->colorToning.labgridBHigh);
+
+        labRegionAB->setEdited(pedited->colorToning.labregions);
     }
 
     redlow->setValue    (pp->colorToning.redlow);
@@ -571,6 +581,8 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
         method->set_active (4);
     } else if (pp->colorToning.method == "LabGrid") {
         method->set_active(5);
+    } else if (pp->colorToning.method == "LabRegions") {
+        method->set_active(6);
     }
 
     methodChanged();
@@ -625,6 +637,9 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
 
     labgrid->getParams(pp->colorToning.labgridALow, pp->colorToning.labgridBLow, pp->colorToning.labgridAHigh, pp->colorToning.labgridBHigh);
 
+    labRegionGet(labRegionSelected);
+    pp->colorToning.labregions = labRegionData;
+
     if (pedited) {
         pedited->colorToning.redlow     = redlow->getEditedState ();
         pedited->colorToning.greenlow   = greenlow->getEditedState ();
@@ -651,6 +666,8 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
         pedited->colorToning.shadowsColSat = shadowsColSat->getEditedState ();
 
         pedited->colorToning.labgridALow = pedited->colorToning.labgridBLow = pedited->colorToning.labgridAHigh = pedited->colorToning.labgridBHigh = labgrid->getEdited();
+
+        pedited->colorToning.labregions = labRegionAB->getEdited();
     }
 
     if (method->get_active_row_number() == 0) {
@@ -665,6 +682,8 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
         pp->colorToning.method = "Splitlr";
     } else if (method->get_active_row_number() == 5) {
         pp->colorToning.method = "LabGrid";
+    } else if (method->get_active_row_number() == 6) {
+        pp->colorToning.method = "LabRegions";
     }
 
     if (twocolor->get_active_row_number() == 0) {
@@ -722,6 +741,7 @@ void ColorToning::setDefaults (const ProcParams* defParams, const ParamsEdited* 
     shadowsColSat->setDefault<int> (defParams->colorToning.shadowsColSat);
     strength->setDefault (defParams->colorToning.strength);
     labgrid->setDefault(defParams->colorToning.labgridALow, defParams->colorToning.labgridBLow, defParams->colorToning.labgridAHigh, defParams->colorToning.labgridBHigh);
+    
 
     if (pedited) {
         redlow->setDefaultEditedState (pedited->colorToning.redlow ? Edited : UnEdited);
@@ -740,6 +760,8 @@ void ColorToning::setDefaults (const ProcParams* defParams, const ParamsEdited* 
         shadowsColSat->setDefaultEditedState (pedited->colorToning.shadowsColSat ? Edited : UnEdited);
         strength->setDefaultEditedState (pedited->colorToning.strength ? Edited : UnEdited);
         labgrid->setEdited((pedited->colorToning.labgridALow || pedited->colorToning.labgridBLow || pedited->colorToning.labgridAHigh || pedited->colorToning.labgridBHigh) ? Edited : UnEdited);
+
+        labRegionAB->setEdited(pedited->colorToning.labregions ? Edited : UnEdited);
     } else {
         redlow->setDefaultEditedState (Irrelevant);
         greenlow->setDefaultEditedState (Irrelevant);
@@ -757,6 +779,7 @@ void ColorToning::setDefaults (const ProcParams* defParams, const ParamsEdited* 
         shadowsColSat->setDefaultEditedState (Irrelevant);
         strength->setDefaultEditedState (Irrelevant);
         labgrid->setEdited(Edited);
+        labRegionAB->setEdited(Edited);
     }
 }
 
@@ -905,6 +928,7 @@ void ColorToning::methodChanged ()
 
     if (!batchMode) {
         labgridBox->hide();
+        labRegionBox->hide();
 
         if (method->get_active_row_number() == 0) { // Lab
             colorSep->show();
@@ -1053,7 +1077,7 @@ void ColorToning::methodChanged ()
             chanMixerBox->hide();
             neutrHBox->hide();
             lumamode->show();
-        } else if (method->get_active_row_number() == 5) { // Lab Grid
+        } else if (method->get_active_row_number() == 5 || method->get_active_row_number() == 6) { // Lab Grid or Lab Regions
             colorSep->hide();
             colorCurveEditorG->hide();
             twocolor->hide();
@@ -1072,7 +1096,11 @@ void ColorToning::methodChanged ()
             neutrHBox->hide();
             lumamode->hide();
 
-            labgridBox->show();
+            if (method->get_active_row_number() == 5) {
+                labgridBox->show();
+            } else {
+                labRegionBox->show();
+            }
         }
     }
 
@@ -1151,6 +1179,8 @@ void ColorToning::curveChanged (CurveEditor* ce)
         } else if (ce == cl2shape) {
             listener->panelChanged (EvColorToningLLCurve, M("HISTORY_CUSTOMCURVE"));
         }
+
+        // TODO
     }
 }
 
@@ -1252,6 +1282,8 @@ void ColorToning::adjusterChanged(Adjuster* a, double newval)
     } else if (a == strength) {
         listener->panelChanged (EvColorToningStrength, a->getTextValue());
     }
+
+    // TODO
 }
 
 void ColorToning::adjusterAutoToggled(Adjuster* a, bool newval)
@@ -1301,9 +1333,24 @@ void ColorToning::onLabRegionSelectionChanged()
 {
     auto s = labRegionList->get_selected();
     if (!s.empty()) {
+        // update the selected values
+        labRegionGet(labRegionSelected);
         labRegionSelected = s[0];
         labRegionShow(labRegionSelected);
     }
+}
+
+
+void ColorToning::labRegionGet(int idx)
+{
+    auto &r = labRegionData[idx];
+    double la, lb;
+    labRegionAB->getParams(la, lb, r.a, r.b);
+    r.saturation = labRegionSaturation->getValue();
+    r.lightness = labRegionLightness->getValue();
+    r.hueMask = labRegionHueMask->getCurve();
+    r.chromaticityMask = labRegionChromaticityMask->getCurve();
+    r.lightnessMask = labRegionLightnessMask->getCurve();
 }
 
 
@@ -1320,8 +1367,35 @@ void ColorToning::labRegionRemovePressed()
         auto s = labRegionList->get_selected();
         if (!s.empty()) {
             labRegionData.erase(s[0]);
+            labRegionSelected = LIM(labRegionSelected-1, 0, labRegionData.size()-1);
             labRegionPopulateList();
             labRegionShow(labRegionSelected);
         }
     }
+}
+
+
+void ColorToning::labRegionPopulateList()
+{
+    ConnectionBlocker b(labRegionSelectionConn);
+    labRegionList->clear_items();
+    for (size_t i = 0; i < labRegionData.size(); ++i) {
+        auto &r = labRegionData[i];
+        auto j = labRegionList->append(std::to_string(i+1));
+        labRegionList->set_text(j, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", r.a, r.b, r.saturation, r.lightness));
+    }
+}
+
+
+void ColorToning::labRegionShow(int idx)
+{
+    disableListener();
+    auto &r = labRegionData[idx];
+    labRegionAB->setParams(0, 0, r.a, r.b, false);
+    labRegionSaturation->setValue(r.saturation);
+    labRegionLightness->setValue(r.lightness);
+    labRegionHueMask->setCurve(r.hueMask);
+    labRegionChromaticityMask->setCurve(r.chromaticityMask);
+    labRegionLightnessMask->setCurve(r.lightnessMask);
+    enableListener();
 }

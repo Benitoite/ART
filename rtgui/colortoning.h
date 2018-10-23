@@ -66,6 +66,7 @@ private:
     void labRegionRemovePressed();
     void labRegionPopulateList();
     void labRegionShow(int idx);
+    void labRegionGet(int idx);
 
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
