@@ -60,6 +60,12 @@ public:
 
 private:
     bool resetPressed(GdkEventButton* event);
+    bool labRegionResetPressed(GdkEventButton *event);
+    void onLabRegionSelectionChanged();
+    void labRegionAddPressed();
+    void labRegionRemovePressed();
+    void labRegionPopulateList();
+    void labRegionShow(int idx);
 
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
@@ -116,6 +122,29 @@ private:
     Gtk::Button *labgridReset;
     LabGrid *labgrid;
     Gtk::HBox *labgridBox;
+
+    rtengine::ProcEvent EvLabRegionList;
+    rtengine::ProcEvent EvLabRegionAB;
+    rtengine::ProcEvent EvLabRegionSaturation;
+    rtengine::ProcEvent EvLabRegionLightness;
+    rtengine::ProcEvent EvLabRegionHueMask;
+    rtengine::ProcEvent EvLabRegionChromaticityMask;
+    rtengine::ProcEvent EvLabRegionLightnessMask;
+
+    Gtk::VBox *labRegionBox;
+    Gtk::ListViewText *labRegionList;
+    Gtk::Button *labRegionAdd;
+    Gtk::Button *labRegionRemove;
+    Gtk::Button *labRegionABReset;
+    LabGrid *labRegionAB;
+    Adjuster *labRegionSaturation;
+    Adjuster *labRegionLightness;
+    FlatCurveEditor *labRegionHueMask;
+    FlatCurveEditor *labRegionChromaticityMask;
+    FlatCurveEditor *labRegionLightnessMask;
+    std::vector<ColorToningParams::LabCorrectionRegion> labRegionData;
+    int labRegionSelected;
+    sigc::connection labRegionSelectionConn;
 
     IdleRegister idle_register;
 };

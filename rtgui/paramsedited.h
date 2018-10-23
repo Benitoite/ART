@@ -178,6 +178,7 @@ public:
     bool labgridBLow;
     bool labgridAHigh;
     bool labgridBHigh;
+    bool labregions;
 };
 
 class SharpenEdgeParamsEdited

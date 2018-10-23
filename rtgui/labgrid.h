@@ -64,11 +64,14 @@ private:
     sigc::connection delayconn;
     static const int inset = 2;
 
+    bool grid_visible;
+    bool low_enabled;
+
     bool notifyListener();
     void getLitPoint();
 
 public:
-    LabGrid(rtengine::ProcEvent evt);
+    LabGrid(rtengine::ProcEvent evt, bool enable_low=true);
 
     void getParams(double &la, double &lb, double &ha, double &hb) const;
     void setParams(double la, double lb, double ha, double hb, bool notify);
@@ -77,6 +80,9 @@ public:
     bool getEdited() const;
     void reset(bool toInitial);
     void setListener(ToolPanelListener *l);
+
+    bool lowEnabled() const;
+    void setLowEnabled(bool yes);
 
     bool on_draw(const ::Cairo::RefPtr<Cairo::Context> &crf);
     void on_style_updated ();

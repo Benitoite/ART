@@ -141,6 +141,7 @@ void ParamsEdited::set(bool v)
     colorToning.labgridBLow = v;
     colorToning.labgridAHigh = v;
     colorToning.labgridBHigh = v;
+    colorToning.labregions = v;
 
     sharpening.enabled            = v;
     sharpening.contrast           = v;
@@ -715,6 +716,7 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         colorToning.labgridBLow = colorToning.labgridBLow && p.colorToning.labgridBLow == other.colorToning.labgridBLow;
         colorToning.labgridAHigh = colorToning.labgridAHigh && p.colorToning.labgridAHigh == other.colorToning.labgridAHigh;
         colorToning.labgridBHigh = colorToning.labgridBHigh && p.colorToning.labgridBHigh == other.colorToning.labgridBHigh;
+        colorToning.labregions = colorToning.labregions && p.colorToning.labregions == other.colorToning.labregions;
         sharpenEdge.enabled = sharpenEdge.enabled && p.sharpenEdge.enabled == other.sharpenEdge.enabled;
         sharpenEdge.passes = sharpenEdge.passes && p.sharpenEdge.passes == other.sharpenEdge.passes;
         sharpenEdge.amount = sharpenEdge.amount && p.sharpenEdge.amount == other.sharpenEdge.amount;
@@ -1605,6 +1607,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
 
     if (colorToning.labgridBHigh) {
         toEdit.colorToning.labgridBHigh = mods.colorToning.labgridBHigh;
+    }
+
+    if (colorToning.labregions) {
+        toEdit.colorToning.labregions = mods.colorToning.labregions;
     }
 
     if (sharpenEdge.enabled) {
