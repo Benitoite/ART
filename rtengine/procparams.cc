@@ -614,6 +614,82 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 const double ColorToningParams::LABGRID_CORR_MAX = 12000.f;
 const double ColorToningParams::LABGRID_CORR_SCALE = 3.f;
 
+ColorToningParams::LabGridZone::LabGridZone():
+    a(0),
+    b(0),
+    saturation(0),
+    lightness(0),
+    hueMask{
+        FCT_MinMaxCPoints,
+            0.166666667,
+            1.,
+            0.35,
+            0.35,
+            0.347,
+            1.,
+            0.35,
+            0.35,
+            0.513667426,
+            1,
+            0.35,
+            0.35,
+            0.668944571,
+            1.,
+            0.35,
+            0.35,
+            0.8287775246,
+            1.,
+            0.35,
+            0.35,
+            0.9908883827,
+            1.,
+            0.35,
+            0.35
+    },
+    chromaticityMask{
+        FCT_MinMaxCPoints,
+            0.,
+            1.,
+            0.35,
+            0.35,
+            1.,
+            1.,
+            0.35,
+            0.35
+            },
+    lightnessMask{
+        FCT_MinMaxCPoints,
+            0.,
+            1.,
+            0.35,
+            0.35,
+            1.,
+            1.,
+            0.35,
+            0.35
+            }
+{
+}
+
+
+bool ColorToningParams::LabGridZone::operator==(const LabGridZone &other) const
+{
+    return a == other.a
+        && b == other.b
+        && saturation == other.saturation
+        && lightness == other.lightness
+        && hueMask == other.hueMask
+        && chromaticityMask == other.chromaticityMask
+        && lightnessMask == other.lightnessMask;
+}
+
+
+bool ColorToningParams::LabGridZone::operator!=(const LabGridZone &other) const
+{
+    return !(*this == other);
+}
+
+
 ColorToningParams::ColorToningParams() :
     enabled(false),
     autosat(true),
@@ -685,10 +761,11 @@ ColorToningParams::ColorToningParams() :
     satlow(0.0),
     sathigh(0.0),
     lumamode(true),
-    labgridALow(0.0),
-    labgridBLow(0.0),
-    labgridAHigh(0.0),
-    labgridBHigh(0.0)
+    labgrid({LabGridZone()})
+    // labgridALow(0.0),
+    // labgridBLow(0.0),
+    // labgridAHigh(0.0),
+    // labgridBHigh(0.0)
 {
 }
 
@@ -721,10 +798,11 @@ bool ColorToningParams::operator ==(const ColorToningParams& other) const
         && satlow == other.satlow
         && sathigh == other.sathigh
         && lumamode == other.lumamode
-        && labgridALow == other.labgridALow
-        && labgridBLow == other.labgridBLow
-        && labgridAHigh == other.labgridAHigh
-        && labgridBHigh == other.labgridBHigh;
+        && labgrid == other.labgrid;
+        // && labgridALow == other.labgridALow
+        // && labgridBLow == other.labgridBLow
+        // && labgridAHigh == other.labgridAHigh
+        // && labgridBHigh == other.labgridBHigh;
 }
 
 bool ColorToningParams::operator !=(const ColorToningParams& other) const
@@ -3470,10 +3548,23 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->colorToning.shadowsColSat, "ColorToning", "ShadowsColorSaturation", colorToning.shadowsColSat.toVector(), keyFile);
         saveToKeyfile(!pedited || pedited->colorToning.clcurve, "ColorToning", "ClCurve", colorToning.clcurve, keyFile);
         saveToKeyfile(!pedited || pedited->colorToning.cl2curve, "ColorToning", "Cl2Curve", colorToning.cl2curve, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridALow, "ColorToning", "LabGridALow", colorToning.labgridALow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridBLow, "ColorToning", "LabGridBLow", colorToning.labgridBLow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridAHigh, "ColorToning", "LabGridAHigh", colorToning.labgridAHigh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridBHigh, "ColorToning", "LabGridBHigh", colorToning.labgridBHigh, keyFile);
+        // saveToKeyfile(!pedited || pedited->colorToning.labgridALow, "ColorToning", "LabGridALow", colorToning.labgridALow, keyFile);
+        // saveToKeyfile(!pedited || pedited->colorToning.labgridBLow, "ColorToning", "LabGridBLow", colorToning.labgridBLow, keyFile);
+        // saveToKeyfile(!pedited || pedited->colorToning.labgridAHigh, "ColorToning", "LabGridAHigh", colorToning.labgridAHigh, keyFile);
+        // saveToKeyfile(!pedited || pedited->colorToning.labgridBHigh, "ColorToning", "LabGridBHigh", colorToning.labgridBHigh, keyFile);
+        if (!pedited || pedited->colorToning.labgrid) {
+            for (size_t j = 0; j < colorToning.labgrid.size(); ++j) {
+                std::string n = std::to_string(j+1);
+                auto &l = colorToning.labgrid[j];
+                putToKeyfile("ColorToning", Glib::ustring("LabGridA_") + n, l.a, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabGridB_") + n, l.b, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabGridSaturation_") + n, l.saturation, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabGridLightness_") + n, l.lightness, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabGridHueMask_") + n, l.hueMask, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabGridChromaticityMask_") + n, l.chromaticityMask, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabGridLightnessMask_") + n, l.lightnessMask, keyFile);
+            }
+        }
 
 // Raw
         saveToKeyfile(!pedited || pedited->raw.darkFrame, "RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
@@ -4846,16 +4937,58 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "ColorToning", "Greenhigh", pedited, colorToning.greenhigh, pedited->colorToning.greenhigh);
             assignFromKeyfile(keyFile, "ColorToning", "Bluehigh", pedited, colorToning.bluehigh, pedited->colorToning.bluehigh);
 
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridALow", pedited, colorToning.labgridALow, pedited->colorToning.labgridALow);
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridBLow", pedited, colorToning.labgridBLow, pedited->colorToning.labgridBLow);
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridAHigh", pedited, colorToning.labgridAHigh, pedited->colorToning.labgridAHigh);
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridBHigh", pedited, colorToning.labgridBHigh, pedited->colorToning.labgridBHigh);
-            if (ppVersion < 337) {
-                const double scale = ColorToningParams::LABGRID_CORR_SCALE;
-                colorToning.labgridALow *= scale;
-                colorToning.labgridAHigh *= scale;
-                colorToning.labgridBLow *= scale;
-                colorToning.labgridBHigh *= scale;
+            // assignFromKeyfile(keyFile, "ColorToning", "LabGridALow", pedited, colorToning.labgridALow, pedited->colorToning.labgridALow);
+            // assignFromKeyfile(keyFile, "ColorToning", "LabGridBLow", pedited, colorToning.labgridBLow, pedited->colorToning.labgridBLow);
+            // assignFromKeyfile(keyFile, "ColorToning", "LabGridAHigh", pedited, colorToning.labgridAHigh, pedited->colorToning.labgridAHigh);
+            // assignFromKeyfile(keyFile, "ColorToning", "LabGridBHigh", pedited, colorToning.labgridBHigh, pedited->colorToning.labgridBHigh);
+            // if (ppVersion < 337) {
+            //     const double scale = ColorToningParams::LABGRID_CORR_SCALE;
+            //     colorToning.labgridALow *= scale;
+            //     colorToning.labgridAHigh *= scale;
+            //     colorToning.labgridBLow *= scale;
+            //     colorToning.labgridBHigh *= scale;
+            // }
+            std::vector<LabGridZone> lg;
+            bool found = false;
+            bool done = false;
+            for (int i = 1; !done; ++i) {
+                LabGridZone cur;
+                done = true;
+                std::string n = std::to_string(i);
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridA_") + n, pedited, cur.a, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridB_") + n, pedited, cur.b, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridSaturation_") + n, pedited, cur.saturation, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridLightness_") + n, pedited, cur.lightness, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridHueMask_") + n, pedited, cur.hueMask, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridChromaticityMask_") + n, pedited, cur.chromaticityMask, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabGridLightnessMask_") + n, pedited, cur.lightnessMask, pedited->colorToning.labgrid)) {
+                    found = true;
+                    done = false;
+                }
+                if (!done) {
+                    lg.emplace_back(cur);
+                }
+            }
+            if (found) {
+                colorToning.labgrid = std::move(lg);
             }
         }
 

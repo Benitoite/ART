@@ -448,10 +448,24 @@ struct ColorToningParams {
     double sathigh;
     bool lumamode;
 
-    double labgridALow;
-    double labgridBLow;
-    double labgridAHigh;
-    double labgridBHigh;
+    struct LabGridZone {
+        double a;
+        double b;
+        double saturation;
+        double lightness;
+        std::vector<double> hueMask;
+        std::vector<double> chromaticityMask;
+        std::vector<double> lightnessMask;
+
+        LabGridZone();
+        bool operator==(const LabGridZone &other) const;
+        bool operator!=(const LabGridZone &other) const;
+    };
+    std::vector<LabGridZone> labgrid;
+    /* double labgridALow; */
+    /* double labgridBLow; */
+    /* double labgridAHigh; */
+    /* double labgridBHigh; */
     static const double LABGRID_CORR_MAX;
     static const double LABGRID_CORR_SCALE;
 
