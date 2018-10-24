@@ -48,12 +48,6 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
         lmask[i].reset(new FlatCurve(r.lightnessMask, false));
     }
 
-    const auto logscale =
-        [](float x, float base) -> float
-        {
-            return std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
-        };
-
     array2D<float> guide(lab->W, lab->H, lab->L, ARRAY2D_BYREFERENCE);
     array2D<float> abmask(lab->W, lab->H);
     array2D<float> Lmask(lab->W, lab->H);
@@ -68,7 +62,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
             float b = lab->b[y][x];
             float c, h;
             Color::Lab2Lch(a, b, c, h);
-            float c1 = logscale(c / 42000.f, 1e6);
+            float c1 = lin2log(c * (327.68f / 48000.f), 10.f);
             float h1 = Color::huelab_to_huehsv2(h);
             float l1 = l / 32768.f;
 

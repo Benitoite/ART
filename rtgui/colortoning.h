@@ -58,6 +58,9 @@ public:
 
     void setListener(ToolPanelListener *tpl);
 
+    void setEditProvider(EditDataProvider *provider);
+    float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3);
+
 private:
     bool resetPressed(GdkEventButton* event);
     bool labRegionResetPressed(GdkEventButton *event);

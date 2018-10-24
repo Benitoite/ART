@@ -413,25 +413,31 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionHueMask = static_cast<FlatCurveEditor *>(labRegionEditorG->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_HUEMASK"), nullptr, false, true));
     labRegionHueMask->setIdentityValue(0.);
     labRegionHueMask->setResetCurve(FlatCurveType(default_params.labregions[0].hueMask[0]), default_params.labregions[0].hueMask);
-    {
-        std::vector<GradientMilestone> bottomMilestones;
-        float R, G, B;
-        for (int i = 0; i < 7; i++) {
-            float x = float(i) * (1.0f / 6.0);
-            Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
-            bottomMilestones.push_back(GradientMilestone(double(x), double(R), double(G), double(B)));
-        }
-        labRegionHueMask->setBottomBarBgGradient(bottomMilestones);
-    }
+    // {
+    //     std::vector<GradientMilestone> bottomMilestones;
+    //     float R, G, B;
+    //     for (int i = 0; i < 7; i++) {
+    //         float x = float(i) * (1.0f / 6.0);
+    //         Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
+    //         bottomMilestones.push_back(GradientMilestone(double(x), double(R), double(G), double(B)));
+    //     }
+    //     labRegionHueMask->setBottomBarBgGradient(bottomMilestones);
+    // }
     labRegionHueMask->setCurveColorProvider(this, ID_LABREGION_HUE);
+    labRegionHueMask->setBottomBarColorProvider(this, ID_LABREGION_HUE);
+    labRegionHueMask->setEditID(EUID_Lab_HHCurve, BT_SINGLEPLANE_FLOAT);
 
     labRegionChromaticityMask = static_cast<FlatCurveEditor *>(labRegionEditorG->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_CHROMATICITYMASK"), nullptr, false, false));
     labRegionChromaticityMask->setIdentityValue(0.);
     labRegionChromaticityMask->setResetCurve(FlatCurveType(default_params.labregions[0].chromaticityMask[0]), default_params.labregions[0].chromaticityMask);
+    labRegionChromaticityMask->setBottomBarColorProvider(this, ID_LABREGION_HUE+1);
+    labRegionChromaticityMask->setEditID(EUID_Lab_CCurve, BT_SINGLEPLANE_FLOAT);
 
     labRegionLightnessMask = static_cast<FlatCurveEditor *>(labRegionEditorG->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_LIGHTNESSMASK"), nullptr, false, false));
     labRegionLightnessMask->setIdentityValue(0.);
     labRegionLightnessMask->setResetCurve(FlatCurveType(default_params.labregions[0].lightnessMask[0]), default_params.labregions[0].lightnessMask);
+    labRegionLightnessMask->setBottomBarBgGradient(milestones);
+    labRegionLightnessMask->setEditID(EUID_Lab_LCurve, BT_SINGLEPLANE_FLOAT);
 
     labRegionData = default_params.labregions;
     labRegionSelected = 0;
@@ -1179,7 +1185,16 @@ void ColorToning::colorForValue (double valX, double valY, enum ColorCaller::Ele
     } else if (callerId == 4) {  // color curve vertical and horizontal crosshair
         Color::hsv2rgb01(float(valY), 1.0f, 0.5f, R, G, B);
     } else if (callerId == ID_LABREGION_HUE) {
-        Color::hsv2rgb01(float(valX), 0.5f, 0.5f, R, G, B);        
+        // TODO
+        // float x = valX - 1.f/6.f;
+        // if (x < 0.f) {
+        //     x += 1.f;
+        // }
+        // x = log2lin(x, 3.f);
+        float x = valX;
+        Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
+    } else if (callerId == ID_LABREGION_HUE+1) {
+        Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);        
     }
 
     caller->ccRed = double(R);
@@ -1434,4 +1449,21 @@ void ColorToning::labRegionShow(int idx)
     if (disable) {
         enableListener();
     }
+}
+
+
+void ColorToning::setEditProvider(EditDataProvider *provider)
+{
+    labRegionHueMask->setEditProvider(provider);
+    labRegionChromaticityMask->setEditProvider(provider);
+    labRegionLightnessMask->setEditProvider(provider);
+}
+
+
+float ColorToning::blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3)
+{
+    if (ce == labRegionChromaticityMask && chan1 > 0.f) {
+        return lin2log(chan1, 10.f);
+    }
+    return CurveListener::blendPipetteValues(ce, chan1, chan2, chan3);
 }
