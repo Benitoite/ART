@@ -464,9 +464,9 @@ struct ColorToningParams {
         std::vector<double> chromaticityMask;
         std::vector<double> lightnessMask;
 
-        LabGridZone();
-        bool operator==(const LabGridZone &other) const;
-        bool operator!=(const LabGridZone &other) const;
+        LabCorrectionRegion();
+        bool operator==(const LabCorrectionRegion &other) const;
+        bool operator!=(const LabCorrectionRegion &other) const;
     };
     std::vector<LabCorrectionRegion> labregions;
     

@@ -4948,11 +4948,11 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 colorToning.labgridBLow *= scale;
                 colorToning.labgridBHigh *= scale;
             }
-            std::vector<LabCorrectionRegion> lg;
+            std::vector<ColorToningParams::LabCorrectionRegion> lg;
             bool found = false;
             bool done = false;
             for (int i = 1; !done; ++i) {
-                LabCorrectionRegion cur;
+                ColorToningParams::LabCorrectionRegion cur;
                 done = true;
                 std::string n = std::to_string(i);
                 if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionA_") + n, pedited, cur.a, pedited->colorToning.labregions)) {

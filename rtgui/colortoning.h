@@ -143,7 +143,7 @@ private:
     FlatCurveEditor *labRegionHueMask;
     FlatCurveEditor *labRegionChromaticityMask;
     FlatCurveEditor *labRegionLightnessMask;
-    std::vector<ColorToningParams::LabCorrectionRegion> labRegionData;
+    std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
     int labRegionSelected;
     sigc::connection labRegionSelectionConn;
 
