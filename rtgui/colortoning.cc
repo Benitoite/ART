@@ -375,12 +375,10 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionAdd->add(*Gtk::manage(new RTImage("add-small.png")));
     labRegionAdd->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionAddPressed));
     add_button(labRegionAdd, vb);
-//    vb->pack_start(*labRegionAdd);
     labRegionRemove = Gtk::manage(new Gtk::Button());
     labRegionRemove->add(*Gtk::manage(new RTImage("remove-small.png")));
     labRegionRemove->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionRemovePressed));
     add_button(labRegionRemove, vb);
-//    vb->pack_start(*labRegionRemove);
     hb->pack_start(*vb, Gtk::PACK_SHRINK);
     labRegionBox->pack_start(*hb, true, true);
     
@@ -390,15 +388,9 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionABReset = Gtk::manage(new Gtk::Button());
     labRegionABReset->set_tooltip_markup(M("ADJUSTER_RESET_TO_DEFAULT"));
     labRegionABReset->add(*Gtk::manage(new RTImage("undo-small.png", "redo-small.png")));
-    // setExpandAlignProperties(labRegionABReset, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_START);
-    // labRegionABReset->set_relief(Gtk::RELIEF_NONE);
-    // labRegionABReset->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
-    // labRegionABReset->set_can_focus(false);
-    // labRegionABReset->set_size_request(-1, 20);
     labRegionABReset->signal_button_release_event().connect(sigc::mem_fun(*this, &ColorToning::labRegionResetPressed));
     add_button(labRegionABReset, hb);
-//    hb->pack_start(*labRegionABReset, false, false);
-    labRegionBox->pack_start(*hb); //, Gtk::PACK_EXPAND_WIDGET);
+    labRegionBox->pack_start(*hb);
 
     labRegionSaturation = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_SATURATION"), -100, 100, 1, 0));
     labRegionSaturation->setAdjusterListener(this);
@@ -413,16 +405,6 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionHueMask = static_cast<FlatCurveEditor *>(labRegionEditorG->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_HUEMASK"), nullptr, false, true));
     labRegionHueMask->setIdentityValue(0.);
     labRegionHueMask->setResetCurve(FlatCurveType(default_params.labregions[0].hueMask[0]), default_params.labregions[0].hueMask);
-    // {
-    //     std::vector<GradientMilestone> bottomMilestones;
-    //     float R, G, B;
-    //     for (int i = 0; i < 7; i++) {
-    //         float x = float(i) * (1.0f / 6.0);
-    //         Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
-    //         bottomMilestones.push_back(GradientMilestone(double(x), double(R), double(G), double(B)));
-    //     }
-    //     labRegionHueMask->setBottomBarBgGradient(bottomMilestones);
-    // }
     labRegionHueMask->setCurveColorProvider(this, ID_LABREGION_HUE);
     labRegionHueMask->setBottomBarColorProvider(this, ID_LABREGION_HUE);
     labRegionHueMask->setEditID(EUID_Lab_HHCurve, BT_SINGLEPLANE_FLOAT);
@@ -665,6 +647,7 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
     labgrid->getParams(pp->colorToning.labgridALow, pp->colorToning.labgridBLow, pp->colorToning.labgridAHigh, pp->colorToning.labgridBHigh);
 
     labRegionGet(labRegionSelected);
+    labRegionShow(labRegionSelected, true);
     pp->colorToning.labregions = labRegionData;
 
     if (pedited) {
@@ -1186,12 +1169,12 @@ void ColorToning::colorForValue (double valX, double valY, enum ColorCaller::Ele
         Color::hsv2rgb01(float(valY), 1.0f, 0.5f, R, G, B);
     } else if (callerId == ID_LABREGION_HUE) {
         // TODO
-        // float x = valX - 1.f/6.f;
-        // if (x < 0.f) {
-        //     x += 1.f;
-        // }
-        // x = log2lin(x, 3.f);
-        float x = valX;
+        float x = valX - 1.f/6.f;
+        if (x < 0.f) {
+            x += 1.f;
+        }
+        x = log2lin(x, 3.f);
+        // float x = valX;
         Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
     } else if (callerId == ID_LABREGION_HUE+1) {
         Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);        
@@ -1429,19 +1412,21 @@ void ColorToning::labRegionPopulateList()
 }
 
 
-void ColorToning::labRegionShow(int idx)
+void ColorToning::labRegionShow(int idx, bool list_only)
 {
     bool disable = listener;
     if (disable) {
         disableListener();
     }
     auto &r = labRegionData[idx];
-    labRegionAB->setParams(0, 0, r.a, r.b, false);
-    labRegionSaturation->setValue(r.saturation);
-    labRegionLightness->setValue(r.lightness);
-    labRegionHueMask->setCurve(r.hueMask);
-    labRegionChromaticityMask->setCurve(r.chromaticityMask);
-    labRegionLightnessMask->setCurve(r.lightnessMask);
+    if (!list_only) {
+        labRegionAB->setParams(0, 0, r.a, r.b, false);
+        labRegionSaturation->setValue(r.saturation);
+        labRegionLightness->setValue(r.lightness);
+        labRegionHueMask->setCurve(r.hueMask);
+        labRegionChromaticityMask->setCurve(r.chromaticityMask);
+        labRegionLightnessMask->setCurve(r.lightnessMask);
+    }
     labRegionList->set_text(idx, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", r.a, r.b, r.saturation, r.lightness));
     Gtk::TreePath pth;
     pth.push_back(idx);
@@ -1464,6 +1449,12 @@ float ColorToning::blendPipetteValues(CurveEditor *ce, float chan1, float chan2,
 {
     if (ce == labRegionChromaticityMask && chan1 > 0.f) {
         return lin2log(chan1, 10.f);
+    } else if (ce == labRegionHueMask && chan1 > 0.f) {
+        float x = chan1 + 1.f/6.f;
+        if (x > 1.f) {
+            x -= 1.f;
+        }
+        return lin2log(x, 3.f);
     }
     return CurveListener::blendPipetteValues(ce, chan1, chan2, chan3);
 }

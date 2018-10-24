@@ -64,6 +64,11 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
             Color::Lab2Lch(a, b, c, h);
             float c1 = lin2log(c * (327.68f / 48000.f), 10.f);
             float h1 = Color::huelab_to_huehsv2(h);
+            h1 = h1 + 1.f/6.f;
+            if (h1 > 1.f) {
+                h1 -= 1.f;
+            }
+            h1 = lin2log(h1, 3.f);
             float l1 = l / 32768.f;
 
             for (size_t i = 0; i < n; ++i) {
