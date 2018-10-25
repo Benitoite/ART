@@ -773,6 +773,7 @@ public:
         bool dcbIterations;
         bool dcbEnhance;
         bool lmmseIterations;
+        bool dualDemosaicAutoContrast;
         bool dualDemosaicContrast;
         bool pixelShiftMotionCorrectionMethod;
         bool pixelShiftEperIso;
@@ -803,6 +804,7 @@ public:
 
     public:
         bool method;
+        bool dualDemosaicAutoContrast;
         bool dualDemosaicContrast;
         bool ccSteps;
         bool exBlackRed;

@@ -1339,6 +1339,7 @@ struct RAWParams {
         int greenthresh;
         int dcb_iterations;
         int lmmse_iterations;
+        bool dualDemosaicAutoContrast;
         double dualDemosaicContrast;
         PSMotionCorrectionMethod pixelShiftMotionCorrectionMethod;
         double pixelShiftEperIso;
@@ -1386,6 +1387,7 @@ struct RAWParams {
         };
 
         Glib::ustring method;
+        bool dualDemosaicAutoContrast;
         double dualDemosaicContrast;
         int ccSteps;
         double blackred;
