@@ -360,6 +360,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     EvLabRegionHueMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_HUEMASK");
     EvLabRegionChromaticityMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_CHROMATICITYMASK");
     EvLabRegionLightnessMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_LIGHTNESSMASK");
+    EvLabRegionShowMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_SHOWMASK");
     labRegionBox = Gtk::manage(new Gtk::VBox());
 
     labRegionList = Gtk::manage(new Gtk::ListViewText(3));
@@ -440,6 +441,10 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionEditorG->curveListComplete();
     labRegionEditorG->show();
     labRegionBox->pack_start(*labRegionEditorG, Gtk::PACK_SHRINK, 2);
+
+    labRegionShowMask = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_SHOW_MASK")));
+    labRegionShowMask->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labRegionShowMaskChanged));
+    labRegionBox->pack_start(*labRegionShowMask, Gtk::PACK_SHRINK, 4);
 
     pack_start(*labRegionBox, Gtk::PACK_EXPAND_WIDGET, 4);
     //------------------------------------------------------------------------
@@ -522,7 +527,13 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
     if (labRegionData.empty()) {
         labRegionData.emplace_back(rtengine::ColorToningParams::LabCorrectionRegion());
     }
-    labRegionSelected = 0;
+    if (pp->colorToning.labregionsShowMask >= 0) {
+        labRegionSelected = pp->colorToning.labregionsShowMask;
+        labRegionShowMask->set_active(true);
+    } else {
+        labRegionSelected = 0;
+        labRegionShowMask->set_active(false);
+    }        
     labRegionPopulateList();
     labRegionShow(labRegionSelected);
 
@@ -552,6 +563,7 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
         labgrid->setEdited(pedited->colorToning.labgridALow || pedited->colorToning.labgridBLow || pedited->colorToning.labgridAHigh || pedited->colorToning.labgridBHigh);
 
         labRegionAB->setEdited(pedited->colorToning.labregions);
+        labRegionShowMask->set_inconsistent(!pedited->colorToning.labregionsShowMask);
     }
 
     redlow->setValue    (pp->colorToning.redlow);
@@ -658,6 +670,11 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
     labRegionGet(labRegionSelected);
     labRegionShow(labRegionSelected, true);
     pp->colorToning.labregions = labRegionData;
+    if (labRegionShowMask->get_active()) {
+        pp->colorToning.labregionsShowMask = labRegionSelected;
+    } else {
+        pp->colorToning.labregionsShowMask = -1;
+    }
 
     if (pedited) {
         pedited->colorToning.redlow     = redlow->getEditedState ();
@@ -687,6 +704,7 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
         pedited->colorToning.labgridALow = pedited->colorToning.labgridBLow = pedited->colorToning.labgridAHigh = pedited->colorToning.labgridBHigh = labgrid->getEdited();
 
         pedited->colorToning.labregions = labRegionAB->getEdited();
+        pedited->colorToning.labregionsShowMask = !labRegionShowMask->get_inconsistent();
     }
 
     if (method->get_active_row_number() == 0) {
@@ -1444,6 +1462,14 @@ void ColorToning::labRegionDownPressed()
         if (listener) {
             listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
         }
+    }
+}
+
+
+void ColorToning::labRegionShowMaskChanged()
+{
+    if (listener) {
+        listener->panelChanged(EvLabRegionShowMask, labRegionShowMask->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }
 

@@ -69,6 +69,7 @@ private:
     void labRegionRemovePressed();
     void labRegionUpPressed();
     void labRegionDownPressed();
+    void labRegionShowMaskChanged();
     void labRegionPopulateList();
     void labRegionShow(int idx, bool list_only=false);
     void labRegionGet(int idx);
@@ -136,6 +137,7 @@ private:
     rtengine::ProcEvent EvLabRegionHueMask;
     rtengine::ProcEvent EvLabRegionChromaticityMask;
     rtengine::ProcEvent EvLabRegionLightnessMask;
+    rtengine::ProcEvent EvLabRegionShowMask;
 
     Gtk::VBox *labRegionBox;
     Gtk::ListViewText *labRegionList;
@@ -150,6 +152,7 @@ private:
     FlatCurveEditor *labRegionHueMask;
     FlatCurveEditor *labRegionChromaticityMask;
     FlatCurveEditor *labRegionLightnessMask;
+    Gtk::CheckButton *labRegionShowMask;
     std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
     int labRegionSelected;
     sigc::connection labRegionSelectionConn;

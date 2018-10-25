@@ -749,7 +749,8 @@ ColorToningParams::ColorToningParams() :
     labgridBLow(0.0),
     labgridAHigh(0.0),
     labgridBHigh(0.0),
-    labregions{LabCorrectionRegion()}
+    labregions{LabCorrectionRegion()},
+    labregionsShowMask(-1)
 {
 }
 
@@ -786,7 +787,8 @@ bool ColorToningParams::operator ==(const ColorToningParams& other) const
         && labgridBLow == other.labgridBLow
         && labgridAHigh == other.labgridAHigh
         && labgridBHigh == other.labgridBHigh
-        && labregions == other.labregions;
+        && labregions == other.labregions
+        && labregionsShowMask == other.labregionsShowMask;
 }
 
 bool ColorToningParams::operator !=(const ColorToningParams& other) const
@@ -3549,6 +3551,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionLightnessMask_") + n, l.lightnessMask, keyFile);
             }
         }
+        saveToKeyfile(!pedited || pedited->colorToning.labregionsShowMask, "ColorToning", "LabRegionsShowMask", colorToning.labregionsShowMask, keyFile);
 
 // Raw
         saveToKeyfile(!pedited || pedited->raw.darkFrame, "RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
@@ -4974,6 +4977,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             if (found) {
                 colorToning.labregions = std::move(lg);
             }
+            assignFromKeyfile(keyFile, "ColorToning", "LabRegionsShowMask", pedited, colorToning.labregionsShowMask, pedited->colorToning.labregionsShowMask);
         }
 
         if (keyFile.has_group("RAW")) {

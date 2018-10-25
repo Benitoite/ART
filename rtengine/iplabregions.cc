@@ -77,18 +77,41 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
             h1 = lin2log(h1, 3.f);
             float l1 = l / 32768.f;
 
-            for (size_t i = 0; i < n; ++i) {
-                auto &hm = hmask[i];
-                auto &cm = cmask[i];
-                auto &lm = lmask[i];
+            if (params->colorToning.labregionsShowMask >= 0 && params->colorToning.labregionsShowMask < n) {
+                int idx = params->colorToning.labregionsShowMask;
+                auto &hm = hmask[idx];
+                auto &cm = cmask[idx];
+                auto &lm = lmask[idx];
                 float blend = (hm ? hm->getVal(h1) : 1.f) * (cm ? cm->getVal(c1) : 1.f) * (lm ? lm->getVal(l1) : 1.f);
                 Lmask[y][x] = abmask[y][x] = blend;
+            } else {
+                for (size_t i = 0; i < n; ++i) {
+                    auto &hm = hmask[i];
+                    auto &cm = cmask[i];
+                    auto &lm = lmask[i];
+                    float blend = (hm ? hm->getVal(h1) : 1.f) * (cm ? cm->getVal(c1) : 1.f) * (lm ? lm->getVal(l1) : 1.f);
+                    Lmask[y][x] = abmask[y][x] = blend;
+                }
             }
         }
     }
 
     rtengine::guidedFilter(guide, abmask, abmask, max(int(4 / scale + 0.5), 1), 0.001, multiThread);
     rtengine::guidedFilter(guide, Lmask, Lmask, max(int(25 / scale + 0.5), 1), 0.0001, multiThread);
+
+    if (params->colorToning.labregionsShowMask >= 0 && params->colorToning.labregionsShowMask < n) {
+#ifdef _OPENMP
+        #pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < lab->H; ++y) {
+            for (int x = 0; x < lab->W; ++x) {
+                lab->a[y][x] = 0.f;
+                lab->b[y][x] = abmask[y][x] * 42000.f;
+            }
+        }
+
+        return;
+    }
 
     const auto abcoord =
         [](float x) -> float

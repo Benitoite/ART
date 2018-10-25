@@ -469,6 +469,7 @@ struct ColorToningParams {
         bool operator!=(const LabCorrectionRegion &other) const;
     };
     std::vector<LabCorrectionRegion> labregions;
+    int labregionsShowMask;
     
     ColorToningParams();
 
