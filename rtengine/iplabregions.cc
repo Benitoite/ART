@@ -84,6 +84,13 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
     rtengine::guidedFilter(guide, abmask, abmask, max(int(4 / scale + 0.5), 1), 0.001, multiThread);
     rtengine::guidedFilter(guide, Lmask, Lmask, max(int(25 / scale + 0.5), 1), 0.0001, multiThread);
 
+    const auto abcoord =
+        [](float x) -> float
+        {
+            const float m = ColorToningParams::LABGRID_CORR_MAX;
+            return SGN(x) * log2lin(std::abs(x) / m, 4.f) * m;
+        };
+
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
 #endif
@@ -97,8 +104,8 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
                 auto &r = params->colorToning.labregions[i];
                 float blend = abmask[y][x];
                 float s = 1.f + r.saturation / 100.f;
-                float a_new = s * (a + 32768.f * r.a / factor / scaling);
-                float b_new = s * (b + 32768.f * r.b / factor / scaling);
+                float a_new = s * (a + 32768.f * abcoord(r.a) / factor / scaling);
+                float b_new = s * (b + 32768.f * abcoord(r.b) / factor / scaling);
                 float l_new = l * (1.f + r.lightness / 1000.f);
                 lab->L[y][x] = intp(Lmask[y][x], l_new, l);
                 //L[y][x] = l_new;
