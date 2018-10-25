@@ -362,10 +362,11 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     EvLabRegionLightnessMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_LIGHTNESSMASK");
     labRegionBox = Gtk::manage(new Gtk::VBox());
 
-    labRegionList = Gtk::manage(new Gtk::ListViewText(2));
+    labRegionList = Gtk::manage(new Gtk::ListViewText(3));
     labRegionList->set_size_request(-1, 100);
     labRegionList->set_column_title(0, "#");
     labRegionList->set_column_title(1, M("TP_COLORTONING_LABREGION_LIST_TITLE"));
+    labRegionList->set_column_title(2, M("TP_COLORTONING_LABREGION_MASK"));
     labRegionList->set_activate_on_single_click(true);
     labRegionSelectionConn = labRegionList->get_selection()->signal_changed().connect(sigc::mem_fun(this, &ColorToning::onLabRegionSelectionChanged));
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
@@ -1400,14 +1401,36 @@ void ColorToning::labRegionRemovePressed()
 }
 
 
+namespace {
+
+bool hasMask(const std::vector<double> &dflt, const std::vector<double> &mask)
+{
+    if (mask.empty() || mask[0] == FCT_Linear || mask == dflt) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+} // namespace
+
+
 void ColorToning::labRegionPopulateList()
 {
     ConnectionBlocker b(labRegionSelectionConn);
     labRegionList->clear_items();
+    rtengine::ColorToningParams::LabCorrectionRegion dflt;
+    
     for (size_t i = 0; i < labRegionData.size(); ++i) {
         auto &r = labRegionData[i];
         auto j = labRegionList->append(std::to_string(i+1));
         labRegionList->set_text(j, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", int(r.a), int(r.b), r.saturation, r.lightness));
+        labRegionList->set_text(
+            j, 2, Glib::ustring::compose(
+                "%1%2%3",
+                hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
+                hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
+                hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : ""));
     }
 }
 
@@ -1418,6 +1441,7 @@ void ColorToning::labRegionShow(int idx, bool list_only)
     if (disable) {
         disableListener();
     }
+    rtengine::ColorToningParams::LabCorrectionRegion dflt;
     auto &r = labRegionData[idx];
     if (!list_only) {
         labRegionAB->setParams(0, 0, r.a, r.b, false);
@@ -1428,6 +1452,12 @@ void ColorToning::labRegionShow(int idx, bool list_only)
         labRegionLightnessMask->setCurve(r.lightnessMask);
     }
     labRegionList->set_text(idx, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", int(r.a), int(r.b), r.saturation, r.lightness));
+    labRegionList->set_text(
+        idx, 2, Glib::ustring::compose(
+            "%1%2%3",
+            hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
+            hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
+            hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : ""));
     Gtk::TreePath pth;
     pth.push_back(idx);
     labRegionList->get_selection()->select(pth);
