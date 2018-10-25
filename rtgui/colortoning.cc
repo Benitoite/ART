@@ -442,7 +442,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionEditorG->show();
     labRegionBox->pack_start(*labRegionEditorG, Gtk::PACK_SHRINK, 2);
 
-    labRegionShowMask = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_SHOW_MASK")));
+    labRegionShowMask = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_SHOWMASK")));
     labRegionShowMask->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labRegionShowMaskChanged));
     labRegionBox->pack_start(*labRegionShowMask, Gtk::PACK_SHRINK, 4);
 
@@ -1389,6 +1389,9 @@ void ColorToning::onLabRegionSelectionChanged()
         labRegionGet(labRegionSelected);
         labRegionSelected = s[0];
         labRegionShow(labRegionSelected);
+        if (labRegionShowMask->get_active()) {
+            labRegionShowMaskChanged();
+        }
     }
 }
 

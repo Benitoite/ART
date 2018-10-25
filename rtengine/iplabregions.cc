@@ -36,12 +36,12 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
     const float factor = ColorToningParams::LABGRID_CORR_MAX * 3.f;
     const float scaling = 1.f;
 
-    size_t n = params->colorToning.labregions.size();
+    int n = params->colorToning.labregions.size();
     std::vector<std::unique_ptr<FlatCurve>> hmask(n);
     std::vector<std::unique_ptr<FlatCurve>> cmask(n);
     std::vector<std::unique_ptr<FlatCurve>> lmask(n);
 
-    for (size_t i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         auto &r = params->colorToning.labregions[i];
         if (!r.hueMask.empty() && r.hueMask[0] != FCT_Linear) {
             hmask[i].reset(new FlatCurve(r.hueMask, true));
@@ -55,8 +55,12 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
     }
 
     array2D<float> guide(lab->W, lab->H, lab->L, ARRAY2D_BYREFERENCE);
-    array2D<float> abmask(lab->W, lab->H);
-    array2D<float> Lmask(lab->W, lab->H);
+    std::vector<array2D<float>> abmask(n);
+    std::vector<array2D<float>> Lmask(n);
+    for (int i = 0; i < n; ++i) {
+        abmask[i](lab->W, lab->H);
+        Lmask[i](lab->W, lab->H);
+    }
     
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
@@ -83,30 +87,35 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
                 auto &cm = cmask[idx];
                 auto &lm = lmask[idx];
                 float blend = (hm ? hm->getVal(h1) : 1.f) * (cm ? cm->getVal(c1) : 1.f) * (lm ? lm->getVal(l1) : 1.f);
-                Lmask[y][x] = abmask[y][x] = blend;
+                abmask[idx][y][x] = blend;
             } else {
-                for (size_t i = 0; i < n; ++i) {
+                for (int i = 0; i < n; ++i) {
                     auto &hm = hmask[i];
                     auto &cm = cmask[i];
                     auto &lm = lmask[i];
                     float blend = (hm ? hm->getVal(h1) : 1.f) * (cm ? cm->getVal(c1) : 1.f) * (lm ? lm->getVal(l1) : 1.f);
-                    Lmask[y][x] = abmask[y][x] = blend;
+                    Lmask[i][y][x] = abmask[i][y][x] = blend;
                 }
             }
         }
     }
 
-    rtengine::guidedFilter(guide, abmask, abmask, max(int(4 / scale + 0.5), 1), 0.001, multiThread);
-    rtengine::guidedFilter(guide, Lmask, Lmask, max(int(25 / scale + 0.5), 1), 0.0001, multiThread);
+    for (int i = 0; i < n; ++i) {
+        rtengine::guidedFilter(guide, abmask[i], abmask[i], max(int(4 / scale + 0.5), 1), 0.001, multiThread);
+        rtengine::guidedFilter(guide, Lmask[i], Lmask[i], max(int(25 / scale + 0.5), 1), 0.0001, multiThread);
+    }
 
     if (params->colorToning.labregionsShowMask >= 0 && params->colorToning.labregionsShowMask < n) {
+        int idx = params->colorToning.labregionsShowMask;
 #ifdef _OPENMP
         #pragma omp parallel for if (multiThread)
 #endif
         for (int y = 0; y < lab->H; ++y) {
             for (int x = 0; x < lab->W; ++x) {
+                auto blend = abmask[idx][y][x];
                 lab->a[y][x] = 0.f;
-                lab->b[y][x] = abmask[y][x] * 42000.f;
+                lab->b[y][x] = blend * 42000.f;
+                lab->L[y][x] = LIM(lab->L[y][x] + 32768.f * blend, 0.f, 32768.f);
             }
         }
 
@@ -129,31 +138,22 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
             float a = lab->a[y][x];
             float b = lab->b[y][x];
 
-            for (size_t i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 auto &r = params->colorToning.labregions[i];
-                float blend = abmask[y][x];
+                float blend = abmask[i][y][x];
                 float s = 1.f + r.saturation / 100.f;
                 float a_new = s * (a + 32768.f * abcoord(r.a) / factor / scaling);
                 float b_new = s * (b + 32768.f * abcoord(r.b) / factor / scaling);
                 float l_new = l * (1.f + r.lightness / 1000.f);
-                lab->L[y][x] = intp(Lmask[y][x], l_new, l);
-                //L[y][x] = l_new;
-                lab->a[y][x] = intp(blend, a_new, a);
-                lab->b[y][x] = intp(blend, b_new, b);
+                l = intp(Lmask[i][y][x], l_new, l);
+                a = intp(blend, a_new, a);
+                b = intp(blend, b_new, b);
             }
+            lab->L[y][x] = l;
+            lab->a[y][x] = a;
+            lab->b[y][x] = b;
         }
     }
-
-//     rtengine::guidedFilter(guide, L, L, max(int(25 / scale + 0.5), 1), 0.1, multiThread);
-
-// #ifdef _OPENMP
-//     #pragma omp parallel for if (multiThread)
-// #endif
-//     for (int y = 0; y < lab->H; ++y) {
-//         for (int x = 0; x < lab->W; ++x) {
-//             lab->L[y][x] = intp(mask[y][x], L[y][x], lab->L[y][x]);
-//         }
-//     }
 }
 
 } // namespace rtengine
