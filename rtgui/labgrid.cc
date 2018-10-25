@@ -44,15 +44,16 @@ using rtengine::Color;
 bool LabGrid::notifyListener()
 {
     if (listener) {
-        listener->panelChanged(evt, Glib::ustring::compose(M("TP_COLORTONING_LABGRID_VALUES"), int(low_a), int(low_b), int(high_a), int(high_b)));
+        listener->panelChanged(evt, Glib::ustring::compose(evtMsg, int(high_a), int(high_b), int(low_a), int(low_b)));
     }
     return false;
 }
 
 
-LabGrid::LabGrid(rtengine::ProcEvent evt, bool enable_low):
+LabGrid::LabGrid(rtengine::ProcEvent evt, const Glib::ustring &msg, bool enable_low):
     Gtk::DrawingArea(),
-    evt(evt), litPoint(NONE),
+    evt(evt), evtMsg(msg),
+    litPoint(NONE),
     low_a(0.f), high_a(0.f), low_b(0.f), high_b(0.f),
     defaultLow_a(0.f), defaultHigh_a(0.f), defaultLow_b(0.f), defaultHigh_b(0.f),
     listener(nullptr),

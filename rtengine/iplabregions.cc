@@ -43,9 +43,15 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
 
     for (size_t i = 0; i < n; ++i) {
         auto &r = params->colorToning.labregions[i];
-        hmask[i].reset(new FlatCurve(r.hueMask, true));
-        cmask[i].reset(new FlatCurve(r.chromaticityMask, false));
-        lmask[i].reset(new FlatCurve(r.lightnessMask, false));
+        if (!r.hueMask.empty() && r.hueMask[0] != FCT_Linear) {
+            hmask[i].reset(new FlatCurve(r.hueMask, true));
+        }
+        if (!r.chromaticityMask.empty() && r.chromaticityMask[0] != FCT_Linear) {
+            cmask[i].reset(new FlatCurve(r.chromaticityMask, false));
+        }
+        if (!r.lightnessMask.empty() && r.lightnessMask[0] != FCT_Linear) {
+            lmask[i].reset(new FlatCurve(r.lightnessMask, false));
+        }
     }
 
     array2D<float> guide(lab->W, lab->H, lab->L, ARRAY2D_BYREFERENCE);
@@ -75,7 +81,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
                 auto &hm = hmask[i];
                 auto &cm = cmask[i];
                 auto &lm = lmask[i];
-                float blend = hm->getVal(h1) * cm->getVal(c1) * lm->getVal(l1);
+                float blend = (hm ? hm->getVal(h1) : 1.f) * (cm ? cm->getVal(c1) : 1.f) * (lm ? lm->getVal(l1) : 1.f);
                 Lmask[y][x] = abmask[y][x] = blend;
             }
         }

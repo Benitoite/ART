@@ -46,6 +46,8 @@
 class LabGrid: public Gtk::DrawingArea, public BackBuffer {
 private:
     rtengine::ProcEvent evt;
+    Glib::ustring evtMsg;
+    
     enum State { NONE, HIGH, LOW };
     State litPoint;
     float low_a;
@@ -71,7 +73,7 @@ private:
     void getLitPoint();
 
 public:
-    LabGrid(rtengine::ProcEvent evt, bool enable_low=true);
+    LabGrid(rtengine::ProcEvent evt, const Glib::ustring &msg, bool enable_low=true);
 
     void getParams(double &la, double &lb, double &ha, double &hb) const;
     void setParams(double la, double lb, double ha, double hb, bool notify);

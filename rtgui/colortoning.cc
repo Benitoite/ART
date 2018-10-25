@@ -324,7 +324,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     auto m = ProcEventMapper::getInstance();
     EvColorToningLabGridValue = m->newEvent(RGBCURVE, "HISTORY_MSG_COLORTONING_LABGRID_VALUE");
     labgridBox = Gtk::manage(new Gtk::HBox());
-    labgrid = Gtk::manage(new LabGrid(EvColorToningLabGridValue));
+    labgrid = Gtk::manage(new LabGrid(EvColorToningLabGridValue, M("TP_COLORTONING_LABGRID_VALUES")));
     labgridBox->pack_start(*labgrid, true, true);
     labgridReset = Gtk::manage(new Gtk::Button ());
     labgridReset->add (*Gtk::manage(new RTImage ("undo-small.png", "redo-small.png")));
@@ -382,7 +382,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     hb->pack_start(*vb, Gtk::PACK_SHRINK);
     labRegionBox->pack_start(*hb, true, true);
     
-    labRegionAB = Gtk::manage(new LabGrid(EvLabRegionAB, false));
+    labRegionAB = Gtk::manage(new LabGrid(EvLabRegionAB, M("TP_COLORTONING_LABREGION_ABVALUES"), false));
     hb = Gtk::manage(new Gtk::HBox());
     hb->pack_start(*labRegionAB, true, true);
     labRegionABReset = Gtk::manage(new Gtk::Button());
@@ -1407,7 +1407,7 @@ void ColorToning::labRegionPopulateList()
     for (size_t i = 0; i < labRegionData.size(); ++i) {
         auto &r = labRegionData[i];
         auto j = labRegionList->append(std::to_string(i+1));
-        labRegionList->set_text(j, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", r.a, r.b, r.saturation, r.lightness));
+        labRegionList->set_text(j, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", int(r.a), int(r.b), r.saturation, r.lightness));
     }
 }
 
@@ -1427,7 +1427,7 @@ void ColorToning::labRegionShow(int idx, bool list_only)
         labRegionChromaticityMask->setCurve(r.chromaticityMask);
         labRegionLightnessMask->setCurve(r.lightnessMask);
     }
-    labRegionList->set_text(idx, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", r.a, r.b, r.saturation, r.lightness));
+    labRegionList->set_text(idx, 1, Glib::ustring::compose("a=%1 b=%2 s=%3 l=%4", int(r.a), int(r.b), r.saturation, r.lightness));
     Gtk::TreePath pth;
     pth.push_back(idx);
     labRegionList->get_selection()->select(pth);
