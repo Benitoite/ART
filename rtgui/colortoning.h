@@ -67,6 +67,8 @@ private:
     void onLabRegionSelectionChanged();
     void labRegionAddPressed();
     void labRegionRemovePressed();
+    void labRegionUpPressed();
+    void labRegionDownPressed();
     void labRegionPopulateList();
     void labRegionShow(int idx, bool list_only=false);
     void labRegionGet(int idx);
@@ -139,6 +141,8 @@ private:
     Gtk::ListViewText *labRegionList;
     Gtk::Button *labRegionAdd;
     Gtk::Button *labRegionRemove;
+    Gtk::Button *labRegionUp;
+    Gtk::Button *labRegionDown;
     Gtk::Button *labRegionABReset;
     LabGrid *labRegionAB;
     Adjuster *labRegionSaturation;

@@ -380,6 +380,14 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionRemove->add(*Gtk::manage(new RTImage("remove-small.png")));
     labRegionRemove->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionRemovePressed));
     add_button(labRegionRemove, vb);
+    labRegionUp = Gtk::manage(new Gtk::Button());
+    labRegionUp->add(*Gtk::manage(new RTImage("arrow-up-small.png")));
+    labRegionUp->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionUpPressed));
+    add_button(labRegionUp, vb);
+    labRegionDown = Gtk::manage(new Gtk::Button());
+    labRegionDown->add(*Gtk::manage(new RTImage("arrow-down-small.png")));
+    labRegionDown->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionDownPressed));
+    add_button(labRegionDown, vb);
     hb->pack_start(*vb, Gtk::PACK_SHRINK);
     labRegionBox->pack_start(*hb, true, true);
     
@@ -1382,20 +1390,59 @@ void ColorToning::labRegionGet(int idx)
 
 void ColorToning::labRegionAddPressed()
 {
-    labRegionData.emplace_back(rtengine::ColorToningParams::LabCorrectionRegion());
+    labRegionData.insert(labRegionData.begin(), rtengine::ColorToningParams::LabCorrectionRegion());
+    labRegionSelected = 0;
     labRegionPopulateList();
+    labRegionShow(labRegionSelected);
+
+    if (listener) {
+        listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
+    }
 }
 
 
 void ColorToning::labRegionRemovePressed()
 {
     if (labRegionList->size() > 1) {
-        auto s = labRegionList->get_selected();
-        if (!s.empty()) {
-            labRegionData.erase(labRegionData.begin() + s[0]);
-            labRegionSelected = LIM(labRegionSelected-1, 0, int(labRegionData.size()-1));
-            labRegionPopulateList();
-            labRegionShow(labRegionSelected);
+        labRegionData.erase(labRegionData.begin() + labRegionSelected);
+        labRegionSelected = LIM(labRegionSelected-1, 0, int(labRegionData.size()-1));
+        labRegionPopulateList();
+        labRegionShow(labRegionSelected);
+
+        if (listener) {
+            listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
+        }
+    }
+}
+
+
+void ColorToning::labRegionUpPressed()
+{
+    if (labRegionSelected > 0) {
+        auto r = labRegionData[labRegionSelected];
+        labRegionData.erase(labRegionData.begin() + labRegionSelected);
+        --labRegionSelected;
+        labRegionData.insert(labRegionData.begin() + labRegionSelected, r);
+        labRegionPopulateList();
+
+        if (listener) {
+            listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
+        }
+    }
+}
+
+
+void ColorToning::labRegionDownPressed()
+{
+    if (labRegionSelected < int(labRegionData.size()-1)) {
+        auto r = labRegionData[labRegionSelected];
+        labRegionData.erase(labRegionData.begin() + labRegionSelected);
+        ++labRegionSelected;
+        labRegionData.insert(labRegionData.begin() + labRegionSelected, r);
+        labRegionPopulateList();
+
+        if (listener) {
+            listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
         }
     }
 }
