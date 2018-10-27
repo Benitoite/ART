@@ -10044,7 +10044,7 @@ bw:   colors = 1;
 dng_skip:
   if ((use_camera_matrix & (use_camera_wb || dng_version))
         && cmatrix[0][0] > 0.125
-        && !strncmp(RT_software.c_str(), "Adobe DNG Converter", 19)
+        && strncmp(RT_software.c_str(), "Adobe DNG Converter", 19) != 0
       /* RT -- do not use the embedded
        * matrices for DNGs coming from the
        * Adobe DNG Converter, to ensure
