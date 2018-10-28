@@ -345,7 +345,6 @@ public:
     void localContrast(LabImage *lab);
     void colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread);
     void shadowsHighlights(LabImage *lab);
-    void softLight(float *red, float *green, float *blue, int istart, int jstart, int tW, int tH, int TS);
     void softLight(LabImage *lab);
     void guidedFilter(LabImage *lab);
     void labColorCorrectionRegions(LabImage *lab);

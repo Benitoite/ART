@@ -45,37 +45,6 @@ inline float sl(float blend, float x)
 
 } // namespace
 
-void ImProcFunctions::softLight(float *red, float *green, float *blue, int istart, int jstart, int tW, int tH, int TS)
-{
-    if (!params->softlight.enabled || !params->softlight.strength) {
-        return;
-    }
-
-    const float blend = params->softlight.strength / 100.f;
-    //const float orig = 1.f - blend;
-
-    const auto apply = [=](float x) -> float { return sl(blend, x); };
-
-#ifdef _OPENMP
-    #pragma omp parallel if (multiThread)
-#endif
-    {
-        int ti = 0;
-#ifdef _OPENMP
-        #pragma omp for
-#endif
-        for (int i = istart; i < tH; i++) {
-            for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                const int idx = ti * TS + tj;
-                red[idx] = apply(red[idx]);
-                green[idx] = apply(green[idx]);
-                blue[idx] = apply(blue[idx]);
-            }
-            ++ti;
-        }
-    }
-}
-
 
 void ImProcFunctions::softLight(LabImage *lab)
 {
