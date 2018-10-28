@@ -1174,6 +1174,49 @@ void CLASS lossless_dng_load_raw()
   }
 }
 
+static uint32_t DNG_HalfToFloat(uint16_t halfValue);
+
+void CLASS packed_dng_load_raw()
+{
+  ushort *pixel, *rp;
+  int row, col;
+  int isfloat = (tiff_nifds == 1 && tiff_ifd[0].sample_format == 3 && (tiff_bps == 16 || tiff_bps == 32));
+  if (isfloat) {
+    float_raw_image = new float[raw_width * raw_height];
+  }
+
+  pixel = (ushort *) calloc (raw_width, tiff_samples*sizeof *pixel);
+  merror (pixel, "packed_dng_load_raw()");
+  for (row=0; row < raw_height; row++) {
+    if (tiff_bps == 16) {
+      read_shorts (pixel, raw_width * tiff_samples);
+      if (isfloat) {
+          uint32_t *dst = reinterpret_cast<uint32_t *>(&float_raw_image[row*raw_width]);
+          for (col = 0; col < raw_width; col++) {
+              uint32_t f = DNG_HalfToFloat(pixel[col]);
+              dst[col] = f;
+          }
+      }
+    } else if (isfloat) {
+      if (fread(&float_raw_image[row*raw_width], sizeof(float), raw_width, ifp) != raw_width) {
+        derror();
+      }
+      if ((order == 0x4949) == (ntohs(0x1234) == 0x1234)) {
+        char *d = reinterpret_cast<char *>(float_raw_image);
+        rtengine::swab(d, d, sizeof(float)*raw_width);
+      }
+    } else {
+      getbits(-1);
+      for (col=0; col < raw_width * tiff_samples; col++)
+	pixel[col] = getbits(tiff_bps);
+    }
+    if (!isfloat) {
+        for (rp=pixel, col=0; col < raw_width; col++)
+            adobe_copy_pixel (row, col, &rp);
+    }
+  }
+  free (pixel);
+}
 
 void CLASS pentax_load_raw()
 {
@@ -6420,6 +6463,9 @@ guess_cfa_pc:
 	xyz[2] = 1 - xyz[0] - xyz[1];
 	FORC3 xyz[c] /= d65_white[c];
 	break;
+      case 50730:                       /* BaselineExposure */
+        if (dng_version) RT_baseline_exposure = getreal(type);
+        break;
       case 50740:			/* DNGPrivateData */
 	if (dng_version) break;
 	parse_minolta (j = get4()+base);
@@ -10194,7 +10240,8 @@ static void decodeFPDeltaRow(Bytef * src, Bytef * dst, size_t tileWidth, size_t 
 }
 
 // From DNG SDK dng_utils.h
-static inline uint32_t DNG_HalfToFloat(uint16_t halfValue) {
+static //inline
+uint32_t DNG_HalfToFloat(uint16_t halfValue) {
   int32_t sign     = (halfValue >> 15) & 0x00000001;
   int32_t exponent = (halfValue >> 10) & 0x0000001f;
   int32_t mantissa =  halfValue        & 0x000003ff;
@@ -10439,42 +10486,6 @@ void CLASS deflate_dng_load_raw() {
   }
 
 }
-
-
-void CLASS packed_dng_load_raw()
-{
-  ushort *pixel, *rp;
-  int row, col;
-  int isfloat = (tiff_nifds == 1 && tiff_ifd[0].sample_format == 3 && tiff_bps == 16);
-  if (isfloat) {
-    float_raw_image = new float[raw_width * raw_height];
-  }      
-
-  pixel = (ushort *) calloc (raw_width, tiff_samples*sizeof *pixel);
-  merror (pixel, "packed_dng_load_raw()");
-  for (row=0; row < raw_height; row++) {
-    if (tiff_bps == 16) {
-      read_shorts (pixel, raw_width * tiff_samples);
-      if (isfloat) {
-          uint32_t *dst = reinterpret_cast<uint32_t *>(&float_raw_image[row*raw_width]);
-          for (col = 0; col < raw_width; col++) {
-              uint32_t f = DNG_HalfToFloat(pixel[col]);
-              dst[col] = f;
-          }
-      }
-    } else {
-      getbits(-1);
-      for (col=0; col < raw_width * tiff_samples; col++)
-	pixel[col] = getbits(tiff_bps);
-    }
-    if (!isfloat) {
-        for (rp=pixel, col=0; col < raw_width; col++)
-            adobe_copy_pixel (row, col, &rp);
-    }
-  }
-  free (pixel);
-}
-
 
 /* RT: removed unused functions */
 
