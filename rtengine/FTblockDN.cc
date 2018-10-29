@@ -474,12 +474,62 @@ void ImProcFunctions::Tile_calc(int tilesize, int overlap, int kall, int imwidth
 int denoiseNestedLevels = 1;
 enum nrquality {QUALITY_STANDARD, QUALITY_HIGH};
 
-void ImProcFunctions::RGB_denoise(int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DirPyrDenoiseParams & dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi)
+
+namespace {
+
+void adjust_params(procparams::DirPyrDenoiseParams &dnparams, double scale)
+{
+    double scale_factor = 1.0 / scale;
+    double noise_factor = scale_factor;
+    dnparams.luma *= noise_factor;
+    dnparams.Ldetail += (100 - dnparams.Ldetail) * scale_factor;
+    if (dnparams.C2method == "MANU") {
+        dnparams.chroma *= noise_factor;
+        dnparams.redchro *= noise_factor;
+        dnparams.bluechro *= noise_factor;
+    }
+    if (scale > 2) {
+        dnparams.smethod = "shal"; // QUALITY_STANDARD
+    }
+    // auto &lcurve = dnparams.lcurve;
+
+    // for (size_t i = 2; i < lcurve.size(); i += 4) {
+    //     lcurve[i] *= min(noise_factor /* * scale_factor*/, 1.0);
+    // }
+
+    // noiseLCurve.Set (lcurve);
+    const char *medmethods[] = { "soft", "33", "55soft", "55", "77", "99" };
+
+    if (dnparams.median) {
+        auto &key = dnparams.methodmed == "RGB" ? dnparams.rgbmethod : dnparams.medmethod;
+
+        for (int i = 1; i < int (sizeof (medmethods) / sizeof (const char *)); ++i) {
+            if (key == medmethods[i]) {
+                int j = i - int (1.0 / scale_factor);
+
+                if (j < 0) {
+                    dnparams.median = false;
+                } else {
+                    key = medmethods[j];
+                }
+
+                break;
+            }
+        }
+    }    
+}
+
+} // namespace
+
+void ImProcFunctions::RGB_denoise(int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DirPyrDenoiseParams & orig_dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi)
 {
 BENCHFUN
 //#ifdef _DEBUG
     MyTime t1e, t2e;
     t1e.set();
+
+    procparams::DirPyrDenoiseParams dnparams(orig_dnparams);
+    adjust_params(dnparams, scale);    
 
 //#endif
     if (dnparams.luma == 0 && dnparams.chroma == 0  && !dnparams.median && !noiseLCurve && !noiseCCurve) {
@@ -1136,6 +1186,8 @@ BENCHFUN
                             if (levwav > 8) {
                                 levwav = 8;
                             }
+
+                            levwav = max(5, int(levwav - std::ceil(std::log(scale))));
 
                             int minsizetile = min(tilewidth, tileheight);
                             int maxlev2 = 8;
@@ -3531,7 +3583,7 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
                 schoice = 2;
             }
 
-            const int levwav = 5;
+            const int levwav = max(2, int(5 - std::ceil(std::log(scale))));
 #ifdef _OPENMP
             #pragma omp parallel sections if (multiThread)
 #endif

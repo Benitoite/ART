@@ -107,6 +107,10 @@ public:
 private:
     Imagefloat *normal_pipeline()
     {
+        if (settings->verbose) {
+            std::cout << "Processing with the normal pipeline" << std::endl;
+        }
+        
         if (!stage_init()) {
             return nullptr;
         }
@@ -120,6 +124,10 @@ private:
     {
         if (!job->pparams.resize.enabled) {
             return normal_pipeline();
+        }
+
+        if (settings->verbose) {
+            std::cout << "Processing with the fast pipeline" << std::endl;
         }
 
         pl = nullptr;
@@ -203,6 +211,10 @@ private:
 
         ipf_p.reset (new ImProcFunctions (&params, true));
         ImProcFunctions &ipf = * (ipf_p.get());
+        int imw, imh;
+        double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
+        adjust_procparams (scale_factor);
+        
 
         imgsrc->setCurrentFrame (params.raw.bayersensor.imageNum);
         imgsrc->preprocess ( params.raw, params.lensProf, params.coarse, params.dirpyrDenoise.enabled);
@@ -267,8 +279,8 @@ private:
         autoNR = (float) settings->nrauto;//
         autoNRmax = (float) settings->nrautomax;//
 
-        int imw, imh;
-        double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
+        // int imw, imh;
+        // double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
 
         if (settings->leveldnti == 0) {
             tilesize = 1024;
@@ -1463,7 +1475,9 @@ private:
             baseImg = resized;
         }
 
-        adjust_procparams (scale_factor);
+//        adjust_procparams (scale_factor);
+        params.resize.enabled = false;
+        params.crop.enabled = false;
 
         fw = imw;
         fh = imh;
@@ -1474,33 +1488,40 @@ private:
         procparams::ProcParams &params = job->pparams;
         procparams::ProcParams defaultparams;
 
-        params.resize.enabled = false;
-        params.crop.enabled = false;
+        // params.resize.enabled = false;
+        // params.crop.enabled = false;
 
         if (params.prsharpening.enabled) {
             params.sharpening = params.prsharpening;
-        } else {
-            params.sharpening.radius *= scale_factor;
-            params.sharpening.deconvradius *= scale_factor;
         }
+            
+        ImProcFunctions &ipf = *(ipf_p.get());
+        ipf.setScale(1.0 / scale_factor);
+        
+        // if (params.prsharpening.enabled) {
+        //     params.sharpening = params.prsharpening;
+        // } else {
+        //     params.sharpening.radius *= scale_factor;
+        //     params.sharpening.deconvradius *= scale_factor;
+        // }
 
-        params.impulseDenoise.thresh *= scale_factor;
+        // params.impulseDenoise.thresh *= scale_factor;
 
-        if (scale_factor < 0.5) {
-            params.impulseDenoise.enabled = false;
-        }
+        // if (scale_factor < 0.5) {
+        //     params.impulseDenoise.enabled = false;
+        // }
 
         params.wavelet.strength *= scale_factor;
-        double noise_factor = (1.0 - scale_factor);
-        params.dirpyrDenoise.luma *= noise_factor; // * scale_factor;
-        params.dirpyrDenoise.Ldetail += (100 - params.dirpyrDenoise.Ldetail) * scale_factor;
-        auto &lcurve = params.dirpyrDenoise.lcurve;
+        // double noise_factor = (1.0 - scale_factor);
+        // params.dirpyrDenoise.luma *= noise_factor; // * scale_factor;
+        // params.dirpyrDenoise.Ldetail += (100 - params.dirpyrDenoise.Ldetail) * scale_factor;
+        // auto &lcurve = params.dirpyrDenoise.lcurve;
 
-        for (size_t i = 2; i < lcurve.size(); i += 4) {
-            lcurve[i] *= min(noise_factor /* * scale_factor*/, 1.0);
-        }
+        // for (size_t i = 2; i < lcurve.size(); i += 4) {
+        //     lcurve[i] *= min(noise_factor /* * scale_factor*/, 1.0);
+        // }
 
-        noiseLCurve.Set (lcurve);
+        // noiseLCurve.Set (lcurve);
         const char *medmethods[] = { "soft", "33", "55soft", "55", "77", "99" };
 
         if (params.dirpyrDenoise.median) {
@@ -1521,22 +1542,22 @@ private:
             }
         }
 
-        params.epd.scale *= scale_factor;
-        //params.epd.edgeStopping *= scale_factor;
+        // params.epd.scale *= scale_factor;
+        // //params.epd.edgeStopping *= scale_factor;
 
-        const double dirpyreq_scale = min (scale_factor * 1.5, 1.0);
+        // const double dirpyreq_scale = min (scale_factor * 1.5, 1.0);
 
-        for (int i = 0; i < 6; ++i) {
-            adjust_radius (defaultparams.dirpyrequalizer.mult[i], dirpyreq_scale,
-                           params.dirpyrequalizer.mult[i]);
-        }
+        // for (int i = 0; i < 6; ++i) {
+        //     adjust_radius (defaultparams.dirpyrequalizer.mult[i], dirpyreq_scale,
+        //                    params.dirpyrequalizer.mult[i]);
+        // }
 
-        params.dirpyrequalizer.threshold *= scale_factor;
+        // params.dirpyrequalizer.threshold *= scale_factor;
 
-        adjust_radius (defaultparams.defringe.radius, scale_factor,
-                       params.defringe.radius);
-        params.sh.radius *= scale_factor;
-        params.localContrast.radius *= scale_factor;
+        // adjust_radius (defaultparams.defringe.radius, scale_factor,
+        //                params.defringe.radius);
+        // params.sh.radius *= scale_factor;
+        // params.localContrast.radius *= scale_factor;
 
         if (params.raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::THREE_PASS)) {
             params.raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::ONE_PASS);
@@ -1551,8 +1572,8 @@ private:
             params.raw.bayersensor.method = procparams::RAWParams::BayerSensor::getMethodString(procparams::RAWParams::BayerSensor::Method::RCD);
         }
 
-        params.guidedfilter.smoothingRadius *= scale_factor;
-        params.guidedfilter.decompRadius *= scale_factor;
+        // params.guidedfilter.smoothingRadius *= scale_factor;
+        // params.guidedfilter.decompRadius *= scale_factor;
     }
 
 private:
