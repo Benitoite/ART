@@ -167,6 +167,7 @@ void Crop::update(int todo)
     int heiIm = parent->fh;
 
     bool needstransform  = parent->ipf.needsTransform();
+    bool show_denoise = params.dirpyrDenoise.enabled && (skip == 1 || options.denoiseZoomedOut);
 
     if (todo & (M_INIT | M_LINDENOISE | M_HDR)) {
         MyMutex::MyLock lock(parent->minit);  // Also used in improccoord
@@ -241,7 +242,7 @@ void Crop::update(int todo)
             PreviewProps pp(trafx, trafy, trafw * skip, trafh * skip, skip);
             parent->imgsrc->getImage(parent->currWB, tr, origCrop, pp, params.toneCurve, params.raw);
 
-            if ((!isDetailWindow) && parent->adnListener && skip == 1 && params.dirpyrDenoise.enabled) {
+            if ((!isDetailWindow) && parent->adnListener && show_denoise) {
                 float lowdenoise = 1.f;
                 int levaut = settings->leveldnaut;
 
@@ -393,7 +394,7 @@ void Crop::update(int todo)
             }
         }
 
-        if (skip == 1 && params.dirpyrDenoise.enabled && !parent->denoiseInfoStore.valid && ((settings->leveldnautsimpl == 1 && params.dirpyrDenoise.Cmethod == "AUT")  || (settings->leveldnautsimpl == 0 && params.dirpyrDenoise.C2method == "AUTO"))) {
+        if (show_denoise && !parent->denoiseInfoStore.valid && ((settings->leveldnautsimpl == 1 && params.dirpyrDenoise.Cmethod == "AUT")  || (settings->leveldnautsimpl == 0 && params.dirpyrDenoise.C2method == "AUTO"))) {
             MyTime t1aue, t2aue;
             t1aue.set();
 
@@ -628,7 +629,7 @@ void Crop::update(int todo)
             noiseLCurve.Reset();
         }
 
-        if ((noiseLCurve || noiseCCurve) && skip == 1 && denoiseParams.enabled)   {  //only allocate memory if enabled and skip
+        if ((noiseLCurve || noiseCCurve) && show_denoise)   {  //only allocate memory if enabled and skip
             // we only need image reduced to 1/4 here
             int W = origCrop->getWidth();
             int H = origCrop->getHeight();
@@ -650,7 +651,7 @@ void Crop::update(int todo)
             }
 
         if (todo & M_LINDENOISE) {
-            if (skip == 1 && denoiseParams.enabled) {
+            if (show_denoise) {
                 int kall = 0;
 
                 float nresi, highresi;

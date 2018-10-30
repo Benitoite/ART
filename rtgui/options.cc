@@ -440,6 +440,7 @@ void Options::setDefaults()
     maxInspectorBuffers = 2; //  a rather conservative value for low specced systems...
     inspectorDelay = 0;
     serializeTiffRead = true;
+    denoiseZoomedOut = false;
 
     FileBrowserToolbarSingleRow = false;
     hideTPVScrollbar = false;

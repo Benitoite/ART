@@ -635,7 +635,13 @@ Gtk::Widget* Preferences::getPerformancePanel ()
     cprevdemo->set_active (1);
     hbprevdemo->pack_start (*lprevdemo, Gtk::PACK_SHRINK);
     hbprevdemo->pack_start (*cprevdemo);
-    fprevdemo->add (*hbprevdemo);
+    //fprevdemo->add (*hbprevdemo);
+    Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
+    vb->pack_start(*hbprevdemo);
+    denoiseZoomedOut = Gtk::manage(new Gtk::CheckButton(M("PREFERENCES_DENOISE_ZOOM_OUT")));
+    denoiseZoomedOut->set_tooltip_text(M("PREFERENCES_DENOISE_ZOOM_OUT_TOOLTIP"));
+    vb->pack_start(*denoiseZoomedOut);
+    fprevdemo->add(*vb);
     vbPerformance->pack_start (*fprevdemo, Gtk::PACK_SHRINK, 4);
 
     Gtk::Frame* ftiffserialize = Gtk::manage (new Gtk::Frame (M ("PREFERENCES_SERIALIZE_TIFF_READ")));
@@ -1679,6 +1685,7 @@ void Preferences::storePreferences ()
 
     moptions.prevdemo = (prevdemo_t)cprevdemo->get_active_row_number ();
     moptions.serializeTiffRead = ctiffserialize->get_active();
+    moptions.denoiseZoomedOut = denoiseZoomedOut->get_active();
 
     if (sdcurrent->get_active ()) {
         moptions.startupDir = STARTUPDIR_CURRENT;
@@ -1778,6 +1785,7 @@ void Preferences::fillPreferences ()
     panFactor->set_value (moptions.panAccelFactor);
     rememberZoomPanCheckbutton->set_active (moptions.rememberZoomAndPan);
     ctiffserialize->set_active (moptions.serializeTiffRead);
+    denoiseZoomedOut->set_active(moptions.denoiseZoomedOut);
 
     setActiveTextOrIndex (*prtProfile, moptions.rtSettings.printerProfile, 0);
 
