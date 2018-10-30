@@ -1102,7 +1102,7 @@ PREFERENCES_DARKFRAMETEMPLATES;templates
 PREFERENCES_DATEFORMAT;Date format
 PREFERENCES_DATEFORMATHINT;You can use the following formatting strings:\n<b>%y</b>	- year\n<b>%m</b>	- month\n<b>%d</b>	- day\n\nFor example, the ISO 8601 standard dictates the date format as follows:\n<b>%y-%m-%d</b>
 PREFERENCES_DENOISE_ZOOM_OUT;Show effects of noise reduction in the preview at <100% zoom
-PREFERENCES_DENOISE_ZOOM_OUT_TOOLTIP;Note that this will still not be 100% accurate
+PREFERENCES_DENOISE_ZOOM_OUT_TOOLTIP;Note that this will still not be fully accurate
 PREFERENCES_DIRDARKFRAMES;Dark-frames directory
 PREFERENCES_DIRECTORIES;Directories
 PREFERENCES_DIRHOME;Home directory
