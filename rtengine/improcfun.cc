@@ -5783,27 +5783,20 @@ void ImProcFunctions::lab2rgb (const LabImage &src, Imagefloat &dst, const Glib:
 */
 void ImProcFunctions::colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread)
 {
-    const float factor = 3.f;
-    const float scaling = 3.f;
+    const float factor = ColorToningParams::LABGRID_CORR_MAX * 3.f;
+    const float scaling = ColorToningParams::LABGRID_CORR_SCALE;
     float a_scale = (params->colorToning.labgridAHigh - params->colorToning.labgridALow) / factor / scaling;
     float a_base = params->colorToning.labgridALow / scaling;
     float b_scale = (params->colorToning.labgridBHigh - params->colorToning.labgridBLow) / factor / scaling;
     float b_base = params->colorToning.labgridBLow / scaling;
-
-    const auto blend =
-        [](float ab) -> float
-        {
-            return 2.f/(1.f+xexpf(-0.8f*(std::abs(ab/420.f)))) - 1.f;
-        };
 
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
 #endif
     for (int y = ystart; y < yend; ++y) {
         for (int x = xstart; x < xend; ++x) {
-            float l = 32768.f * std::pow(lab->L[y][x] / 32768.f, 1.f/2.2f);
-            lab->a[y][x] += blend(lab->a[y][x]) * (l * a_scale + a_base);
-            lab->b[y][x] += blend(lab->b[y][x]) * (l * b_scale + b_base);
+            lab->a[y][x] += lab->L[y][x] * a_scale + a_base;
+            lab->b[y][x] += lab->L[y][x] * b_scale + b_base;
         }
     }
 }
