@@ -111,7 +111,7 @@ private:
             std::cout << "Processing with the normal pipeline" << std::endl;
         }
         
-        if (!stage_init()) {
+        if (!stage_init(false)) {
             return nullptr;
         }
 
@@ -132,7 +132,7 @@ private:
 
         pl = nullptr;
 
-        if (!stage_init()) {
+        if (!stage_init(true)) {
             return nullptr;
         }
 
@@ -142,7 +142,7 @@ private:
         return stage_finish();
     }
 
-    bool stage_init()
+    bool stage_init(bool is_fast)
     {
         errorCode = 0;
 
@@ -211,9 +211,12 @@ private:
 
         ipf_p.reset (new ImProcFunctions (&params, true));
         ImProcFunctions &ipf = * (ipf_p.get());
-        int imw, imh;
-        double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
-        adjust_procparams (scale_factor);
+        double scale_factor = 1.0;
+        if (is_fast) {
+            int imw, imh;
+            scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
+            adjust_procparams(scale_factor);
+        }
         
 
         imgsrc->setCurrentFrame (params.raw.bayersensor.imageNum);
