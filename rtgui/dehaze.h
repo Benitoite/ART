@@ -32,8 +32,8 @@ private:
 
     rtengine::ProcEvent EvDehazeEnabled;
     rtengine::ProcEvent EvDehazeStrength;
-    rtengine::ProcEvent EvDehazeShowDepthMap;
     rtengine::ProcEvent EvDehazeDepth;
+    rtengine::ProcEvent EvDehazeShowDepthMap;
     
 public:
 
@@ -48,6 +48,6 @@ public:
     void enabledChanged();
     void showDepthMapChanged();
     void setAdjusterBehavior(bool strengthAdd);
-    void adjusterAutoToggled(Adjuster *a, bool newval) {}
+    void adjusterAutoToggled(Adjuster* a, bool newval) {}
 };
 

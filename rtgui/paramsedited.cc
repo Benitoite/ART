@@ -3197,12 +3197,12 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.dehaze.strength        = dontforceSet && options.baBehav[ADDSET_DEHAZE_STRENGTH] ? toEdit.dehaze.strength + mods.dehaze.strength : mods.dehaze.strength;
     }
     
-    if (dehaze.showDepthMap) {
-        toEdit.dehaze.showDepthMap     = mods.dehaze.showDepthMap;
-    }
-
     if (dehaze.depth) {
         toEdit.dehaze.depth     = mods.dehaze.depth;
+    }
+
+    if (dehaze.showDepthMap) {
+        toEdit.dehaze.showDepthMap     = mods.dehaze.showDepthMap;
     }
 
 #define SETVAL_(name) do { if (name) toEdit. name = mods. name; } while (false)
