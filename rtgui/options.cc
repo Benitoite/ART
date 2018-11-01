@@ -1067,6 +1067,10 @@ void Options::readFromFile(Glib::ustring fname)
                 if (keyFile.has_key("Performance", "ThumbnailInspectorMode")) {
                     rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(keyFile.get_integer("Performance", "ThumbnailInspectorMode"));
                 }
+
+                if (keyFile.has_key("Performance", "DenoiseZoomedOut")) {
+                    denoiseZoomedOut = keyFile.get_boolean("Performance", "DenoiseZoomedOut");
+                }
             }
 
             if (keyFile.has_group("GUI")) {
@@ -1920,6 +1924,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_integer("Performance", "PreviewDemosaicFromSidecar", prevdemo);
         keyFile.set_boolean("Performance", "SerializeTiffRead", serializeTiffRead);
         keyFile.set_integer("Performance", "ThumbnailInspectorMode", int(rtSettings.thumbnail_inspector_mode));
+        keyFile.set_boolean("Performance", "DenoiseZoomedOut", denoiseZoomedOut);
 
         keyFile.set_string("Output", "Format", saveFormat.format);
         keyFile.set_integer("Output", "JpegQuality", saveFormat.jpegQuality);
