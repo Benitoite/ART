@@ -484,14 +484,15 @@ void adjust_params(procparams::DirPyrDenoiseParams &dnparams, double scale)
     }
     
     double scale_factor = 1.0 / scale;
-    double noise_factor = scale_factor;
-    dnparams.luma *= noise_factor;
+    double noise_factor_c = scale_factor;
+    double noise_factor_l = std::pow(scale_factor, scale_factor);
+    dnparams.luma *= noise_factor_l;
     //dnparams.Ldetail += (100 - dnparams.Ldetail) * scale_factor;
-    dnparams.Ldetail += dnparams.Ldetail * std::pow(scale_factor, 0.5f);
+    dnparams.Ldetail += dnparams.Ldetail * noise_factor_l;
     if (dnparams.C2method == "MANU") {
-        dnparams.chroma *= noise_factor;
-        dnparams.redchro *= noise_factor;
-        dnparams.bluechro *= noise_factor;
+        dnparams.chroma *= noise_factor_c;
+        dnparams.redchro *= noise_factor_c;
+        dnparams.bluechro *= noise_factor_c;
     }
     if (scale > 2) {
         dnparams.smethod = "shal"; // QUALITY_STANDARD
