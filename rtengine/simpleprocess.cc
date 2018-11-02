@@ -1567,16 +1567,8 @@ private:
         }
 
         if (params.raw.bayersensor.method == procparams::RAWParams::BayerSensor::getMethodString(procparams::RAWParams::BayerSensor::Method::PIXELSHIFT)) {
-            params.raw.bayersensor.method = procparams::RAWParams::BayerSensor::getMethodString(procparams::RAWParams::BayerSensor::Method::RCD);
+            params.raw.bayersensor.method = procparams::RAWParams::BayerSensor::getMethodString(procparams::RAWParams::BayerSensor::Method::AMAZE);
         }
-
-        // Use Rcd instead of Amaze for fast export
-        if (params.raw.bayersensor.method == procparams::RAWParams::BayerSensor::getMethodString(procparams::RAWParams::BayerSensor::Method::AMAZE)) {
-            params.raw.bayersensor.method = procparams::RAWParams::BayerSensor::getMethodString(procparams::RAWParams::BayerSensor::Method::RCD);
-        }
-
-        // params.guidedfilter.smoothingRadius *= scale_factor;
-        // params.guidedfilter.decompRadius *= scale_factor;
     }
 
 private:
