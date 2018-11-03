@@ -72,8 +72,9 @@ GuidedFilter::GuidedFilter(): FoldableToolPanel(this, "guidedfilter", M("TP_GUID
     decompRadius->setAdjusterListener(this);
     decomp->pack_start(*decompRadius);
 
-    decompEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1.0, 20.0, 0.1, 1.0));
+    decompEpsilon = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_EPSILON"), 1.0, 20.0, 0.01, 1.0));
     decompEpsilon->setAdjusterListener(this);
+    decompEpsilon->setLogScale(20, 1);
     decomp->pack_start(*decompEpsilon);
     
     decompDetailBoost = Gtk::manage(new Adjuster(M("TP_GUIDED_FILTER_DECOMP_DETAIL_BOOST"), -10.0, 30.0, 0.01, 0));
