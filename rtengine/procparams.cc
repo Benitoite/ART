@@ -1533,12 +1533,12 @@ bool EPDParams::operator !=(const EPDParams& other) const
 DRCompressionParams::DRCompressionParams() :
     enabled(false),
     method(DRCompressionParams::DR_COMP_FATTAL),
-    threshold(0),
-    amount(30),
+    threshold(30),
+    amount(20),
     anchor(50),
-    dynamicRange(16.0),
+    dynamicRange(10.0),
     grayPoint(18.0),
-    shadowsRange(-12.0)
+    shadowsRange(-5.0)
 {
 }
 

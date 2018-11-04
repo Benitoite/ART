@@ -45,8 +45,8 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
     pack_start(*b);
 
     fattalbox = Gtk::manage(new Gtk::VBox());
-    amount = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_AMOUNT"), 1., 100., 1., 30.));
-    threshold = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_THRESHOLD"), -100., 300., 1., 0.0));
+    amount = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_AMOUNT"), 1., 100., 1., 20.));
+    threshold = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_THRESHOLD"), -100., 300., 1., 30.0));
     Gtk::Image *al = Gtk::manage(new RTImage("circle-black-small.png"));
     Gtk::Image *ar = Gtk::manage(new RTImage("circle-white-small.png"));
     anchor = Gtk::manage(new Adjuster(M("TP_TM_FATTAL_ANCHOR"), 1, 100, 1, 50, al, ar));
@@ -69,9 +69,9 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
     pack_start(*fattalbox);
 
     logbox = Gtk::manage(new Gtk::VBox());
-    dynamicRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 16.0));
+    dynamicRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 10.0));
     grayPoint = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
-    shadowsRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -12.0));
+    shadowsRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -5.0));
 
     dynamicRange->setAdjusterListener(this);
     grayPoint->setAdjusterListener(this);
