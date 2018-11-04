@@ -745,9 +745,9 @@ HISTORY_MSG_DEHAZE_ENABLED;Haze Removal
 HISTORY_MSG_DEHAZE_SHOW_DEPTH_MAP;Dehaze - Show depth map
 HISTORY_MSG_DEHAZE_STRENGTH;Dehaze - Strength
 HISTORY_MSG_DR_COMP_METHOD;DR Compression - Method
-HISTORY_MSG_DR_COMP_POWER;DR Compression - Power
-HISTORY_MSG_DR_COMP_SLOPE;DR Compression - Slope
-HISTORY_MSG_DR_COMP_OFFSET;DR Compression - Offset
+HISTORY_MSG_DR_COMP_LOG_DYNAMIC_RANGE;DR Compression - Dynamic range
+HISTORY_MSG_DR_COMP_LOG_GRAY_POINT;DR Compression - Gray point
+HISTORY_MSG_DR_COMP_LOG_SHADOWS_RANGE;DR Compression - Black exposure
 HISTORY_MSG_DUALDEMOSAIC_CONTRAST;Dual demosaic - Contrast threshold
 HISTORY_MSG_DUALDEMOSAIC_AUTO_CONTRAST;Dual demosaic - Auto threshold
 HISTORY_MSG_GUIDED_FILTER_DECOMP_BASE_CURVE_1;Guided filter - Decomp base curve 1
@@ -1631,10 +1631,10 @@ TP_DISTORTION_AMOUNT;Amount
 TP_DISTORTION_AUTO_TIP;Automatically corrects lens distortion in raw files by matching it against the embedded JPEG image if one exists and has had its lens disortion auto-corrected by the camera.
 TP_DISTORTION_LABEL;Distortion Correction
 TP_DR_COMP_METHOD_FATTAL;HDR Tone Mapping
-TP_DR_COMP_METHOD_GAMMA;Gamma encoding
-TP_DR_COMP_OFFSET;Offset
-TP_DR_COMP_POWER;Power
-TP_DR_COMP_SLOPE;Slope
+TP_DR_COMP_METHOD_LOG;Log encoding
+TP_DR_COMP_LOG_DYNAMIC_RANGE;Dynamic Range (EV)
+TP_DR_COMP_LOG_GRAY_POINT;Gray Point
+TP_DR_COMP_LOG_SHADOWS_RANGE;Black Relative Exposure (EV)
 TP_EPD_EDGESTOPPING;Edge stopping
 TP_EPD_GAMMA;Gamma
 TP_EPD_LABEL;Tone Mapping

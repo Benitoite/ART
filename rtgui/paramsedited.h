@@ -397,8 +397,9 @@ public:
     bool threshold;
     bool amount;
     bool anchor;
-    bool power;
-    bool slope;
+    bool dynamicRange;
+    bool grayPoint;
+    bool shadowsRange;
 };
 
 

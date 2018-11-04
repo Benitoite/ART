@@ -289,8 +289,9 @@ void ParamsEdited::set(bool v)
     drcomp.threshold = v;
     drcomp.amount    = v;
     drcomp.anchor    = v;
-    drcomp.power = v;
-    drcomp.slope = v;
+    drcomp.dynamicRange = v;
+    drcomp.grayPoint = v;
+    drcomp.shadowsRange = v;
     sh.enabled       = v;
     sh.highlights    = v;
     sh.htonalwidth   = v;
@@ -599,6 +600,7 @@ using namespace rtengine::procparams;
 
 void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>& src)
 {
+#define SETVAL_(name) name = name && p. name == other. name
 
     set(true);
 
@@ -870,8 +872,9 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         drcomp.threshold = drcomp.threshold && p.drcomp.threshold == other.drcomp.threshold;
         drcomp.amount = drcomp.amount && p.drcomp.amount == other.drcomp.amount;
         drcomp.anchor = drcomp.anchor && p.drcomp.anchor == other.drcomp.anchor;
-        drcomp.power = drcomp.power && p.drcomp.power == other.drcomp.power;
-        drcomp.slope = drcomp.slope && p.drcomp.slope == other.drcomp.slope;
+        SETVAL_(drcomp.dynamicRange);
+        SETVAL_(drcomp.grayPoint);
+        SETVAL_(drcomp.shadowsRange);
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
         sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
@@ -1153,7 +1156,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         dehaze.showDepthMap = dehaze.showDepthMap && p.dehaze.showDepthMap == other.dehaze.showDepthMap;
         dehaze.depth = dehaze.depth && p.dehaze.depth == other.dehaze.depth;
 
-#define SETVAL_(name) name = name && p. name == other. name
         SETVAL_(guidedfilter.enabled);
         SETVAL_(guidedfilter.smoothingRadius);
         SETVAL_(guidedfilter.smoothingEpsilon);
@@ -1165,7 +1167,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(guidedfilter.decompBaseCurve1);
         SETVAL_(guidedfilter.decompBaseCurve2);
         SETVAL_(guidedfilter.decompDetailBoost);
-#undef SETVAL_
 
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
@@ -1173,10 +1174,21 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
 //      exif = exif && p.exif==other.exif
 //      iptc = other.iptc;
     }
+
+#undef SETVAL_
 }
 
 void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rtengine::procparams::ProcParams& mods, bool forceSet)
 {
+#define ADDSETVAL_(v, i)                                                                        \
+    do {                                                                                        \
+        if ( v ) {                                                                              \
+            toEdit. v = dontforceSet && options.baBehav[ i ] ? toEdit. v + mods. v : mods. v ;  \
+        }                                                                                       \
+    } while (false)
+
+#define SETVAL_(name) do { if (name) toEdit. name = mods. name; } while (false)
+
 
     bool dontforceSet = !forceSet;
 
@@ -1454,18 +1466,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.localContrast.enabled = mods.localContrast.enabled;
     }
 
-#define ADDSETVAL_(v, i)                                                                        \
-    do {                                                                                        \
-        if ( v ) {                                                                              \
-            toEdit. v = dontforceSet && options.baBehav[ i ] ? toEdit. v + mods. v : mods. v ;  \
-        }                                                                                       \
-    } while (false)
-
     ADDSETVAL_(localContrast.radius, ADDSET_LOCALCONTRAST_RADIUS);
     ADDSETVAL_(localContrast.amount, ADDSET_LOCALCONTRAST_AMOUNT);
     ADDSETVAL_(localContrast.darkness, ADDSET_LOCALCONTRAST_DARKNESS);
     ADDSETVAL_(localContrast.lightness, ADDSET_LOCALCONTRAST_LIGHTNESS);
-#undef ADDSETVAL_
 
     if (rgbCurves.enabled) {
         toEdit.rgbCurves.enabled = mods.rgbCurves.enabled;
@@ -2154,13 +2158,9 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.drcomp.anchor = mods.drcomp.anchor;
     }
 
-    if (drcomp.power) {
-        toEdit.drcomp.power = mods.drcomp.power;
-    }
-
-    if (drcomp.slope) {
-        toEdit.drcomp.slope = mods.drcomp.slope;
-    }
+    SETVAL_(drcomp.dynamicRange);
+    SETVAL_(drcomp.grayPoint);
+    SETVAL_(drcomp.shadowsRange);
 
     if (sh.enabled) {
         toEdit.sh.enabled         = mods.sh.enabled;
@@ -3205,7 +3205,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.dehaze.showDepthMap     = mods.dehaze.showDepthMap;
     }
 
-#define SETVAL_(name) do { if (name) toEdit. name = mods. name; } while (false)
     SETVAL_(guidedfilter.enabled);
     SETVAL_(guidedfilter.smoothingRadius);
     SETVAL_(guidedfilter.smoothingEpsilon);
@@ -3217,7 +3216,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(guidedfilter.decompBaseCurve1);
     SETVAL_(guidedfilter.decompBaseCurve2);
     SETVAL_(guidedfilter.decompDetailBoost);
-#undef SETVAL_
 
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;
@@ -3234,6 +3232,9 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         for (procparams::IPTCPairs::const_iterator i = mods.iptc.begin(); i != mods.iptc.end(); ++i) {
             toEdit.iptc[i->first] = i->second;
         }
+
+#undef SETVAL_
+#undef ADDSETVAL_
 }
 
 bool RAWParamsEdited::BayerSensor::isUnchanged() const

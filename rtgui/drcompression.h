@@ -33,15 +33,16 @@ protected:
     Adjuster *amount;
     Adjuster *anchor;
 
-    Gtk::VBox *gammabox;
-    Adjuster *power;
-    Adjuster *slope;
+    Gtk::VBox *logbox;
+    Adjuster *dynamicRange;
+    Adjuster *grayPoint;
+    Adjuster *shadowsRange;
 
     rtengine::ProcEvent EvTMFattalAnchor;
     rtengine::ProcEvent EvDRCompMethod;
-    rtengine::ProcEvent EvDRCompPower;
-    rtengine::ProcEvent EvDRCompSlope;
-    rtengine::ProcEvent EvDRCompOffset;
+    rtengine::ProcEvent EvDRLogDynamicRange;
+    rtengine::ProcEvent EvDRLogGrayPoint;
+    rtengine::ProcEvent EvDRLogShadowsRange;
     
 public:
 

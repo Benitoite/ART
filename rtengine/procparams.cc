@@ -1536,8 +1536,9 @@ DRCompressionParams::DRCompressionParams() :
     threshold(0),
     amount(30),
     anchor(50),
-    power(1.0),
-    slope(1.0)
+    dynamicRange(16.0),
+    grayPoint(18.0),
+    shadowsRange(-12.0)
 {
 }
 
@@ -1548,8 +1549,9 @@ bool DRCompressionParams::operator ==(const DRCompressionParams& other) const
         && threshold == other.threshold
         && amount == other.amount
         && anchor == other.anchor
-        && power == other.power
-        && slope == other.slope;
+        && dynamicRange == other.dynamicRange
+        && grayPoint == other.grayPoint
+        && shadowsRange == other.shadowsRange;
 }
 
 bool DRCompressionParams::operator !=(const DRCompressionParams& other) const
@@ -3222,8 +3224,9 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->drcomp.threshold, "DynamicRangeCompression", "Threshold", drcomp.threshold, keyFile);
         saveToKeyfile(!pedited || pedited->drcomp.amount, "DynamicRangeCompression", "Amount", drcomp.amount, keyFile);
         saveToKeyfile(!pedited || pedited->drcomp.anchor, "DynamicRangeCompression", "Anchor", drcomp.anchor, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.power, "DynamicRangeCompression", "Power", drcomp.power, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.slope, "DynamicRangeCompression", "Slope", drcomp.slope, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.dynamicRange, "DynamicRangeCompression", "DynamicRange", drcomp.dynamicRange, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.grayPoint, "DynamicRangeCompression", "GrayPoint", drcomp.grayPoint, keyFile);
+        saveToKeyfile(!pedited || pedited->drcomp.shadowsRange, "DynamicRangeCompression", "ShadowsRange", drcomp.shadowsRange, keyFile);
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
@@ -4191,8 +4194,9 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 assignFromKeyfile(keyFile, drcomp_group, "Threshold", pedited, drcomp.threshold, pedited->drcomp.threshold);
                 assignFromKeyfile(keyFile, drcomp_group, "Amount", pedited, drcomp.amount, pedited->drcomp.amount);
                 assignFromKeyfile(keyFile, drcomp_group, "Anchor", pedited, drcomp.anchor, pedited->drcomp.anchor);
-                assignFromKeyfile(keyFile, drcomp_group, "Power", pedited, drcomp.power, pedited->drcomp.power);
-                assignFromKeyfile(keyFile, drcomp_group, "Slope", pedited, drcomp.slope, pedited->drcomp.slope);
+                assignFromKeyfile(keyFile, drcomp_group, "DynamicRange", pedited, drcomp.dynamicRange, pedited->drcomp.dynamicRange);
+                assignFromKeyfile(keyFile, drcomp_group, "GrayPoint", pedited, drcomp.grayPoint, pedited->drcomp.grayPoint);
+                assignFromKeyfile(keyFile, drcomp_group, "ShadowsRange", pedited, drcomp.shadowsRange, pedited->drcomp.shadowsRange);
             }
         }
 

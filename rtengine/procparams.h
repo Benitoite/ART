@@ -745,13 +745,14 @@ struct EPDParams {
 
 struct DRCompressionParams {
     bool enabled;
-    enum { DR_COMP_FATTAL, DR_COMP_GAMMA };
+    enum { DR_COMP_FATTAL, DR_COMP_LOG };
     int method;
     int threshold;
     int amount;
     int anchor;
-    double power;
-    double slope;
+    double dynamicRange;
+    double grayPoint;
+    double shadowsRange;
 
     DRCompressionParams();
 

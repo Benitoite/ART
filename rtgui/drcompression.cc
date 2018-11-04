@@ -30,15 +30,15 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
     auto m = ProcEventMapper::getInstance();
     EvTMFattalAnchor = m->newEvent(HDR, "HISTORY_MSG_TM_FATTAL_ANCHOR");
     EvDRCompMethod = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_METHOD");
-    EvDRCompPower = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_POWER");
-    EvDRCompSlope = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_SLOPE");
-    EvDRCompOffset = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_OFFSET");
+    EvDRLogDynamicRange = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_LOG_DYNAMIC_RANGE");
+    EvDRLogGrayPoint = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_LOG_GRAY_POINT");
+    EvDRLogShadowsRange = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_LOG_SHADOWS_RANGE");
 
     Gtk::HBox *b = Gtk::manage(new Gtk::HBox());
     b->pack_start(*Gtk::manage(new Gtk::Label(M("TP_SHARPENING_METHOD") + ":")), Gtk::PACK_SHRINK, 4);
     method = Gtk::manage(new MyComboBoxText());
     method->append(M("TP_DR_COMP_METHOD_FATTAL"));
-    method->append(M("TP_DR_COMP_METHOD_GAMMA"));
+    method->append(M("TP_DR_COMP_METHOD_LOG"));
 
     method->show();
     b->pack_start(*method);
@@ -68,21 +68,25 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
 
     pack_start(*fattalbox);
 
-    gammabox = Gtk::manage(new Gtk::VBox());
-    power = Gtk::manage(new Adjuster (M("TP_DR_COMP_POWER"), 0.0, 2.0, 0.005, 1.));
-    slope = Gtk::manage(new Adjuster (M("TP_DR_COMP_SLOPE"), 0.001, 2.0, 0.005, 1.0));
+    logbox = Gtk::manage(new Gtk::VBox());
+    dynamicRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 16.0));
+    grayPoint = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
+    shadowsRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -12.0));
 
-    power->setAdjusterListener(this);
-    slope->setAdjusterListener(this);
+    dynamicRange->setAdjusterListener(this);
+    grayPoint->setAdjusterListener(this);
+    shadowsRange->setAdjusterListener(this);
 
-    gammabox->show();
-    power->show();
-    slope->show();
+    logbox->show();
+    dynamicRange->show();
+    grayPoint->show();
+    shadowsRange->show();
 
-    gammabox->pack_start(*power);
-    gammabox->pack_start(*slope);
+    logbox->pack_start(*grayPoint);
+    logbox->pack_start(*shadowsRange);
+    logbox->pack_start(*dynamicRange);
 
-    pack_start(*gammabox);
+    pack_start(*logbox);
 
     method->signal_changed().connect(sigc::mem_fun(*this, &DRCompression::method_changed));
 }
@@ -95,8 +99,9 @@ void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
         threshold->setEditedState(pedited->drcomp.threshold ? Edited : UnEdited);
         amount->setEditedState(pedited->drcomp.amount ? Edited : UnEdited);
         anchor->setEditedState(pedited->drcomp.anchor ? Edited : UnEdited);
-        power->setEditedState(pedited->drcomp.power ? Edited : UnEdited);
-        slope->setEditedState(pedited->drcomp.slope ? Edited : UnEdited);
+        dynamicRange->setEditedState(pedited->drcomp.dynamicRange ? Edited : UnEdited);
+        grayPoint->setEditedState(pedited->drcomp.grayPoint ? Edited : UnEdited);
+        shadowsRange->setEditedState(pedited->drcomp.shadowsRange ? Edited : UnEdited);
         set_inconsistent(multiImage && !pedited->drcomp.enabled);
     }
 
@@ -105,8 +110,9 @@ void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
     amount->setValue(pp->drcomp.amount);
     anchor->setValue(pp->drcomp.anchor);
 
-    power->setValue(pp->drcomp.power);
-    slope->setValue(pp->drcomp.slope);
+    dynamicRange->setValue(pp->drcomp.dynamicRange);
+    grayPoint->setValue(pp->drcomp.grayPoint);
+    shadowsRange->setValue(pp->drcomp.shadowsRange);
 
     if (pedited && !pedited->drcomp.method) {
         method->set_active(2);
@@ -114,10 +120,10 @@ void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
         method->set_active(pp->drcomp.method);
         if (pp->drcomp.method == rtengine::procparams::DRCompressionParams::DR_COMP_FATTAL) {
             fattalbox->show();
-            gammabox->hide();
+            logbox->hide();
         } else {
             fattalbox->hide();
-            gammabox->show();
+            logbox->show();
         }
     }
     
@@ -130,19 +136,21 @@ void DRCompression::write(ProcParams *pp, ParamsEdited *pedited)
     pp->drcomp.amount = amount->getValue();
     pp->drcomp.anchor = anchor->getValue();
     pp->drcomp.enabled = getEnabled();
-    pp->drcomp.power = power->getValue();
-    pp->drcomp.slope = slope->getValue();
+    pp->drcomp.dynamicRange = dynamicRange->getValue();
+    pp->drcomp.grayPoint = grayPoint->getValue();
+    pp->drcomp.shadowsRange = shadowsRange->getValue();
     if (method->get_active_row_number() != 2) {
         pp->drcomp.method = method->get_active_row_number();
     }
 
-    if(pedited) {
+    if (pedited) {
         pedited->drcomp.threshold = threshold->getEditedState();
         pedited->drcomp.amount = amount->getEditedState();
         pedited->drcomp.anchor = anchor->getEditedState();
         pedited->drcomp.enabled = !get_inconsistent();
-        pedited->drcomp.power = power->getEditedState();
-        pedited->drcomp.slope = slope->getEditedState();
+        pedited->drcomp.dynamicRange = dynamicRange->getEditedState();
+        pedited->drcomp.grayPoint = grayPoint->getEditedState();
+        pedited->drcomp.shadowsRange = shadowsRange->getEditedState();
         pedited->drcomp.method = method->get_active_row_number() != 2;
     }
 }
@@ -153,23 +161,26 @@ void DRCompression::setDefaults(const ProcParams *defParams, const ParamsEdited 
     amount->setDefault(defParams->drcomp.amount);
     anchor->setDefault(defParams->drcomp.anchor);
 
-    power->setDefault(defParams->drcomp.power);
-    slope->setDefault(defParams->drcomp.slope);
+    dynamicRange->setDefault(defParams->drcomp.dynamicRange);
+    grayPoint->setDefault(defParams->drcomp.grayPoint);
+    shadowsRange->setDefault(defParams->drcomp.shadowsRange);
     
-    if(pedited) {
+    if (pedited) {
         threshold->setDefaultEditedState(pedited->drcomp.threshold ? Edited : UnEdited);
         amount->setDefaultEditedState(pedited->drcomp.amount ? Edited : UnEdited);
         anchor->setDefaultEditedState(pedited->drcomp.anchor ? Edited : UnEdited);
 
-        power->setDefaultEditedState(pedited->drcomp.power ? Edited : UnEdited);
-        slope->setDefaultEditedState(pedited->drcomp.slope ? Edited : UnEdited);
+        dynamicRange->setDefaultEditedState(pedited->drcomp.dynamicRange ? Edited : UnEdited);
+        grayPoint->setDefaultEditedState(pedited->drcomp.grayPoint ? Edited : UnEdited);
+        shadowsRange->setDefaultEditedState(pedited->drcomp.shadowsRange ? Edited : UnEdited);
     } else {
         threshold->setDefaultEditedState(Irrelevant);
         amount->setDefaultEditedState(Irrelevant);
         anchor->setDefaultEditedState(Irrelevant);
 
-        power->setDefaultEditedState(Irrelevant);
-        slope->setDefaultEditedState(Irrelevant);
+        dynamicRange->setDefaultEditedState(Irrelevant);
+        grayPoint->setDefaultEditedState(Irrelevant);
+        shadowsRange->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -182,10 +193,12 @@ void DRCompression::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvTMFattalAmount, a->getTextValue());
         } else if(a == anchor) {
             listener->panelChanged(EvTMFattalAnchor, a->getTextValue());
-        } else if (a == power) {
-            listener->panelChanged(EvDRCompPower, a->getTextValue());
-        } else if (a == slope) {
-            listener->panelChanged(EvDRCompSlope, a->getTextValue());
+        } else if (a == dynamicRange) {
+            listener->panelChanged(EvDRLogDynamicRange, a->getTextValue());
+        } else if (a == grayPoint) {
+            listener->panelChanged(EvDRLogGrayPoint, a->getTextValue());
+        } else if (a == shadowsRange) {
+            listener->panelChanged(EvDRLogShadowsRange, a->getTextValue());
         }
     }
 }
@@ -215,8 +228,9 @@ void DRCompression::setBatchMode(bool batchMode)
     amount->showEditedCB();
     anchor->showEditedCB();
 
-    power->showEditedCB();
-    slope->showEditedCB();
+    dynamicRange->showEditedCB();
+    grayPoint->showEditedCB();
+    shadowsRange->showEditedCB();
     
     method->append(M("GENERAL_UNCHANGED"));
 }
@@ -233,10 +247,10 @@ void DRCompression::method_changed()
 {
     if (!batchMode) {
         fattalbox->show();
-        gammabox->show();
+        logbox->show();
 
         if (method->get_active_row_number() == 0) {
-            gammabox->hide();
+            logbox->hide();
         } else if (method->get_active_row_number() == 1) {
             fattalbox->hide();
         }
