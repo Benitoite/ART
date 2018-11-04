@@ -38,7 +38,7 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *img)
 
     array2D<float> mask(width, height);
     array2D<float> L(width, height);
-    const float radius = float(params->sh.radius) * 20 / scale;
+    const float radius = float(params->sh.radius) * 10 / scale;
     LUTf f(lab_mode ? 32768 : 65536);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -186,11 +186,11 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *img)
         };
 
     if (params->sh.highlights) {
-        apply(params->sh.highlights * 0.7, params->sh.htonalwidth * 0.75, true);
+        apply(params->sh.highlights * 0.7, std::pow(float(params->sh.htonalwidth / 100.f), 1.8f) * 100.f, true);
     }
 
     if (params->sh.shadows) {
-        apply(params->sh.shadows * 0.6, params->sh.stonalwidth * 0.5, false);
+        apply(params->sh.shadows * 0.6, std::pow(float(params->sh.stonalwidth / 100.f), 1.4f) * 100.f, false);
     }
 }
 
