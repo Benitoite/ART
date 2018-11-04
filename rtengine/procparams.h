@@ -463,6 +463,7 @@ struct ColorToningParams {
         std::vector<double> hueMask;
         std::vector<double> chromaticityMask;
         std::vector<double> lightnessMask;
+        double maskBlur;
 
         LabCorrectionRegion();
         bool operator==(const LabCorrectionRegion &other) const;

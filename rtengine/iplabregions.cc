@@ -143,8 +143,12 @@ BENCHFUN
     }
 
     for (int i = begin_idx; i < end_idx; ++i) {
-        rtengine::guidedFilter(guide, abmask[i], abmask[i], max(int(4 / scale + 0.5), 1), 0.001, multiThread);
-        rtengine::guidedFilter(guide, Lmask[i], Lmask[i], max(int(25 / scale + 0.5), 1), 0.0001, multiThread);
+        float blur = params->colorToning.labregions[i].maskBlur;
+        blur = blur < 0.f ? -1.f/blur : 1.f + blur;
+        int r1 = max(int(4 / scale * blur + 0.5), 1);
+        int r2 = max(int(25 / scale * blur + 0.5), 1);
+        rtengine::guidedFilter(guide, abmask[i], abmask[i], r1, 0.001, multiThread);
+        rtengine::guidedFilter(guide, Lmask[i], Lmask[i], r2, 0.0001, multiThread);
     }
 
     if (show_mask_idx >= 0) {

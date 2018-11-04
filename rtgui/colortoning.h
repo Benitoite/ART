@@ -133,6 +133,7 @@ private:
     rtengine::ProcEvent EvLabRegionHueMask;
     rtengine::ProcEvent EvLabRegionChromaticityMask;
     rtengine::ProcEvent EvLabRegionLightnessMask;
+    rtengine::ProcEvent EvLabRegionMaskBlur;
     rtengine::ProcEvent EvLabRegionShowMask;
 
     Gtk::VBox *labRegionBox;
@@ -147,6 +148,7 @@ private:
     FlatCurveEditor *labRegionHueMask;
     FlatCurveEditor *labRegionChromaticityMask;
     FlatCurveEditor *labRegionLightnessMask;
+    Adjuster *labRegionMaskBlur;
     Gtk::CheckButton *labRegionShowMask;
     std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
     int labRegionSelected;

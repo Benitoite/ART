@@ -644,7 +644,8 @@ ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
             1.,
             0.35,
             0.35
-            }
+            },
+    maskBlur(0)
 {
 }
 
@@ -657,7 +658,8 @@ bool ColorToningParams::LabCorrectionRegion::operator==(const LabCorrectionRegio
         && lightness == other.lightness
         && hueMask == other.hueMask
         && chromaticityMask == other.chromaticityMask
-        && lightnessMask == other.lightnessMask;
+        && lightnessMask == other.lightnessMask
+        && maskBlur == other.maskBlur;
 }
 
 
@@ -3549,6 +3551,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionHueMask_") + n, l.hueMask, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionChromaticityMask_") + n, l.chromaticityMask, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionLightnessMask_") + n, l.lightnessMask, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionMaskBlur_") + n, l.maskBlur, keyFile);
             }
         }
         saveToKeyfile(!pedited || pedited->colorToning.labregionsShowMask, "ColorToning", "LabRegionsShowMask", colorToning.labregionsShowMask, keyFile);
@@ -4970,6 +4973,10 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     done = false;
                 }
                 if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionLightnessMask_") + n, pedited, cur.lightnessMask, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionMaskBlur_") + n, pedited, cur.maskBlur, pedited->colorToning.labregions)) {
                     found = true;
                     done = false;
                 }
