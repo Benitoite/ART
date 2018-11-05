@@ -285,13 +285,13 @@ void ParamsEdited::set(bool v)
     epd.scale               = v;
     epd.reweightingIterates = v;
     drcomp.enabled   = v;
-    drcomp.method   = v;
     drcomp.threshold = v;
     drcomp.amount    = v;
     drcomp.anchor    = v;
-    drcomp.dynamicRange = v;
-    drcomp.grayPoint = v;
-    drcomp.shadowsRange = v;
+    logenc.enabled   = v;
+    logenc.dynamicRange = v;
+    logenc.grayPoint = v;
+    logenc.shadowsRange = v;
     sh.enabled       = v;
     sh.highlights    = v;
     sh.htonalwidth   = v;
@@ -868,13 +868,13 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         epd.reweightingIterates = epd.reweightingIterates && p.epd.reweightingIterates == other.epd.reweightingIterates;
 
         drcomp.enabled = drcomp.enabled && p.drcomp.enabled == other.drcomp.enabled;
-        drcomp.method = drcomp.method && p.drcomp.method == other.drcomp.method;
         drcomp.threshold = drcomp.threshold && p.drcomp.threshold == other.drcomp.threshold;
         drcomp.amount = drcomp.amount && p.drcomp.amount == other.drcomp.amount;
         drcomp.anchor = drcomp.anchor && p.drcomp.anchor == other.drcomp.anchor;
-        SETVAL_(drcomp.dynamicRange);
-        SETVAL_(drcomp.grayPoint);
-        SETVAL_(drcomp.shadowsRange);
+        SETVAL_(logenc.enabled);
+        SETVAL_(logenc.dynamicRange);
+        SETVAL_(logenc.grayPoint);
+        SETVAL_(logenc.shadowsRange);
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
         sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
@@ -2142,10 +2142,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.drcomp.enabled = mods.drcomp.enabled;
     }
 
-    if (drcomp.method) {
-        toEdit.drcomp.method = mods.drcomp.method;
-    }
-
     if (drcomp.threshold) {
         toEdit.drcomp.threshold = mods.drcomp.threshold;
     }
@@ -2158,9 +2154,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.drcomp.anchor = mods.drcomp.anchor;
     }
 
-    SETVAL_(drcomp.dynamicRange);
-    SETVAL_(drcomp.grayPoint);
-    SETVAL_(drcomp.shadowsRange);
+    SETVAL_(logenc.enabled);
+    SETVAL_(logenc.dynamicRange);
+    SETVAL_(logenc.grayPoint);
+    SETVAL_(logenc.shadowsRange);
 
     if (sh.enabled) {
         toEdit.sh.enabled         = mods.sh.enabled;

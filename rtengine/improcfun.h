@@ -348,6 +348,7 @@ public:
     void softLight(LabImage *lab);
     void labColorCorrectionRegions(LabImage *lab);
     void guidedFilter(LabImage *lab);
+    void logEncoding(float *r, float *g, float *b, int istart, int jstart, int tW, int tH, int TS);
 
     Image8*     lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm, bool consider_histogram_settings = true);
     Imagefloat*    lab2rgbOut(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm);

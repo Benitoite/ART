@@ -1532,15 +1532,35 @@ bool EPDParams::operator !=(const EPDParams& other) const
     return !(*this == other);
 }
 
-DRCompressionParams::DRCompressionParams() :
+
+LogEncodingParams::LogEncodingParams():
     enabled(false),
-    method(DRCompressionParams::DR_COMP_FATTAL),
-    threshold(30),
-    amount(20),
-    anchor(50),
     dynamicRange(10.0),
     grayPoint(18.0),
     shadowsRange(-5.0)
+{
+}
+
+bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
+{
+    return
+        enabled == other.enabled
+        && dynamicRange == other.dynamicRange
+        && grayPoint == other.grayPoint
+        && shadowsRange == other.shadowsRange;
+}
+
+bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
+{
+    return !(*this == other);
+}
+
+
+DRCompressionParams::DRCompressionParams() :
+    enabled(false),
+    threshold(30),
+    amount(20),
+    anchor(50)
 {
 }
 
@@ -1550,10 +1570,7 @@ bool DRCompressionParams::operator ==(const DRCompressionParams& other) const
         enabled == other.enabled
         && threshold == other.threshold
         && amount == other.amount
-        && anchor == other.anchor
-        && dynamicRange == other.dynamicRange
-        && grayPoint == other.grayPoint
-        && shadowsRange == other.shadowsRange;
+        && anchor == other.anchor;
 }
 
 bool DRCompressionParams::operator !=(const DRCompressionParams& other) const
@@ -2818,6 +2835,8 @@ void ProcParams::setDefaults()
 
     drcomp = DRCompressionParams();
 
+    logenc = LogEncodingParams();
+
     sh = SHParams();
 
     crop = CropParams();
@@ -3222,13 +3241,15 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Fattal
         saveToKeyfile(!pedited || pedited->drcomp.enabled, "DynamicRangeCompression", "Enabled", drcomp.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.enabled, "DynamicRangeCompression", "Method", drcomp.method, keyFile);
         saveToKeyfile(!pedited || pedited->drcomp.threshold, "DynamicRangeCompression", "Threshold", drcomp.threshold, keyFile);
         saveToKeyfile(!pedited || pedited->drcomp.amount, "DynamicRangeCompression", "Amount", drcomp.amount, keyFile);
         saveToKeyfile(!pedited || pedited->drcomp.anchor, "DynamicRangeCompression", "Anchor", drcomp.anchor, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.dynamicRange, "DynamicRangeCompression", "DynamicRange", drcomp.dynamicRange, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.grayPoint, "DynamicRangeCompression", "GrayPoint", drcomp.grayPoint, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.shadowsRange, "DynamicRangeCompression", "ShadowsRange", drcomp.shadowsRange, keyFile);
+
+// Log encoding        
+        saveToKeyfile(!pedited || pedited->logenc.enabled, "LogEncoding", "Enabled", logenc.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.dynamicRange, "LogEncoding", "DynamicRange", logenc.dynamicRange, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.grayPoint, "LogEncoding", "GrayPoint", logenc.grayPoint, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.shadowsRange, "LogEncoding", "ShadowsRange", logenc.shadowsRange, keyFile);
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
@@ -4193,14 +4214,17 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             const char *drcomp_group = (ppVersion < 344) ? "FattalToneMapping" : "DynamicRangeCompression";
             if (keyFile.has_group(drcomp_group)) {
                 assignFromKeyfile(keyFile, drcomp_group, "Enabled", pedited, drcomp.enabled, pedited->drcomp.enabled);
-                assignFromKeyfile(keyFile, drcomp_group, "Method", pedited, drcomp.method, pedited->drcomp.method);
                 assignFromKeyfile(keyFile, drcomp_group, "Threshold", pedited, drcomp.threshold, pedited->drcomp.threshold);
                 assignFromKeyfile(keyFile, drcomp_group, "Amount", pedited, drcomp.amount, pedited->drcomp.amount);
                 assignFromKeyfile(keyFile, drcomp_group, "Anchor", pedited, drcomp.anchor, pedited->drcomp.anchor);
-                assignFromKeyfile(keyFile, drcomp_group, "DynamicRange", pedited, drcomp.dynamicRange, pedited->drcomp.dynamicRange);
-                assignFromKeyfile(keyFile, drcomp_group, "GrayPoint", pedited, drcomp.grayPoint, pedited->drcomp.grayPoint);
-                assignFromKeyfile(keyFile, drcomp_group, "ShadowsRange", pedited, drcomp.shadowsRange, pedited->drcomp.shadowsRange);
             }
+        }
+
+        if (keyFile.has_group("LogEncoding")) {
+            assignFromKeyfile(keyFile, "LogEncoding", "Enabled", pedited, logenc.enabled, pedited->logenc.enabled);
+            assignFromKeyfile(keyFile, "LogEncoding", "DynamicRange", pedited, logenc.dynamicRange, pedited->logenc.dynamicRange);
+            assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", pedited, logenc.grayPoint, pedited->logenc.grayPoint);
+            assignFromKeyfile(keyFile, "LogEncoding", "ShadowsRange", pedited, logenc.shadowsRange, pedited->logenc.shadowsRange);
         }
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {
@@ -5262,6 +5286,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && dirpyrDenoise == other.dirpyrDenoise
         && epd == other.epd
         && drcomp == other.drcomp
+        && logenc == other.logenc
         && defringe == other.defringe
         && sh == other.sh
         && crop == other.crop

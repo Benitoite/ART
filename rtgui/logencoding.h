@@ -23,27 +23,28 @@
 #include "adjuster.h"
 #include "toolpanel.h"
 
-class DRCompression: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class LogEncoding: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
 {
 protected:
-    Adjuster *threshold;
-    Adjuster *amount;
-    Adjuster *anchor;
+    Adjuster *dynamicRange;
+    Adjuster *grayPoint;
+    Adjuster *shadowsRange;
 
-    rtengine::ProcEvent EvTMFattalAnchor;
+    rtengine::ProcEvent EvEnabled;
+    rtengine::ProcEvent EvDRLogDynamicRange;
+    rtengine::ProcEvent EvDRLogGrayPoint;
+    rtengine::ProcEvent EvDRLogShadowsRange;
     
 public:
+    LogEncoding();
 
-    DRCompression();
+    void read(const rtengine::procparams::ProcParams *pp, const ParamsEdited *pedited=nullptr);
+    void write(rtengine::procparams::ProcParams *pp, ParamsEdited *pedited=nullptr);
+    void setDefaults(const rtengine::procparams::ProcParams *defParams, const ParamsEdited *pedited=nullptr);
+    void setBatchMode(bool batchMode);
 
-    void read           (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr);
-    void write          (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr);
-    void setDefaults    (const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr);
-    void setBatchMode   (bool batchMode);
-
-    void adjusterChanged (Adjuster* a, double newval);
+    void adjusterChanged(Adjuster* a, double newval);
     void adjusterAutoToggled(Adjuster* a, bool newval);
-    void enabledChanged  ();
-    void setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool anchorAdd);
+    void enabledChanged();
 };
 

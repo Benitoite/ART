@@ -27,7 +27,12 @@
 
 namespace rtengine {
 
-namespace {
+
+void ImProcFunctions::dynamicRangeCompression(Imagefloat *rgb)
+{
+    ToneMapFattal02(rgb);
+}
+
 
 // taken from darktable (src/iop/profile_gamma.c)
 /*
@@ -48,12 +53,15 @@ namespace {
    You should have received a copy of the GNU General Public License
    along with darktable.  If not, see <http://www.gnu.org/licenses/>.
 */ 
-void log_compress(Imagefloat *rgb, float dynamic_range, float gray_point, float shadows_range, bool multithread)
+void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int jstart, int tW, int tH, int TS)
 {
-    int w = rgb->getWidth();
-    int h = rgb->getHeight();
-
-    const float gray = (gray_point / 100.f) * 65535.f;
+    if (!params->logenc.enabled) {
+        return;
+    }
+    
+    const float gray = (params->logenc.grayPoint / 100.f) * 65535.f;
+    const float shadows_range = params->logenc.shadowsRange;
+    const float dynamic_range = params->logenc.dynamicRange;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
 
@@ -65,28 +73,12 @@ void log_compress(Imagefloat *rgb, float dynamic_range, float gray_point, float 
             return x * 65535.f;
         };
 
-#ifdef _OPENMP
-    #pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            rgb->r(y, x) = apply(rgb->r(y, x));
-            rgb->g(y, x) = apply(rgb->g(y, x));
-            rgb->b(y, x) = apply(rgb->b(y, x));
-        }
-    }
-}
-
-} // namespace
-
-
-void ImProcFunctions::dynamicRangeCompression(Imagefloat *rgb)
-{
-    if (params->drcomp.enabled) {
-        if (params->drcomp.method == procparams::DRCompressionParams::DR_COMP_LOG) {
-            log_compress(rgb, params->drcomp.dynamicRange, params->drcomp.grayPoint, params->drcomp.shadowsRange, multiThread);
-        } else {
-            ToneMapFattal02(rgb);
+    for (int i = istart, ti = 0; i < tH; i++, ti++) {
+        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+            int idx = ti * TS + tj;
+            r[idx] = apply(r[idx]);
+            g[idx] = apply(g[idx]);
+            b[idx] = apply(b[idx]);
         }
     }
 }

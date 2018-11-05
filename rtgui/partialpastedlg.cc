@@ -49,6 +49,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     // Basic Settings:
     wb          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_WHITEBALANCE")));
     exposure    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EXPOSURE")));
+    logenc      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_LOG")));
     sh          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_SHADOWSHIGHLIGHTS")));
     epd         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EPD")));
     drcomp      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_FATTAL")));
@@ -152,6 +153,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[0]->pack_start (*hseps[0], Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*wb, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*exposure, Gtk::PACK_SHRINK, 2);
+    vboxes[0]->pack_start (*logenc, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*sh, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*epd, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*drcomp, Gtk::PACK_SHRINK, 2);
@@ -315,6 +317,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     // Basic Settings
     wbConn          = wb->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     exposureConn    = exposure->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
+    logencConn      = logenc->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     shConn          = sh->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     epdConn         = epd->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     drcompConn      = drcomp->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
@@ -510,6 +513,7 @@ void PartialPasteDlg::basicToggled ()
 
     ConnectionBlocker wbBlocker(wbConn);
     ConnectionBlocker exposureBlocker(exposureConn);
+    ConnectionBlocker logencBlocker(logencConn);
     ConnectionBlocker shBlocker(shConn);
     ConnectionBlocker epdBlocker(epdConn);
     ConnectionBlocker drcompBlocker(drcompConn);
@@ -521,6 +525,7 @@ void PartialPasteDlg::basicToggled ()
 
     wb->set_active (basic->get_active ());
     exposure->set_active (basic->get_active ());
+    logenc->set_active (basic->get_active ());
     sh->set_active (basic->get_active ());
     epd->set_active (basic->get_active ());
     drcomp->set_active (basic->get_active ());
@@ -678,6 +683,10 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!localcontrast->get_active()) {
         filterPE.localContrast = falsePE.localContrast;
+    }
+
+    if (!logenc->get_active ()) {
+        filterPE.logenc         = falsePE.logenc;
     }
 
     if (!sh->get_active ()) {

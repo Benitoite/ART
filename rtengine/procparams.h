@@ -744,16 +744,24 @@ struct EPDParams {
 };
 
 
-struct DRCompressionParams {
+struct LogEncodingParams {
     bool enabled;
-    enum { DR_COMP_FATTAL, DR_COMP_LOG };
-    int method;
-    int threshold;
-    int amount;
-    int anchor;
     double dynamicRange;
     double grayPoint;
     double shadowsRange;
+
+    LogEncodingParams();
+
+    bool operator==(const LogEncodingParams &other) const;
+    bool operator !=(const LogEncodingParams &other) const;
+};
+
+
+struct DRCompressionParams {
+    bool enabled;
+    int threshold;
+    int amount;
+    int anchor;
 
     DRCompressionParams();
 
@@ -1473,6 +1481,7 @@ public:
     DirPyrDenoiseParams     dirpyrDenoise;   ///< Directional Pyramid denoising parameters
     EPDParams               epd;             ///< Edge Preserving Decomposition parameters
     DRCompressionParams     drcomp;          ///< Dynamic Range Compression
+    LogEncodingParams       logenc;
     SHParams                sh;              ///< Shadow/highlight enhancement parameters
     CropParams              crop;            ///< Crop parameters
     CoarseTransformParams   coarse;          ///< Coarse transformation (90, 180, 270 deg rotation, h/v flipping) parameters

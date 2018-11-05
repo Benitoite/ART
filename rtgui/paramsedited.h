@@ -389,17 +389,23 @@ public:
 };
 
 
+class LogEncodingParamsEdited
+{
+public:
+    bool enabled;
+    bool dynamicRange;
+    bool grayPoint;
+    bool shadowsRange;
+};
+
+
 class DRCompressionParamsEdited
 {
 public:
     bool enabled;
-    bool method;
     bool threshold;
     bool amount;
     bool anchor;
-    bool dynamicRange;
-    bool grayPoint;
-    bool shadowsRange;
 };
 
 
@@ -874,6 +880,7 @@ public:
     DirPyrDenoiseParamsEdited     dirpyrDenoise;
     EPDParamsEdited               epd;
     DRCompressionParamsEdited     drcomp;
+    LogEncodingParamsEdited       logenc;
     ImpulseDenoiseParamsEdited    impulseDenoise;
     SHParamsEdited                sh;
     CropParamsEdited              crop;

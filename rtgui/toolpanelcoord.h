@@ -82,6 +82,7 @@
 #include "softlight.h"
 #include "dehaze.h"
 #include "guidedfilter.h"
+#include "logencoding.h"
 #include "guiutils.h"
 
 class ImageEditorCoordinator;
@@ -152,6 +153,7 @@ protected:
     BayerRAWExposure* bayerrawexposure;
     XTransRAWExposure* xtransrawexposure;
     DRCompression *drcomp;
+    LogEncoding *logenc;
     MetaDataPanel* metadata;
     GuidedFilter *guidedfilter;
 

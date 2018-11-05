@@ -29,22 +29,7 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
 {
     auto m = ProcEventMapper::getInstance();
     EvTMFattalAnchor = m->newEvent(HDR, "HISTORY_MSG_TM_FATTAL_ANCHOR");
-    EvDRCompMethod = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_METHOD");
-    EvDRLogDynamicRange = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_LOG_DYNAMIC_RANGE");
-    EvDRLogGrayPoint = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_LOG_GRAY_POINT");
-    EvDRLogShadowsRange = m->newEvent(HDR, "HISTORY_MSG_DR_COMP_LOG_SHADOWS_RANGE");
 
-    Gtk::HBox *b = Gtk::manage(new Gtk::HBox());
-    b->pack_start(*Gtk::manage(new Gtk::Label(M("TP_SHARPENING_METHOD") + ":")), Gtk::PACK_SHRINK, 4);
-    method = Gtk::manage(new MyComboBoxText());
-    method->append(M("TP_DR_COMP_METHOD_FATTAL"));
-    method->append(M("TP_DR_COMP_METHOD_LOG"));
-
-    method->show();
-    b->pack_start(*method);
-    pack_start(*b);
-
-    fattalbox = Gtk::manage(new Gtk::VBox());
     amount = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_AMOUNT"), 1., 100., 1., 20.));
     threshold = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_THRESHOLD"), -100., 300., 1., 30.0));
     Gtk::Image *al = Gtk::manage(new RTImage("circle-black-small.png"));
@@ -57,38 +42,13 @@ DRCompression::DRCompression(): FoldableToolPanel(this, "fattal", M("TP_TM_FATTA
 
     threshold->setLogScale(10, 0);
 
-    fattalbox->show();
     amount->show();
     threshold->show();
     anchor->show();
 
-    fattalbox->pack_start(*amount);
-    fattalbox->pack_start(*threshold);
-    fattalbox->pack_start(*anchor);
-
-    pack_start(*fattalbox);
-
-    logbox = Gtk::manage(new Gtk::VBox());
-    dynamicRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 10.0));
-    grayPoint = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
-    shadowsRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -5.0));
-
-    dynamicRange->setAdjusterListener(this);
-    grayPoint->setAdjusterListener(this);
-    shadowsRange->setAdjusterListener(this);
-
-    logbox->show();
-    dynamicRange->show();
-    grayPoint->show();
-    shadowsRange->show();
-
-    logbox->pack_start(*grayPoint);
-    logbox->pack_start(*shadowsRange);
-    logbox->pack_start(*dynamicRange);
-
-    pack_start(*logbox);
-
-    method->signal_changed().connect(sigc::mem_fun(*this, &DRCompression::method_changed));
+    pack_start(*amount);
+    pack_start(*threshold);
+    pack_start(*anchor);
 }
 
 void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
@@ -99,9 +59,6 @@ void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
         threshold->setEditedState(pedited->drcomp.threshold ? Edited : UnEdited);
         amount->setEditedState(pedited->drcomp.amount ? Edited : UnEdited);
         anchor->setEditedState(pedited->drcomp.anchor ? Edited : UnEdited);
-        dynamicRange->setEditedState(pedited->drcomp.dynamicRange ? Edited : UnEdited);
-        grayPoint->setEditedState(pedited->drcomp.grayPoint ? Edited : UnEdited);
-        shadowsRange->setEditedState(pedited->drcomp.shadowsRange ? Edited : UnEdited);
         set_inconsistent(multiImage && !pedited->drcomp.enabled);
     }
 
@@ -110,23 +67,6 @@ void DRCompression::read(const ProcParams *pp, const ParamsEdited *pedited)
     amount->setValue(pp->drcomp.amount);
     anchor->setValue(pp->drcomp.anchor);
 
-    dynamicRange->setValue(pp->drcomp.dynamicRange);
-    grayPoint->setValue(pp->drcomp.grayPoint);
-    shadowsRange->setValue(pp->drcomp.shadowsRange);
-
-    if (pedited && !pedited->drcomp.method) {
-        method->set_active(2);
-    } else {
-        method->set_active(pp->drcomp.method);
-        if (pp->drcomp.method == rtengine::procparams::DRCompressionParams::DR_COMP_FATTAL) {
-            fattalbox->show();
-            logbox->hide();
-        } else {
-            fattalbox->hide();
-            logbox->show();
-        }
-    }
-    
     enableListener();
 }
 
@@ -136,22 +76,12 @@ void DRCompression::write(ProcParams *pp, ParamsEdited *pedited)
     pp->drcomp.amount = amount->getValue();
     pp->drcomp.anchor = anchor->getValue();
     pp->drcomp.enabled = getEnabled();
-    pp->drcomp.dynamicRange = dynamicRange->getValue();
-    pp->drcomp.grayPoint = grayPoint->getValue();
-    pp->drcomp.shadowsRange = shadowsRange->getValue();
-    if (method->get_active_row_number() != 2) {
-        pp->drcomp.method = method->get_active_row_number();
-    }
 
     if (pedited) {
         pedited->drcomp.threshold = threshold->getEditedState();
         pedited->drcomp.amount = amount->getEditedState();
         pedited->drcomp.anchor = anchor->getEditedState();
         pedited->drcomp.enabled = !get_inconsistent();
-        pedited->drcomp.dynamicRange = dynamicRange->getEditedState();
-        pedited->drcomp.grayPoint = grayPoint->getEditedState();
-        pedited->drcomp.shadowsRange = shadowsRange->getEditedState();
-        pedited->drcomp.method = method->get_active_row_number() != 2;
     }
 }
 
@@ -161,26 +91,14 @@ void DRCompression::setDefaults(const ProcParams *defParams, const ParamsEdited 
     amount->setDefault(defParams->drcomp.amount);
     anchor->setDefault(defParams->drcomp.anchor);
 
-    dynamicRange->setDefault(defParams->drcomp.dynamicRange);
-    grayPoint->setDefault(defParams->drcomp.grayPoint);
-    shadowsRange->setDefault(defParams->drcomp.shadowsRange);
-    
     if (pedited) {
         threshold->setDefaultEditedState(pedited->drcomp.threshold ? Edited : UnEdited);
         amount->setDefaultEditedState(pedited->drcomp.amount ? Edited : UnEdited);
         anchor->setDefaultEditedState(pedited->drcomp.anchor ? Edited : UnEdited);
-
-        dynamicRange->setDefaultEditedState(pedited->drcomp.dynamicRange ? Edited : UnEdited);
-        grayPoint->setDefaultEditedState(pedited->drcomp.grayPoint ? Edited : UnEdited);
-        shadowsRange->setDefaultEditedState(pedited->drcomp.shadowsRange ? Edited : UnEdited);
     } else {
         threshold->setDefaultEditedState(Irrelevant);
         amount->setDefaultEditedState(Irrelevant);
         anchor->setDefaultEditedState(Irrelevant);
-
-        dynamicRange->setDefaultEditedState(Irrelevant);
-        grayPoint->setDefaultEditedState(Irrelevant);
-        shadowsRange->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -193,12 +111,6 @@ void DRCompression::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvTMFattalAmount, a->getTextValue());
         } else if(a == anchor) {
             listener->panelChanged(EvTMFattalAnchor, a->getTextValue());
-        } else if (a == dynamicRange) {
-            listener->panelChanged(EvDRLogDynamicRange, a->getTextValue());
-        } else if (a == grayPoint) {
-            listener->panelChanged(EvDRLogGrayPoint, a->getTextValue());
-        } else if (a == shadowsRange) {
-            listener->panelChanged(EvDRLogShadowsRange, a->getTextValue());
         }
     }
 }
@@ -227,12 +139,6 @@ void DRCompression::setBatchMode(bool batchMode)
     threshold->showEditedCB();
     amount->showEditedCB();
     anchor->showEditedCB();
-
-    dynamicRange->showEditedCB();
-    grayPoint->showEditedCB();
-    shadowsRange->showEditedCB();
-    
-    method->append(M("GENERAL_UNCHANGED"));
 }
 
 void DRCompression::setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool anchorAdd)
@@ -240,23 +146,4 @@ void DRCompression::setAdjusterBehavior(bool amountAdd, bool thresholdAdd, bool 
     amount->setAddMode(amountAdd);
     threshold->setAddMode(thresholdAdd);
     anchor->setAddMode(anchorAdd);
-}
-
-
-void DRCompression::method_changed()
-{
-    if (!batchMode) {
-        fattalbox->show();
-        logbox->show();
-
-        if (method->get_active_row_number() == 0) {
-            logbox->hide();
-        } else if (method->get_active_row_number() == 1) {
-            fattalbox->hide();
-        }
-    }
-
-    if (listener && (multiImage || getEnabled()) ) {
-        listener->panelChanged (EvDRCompMethod, method->get_active_text());
-    }
 }

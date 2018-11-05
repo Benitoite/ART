@@ -1447,6 +1447,7 @@ void ImProcCoordinator::process()
             || params.colorappearance != nextParams.colorappearance
             || params.epd != nextParams.epd
             || params.drcomp != nextParams.drcomp
+            || params.logenc != nextParams.logenc
             || params.sh != nextParams.sh
             || params.crop != nextParams.crop
             || params.coarse != nextParams.coarse

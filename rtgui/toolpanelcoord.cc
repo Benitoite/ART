@@ -92,6 +92,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     xtransrawexposure   = Gtk::manage (new XTransRAWExposure ());
     drcomp              = Gtk::manage (new DRCompression ());
     guidedfilter        = Gtk::manage(new GuidedFilter());
+    logenc              = Gtk::manage(new LogEncoding());
 
     // So Demosaic, Line noise filter, Green Equilibration, Ca-Correction (garder le nom de section identique!) and Black-Level will be moved in a "Bayer sensor" tool,
     // and a separate Demosaic and Black Level tool will be created in an "X-Trans sensor" tool
@@ -107,6 +108,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (colorPanel, vibrance);
     addPanel (colorPanel, chmixer);
     addPanel (colorPanel, blackwhite);
+    addPanel (exposurePanel, logenc);
     addPanel (exposurePanel, shadowshighlights);
     addPanel (detailsPanel, sharpening);
     addPanel (detailsPanel, localContrast);

@@ -2434,6 +2434,8 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                     dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, asIn);
                 }
 
+                logEncoding(rtemp, gtemp, btemp, istart, jstart, tW, tH, TS);
+
                 if (params->toneCurve.clampOOG) {
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
