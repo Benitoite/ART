@@ -2007,7 +2007,6 @@ filmlike_clip (float *r, float *g, float *b)
     }
 }
 
-
 void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer *pipetteBuffer, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili,  LUTf & clToningcurve, LUTf & cl2Toningcurve,
                                const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2, const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, DCPProfile *dcpProf, const DCPProfile::ApplyState &asIn, LUTu &histToneCurve )
@@ -2020,16 +2019,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clToningcurve, LUTf & cl2Toningcurve,
                                const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, double expcomp, int hlcompr, int hlcomprthresh, DCPProfile *dcpProf, const DCPProfile::ApplyState &asIn, LUTu &histToneCurve )
 {
-    std::unique_ptr<Imagefloat> shimage;
-    if (params->sh.enabled) {
-        shimage.reset(new Imagefloat(working->getWidth(), working->getHeight()));
-        working->copyData(shimage.get());
-        working = shimage.get();
-        // guidedFilter(working);
-        // shadowsHighlights(working);
-    }
-    
-//    BENCHFUN
+    BENCHFUN
     Imagefloat *tmpImage = nullptr;
 
     Imagefloat* editImgFloat = nullptr;
@@ -2344,82 +2334,8 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
     // For tonecurve histogram
     const float lumimulf[3] = {static_cast<float> (lumimul[0]), static_cast<float> (lumimul[1]), static_cast<float> (lumimul[2])};
 
-    constexpr int TS = 112;
 
-    const auto apply_basic_expcomp =
-        [&](float *rtemp, float *gtemp, float *btemp, int istart, int jstart, int tW, int tH, bool copy_back) -> void
-        {
-            for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                    rtemp[ti * TS + tj] = working->r (i, j);
-                    gtemp[ti * TS + tj] = working->g (i, j);
-                    btemp[ti * TS + tj] = working->b (i, j);
-                }
-            }
-
-            if (mixchannels) {
-                for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                    for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                        float r = rtemp[ti * TS + tj];
-                        float g = gtemp[ti * TS + tj];
-                        float b = btemp[ti * TS + tj];
-
-                        //if (i==100 & j==100) printf("rgbProc input R= %f  G= %f  B= %f  \n",r,g,b);
-                        float rmix = (r * chMixRR + g * chMixRG + b * chMixRB) / 100.f;
-                        float gmix = (r * chMixGR + g * chMixGG + b * chMixGB) / 100.f;
-                        float bmix = (r * chMixBR + g * chMixBG + b * chMixBB) / 100.f;
-
-                        rtemp[ti * TS + tj] = rmix;
-                        gtemp[ti * TS + tj] = gmix;
-                        btemp[ti * TS + tj] = bmix;
-                    }
-                }
-            }
-
-            highlightToneCurve(hltonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS, exp_scale, comp, hlrange);
-            shadowToneCurve(shtonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
-
-            if (copy_back) {
-                for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                    for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                        working->r(i, j) = rtemp[ti * TS + tj];
-                        working->g(i, j) = gtemp[ti * TS + tj];
-                        working->b(i, j) = btemp[ti * TS + tj];
-                    }
-                }
-            }
-        };
-
-    if (shimage) {
-#ifdef _OPENMP
-        #pragma omp parallel if (multiThread)
-#endif
-        {
-            size_t perChannelSizeBytes = padToAlignment(sizeof (float) * TS * TS + 4 * 64);
-            AlignedBuffer<float> buffer(3 * perChannelSizeBytes);
-
-            float *rtemp = buffer.data;
-            float *gtemp = &rtemp[perChannelSizeBytes / sizeof(float)];
-            float *btemp = &gtemp[perChannelSizeBytes / sizeof(float)];
-
-#ifdef _OPENMP
-            #pragma omp for schedule(dynamic) collapse(2)
-#endif
-
-            for (int ii = 0; ii < working->getHeight(); ii += TS) {
-                for (int jj = 0; jj < working->getWidth(); jj += TS) {
-                    int istart = ii;
-                    int jstart = jj;
-                    int tH = min (ii + TS, working->getHeight());
-                    int tW = min (jj + TS, working->getWidth());
-                    apply_basic_expcomp(rtemp, gtemp, btemp, istart, jstart, tW, tH, true);
-                }
-            }
-        }
-
-        shadowsHighlights(working);
-    }
-
+#define TS 112
 
 #ifdef _OPENMP
     #pragma omp parallel if (multiThread)
@@ -2492,30 +2408,27 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                     }
                 }
 
-                if (!shimage) {
-                    apply_basic_expcomp(rtemp, gtemp, btemp, istart, jstart, tW, tH, false);
+                if (mixchannels) {
+                    for (int i = istart, ti = 0; i < tH; i++, ti++) {
+                        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+                            float r = rtemp[ti * TS + tj];
+                            float g = gtemp[ti * TS + tj];
+                            float b = btemp[ti * TS + tj];
+
+                            //if (i==100 & j==100) printf("rgbProc input R= %f  G= %f  B= %f  \n",r,g,b);
+                            float rmix = (r * chMixRR + g * chMixRG + b * chMixRB) / 100.f;
+                            float gmix = (r * chMixGR + g * chMixGG + b * chMixGB) / 100.f;
+                            float bmix = (r * chMixBR + g * chMixBG + b * chMixBB) / 100.f;
+
+                            rtemp[ti * TS + tj] = rmix;
+                            gtemp[ti * TS + tj] = gmix;
+                            btemp[ti * TS + tj] = bmix;
+                        }
+                    }
                 }
-                // if (mixchannels) {
-                //     for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                //         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                //             float r = rtemp[ti * TS + tj];
-                //             float g = gtemp[ti * TS + tj];
-                //             float b = btemp[ti * TS + tj];
 
-                //             //if (i==100 & j==100) printf("rgbProc input R= %f  G= %f  B= %f  \n",r,g,b);
-                //             float rmix = (r * chMixRR + g * chMixRG + b * chMixRB) / 100.f;
-                //             float gmix = (r * chMixGR + g * chMixGG + b * chMixGB) / 100.f;
-                //             float bmix = (r * chMixBR + g * chMixBG + b * chMixBB) / 100.f;
-
-                //             rtemp[ti * TS + tj] = rmix;
-                //             gtemp[ti * TS + tj] = gmix;
-                //             btemp[ti * TS + tj] = bmix;
-                //         }
-                //     }
-                // }
-
-                // highlightToneCurve(hltonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS, exp_scale, comp, hlrange);
-                // shadowToneCurve(shtonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
+                highlightToneCurve(hltonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS, exp_scale, comp, hlrange);
+                shadowToneCurve(shtonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
 
                 if (dcpProf) {
                     dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, asIn);
@@ -3701,14 +3614,13 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
     }
 
     guidedFilter(lab);
-    //shadowsHighlights(lab);
+    shadowsHighlights(lab);
 
     if (params->localContrast.enabled) {
         // Alberto's local contrast
         localContrast(lab);
     }
 }
-
 
 /**
 * @brief retreave RGB value with maximum saturation

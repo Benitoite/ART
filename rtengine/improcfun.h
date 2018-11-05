@@ -344,7 +344,7 @@ public:
     void ToneMapFattal02(Imagefloat *rgb);
     void localContrast(LabImage *lab);
     void colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread);
-    void shadowsHighlights(Imagefloat *img);
+    void shadowsHighlights(LabImage *lab);
     void softLight(LabImage *lab);
     void labColorCorrectionRegions(LabImage *lab);
     void guidedFilter(LabImage *lab);
