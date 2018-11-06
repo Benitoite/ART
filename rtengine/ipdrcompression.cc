@@ -64,13 +64,14 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
     const float dynamic_range = params->logenc.dynamicRange;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
+    const float base = pow_F(2.f, -params->logenc.brightness);
 
     const auto apply =
         [=](float x) -> float
         {
             x = max(x / gray, noise);
             x = max((xlogf(x)/log2 - shadows_range) / dynamic_range, noise);
-            return x * 65535.f;
+            return (base != 1.f ? xlog2lin(x, base) : x) * 65535.f;
         };
 
     for (int i = istart, ti = 0; i < tH; i++, ti++) {

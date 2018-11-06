@@ -29,11 +29,13 @@ protected:
     Adjuster *dynamicRange;
     Adjuster *grayPoint;
     Adjuster *shadowsRange;
+    Adjuster *brightness;
 
     rtengine::ProcEvent EvEnabled;
-    rtengine::ProcEvent EvDRLogDynamicRange;
-    rtengine::ProcEvent EvDRLogGrayPoint;
-    rtengine::ProcEvent EvDRLogShadowsRange;
+    rtengine::ProcEvent EvDynamicRange;
+    rtengine::ProcEvent EvGrayPoint;
+    rtengine::ProcEvent EvShadowsRange;
+    rtengine::ProcEvent EvBrightness;
     
 public:
     LogEncoding();
