@@ -808,6 +808,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             }
     
             ipf.softLight(nprevl);
+            ipf.localContrast(nprevl);
             
             if (params.colorappearance.enabled) {
                 //L histo  and Chroma histo for ciecam

@@ -3617,11 +3617,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
 
     guidedFilter(lab);
     shadowsHighlights(lab);
-
-    if (params->localContrast.enabled) {
-        // Alberto's local contrast
-        localContrast(lab);
-    }
 }
 
 /**

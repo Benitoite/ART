@@ -1014,7 +1014,8 @@ void Crop::update(int todo)
             parent->ipf.ip_wavelet(labnCrop, labnCrop, kall, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL, parent->wavclCurve, skip);
         }
 
-        parent->ipf.softLight(labnCrop);        
+        parent->ipf.softLight(labnCrop);
+        parent->ipf.localContrast(labnCrop);
 
         //     }
 

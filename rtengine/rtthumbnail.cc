@@ -1395,6 +1395,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     }
 
     ipf.softLight(labView);
+    ipf.localContrast(labView);
 
     if (params.colorappearance.enabled) {
         CurveFactory::curveLightBrightColor (
