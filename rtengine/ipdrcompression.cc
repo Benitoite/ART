@@ -30,7 +30,9 @@ namespace rtengine {
 
 void ImProcFunctions::dynamicRangeCompression(Imagefloat *rgb)
 {
-    ToneMapFattal02(rgb);
+    if (params->drcomp.enabled) {
+        ToneMapFattal02(rgb);
+    }
 }
 
 
