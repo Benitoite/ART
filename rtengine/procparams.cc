@@ -1537,8 +1537,7 @@ LogEncodingParams::LogEncodingParams():
     enabled(false),
     dynamicRange(10.0),
     grayPoint(18.0),
-    shadowsRange(-5.0),
-    brightness(0.0)
+    shadowsRange(-5.0)
 {
 }
 
@@ -1548,8 +1547,7 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
         enabled == other.enabled
         && dynamicRange == other.dynamicRange
         && grayPoint == other.grayPoint
-        && shadowsRange == other.shadowsRange
-        && brightness == other.brightness;
+        && shadowsRange == other.shadowsRange;
 }
 
 bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
@@ -3252,7 +3250,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->logenc.dynamicRange, "LogEncoding", "DynamicRange", logenc.dynamicRange, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.grayPoint, "LogEncoding", "GrayPoint", logenc.grayPoint, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.shadowsRange, "LogEncoding", "ShadowsRange", logenc.shadowsRange, keyFile);
-        saveToKeyfile(!pedited || pedited->logenc.brightness, "LogEncoding", "Brightness", logenc.brightness, keyFile);
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
@@ -4228,7 +4225,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "LogEncoding", "DynamicRange", pedited, logenc.dynamicRange, pedited->logenc.dynamicRange);
             assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", pedited, logenc.grayPoint, pedited->logenc.grayPoint);
             assignFromKeyfile(keyFile, "LogEncoding", "ShadowsRange", pedited, logenc.shadowsRange, pedited->logenc.shadowsRange);
-            assignFromKeyfile(keyFile, "LogEncoding", "Brightness", pedited, logenc.brightness, pedited->logenc.brightness);
         }
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {

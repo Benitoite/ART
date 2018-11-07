@@ -2185,7 +2185,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
     ToneCurveParams::TcMode curveMode = params->toneCurve.curveMode;
     ToneCurveParams::TcMode curveMode2 = params->toneCurve.curveMode2;
     bool highlight = params->toneCurve.hrenabled;//Get the value if "highlight reconstruction" is activated
-    bool hasToneCurve1 = bool (customToneCurve1);
+    bool hasToneCurve1 = bool (customToneCurve1) && !params->logenc.enabled;
     bool hasToneCurve2 = bool (customToneCurve2) && !params->logenc.enabled;
     BlackWhiteParams::TcMode beforeCurveMode = params->blackwhite.beforeCurveMode;
     BlackWhiteParams::TcMode afterCurveMode = params->blackwhite.afterCurveMode;
@@ -2435,6 +2435,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                 }
 
                 logEncoding(rtemp, gtemp, btemp, istart, jstart, tW, tH, TS);
+                if (params->logenc.enabled) {
+                    tonecurve.makeIdentity();
+                }
 
                 if (params->toneCurve.clampOOG) {
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {

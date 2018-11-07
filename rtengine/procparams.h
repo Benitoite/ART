@@ -749,7 +749,6 @@ struct LogEncodingParams {
     double dynamicRange;
     double grayPoint;
     double shadowsRange;
-    double brightness;
 
     LogEncodingParams();
 

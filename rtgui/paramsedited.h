@@ -396,7 +396,6 @@ public:
     bool dynamicRange;
     bool grayPoint;
     bool shadowsRange;
-    bool brightness;
 };
 
 

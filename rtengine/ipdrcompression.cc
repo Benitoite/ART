@@ -61,19 +61,32 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
         return;
     }
     
-    const float gray = (params->logenc.grayPoint / 100.f) * 65535.f;
+    const float gray = params->logenc.grayPoint / 100.f;
     const float shadows_range = params->logenc.shadowsRange;
     const float dynamic_range = params->logenc.dynamicRange;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
-    const float base = pow_F(2.f, -params->logenc.brightness);
+    const bool brightness_enabled = params->toneCurve.brightness < 0.f;
+    const float brightness = max(-params->toneCurve.brightness / 10.f, 0.f);
+    const float base = pow_F(2.f, brightness);
+    const bool contrast_enabled = params->toneCurve.contrast;
+    const float contrast = params->toneCurve.contrast >= 0 ? 1.f + params->toneCurve.contrast / 100.f : -1.f/(params->toneCurve.contrast / 10.f);
 
     const auto apply =
         [=](float x) -> float
         {
+            x /= 65535.f;
+            x = max(x, noise);
+            if (contrast_enabled) {
+                x = pow_F(x / gray, contrast) * gray;
+            }
             x = max(x / gray, noise);
             x = max((xlogf(x)/log2 - shadows_range) / dynamic_range, noise);
-            return (base != 1.f ? xlog2lin(x, base) : x) * 65535.f;
+            assert(x == x);
+            if (brightness_enabled) {
+                x = xlog2lin(x, base);
+            }
+            return x * 65535.f;
         };
 
     for (int i = istart, ti = 0; i < tH; i++, ti++) {

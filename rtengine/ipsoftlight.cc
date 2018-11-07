@@ -112,7 +112,7 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
 void ImProcFunctions::softLight(LabImage *lab)
 {
     const bool sl_enabled = params->softlight.enabled && params->softlight.strength > 0;
-    const bool logenc_enabled = params->logenc.enabled && (!params->toneCurve.curve2.empty() && params->toneCurve.curve2[0] != DCT_Linear);
+    const bool logenc_enabled = params->logenc.enabled && ((!params->toneCurve.curve.empty() && params->toneCurve.curve[0] != DCT_Linear) || (!params->toneCurve.curve2.empty() && params->toneCurve.curve2[0] != DCT_Linear));
                                                            
     if (!sl_enabled && !logenc_enabled) {
         return;
@@ -123,10 +123,17 @@ void ImProcFunctions::softLight(LabImage *lab)
     
     if (logenc_enabled) {
         ToneCurve tc;
-        const DiagonalCurve tcurve(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+        const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
 
-        if (!tcurve.isIdentity()) {
-            tc.Set(tcurve, Color::sRGBGammaCurve);
+        if (!tcurve1.isIdentity()) {
+            tc.Set(tcurve1, Color::sRGBGammaCurve);
+            apply_tc(&working, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
+        }
+
+        const DiagonalCurve tcurve2(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+
+        if (!tcurve2.isIdentity()) {
+            tc.Set(tcurve2, Color::sRGBGammaCurve);
             apply_tc(&working, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
         }
     }
