@@ -25,17 +25,17 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_TM_LOG_LABEL"), true, true)
+LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvEnabled = m->newEvent(RGBCURVE, "HISTORY_MSG_DR_COMP_LOG_ENABLED");
-    EvDynamicRange = m->newEvent(RGBCURVE, "HISTORY_MSG_DR_COMP_LOG_DYNAMIC_RANGE");
-    EvGrayPoint = m->newEvent(RGBCURVE, "HISTORY_MSG_DR_COMP_LOG_GRAY_POINT");
-    EvShadowsRange = m->newEvent(RGBCURVE, "HISTORY_MSG_DR_COMP_LOG_SHADOWS_RANGE");
+    EvEnabled = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_ENABLED");
+    EvDynamicRange = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_DYNAMIC_RANGE");
+    EvGrayPoint = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvShadowsRange = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_SHADOWS_RANGE");
 
-    dynamicRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 10.0));
-    grayPoint = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
-    shadowsRange = Gtk::manage(new Adjuster(M("TP_DR_COMP_LOG_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -5.0));
+    dynamicRange = Gtk::manage(new Adjuster(M("TP_LOGENC_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 10.0));
+    grayPoint = Gtk::manage(new Adjuster(M("TP_LOGENC_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
+    shadowsRange = Gtk::manage(new Adjuster(M("TP_LOGENC_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -5.0));
 
     dynamicRange->setAdjusterListener(this);
     grayPoint->setAdjusterListener(this);

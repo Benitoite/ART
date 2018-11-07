@@ -119,7 +119,6 @@ set(RTENGINESOURCEFILES
     utils.cc
     rtlensfun.cc
     tmo_fattal02.cc
-    ipdrcompression.cc
     iplocalcontrast.cc
     histmatching.cc
     pdaflinesfilter.cc
@@ -133,6 +132,7 @@ set(RTENGINESOURCEFILES
     ipdehaze.cc
     iplabregions.cc
     ipguidedfilter.cc
+    iplogenc.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)
