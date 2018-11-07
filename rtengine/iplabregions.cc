@@ -254,9 +254,9 @@ BENCHFUN
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
                     vfloat sv = F2V(rs[i]);
-                    vfloat a_newv = LIMV(sv * (av + F2V(abca[i])), cm42000v, c42000v);
-                    vfloat b_newv = LIMV(sv * (bv + F2V(abcb[i])), cm42000v, c42000v);
-                    vfloat l_newv = LIMV(lv * F2V(rl[i]), ZEROV, c32768v);
+                    vfloat a_newv = vclampf(sv * (av + F2V(abca[i])), cm42000v, c42000v);
+                    vfloat b_newv = vclampf(sv * (bv + F2V(abcb[i])), cm42000v, c42000v);
+                    vfloat l_newv = vclampf(lv * F2V(rl[i]), ZEROV, c32768v);
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i]);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
