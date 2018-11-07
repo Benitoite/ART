@@ -130,6 +130,9 @@ private:
     rtengine::ProcEvent EvLabRegionAB;
     rtengine::ProcEvent EvLabRegionSaturation;
     rtengine::ProcEvent EvLabRegionLightness;
+    rtengine::ProcEvent EvLabRegionSlope;
+    rtengine::ProcEvent EvLabRegionOffset;
+    rtengine::ProcEvent EvLabRegionPower;    
     rtengine::ProcEvent EvLabRegionHueMask;
     rtengine::ProcEvent EvLabRegionChromaticityMask;
     rtengine::ProcEvent EvLabRegionLightnessMask;
@@ -145,6 +148,9 @@ private:
     LabGrid *labRegionAB;
     Adjuster *labRegionSaturation;
     Adjuster *labRegionLightness;
+    Adjuster *labRegionSlope;
+    Adjuster *labRegionOffset;
+    Adjuster *labRegionPower;
     FlatCurveEditor *labRegionHueMask;
     FlatCurveEditor *labRegionChromaticityMask;
     FlatCurveEditor *labRegionLightnessMask;

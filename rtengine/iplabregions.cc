@@ -177,13 +177,59 @@ BENCHFUN
     float abcb[n];
     float rs[n];
     float rl[n];
+    float slope[n];
+    float offset[n];
+    float power[n];
     for (int i = 0; i < n; ++i) {
         auto &r = params->colorToning.labregions[i];
         abca[i] = abcoord(r.a);
         abcb[i] = abcoord(r.b);
         rs[i] = 1.f + r.saturation / 100.f;
         rl[i] = 1.f + r.lightness / 500.f;
+        slope[i] = r.slope;
+        offset[i] = r.offset;
+        power[i] = r.power;
     }
+
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
+
+    const auto CDL =
+        [=](float &l, float &a, float &b, float slope, float offset, float power) -> void
+        {
+            if (slope != 1.f || offset != 0.f || power != 1.f) {
+                float rgb[3];
+                float x, y, z;
+                Color::Lab2XYZ(l, a, b, x, y, z);
+                Color::xyz2rgb(x, y, z, rgb[0], rgb[1], rgb[2], iws);
+                for (int i = 0; i < 3; ++i) {
+                    rgb[i] = LIM01(pow_F((rgb[i] / 65535.f) * slope + offset, power)) * 65535.f;
+                }
+                Color::rgbxyz(rgb[0], rgb[1], rgb[2], x, y, z, ws);
+                Color::XYZ2Lab(x, y, z, l, a, b);
+            }
+        };
+
+#ifdef __SSE2__
+    const auto CDL_v =
+        [=](vfloat &l, vfloat &a, vfloat &b, float slope, float offset, float power) -> void
+        {
+            if (slope != 1.f || offset != 0.f || power != 1.f) {
+                float ll[4];
+                float aa[4];
+                float bb[4];
+                STVFU(ll[0], l);
+                STVFU(aa[0], a);
+                STVFU(bb[0], b);
+                for (int i = 0; i < 4; ++i) {
+                    CDL(ll[i], aa[i], bb[i], slope, offset, power);
+                }
+                l = LVFU(ll[0]);
+                a = LVFU(aa[0]);
+                b = LVFU(bb[0]);
+            }
+        };
+#endif
 
 #ifdef _OPENMP
     #pragma omp parallel if (multiThread)
@@ -211,6 +257,7 @@ BENCHFUN
                     vfloat a_newv = LIMV(sv * (av + F2V(abca[i])), cm42000v, c42000v);
                     vfloat b_newv = LIMV(sv * (bv + F2V(abcb[i])), cm42000v, c42000v);
                     vfloat l_newv = LIMV(lv * F2V(rl[i]), ZEROV, c32768v);
+                    CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i]);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
                     bv = vintpf(blendv, b_newv, bv);
@@ -231,6 +278,7 @@ BENCHFUN
                     float a_new = LIM(s * (a + abca[i]), -42000.f, 42000.f);
                     float b_new = LIM(s * (b + abcb[i]), -42000.f, 42000.f);
                     float l_new = LIM(l * rl[i], 0.f, 32768.f);
+                    CDL(l_new, a_new, b_new, slope[i], offset[i], power[i]);
                     l = intp(Lmask[i][y][x], l_new, l);
                     a = intp(blend, a_new, a);
                     b = intp(blend, b_new, b);

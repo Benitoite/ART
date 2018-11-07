@@ -460,6 +460,9 @@ struct ColorToningParams {
         double b;
         double saturation;
         double lightness;
+        double slope;
+        double offset;
+        double power;
         std::vector<double> hueMask;
         std::vector<double> chromaticityMask;
         std::vector<double> lightnessMask;
