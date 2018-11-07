@@ -432,7 +432,7 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         || pparams.wb != pp.wb
         || pparams.colorappearance != pp.colorappearance
         || pparams.epd != pp.epd
-        || pparams.drcomp != pp.drcomp
+        || pparams.fattal != pp.fattal
         || pparams.logenc != pp.logenc
         || pparams.sh != pp.sh
         || pparams.crop != pp.crop

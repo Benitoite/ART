@@ -150,7 +150,7 @@ set(NONCLISOURCEFILES
     xtransprocess.cc
     xtransrawexposure.cc
     zoompanel.cc
-    drcompression.cc
+    fattaltonemap.cc
     localcontrast.cc
     eventmapper.cc
     metadatapanel.cc

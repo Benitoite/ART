@@ -1562,7 +1562,7 @@ bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
 }
 
 
-DRCompressionParams::DRCompressionParams() :
+FattalToneMappingParams::FattalToneMappingParams() :
     enabled(false),
     threshold(30),
     amount(20),
@@ -1570,7 +1570,7 @@ DRCompressionParams::DRCompressionParams() :
 {
 }
 
-bool DRCompressionParams::operator ==(const DRCompressionParams& other) const
+bool FattalToneMappingParams::operator ==(const FattalToneMappingParams& other) const
 {
     return
         enabled == other.enabled
@@ -1579,7 +1579,7 @@ bool DRCompressionParams::operator ==(const DRCompressionParams& other) const
         && anchor == other.anchor;
 }
 
-bool DRCompressionParams::operator !=(const DRCompressionParams& other) const
+bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) const
 {
     return !(*this == other);
 }
@@ -2839,7 +2839,7 @@ void ProcParams::setDefaults()
 
     epd = EPDParams();
 
-    drcomp = DRCompressionParams();
+    fattal = FattalToneMappingParams();
 
     logenc = LogEncodingParams();
 
@@ -3246,10 +3246,10 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->epd.reweightingIterates, "EPD", "ReweightingIterates", epd.reweightingIterates, keyFile);
 
 // Fattal
-        saveToKeyfile(!pedited || pedited->drcomp.enabled, "DynamicRangeCompression", "Enabled", drcomp.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.threshold, "DynamicRangeCompression", "Threshold", drcomp.threshold, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.amount, "DynamicRangeCompression", "Amount", drcomp.amount, keyFile);
-        saveToKeyfile(!pedited || pedited->drcomp.anchor, "DynamicRangeCompression", "Anchor", drcomp.anchor, keyFile);
+        saveToKeyfile(!pedited || pedited->fattal.enabled, "FattalToneMapping", "Enabled", fattal.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->fattal.threshold, "FattalToneMapping", "Threshold", fattal.threshold, keyFile);
+        saveToKeyfile(!pedited || pedited->fattal.amount, "FattalToneMapping", "Amount", fattal.amount, keyFile);
+        saveToKeyfile(!pedited || pedited->fattal.anchor, "FattalToneMapping", "Anchor", fattal.anchor, keyFile);
 
 // Log encoding        
         saveToKeyfile(!pedited || pedited->logenc.enabled, "LogEncoding", "Enabled", logenc.enabled, keyFile);
@@ -4219,14 +4219,11 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "EPD", "ReweightingIterates", pedited, epd.reweightingIterates, pedited->epd.reweightingIterates);
         }
 
-        {
-            const char *drcomp_group = (ppVersion < 344) ? "FattalToneMapping" : "DynamicRangeCompression";
-            if (keyFile.has_group(drcomp_group)) {
-                assignFromKeyfile(keyFile, drcomp_group, "Enabled", pedited, drcomp.enabled, pedited->drcomp.enabled);
-                assignFromKeyfile(keyFile, drcomp_group, "Threshold", pedited, drcomp.threshold, pedited->drcomp.threshold);
-                assignFromKeyfile(keyFile, drcomp_group, "Amount", pedited, drcomp.amount, pedited->drcomp.amount);
-                assignFromKeyfile(keyFile, drcomp_group, "Anchor", pedited, drcomp.anchor, pedited->drcomp.anchor);
-            }
+        if (keyFile.has_group("FattalToneMapping")) {
+            assignFromKeyfile(keyFile, "FattalToneMapping", "Enabled", pedited, fattal.enabled, pedited->fattal.enabled);
+            assignFromKeyfile(keyFile, "FattalToneMapping", "Threshold", pedited, fattal.threshold, pedited->fattal.threshold);
+            assignFromKeyfile(keyFile, "FattalToneMapping", "Amount", pedited, fattal.amount, pedited->fattal.amount);
+            assignFromKeyfile(keyFile, "FattalToneMapping", "Anchor", pedited, fattal.anchor, pedited->fattal.anchor);
         }
 
         if (keyFile.has_group("LogEncoding")) {
@@ -5306,7 +5303,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && impulseDenoise == other.impulseDenoise
         && dirpyrDenoise == other.dirpyrDenoise
         && epd == other.epd
-        && drcomp == other.drcomp
+        && fattal == other.fattal
         && logenc == other.logenc
         && defringe == other.defringe
         && sh == other.sh

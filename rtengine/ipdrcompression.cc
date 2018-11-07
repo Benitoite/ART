@@ -28,14 +28,6 @@
 namespace rtengine {
 
 
-void ImProcFunctions::dynamicRangeCompression(Imagefloat *rgb)
-{
-    if (params->drcomp.enabled) {
-        ToneMapFattal02(rgb);
-    }
-}
-
-
 // taken from darktable (src/iop/profile_gamma.c)
 /*
    copyright (c) 2009--2010 johannes hanika.

@@ -341,7 +341,6 @@ public:
 
     void dehaze(Imagefloat *rgb);
     void dynamicRangeCompression(Imagefloat *rgb);
-    void ToneMapFattal02(Imagefloat *rgb);
     void localContrast(LabImage *lab);
     void colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread);
     void shadowsHighlights(LabImage *lab);

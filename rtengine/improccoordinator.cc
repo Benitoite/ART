@@ -428,7 +428,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
         readyphase++;
     
-        if ((todo & M_HDR) && (params.drcomp.enabled || params.dehaze.enabled)) {
+        if ((todo & M_HDR) && (params.fattal.enabled || params.dehaze.enabled)) {
             if (drcomp_11_dcrop_cache) {
                 delete drcomp_11_dcrop_cache;
                 drcomp_11_dcrop_cache = nullptr;
@@ -1447,7 +1447,7 @@ void ImProcCoordinator::process()
             || params.wb != nextParams.wb
             || params.colorappearance != nextParams.colorappearance
             || params.epd != nextParams.epd
-            || params.drcomp != nextParams.drcomp
+            || params.fattal != nextParams.fattal
             || params.logenc != nextParams.logenc
             || params.sh != nextParams.sh
             || params.crop != nextParams.crop

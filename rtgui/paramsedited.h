@@ -399,7 +399,7 @@ public:
 };
 
 
-class DRCompressionParamsEdited
+class FattalToneMappingParamsEdited
 {
 public:
     bool enabled;
@@ -879,7 +879,7 @@ public:
     DefringeParamsEdited          defringe;
     DirPyrDenoiseParamsEdited     dirpyrDenoise;
     EPDParamsEdited               epd;
-    DRCompressionParamsEdited     drcomp;
+    FattalToneMappingParamsEdited fattal;
     LogEncodingParamsEdited       logenc;
     ImpulseDenoiseParamsEdited    impulseDenoise;
     SHParamsEdited                sh;

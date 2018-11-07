@@ -90,7 +90,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     rawexposure         = Gtk::manage (new RAWExposure ());
     bayerrawexposure    = Gtk::manage (new BayerRAWExposure ());
     xtransrawexposure   = Gtk::manage (new XTransRAWExposure ());
-    drcomp              = Gtk::manage (new DRCompression ());
+    fattal              = Gtk::manage (new FattalToneMapping());
     guidedfilter        = Gtk::manage(new GuidedFilter());
     logenc              = Gtk::manage(new LogEncoding());
 
@@ -120,7 +120,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (colorPanel, rgbcurves);
     addPanel (colorPanel, colortoning);
     addPanel (exposurePanel, epd);
-    addPanel (exposurePanel, drcomp);
+    addPanel (exposurePanel, fattal);
     addPanel (advancedPanel, retinex);
     addPanel (exposurePanel, pcvignette);
     addPanel (exposurePanel, gradient);

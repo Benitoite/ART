@@ -760,16 +760,16 @@ struct LogEncodingParams {
 };
 
 
-struct DRCompressionParams {
+struct FattalToneMappingParams {
     bool enabled;
     int threshold;
     int amount;
     int anchor;
 
-    DRCompressionParams();
+    FattalToneMappingParams();
 
-    bool operator ==(const DRCompressionParams& other) const;
-    bool operator !=(const DRCompressionParams& other) const;
+    bool operator ==(const FattalToneMappingParams& other) const;
+    bool operator !=(const FattalToneMappingParams& other) const;
 };
 
 /**
@@ -1483,7 +1483,7 @@ public:
     ImpulseDenoiseParams    impulseDenoise;  ///< Impulse denoising parameters
     DirPyrDenoiseParams     dirpyrDenoise;   ///< Directional Pyramid denoising parameters
     EPDParams               epd;             ///< Edge Preserving Decomposition parameters
-    DRCompressionParams     drcomp;          ///< Dynamic Range Compression
+    FattalToneMappingParams fattal;          ///< Dynamic Range Compression
     LogEncodingParams       logenc;
     SHParams                sh;              ///< Shadow/highlight enhancement parameters
     CropParams              crop;            ///< Crop parameters

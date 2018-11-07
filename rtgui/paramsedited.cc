@@ -284,10 +284,10 @@ void ParamsEdited::set(bool v)
     epd.edgeStopping        = v;
     epd.scale               = v;
     epd.reweightingIterates = v;
-    drcomp.enabled   = v;
-    drcomp.threshold = v;
-    drcomp.amount    = v;
-    drcomp.anchor    = v;
+    fattal.enabled   = v;
+    fattal.threshold = v;
+    fattal.amount    = v;
+    fattal.anchor    = v;
     logenc.enabled   = v;
     logenc.dynamicRange = v;
     logenc.grayPoint = v;
@@ -867,10 +867,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         epd.scale = epd.scale && p.epd.scale == other.epd.scale;
         epd.reweightingIterates = epd.reweightingIterates && p.epd.reweightingIterates == other.epd.reweightingIterates;
 
-        drcomp.enabled = drcomp.enabled && p.drcomp.enabled == other.drcomp.enabled;
-        drcomp.threshold = drcomp.threshold && p.drcomp.threshold == other.drcomp.threshold;
-        drcomp.amount = drcomp.amount && p.drcomp.amount == other.drcomp.amount;
-        drcomp.anchor = drcomp.anchor && p.drcomp.anchor == other.drcomp.anchor;
+        fattal.enabled = fattal.enabled && p.fattal.enabled == other.fattal.enabled;
+        fattal.threshold = fattal.threshold && p.fattal.threshold == other.fattal.threshold;
+        fattal.amount = fattal.amount && p.fattal.amount == other.fattal.amount;
+        fattal.anchor = fattal.anchor && p.fattal.anchor == other.fattal.anchor;
         SETVAL_(logenc.enabled);
         SETVAL_(logenc.dynamicRange);
         SETVAL_(logenc.grayPoint);
@@ -2138,20 +2138,20 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.epd.reweightingIterates    = mods.epd.reweightingIterates;
     }
 
-    if (drcomp.enabled) {
-        toEdit.drcomp.enabled = mods.drcomp.enabled;
+    if (fattal.enabled) {
+        toEdit.fattal.enabled = mods.fattal.enabled;
     }
 
-    if (drcomp.threshold) {
-        toEdit.drcomp.threshold = mods.drcomp.threshold;
+    if (fattal.threshold) {
+        toEdit.fattal.threshold = mods.fattal.threshold;
     }
 
-    if (drcomp.amount) {
-        toEdit.drcomp.amount = mods.drcomp.amount;
+    if (fattal.amount) {
+        toEdit.fattal.amount = mods.fattal.amount;
     }
 
-    if (drcomp.anchor) {
-        toEdit.drcomp.anchor = mods.drcomp.anchor;
+    if (fattal.anchor) {
+        toEdit.fattal.anchor = mods.fattal.anchor;
     }
 
     SETVAL_(logenc.enabled);

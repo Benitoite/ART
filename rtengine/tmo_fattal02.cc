@@ -1015,22 +1015,19 @@ inline int find_fast_dim (int dim)
 }
 
 
-} // namespace
-
-
-void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
+void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *params, bool multiThread)
 {
 //    BENCHFUN
     const int detail_level = 3;
 
     float alpha = 1.f;
-    if (params->drcomp.threshold < 0) {
-        alpha += (params->drcomp.threshold * 0.9f) / 100.f;
-    } else if (params->drcomp.threshold > 0) {
-        alpha += params->drcomp.threshold / 100.f;
+    if (params->fattal.threshold < 0) {
+        alpha += (params->fattal.threshold * 0.9f) / 100.f;
+    } else if (params->fattal.threshold > 0) {
+        alpha += params->fattal.threshold / 100.f;
     }
 
-    float beta = 1.f - (params->drcomp.amount * 0.3f) / 100.f;
+    float beta = 1.f - (params->fattal.amount * 0.3f) / 100.f;
 
     // sanity check
     if (alpha <= 0 || beta <= 0) {
@@ -1058,7 +1055,7 @@ void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
     }
 
     float oldMedian;
-    const float percentile = float(LIM(params->drcomp.anchor, 1, 100)) / 100.f;
+    const float percentile = float(LIM(params->fattal.anchor, 1, 100)) / 100.f;
     findMinMaxPercentile (Yr.data(), Yr.getRows() * Yr.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
     // median filter on the deep shadows, to avoid boosting noise
     // because w2 >= w and h2 >= h, we can use the L buffer as temporary buffer for Median_Denoise()
@@ -1072,19 +1069,19 @@ void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
         int num_threads = 1;
 #endif
         float r = float (std::max (w, h)) / float (RT_dimension_cap);
-        Median med;
+        ImProcFunctions::Median med;
 
         if (r >= 3) {
-            med = Median::TYPE_7X7;
+            med = ImProcFunctions::Median::TYPE_7X7;
         } else if (r >= 2) {
-            med = Median::TYPE_5X5_STRONG;
+            med = ImProcFunctions::Median::TYPE_5X5_STRONG;
         } else if (r >= 1) {
-            med = Median::TYPE_5X5_SOFT;
+            med = ImProcFunctions::Median::TYPE_5X5_SOFT;
         } else {
-            med = Median::TYPE_3X3_STRONG;
+            med = ImProcFunctions::Median::TYPE_3X3_STRONG;
         }
 
-        Median_Denoise (Yr, Yr, luminance_noise_floor, w, h, med, 1, num_threads, L);
+        ipf->Median_Denoise (Yr, Yr, luminance_noise_floor, w, h, med, 1, num_threads, L);
     }
 
     float noise = alpha * 0.01f;
@@ -1123,6 +1120,16 @@ void ImProcFunctions::ToneMapFattal02(Imagefloat *rgb)
             assert(std::isfinite(rgb->g(y, x)));
             assert(std::isfinite(rgb->b(y, x)));
         }
+    }
+}
+
+} // namespace
+
+
+void ImProcFunctions::dynamicRangeCompression(Imagefloat *rgb)
+{
+    if (params->fattal.enabled) {
+        ToneMapFattal02(rgb, this, params, multiThread);
     }
 }
 

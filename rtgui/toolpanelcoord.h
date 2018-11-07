@@ -77,7 +77,7 @@
 #include "colortoning.h"
 #include "filmsimulation.h"
 #include "prsharpening.h"
-#include "drcompression.h"
+#include "fattaltonemap.h"
 #include "localcontrast.h"
 #include "softlight.h"
 #include "dehaze.h"
@@ -152,7 +152,7 @@ protected:
     RAWExposure* rawexposure;
     BayerRAWExposure* bayerrawexposure;
     XTransRAWExposure* xtransrawexposure;
-    DRCompression *drcomp;
+    FattalToneMapping *fattal;
     LogEncoding *logenc;
     MetaDataPanel* metadata;
     GuidedFilter *guidedfilter;

@@ -52,7 +52,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     logenc      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_LOG")));
     sh          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_SHADOWSHIGHLIGHTS")));
     epd         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EPD")));
-    drcomp      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_FATTAL")));
+    fattal      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_FATTAL")));
     pcvignette  = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_PCVIGNETTE")));
     gradient    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_GRADIENT")));
     labcurve    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_LABCURVE")));
@@ -156,7 +156,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[0]->pack_start (*logenc, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*sh, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*epd, Gtk::PACK_SHRINK, 2);
-    vboxes[0]->pack_start (*drcomp, Gtk::PACK_SHRINK, 2);
+    vboxes[0]->pack_start (*fattal, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*pcvignette, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*gradient, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*labcurve, Gtk::PACK_SHRINK, 2);
@@ -320,7 +320,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     logencConn      = logenc->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     shConn          = sh->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     epdConn         = epd->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
-    drcompConn      = drcomp->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
+    fattalConn      = fattal->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     pcvignetteConn  = pcvignette->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     gradientConn    = gradient->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     labcurveConn    = labcurve->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
@@ -516,7 +516,7 @@ void PartialPasteDlg::basicToggled ()
     ConnectionBlocker logencBlocker(logencConn);
     ConnectionBlocker shBlocker(shConn);
     ConnectionBlocker epdBlocker(epdConn);
-    ConnectionBlocker drcompBlocker(drcompConn);
+    ConnectionBlocker fattalBlocker(fattalConn);
     ConnectionBlocker pcvignetteBlocker(pcvignetteConn);
     ConnectionBlocker gradientBlocker(gradientConn);
     ConnectionBlocker labcurveBlocker(labcurveConn);
@@ -528,7 +528,7 @@ void PartialPasteDlg::basicToggled ()
     logenc->set_active (basic->get_active ());
     sh->set_active (basic->get_active ());
     epd->set_active (basic->get_active ());
-    drcomp->set_active (basic->get_active ());
+    fattal->set_active (basic->get_active ());
     pcvignette->set_active (basic->get_active ());
     gradient->set_active (basic->get_active ());
     labcurve->set_active (basic->get_active ());
@@ -697,8 +697,8 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
         filterPE.epd        = falsePE.epd;
     }
 
-    if (!drcomp->get_active ()) {
-        filterPE.drcomp     = falsePE.drcomp;
+    if (!fattal->get_active ()) {
+        filterPE.fattal     = falsePE.fattal;
     }
 
     if (!retinex->get_active ()) {

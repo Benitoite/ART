@@ -23,7 +23,7 @@
 #include "adjuster.h"
 #include "toolpanel.h"
 
-class DRCompression: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class FattalToneMapping: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
 {
 protected:
     Adjuster *threshold;
@@ -34,7 +34,7 @@ protected:
     
 public:
 
-    DRCompression();
+    FattalToneMapping();
 
     void read           (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr);
     void write          (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr);
