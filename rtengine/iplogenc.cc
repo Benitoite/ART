@@ -58,11 +58,11 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
     const float dynamic_range = params->logenc.dynamicRange;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
-    const bool brightness_enabled = params->toneCurve.brightness < 0.f;
-    const float brightness = max(-params->toneCurve.brightness / 10.f, 0.f);
+    const bool brightness_enabled = params->toneCurve.brightness;
+    const float brightness = params->toneCurve.brightness <= 0 ? -params->toneCurve.brightness / 10.f : 1.f / (1.f + params->toneCurve.brightness / 10.f);
     const float base = pow_F(2.f, brightness);
     const bool contrast_enabled = params->toneCurve.contrast;
-    const float contrast = params->toneCurve.contrast >= 0 ? 1.f + params->toneCurve.contrast / 100.f : -1.f/(params->toneCurve.contrast / 10.f);
+    const float contrast = params->toneCurve.contrast >= 0 ? 1.f + params->toneCurve.contrast / 100.f : 1.f/(1.f - params->toneCurve.contrast / 50.f);
 
     const auto apply =
         [=](float x) -> float
