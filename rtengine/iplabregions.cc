@@ -256,8 +256,9 @@ BENCHFUN
                     vfloat sv = F2V(rs[i]);
                     vfloat a_newv = vclampf(sv * (av + F2V(abca[i])), cm42000v, c42000v);
                     vfloat b_newv = vclampf(sv * (bv + F2V(abcb[i])), cm42000v, c42000v);
-                    vfloat l_newv = vclampf(lv * F2V(rl[i]), ZEROV, c32768v);
+                    vfloat l_newv = lv;
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i]);
+                    l_newv = vclampf(l_newv * F2V(rl[i]), ZEROV, c32768v);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
                     bv = vintpf(blendv, b_newv, bv);
@@ -277,8 +278,9 @@ BENCHFUN
                     float s = rs[i];
                     float a_new = LIM(s * (a + abca[i]), -42000.f, 42000.f);
                     float b_new = LIM(s * (b + abcb[i]), -42000.f, 42000.f);
-                    float l_new = LIM(l * rl[i], 0.f, 32768.f);
+                    float l_new = l;
                     CDL(l_new, a_new, b_new, slope[i], offset[i], power[i]);
+                    l_new = LIM(l_new * rl[i], 0.f, 32768.f);
                     l = intp(Lmask[i][y][x], l_new, l);
                     a = intp(blend, a_new, a);
                     b = intp(blend, b_new, b);
