@@ -179,6 +179,8 @@ void LogEncoding::autocomputeToggled()
 
 void LogEncoding::logEncodingChanged(const rtengine::LogEncodingParams &params)
 {
+    GThreadLock lock;
+    
     disableListener();
     ConnectionBlocker cbl(autoconn);
 

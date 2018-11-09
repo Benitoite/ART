@@ -101,6 +101,7 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     PreviewProps pp(0, 0, fw, fh, 10);
     Imagefloat img(int(fw / 10 + 0.5), int(fh / 10 + 0.5));
     imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, params->toneCurve, params->raw);
+    imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
     std::vector<float> data;
     data.reserve(fw/10 * fh/10 * 2);
@@ -119,8 +120,8 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 
     std::sort(data.begin(), data.end());
     int n = data.size();
-    float vmin = data[min(1, n-1)];
-    float vmax = data[max(0, n-2)];
+    float vmin = data[0];
+    float vmax = data[n-1];
     
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
@@ -128,8 +129,8 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         const float gray = float(lparams.grayPoint) / 100.f;
         vmin = max(vmin / vmax, noise);
         float lmin = xlogf(vmin) / log2;
-        lparams.dynamicRange = std::abs(lmin) + 0.3f;
-        lparams.shadowsRange = xlogf(vmin/gray) / log2 - 0.15f;
+        lparams.dynamicRange = std::abs(lmin) + 0.5f;
+        lparams.shadowsRange = xlogf(vmin/gray) / log2;
     }
 }
 
