@@ -318,6 +318,15 @@ public:
     virtual void autoMatchedToneCurveChanged(procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) = 0;
 };
 
+
+class AutoLogListener
+{
+public:
+    virtual ~AutoLogListener() = default;
+    virtual void logEncodingChanged(const procparams::LogEncodingParams &params) = 0;
+};
+
+
 class AutoCamListener
 {
 public :
@@ -506,6 +515,7 @@ public:
     virtual void        setRetinexListener      (RetinexListener* l) = 0;
     virtual void        setWaveletListener      (WaveletListener* l) = 0;
     virtual void        setImageTypeListener    (ImageTypeListener* l) = 0;
+    virtual void setAutoLogListener(AutoLogListener *l) = 0;
 
     virtual void        setMonitorProfile       (const Glib::ustring& monitorProfile, RenderingIntent intent) = 0;
     virtual void        getMonitorProfile       (Glib::ustring& monitorProfile, RenderingIntent& intent) const = 0;

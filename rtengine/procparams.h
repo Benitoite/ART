@@ -749,6 +749,7 @@ struct EPDParams {
 
 struct LogEncodingParams {
     bool enabled;
+    double autocompute;
     double dynamicRange;
     double grayPoint;
     double shadowsRange;

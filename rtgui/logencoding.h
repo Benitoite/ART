@@ -23,17 +23,22 @@
 #include "adjuster.h"
 #include "toolpanel.h"
 
-class LogEncoding: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class LogEncoding: public ToolParamBlock, public AdjusterListener, public rtengine::AutoLogListener, public FoldableToolPanel
 {
 protected:
+    Gtk::ToggleButton *autocompute;
     Adjuster *dynamicRange;
     Adjuster *grayPoint;
     Adjuster *shadowsRange;
 
     rtengine::ProcEvent EvEnabled;
+    rtengine::ProcEvent EvAuto;
+    rtengine::ProcEvent EvAutoBatch;
     rtengine::ProcEvent EvDynamicRange;
     rtengine::ProcEvent EvGrayPoint;
     rtengine::ProcEvent EvShadowsRange;
+
+    sigc::connection autoconn;
     
 public:
     LogEncoding();
@@ -46,5 +51,8 @@ public:
     void adjusterChanged(Adjuster* a, double newval);
     void adjusterAutoToggled(Adjuster* a, bool newval);
     void enabledChanged();
+
+    void logEncodingChanged(const rtengine::LogEncodingParams &params);
+    void autocomputeToggled();
 };
 

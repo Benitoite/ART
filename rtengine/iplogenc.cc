@@ -24,6 +24,8 @@
 
 #include "improcfun.h"
 #include "sleef.c"
+#include "imagesource.h"
+#include "rt_algo.h"
 
 namespace rtengine {
 
@@ -90,5 +92,46 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
         }
     }
 }
+
+
+void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams)
+{
+    int fw, fh, tr = TR_NONE;
+    imgsrc->getFullSize(fw, fh, tr);
+    PreviewProps pp(0, 0, fw, fh, 10);
+    Imagefloat img(int(fw / 10 + 0.5), int(fh / 10 + 0.5));
+    imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, params->toneCurve, params->raw);
+
+    std::vector<float> data;
+    data.reserve(fw/10 * fh/10 * 2);
+
+    for (int y = 0, h = fh / 10; y < h; ++y) {
+        for (int x = 0, w = fw / 10; x < w; ++x) {
+            float r = img.r(y, x);
+            float g = img.g(y, x);
+            float b = img.b(y, x);
+            if (min(r, g, b) > 0.f) {
+                data.push_back(min(r, g, b));
+                data.push_back(max(r, g, b));
+            }
+        }
+    }
+
+    std::sort(data.begin(), data.end());
+    int n = data.size();
+    float vmin = data[min(1, n-1)];
+    float vmax = data[max(0, n-2)];
+    
+    if (vmax > vmin) {
+        const float log2 = xlogf(2.f);
+        const float noise = pow_F(2.f, -16.f);
+        const float gray = float(lparams.grayPoint) / 100.f;
+        vmin = max(vmin / vmax, noise);
+        float lmin = xlogf(vmin) / log2;
+        lparams.dynamicRange = std::abs(lmin) + 0.3f;
+        lparams.shadowsRange = xlogf(vmin/gray) / log2 - 0.15f;
+    }
+}
+
 
 } // namespace rtengine

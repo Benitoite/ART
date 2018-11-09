@@ -172,6 +172,8 @@ protected:
     HistogramListener* hListener;
     std::vector<SizeListener*> sizeListeners;
 
+    AutoLogListener *autoLogListener;
+
     std::vector<Crop*> crops;
 
     bool resultValid;
@@ -364,6 +366,11 @@ public:
     void setImageTypeListener  (ImageTypeListener* itl)
     {
         imageTypeListener = itl;
+    }
+
+    void setAutoLogListener(AutoLogListener *l)
+    {
+        autoLogListener = l;
     }
 
     void saveInputICCReference (const Glib::ustring& fname, bool apply_wb);

@@ -1541,6 +1541,7 @@ bool EPDParams::operator !=(const EPDParams& other) const
 
 LogEncodingParams::LogEncodingParams():
     enabled(false),
+    autocompute(true),
     dynamicRange(10.0),
     grayPoint(18.0),
     shadowsRange(-5.0)
@@ -1551,6 +1552,7 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
 {
     return
         enabled == other.enabled
+        && autocompute == other.autocompute
         && dynamicRange == other.dynamicRange
         && grayPoint == other.grayPoint
         && shadowsRange == other.shadowsRange;
@@ -3253,6 +3255,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Log encoding        
         saveToKeyfile(!pedited || pedited->logenc.enabled, "LogEncoding", "Enabled", logenc.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.autocompute, "LogEncoding", "Auto", logenc.autocompute, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.dynamicRange, "LogEncoding", "DynamicRange", logenc.dynamicRange, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.grayPoint, "LogEncoding", "GrayPoint", logenc.grayPoint, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.shadowsRange, "LogEncoding", "ShadowsRange", logenc.shadowsRange, keyFile);
@@ -4228,6 +4231,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group("LogEncoding")) {
             assignFromKeyfile(keyFile, "LogEncoding", "Enabled", pedited, logenc.enabled, pedited->logenc.enabled);
+            assignFromKeyfile(keyFile, "LogEncoding", "Auto", pedited, logenc.autocompute, pedited->logenc.autocompute);
             assignFromKeyfile(keyFile, "LogEncoding", "DynamicRange", pedited, logenc.dynamicRange, pedited->logenc.dynamicRange);
             assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", pedited, logenc.grayPoint, pedited->logenc.grayPoint);
             assignFromKeyfile(keyFile, "LogEncoding", "ShadowsRange", pedited, logenc.shadowsRange, pedited->logenc.shadowsRange);

@@ -822,7 +822,10 @@ private:
             params.toneCurve.brightness = 0;
             params.toneCurve.contrast = 0;
             params.toneCurve.black = 0;
-        }        
+        }
+        if (params.logenc.enabled && params.logenc.autocompute) {
+            ipf.getAutoLog(imgsrc, params.logenc);
+        }
 
         // at this stage, we can flush the raw data to free up quite an important amount of memory
         // commented out because it makes the application crash when batch processing...

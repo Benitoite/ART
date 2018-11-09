@@ -289,6 +289,7 @@ void ParamsEdited::set(bool v)
     fattal.amount    = v;
     fattal.anchor    = v;
     logenc.enabled   = v;
+    logenc.autocompute = v;
     logenc.dynamicRange = v;
     logenc.grayPoint = v;
     logenc.shadowsRange = v;
@@ -872,6 +873,7 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         fattal.amount = fattal.amount && p.fattal.amount == other.fattal.amount;
         fattal.anchor = fattal.anchor && p.fattal.anchor == other.fattal.anchor;
         SETVAL_(logenc.enabled);
+        SETVAL_(logenc.autocompute);
         SETVAL_(logenc.dynamicRange);
         SETVAL_(logenc.grayPoint);
         SETVAL_(logenc.shadowsRange);
@@ -2155,6 +2157,7 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     }
 
     SETVAL_(logenc.enabled);
+    SETVAL_(logenc.autocompute);
     SETVAL_(logenc.dynamicRange);
     SETVAL_(logenc.grayPoint);
     SETVAL_(logenc.shadowsRange);
