@@ -454,7 +454,8 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionEditorG->show();
     labRegionBox->pack_start(*labRegionEditorG, Gtk::PACK_SHRINK, 2);
 
-    labRegionMaskBlur = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_MASKBLUR"), -10, 10, 0.1, 0));
+    labRegionMaskBlur = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_MASKBLUR"), -10, 100, 0.1, 0));
+    labRegionMaskBlur->setLogScale(10, 0);
     labRegionMaskBlur->setAdjusterListener(this);
     labRegionBox->pack_start(*labRegionMaskBlur);
 
