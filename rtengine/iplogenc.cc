@@ -26,8 +26,76 @@
 #include "sleef.c"
 #include "imagesource.h"
 #include "rt_algo.h"
+#include "curves.h"
 
 namespace rtengine {
+
+namespace {
+
+template <class Curve>
+inline void apply_batch(const Curve &c, Imagefloat *rgb, int W, int H, bool multithread)
+{
+#ifdef _OPENMP
+    #pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        c.BatchApply(0, W, rgb->r.ptrs[y], rgb->g.ptrs[y], rgb->b.ptrs[y]);
+    }
+}
+
+
+template <class Curve>
+inline void apply(const Curve &c, Imagefloat *rgb, int W, int H, bool multithread)
+{
+#ifdef _OPENMP
+    #pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            c.Apply(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x));
+        }
+    }
+}
+
+
+void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curveMode, const Glib::ustring &working_profile, bool multithread)
+{
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+    
+    if (curveMode == ToneCurveParams::TcMode::PERCEPTUAL) {
+        const PerceptualToneCurve &c = static_cast<const PerceptualToneCurve&>(tc);
+        PerceptualToneCurveState state;
+        c.initApplyState(state, working_profile);
+
+#ifdef _OPENMP
+        #pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            c.BatchApply(0, W, rgb->r.ptrs[y], rgb->g.ptrs[y], rgb->b.ptrs[y], state);
+        }
+    } else if (curveMode == ToneCurveParams::TcMode::STD) {
+        const StandardToneCurve &c = static_cast<const StandardToneCurve &>(tc);
+        apply_batch(c, rgb, W, H, multithread);
+    } else if (curveMode == ToneCurveParams::TcMode::WEIGHTEDSTD) {
+        const WeightedStdToneCurve &c = static_cast<const WeightedStdToneCurve &>(tc);
+        apply_batch(c, rgb, W, H, multithread);
+    } else if (curveMode == ToneCurveParams::TcMode::FILMLIKE) {
+        const AdobeToneCurve &c = static_cast<const AdobeToneCurve &>(tc);
+        apply(c, rgb, W, H, multithread);
+    } else if (curveMode == ToneCurveParams::TcMode::SATANDVALBLENDING) {
+        const SatAndValueBlendingToneCurve &c = static_cast<const SatAndValueBlendingToneCurve &>(tc);
+        apply(c, rgb, W, H, multithread);
+    } else if (curveMode == ToneCurveParams::TcMode::LUMINANCE) {
+        const LuminanceToneCurve &c = static_cast<const LuminanceToneCurve &>(tc);
+        apply(c, rgb, W, H, multithread);
+    }
+}
+
+
+
+
+} // namespace
 
 
 // taken from darktable (src/iop/profile_gamma.c)
@@ -132,6 +200,36 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         lparams.dynamicRange = std::abs(lmin) + 0.5f;
         lparams.shadowsRange = xlogf(vmin/gray) / log2;
     }
+}
+
+
+void ImProcFunctions::logEncodingCurves(LabImage *lab)
+{
+    const bool logenc_enabled = params->logenc.enabled && ((!params->toneCurve.curve.empty() && params->toneCurve.curve[0] != DCT_Linear) || (!params->toneCurve.curve2.empty() && params->toneCurve.curve2[0] != DCT_Linear));
+
+    if (!logenc_enabled) {
+        return;
+    }
+
+    Imagefloat working(lab->W, lab->H);
+    lab2rgb(*lab, working, params->icm.workingProfile);
+
+    ToneCurve tc;
+    const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+
+    if (!tcurve1.isIdentity()) {
+        tc.Set(tcurve1, Color::sRGBGammaCurve);
+        apply_tc(&working, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
+    }
+
+    const DiagonalCurve tcurve2(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+
+    if (!tcurve2.isIdentity()) {
+        tc.Set(tcurve2, Color::sRGBGammaCurve);
+        apply_tc(&working, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
+    }
+
+    rgb2lab(working, *lab, params->icm.workingProfile);
 }
 
 

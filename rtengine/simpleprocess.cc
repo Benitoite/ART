@@ -1135,14 +1135,16 @@ private:
 
         ipf.chromiLuminanceCurve (nullptr, 1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
 
+        ipf.vibrance (labView);
+        ipf.labColorCorrectionRegions(labView);
+        ipf.logEncodingCurves(labView);
+
         if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
             ipf.EPDToneMap (labView, 5, 1);
         }
 
-
-        ipf.vibrance (labView);
-        ipf.labColorCorrectionRegions(labView);
-
+        ipf.localContrast(labView);
+        
         if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
             ipf.impulsedenoise (labView);
         }

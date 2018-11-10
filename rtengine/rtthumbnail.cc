@@ -1389,13 +1389,15 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     ipf.vibrance (labView);
     ipf.labColorCorrectionRegions(labView);
+    ipf.logEncodingCurves(labView);
 
     if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || !params.colorappearance.enabled) {
         ipf.EPDToneMap (labView, 5, 6);
     }
 
-    ipf.softLight(labView);
     ipf.localContrast(labView);
+
+    ipf.softLight(labView);
 
     if (params.colorappearance.enabled) {
         CurveFactory::curveLightBrightColor (

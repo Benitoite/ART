@@ -899,11 +899,14 @@ void Crop::update(int todo)
         parent->ipf.chromiLuminanceCurve(this, 1, labnCrop, labnCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
         parent->ipf.vibrance(labnCrop);
         parent->ipf.labColorCorrectionRegions(labnCrop);
+        parent->ipf.logEncodingCurves(labnCrop);
 
         if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
             parent->ipf.EPDToneMap(labnCrop, 5, skip);
         }
 
+        parent->ipf.localContrast(labnCrop);
+        
         //parent->ipf.EPDToneMap(labnCrop, 5, 1);    //Go with much fewer than normal iterates for fast redisplay.
         // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
         if (skip == 1) {
@@ -1015,7 +1018,6 @@ void Crop::update(int todo)
         }
 
         parent->ipf.softLight(labnCrop);
-        parent->ipf.localContrast(labnCrop);
 
         //     }
 
