@@ -30,8 +30,6 @@ extern Options options;
 
 namespace rtengine {
 
-extern void filmlike_clip(float *r, float *g, float *b);
-
 namespace {
 
 inline void rgb2lab(float R, float G, float B, float &l, float &a, float &b, const TMatrix &ws)
@@ -111,7 +109,7 @@ void guided_smoothing(LabImage *lab, array2D<float> &R, array2D<float> &G, array
                 float rr = R[y][x] * 65535.f;
                 float gg = G[y][x] * 65535.f;
                 float bb = B[y][x] * 65535.f;
-                filmlike_clip(&rr, &gg, &bb);
+                Color::filmlike_clip(&rr, &gg, &bb);
                 rgb2lab(rr, gg, bb, l, a, b, ws);
                 lab2rgb(intp(l_blend, l, lab->L[y][x]), intp(ab_blend, a, lab->a[y][x]), intp(ab_blend, b, lab->b[y][x]), rr, gg, bb, iws);
                 R[y][x] = rr / 65535.f;

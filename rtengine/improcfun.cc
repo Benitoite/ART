@@ -1967,45 +1967,6 @@ void ImProcFunctions::moyeqt (Imagefloat* working, float &moyS, float &eqty)
     moyS = moy;
 }
 
-static inline void
-filmlike_clip_rgb_tone (float *r, float *g, float *b, const float L)
-{
-    float r_ = *r > L ? L : *r;
-    float b_ = *b > L ? L : *b;
-    float g_ = b_ + ((r_ - b_) * (*g - *b) / (*r - *b));
-    *r = r_;
-    *g = g_;
-    *b = b_;
-}
-
-/*static*/ void
-filmlike_clip (float *r, float *g, float *b)
-{
-    // This is Adobe's hue-stable film-like curve with a diagonal, ie only used for clipping. Can probably be further optimized.
-    const float L = 65535.0;
-
-    if (*r >= *g) {
-        if (*g > *b) {         // Case 1: r >= g >  b
-            filmlike_clip_rgb_tone (r, g, b, L);
-        } else if (*b > *r) {  // Case 2: b >  r >= g
-            filmlike_clip_rgb_tone (b, r, g, L);
-        } else if (*b > *g) {  // Case 3: r >= b >  g
-            filmlike_clip_rgb_tone (r, b, g, L);
-        } else {               // Case 4: r >= g == b
-            *r = *r > L ? L : *r;
-            *g = *g > L ? L : *g;
-            *b = *g;
-        }
-    } else {
-        if (*r >= *b) {        // Case 5: g >  r >= b
-            filmlike_clip_rgb_tone (g, r, b, L);
-        } else if (*b > *g) {  // Case 6: b >  g >  r
-            filmlike_clip_rgb_tone (b, g, r, L);
-        } else {               // Case 7: g >= b >  r
-            filmlike_clip_rgb_tone (g, b, r, L);
-        }
-    }
-}
 
 void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer *pipetteBuffer, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili,  LUTf & clToningcurve, LUTf & cl2Toningcurve,
@@ -2442,18 +2403,18 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                     dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, asIn);
                 }
 
-                logEncoding(rtemp, gtemp, btemp, istart, jstart, tW, tH, TS);
-
-                if (params->toneCurve.clampOOG) {
+                if (params->logenc.enabled) {
+                    // no clamping
+                } else if (params->toneCurve.clampOOG) {
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                             // clip out of gamut colors, without distorting colour too bad
-                            float r = std::max(rtemp[ti * TS + tj], 0.f);
-                            float g = std::max(gtemp[ti * TS + tj], 0.f);
-                            float b = std::max(btemp[ti * TS + tj], 0.f);
+                            float r = max(rtemp[ti * TS + tj], 0.f);
+                            float g = max(gtemp[ti * TS + tj], 0.f);
+                            float b = max(btemp[ti * TS + tj], 0.f);
 
                             if (OOG(r) || OOG(g) || OOG(b)) {
-                                filmlike_clip(&r, &g, &b);
+                                Color::filmlike_clip(&r, &g, &b);
                             }
                             rtemp[ti * TS + tj] = r;
                             gtemp[ti * TS + tj] = g;
@@ -2464,12 +2425,12 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                             // clip out of gamut colors, without distorting colour too bad
-                            float r = std::max(rtemp[ti * TS + tj], 0.f);
-                            float g = std::max(gtemp[ti * TS + tj], 0.f);
-                            float b = std::max(btemp[ti * TS + tj], 0.f);
+                            float r = max(rtemp[ti * TS + tj], 0.f);
+                            float g = max(gtemp[ti * TS + tj], 0.f);
+                            float b = max(btemp[ti * TS + tj], 0.f);
 
                             if (OOG(max(r, g, b)) && !OOG(min(r, g, b))) {
-                                filmlike_clip(&r, &g, &b);
+                                Color::filmlike_clip(&r, &g, &b);
                             }
                             setUnlessOOG(rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], r, g, b);
                         }

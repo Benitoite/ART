@@ -1389,7 +1389,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     ipf.vibrance (labView);
     ipf.labColorCorrectionRegions(labView);
-    ipf.logEncodingCurves(labView);
+    ipf.logEncoding(labView);
 
     if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || !params.colorappearance.enabled) {
         ipf.EPDToneMap (labView, 5, 6);

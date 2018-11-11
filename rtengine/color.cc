@@ -7087,4 +7087,47 @@ void Color::initMunsell ()
 #endif
 }
 
+
+namespace {
+
+inline void filmlike_clip_rgb_tone(float *r, float *g, float *b, const float L)
+{
+    float r_ = *r > L ? L : *r;
+    float b_ = *b > L ? L : *b;
+    float g_ = b_ + ((r_ - b_) * (*g - *b) / (*r - *b));
+    *r = r_;
+    *g = g_;
+    *b = b_;
+}
+
+} // namespace
+
+void Color::filmlike_clip(float *r, float *g, float *b)
+{
+    // This is Adobe's hue-stable film-like curve with a diagonal, ie only used for clipping. Can probably be further optimized.
+    const float L = 65535.0;
+
+    if (*r >= *g) {
+        if (*g > *b) {         // Case 1: r >= g >  b
+            filmlike_clip_rgb_tone (r, g, b, L);
+        } else if (*b > *r) {  // Case 2: b >  r >= g
+            filmlike_clip_rgb_tone (b, r, g, L);
+        } else if (*b > *g) {  // Case 3: r >= b >  g
+            filmlike_clip_rgb_tone (r, b, g, L);
+        } else {               // Case 4: r >= g == b
+            *r = *r > L ? L : *r;
+            *g = *g > L ? L : *g;
+            *b = *g;
+        }
+    } else {
+        if (*r >= *b) {        // Case 5: g >  r >= b
+            filmlike_clip_rgb_tone (g, r, b, L);
+        } else if (*b > *g) {  // Case 6: b >  g >  r
+            filmlike_clip_rgb_tone (b, g, r, L);
+        } else {               // Case 7: g >= b >  r
+            filmlike_clip_rgb_tone (g, b, r, L);
+        }
+    }
+}
+
 }

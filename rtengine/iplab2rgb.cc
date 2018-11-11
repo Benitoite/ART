@@ -29,8 +29,6 @@
 namespace rtengine
 {
 
-extern void filmlike_clip(float *r, float *g, float *b);
-
 extern const Settings* settings;
 
 namespace {
@@ -42,7 +40,7 @@ inline void copyAndClampLine(const float *src, unsigned char *dst, const int W)
         float g = src[iy+1] * MAXVALF;
         float b = src[iy+2] * MAXVALF;
         if (r > MAXVALF || g > MAXVALF || b > MAXVALF) {
-            filmlike_clip(&r, &g, &b);
+            Color::filmlike_clip(&r, &g, &b);
         }
         dst[iy] = uint16ToUint8Rounded(CLIP(r));
         dst[iy+1] = uint16ToUint8Rounded(CLIP(g));
@@ -74,7 +72,7 @@ inline void copyAndClamp(const LabImage *src, unsigned char *dst, const double r
             Color::xyz2rgb(x_, y_, z_, R, G, B, rgb_xyz);
 
             if (R > MAXVALF || G > MAXVALF || B > MAXVALF) {
-                filmlike_clip(&R, &G, &B);
+                Color::filmlike_clip(&R, &G, &B);
             }
 
             dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[R]);

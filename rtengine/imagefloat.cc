@@ -108,8 +108,6 @@ void Imagefloat::setScanline (int row, unsigned char* buffer, int bps, unsigned 
 }
 
 
-namespace rtengine { extern void filmlike_clip(float *r, float *g, float *b); }
-
 void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFloat)
 {
 
@@ -144,7 +142,7 @@ void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFl
             float gi = g(row, i);
             float bi = b(row, i);
             if (ri > 65535.f || gi > 65535.f || bi > 65535.f) {
-                filmlike_clip(&ri, &gi, &bi);
+                Color::filmlike_clip(&ri, &gi, &bi);
             }
             if (bps == 16) {
                 sbuffer[ix++] = CLIP(ri);

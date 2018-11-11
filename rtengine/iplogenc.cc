@@ -143,34 +143,15 @@ float find_brightness(float source_gray, float target_gray)
 }
 
 
-} // namespace
-
-
-// taken from darktable (src/iop/profile_gamma.c)
-/*
-   copyright (c) 2009--2010 johannes hanika.
-   copyright (c) 2014 LebedevRI.
-   copyright (c) 2018 Aurélien Pierre.
-
-   darktable is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   darktable is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with darktable.  If not, see <http://www.gnu.org/licenses/>.
-*/ 
-void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int jstart, int tW, int tH, int TS)
+// basic log encoding taken from ACESutil.Lin_to_Log2, from
+// https://github.com/ampas/aces-dev
+// (as seen on pixls.us)
+void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
 {
     if (!params->logenc.enabled) {
         return;
     }
-    
+
     const float gray = params->logenc.grayPoint / 100.f;
     const float shadows_range = params->logenc.blackEv;
     const float dynamic_range = params->logenc.whiteEv - params->logenc.blackEv;
@@ -209,21 +190,36 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
             return x * 65535.f;
         };
 
-    for (int i = istart, ti = 0; i < tH; i++, ti++) {
-        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-            int idx = ti * TS + tj;
-            r[idx] = apply(r[idx]);
-            g[idx] = apply(g[idx]);
-            b[idx] = apply(b[idx]);
+#ifdef _OPENMP
+    #pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < rgb->getHeight(); ++y) {
+        for (int x = 0; x < rgb->getWidth(); ++x) {
+            float r = rgb->r(y, x);
+            float g = rgb->g(y, x);
+            float b = rgb->b(y, x);
+            r = apply(r);
+            g = apply(g);
+            b = apply(b);
             if (saturation_enabled) {
-                float l = Color::rgbLuminance(r[idx], g[idx], b[idx], ws);
-                r[idx] = l + saturation * (r[idx] - l);
-                g[idx] = l + saturation * (g[idx] - l);
-                b[idx] = l + saturation * (b[idx] - l);
+                float l = Color::rgbLuminance(r, g, b, ws);
+                r = max(l + saturation * (r - l), noise);
+                g = max(l + saturation * (g - l), noise);
+                b = max(l + saturation * (b - l), noise);
             }
+
+            if (OOG(r) || OOG(g) || OOG(b)) {
+                Color::filmlike_clip(&r, &g, &b);
+            }
+            
+            rgb->r(y, x) = r;
+            rgb->g(y, x) = g;
+            rgb->b(y, x) = b;
         }
     }
 }
+
+} // namespace
 
 
 void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams)
@@ -284,16 +280,16 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 }
 
 
-void ImProcFunctions::logEncodingCurves(LabImage *lab)
+void ImProcFunctions::logEncoding(LabImage *lab)
 {
-    const bool logenc_enabled = params->logenc.enabled && ((!params->toneCurve.curve.empty() && params->toneCurve.curve[0] != DCT_Linear) || (!params->toneCurve.curve2.empty() && params->toneCurve.curve2[0] != DCT_Linear));
-
-    if (!logenc_enabled) {
+    if (!params->logenc.enabled) {
         return;
     }
 
     Imagefloat working(lab->W, lab->H);
     lab2rgb(*lab, working, params->icm.workingProfile);
+
+    log_encode(&working, params, multiThread);
 
     ToneCurve tc;
     const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
