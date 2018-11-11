@@ -93,6 +93,54 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
 }
 
 
+float find_brightness(float source_gray, float target_gray)
+{
+    // find a base such that log2lin(base, source_gray) = target_gray
+    // log2lin is (base^source_gray - 1) / (base - 1), so we solve
+    //
+    //  (base^source_gray - 1) / (base - 1) = target_gray, that is
+    //
+    //  base^source_gray - 1 - base * target_gray - target_gray = 0
+    //
+    // use a bisection method (maybe later change to Netwon)
+
+    const auto f =
+        [=](float x) -> float
+        {
+            return pow_F(x, source_gray) - 1 - target_gray * x - target_gray;
+        };
+
+    // first find the interval we are interested in
+    float lo = 1.f;
+    while (f(lo) <= 0.f) {
+        lo *= 2.f;
+    }
+
+    float hi = lo * 2.f;
+    while (f(hi) >= 0.f) {
+        hi *= 2.f;
+    }
+
+    if (std::isinf(hi)) {
+        return 0.f;
+    }
+
+    // now search for a zero
+    for (int iter = 0; iter < 100; ++iter) {
+        float mid = lo + (hi - lo) / 2.f;
+        float v = f(mid);
+        if (std::abs(v) < 1e-4f || (hi - lo) / lo <= 1e-4f) {
+            return mid;
+        }
+        if (v > 0.f) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+
+    return 0.f; // not found
+}
 
 
 } // namespace
@@ -124,30 +172,40 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
     }
     
     const float gray = params->logenc.grayPoint / 100.f;
-    const float shadows_range = params->logenc.shadowsRange;
-    const float dynamic_range = params->logenc.dynamicRange;
+    const float shadows_range = params->logenc.blackEv;
+    const float dynamic_range = params->logenc.whiteEv - params->logenc.blackEv;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
     const bool brightness_enabled = params->toneCurve.brightness;
-    const float brightness = params->toneCurve.brightness <= 0 ? -params->toneCurve.brightness / 10.f : 1.f / (1.f + params->toneCurve.brightness / 10.f);
-    const float base = pow_F(2.f, brightness);
+    const float brightness = 1.f + params->toneCurve.brightness / 100.f; //params->toneCurve.brightness <= 0 ? -params->toneCurve.brightness / 10.f : 1.f / (1.f + params->toneCurve.brightness);// / 10.f);
+//    const float base = pow_F(2.f, brightness);
     const bool contrast_enabled = params->toneCurve.contrast;
-    const float contrast = params->toneCurve.contrast >= 0 ? 1.f + params->toneCurve.contrast / 100.f : 1.f/(1.f - params->toneCurve.contrast / 50.f);
+    const float contrast = 1.f + params->toneCurve.contrast / 100.f; //params->toneCurve.contrast >= 0 ? 1.f + params->toneCurve.contrast / 100.f : 1.f/(1.f - params->toneCurve.contrast / 50.f);
+    const bool saturation_enabled = params->toneCurve.saturation;
+    const float saturation = 1.f + params->toneCurve.saturation / 100.f;
+    const float norm = params->logenc.base > 0 ? pow_F(2.f, params->logenc.base) : 0;
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
     const auto apply =
         [=](float x) -> float
         {
             x /= 65535.f;
             x = max(x, noise);
+            if (brightness_enabled) {
+                x *= brightness;
+            }
             if (contrast_enabled) {
                 x = pow_F(x / gray, contrast) * gray;
             }
             x = max(x / gray, noise);
             x = max((xlogf(x)/log2 - shadows_range) / dynamic_range, noise);
             assert(x == x);
-            if (brightness_enabled) {
-                x = xlog2lin(x, base);
+            if (norm > 0.f) {
+                x = xlog2lin(x, norm);
             }
+            // if (brightness_enabled) {
+            //     x = xlog2lin(x, base);
+            // }
             return x * 65535.f;
         };
 
@@ -157,6 +215,12 @@ void ImProcFunctions::logEncoding(float *r, float *g, float *b, int istart, int 
             r[idx] = apply(r[idx]);
             g[idx] = apply(g[idx]);
             b[idx] = apply(b[idx]);
+            if (saturation_enabled) {
+                float l = Color::rgbLuminance(r[idx], g[idx], b[idx], ws);
+                r[idx] = l + saturation * (r[idx] - l);
+                g[idx] = l + saturation * (g[idx] - l);
+                b[idx] = l + saturation * (b[idx] - l);
+            }
         }
     }
 }
@@ -174,31 +238,48 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     std::vector<float> data;
     data.reserve(fw/10 * fh/10 * 2);
 
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    double tot = 0.0;
+
     for (int y = 0, h = fh / 10; y < h; ++y) {
         for (int x = 0, w = fw / 10; x < w; ++x) {
-            float r = img.r(y, x);
-            float g = img.g(y, x);
-            float b = img.b(y, x);
-            if (min(r, g, b) > 0.f) {
-                data.push_back(min(r, g, b));
-                data.push_back(max(r, g, b));
+            float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
+            if (l > 0.f) {
+                data.push_back(l);
+                tot += l;
             }
         }
     }
 
     std::sort(data.begin(), data.end());
     int n = data.size();
+    if (!n) {
+        return;
+    }
+    
     float vmin = data[0];
     float vmax = data[n-1];
+    float vmid = tot / n;
+
+    constexpr float dr_headroom = 1.f;
+    constexpr float black_headroom = 0.5f;
     
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
         const float noise = pow_F(2.f, -16.f);
+        lparams.grayPoint = int(vmid / 65535.f * 100.f);
         const float gray = float(lparams.grayPoint) / 100.f;
         vmin = max(vmin / vmax, noise);
         float lmin = xlogf(vmin) / log2;
-        lparams.dynamicRange = std::abs(lmin) + 0.5f;
-        lparams.shadowsRange = xlogf(vmin/gray) / log2;
+        lparams.blackEv = xlogf(vmin/gray) / log2 - black_headroom;
+        float dynamic_range = std::abs(lmin) + dr_headroom;
+        lparams.whiteEv = dynamic_range + lparams.blackEv;
+        float b = find_brightness(std::abs(lparams.blackEv) / dynamic_range, 0.18);
+        if (b > 0.f) {
+            lparams.base = std::log(b) / log2;
+        } else {
+            lparams.base = 0;
+        }
     }
 }
 

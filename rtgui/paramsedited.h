@@ -394,9 +394,10 @@ class LogEncodingParamsEdited
 public:
     bool enabled;
     bool autocompute;
-    bool dynamicRange;
     bool grayPoint;
-    bool shadowsRange;
+    bool blackEv;
+    bool whiteEv;
+    bool base;
 };
 
 

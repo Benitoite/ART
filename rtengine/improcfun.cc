@@ -2198,6 +2198,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
         tonecurve.makeIdentity();
         hasToneCurve1 = false;
         hasToneCurve2 = false;
+        sat = false;
     }
 
     PerceptualToneCurveState ptc1ApplyState, ptc2ApplyState;

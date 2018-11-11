@@ -31,30 +31,36 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     EvEnabled = m->newEvent(RGBCURVE | M_AUTOEXP, "HISTORY_MSG_LOGENC_ENABLED");
     EvAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTO");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
-    EvDynamicRange = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_DYNAMIC_RANGE");
     EvGrayPoint = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_GRAY_POINT");
-    EvShadowsRange = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_SHADOWS_RANGE");
+    EvBlackEv = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_BLACK_EV");
+    EvWhiteEv = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_WHITE_EV");
+    EvBase = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_BASE");
 
     autocompute = Gtk::manage(new Gtk::ToggleButton(M("TP_LOGENC_AUTO")));
     autoconn = autocompute->signal_toggled().connect(sigc::mem_fun(*this, &LogEncoding::autocomputeToggled));
     
-    dynamicRange = Gtk::manage(new Adjuster(M("TP_LOGENC_DYNAMIC_RANGE"), 1.0, 32.0, 0.1, 10.0));
     grayPoint = Gtk::manage(new Adjuster(M("TP_LOGENC_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
-    shadowsRange = Gtk::manage(new Adjuster(M("TP_LOGENC_SHADOWS_RANGE"), -16.0, 0.0, 0.1, -5.0));
+    blackEv = Gtk::manage(new Adjuster(M("TP_LOGENC_BLACK_EV"), -16.0, 0.0, 0.1, -5.0));
+    whiteEv = Gtk::manage(new Adjuster(M("TP_LOGENC_WHITE_EV"), 0.0, 32.0, 0.1, 10.0));
+    base = Gtk::manage(new Adjuster(M("TP_LOGENC_BASE"), 0.0, 100.0, 0.1, 3.9));
+    base->setLogScale(10, 0);
 
-    dynamicRange->setAdjusterListener(this);
+    whiteEv->setAdjusterListener(this);
     grayPoint->setAdjusterListener(this);
-    shadowsRange->setAdjusterListener(this);
+    blackEv->setAdjusterListener(this);
+    base->setAdjusterListener(this);
 
     autocompute->show();
-    dynamicRange->show();
+    whiteEv->show();
     grayPoint->show();
-    shadowsRange->show();
+    blackEv->show();
+    base->show();
 
     pack_start(*autocompute);
     pack_start(*grayPoint);
-    pack_start(*shadowsRange);
-    pack_start(*dynamicRange);
+    pack_start(*blackEv);
+    pack_start(*whiteEv);
+    pack_start(*base);
 }
 
 
@@ -64,9 +70,10 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
     ConnectionBlocker cbl(autoconn);
 
     if (pedited) {
-        dynamicRange->setEditedState(pedited->logenc.dynamicRange ? Edited : UnEdited);
         grayPoint->setEditedState(pedited->logenc.grayPoint ? Edited : UnEdited);
-        shadowsRange->setEditedState(pedited->logenc.shadowsRange ? Edited : UnEdited);
+        blackEv->setEditedState(pedited->logenc.blackEv ? Edited : UnEdited);
+        whiteEv->setEditedState(pedited->logenc.whiteEv ? Edited : UnEdited);
+        base->setEditedState(pedited->logenc.base ? Edited : UnEdited);
         set_inconsistent(multiImage && !pedited->logenc.enabled);
         autocompute->set_inconsistent(!pedited->logenc.autocompute);
     }
@@ -74,9 +81,10 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
     setEnabled(pp->logenc.enabled);
 
     autocompute->set_active(pp->logenc.autocompute);    
-    dynamicRange->setValue(pp->logenc.dynamicRange);
     grayPoint->setValue(pp->logenc.grayPoint);
-    shadowsRange->setValue(pp->logenc.shadowsRange);
+    blackEv->setValue(pp->logenc.blackEv);
+    whiteEv->setValue(pp->logenc.whiteEv);
+    base->setValue(pp->logenc.base);
 
     enableListener();
 }
@@ -85,33 +93,38 @@ void LogEncoding::write(ProcParams *pp, ParamsEdited *pedited)
 {
     pp->logenc.enabled = getEnabled();
     pp->logenc.autocompute = autocompute->get_active();
-    pp->logenc.dynamicRange = dynamicRange->getValue();
     pp->logenc.grayPoint = grayPoint->getValue();
-    pp->logenc.shadowsRange = shadowsRange->getValue();
+    pp->logenc.blackEv = blackEv->getValue();
+    pp->logenc.whiteEv = whiteEv->getValue();
+    pp->logenc.base = base->getValue();
 
     if (pedited) {
         pedited->logenc.enabled = !get_inconsistent();
         pedited->logenc.autocompute = !autocompute->get_inconsistent();
-        pedited->logenc.dynamicRange = dynamicRange->getEditedState();
         pedited->logenc.grayPoint = grayPoint->getEditedState();
-        pedited->logenc.shadowsRange = shadowsRange->getEditedState();
+        pedited->logenc.blackEv = blackEv->getEditedState();
+        pedited->logenc.whiteEv = whiteEv->getEditedState();
+        pedited->logenc.base = base->getEditedState();
     }
 }
 
 void LogEncoding::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
 {
-    dynamicRange->setDefault(defParams->logenc.dynamicRange);
     grayPoint->setDefault(defParams->logenc.grayPoint);
-    shadowsRange->setDefault(defParams->logenc.shadowsRange);
+    blackEv->setDefault(defParams->logenc.blackEv);
+    whiteEv->setDefault(defParams->logenc.whiteEv);
+    base->setDefault(defParams->logenc.base);
     
     if (pedited) {
-        dynamicRange->setDefaultEditedState(pedited->logenc.dynamicRange ? Edited : UnEdited);
         grayPoint->setDefaultEditedState(pedited->logenc.grayPoint ? Edited : UnEdited);
-        shadowsRange->setDefaultEditedState(pedited->logenc.shadowsRange ? Edited : UnEdited);
+        blackEv->setDefaultEditedState(pedited->logenc.blackEv ? Edited : UnEdited);
+        whiteEv->setDefaultEditedState(pedited->logenc.whiteEv ? Edited : UnEdited);
+        base->setDefaultEditedState(pedited->logenc.base ? Edited : UnEdited);
     } else {
-        dynamicRange->setDefaultEditedState(Irrelevant);
         grayPoint->setDefaultEditedState(Irrelevant);
-        shadowsRange->setDefaultEditedState(Irrelevant);
+        blackEv->setDefaultEditedState(Irrelevant);
+        whiteEv->setDefaultEditedState(Irrelevant);
+        base->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -121,12 +134,14 @@ void LogEncoding::adjusterChanged(Adjuster* a, double newval)
     autocompute->set_active(false);
     
     if (listener && getEnabled()) {
-        if (a == dynamicRange) {
-            listener->panelChanged(EvDynamicRange, a->getTextValue());
-        } else if (a == grayPoint) {
+        if (a == grayPoint) {
             listener->panelChanged(EvGrayPoint, a->getTextValue());
-        } else if (a == shadowsRange) {
-            listener->panelChanged(EvShadowsRange, a->getTextValue());
+        } else if (a == blackEv) {
+            listener->panelChanged(EvBlackEv, a->getTextValue());
+        } else if (a == whiteEv) {
+            listener->panelChanged(EvWhiteEv, a->getTextValue());
+        } else if (a == base) {
+            listener->panelChanged(EvBase, a->getTextValue());
         }
     }
 }
@@ -152,9 +167,10 @@ void LogEncoding::setBatchMode(bool batchMode)
 {
     ToolPanel::setBatchMode(batchMode);
 
-    dynamicRange->showEditedCB();
     grayPoint->showEditedCB();
-    shadowsRange->showEditedCB();
+    blackEv->showEditedCB();
+    whiteEv->showEditedCB();
+    base->showEditedCB();
 }
 
 
@@ -164,9 +180,10 @@ void LogEncoding::autocomputeToggled()
         if (!batchMode) {
             if (autocompute->get_active()) {
                 listener->panelChanged(EvAuto, M("GENERAL_ENABLED"));
-                dynamicRange->setEnabled(false);
                 grayPoint->setEnabled(false);
-                shadowsRange->setEnabled(false);
+                blackEv->setEnabled(false);
+                whiteEv->setEnabled(false);
+                base->setEnabled(false);
             } else {
                 listener->panelChanged(EvAuto, M("GENERAL_DISABLED"));
             }
@@ -184,13 +201,15 @@ void LogEncoding::logEncodingChanged(const rtengine::LogEncodingParams &params)
     disableListener();
     ConnectionBlocker cbl(autoconn);
 
-    dynamicRange->setEnabled(true);
     grayPoint->setEnabled(true);
-    shadowsRange->setEnabled(true);
+    blackEv->setEnabled(true);
+    whiteEv->setEnabled(true);
+    base->setEnabled(true);
 
-    dynamicRange->setValue(params.dynamicRange);
     grayPoint->setValue(params.grayPoint);
-    shadowsRange->setValue(params.shadowsRange);
+    blackEv->setValue(params.blackEv);
+    whiteEv->setValue(params.whiteEv);
+    base->setValue(params.base);
     
     enableListener();
 }
