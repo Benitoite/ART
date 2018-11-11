@@ -411,14 +411,16 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionLightness->setAdjusterListener(this);
     labRegionBox->pack_start(*labRegionLightness);
 
-    labRegionSlope = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_SLOPE"), 0.1, 2.0, 0.001, 1));
+    labRegionSlope = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_SLOPE"), 0.1, 4.0, 0.001, 1));
+    labRegionSlope->setLogScale(4, 0.1);
     labRegionSlope->setAdjusterListener(this);
     labRegionBox->pack_start(*labRegionSlope);
     labRegionOffset = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_OFFSET"), -0.1, 0.1, 0.001, 0));
     labRegionOffset->setAdjusterListener(this);
     labRegionBox->pack_start(*labRegionOffset);
-    labRegionPower = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_POWER"), 0.5, 2.0, 0.001, 1));
+    labRegionPower = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_POWER"), 0.1, 4.0, 0.001, 1));
     labRegionPower->setAdjusterListener(this);
+    labRegionPower->setLogScale(4, 0.1);
     labRegionBox->pack_start(*labRegionPower);
     
     CurveEditorGroup *labRegionEditorG = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_COLORTONING_LABREGION_MASK")));
