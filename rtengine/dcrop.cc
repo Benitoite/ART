@@ -905,8 +905,6 @@ void Crop::update(int todo)
             parent->ipf.EPDToneMap(labnCrop, 5, skip);
         }
 
-        parent->ipf.localContrast(labnCrop);
-        
         //parent->ipf.EPDToneMap(labnCrop, 5, 1);    //Go with much fewer than normal iterates for fast redisplay.
         // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
         if (skip == 1) {
@@ -1018,7 +1016,8 @@ void Crop::update(int todo)
         }
 
         parent->ipf.softLight(labnCrop);
-
+        parent->ipf.localContrast(labnCrop);
+        
         //     }
 
         //   }

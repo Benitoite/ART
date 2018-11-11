@@ -745,8 +745,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.EPDToneMap(nprevl, 5, scale);
             }
 
-            ipf.localContrast(nprevl);
-            
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
             readyphase++;
     
