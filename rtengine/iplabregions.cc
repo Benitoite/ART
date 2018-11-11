@@ -176,7 +176,6 @@ BENCHFUN
     float abca[n];
     float abcb[n];
     float rs[n];
-    float rl[n];
     float slope[n];
     float offset[n];
     float power[n];
@@ -185,7 +184,6 @@ BENCHFUN
         abca[i] = abcoord(r.a);
         abcb[i] = abcoord(r.b);
         rs[i] = 1.f + r.saturation / 100.f;
-        rl[i] = 1.f + r.lightness / 500.f;
         slope[i] = r.slope;
         offset[i] = r.offset;
         power[i] = r.power;
@@ -238,7 +236,6 @@ BENCHFUN
 #ifdef __SSE2__
         vfloat c42000v = F2V(42000.f);
         vfloat cm42000v = F2V(-42000.f);
-        vfloat c32768v = F2V(32768.f);
 #endif
 #ifdef _OPENMP
         #pragma omp for
@@ -258,7 +255,7 @@ BENCHFUN
                     vfloat b_newv = vclampf(sv * (bv + F2V(abcb[i])), cm42000v, c42000v);
                     vfloat l_newv = lv;
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i]);
-                    l_newv = vclampf(l_newv * F2V(rl[i]), ZEROV, c32768v);
+                    l_newv = vmaxf(l_newv, ZEROV);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
                     bv = vintpf(blendv, b_newv, bv);
@@ -280,7 +277,7 @@ BENCHFUN
                     float b_new = LIM(s * (b + abcb[i]), -42000.f, 42000.f);
                     float l_new = l;
                     CDL(l_new, a_new, b_new, slope[i], offset[i], power[i]);
-                    l_new = LIM(l_new * rl[i], 0.f, 32768.f);
+                    l_new = max(l_new, 0.f);
                     l = intp(Lmask[i][y][x], l_new, l);
                     a = intp(blend, a_new, a);
                     b = intp(blend, b_new, b);

@@ -611,7 +611,6 @@ ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
     a(0),
     b(0),
     saturation(0),
-    lightness(0),
     slope(1),
     offset(0),
     power(1),
@@ -658,7 +657,6 @@ bool ColorToningParams::LabCorrectionRegion::operator==(const LabCorrectionRegio
     return a == other.a
         && b == other.b
         && saturation == other.saturation
-        && lightness == other.lightness
         && slope == other.slope
         && offset == other.offset
         && power == other.power
@@ -3580,7 +3578,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionA_") + n, l.a, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionB_") + n, l.b, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionSaturation_") + n, l.saturation, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionLightness_") + n, l.lightness, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionSlope_") + n, l.slope, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionOffset_") + n, l.offset, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionPower_") + n, l.power, keyFile);
@@ -4995,10 +4992,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     done = false;
                 }
                 if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionSaturation_") + n, pedited, cur.saturation, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionLightness_") + n, pedited, cur.lightness, pedited->colorToning.labregions)) {
                     found = true;
                     done = false;
                 }

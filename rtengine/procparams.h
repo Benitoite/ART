@@ -459,7 +459,6 @@ struct ColorToningParams {
         double a;
         double b;
         double saturation;
-        double lightness;
         double slope;
         double offset;
         double power;

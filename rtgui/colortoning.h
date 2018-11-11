@@ -147,7 +147,6 @@ private:
     Gtk::Button *labRegionDown;
     LabGrid *labRegionAB;
     Adjuster *labRegionSaturation;
-    Adjuster *labRegionLightness;
     Adjuster *labRegionSlope;
     Adjuster *labRegionOffset;
     Adjuster *labRegionPower;
