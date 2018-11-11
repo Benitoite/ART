@@ -100,17 +100,18 @@ float find_brightness(float source_gray, float target_gray)
     //
     //  (base^source_gray - 1) / (base - 1) = target_gray, that is
     //
-    //  base^source_gray - 1 - base * target_gray - target_gray = 0
+    //  base^source_gray - 1 - base * target_gray + target_gray = 0
     //
     // use a bisection method (maybe later change to Netwon)
 
     const auto f =
         [=](float x) -> float
         {
-            return pow_F(x, source_gray) - 1 - target_gray * x - target_gray;
+            return std::pow(x, source_gray) - 1 - target_gray * x + target_gray;
         };
 
     // first find the interval we are interested in
+
     float lo = 1.f;
     while (f(lo) <= 0.f) {
         lo *= 2.f;
