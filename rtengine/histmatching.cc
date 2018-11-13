@@ -236,8 +236,8 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
     if (idx >= 0 && size_t(idx) < curve.size()) {
         // idx is the position of the first point in the upper part of the S
         // for each 3 consecutive points (xa, ya), (x, y), (xb, yb) we check
-        // that yb is above the point at x of the line between the other two
-        // if this is not the case, we remove the middle point
+        // that y is above the point at x of the line between the other two
+        // if this is not the case, we remove (x, y) from the curve
         while (size_t(idx+5) < curve.size()) {
             float xa = curve[idx];
             float ya = curve[idx+1];
