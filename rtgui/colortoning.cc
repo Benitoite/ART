@@ -398,6 +398,10 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionDown->add(*Gtk::manage(new RTImage("arrow-down-small.png")));
     labRegionDown->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionDownPressed));
     add_button(labRegionDown, vb);
+    labRegionCopy = Gtk::manage(new Gtk::Button());
+    labRegionCopy->add(*Gtk::manage(new RTImage("arrow-right-small.png")));
+    labRegionCopy->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionCopyPressed));
+    add_button(labRegionCopy, vb);
     hb->pack_start(*vb, Gtk::PACK_SHRINK);
     labRegionBox->pack_start(*hb, true, true);
     
@@ -1480,6 +1484,21 @@ void ColorToning::labRegionDownPressed()
         labRegionData.erase(labRegionData.begin() + labRegionSelected);
         ++labRegionSelected;
         labRegionData.insert(labRegionData.begin() + labRegionSelected, r);
+        labRegionPopulateList();
+
+        if (listener) {
+            listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
+        }
+    }
+}
+
+
+void ColorToning::labRegionCopyPressed()
+{
+    if (labRegionSelected < int(labRegionData.size())) {
+        auto r = labRegionData[labRegionSelected];
+        labRegionData.push_back(r);
+        labRegionSelected = labRegionData.size()-1;
         labRegionPopulateList();
 
         if (listener) {
