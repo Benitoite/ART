@@ -179,14 +179,16 @@ BENCHFUN
     float slope[n];
     float offset[n];
     float power[n];
+    int channel[n];
     for (int i = 0; i < n; ++i) {
         auto &r = params->colorToning.labregions[i];
         abca[i] = abcoord(r.a);
         abcb[i] = abcoord(r.b);
-        rs[i] = 1.f + r.saturation / 100.f;
+        rs[i] = 1.f + r.saturation / (SGN(r.saturation) > 0 ? 50.f : 100.f);
         slope[i] = r.slope;
         offset[i] = r.offset;
         power[i] = r.power;
+        channel[i] = r.channel;
     }
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -208,6 +210,23 @@ BENCHFUN
             }
         };
 
+    const auto chan =
+        [=](float prev_l, float prev_a, float prev_b, float &l, float &a, float &b, int channel) -> void
+        {
+            if (channel >= 0) {
+                float prev_rgb[3];
+                float rgb[3];
+                float x, y, z;
+                Color::Lab2XYZ(l, a, b, x, y, z);
+                Color::xyz2rgb(x, y, z, rgb[0], rgb[1], rgb[2], iws);
+                Color::Lab2XYZ(prev_l, prev_a, prev_b, x, y, z);
+                Color::xyz2rgb(x, y, z, prev_rgb[0], prev_rgb[1], prev_rgb[2], iws);
+                prev_rgb[channel] = rgb[channel];
+                Color::rgbxyz(prev_rgb[0], prev_rgb[1], prev_rgb[2], x, y, z, ws);
+                Color::XYZ2Lab(x, y, z, l, a, b);
+            }
+        };
+
 #ifdef __SSE2__
     const auto CDL_v =
         [=](vfloat &l, vfloat &a, vfloat &b, float slope, float offset, float power) -> void
@@ -221,6 +240,31 @@ BENCHFUN
                 STVFU(bb[0], b);
                 for (int i = 0; i < 4; ++i) {
                     CDL(ll[i], aa[i], bb[i], slope, offset, power);
+                }
+                l = LVFU(ll[0]);
+                a = LVFU(aa[0]);
+                b = LVFU(bb[0]);
+            }
+        };
+
+    const auto chan_v =
+        [=](vfloat prev_l, vfloat prev_a, vfloat prev_b, vfloat &l, vfloat &a, vfloat &b, int channel) -> void
+        {
+            if (channel >= 0) {
+                float ll[4];
+                float aa[4];
+                float bb[4];
+                STVFU(ll[0], l);
+                STVFU(aa[0], a);
+                STVFU(bb[0], b);
+                float prev_ll[4];
+                float prev_aa[4];
+                float prev_bb[4];
+                STVFU(prev_ll[0], prev_l);
+                STVFU(prev_aa[0], prev_a);
+                STVFU(prev_bb[0], prev_b);
+                for (int i = 0; i < 4; ++i) {
+                    chan(prev_ll[i], prev_aa[i], prev_bb[i], ll[i], aa[i], bb[i], channel);
                 }
                 l = LVFU(ll[0]);
                 a = LVFU(aa[0]);
@@ -256,6 +300,7 @@ BENCHFUN
                     vfloat l_newv = lv;
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i]);
                     l_newv = vmaxf(l_newv, ZEROV);
+                    chan_v(lv, av, bv, l_newv, a_newv, b_newv, channel[i]);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
                     bv = vintpf(blendv, b_newv, bv);
@@ -278,6 +323,7 @@ BENCHFUN
                     float l_new = l;
                     CDL(l_new, a_new, b_new, slope[i], offset[i], power[i]);
                     l_new = max(l_new, 0.f);
+                    chan(l, a, b, l_new, a_new, b_new, channel[i]);
                     l = intp(Lmask[i][y][x], l_new, l);
                     a = intp(blend, a_new, a);
                     b = intp(blend, b_new, b);

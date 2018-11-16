@@ -69,6 +69,7 @@ private:
     void labRegionDownPressed();
     void labRegionCopyPressed();
     void labRegionShowMaskChanged();
+    void labRegionChannelChanged();
     void labRegionPopulateList();
     void labRegionShow(int idx, bool list_only=false);
     void labRegionGet(int idx);
@@ -139,6 +140,7 @@ private:
     rtengine::ProcEvent EvLabRegionLightnessMask;
     rtengine::ProcEvent EvLabRegionMaskBlur;
     rtengine::ProcEvent EvLabRegionShowMask;
+    rtengine::ProcEvent EvLabRegionChannel;
 
     Gtk::VBox *labRegionBox;
     Gtk::ListViewText *labRegionList;
@@ -152,6 +154,7 @@ private:
     Adjuster *labRegionSlope;
     Adjuster *labRegionOffset;
     Adjuster *labRegionPower;
+    MyComboBoxText *labRegionChannel;
     FlatCurveEditor *labRegionHueMask;
     FlatCurveEditor *labRegionChromaticityMask;
     FlatCurveEditor *labRegionLightnessMask;
