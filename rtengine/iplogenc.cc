@@ -237,10 +237,11 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     double tot = 0.0;
+    const float exp = pow_F(2.0, params->toneCurve.expcomp);
 
     for (int y = 0, h = fh / 10; y < h; ++y) {
         for (int x = 0, w = fw / 10; x < w; ++x) {
-            float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
+            float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws) * exp;
             if (l > 0.f) {
                 data.push_back(l);
                 tot += l;

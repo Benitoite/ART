@@ -881,12 +881,7 @@ void Crop::update(int todo)
     }*/
 
     // apply luminance operations
-    if (todo & (M_LUMINANCE + M_COLOR)) {
-        //I made a little change here. Rather than have luminanceCurve (and others) use in/out lab images, we can do more if we copy right here.
-        labnCrop->CopyFrom(laboCrop);
-
-
-        //parent->ipf.luminanceCurve (labnCrop, labnCrop, parent->lumacurve);
+    if (todo & M_LUMACURVE) {
         bool utili = parent->utili;
         bool autili = parent->autili;
         bool butili = parent->butili;
@@ -895,12 +890,16 @@ void Crop::update(int todo)
         bool cclutili = parent->cclutili;
 
         LUTu dummy;
-        //    parent->ipf.MSR(labnCrop, labnCrop->W, labnCrop->H, 1);
-        parent->ipf.chromiLuminanceCurve(this, 1, labnCrop, labnCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
-        parent->ipf.vibrance(labnCrop);
-        parent->ipf.labColorCorrectionRegions(labnCrop);
-        parent->ipf.logEncoding(labnCrop);
+        parent->ipf.chromiLuminanceCurve(this, 1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+        parent->ipf.vibrance(laboCrop);
+        parent->ipf.labColorCorrectionRegions(laboCrop);
+    }
+    
+    if (todo & (M_LUMINANCE | M_COLOR)) {
+        labnCrop->CopyFrom(laboCrop);
 
+        parent->ipf.logEncoding(labnCrop);
+        
         if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
             parent->ipf.EPDToneMap(labnCrop, 5, skip);
         }
@@ -1008,7 +1007,6 @@ void Crop::update(int todo)
             WavOpacityCurveW waOpacityCurveW;
             WavOpacityCurveWL waOpacityCurveWL;
             LUTf wavclCurve;
-            LUTu dummy;
 
             params.wavelet.getCurves(wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL);
 
@@ -1049,6 +1047,7 @@ void Crop::update(int todo)
             }
 
             float d, dj, yb; // not used after this block
+            LUTu dummy;
             parent->ipf.ciecam_02float(cieCrop, float (adap), 1, 2, labnCrop, &params, parent->customColCurve1, parent->customColCurve2, parent->customColCurve3,
                                        dummy, dummy, parent->CAMBrightCurveJ, parent->CAMBrightCurveQ, parent->CAMMean, 5, skip, execsharp, d, dj, yb, 1, parent->sharpMask);
         } else {

@@ -557,6 +557,12 @@ int RefreshMapper::getAction(ProcEvent event) const
 }
 
 
+void RefreshMapper::setAction(ProcEvent event, int action)
+{
+    mapEvent(event, action);
+}
+
+
 RefreshMapper *RefreshMapper::getInstance()
 {
     static RefreshMapper instance;

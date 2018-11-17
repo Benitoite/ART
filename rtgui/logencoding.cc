@@ -31,10 +31,10 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     EvEnabled = m->newEvent(RGBCURVE | M_AUTOEXP, "HISTORY_MSG_LOGENC_ENABLED");
     EvAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTO");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
-    EvGrayPoint = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_GRAY_POINT");
-    EvBlackEv = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_BLACK_EV");
-    EvWhiteEv = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_WHITE_EV");
-    EvBase = m->newEvent(RGBCURVE, "HISTORY_MSG_LOGENC_BASE");
+    EvGrayPoint = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvBlackEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BLACK_EV");
+    EvWhiteEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_WHITE_EV");
+    EvBase = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BASE");
 
     autocompute = Gtk::manage(new Gtk::ToggleButton(M("TP_LOGENC_AUTO")));
     autoconn = autocompute->signal_toggled().connect(sigc::mem_fun(*this, &LogEncoding::autocomputeToggled));

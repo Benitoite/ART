@@ -206,6 +206,13 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
     shcompr->setAdjusterListener (this);
     contrast->setAdjusterListener (this);
     saturation->setAdjusterListener (this);
+
+    EvLogBrightness = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvBrightness));
+    EvLogContrast = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvContrast));
+    EvLogSaturation = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvSaturation));
+    EvLogToneCurve1 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurve1));
+    EvLogToneCurve2 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurve2));
+    logenc = false;
 }
 
 ToneCurve::~ToneCurve ()
@@ -314,6 +321,8 @@ void ToneCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
     tcmodeconn.block(false);
 
     enableListener ();
+
+    logenc = !batchMode && pp->logenc.enabled;
 }
 
 void ToneCurve::autoOpenCurve  ()
@@ -528,9 +537,9 @@ void ToneCurve::curveChanged (CurveEditor* ce)
     if (listener) {
         setHistmatching(false);
         if (ce == shape) {
-            listener->panelChanged (EvToneCurve1, M("HISTORY_CUSTOMCURVE"));
+            listener->panelChanged (logenc ? EvLogToneCurve1 : EvToneCurve1, M("HISTORY_CUSTOMCURVE"));
         } else if (ce == shape2) {
-            listener->panelChanged (EvToneCurve2, M("HISTORY_CUSTOMCURVE"));
+            listener->panelChanged (logenc ? EvLogToneCurve2 : EvToneCurve2, M("HISTORY_CUSTOMCURVE"));
         }
     }
 }
@@ -616,7 +625,7 @@ void ToneCurve::adjusterChanged(Adjuster* a, double newval)
     if (a == expcomp) {
         listener->panelChanged (EvExpComp, costr);
     } else if (a == brightness) {
-        listener->panelChanged (EvBrightness, costr);
+        listener->panelChanged (logenc ? EvLogBrightness : EvBrightness, costr);
     } else if (a == black) {
         listener->panelChanged (EvBlack, costr);
 
@@ -624,9 +633,9 @@ void ToneCurve::adjusterChanged(Adjuster* a, double newval)
             shcompr->set_sensitive(!((int)black->getValue () == 0));    //at black=0 shcompr value has no effect
         }
     } else if (a == contrast) {
-        listener->panelChanged (EvContrast, costr);
+        listener->panelChanged (logenc ? EvLogContrast : EvContrast, costr);
     } else if (a == saturation) {
-        listener->panelChanged (EvSaturation, costr);
+        listener->panelChanged (logenc ? EvLogSaturation : EvSaturation, costr);
     } else if (a == hlcompr) {
         listener->panelChanged (EvHLCompr, costr);
         
@@ -893,6 +902,8 @@ void ToneCurve::setBatchMode (bool batchMode)
 
     curveEditorG->setBatchMode (batchMode);
     curveEditorG2->setBatchMode (batchMode);
+
+    logenc = false;
 }
 
 void ToneCurve::setAdjusterBehavior (bool expadd, bool hlcompadd, bool hlcompthreshadd, bool bradd, bool blackadd, bool shcompadd, bool contradd, bool satadd)

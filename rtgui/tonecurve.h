@@ -72,6 +72,13 @@ protected:
     rtengine::ProcEvent EvHistMatching;
     rtengine::ProcEvent EvHistMatchingBatch;
     rtengine::ProcEvent EvClampOOG;
+
+    rtengine::ProcEvent EvLogBrightness;
+    rtengine::ProcEvent EvLogContrast;
+    rtengine::ProcEvent EvLogSaturation;
+    rtengine::ProcEvent EvLogToneCurve1;
+    rtengine::ProcEvent EvLogToneCurve2;
+    bool logenc;
     
     // used temporarily in eventing
     double nextExpcomp;

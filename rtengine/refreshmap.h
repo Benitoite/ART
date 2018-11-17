@@ -60,7 +60,7 @@
 #define TRANSFORM                                                  (M_TRANSFORM|M_BLURMAP|M_AUTOEXP|M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define AUTOEXP                                                                    (M_HDR|M_AUTOEXP|M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define RGBCURVE                                                                                   (M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
-#define LUMINANCECURVE                                                                                        (M_LUMACURVE|M_LUMINANCE|M_COLOR)
+#define LUMINANCECURVE RGBCURVE //                                                                                        (M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define SHARPENING                                                                                                        (M_LUMINANCE|M_COLOR)
 #define IMPULSEDENOISE                                                                                                    (M_LUMINANCE|M_COLOR)
 #define DEFRINGE                                                                                                          (M_LUMINANCE|M_COLOR)
@@ -86,6 +86,7 @@ public:
     ProcEvent newEvent();
     void mapEvent(ProcEvent event, int action);
     int getAction(ProcEvent event) const;
+    void setAction(ProcEvent event, int action);
     
 private:
     RefreshMapper();

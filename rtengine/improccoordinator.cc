@@ -725,16 +725,18 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                                           params.labCurve.lccurve, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, scale == 1 ? 1 : 16);
         }
     
-        if (todo & (M_LUMINANCE + M_COLOR)) {
-            nprevl->CopyFrom(oprevl);
-    
+        if (todo & M_LUMACURVE) {
             progress("Applying Color Boost...", 100 * readyphase / numofphases);
-            //   ipf.MSR(nprevl, nprevl->W, nprevl->H, 1);
             histCCurve.clear();
             histLCurve.clear();
-            ipf.chromiLuminanceCurve(nullptr, pW, nprevl, nprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
-            ipf.vibrance(nprevl);
-            ipf.labColorCorrectionRegions(nprevl);
+            ipf.chromiLuminanceCurve(nullptr, pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
+            ipf.vibrance(oprevl);
+            ipf.labColorCorrectionRegions(oprevl);
+        }
+
+        if (todo & (M_LUMINANCE | M_COLOR)) {
+            nprevl->CopyFrom(oprevl);
+    
             ipf.logEncoding(nprevl);
     
             if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
