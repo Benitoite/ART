@@ -45,6 +45,11 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     base = Gtk::manage(new Adjuster(M("TP_LOGENC_BASE"), 0.0, 100.0, 0.1, 3.9));
     base->setLogScale(10, 0);
 
+    grayPoint->delay = options.adjusterMaxDelay;
+    blackEv->delay = options.adjusterMaxDelay;
+    whiteEv->delay = options.adjusterMaxDelay;
+    base->delay = options.adjusterMaxDelay;
+    
     whiteEv->setAdjusterListener(this);
     grayPoint->setAdjusterListener(this);
     blackEv->setAdjusterListener(this);
