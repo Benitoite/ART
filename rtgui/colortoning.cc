@@ -483,6 +483,12 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionBox->pack_start(*labRegionShowMask, Gtk::PACK_SHRINK, 4);
 
     pack_start(*labRegionBox, Gtk::PACK_EXPAND_WIDGET, 4);
+
+    labRegionSaturation->delay = options.adjusterMaxDelay;
+    labRegionSlope->delay = options.adjusterMaxDelay;
+    labRegionOffset->delay = options.adjusterMaxDelay;
+    labRegionPower->delay = options.adjusterMaxDelay;
+    labRegionMaskBlur->delay = options.adjusterMaxDelay;
     //------------------------------------------------------------------------
     
     show_all();
