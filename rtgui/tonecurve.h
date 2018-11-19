@@ -78,6 +78,8 @@ protected:
     rtengine::ProcEvent EvLogSaturation;
     rtengine::ProcEvent EvLogToneCurve1;
     rtengine::ProcEvent EvLogToneCurve2;
+    rtengine::ProcEvent EvLogToneCurveMode1;
+    rtengine::ProcEvent EvLogToneCurveMode2;
     bool logenc;
     
     // used temporarily in eventing

@@ -212,6 +212,8 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
     EvLogSaturation = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvSaturation));
     EvLogToneCurve1 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurve1));
     EvLogToneCurve2 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurve2));
+    EvLogToneCurveMode1 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurveMode1));
+    EvLogToneCurveMode2 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurveMode2));
     logenc = false;
 }
 
@@ -556,7 +558,7 @@ void ToneCurve::curveMode1Changed ()
 bool ToneCurve::curveMode1Changed_ ()
 {
     if (listener) {
-        listener->panelChanged (EvToneCurveMode1, toneCurveMode->get_active_text());
+        listener->panelChanged(logenc ? EvLogToneCurveMode1 : EvToneCurveMode1, toneCurveMode->get_active_text());
     }
 
     return false;
@@ -574,7 +576,7 @@ void ToneCurve::curveMode2Changed ()
 bool ToneCurve::curveMode2Changed_ ()
 {
     if (listener) {
-        listener->panelChanged (EvToneCurveMode2, toneCurveMode2->get_active_text());
+        listener->panelChanged(logenc ? EvLogToneCurveMode2 : EvToneCurveMode2, toneCurveMode2->get_active_text());
     }
 
     return false;
