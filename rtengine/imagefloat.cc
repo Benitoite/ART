@@ -108,7 +108,7 @@ void Imagefloat::setScanline (int row, unsigned char* buffer, int bps, unsigned 
 }
 
 
-void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFloat)
+void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFloat) const
 {
 
     if (data == nullptr) {
@@ -157,7 +157,7 @@ void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFl
     }
 }
 
-Imagefloat* Imagefloat::copy ()
+Imagefloat* Imagefloat::copy () const
 {
 
     Imagefloat* cp = new Imagefloat (width, height);
@@ -166,7 +166,7 @@ Imagefloat* Imagefloat::copy ()
 }
 
 // This is called by the StdImageSource class. We assume that fp images from StdImageSource don't have to deal with gamma
-void Imagefloat::getStdImage (ColorTemp ctemp, int tran, Imagefloat* image, PreviewProps pp)
+void Imagefloat::getStdImage (const ColorTemp &ctemp, int tran, Imagefloat* image, PreviewProps pp) const
 {
 
     // compute channel multipliers
@@ -328,7 +328,7 @@ void Imagefloat::getStdImage (ColorTemp ctemp, int tran, Imagefloat* image, Prev
 }
 
 Image8*
-Imagefloat::to8()
+Imagefloat::to8() const
 {
     Image8* img8 = new Image8(width, height);
 #ifdef _OPENMP
@@ -347,7 +347,7 @@ Imagefloat::to8()
 }
 
 Image16*
-Imagefloat::to16()
+Imagefloat::to16() const
 {
     Image16* img16 = new Image16(width, height);
 #ifdef _OPENMP
