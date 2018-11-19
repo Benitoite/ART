@@ -195,15 +195,21 @@ BENCHFUN
     TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
 
     const auto CDL =
-        [=](float &l, float &a, float &b, float slope, float offset, float power) -> void
+        [=](float &l, float &a, float &b, float slope, float offset, float power, float saturation) -> void
         {
-            if (slope != 1.f || offset != 0.f || power != 1.f) {
+            if (slope != 1.f || offset != 0.f || power != 1.f || saturation != 1.f) {
                 float rgb[3];
                 float x, y, z;
                 Color::Lab2XYZ(l, a, b, x, y, z);
                 Color::xyz2rgb(x, y, z, rgb[0], rgb[1], rgb[2], iws);
                 for (int i = 0; i < 3; ++i) {
-                    rgb[i] = /*LIM01*/(pow_F(max((rgb[i] / 65535.f) * slope + offset, 0.f), power)) * 65535.f;
+                    rgb[i] = (pow_F(max((rgb[i] / 65535.f) * slope + offset, 0.f), power)) * 65535.f;
+                }
+                if (saturation != 1.f) {
+                    float Y = Color::rgbLuminance(rgb[0], rgb[1], rgb[2], ws);
+                    for (int i = 0; i < 3; ++i) {
+                        rgb[i] = max(Y + saturation * (rgb[i] - Y), 0.f);
+                    }
                 }
                 Color::rgbxyz(rgb[0], rgb[1], rgb[2], x, y, z, ws);
                 Color::XYZ2Lab(x, y, z, l, a, b);
@@ -229,9 +235,9 @@ BENCHFUN
 
 #ifdef __SSE2__
     const auto CDL_v =
-        [=](vfloat &l, vfloat &a, vfloat &b, float slope, float offset, float power) -> void
+        [=](vfloat &l, vfloat &a, vfloat &b, float slope, float offset, float power, float saturation) -> void
         {
-            if (slope != 1.f || offset != 0.f || power != 1.f) {
+            if (slope != 1.f || offset != 0.f || power != 1.f || saturation != 1.f) {
                 float ll[4];
                 float aa[4];
                 float bb[4];
@@ -239,7 +245,7 @@ BENCHFUN
                 STVFU(aa[0], a);
                 STVFU(bb[0], b);
                 for (int i = 0; i < 4; ++i) {
-                    CDL(ll[i], aa[i], bb[i], slope, offset, power);
+                    CDL(ll[i], aa[i], bb[i], slope, offset, power, saturation);
                 }
                 l = LVFU(ll[0]);
                 a = LVFU(aa[0]);
@@ -294,14 +300,11 @@ BENCHFUN
 
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
-                    vfloat sv = F2V(rs[i]);
                     vfloat l_newv = lv;
-                    vfloat a_newv = av;
-                    vfloat b_newv = bv;
-                    CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i]);
+                    vfloat a_newv = vclampf(av + F2V(abca[i]), cm42000v, c42000v);
+                    vfloat b_newv = vclampf(bv + F2V(abcb[i]), cm42000v, c42000v);
+                    CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i], rs[i]);
                     l_newv = vmaxf(l_newv, ZEROV);
-                    a_newv = vclampf(sv * (a_newv + F2V(abca[i])), cm42000v, c42000v);
-                    b_newv = vclampf(sv * (b_newv + F2V(abcb[i])), cm42000v, c42000v);
                     chan_v(lv, av, bv, l_newv, a_newv, b_newv, channel[i]);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
@@ -319,14 +322,11 @@ BENCHFUN
 
                 for (int i = 0; i < n; ++i) {
                     float blend = abmask[i][y][x];
-                    float s = rs[i];
                     float l_new = l;
-                    float a_new = a;
-                    float b_new = b;
-                    CDL(l_new, a_new, b_new, slope[i], offset[i], power[i]);
+                    float a_new = LIM(a + abca[i], -42000.f, 42000.f);
+                    float b_new = LIM(b + abcb[i], -42000.f, 42000.f);
+                    CDL(l_new, a_new, b_new, slope[i], offset[i], power[i], rs[i]);
                     l_new = max(l_new, 0.f);
-                    a_new = LIM(s * (a_new + abca[i]), -42000.f, 42000.f);
-                    b_new = LIM(s * (b_new + abcb[i]), -42000.f, 42000.f);
                     chan(l, a, b, l_new, a_new, b_new, channel[i]);
                     l = intp(Lmask[i][y][x], l_new, l);
                     a = intp(blend, a_new, a);
