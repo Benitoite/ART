@@ -1330,10 +1330,10 @@ void CLASS nikon_load_raw()
     if (ver0 == 0x46) tree = 2;
     if (tiff_bps == 14) tree += 3;
     read_shorts (vpred[0], 4);
-    max = 1 << tiff_bps & 0x7fff;
+    max = 1 << (tiff_bps - (ver0 == 0x44 && ver1 == 0x40 ? 2 : 0)) & 0x7fff;
     if ((csize = get2()) > 1)
         step = max / (csize-1);
-    if (ver0 == 0x44 && ver1 == 0x20 && step > 0) {
+    if (ver0 == 0x44 && (ver1 == 0x20 || ver1 == 0x40) && step > 0) {
         for (int i=0; i < csize; i++)
             curve[i*step] = get2();
         for (int i=0; i < max; i++)
