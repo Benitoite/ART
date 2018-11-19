@@ -236,15 +236,12 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     data.reserve(fw/10 * fh/10 * 2);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    double tot = 0.0;
-    const float exp = pow_F(2.0, params->toneCurve.expcomp);
 
     for (int y = 0, h = fh / 10; y < h; ++y) {
         for (int x = 0, w = fw / 10; x < w; ++x) {
-            float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws) * exp;
+            float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
             if (l > 0.f) {
                 data.push_back(l);
-                tot += l;
             }
         }
     }
@@ -257,7 +254,6 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     
     float vmin = data[0];
     float vmax = data[n-1];
-    float vmid = tot / n;
 
     constexpr float dr_headroom = 1.f;
     constexpr float black_headroom = 0.5f;
@@ -265,7 +261,6 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
         const float noise = pow_F(2.f, -16.f);
-        lparams.grayPoint = int(vmid / 65535.f * 100.f);
         const float gray = float(lparams.grayPoint) / 100.f;
         vmin = max(vmin / vmax, noise);
         float lmin = xlogf(vmin) / log2;

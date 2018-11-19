@@ -36,6 +36,7 @@ protected:
     rtengine::ProcEvent EvAuto;
     rtengine::ProcEvent EvAutoBatch;
     rtengine::ProcEvent EvGrayPoint;
+    rtengine::ProcEvent EvGrayPointAuto;
     rtengine::ProcEvent EvBlackEv;
     rtengine::ProcEvent EvWhiteEv;
     rtengine::ProcEvent EvBase;

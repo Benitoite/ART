@@ -32,6 +32,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     EvAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTO");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
     EvGrayPoint = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvGrayPointAuto = m->newEvent(M_LUMINANCE | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
     EvBlackEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BLACK_EV");
     EvWhiteEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_WHITE_EV");
     EvBase = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BASE");
@@ -55,14 +56,14 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     blackEv->setAdjusterListener(this);
     base->setAdjusterListener(this);
 
+    grayPoint->show();
     autocompute->show();
     whiteEv->show();
-    grayPoint->show();
     blackEv->show();
     base->show();
 
-    pack_start(*autocompute);
     pack_start(*grayPoint);
+    pack_start(*autocompute);
     pack_start(*blackEv);
     pack_start(*whiteEv);
     pack_start(*base);
@@ -136,11 +137,13 @@ void LogEncoding::setDefaults(const ProcParams *defParams, const ParamsEdited *p
 void LogEncoding::adjusterChanged(Adjuster* a, double newval)
 {
     ConnectionBlocker cbl(autoconn);
-    autocompute->set_active(false);
+    if (a != grayPoint) {
+        autocompute->set_active(false);
+    }
     
     if (listener && getEnabled()) {
         if (a == grayPoint) {
-            listener->panelChanged(EvGrayPoint, a->getTextValue());
+            listener->panelChanged(autocompute->get_active() ? EvGrayPointAuto : EvGrayPoint, a->getTextValue());
         } else if (a == blackEv) {
             listener->panelChanged(EvBlackEv, a->getTextValue());
         } else if (a == whiteEv) {
