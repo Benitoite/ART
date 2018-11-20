@@ -170,7 +170,7 @@ BENCHFUN
     const auto abcoord =
         [](float x) -> float
         {
-            return 12000.f * SGN(x) * xlog2lin(std::abs(x), 4.f);
+            return /*12000.f **/ SGN(x) * xlog2lin(std::abs(x), 4.f);
         };
 
     float abca[n];
@@ -301,8 +301,8 @@ BENCHFUN
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
                     vfloat l_newv = lv;
-                    vfloat a_newv = vclampf(av + F2V(abca[i]), cm42000v, c42000v);
-                    vfloat b_newv = vclampf(bv + F2V(abcb[i]), cm42000v, c42000v);
+                    vfloat a_newv = vclampf(av + lv * F2V(abca[i]), cm42000v, c42000v);
+                    vfloat b_newv = vclampf(bv + lv * F2V(abcb[i]), cm42000v, c42000v);
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i], rs[i]);
                     l_newv = vmaxf(l_newv, ZEROV);
                     chan_v(lv, av, bv, l_newv, a_newv, b_newv, channel[i]);
@@ -323,8 +323,8 @@ BENCHFUN
                 for (int i = 0; i < n; ++i) {
                     float blend = abmask[i][y][x];
                     float l_new = l;
-                    float a_new = LIM(a + abca[i], -42000.f, 42000.f);
-                    float b_new = LIM(b + abcb[i], -42000.f, 42000.f);
+                    float a_new = LIM(a + l * abca[i], -42000.f, 42000.f);
+                    float b_new = LIM(b + l * abcb[i], -42000.f, 42000.f);
                     CDL(l_new, a_new, b_new, slope[i], offset[i], power[i], rs[i]);
                     l_new = max(l_new, 0.f);
                     chan(l, a, b, l_new, a_new, b_new, channel[i]);
