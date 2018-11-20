@@ -2156,7 +2156,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
 
     // adjust parameters if logEncoding is enabled
     if (params->logenc.enabled) {
-        tonecurve.makeIdentity();
+        //tonecurve.makeIdentity();
         hasToneCurve1 = false;
         hasToneCurve2 = false;
         sat = false;
@@ -2449,10 +2449,12 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                             int y = CLIP<int> (lumimulf[0] * Color::gamma2curve[rtemp[ti * TS + tj]] + lumimulf[1] * Color::gamma2curve[gtemp[ti * TS + tj]] + lumimulf[2] * Color::gamma2curve[btemp[ti * TS + tj]]);
                             histToneCurveThr[y >> histToneCurveCompression]++;
 
-                            setUnlessOOG(rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], r, g, b);
+                            if (!params->logenc.enabled) {
+                                setUnlessOOG(rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], r, g, b);
+                            }
                         }
                     }
-                } else {
+                } else if (!params->logenc.enabled) {
                     float tmpr[4] ALIGNED16;
                     float tmpg[4] ALIGNED16;
                     float tmpb[4] ALIGNED16;
