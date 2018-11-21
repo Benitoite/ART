@@ -288,6 +288,15 @@ void ImProcFunctions::logEncoding(LabImage *lab)
 
     log_encode(&working, params, multiThread);
 
+    if (dcpProf && dcpApplyState) {
+        for (int y = 0; y < lab->H; ++y) {
+            float *r = working.r.ptrs[y];
+            float *g = working.g.ptrs[y];
+            float *b = working.b.ptrs[y];
+            dcpProf->step2ApplyTile(r, g, b, lab->W, 1, 1, *dcpApplyState);
+        }
+    }    
+
     ToneCurve tc;
     const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
 

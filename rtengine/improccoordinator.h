@@ -71,6 +71,7 @@ protected:
     double lastAwbTempBias;
 
     ImProcFunctions ipf;
+    DCPProfile::ApplyState dcpApplyState;
 
     Glib::ustring monitorProfile;
     RenderingIntent monitorIntent;

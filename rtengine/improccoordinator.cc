@@ -147,6 +147,9 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     int numofphases = 14;
     int readyphase = 0;
 
+    DCPProfile *dcpProf = imgsrc->getDCP(params.icm, dcpApplyState);
+    ipf.setDCPProfile(dcpProf, dcpApplyState);
+
     bwAutoR = bwAutoG = bwAutoB = -9000.f;
 
     if (todo == CROP && ipf.needsPCVignetting()) {
@@ -562,7 +565,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             }
         }
     
-    
         if ((todo & M_RGBCURVE) || (todo & M_CROP)) {
     //        if (hListener) oprevi->calcCroppedHistogram(params, scale, histCropped);
     
@@ -658,11 +660,12 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 double ggm = 33.;
                 double bbm = 33.;
     
-                DCPProfile::ApplyState as;
-                DCPProfile *dcpProf = imgsrc->getDCP(params.icm, as);
+                // DCPProfile::ApplyState as;
+                // DCPProfile *dcpProf = imgsrc->getDCP(params.icm, as);
+                // ipf.setDCPProfile(dcpProf, as);
     
                 ipf.rgbProc (oprevi, oprevl, nullptr, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
-                            rCurve, gCurve, bCurve, colourToningSatLimit, colourToningSatLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, beforeToneCurveBW, afterToneCurveBW, rrm, ggm, bbm, bwAutoR, bwAutoG, bwAutoB, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, dcpProf, as, histToneCurve);
+                            rCurve, gCurve, bCurve, colourToningSatLimit, colourToningSatLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, beforeToneCurveBW, afterToneCurveBW, rrm, ggm, bbm, bwAutoR, bwAutoG, bwAutoB, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, histToneCurve);
     
                 if (params.blackwhite.enabled && params.blackwhite.autoc && abwListener) {
                     if (settings->verbose) {
