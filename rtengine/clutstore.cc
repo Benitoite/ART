@@ -335,3 +335,178 @@ rtengine::CLUTStore::CLUTStore() :
     cache(options.clutCacheSize)
 {
 }
+
+
+//-----------------------------------------------------------------------------
+// HaldCLUTApplication
+//-----------------------------------------------------------------------------
+
+namespace rtengine {
+
+HaldCLUTApplication::HaldCLUTApplication(const Glib::ustring &clut_filename, const Glib::ustring &working_profile):
+    clut_filename_(clut_filename),
+    working_profile_(working_profile),
+    ok_(false),
+    clut_and_working_profiles_are_same_(false),
+    TS_(0),
+    strength_(0)
+{
+}
+
+
+void HaldCLUTApplication::init(float strength, int tile_size)
+{
+    hald_clut_ = CLUTStore::getInstance().getClut(clut_filename_);
+    if (!hald_clut_) {
+        ok_ = false;
+        return;
+    }
+
+    strength_ = strength;
+    TS_ = tile_size;
+
+    clut_and_working_profiles_are_same_ = hald_clut_->getProfile() == working_profile_;
+
+    if (!clut_and_working_profiles_are_same_) {
+        wprof_ = ICCStore::getInstance()->workingSpaceMatrix(working_profile_);
+        wiprof_ = ICCStore::getInstance()->workingSpaceInverseMatrix(working_profile_);
+        
+        xyz2clut_ = ICCStore::getInstance()->workingSpaceInverseMatrix(hald_clut_->getProfile());
+        clut2xyz_ = ICCStore::getInstance()->workingSpaceMatrix(hald_clut_->getProfile());
+
+#ifdef __SSE2__
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                v_work2xyz_[i][j] = F2V(wprof_[i][j]);
+                v_xyz2clut_[i][j] = F2V(xyz2clut_[i][j]);
+                v_xyz2work_[i][j] = F2V(wiprof_[i][j]);
+                v_clut2xyz_[i][j] = F2V(clut2xyz_[i][j]);
+            }
+        }
+#endif
+    }
+
+    ok_ = true;
+}
+
+
+void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, int jstart, int tW, int tH)
+{
+    if (!ok_) {
+        return;
+    }
+
+    float out_rgbx[4 * TS_] ALIGNED16; // Line buffer for CLUT
+    float clutr[TS_] ALIGNED16;
+    float clutg[TS_] ALIGNED16;
+    float clutb[TS_] ALIGNED16;
+    
+    for (int i = istart, ti = 0; i < tH; i++, ti++) {
+        std::cout << "HERE: " << i << std::endl;
+        
+        if (!clut_and_working_profiles_are_same_) {
+            // Convert from working to clut profile
+            int j = jstart;
+            int tj = 0;
+
+#ifdef __SSE2__
+            for (; j < tW - 3; j += 4, tj += 4) {
+                vfloat sourceR = LVF(r[ti * TS_ + tj]);
+                vfloat sourceG = LVF(g[ti * TS_ + tj]);
+                vfloat sourceB = LVF(b[ti * TS_ + tj]);
+
+                vfloat x;
+                vfloat y;
+                vfloat z;
+                Color::rgbxyz(sourceR, sourceG, sourceB, x, y, z, v_work2xyz_);
+                Color::xyz2rgb(x, y, z, sourceR, sourceG, sourceB, v_xyz2clut_);
+
+                STVF(clutr[tj], sourceR);
+                STVF(clutg[tj], sourceG);
+                STVF(clutb[tj], sourceB);
+            }
+
+#endif
+
+            for (; j < tW; j++, tj++) {
+                float sourceR = r[ti * TS_ + tj];
+                float sourceG = g[ti * TS_ + tj];
+                float sourceB = b[ti * TS_ + tj];
+
+                float x, y, z;
+                Color::rgbxyz(sourceR, sourceG, sourceB, x, y, z, wprof_);
+                Color::xyz2rgb(x, y, z, clutr[tj], clutg[tj], clutb[tj], xyz2clut_);
+            }
+        } else {
+            memcpy(clutr, &r[ti * TS_], sizeof(float) * TS_);
+            memcpy(clutg, &g[ti * TS_], sizeof(float) * TS_);
+            memcpy(clutb, &b[ti * TS_], sizeof(float) * TS_);
+        }
+
+        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+            float &sourceR = clutr[tj];
+            float &sourceG = clutg[tj];
+            float &sourceB = clutb[tj];
+
+            // Apply gamma sRGB (default RT)
+            sourceR = Color::gamma_srgbclipped(sourceR);
+            sourceG = Color::gamma_srgbclipped(sourceG);
+            sourceB = Color::gamma_srgbclipped(sourceB);
+        }
+
+        hald_clut_->getRGB(strength_, std::min(TS_, tW - jstart), clutr, clutg, clutb, out_rgbx);
+
+        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+            float &sourceR = clutr[tj];
+            float &sourceG = clutg[tj];
+            float &sourceB = clutb[tj];
+
+            // Apply inverse gamma sRGB
+            sourceR = Color::igamma_srgb(out_rgbx[tj * 4 + 0]);
+            sourceG = Color::igamma_srgb(out_rgbx[tj * 4 + 1]);
+            sourceB = Color::igamma_srgb(out_rgbx[tj * 4 + 2]);
+        }
+
+        if (!clut_and_working_profiles_are_same_) {
+            // Convert from clut to working profile
+            int j = jstart;
+            int tj = 0;
+
+#ifdef __SSE2__
+
+            for (; j < tW - 3; j += 4, tj += 4) {
+                vfloat sourceR = LVF(clutr[tj]);
+                vfloat sourceG = LVF(clutg[tj]);
+                vfloat sourceB = LVF(clutb[tj]);
+
+                vfloat x;
+                vfloat y;
+                vfloat z;
+                Color::rgbxyz(sourceR, sourceG, sourceB, x, y, z, v_clut2xyz_);
+                Color::xyz2rgb(x, y, z, sourceR, sourceG, sourceB, v_xyz2work_);
+
+                STVF(clutr[tj], sourceR);
+                STVF(clutg[tj], sourceG);
+                STVF(clutb[tj], sourceB);
+            }
+
+#endif
+
+            for (; j < tW; j++, tj++) {
+                float &sourceR = clutr[tj];
+                float &sourceG = clutg[tj];
+                float &sourceB = clutb[tj];
+
+                float x, y, z;
+                Color::rgbxyz(sourceR, sourceG, sourceB, x, y, z, clut2xyz_);
+                Color::xyz2rgb(x, y, z, sourceR, sourceG, sourceB, wiprof_);
+            }
+        }
+
+        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+            setUnlessOOG(r[ti * TS_ + tj], g[ti * TS_ + tj], b[ti * TS_ + tj], clutr[tj], clutg[tj], clutb[tj]);
+        }
+    }
+}
+
+} // namespace rtengine

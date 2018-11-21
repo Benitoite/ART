@@ -27,6 +27,7 @@
 #include "imagesource.h"
 #include "rt_algo.h"
 #include "curves.h"
+#include "clutstore.h"
 
 namespace rtengine {
 
@@ -295,7 +296,29 @@ void ImProcFunctions::logEncoding(LabImage *lab)
             float *b = working.b.ptrs[y];
             dcpProf->step2ApplyTile(r, g, b, lab->W, 1, 1, *dcpApplyState);
         }
-    }    
+    }
+
+    HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
+    if (params->filmSimulation.enabled) {
+        constexpr int TS = 112;
+        hald_clut.init(float(params->filmSimulation.strength)/100.f, TS);
+
+        if (hald_clut) {
+#ifdef _OPENMP
+            #pragma omp parallel for if (multiThread)
+#endif
+            for (int y = 0; y < working.getHeight(); ++y) {
+                for (int jj = 0; jj < working.getWidth(); jj += TS) {
+                    int jstart = jj;
+                    float *r = working.r.ptrs[y]+jstart;
+                    float *g = working.g.ptrs[y]+jstart;
+                    float *b = working.b.ptrs[y]+jstart;
+                    int tW = min(jj + TS, working.getWidth());
+                    hald_clut(r, g, b, 0, jstart, tW, 1);
+                }
+            }
+        }
+    }
 
     ToneCurve tc;
     const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
