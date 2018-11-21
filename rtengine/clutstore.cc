@@ -402,8 +402,6 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
     float clutb[TS_] ALIGNED16;
     
     for (int i = istart, ti = 0; i < tH; i++, ti++) {
-        std::cout << "HERE: " << i << std::endl;
-        
         if (!clut_and_working_profiles_are_same_) {
             // Convert from working to clut profile
             int j = jstart;
