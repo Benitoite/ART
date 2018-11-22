@@ -109,10 +109,9 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                // float l, a, b;
-                float rr = R[y][x]; // * 65535.f;
-                float gg = G[y][x]; // * 65535.f;
-                float bb = B[y][x]; // * 65535.f;
+                float rr = R[y][x];
+                float gg = G[y][x];
+                float bb = B[y][x];
                 float ir = iR[y][x];
                 float ig = iG[y][x];
                 float ib = iB[y][x];
@@ -125,12 +124,6 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                 R[y][x] = oY + rr;
                 G[y][x] = oY + gg;
                 B[y][x] = oY + bb;
-                // Color::filmlike_clip(&rr, &gg, &bb);
-                // rgb2lab(rr, gg, bb, l, a, b, ws);
-                // lab2rgb(intp(l_blend, l, lab->L[y][x]), intp(ab_blend, a, lab->a[y][x]), intp(ab_blend, b, lab->b[y][x]), rr, gg, bb, iws);
-                // R[y][x] = rr / 65535.f;
-                // G[y][x] = gg / 65535.f;
-                // B[y][x] = bb / 65535.f;
             }
         }
     }
@@ -151,15 +144,13 @@ void guided_decomposition(array2D<float> &R, array2D<float> &G, array2D<float> &
                 float y = baseCurve1.getVal(x);
                 y = (std::pow(base, y) - 1.0f) / (base - 1.0f);
                 x = y;
-                // x = std::log(x * (base - 1.0f) + 1.0f) / std::log(base);
                 y = baseCurve2.getVal(x);
-                // y = (std::pow(base, y) - 1.0f) / (base - 1.0f);                
                 curve[i] = y * 65535.f;
             }
         }
 
-        const int W = R.width();//lab->W;
-        const int H = R.height();//lab->H;
+        const int W = R.width();
+        const int H = R.height();
         array2D<float> tmp(W, H);
         
         const int r = max(int(gf.decompRadius / scale), 1);

@@ -26,172 +26,279 @@
 
 namespace rtengine {
 
-void ImProcFunctions::shadowsHighlights(LabImage *lab)
+namespace {
+
+inline void rgb2lab(float R, float G, float B, float &l, float &a, float &b, const TMatrix &ws)
 {
-    if (!params->sh.enabled || (!params->sh.highlights && !params->sh.shadows)){
-        return;
+    float x, y, z;
+    Color::rgbxyz(R, G, B, x, y, z, ws);
+    Color::XYZ2Lab(x, y, z, l, a, b);
+}
+
+
+inline void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const TMatrix &iws)
+{
+    float x, y, z;
+    Color::Lab2XYZ(l, a, b, x, y, z);
+    Color::xyz2rgb(x, y, z, R, G, B, iws);
+}
+
+
+class LabImageAdapter {
+public:
+    LabImageAdapter(LabImage *img, const Glib::ustring &working_profile):
+        img_(img)
+    {
+        ws_ = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
+        iws_ = ICCStore::getInstance()->workingSpaceInverseMatrix(working_profile);
     }
 
-    const int width = lab->W;
-    const int height = lab->H;
-    const bool lab_mode = params->sh.lab;
+    inline int get_width() { return img_->W; }
+    inline int get_height() { return img_->H; }
 
-    array2D<float> mask(width, height);
-    array2D<float> L(width, height);
-    const float radius = float(params->sh.radius) * 10 / scale;
-    LUTf f(lab_mode ? 32768 : 65536);
+    inline float get_L(int y, int x)
+    {
+        return img_->L[y][x];
+    }
 
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
+    inline void get_Lab(int y, int x, float &l, float &a, float &b)
+    {
+        l = img_->L[y][x];
+        a = img_->a[y][x];
+        b = img_->b[y][x];
+    }
 
-    const auto rgb2lab =
-        [&](float R, float G, float B, float &l, float &a, float &b) -> void
-        {
-            float x, y, z;
-            Color::rgbxyz(R, G, B, x, y, z, ws);
-            Color::XYZ2Lab(x, y, z, l, a, b);
-        };
+    inline void set_Lab(int y, int x, float l, float a, float b)
+    {
+        img_->L[y][x] = l;
+        img_->a[y][x] = a;
+        img_->b[y][x] = b;
+    }
 
-    const auto lab2rgb =
-        [&](float l, float a, float b, float &R, float &G, float &B) -> void
-        {
-            float x, y, z;
-            Color::Lab2XYZ(l, a, b, x, y, z);
-            Color::xyz2rgb(x, y, z, R, G, B, iws);
-        };
+    inline void get_RGB(int y, int x, float &r, float &g, float &b)
+    {
+        lab2rgb(img_->L[y][x], img_->a[y][x], img_->b[y][x], r, g, b, iws_);
+    }
+
+    inline void set_RGB(int y, int x, float r, float g, float b)
+    {
+        rgb2lab(r, g, b, img_->L[y][x], img_->a[y][x], img_->b[y][x], ws_);
+    }
     
-    const auto apply =
-        [&](int amount, int tonalwidth, bool hl) -> void
-        {
-            const float thresh = tonalwidth * 327.68f;
-            const float scale = hl ? (thresh > 0.f ? 0.9f / thresh : 1.f) : thresh * 0.9f;
+private:
+    LabImage *img_;
+    TMatrix ws_;
+    TMatrix iws_;
+};
+
+
+class RGBImageAdapter {
+public:
+    RGBImageAdapter(Imagefloat *img, const Glib::ustring &working_profile):
+        img_(img)
+    {
+        ws_ = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
+        iws_ = ICCStore::getInstance()->workingSpaceInverseMatrix(working_profile);
+    }
+
+    inline int get_width() { return img_->getWidth(); }
+    inline int get_height() { return img_->getHeight(); }
+
+    inline float get_L(int y, int x)
+    {
+        float l, a, b;
+        rgb2lab(img_->r(y, x), img_->g(y, x), img_->b(y, x), l, a, b, ws_);
+        return l;
+    }
+
+    inline void get_Lab(int y, int x, float &l, float &a, float &b)
+    {
+        rgb2lab(img_->r(y, x), img_->g(y, x), img_->b(y, x), l, a, b, ws_);
+    }
+
+    inline void set_Lab(int y, int x, float l, float a, float b)
+    {
+        lab2rgb(l, a, b, img_->r(y, x), img_->g(y, x), img_->b(y, x), iws_);
+    }
+
+    inline void get_RGB(int y, int x, float &r, float &g, float &b)
+    {
+        r = img_->r(y, x);
+        g = img_->g(y, x);
+        b = img_->b(y, x);
+    }
+
+    inline void set_RGB(int y, int x, float r, float g, float b)
+    {
+        img_->r(y, x) = r;
+        img_->g(y, x) = g;
+        img_->b(y, x) = b;
+    }
+
+private:
+    Imagefloat *img_;
+    TMatrix ws_;
+    TMatrix iws_;
+};
+
+
+
+template <class Img>
+class ShadowsHighlights {
+public:
+    ShadowsHighlights(const ProcParams *params, double scale, bool multithread, Img *img):
+        params_(params),
+        scale_(scale),
+        multithread_(multithread),
+        img_(img)
+    {
+        ws_ = ICCStore::getInstance()->workingSpaceMatrix(params_->icm.workingProfile);
+        iws_ = ICCStore::getInstance()->workingSpaceInverseMatrix(params_->icm.workingProfile);
+    }
+
+    void operator()()
+    {
+        const int width = img_->get_width();
+        const int height = img_->get_height();
+        const bool lab_mode = params_->sh.lab;
+
+        array2D<float> mask(width, height);
+        array2D<float> L(width, height);
+        const float radius = float(params_->sh.radius) * 10 / scale_;
+        LUTf f(lab_mode ? 32768 : 65536);
+
+        const auto apply =
+            [&](int amount, int tonalwidth, bool hl) -> void
+            {
+                const float thresh = tonalwidth * 327.68f;
+                const float scale = hl ? (thresh > 0.f ? 0.9f / thresh : 1.f) : thresh * 0.9f;
 
 #ifdef _OPENMP
-            #pragma omp parallel for if (multiThread)
+#               pragma omp parallel for if (multithread_)
 #endif
-            for (int y = 0; y < height; ++y) {
-                for (int x = 0; x < width; ++x) {
-                    float l = lab->L[y][x];
-                    float l1 = l / 32768.f;
-                    if (hl) {
-                        mask[y][x] = (l > thresh) ? 1.f : pow4(l * scale);
-                        L[y][x] = 1.f - l1;
-                    } else {
-                        mask[y][x] = l <= thresh ? 1.f : pow4(scale / l);
-                        L[y][x] = l1;
+                for (int y = 0; y < height; ++y) {
+                    for (int x = 0; x < width; ++x) {
+                        float l = img_->get_L(y, x);
+                        float l1 = l / 32768.f;
+                        if (hl) {
+                            mask[y][x] = (l > thresh) ? 1.f : pow4(l * scale);
+                            L[y][x] = 1.f - l1;
+                        } else {
+                            mask[y][x] = l <= thresh ? 1.f : pow4(scale / l);
+                            L[y][x] = l1;
+                        }
                     }
                 }
-            }
 
-            rtengine::guidedFilter(L, mask, mask, radius, 0.075, multiThread, 4);
+                rtengine::guidedFilter(L, mask, mask, radius, 0.075, multithread_, 4);
 
-            const float base = std::pow(4.f, float(std::abs(amount))/100.f);
-            const float gamma = (hl == (amount >= 0)) ? base : 1.f / base;
+                const float base = std::pow(4.f, float(std::abs(amount))/100.f);
+                const float gamma = (hl == (amount >= 0)) ? base : 1.f / base;
 
-            const float contrast = std::pow(2.f, float(std::abs(amount))/100.f);
-            DiagonalCurve sh_contrast({
-                    DCT_NURBS,
-                    0, 0,
-                    0.125, std::pow(0.125 / 0.25, contrast) * 0.25, 
-                    0.25, 0.25,
-                    0.375, std::pow(0.375 / 0.25, contrast) * 0.25,
-                    1, 1
-                });
+                const float contrast = std::pow(2.f, float(std::abs(amount))/100.f);
+                DiagonalCurve sh_contrast({
+                        DCT_NURBS,
+                            0, 0,
+                            0.125, std::pow(0.125 / 0.25, contrast) * 0.25, 
+                            0.25, 0.25,
+                            0.375, std::pow(0.375 / 0.25, contrast) * 0.25,
+                            1, 1
+                            });
 
-            if(!hl) {
                 if (lab_mode) {
 #ifdef _OPENMP
-                    #pragma omp parallel for if (multiThread)
+#                   pragma omp parallel for if (multithread_)
 #endif
                     for (int l = 0; l < 32768; ++l) {
                         auto base = pow_F(l / 32768.f, gamma);
-                        // get a bit more contrast in the shadows
-                        base = sh_contrast.getVal(base);
+                        if (!hl) {
+                            base = sh_contrast.getVal(base);
+                        }
                         f[l] = base * 32768.f;
                     }
                 } else {
 #ifdef _OPENMP
-                    #pragma omp parallel for if (multiThread)
+#                   pragma omp parallel for if (multithread_)
 #endif
                     for (int c = 0; c < 65536; ++c) {
                         float l, a, b;
                         float R = c, G = c, B = c;
-                        rgb2lab(R, G, B, l, a, b);
+                        rgb2lab(R, G, B, l, a, b, ws_);
                         auto base = pow_F(l / 32768.f, gamma);
-                        // get a bit more contrast in the shadows
-                        base = sh_contrast.getVal(base);
+                        if (!hl) {
+                            base = sh_contrast.getVal(base);
+                        }
                         l = base * 32768.f;
-                        lab2rgb(l, a, b, R, G, B);
+                        lab2rgb(l, a, b, R, G, B, iws_);
                         f[c] = G;
                     }
                 }
-            } else {
-                if (lab_mode) {
-#ifdef _OPENMP
-                    #pragma omp parallel for if (multiThread)
-#endif
-                    for (int l = 0; l < 32768; ++l) {
-                        auto base = pow_F(l / 32768.f, gamma);
-                        f[l] = base * 32768.f;
-                    }
-                } else {
-#ifdef _OPENMP
-                    #pragma omp parallel for if (multiThread)
-#endif
-                    for (int c = 0; c < 65536; ++c) {
-                        float l, a, b;
-                        float R = c, G = c, B = c;
-                        rgb2lab(R, G, B, l, a, b);
-                        auto base = pow_F(l / 32768.f, gamma);
-                        l = base * 32768.f;
-                        lab2rgb(l, a, b, R, G, B);
-                        f[c] = G;
-                    }
-                }
-            }
 
 #ifdef _OPENMP
-            #pragma omp parallel for schedule(dynamic,16) if (multiThread)
+#               pragma omp parallel for schedule(dynamic,16) if (multithread_)
 #endif
-            for (int y = 0; y < height; ++y) {
-                for (int x = 0; x < width; ++x) {
-                    float l = lab->L[y][x];
-                    float blend = LIM01(mask[y][x]);
-                    float orig = 1.f - blend;
-                    if (l >= 0.f && l < 32768.f) {
+                for (int y = 0; y < height; ++y) {
+                    for (int x = 0; x < width; ++x) {
+                        float blend = LIM01(mask[y][x]);
+                        float orig = 1.f - blend;
                         if (lab_mode) {
-                            lab->L[y][x] = intp(blend, f[l], l);
-                            if (!hl && l > 1.f) {
-                                // when pushing shadows, scale also the chromaticity
-                                float s = max(lab->L[y][x] / l * 0.5f, 1.f) * blend;
-                                float a = lab->a[y][x];
-                                float b = lab->b[y][x];
-                                lab->a[y][x] = a * s + a * orig;
-                                lab->b[y][x] = b * s + b * orig;
+                            float l, a, b;
+                            img_->get_Lab(y, x, l, a, b);
+                            if (l >= 0 && l < 32768.f) {
+                                float ll = intp(blend, f[l], l);
+                                if (!hl && l > 1.f) {
+                                    // when pushing shadows, scale also the chromaticity
+                                    float s = max(ll / l * 0.5f, 1.f) * blend;
+                                    a = a * s + a * orig;
+                                    b = b * s + b * orig;
+                                }
+                                img_->set_Lab(y, x, ll, a, b);
                             }
                         } else {
                             float rgb[3];
-                            lab2rgb(l, lab->a[y][x], lab->b[y][x], rgb[0], rgb[1], rgb[2]);
+                            img_->get_RGB(y, x, rgb[0], rgb[1], rgb[2]);
                             for (int i = 0; i < 3; ++i) {
                                 float c = rgb[i];
                                 if (!OOG(c)) {
                                     rgb[i] = intp(blend, f[c], c);
                                 }
                             }
-                            rgb2lab(rgb[0], rgb[1], rgb[2], lab->L[y][x], lab->a[y][x], lab->b[y][x]);
+                            img_->set_RGB(y, x, rgb[0], rgb[1], rgb[2]);
                         }
                     }
                 }
-            }
-        };
+            };
 
-    if (params->sh.highlights) {
-        apply(params->sh.highlights * 0.7, params->sh.htonalwidth, true);
+        if (params_->sh.highlights) {
+            apply(params_->sh.highlights * 0.7, params_->sh.htonalwidth, true);
+        }
+
+        if (params_->sh.shadows) {
+            apply(params_->sh.shadows * 0.6, params_->sh.stonalwidth, false);
+        }
     }
 
-    if (params->sh.shadows) {
-        apply(params->sh.shadows * 0.6, params->sh.stonalwidth, false);
+private:
+    const ProcParams *params_;
+    double scale_;
+    bool multithread_;
+    Img *img_;
+    TMatrix ws_;
+    TMatrix iws_;
+};
+
+} // namespace
+
+
+void ImProcFunctions::shadowsHighlights(LabImage *lab)
+{
+    if (!params->sh.enabled || (!params->sh.highlights && !params->sh.shadows)){
+        return;
     }
+
+    LabImageAdapter img(lab, params->icm.workingProfile);
+    ShadowsHighlights<LabImageAdapter> sh(params, scale, multiThread, &img);
+    sh();
 }
 
 
@@ -201,10 +308,9 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)
         return;
     }
 
-    LabImage lab(rgb->getWidth(), rgb->getHeight());
-    rgb2lab(*rgb, lab, params->icm.workingProfile);
-    shadowsHighlights(&lab);
-    lab2rgb(lab, *rgb, params->icm.workingProfile);
+    RGBImageAdapter img(rgb, params->icm.workingProfile);
+    ShadowsHighlights<RGBImageAdapter> sh(params, scale, multiThread, &img);
+    sh();
 }
 
 } // namespace rtengine
