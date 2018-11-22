@@ -194,4 +194,17 @@ void ImProcFunctions::shadowsHighlights(LabImage *lab)
     }
 }
 
+
+void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)
+{
+    if (!params->sh.enabled || (!params->sh.highlights && !params->sh.shadows)){
+        return;
+    }
+
+    LabImage lab(rgb->getWidth(), rgb->getHeight());
+    rgb2lab(*rgb, lab, params->icm.workingProfile);
+    shadowsHighlights(&lab);
+    lab2rgb(lab, *rgb, params->icm.workingProfile);
+}
+
 } // namespace rtengine

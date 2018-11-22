@@ -298,6 +298,9 @@ void ImProcFunctions::logEncoding(LabImage *lab)
         }
     }
 
+    guidedFilter(&working);
+    shadowsHighlights(&working);
+    
     HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
     if (params->filmSimulation.enabled) {
         constexpr int TS = 112;

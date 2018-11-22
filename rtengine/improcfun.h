@@ -347,9 +347,11 @@ public:
     void localContrast(LabImage *lab);
     void colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread);
     void shadowsHighlights(LabImage *lab);
+    void shadowsHighlights(Imagefloat *rgb);
     void softLight(LabImage *lab);
     void labColorCorrectionRegions(LabImage *lab);
     void guidedFilter(LabImage *lab);
+    void guidedFilter(Imagefloat *rgb);
     void getAutoLog(ImageSource *imgsrc, procparams::LogEncodingParams &params);
     void logEncoding(LabImage *lab);
 

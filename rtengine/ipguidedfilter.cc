@@ -84,13 +84,17 @@ void recompose(const array2D<float> &R, const array2D<float> &G, const array2D<f
 }
 
 
-void guided_smoothing(LabImage *lab, array2D<float> &R, array2D<float> &G, array2D<float> &B, const GuidedFilterParams &gf, const TMatrix &ws, const TMatrix &iws, double scale, bool multithread)
+void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const GuidedFilterParams &gf, const TMatrix &ws, const TMatrix &iws, double scale, bool multithread)
 {
     if (gf.smoothingRadius > 0) {
-        const int W = lab->W;
-        const int H = lab->H;
+        const int W = R.width();
+        const int H = R.height();
         int r = max(int(gf.smoothingRadius / scale), 1);
         const float epsilon = std::pow(2.f, 2 * (gf.smoothingEpsilon - 10.f)) / 2.f;
+        array2D<float> iR(W, H, R, 0);
+        array2D<float> iG(W, H, G, 0);
+        array2D<float> iB(W, H, B, 0);
+        
         for (int i = 0; i < gf.smoothingIterations; ++i) {
             guidedFilter(R, R, R, r, epsilon, multithread);
             guidedFilter(G, G, G, r, epsilon, multithread);
@@ -105,23 +109,35 @@ void guided_smoothing(LabImage *lab, array2D<float> &R, array2D<float> &G, array
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                float l, a, b;
-                float rr = R[y][x] * 65535.f;
-                float gg = G[y][x] * 65535.f;
-                float bb = B[y][x] * 65535.f;
-                Color::filmlike_clip(&rr, &gg, &bb);
-                rgb2lab(rr, gg, bb, l, a, b, ws);
-                lab2rgb(intp(l_blend, l, lab->L[y][x]), intp(ab_blend, a, lab->a[y][x]), intp(ab_blend, b, lab->b[y][x]), rr, gg, bb, iws);
-                R[y][x] = rr / 65535.f;
-                G[y][x] = gg / 65535.f;
-                B[y][x] = bb / 65535.f;
+                // float l, a, b;
+                float rr = R[y][x]; // * 65535.f;
+                float gg = G[y][x]; // * 65535.f;
+                float bb = B[y][x]; // * 65535.f;
+                float ir = iR[y][x];
+                float ig = iG[y][x];
+                float ib = iB[y][x];
+                float Y = Color::rgbLuminance(rr, gg, bb, ws);
+                float iY = Color::rgbLuminance(ir, ig, ib, ws);
+                float oY = intp(l_blend, Y, iY);
+                rr = intp(ab_blend, rr - Y, ir - iY); 
+                gg = intp(ab_blend, gg - Y, ig - iY); 
+                bb = intp(ab_blend, bb - Y, ib - iY);
+                R[y][x] = oY + rr;
+                G[y][x] = oY + gg;
+                B[y][x] = oY + bb;
+                // Color::filmlike_clip(&rr, &gg, &bb);
+                // rgb2lab(rr, gg, bb, l, a, b, ws);
+                // lab2rgb(intp(l_blend, l, lab->L[y][x]), intp(ab_blend, a, lab->a[y][x]), intp(ab_blend, b, lab->b[y][x]), rr, gg, bb, iws);
+                // R[y][x] = rr / 65535.f;
+                // G[y][x] = gg / 65535.f;
+                // B[y][x] = bb / 65535.f;
             }
         }
     }
 }
 
 
-void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, array2D<float> &B, const GuidedFilterParams &gf, double scale, bool multithread)
+void guided_decomposition(array2D<float> &R, array2D<float> &G, array2D<float> &B, const GuidedFilterParams &gf, double scale, bool multithread)
 {
     if (gf.decompRadius > 0) {
         LUTf curve(65536);
@@ -142,8 +158,8 @@ void guided_decomposition(LabImage *lab, array2D<float> &R, array2D<float> &G, a
             }
         }
 
-        const int W = lab->W;
-        const int H = lab->H;
+        const int W = R.width();//lab->W;
+        const int H = R.height();//lab->H;
         array2D<float> tmp(W, H);
         
         const int r = max(int(gf.decompRadius / scale), 1);
@@ -192,9 +208,33 @@ void ImProcFunctions::guidedFilter(LabImage *lab)
     TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
 
     decompose(lab, R, G, B, iws, multiThread);
-    guided_smoothing(lab, R, G, B, params->guidedfilter, ws, iws, scale, multiThread);
-    guided_decomposition(lab, R, G, B, params->guidedfilter, scale, multiThread);
+    guided_smoothing(R, G, B, params->guidedfilter, ws, iws, scale, multiThread);
+    guided_decomposition(R, G, B, params->guidedfilter, scale, multiThread);
     recompose(R, G, B, lab, ws, multiThread);
+}
+
+
+void ImProcFunctions::guidedFilter(Imagefloat *rgb)
+{
+    if (!params->guidedfilter.enabled) {
+        return;
+    }
+
+    rgb->normalizeFloatTo1();
+
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+    array2D<float> R(W, H, rgb->r.ptrs, ARRAY2D_BYREFERENCE);
+    array2D<float> G(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
+    array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
+
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
+
+    guided_smoothing(R, G, B, params->guidedfilter, ws, iws, scale, multiThread);
+    guided_decomposition(R, G, B, params->guidedfilter, scale, multiThread);
+
+    rgb->normalizeFloatTo65535();
 }
 
 } // namespace rtengine
