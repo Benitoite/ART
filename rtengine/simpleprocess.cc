@@ -1527,25 +1527,25 @@ private:
         // }
 
         // noiseLCurve.Set (lcurve);
-        const char *medmethods[] = { "soft", "33", "55soft", "55", "77", "99" };
+        // const char *medmethods[] = { "soft", "33", "55soft", "55", "77", "99" };
 
-        if (params.dirpyrDenoise.median) {
-            auto &key = params.dirpyrDenoise.methodmed == "RGB" ? params.dirpyrDenoise.rgbmethod : params.dirpyrDenoise.medmethod;
+        // if (params.dirpyrDenoise.median) {
+        //     auto &key = params.dirpyrDenoise.methodmed == "RGB" ? params.dirpyrDenoise.rgbmethod : params.dirpyrDenoise.medmethod;
 
-            for (int i = 1; i < int (sizeof (medmethods) / sizeof (const char *)); ++i) {
-                if (key == medmethods[i]) {
-                    int j = i - int (1.0 / scale_factor);
+        //     for (int i = 1; i < int (sizeof (medmethods) / sizeof (const char *)); ++i) {
+        //         if (key == medmethods[i]) {
+        //             int j = i - int (1.0 / scale_factor);
 
-                    if (j < 0) {
-                        params.dirpyrDenoise.median = false;
-                    } else {
-                        key = medmethods[j];
-                    }
+        //             if (j < 0) {
+        //                 params.dirpyrDenoise.median = false;
+        //             } else {
+        //                 key = medmethods[j];
+        //             }
 
-                    break;
-                }
-            }
-        }
+        //             break;
+        //         }
+        //     }
+        // }
 
         // params.epd.scale *= scale_factor;
         // //params.epd.edgeStopping *= scale_factor;
