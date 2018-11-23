@@ -21,7 +21,7 @@
 #include <cstring>
 #include <gdkmm/types.h>
 
-MyCurve::MyCurve () : pipetteR(-1.f), pipetteG(-1.f), pipetteB(-1.f), pipetteVal(-1.f), listener(nullptr), cursor_type(CSArrow), graphW(0), graphH(0), mod_type(Gdk::MODIFIER_MASK), cursorX(0), cursorY(0), snapToMinDistX(0.0), snapToMinDistY(0.0), snapToValX(0.0), snapToValY(0.0)
+MyCurve::MyCurve () : pipetteR(-1.f), pipetteG(-1.f), pipetteB(-1.f), pipetteVal(-1.f), listener(nullptr), cursor_type(CSArrow), graphW(0), graphH(0), mod_type(Gdk::MODIFIER_MASK), cursorX(0), cursorY(0), snapToMinDistX(0.0), snapToMinDistY(0.0), snapToValX(0.0), snapToValY(0.0), sizeRatio(1)
 {
 
     graphX = get_allocation().get_width() - RADIUS * 2;
@@ -55,11 +55,21 @@ MyCurve::~MyCurve ()
     }
 }
 
+
+void MyCurve::setRatio(float r)
+{
+    sizeRatio = r;
+    setDirty(true);
+    queue_draw();
+}
+
+
 int MyCurve::calcDimensions ()
 {
     int newRequestedW, newRequestedH;
 
     newRequestedW = newRequestedH = get_allocation().get_width();
+    newRequestedH = newRequestedH * sizeRatio + 0.5;
 
     if (leftBar && !bottomBar) {
         newRequestedH -= CBAR_WIDTH + CBAR_MARGIN - RADIUS;
@@ -97,7 +107,7 @@ void MyCurve::get_preferred_width_vfunc (int &minimum_width, int &natural_width)
 
 void MyCurve::get_preferred_height_for_width_vfunc (int width, int &minimum_height, int &natural_height) const
 {
-    minimum_height = width;
+    minimum_height = width * sizeRatio + 0.5;
 
     if (leftBar && !bottomBar) {
         minimum_height -= CBAR_WIDTH + CBAR_MARGIN - RADIUS;

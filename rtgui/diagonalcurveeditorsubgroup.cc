@@ -34,7 +34,7 @@
 
 #include "../rtengine/curves.h"
 
-DiagonalCurveEditorSubGroup::DiagonalCurveEditorSubGroup (CurveEditorGroup* prt, Glib::ustring& curveDir) : CurveEditorSubGroup(curveDir)
+DiagonalCurveEditorSubGroup::DiagonalCurveEditorSubGroup (CurveEditorGroup* prt, Glib::ustring& curveDir, float curvesRatio) : CurveEditorSubGroup(curveDir)
 {
 
     editedAdjuster = nullptr;
@@ -56,6 +56,7 @@ DiagonalCurveEditorSubGroup::DiagonalCurveEditorSubGroup (CurveEditorGroup* prt,
 
     customCurve = Gtk::manage (new MyDiagonalCurve ());
     customCurve->setType (DCT_Spline);
+    customCurve->setRatio(curvesRatio);
     
     Gtk::Grid* customCurveBox= Gtk::manage (new Gtk::Grid ());
     customCurveBox->get_style_context()->add_class("curve-curvebox");
@@ -148,6 +149,7 @@ DiagonalCurveEditorSubGroup::DiagonalCurveEditorSubGroup (CurveEditorGroup* prt,
 
     NURBSCurve = Gtk::manage (new MyDiagonalCurve ());
     NURBSCurve->setType (DCT_NURBS);
+    NURBSCurve->setRatio(curvesRatio);
     
     Gtk::Grid* NURBSCurveBox= Gtk::manage (new Gtk::Grid ());
     NURBSCurveBox->get_style_context()->add_class("curve-curvebox");
@@ -240,6 +242,7 @@ DiagonalCurveEditorSubGroup::DiagonalCurveEditorSubGroup (CurveEditorGroup* prt,
 
     paramCurve = Gtk::manage (new MyDiagonalCurve ());
     paramCurve->setType (DCT_Parametric);
+    paramCurve->setRatio(curvesRatio);
     
     Gtk::Grid* paramCurveBox= Gtk::manage (new Gtk::Grid ());
     paramCurveBox->get_style_context()->add_class("curve-curvebox");

@@ -95,6 +95,8 @@ protected:
     int edited_point;  // > -1 when a point is being numerically edited
     std::vector<double> editedPos;
 
+    float sizeRatio;
+
     virtual std::vector<double> get_vector (int veclen) = 0;
     int getGraphMinSize()
     {
@@ -143,6 +145,8 @@ public:
     void get_preferred_width_vfunc (int &minimum_width, int &natural_width) const;
     void get_preferred_height_for_width_vfunc (int width, int &minimum_height, int &natural_height) const;
     void get_preferred_width_for_height_vfunc (int height, int &minimum_width, int &natural_width) const;
+
+    void setRatio(float r);
 };
 
 class MyCurveIdleHelper

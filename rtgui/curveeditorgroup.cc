@@ -26,8 +26,8 @@
 #include "multilangmgr.h"
 #include "rtimage.h"
 
-CurveEditorGroup::CurveEditorGroup (Glib::ustring& curveDir, Glib::ustring groupLabel) : curveDir(curveDir), line(0), curve_reset(nullptr),
-    displayedCurve(nullptr), flatSubGroup(nullptr), diagonalSubGroup(nullptr), cl(nullptr), numberOfPackedCurve(0)
+CurveEditorGroup::CurveEditorGroup (Glib::ustring& curveDir, Glib::ustring groupLabel, float curvesRatio) : curveDir(curveDir), line(0), curve_reset(nullptr),
+      displayedCurve(nullptr), flatSubGroup(nullptr), diagonalSubGroup(nullptr), cl(nullptr), numberOfPackedCurve(0), curvesRatio(curvesRatio)
 {
 
     // We set the label to the one provided as parameter, even if it's an empty string
@@ -79,7 +79,7 @@ CurveEditor* CurveEditorGroup::addCurve(CurveType cType, Glib::ustring curveLabe
     switch (cType) {
     case (CT_Diagonal): {
         if (!diagonalSubGroup) {
-            diagonalSubGroup = new DiagonalCurveEditorSubGroup(this, curveDir);
+            diagonalSubGroup = new DiagonalCurveEditorSubGroup(this, curveDir, curvesRatio);
         }
 
         // We add it to the curve editor list
@@ -92,7 +92,7 @@ CurveEditor* CurveEditorGroup::addCurve(CurveType cType, Glib::ustring curveLabe
 
     case (CT_Flat): {
         if (!flatSubGroup) {
-            flatSubGroup = new FlatCurveEditorSubGroup(this, curveDir);
+            flatSubGroup = new FlatCurveEditorSubGroup(this, curveDir, curvesRatio);
         }
 
         // We add it to the curve editor list
@@ -394,6 +394,7 @@ void CurveEditorGroup::setUnChanged (bool uc, CurveEditor* ce)
         //ce->typeconn.block(false);
     }
 }
+
 
 CurveEditorSubGroup::CurveEditorSubGroup(Glib::ustring& curveDir) : curveDir(curveDir), lastFilename(""), valLinear(0), valUnchanged(0), parent(nullptr)
 {

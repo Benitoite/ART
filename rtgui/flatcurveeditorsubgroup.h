@@ -45,7 +45,7 @@ protected:
     sigc::connection   editCPointsConn, editPointCPointsConn;
 
 public:
-    FlatCurveEditorSubGroup(CurveEditorGroup* prt, Glib::ustring& curveDir);
+    FlatCurveEditorSubGroup(CurveEditorGroup* prt, Glib::ustring& curveDir, float curvesRatio=1.f);
     virtual ~FlatCurveEditorSubGroup();
 
     FlatCurveEditor* addCurve(Glib::ustring curveLabel = "", bool periodic = true);

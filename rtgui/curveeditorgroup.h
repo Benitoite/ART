@@ -63,6 +63,9 @@ protected:
 
     unsigned int numberOfPackedCurve;
 
+private:
+    float curvesRatio;
+
 public:
     /**
      * @param curveDir The folder used by load and save dialogs for the curve.
@@ -70,7 +73,7 @@ public:
      *                 dialogs.
      */
 
-    CurveEditorGroup(Glib::ustring& curveDir, Glib::ustring groupLabel = "");
+    CurveEditorGroup(Glib::ustring& curveDir, Glib::ustring groupLabel = "", float curvesRatio=1.f);
     ~CurveEditorGroup();
     void newLine();
     void curveListComplete();

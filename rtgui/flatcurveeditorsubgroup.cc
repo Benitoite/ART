@@ -35,7 +35,7 @@
 
 #include "../rtengine/curves.h"
 
-FlatCurveEditorSubGroup::FlatCurveEditorSubGroup (CurveEditorGroup* prt, Glib::ustring& curveDir) : CurveEditorSubGroup(curveDir)
+FlatCurveEditorSubGroup::FlatCurveEditorSubGroup (CurveEditorGroup* prt, Glib::ustring& curveDir, float curvesRatio) : CurveEditorSubGroup(curveDir)
 {
 
     valLinear = (int)FCT_Linear;
@@ -52,6 +52,7 @@ FlatCurveEditorSubGroup::FlatCurveEditorSubGroup (CurveEditorGroup* prt, Glib::u
 
     CPointsCurve = Gtk::manage (new MyFlatCurve ());
     CPointsCurve->setType (FCT_MinMaxCPoints);
+    CPointsCurve->setRatio(curvesRatio);
     
     Gtk::Grid* CPointsCurveBox = Gtk::manage (new Gtk::Grid ());
     CPointsCurveBox->get_style_context()->add_class("curve-curvebox");

@@ -74,7 +74,7 @@ protected:
     int activeParamControl;
 
 public:
-    DiagonalCurveEditorSubGroup(CurveEditorGroup* prt, Glib::ustring& curveDir);
+    DiagonalCurveEditorSubGroup(CurveEditorGroup* prt, Glib::ustring& curveDir, float curvesRatio=1.f);
     virtual ~DiagonalCurveEditorSubGroup();
 
     DiagonalCurveEditor* addCurve(Glib::ustring curveLabel = "");
