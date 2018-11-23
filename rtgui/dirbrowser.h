@@ -89,7 +89,7 @@ public:
     void updateVolumes ();
     void updateDirTree  (const Gtk::TreeModel::iterator& iter);
     void updateDirTreeRoot  ();
-    void winDirChanged ();
+    void winDirChanged () override;
 private:
     void addRoot (char letter);
 #endif
@@ -101,7 +101,7 @@ private:
 
 public:
     DirBrowser ();
-    ~DirBrowser();
+    ~DirBrowser() override;
 
     void fillDirTree ();
     void on_sort_column_changed() const;

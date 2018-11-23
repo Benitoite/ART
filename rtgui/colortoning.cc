@@ -440,6 +440,33 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
 
     labRegionBox->pack_start(*Gtk::manage(new Gtk::HSeparator()));
 
+    labRegionSlope = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_SLOPE"), 0.1, 4.0, 0.001, 1));
+    labRegionSlope->setLogScale(4, 0.1);
+    labRegionSlope->setAdjusterListener(this);
+    labRegionBox->pack_start(*labRegionSlope);
+    labRegionOffset = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_OFFSET"), -0.1, 0.1, 0.001, 0));
+    labRegionOffset->setAdjusterListener(this);
+    labRegionBox->pack_start(*labRegionOffset);
+    labRegionPower = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_POWER"), 0.1, 4.0, 0.001, 1));
+    labRegionPower->setAdjusterListener(this);
+    labRegionPower->setLogScale(4, 0.1);
+    labRegionBox->pack_start(*labRegionPower);
+
+    hb = Gtk::manage(new Gtk::HBox());
+    labRegionChannel = Gtk::manage(new MyComboBoxText());
+    labRegionChannel->append(M("TP_COLORTONING_LABREGION_CHANNEL_ALL"));
+    labRegionChannel->append(M("TP_COLORTONING_LABREGION_CHANNEL_R"));
+    labRegionChannel->append(M("TP_COLORTONING_LABREGION_CHANNEL_G"));
+    labRegionChannel->append(M("TP_COLORTONING_LABREGION_CHANNEL_B"));
+    labRegionChannel->set_active(0);
+    labRegionChannel->signal_changed().connect(sigc::mem_fun(*this, &ColorToning::labRegionChannelChanged));
+    
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_COLORTONING_LABREGION_CHANNEL") + ": ")), Gtk::PACK_SHRINK);
+    hb->pack_start(*labRegionChannel);
+    labRegionBox->pack_start(*hb);
+
+    labRegionBox->pack_start(*Gtk::manage(new Gtk::HSeparator()));
+
     CurveEditorGroup *labRegionEditorG = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_COLORTONING_LABREGION_MASK"), 0.7));
     labRegionEditorG->setCurveListener(this);
 

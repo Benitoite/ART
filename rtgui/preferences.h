@@ -260,7 +260,7 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
 
 public:
     explicit Preferences (RTWindow *rtwindow);
-    ~Preferences ();
+    ~Preferences () override;
 
     void savePressed ();
     void loadPressed ();
@@ -290,9 +290,9 @@ public:
     void behAddAllPressed ();
     void behSetAllPressed ();
 
-    virtual void storeCurrentValue();
-    virtual void updateProfileList();
-    virtual void restoreValue();
+    void storeCurrentValue() override;
+    void updateProfileList() override;
+    void restoreValue() override;
 
 //    void selectICCProfileDir ();
 //    void selectMonitorProfile ();

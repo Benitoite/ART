@@ -74,7 +74,7 @@ public:
      */
 
     CurveEditorGroup(Glib::ustring& curveDir, Glib::ustring groupLabel = "", float curvesRatio=1.f);
-    ~CurveEditorGroup();
+    ~CurveEditorGroup() override;
     void newLine();
     void curveListComplete();
     void setBatchMode (bool batchMode);
@@ -100,8 +100,8 @@ protected:
     void hideCurrentCurve ();
     void updateGUI (CurveEditor* ce);
     void curveResetPressed ();
-    void curveChanged ();
-    float blendPipetteValues(CurveEditor* ce, float chan1, float chan2, float chan3);
+    void curveChanged () override;
+    float blendPipetteValues(CurveEditor* ce, float chan1, float chan2, float chan3) override;
     void setUnChanged (bool uc, CurveEditor* ce);
 };
 

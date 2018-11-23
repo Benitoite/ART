@@ -362,23 +362,25 @@ Glib::ustring TagDirectory::getDumpKey (int tagID, const Glib::ustring &tagName)
 
     return key;
 }
-void TagDirectory::addTag (Tag* tag)
+void TagDirectory::addTag (Tag* &tag)
 {
 
     // look up if it already exists:
     if (getTag (tag->getID())) {
         delete tag;
+        tag = nullptr;
     } else {
         tags.push_back (tag);
     }
 }
 
-void TagDirectory::addTagFront (Tag* tag)
+void TagDirectory::addTagFront (Tag* &tag)
 {
 
     // look up if it already exists:
     if (getTag (tag->getID())) {
         delete tag;
+        tag = nullptr;
     } else {
         tags.insert (tags.begin(), tag);
     }
@@ -1205,8 +1207,8 @@ Tag::Tag (TagDirectory* p, FILE* f, int base)
     } else {
         // read value
         value = new unsigned char [valuesize + 1];
-        fread (value, 1, valuesize, f);
-        value[valuesize] = '\0';
+        auto readSize = fread (value, 1, valuesize, f);
+        value[readSize] = '\0';
     }
 
     // seek back to the saved position
@@ -2106,10 +2108,12 @@ void ExifManager::parseCIFF ()
     TagDirectory* root = new TagDirectory (nullptr, ifdAttribs, INTEL);
     Tag* exif = new Tag (root, lookupAttrib (ifdAttribs, "Exif"));
     exif->initSubDir ();
-    Tag* mn = new Tag (exif->getDirectory(), lookupAttrib (exifAttribs, "MakerNote"));
-    mn->initMakerNote (IFD, canonAttribs);
     root->addTag (exif);
-    exif->getDirectory()->addTag (mn);
+    if (exif) {
+        Tag* mn = new Tag (exif->getDirectory(), lookupAttrib (exifAttribs, "MakerNote"));
+        mn->initMakerNote (IFD, canonAttribs);
+        exif->getDirectory()->addTag (mn);
+    }
     parseCIFF (rml->ciffLength, root);
     root->sort ();
 }
@@ -2145,10 +2149,14 @@ void ExifManager::parseCIFF (int length, TagDirectory* root)
     char buffer[1024];
     Tag* t;
 
-    fseek (f, rml->ciffBase + length - 4, SEEK_SET);
+    if (fseek(f, rml->ciffBase + length - 4, SEEK_SET)) {
+        return;
+    }
 
     int dirStart = get4 (f, INTEL) + rml->ciffBase;
-    fseek (f, dirStart, SEEK_SET);
+    if (fseek(f, dirStart, SEEK_SET)) {
+        return;
+    }
 
     int numOfTags = get2 (f, INTEL);
 
@@ -2510,7 +2518,7 @@ parse_leafdata (TagDirectory* root, ByteOrder order)
         root->addTagFront (exif);
     }
 
-    if (!exif->getDirectory()->getTag ("ISOSpeedRatings")) {
+    if (exif && !exif->getDirectory()->getTag ("ISOSpeedRatings")) {
         Tag *t = new Tag (exif->getDirectory(), exif->getDirectory()->getAttrib ("ISOSpeedRatings"));
         t->initInt (iso_speed, LONG);
         exif->getDirectory()->addTagFront (t);
@@ -2836,7 +2844,7 @@ void ExifManager::parse (bool isRaw, bool skipIgnored)
                 exif->initSubDir (exifdir);
                 root->addTagFront (exif);
 
-                if (!exif->getDirectory()->getTag ("ISOSpeedRatings") && exif->getDirectory()->getTag ("ExposureIndex")) {
+                if (exif && !exif->getDirectory()->getTag ("ISOSpeedRatings") && exif->getDirectory()->getTag ("ExposureIndex")) {
                     Tag* niso = new Tag (exif->getDirectory(), exif->getDirectory()->getAttrib ("ISOSpeedRatings"));
                     niso->initInt (exif->getDirectory()->getTag ("ExposureIndex")->toInt(), SHORT);
                     exif->getDirectory()->addTagFront (niso);
