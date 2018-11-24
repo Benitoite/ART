@@ -324,7 +324,6 @@ void ToneCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
 
     enableListener ();
 
-    logenc = !batchMode && pp->logenc.enabled;
 }
 
 void ToneCurve::autoOpenCurve  ()
@@ -1047,4 +1046,14 @@ void ToneCurve::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParam
     };
 
     idle_register.add(func, this);
+}
+
+
+void ToneCurve::procParamsChanged(const rtengine::procparams::ProcParams* params, const rtengine::ProcEvent& ev, const Glib::ustring& descr, const ParamsEdited *paramsEdited)
+{
+    if (!batchMode) {
+        logenc = params->logenc.enabled;
+        shape->showEditButton(!logenc);
+        shape2->showEditButton(!logenc);
+    }
 }

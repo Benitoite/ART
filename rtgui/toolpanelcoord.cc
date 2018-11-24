@@ -253,6 +253,11 @@ void ToolPanelCoordinator::addPanel (Gtk::Box* where, FoldableToolPanel* panel, 
     expList.push_back (panel->getExpander());
     where->pack_start (*panel->getExpander(), false, false);
     toolPanels.push_back (panel);
+
+    auto l = panel->getPParamsChangeListener();
+    if (l) {
+        addPParamsChangeListener(l);
+    }
 }
 
 ToolPanelCoordinator::~ToolPanelCoordinator ()

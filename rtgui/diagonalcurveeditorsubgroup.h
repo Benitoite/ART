@@ -91,6 +91,8 @@ public:
 
     bool curveReset (CurveEditor *ce) override;
 
+    void showEditButton(bool yes) override;
+
 protected:
     void storeCurveValues (CurveEditor* ce, const std::vector<double>& p) override;
     void storeDisplayedCurve () override;

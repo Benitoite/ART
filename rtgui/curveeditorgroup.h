@@ -153,6 +153,8 @@ public:
 
     virtual bool curveReset (CurveEditor *ce) = 0; // Reset a curve editor, return TRUE if successful (curve changed)
 
+    virtual void showEditButton(bool yes) = 0;
+
 protected:
 
     /**

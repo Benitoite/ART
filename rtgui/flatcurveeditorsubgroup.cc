@@ -628,6 +628,12 @@ bool FlatCurveEditorSubGroup::curveReset(CurveEditor *ce)
     return true;
 }
 
+
+void FlatCurveEditorSubGroup::showEditButton(bool yes)
+{
+    editCPoints->set_visible(yes);
+}
+
 /*void FlatCurveEditorSubGroup::updateBackgroundHistogram (CurveEditor* ce) {
     CurveEditor* fce = (CurveEditor*)ce;
     if (fce==displayedCurve) {

@@ -1187,6 +1187,14 @@ bool DiagonalCurveEditorSubGroup::curveReset(CurveEditor *ce)
     return true;
 }
 
+
+void DiagonalCurveEditorSubGroup::showEditButton(bool yes)
+{
+    editCustom->set_visible(yes);
+    editNURBS->set_visible(yes);
+    editParam->set_visible(yes);    
+}
+
 /*
  * Listener
  */

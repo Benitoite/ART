@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -27,7 +28,7 @@
 #include "mycurve.h"
 #include "guiutils.h"
 
-class ToneCurve : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public rtengine::AutoExpListener, public CurveListener
+class ToneCurve : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public rtengine::AutoExpListener, public CurveListener, public PParamsChangeListener
 {
 private:
     IdleRegister idle_register;
@@ -150,6 +151,14 @@ public:
     void hrenabledChanged ();
     void methodChanged ();
     void clampOOGChanged();
+
+    PParamsChangeListener *getPParamsChangeListener() override { return this; }
+    void procParamsChanged(
+        const rtengine::procparams::ProcParams* params,
+        const rtengine::ProcEvent& ev,
+        const Glib::ustring& descr,
+        const ParamsEdited* paramsEdited = nullptr) override;
+    void clearParamChanges() override {}
 };
 
 #endif

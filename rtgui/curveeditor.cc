@@ -396,6 +396,12 @@ void CurveEditor::switchOffEditMode ()
     EditSubscriber::switchOffEditMode();  // disconnect
 }
 
+void CurveEditor::showEditButton(bool yes)
+{
+    subGroup->showEditButton(yes);
+}
+
+
 bool CurveEditor::mouseOver(const int modifierKey)
 {
     EditDataProvider* provider = getEditProvider();

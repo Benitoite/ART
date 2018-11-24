@@ -27,6 +27,7 @@
 #include "multilangmgr.h"
 #include "paramsedited.h"
 #include "edit.h"
+#include "pparamschangelistener.h"
 
 class ToolPanel;
 class FoldableToolPanel;
@@ -131,6 +132,7 @@ public:
         this->batchMode = batchMode;
     }
 
+    virtual PParamsChangeListener *getPParamsChangeListener() { return nullptr; }
 };
 
 class FoldableToolPanel : public ToolPanel

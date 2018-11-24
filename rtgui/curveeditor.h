@@ -134,7 +134,7 @@ public:
     bool drag1(const int modifierKey) override;
     CursorShape getCursor(const int objectID) override;
 
-
+    void showEditButton(bool yes);
 };
 
 
