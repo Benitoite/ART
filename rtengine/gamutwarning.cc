@@ -34,7 +34,7 @@ GamutWarning::GamutWarning(cmsHPROFILE iprof, cmsHPROFILE gamutprof, RenderingIn
     softproof2ref(nullptr)
 {
     if (cmsIsMatrixShaper(gamutprof) && !cmsIsCLUT(gamutprof, intent, LCMS_USED_AS_OUTPUT)) {
-        cmsHPROFILE aces = ICCStore::getInstance()->getProfile("RTv4_ACES-AP0");
+        cmsHPROFILE aces = ICCStore::getInstance()->workingSpace("ACESp0");
         if (aces) {
             lab2ref = cmsCreateTransform(iprof, TYPE_Lab_FLT, aces, TYPE_RGB_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
             lab2softproof = cmsCreateTransform(iprof, TYPE_Lab_FLT, gamutprof, TYPE_RGB_FLT, INTENT_ABSOLUTE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
@@ -81,6 +81,12 @@ void GamutWarning::markLine(Image8 *image, int y, float *srcbuf, float *buf1, fl
         
         float delta_max = lab2ref ? 0.0001f : 4.9999f;
         cmsDoTransform(lab2softproof, srcbuf, buf2, width);
+        // since we are checking for out-of-gamut, we do want to clamp here!
+        for (int iy = 0, j = 0; j < width; ++j, iy += 3) {
+            buf2[iy] = LIM01(buf2[iy]);
+            buf2[iy+1] = LIM01(buf2[iy+1]);
+            buf2[iy+2] = LIM01(buf2[iy+2]);
+        }
         cmsDoTransform(softproof2ref, buf2, buf1, width);
         
         float *proofdata = buf1;
