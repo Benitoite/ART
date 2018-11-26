@@ -1493,76 +1493,14 @@ private:
         procparams::ProcParams &params = job->pparams;
         procparams::ProcParams defaultparams;
 
-        // params.resize.enabled = false;
-        // params.crop.enabled = false;
-
-        if (params.prsharpening.enabled) {
+        if (!params.prsharpening.enabled) {
             params.sharpening = params.prsharpening;
         }
             
         ImProcFunctions &ipf = *(ipf_p.get());
         ipf.setScale(1.0 / scale_factor);
-        
-        // if (params.prsharpening.enabled) {
-        //     params.sharpening = params.prsharpening;
-        // } else {
-        //     params.sharpening.radius *= scale_factor;
-        //     params.sharpening.deconvradius *= scale_factor;
-        // }
 
-        // params.impulseDenoise.thresh *= scale_factor;
-
-        // if (scale_factor < 0.5) {
-        //     params.impulseDenoise.enabled = false;
-        // }
-
-        params.wavelet.strength *= scale_factor;
-        // double noise_factor = (1.0 - scale_factor);
-        // params.dirpyrDenoise.luma *= noise_factor; // * scale_factor;
-        // params.dirpyrDenoise.Ldetail += (100 - params.dirpyrDenoise.Ldetail) * scale_factor;
-        // auto &lcurve = params.dirpyrDenoise.lcurve;
-
-        // for (size_t i = 2; i < lcurve.size(); i += 4) {
-        //     lcurve[i] *= min(noise_factor /* * scale_factor*/, 1.0);
-        // }
-
-        // noiseLCurve.Set (lcurve);
-        // const char *medmethods[] = { "soft", "33", "55soft", "55", "77", "99" };
-
-        // if (params.dirpyrDenoise.median) {
-        //     auto &key = params.dirpyrDenoise.methodmed == "RGB" ? params.dirpyrDenoise.rgbmethod : params.dirpyrDenoise.medmethod;
-
-        //     for (int i = 1; i < int (sizeof (medmethods) / sizeof (const char *)); ++i) {
-        //         if (key == medmethods[i]) {
-        //             int j = i - int (1.0 / scale_factor);
-
-        //             if (j < 0) {
-        //                 params.dirpyrDenoise.median = false;
-        //             } else {
-        //                 key = medmethods[j];
-        //             }
-
-        //             break;
-        //         }
-        //     }
-        // }
-
-        // params.epd.scale *= scale_factor;
-        // //params.epd.edgeStopping *= scale_factor;
-
-        // const double dirpyreq_scale = min (scale_factor * 1.5, 1.0);
-
-        // for (int i = 0; i < 6; ++i) {
-        //     adjust_radius (defaultparams.dirpyrequalizer.mult[i], dirpyreq_scale,
-        //                    params.dirpyrequalizer.mult[i]);
-        // }
-
-        // params.dirpyrequalizer.threshold *= scale_factor;
-
-        // adjust_radius (defaultparams.defringe.radius, scale_factor,
-        //                params.defringe.radius);
-        // params.sh.radius *= scale_factor;
-        // params.localContrast.radius *= scale_factor;
+        // params.wavelet.strength *= scale_factor;
 
         if (params.raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::THREE_PASS)) {
             params.raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::ONE_PASS);
