@@ -123,7 +123,7 @@ public:
     void guidedFilter(LabImage *lab);
     void guidedFilter(Imagefloat *rgb);
     void logEncoding(LabImage *lab);
-    Imagefloat* workingtrc(Imagefloat* working, int cw, int ch, int mul, Glib::ustring profile, double gampos, double slpos);
+    void workingtrc(const Imagefloat* src, Imagefloat* dst, int cw, int ch, int mul, const Glib::ustring &profile, double gampos, double slpos, cmsHTRANSFORM &transform, bool normalizeIn = true, bool normalizeOut = true, bool keepTransForm = false) const;
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
