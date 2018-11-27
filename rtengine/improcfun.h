@@ -122,7 +122,7 @@ public:
     void labColorCorrectionRegions(LabImage *lab);
     void guidedFilter(LabImage *lab);
     void guidedFilter(Imagefloat *rgb);
-    void logEncoding(LabImage *lab);
+    void logEncoding(LabImage *lab, LUTu *histToneCurve=nullptr);
     void workingtrc(const Imagefloat* src, Imagefloat* dst, int cw, int ch, int mul, const Glib::ustring &profile, double gampos, double slpos, cmsHTRANSFORM &transform, bool normalizeIn = true, bool normalizeOut = true, bool keepTransForm = false) const;
     //----------------------------------------------------------------------
 

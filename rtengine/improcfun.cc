@@ -2267,6 +2267,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
     if (toneCurveHistSize > 0) {
         histToneCurve.clear();
         histToneCurveCompression = log2 (65536 / toneCurveHistSize);
+        if (params->logenc.enabled) {
+            toneCurveHistSize = 0;
+        }
     }
 
     // For tonecurve histogram

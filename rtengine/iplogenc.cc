@@ -221,6 +221,28 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
     }
 }
 
+
+void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustring &profile, bool multithread)
+{
+    hist.clear();
+    const int compression = log2(65536 / hist.getSize());
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(profile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < img->getHeight(); ++y) {
+        for (int x = 0; x < img->getWidth(); ++x) {
+            float r = CLIP(img->r(y, x));
+            float g = CLIP(img->g(y, x));
+            float b = CLIP(img->b(y, x));
+
+            int y = CLIP<int>(Color::rgbLuminance(Color::gamma2curve[r], Color::gamma2curve[g], Color::gamma2curve[b], ws));
+            hist[y >> compression]++;
+        }
+    }
+}
+
 } // namespace
 
 
@@ -278,7 +300,7 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 }
 
 
-void ImProcFunctions::logEncoding(LabImage *lab)
+void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
 {
     if (!params->logenc.enabled) {
         return;
@@ -321,6 +343,10 @@ void ImProcFunctions::logEncoding(LabImage *lab)
                 }
             }
         }
+    }
+
+    if (histToneCurve && *histToneCurve) {
+        update_tone_curve_histogram(&working, *histToneCurve, params->icm.workingProfile, multiThread);
     }
 
     ToneCurve tc;

@@ -736,7 +736,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         if (todo & (M_LUMINANCE | M_COLOR)) {
             nprevl->CopyFrom(oprevl);
     
-            ipf.logEncoding(nprevl);
+            ipf.logEncoding(nprevl, &histToneCurve);
     
             if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
                 ipf.EPDToneMap(nprevl, 5, scale);
