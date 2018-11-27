@@ -82,10 +82,8 @@ void GamutWarning::markLine(Image8 *image, int y, float *srcbuf, float *buf1, fl
         float delta_max = lab2ref ? 0.0001f : 4.9999f;
         cmsDoTransform(lab2softproof, srcbuf, buf2, width);
         // since we are checking for out-of-gamut, we do want to clamp here!
-        for (int iy = 0, j = 0; j < width; ++j, iy += 3) {
-            buf2[iy] = LIM01(buf2[iy]);
-            buf2[iy+1] = LIM01(buf2[iy+1]);
-            buf2[iy+2] = LIM01(buf2[iy+2]);
+        for (int i = 0; i < width * 3; ++i) {
+            buf2[i] = LIM01(buf2[i]);
         }
         cmsDoTransform(softproof2ref, buf2, buf1, width);
         
