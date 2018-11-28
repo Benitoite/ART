@@ -272,6 +272,7 @@ target_link_libraries(rth rtengine
     ${TIFF_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${LENSFUN_LIBRARIES}
+    ${TCMALLOC_LIBRARIES}
     )
 
 target_link_libraries(rth-cli rtengine
@@ -292,6 +293,7 @@ target_link_libraries(rth-cli rtengine
     ${TIFF_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${LENSFUN_LIBRARIES}
+    ${TCMALLOC_LIBRARIES}
     )
 
 # Install executables
