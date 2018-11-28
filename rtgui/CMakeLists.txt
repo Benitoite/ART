@@ -294,39 +294,6 @@ target_link_libraries(rth-cli rtengine
     ${LENSFUN_LIBRARIES}
     )
 
-add_executable(test-guided     EXCLUDE_FROM_ALL
-    test_guidedfilter.cpp
-    alignedmalloc.cc
-    edit.cc
-    multilangmgr.cc
-    options.cc
-    paramsedited.cc
-    pathutils.cc
-    threadutils.cc
-    )
-
-target_link_libraries(test-guided rtengine
-    ${CANBERRA-GTK_LIBRARIES}
-    ${EXPAT_LIBRARIES}
-    ${EXTRA_LIB_RTGUI}
-    ${FFTW3F_LIBRARIES}
-    ${GIOMM_LIBRARIES}
-    ${GIO_LIBRARIES}
-    ${GLIB2_LIBRARIES}
-    ${GLIBMM_LIBRARIES}
-    ${GOBJECT_LIBRARIES}
-    ${GTHREAD_LIBRARIES}
-    ${GTKMM_LIBRARIES}
-    ${GTK_LIBRARIES}
-    ${IPTCDATA_LIBRARIES}
-    ${JPEG_LIBRARIES}
-    ${LCMS_LIBRARIES}
-    ${PNG_LIBRARIES}
-    ${TIFF_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    ${LENSFUN_LIBRARIES}
-    )
-
 # Install executables
 install(TARGETS rth DESTINATION ${BINDIR})
 install(TARGETS rth-cli DESTINATION ${BINDIR})
