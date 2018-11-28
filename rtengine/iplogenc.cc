@@ -278,7 +278,7 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     float vmin = data[0];
     float vmax = data[n-1];
 
-    constexpr float dr_headroom = 1.f;
+    constexpr float dr_headroom = 0.5f;
     constexpr float black_headroom = 0.5f;
     
     if (vmax > vmin) {
