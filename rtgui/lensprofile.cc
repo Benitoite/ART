@@ -153,6 +153,11 @@ LensProfilePanel::LensProfilePanel() :
     modesGrid->attach(*corrLcpFileRB, 0, 7, 1, 1);
     modesGrid->attach(*corrLcpFileChooser, 1, 7, 1, 1);
 
+#if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 20
+    modesGrid->set_row_spacing(2);
+    modesGrid->set_column_spacing(4);
+#endif
+
     // Populate distortions grid:
 
     distGrid->attach(*useHeaderLbl, 0, 0, 1, 1);
