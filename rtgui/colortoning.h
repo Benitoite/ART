@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  */
 #ifndef _COLORTONING_H_
@@ -13,6 +14,7 @@
 #include "thresholdadjuster.h"
 #include "colorprovider.h"
 #include "labgrid.h"
+#include "areamask.h"
 
 class ColorToning final :
     public ToolParamBlock,
@@ -21,7 +23,8 @@ class ColorToning final :
     public CurveListener,
     public ColorProvider,
     public ThresholdAdjusterListener,
-    public AdjusterListener
+    public AdjusterListener,
+    public AreaMask
 {
 public:
     ColorToning ();
@@ -73,6 +76,7 @@ private:
     void labRegionPopulateList();
     void labRegionShow(int idx, bool list_only=false);
     void labRegionGet(int idx);
+    void labAreaMaskToggle();
 
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
@@ -163,6 +167,7 @@ private:
     std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
     int labRegionSelected;
     sigc::connection labRegionSelectionConn;
+    Gtk::CheckButton *labAreaMask;
 
     IdleRegister idle_register;
 };

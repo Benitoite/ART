@@ -159,6 +159,7 @@ set(NONCLISOURCEFILES
     dehaze.cc
     guidedfilter.cc
     logencoding.cc
+    areamask.cc
     )
 
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")

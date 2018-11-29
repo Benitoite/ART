@@ -482,6 +482,10 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionShowMask->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labRegionShowMaskChanged));
     labRegionBox->pack_start(*labRegionShowMask, Gtk::PACK_SHRINK, 4);
 
+    labAreaMask = Gtk::manage(new Gtk::CheckButton("Show Area Mask"));
+    labRegionBox->pack_start(*labAreaMask);
+    labAreaMask->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labAreaMaskToggle));
+
     pack_start(*labRegionBox, Gtk::PACK_EXPAND_WIDGET, 4);
 
     labRegionSaturation->delay = options.adjusterMaxDelay;
@@ -1633,6 +1637,7 @@ void ColorToning::setEditProvider(EditDataProvider *provider)
     labRegionHueMask->setEditProvider(provider);
     labRegionChromaticityMask->setEditProvider(provider);
     labRegionLightnessMask->setEditProvider(provider);
+    AreaMask::setEditProvider(provider);
 }
 
 
@@ -1648,4 +1653,14 @@ float ColorToning::blendPipetteValues(CurveEditor *ce, float chan1, float chan2,
         return lin2log(x, 3.f);
     }
     return CurveListener::blendPipetteValues(ce, chan1, chan2, chan3);
+}
+
+
+void ColorToning::labAreaMaskToggle()
+{
+    if (labAreaMask->get_active()) {
+        subscribe();
+    } else {
+        unsubscribe();
+    }
 }

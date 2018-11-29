@@ -386,6 +386,7 @@ void ToolPanelCoordinator::panelChanged(const rtengine::ProcEvent& event, const 
         int fw, fh;
         ipc->getInitialImage()->getImageSource()->getFullSize (fw, fh, tr);
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
+        colortoning->updateGeometry(fw, fh);
     }
 
     // some transformations make the crop change for convenience
@@ -485,6 +486,7 @@ void ToolPanelCoordinator::profileChange(
     if (event == rtengine::EvPhotoLoaded || event == rtengine::EvProfileChanged || event == rtengine::EvHistoryBrowsed || event == rtengine::EvCTRotate) {
         // updating the "on preview" geometry
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
+        colortoning->updateGeometry(fw, fh);
     }
 
     // start the IPC processing
