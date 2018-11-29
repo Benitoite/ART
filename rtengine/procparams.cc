@@ -607,6 +607,41 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 const double ColorToningParams::LABGRID_CORR_MAX = 12000.f;
 const double ColorToningParams::LABGRID_CORR_SCALE = 3.f;
 
+ColorToningParams::LabCorrectionRegion::AreaMask::AreaMask():
+    enabled(false),
+    inverted(false),
+    x(0),
+    y(0),
+    width(100),
+    height(100),
+    angle(0),
+    feather(0),
+    roundedness(0)
+{
+}
+
+
+bool ColorToningParams::LabCorrectionRegion::AreaMask::operator==(const AreaMask &other) const
+{
+    return
+        enabled == other.enabled
+        && inverted == other.inverted
+        && x == other.x
+        && y == other.y
+        && width == other.width
+        && height == other.height
+        && angle == other.angle
+        && feather == other.feather
+        && roundedness == other.roundedness;
+}
+
+
+bool ColorToningParams::LabCorrectionRegion::AreaMask::operator!=(const AreaMask &other) const
+{
+    return !(*this == other);
+}
+
+
 ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
     a(0),
     b(0),
@@ -648,8 +683,15 @@ ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
             0.35
             },
     maskBlur(0),
-    channel(ColorToningParams::LabCorrectionRegion::CHAN_ALL)
+    channel(ColorToningParams::LabCorrectionRegion::CHAN_ALL),
+    areaMask()
 {
+}
+
+
+bool ColorToningParams::LabCorrectionRegion::AreaMask::isTrivial() const
+{
+    return !enabled || (*this == AreaMask());
 }
 
 
@@ -665,7 +707,8 @@ bool ColorToningParams::LabCorrectionRegion::operator==(const LabCorrectionRegio
         && chromaticityMask == other.chromaticityMask
         && lightnessMask == other.lightnessMask
         && maskBlur == other.maskBlur
-        && channel == other.channel;
+        && channel == other.channel
+        && areaMask == other.areaMask;
 }
 
 
@@ -3588,6 +3631,15 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionLightnessMask_") + n, l.lightnessMask, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionMaskBlur_") + n, l.maskBlur, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionChannel_") + n, l.channel, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskEnabled_") + n, l.areaMask.enabled, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskInverted_") + n, l.areaMask.inverted, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskX_") + n, l.areaMask.x, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskY_") + n, l.areaMask.y, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskWidth_") + n, l.areaMask.width, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskHeight_") + n, l.areaMask.height, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskAngle_") + n, l.areaMask.angle, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskFeather_") + n, l.areaMask.feather, keyFile);
+                putToKeyfile("ColorToning", Glib::ustring("LabRegionAreaMaskRoundedness_") + n, l.areaMask.roundness, keyFile);
             }
         }
         saveToKeyfile(!pedited || pedited->colorToning.labregionsShowMask, "ColorToning", "LabRegionsShowMask", colorToning.labregionsShowMask, keyFile);
@@ -5027,6 +5079,42 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     done = false;
                 }
                 if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionChannel_") + n, pedited, cur.channel, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskEnabled_") + n, pedited, cur.areaMask.enabled, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskInverted_") + n, pedited, cur.areaMask.inverted, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskX_") + n, pedited, cur.areaMask.x, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskY_") + n, pedited, cur.areaMask.y, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskWidth_") + n, pedited, cur.areaMask.width, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskHeight_") + n, pedited, cur.areaMask.height, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskAngle_") + n, pedited, cur.areaMask.angle, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskFeather_") + n, pedited, cur.areaMask.feather, pedited->colorToning.labregions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionAreaMaskRoundedness_") + n, pedited, cur.areaMask.roundedness, pedited->colorToning.labregions)) {
                     found = true;
                     done = false;
                 }
