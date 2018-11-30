@@ -500,11 +500,13 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labAreaMaskAdjusters.insert(labAreaMaskX);
     labAreaMaskY = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_Y"), -100, 100, 0.1, 0));
     labAreaMaskAdjusters.insert(labAreaMaskY);
-    labAreaMaskWidth = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_WIDTH"), -200, 200, 100, 0));
+    labAreaMaskWidth = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_WIDTH"), 1, 200, 0.1, 100));
+    labAreaMaskWidth->setLogScale(10, 1);
     labAreaMaskAdjusters.insert(labAreaMaskWidth);
-    labAreaMaskHeight = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_HEIGHT"), -200, 200, 100, 0));
+    labAreaMaskHeight = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_HEIGHT"), 1, 200, 0.1, 100));
+    labAreaMaskHeight->setLogScale(10, 1);
     labAreaMaskAdjusters.insert(labAreaMaskHeight);
-    labAreaMaskAngle = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ANGLE"), 0, 360, 0.1, 0));
+    labAreaMaskAngle = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ANGLE"), 0, 180, 0.1, 0));
     labAreaMaskAdjusters.insert(labAreaMaskAngle);
     labAreaMaskFeather = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_FEATHER"), 0, 100, 0.1, 0));
     labAreaMaskAdjusters.insert(labAreaMaskFeather);
@@ -515,7 +517,6 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
         a->setAdjusterListener(this);
         area->pack_start(*a);
     }
-
 
     labAreaMask->add(*area, false);
     labAreaMask->setLevel(2);

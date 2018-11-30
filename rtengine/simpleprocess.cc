@@ -65,6 +65,10 @@ public:
         imgsrc(nullptr),
         fw(0),
         fh(0),
+        oX(0),
+        oY(0),
+        oW(0),
+        oH(0),
         tr(0),
         pp(0, 0, 0, 0, 0),
         calclum(nullptr),
@@ -176,6 +180,8 @@ private:
             }
         }
         imgsrc->getFullSize (fw, fh, tr);
+        oW = fw;
+        oH = fh;
 
         // check the crop params
         if (params.crop.x > fw || params.crop.y > fh) {
@@ -1112,7 +1118,7 @@ private:
         ipf.chromiLuminanceCurve (nullptr, 1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
 
         ipf.vibrance (labView);
-        ipf.labColorCorrectionRegions(labView);
+        ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
         ipf.logEncoding(labView);
 
         if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
@@ -1432,6 +1438,8 @@ private:
             int cy = params.crop.y;
             int cw = params.crop.w;
             int ch = params.crop.h;
+            oX = cx * scale_factor;
+            oY = cy * scale_factor;
 
             Imagefloat *cropped = new Imagefloat(cw, ch);
 
@@ -1460,6 +1468,9 @@ private:
 //        adjust_procparams (scale_factor);
         params.resize.enabled = false;
         params.crop.enabled = false;
+
+        oW *= scale_factor;
+        oH *= scale_factor;
 
         fw = imw;
         fh = imh;
@@ -1500,6 +1511,10 @@ private:
     ImageSource *imgsrc;
     int fw;
     int fh;
+    int oX; // parameters for the area masks 
+    int oY; // in labColorCorrectionRegions
+    int oW; //
+    int oH; //
 
     int tr;
     PreviewProps pp;

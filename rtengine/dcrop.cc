@@ -867,7 +867,7 @@ void Crop::update(int todo)
         LUTu dummy;
         parent->ipf.chromiLuminanceCurve(this, 1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
         parent->ipf.vibrance(laboCrop);
-        parent->ipf.labColorCorrectionRegions(laboCrop, trafx / skip, trafy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+        parent->ipf.labColorCorrectionRegions(laboCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
