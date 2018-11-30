@@ -475,7 +475,7 @@ struct ColorToningParams {
             double height; // [-200,200]
             double angle; // in degrees
             double feather; // [0,100]
-            double roundedness; // [0,100] (0 = rectangle, 100 = ellipse)
+            double roundness; // [0,100] (0 = rectangle, 100 = ellipse)
             AreaMask();
             bool operator==(const AreaMask &other) const;
             bool operator!=(const AreaMask &other) const;

@@ -6,6 +6,7 @@
 #define _COLORTONING_H_
 
 #include <gtkmm.h>
+#include <unordered_set>
 #include "adjuster.h"
 #include "toolpanel.h"
 #include "guiutils.h"
@@ -64,6 +65,9 @@ public:
     void setEditProvider(EditDataProvider *provider) override;
     float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3) override;
 
+    bool button1Released() override;
+    void switchOffEditMode() override;
+    
 private:
     void onLabRegionSelectionChanged();
     void labRegionAddPressed();
@@ -76,7 +80,10 @@ private:
     void labRegionPopulateList();
     void labRegionShow(int idx, bool list_only=false);
     void labRegionGet(int idx);
-    void labAreaMaskToggle();
+    void labAreaMaskToggleChanged();
+    void labAreaMaskInvertedChanged();
+    void labRegionUpdateAreaMask(bool from_mask);
+    void labAreaMaskEnableToggled();
 
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
@@ -145,6 +152,7 @@ private:
     rtengine::ProcEvent EvLabRegionMaskBlur;
     rtengine::ProcEvent EvLabRegionShowMask;
     rtengine::ProcEvent EvLabRegionChannel;
+    rtengine::ProcEvent EvLabRegionAreaMask;
 
     Gtk::VBox *labRegionBox;
     Gtk::ListViewText *labRegionList;
@@ -167,7 +175,17 @@ private:
     std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
     int labRegionSelected;
     sigc::connection labRegionSelectionConn;
-    Gtk::CheckButton *labAreaMask;
+    MyExpander *labAreaMask;
+    Gtk::ToggleButton *labAreaMaskToggle;
+    Gtk::CheckButton *labAreaMaskInverted;
+    Adjuster *labAreaMaskX;
+    Adjuster *labAreaMaskY;
+    Adjuster *labAreaMaskWidth;
+    Adjuster *labAreaMaskHeight;
+    Adjuster *labAreaMaskAngle;
+    Adjuster *labAreaMaskFeather;
+    Adjuster *labAreaMaskRoundness;
+    std::unordered_set<Adjuster *> labAreaMaskAdjusters;
 
     IdleRegister idle_register;
 };

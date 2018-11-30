@@ -370,6 +370,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     EvLabRegionMaskBlur = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_MASKBLUR");
     EvLabRegionShowMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_SHOWMASK");
     EvLabRegionChannel = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_CHANNEL");
+    EvLabRegionAreaMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_AREAMASK");
     labRegionBox = Gtk::manage(new Gtk::VBox());
 
     labRegionList = Gtk::manage(new Gtk::ListViewText(3));
@@ -478,13 +479,51 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionMaskBlur->setAdjusterListener(this);
     labRegionBox->pack_start(*labRegionMaskBlur);
 
+    labAreaMask = Gtk::manage(new MyExpander(true, M("TP_COLORTONING_LABREGION_AREAMASK")));
+    labAreaMask->signal_enabled_toggled().connect(sigc::mem_fun(*this, &ColorToning::labAreaMaskEnableToggled));
+    ToolParamBlock *area = Gtk::manage(new ToolParamBlock());
+    hb = Gtk::manage(new Gtk::HBox());
+
+    labAreaMaskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_AREAMASK_INVERTED")));
+    labAreaMaskInverted->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labAreaMaskInvertedChanged));
+    hb->pack_start(*labAreaMaskInverted, Gtk::PACK_EXPAND_WIDGET);
+
+    labAreaMaskToggle = Gtk::manage(new Gtk::ToggleButton());
+    labAreaMaskToggle->get_style_context()->add_class("independent");
+    labAreaMaskToggle->add(*Gtk::manage(new RTImage("crosshair-adjust.png")));
+    labAreaMaskToggle->set_tooltip_text(M("EDIT_OBJECT_TOOLTIP"));
+    labAreaMaskToggle->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labAreaMaskToggleChanged));
+    hb->pack_start(*labAreaMaskToggle, Gtk::PACK_SHRINK, 0);
+    area->pack_start(*hb);
+
+    labAreaMaskX = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_X"), -100, 100, 0.1, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskX);
+    labAreaMaskY = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_Y"), -100, 100, 0.1, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskY);
+    labAreaMaskWidth = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_WIDTH"), -200, 200, 100, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskWidth);
+    labAreaMaskHeight = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_HEIGHT"), -200, 200, 100, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskHeight);
+    labAreaMaskAngle = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ANGLE"), 0, 360, 0.1, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskAngle);
+    labAreaMaskFeather = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_FEATHER"), 0, 100, 0.1, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskFeather);
+    labAreaMaskRoundness = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ROUNDNESS"), 0, 100, 0.1, 0));
+    labAreaMaskAdjusters.insert(labAreaMaskRoundness);
+
+    for (auto a : labAreaMaskAdjusters) {
+        a->setAdjusterListener(this);
+        area->pack_start(*a);
+    }
+
+
+    labAreaMask->add(*area, false);
+    labAreaMask->setLevel(2);
+    labRegionBox->pack_start(*labAreaMask);
+
     labRegionShowMask = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_SHOWMASK")));
     labRegionShowMask->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labRegionShowMaskChanged));
     labRegionBox->pack_start(*labRegionShowMask, Gtk::PACK_SHRINK, 4);
-
-    labAreaMask = Gtk::manage(new Gtk::CheckButton("Show Area Mask"));
-    labRegionBox->pack_start(*labAreaMask);
-    labAreaMask->signal_toggled().connect(sigc::mem_fun(*this, &ColorToning::labAreaMaskToggle));
 
     pack_start(*labRegionBox, Gtk::PACK_EXPAND_WIDGET, 4);
 
@@ -1391,6 +1430,9 @@ void ColorToning::adjusterChanged(Adjuster* a, double newval)
         listener->panelChanged(EvLabRegionPower, a->getTextValue());
     } else if (a == labRegionMaskBlur) {
         listener->panelChanged(EvLabRegionMaskBlur, a->getTextValue());
+    } else if (labAreaMaskAdjusters.find(a) != labAreaMaskAdjusters.end()) {
+        labRegionUpdateAreaMask(false);
+        listener->panelChanged(EvLabRegionAreaMask, M("GENERAL_CHANGED"));
     }
 }
 
@@ -1421,6 +1463,7 @@ void ColorToning::setBatchMode (bool batchMode)
     clCurveEditorG->setBatchMode (batchMode);
     cl2CurveEditorG->setBatchMode (batchMode);
 
+    labRegionBox->set_sensitive(false);
 }
 
 
@@ -1457,6 +1500,15 @@ void ColorToning::labRegionGet(int idx)
     r.lightnessMask = labRegionLightnessMask->getCurve();
     r.maskBlur = labRegionMaskBlur->getValue();
     r.channel = labRegionChannel->get_active_row_number() - 1;
+    r.areaMask.enabled = labAreaMask->getEnabled();
+    r.areaMask.inverted = labAreaMaskInverted->get_active();
+    r.areaMask.x = labAreaMaskX->getValue();
+    r.areaMask.y = labAreaMaskY->getValue();
+    r.areaMask.width = labAreaMaskWidth->getValue();
+    r.areaMask.height = labAreaMaskHeight->getValue();
+    r.areaMask.angle = labAreaMaskAngle->getValue();
+    r.areaMask.feather = labAreaMaskFeather->getValue();
+    r.areaMask.roundness = labAreaMaskRoundness->getValue();
 }
 
 
@@ -1556,22 +1608,29 @@ void ColorToning::labRegionPopulateList()
         const char *ch = "";
         switch (r.channel) {
         case rtengine::ColorToningParams::LabCorrectionRegion::CHAN_R:
-            ch = "\n[Red]"; break;
+            ch = " [R]"; break;
         case rtengine::ColorToningParams::LabCorrectionRegion::CHAN_G:
-            ch = "\n[Green]"; break;
+            ch = " [G]"; break;
         case rtengine::ColorToningParams::LabCorrectionRegion::CHAN_B:
-            ch = "\n[Blue]"; break;
+            ch = " [B]"; break;
         default:
             ch = "";
         }
+        Glib::ustring am("");
+        if (!r.areaMask.isTrivial()) {
+            am = Glib::ustring::compose("\n[%1 %2 %3 %4]%5",
+                                        r.areaMask.x, r.areaMask.y,
+                                        r.areaMask.width, r.areaMask.height,
+                                        r.areaMask.inverted ? "-" : "");
+        }
         labRegionList->set_text(
             j, 2, Glib::ustring::compose(
-                "%1%2%3%4%5",
+                "%1%2%3%4%5%6",
                 hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
                 hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
                 hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
                 r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "",
-                ch));
+                ch, am));
     }
 }
 
@@ -1595,26 +1654,49 @@ void ColorToning::labRegionShow(int idx, bool list_only)
         labRegionLightnessMask->setCurve(r.lightnessMask);
         labRegionMaskBlur->setValue(r.maskBlur);
         labRegionChannel->set_active(r.channel+1);
+
+        if (isCurrentSubscriber()) {
+            unsubscribe();
+        }
+        labAreaMaskToggle->set_active(false);
+        labAreaMask->setEnabled(r.areaMask.enabled);
+        labAreaMaskInverted->set_active(r.areaMask.inverted);
+        labAreaMaskX->setValue(r.areaMask.x);
+        labAreaMaskY->setValue(r.areaMask.y);
+        labAreaMaskWidth->setValue(r.areaMask.width);
+        labAreaMaskHeight->setValue(r.areaMask.height);
+        labAreaMaskAngle->setValue(r.areaMask.angle);
+        labAreaMaskFeather->setValue(r.areaMask.feather);
+        labAreaMaskRoundness->setValue(r.areaMask.roundness);
+        labRegionUpdateAreaMask(false);
     }
     labRegionList->set_text(idx, 1, Glib::ustring::compose("a=%1 b=%2 S=%3\ns=%4 o=%5 p=%6", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power));
     const char *ch = "";
     switch (r.channel) {
     case rtengine::ColorToningParams::LabCorrectionRegion::CHAN_R:
-        ch = "\n[Red]"; break;
+        ch = " [R]"; break;
     case rtengine::ColorToningParams::LabCorrectionRegion::CHAN_G:
-        ch = "\n[Green]"; break;
+        ch = " [G]"; break;
     case rtengine::ColorToningParams::LabCorrectionRegion::CHAN_B:
-        ch = "\n[Blue]"; break;
+        ch = " [B]"; break;
     default:
         ch = "";
     }
+    Glib::ustring am("");
+    if (!r.areaMask.isTrivial()) {
+        am = Glib::ustring::compose("\n[%1 %2 %3 %4]%5",
+                                    r.areaMask.x, r.areaMask.y,
+                                    r.areaMask.width, r.areaMask.height,
+                                    r.areaMask.inverted ? "-" : "");
+    }
     labRegionList->set_text(
         idx, 2, Glib::ustring::compose(
-            "%1%2%3%4%5",
+            "%1%2%3%4%5%6",
             hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
             hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
             hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
-            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", ch));
+            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "",
+            ch, am));
     Gtk::TreePath pth;
     pth.push_back(idx);
     labRegionList->get_selection()->select(pth);
@@ -1656,11 +1738,72 @@ float ColorToning::blendPipetteValues(CurveEditor *ce, float chan1, float chan2,
 }
 
 
-void ColorToning::labAreaMaskToggle()
+void ColorToning::labAreaMaskToggleChanged()
 {
-    if (labAreaMask->get_active()) {
+    if (labAreaMaskToggle->get_active()) {
         subscribe();
     } else {
         unsubscribe();
+    }
+}
+
+
+void ColorToning::labAreaMaskInvertedChanged()
+{
+    if (listener) {
+        listener->panelChanged(EvLabRegionAreaMask, M("GENERAL_CHANGED"));
+    }
+}
+
+
+void ColorToning::labRegionUpdateAreaMask(bool from_mask)
+{
+    bool has_listener = listener;
+    if (listener) {
+        disableListener();
+    }
+    if (from_mask) {
+        labAreaMaskX->setValue(center_x_);
+        labAreaMaskY->setValue(center_y_);
+        labAreaMaskWidth->setValue(width_);
+        labAreaMaskHeight->setValue(height_);
+        labAreaMaskAngle->setValue(angle_);
+    } else {
+        center_x_ = labAreaMaskX->getValue();
+        center_y_ = labAreaMaskY->getValue();
+        width_ = labAreaMaskWidth->getValue();
+        height_ = labAreaMaskHeight->getValue();
+        angle_ = labAreaMaskAngle->getValue();
+        updateGeometry();
+    }
+    if (has_listener) {
+        enableListener();
+    }
+}
+
+
+bool ColorToning::button1Released()
+{
+    if (last_object_ != -1) {
+        labRegionUpdateAreaMask(true);
+        if (listener) {
+            listener->panelChanged(EvLabRegionAreaMask, M("GENERAL_CHANGED"));
+        }
+    }
+    return AreaMask::button1Released();
+}
+
+
+void ColorToning::switchOffEditMode()
+{
+    labAreaMaskToggle->set_active(false);
+    AreaMask::switchOffEditMode();
+}
+
+
+void ColorToning::labAreaMaskEnableToggled()
+{
+    if (listener) {
+        listener->panelChanged(EvLabRegionAreaMask, labAreaMask->getEnabled() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }

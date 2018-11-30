@@ -27,6 +27,10 @@
 //#define BENCHMARK
 #include "StopWatch.h"
 #include "sleef.c"
+#include "coord.h"
+#include "gauss.h"
+
+namespace rtengine {
 
 namespace {
 
@@ -48,11 +52,88 @@ void fastlin2log(float *x, float factor, float base, int w)
 }
 #endif
 
+
+bool generate_area_mask(array2D<float> &mask, const ColorToningParams::LabCorrectionRegion::AreaMask &area, int ox, int oy, int width, int height, bool multithread)
+{
+    if (area.isTrivial()) {
+        return false;
+    }
+
+    float w2 = float(width) / 2;
+    float h2 = float(height) / 2;
+
+    Coord origin(ox, oy);
+    Coord center(w2 + area.x / 100.0 * w2, h2 + area.y / 100.0 * h2);
+    float area_w = area.width / 100.0 * width;
+    float area_h = area.height / 100.0 * height;
+    
+    float a_min = area_w / 2;
+    float b_min = area_h / 2;
+    float r = b_min / a_min;
+    float a_max = std::sqrt(2) * a_min;
+    float a = a_max - area.roundness / 100.0 * (a_max - a_min);
+
+    float bgcolor = area.inverted ? 1.f : 0.f;
+    float fgcolor = 1.f - bgcolor;
+
+    // first fill with background
+    float *maskdata = mask;
+    std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
+
+    const auto get = [&](int x, int y) -> Coord
+                     {
+                         PolarCoord p(Coord(x, y));
+                         double r, a;
+                         p.get(r, a);
+                         p.set(r, a - area.angle);
+                         Coord ret(p);
+                         ret += center;
+                         ret -= origin;
+                         return ret;
+                     };
+
+    const auto inside = [&](int x, int y) -> bool
+                        {
+                            return (x >= 0 && x < mask.width() &&
+                                    y >= 0 && y < mask.height());
+                        };
+
+    const int dir[] = { 1, 1, 1, -1, -1, 1, -1, -1 };
+
+    // draw the (bounded) ellipse
+    for (int x = 0, n = int(a_min); x < n; ++x) {
+        int yy = r * std::sqrt(a*a - float(x*x));
+        for (int y = 0, m = std::min(yy, int(b_min)); y < m; ++y) {
+            for (int d = 0; d < 4; ++d) {
+                int dx = dir[2*d], dy = dir[2*d+1];
+                Coord point = get(dx * x, dy * y);
+                for (int i = -1; i < 2; ++i) {
+                    for (int j = -1; j < 2; ++j) {
+                        if (inside(point.x+i, point.y+j)) {
+                            mask[point.y+j][point.x+i] = fgcolor;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // and blur
+    float radius = area.feather / 100.0 * std::min(a_min, b_min);
+    if (radius > 1) {
+#ifdef _OPENMP
+#       pragma omp parallel if (multithread)
+#endif
+        gaussianBlur(mask, mask, mask.width(), mask.height(), radius);
+    }
+
+    return true;
 }
 
-namespace rtengine {
+} // namespace
 
-void ImProcFunctions::labColorCorrectionRegions(LabImage *lab)
+
+void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
 {
     if (!params->colorToning.enabled || params->colorToning.method != "LabRegions") {
         return;
@@ -149,6 +230,27 @@ BENCHFUN
         int r2 = max(int(25 / scale * blur + 0.5), 1);
         rtengine::guidedFilter(guide, abmask[i], abmask[i], r1, 0.001, multiThread);
         rtengine::guidedFilter(guide, Lmask[i], Lmask[i], r2, 0.0001, multiThread);
+    }
+
+    if (full_width < 0) {
+        full_width = lab->W;
+    }
+    if (full_height < 0) {
+        full_height = lab->H;
+    }
+
+    for (int i = begin_idx; i < end_idx; ++i) {
+        if (generate_area_mask(guide, params->colorToning.labregions[i].areaMask, offset_x, offset_y, full_width, full_height, multiThread)) {
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int y = 0; y < lab->H; ++y) {
+                for (int x = 0; x < lab->W; ++x) {
+                    abmask[i][y][x] *= guide[y][x];
+                    Lmask[i][y][x] *= guide[y][x];
+                }
+            }
+        }
     }
 
     if (show_mask_idx >= 0) {
