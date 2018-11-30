@@ -286,7 +286,7 @@ BENCHFUN
         auto &r = params->colorToning.labregions[i];
         abca[i] = abcoord(r.a);
         abcb[i] = abcoord(r.b);
-        rs[i] = 1.f + r.saturation / (SGN(r.saturation) > 0 ? 50.f : 100.f);
+        rs[i] = 1.f + r.saturation / 100.f;
         slope[i] = r.slope;
         offset[i] = r.offset;
         power[i] = r.power;
