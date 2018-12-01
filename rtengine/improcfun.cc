@@ -2394,19 +2394,19 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
                         }
                     }
                 } else {
-                    for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                            // clip out of gamut colors, without distorting colour too bad
-                            float r = max(rtemp[ti * TS + tj], 0.f);
-                            float g = max(gtemp[ti * TS + tj], 0.f);
-                            float b = max(btemp[ti * TS + tj], 0.f);
+                    // for (int i = istart, ti = 0; i < tH; i++, ti++) {
+                    //     for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+                    //         // clip out of gamut colors, without distorting colour too bad
+                    //         float r = max(rtemp[ti * TS + tj], 0.f);
+                    //         float g = max(gtemp[ti * TS + tj], 0.f);
+                    //         float b = max(btemp[ti * TS + tj], 0.f);
 
-                            if (OOG(max(r, g, b)) && !OOG(min(r, g, b))) {
-                                Color::filmlike_clip(&r, &g, &b);
-                            }
-                            setUnlessOOG(rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], r, g, b);
-                        }
-                    }
+                    //         if (OOG(max(r, g, b)) && !OOG(min(r, g, b))) {
+                    //             Color::filmlike_clip(&r, &g, &b);
+                    //         }
+                    //         setUnlessOOG(rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], r, g, b);
+                    //     }
+                    // }
                 }
 
                 if (histToneCurveThr) {
