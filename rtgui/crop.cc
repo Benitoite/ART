@@ -53,21 +53,6 @@ int notifyListenerUI (void* data)
 }
 
 
-inline int gcd(int a, int b)
-{
-    if (a < 0) a = -a;
-    if (b < 0) b = -b;
-
-    long t;
-    while (b != 0) {
-        t = b;
-        b = a % b;
-        a = t;
-    }
-    return a;
-}
-
-
 inline void get_custom_ratio(int w, int h, double &rw, double &rh)
 {
     if (w < h) {
