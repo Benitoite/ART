@@ -1464,7 +1464,7 @@ void ColorToning::setBatchMode (bool batchMode)
     clCurveEditorG->setBatchMode (batchMode);
     cl2CurveEditorG->setBatchMode (batchMode);
 
-    labRegionBox->set_sensitive(false);
+    labAreaMask->hide();
 }
 
 

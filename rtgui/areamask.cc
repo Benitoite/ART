@@ -243,7 +243,11 @@ bool AreaMask::drag1(const int modifierKey)
         }
 
         if (dragged_point_adjuster_angle_ != angle_) {
-            angle_ = dragged_point_adjuster_angle_;
+            if (dragged_point_adjuster_angle_ < 0) {
+                angle_ = 180.0 + dragged_point_adjuster_angle_;
+            } else {
+                angle_ = dragged_point_adjuster_angle_;
+            }
             updateGeometry();
             return true;
         }
