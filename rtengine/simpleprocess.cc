@@ -1481,7 +1481,7 @@ private:
         procparams::ProcParams &params = job->pparams;
         procparams::ProcParams defaultparams;
 
-        if (!params.prsharpening.enabled) {
+        if (!params.sharpening.enabled) {
             params.sharpening = params.prsharpening;
         }
             
