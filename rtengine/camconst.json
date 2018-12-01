@@ -1131,6 +1131,10 @@ Camera constants:
     },
 
 // Canon Powershot
+    { // Quality C, CHDK DNGs, raw frame correction
+        "make_model": "Canon PowerShot A3100 IS",
+        "raw_crop": [ 24, 12, 4032, 3024 ] // full size 4036X3026
+    },
 
     { // Quality C, CHDK DNGs, raw frame corrections, experimental infrared support commented out
         "make_model": "Canon PowerShot A480",
@@ -1211,6 +1215,11 @@ Camera constants:
         "raw_crop": [ 120, 34, 4616, 3464 ], // full raw 4768x3516, Usable 96,16,4672,3498 - Canon official 4608x3456 left 124 top 38,
         "masked_areas": [ 20, 2, 3480, 80 ],
         "ranges": { "white": 4050 } // nominal 4080-4093
+    },
+
+    { // Quality C
+        "make_model": "Canon PowerShot SX150 IS",
+        "raw_crop": [ 26, 10, 4364, 3254 ] // cut 2pix left and right
     },
 
     { // Quality C
