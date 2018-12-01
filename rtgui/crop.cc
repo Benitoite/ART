@@ -1424,10 +1424,6 @@ double Crop::getRatio () const
         return r;
     }
 
-    // if (ratio->get_active_row_number() == 1) {
-    //     return double(int(double(w->get_value()) / double(h->get_value()) * 100 + 0.5) / 100.0);
-    // }
-
     r = crop_ratios[ratio->get_active_row_number()].value;
     if (!r) {
         r = maxh <= maxw ? float(maxh)/float(maxw) : float(maxw)/float(maxh);
