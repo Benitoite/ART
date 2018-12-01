@@ -494,7 +494,13 @@ void Crop::write (ProcParams* pp, ParamsEdited* pedited)
     pp->crop.w = nw;
     pp->crop.h = nh;
     pp->crop.fixratio = fixr->get_active ();
-    pp->crop.ratio = ratio->get_active_text ();
+    if (ratio->get_active_row_number() == 0) {
+        pp->crop.ratio = "As Image";
+    } else if (ratio->get_active_row_number() == 1) {
+        pp->crop.ratio = "Current";
+    } else {
+        pp->crop.ratio = ratio->get_active_text ();
+    }
 
     // for historical reasons we store orientation different if ratio is written as 2:3 instead of 3:2, but in GUI 'landscape' is always long side horizontal regardless of the ratio is written short or long side first.
     const bool flip_orientation = fixr->get_active() && crop_ratios[ratio->get_active_row_number()].value > 0 && crop_ratios[ratio->get_active_row_number()].value < 1.0;
