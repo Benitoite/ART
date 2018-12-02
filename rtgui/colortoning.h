@@ -25,7 +25,8 @@ class ColorToning final :
     public ColorProvider,
     public ThresholdAdjusterListener,
     public AdjusterListener,
-    public AreaMask
+    public AreaMask,
+    public PParamsChangeListener
 {
 public:
     ColorToning ();
@@ -68,6 +69,14 @@ public:
     bool button1Released() override;
     void switchOffEditMode() override;
     
+    PParamsChangeListener *getPParamsChangeListener() override { return this; }
+    void procParamsChanged(
+        const rtengine::procparams::ProcParams* params,
+        const rtengine::ProcEvent& ev,
+        const Glib::ustring& descr,
+        const ParamsEdited* paramsEdited = nullptr) override;
+    void clearParamChanges() override {}
+    
 private:
     void onLabRegionSelectionChanged();
     void labRegionAddPressed();
@@ -84,6 +93,7 @@ private:
     void labAreaMaskInvertedChanged();
     void labRegionUpdateAreaMask(bool from_mask);
     void labAreaMaskEnableToggled();
+    void labAreaMaskUpdateDefaults(const rtengine::procparams::ProcParams *pp);
 
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
@@ -186,6 +196,7 @@ private:
     Adjuster *labAreaMaskFeather;
     Adjuster *labAreaMaskRoundness;
     std::unordered_set<Adjuster *> labAreaMaskAdjusters;
+    rtengine::procparams::ColorToningParams::LabCorrectionRegion::AreaMask defaultAreaMask;
 
     IdleRegister idle_register;
 };

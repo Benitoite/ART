@@ -471,8 +471,8 @@ struct ColorToningParams {
             bool inverted;
             double x; // [-100,100], with 0 as center of the image
             double y; // [-100,100]
-            double width; // [-200,200], with 100 as image width
-            double height; // [-200,200]
+            double width; // [0,200], with 100 as image width
+            double height; // [0,200]
             double angle; // in degrees
             double feather; // [0,100]
             double roundness; // [0,100] (0 = rectangle, 100 = ellipse)

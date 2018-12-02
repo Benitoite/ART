@@ -622,6 +622,7 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
     }        
     labRegionPopulateList();
     labRegionShow(labRegionSelected);
+    labAreaMaskUpdateDefaults(pp);
 
     if (pedited) {
         redlow->setEditedState (pedited->colorToning.redlow ? Edited : UnEdited);
@@ -1517,6 +1518,7 @@ void ColorToning::labRegionAddPressed()
 {
     labRegionSelected = labRegionData.size();
     labRegionData.push_back(rtengine::ColorToningParams::LabCorrectionRegion());
+    labRegionData.back().areaMask = defaultAreaMask;
     labRegionPopulateList();
     labRegionShow(labRegionSelected);
 
@@ -1528,15 +1530,22 @@ void ColorToning::labRegionAddPressed()
 
 void ColorToning::labRegionRemovePressed()
 {
+    if (labRegionList->empty()) {
+        return;
+    }
+    
     if (labRegionList->size() > 1) {
         labRegionData.erase(labRegionData.begin() + labRegionSelected);
         labRegionSelected = LIM(labRegionSelected-1, 0, int(labRegionData.size()-1));
-        labRegionPopulateList();
-        labRegionShow(labRegionSelected);
+    } else {
+        labRegionData[0] = procparams::ColorToningParams::LabCorrectionRegion();
+        labRegionData[0].areaMask = defaultAreaMask;
+    }
+    labRegionPopulateList();
+    labRegionShow(labRegionSelected);
 
-        if (listener) {
-            listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
-        }
+    if (listener) {
+        listener->panelChanged(EvLabRegionList, M("HISTORY_CHANGED"));
     }
 }
 
@@ -1807,4 +1816,40 @@ void ColorToning::labAreaMaskEnableToggled()
     if (listener) {
         listener->panelChanged(EvLabRegionAreaMask, labAreaMask->getEnabled() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
+}
+
+
+void ColorToning::procParamsChanged(
+    const rtengine::procparams::ProcParams* params,
+    const rtengine::ProcEvent& ev,
+    const Glib::ustring& descr,
+    const ParamsEdited* paramsEdited)
+{
+    labAreaMaskUpdateDefaults(params);
+}
+
+
+void ColorToning::labAreaMaskUpdateDefaults(const rtengine::procparams::ProcParams* params)
+{
+    EditDataProvider* provider = getEditProvider();
+
+    if (!provider) {
+        return;
+    }
+
+    int imW = 0, imH = 0;
+    provider->getImageSize(imW, imH);
+    if (!imW || !imH) {
+        return;
+    }
+
+    defaultAreaMask = rtengine::procparams::ColorToningParams::LabCorrectionRegion::AreaMask();
+    if (!params->crop.enabled) {
+        return;
+    }
+
+    defaultAreaMask.width = double(params->crop.w)/double(imW) * 100.0;
+    defaultAreaMask.height = double(params->crop.h)/double(imH) * 100.0;
+    defaultAreaMask.x = (double(params->crop.x + params->crop.w * 0.5) / (imW * 0.5) - 1) * 100.0;
+    defaultAreaMask.y = (double(params->crop.y + params->crop.h * 0.5) / (imH * 0.5) - 1) * 100.0;
 }
