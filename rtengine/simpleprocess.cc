@@ -1488,7 +1488,7 @@ private:
         ImProcFunctions &ipf = *(ipf_p.get());
         ipf.setScale(1.0 / scale_factor);
 
-        // params.wavelet.strength *= scale_factor;
+        params.wavelet.strength *= scale_factor;
 
         if (params.raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::THREE_PASS)) {
             params.raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::ONE_PASS);
