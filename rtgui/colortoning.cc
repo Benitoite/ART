@@ -1530,7 +1530,7 @@ void ColorToning::labRegionAddPressed()
 
 void ColorToning::labRegionRemovePressed()
 {
-    if (labRegionList->empty()) {
+    if (labRegionList->size() == 0) {
         return;
     }
     
