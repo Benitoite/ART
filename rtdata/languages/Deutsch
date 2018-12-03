@@ -73,6 +73,7 @@
 #72 05.10.2018 Korrekturen (TooWaBoo) RT 5.5
 #73 21.11.2018 Erweiterung (TooWaBoo) RT 5.5
 #74 24.11.2018 Erweiterung (TooWaBoo) RT 5.5
+#75 02.12.2018 Erweiterung (TooWaBoo) RT 5.5
 
 ABOUT_TAB_BUILD;Version
 ABOUT_TAB_CREDITS;Danksagungen
@@ -2405,3 +2406,8 @@ ZOOMPANEL_ZOOMFITSCREEN;An Bildschirm anpassen.\nTaste: <b>Alt</b> + <b>f</b>
 ZOOMPANEL_ZOOMIN;Hineinzoomen\nTaste: <b>+</b>
 ZOOMPANEL_ZOOMOUT;Herauszoomen\nTaste: <b>-</b>
 
+!!!!!!!!!!!!!!!!!!!!!!!!!
+! Untranslated keys follow; remove the ! prefix after an entry is translated.
+!!!!!!!!!!!!!!!!!!!!!!!!!
+
+GENERAL_CURRENT;Aktuell
