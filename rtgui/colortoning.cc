@@ -497,21 +497,21 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     area->pack_start(*hb);
 
     labAreaMaskX = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_X"), -100, 100, 0.1, 0));
-    labAreaMaskAdjusters.insert(labAreaMaskX);
+    labAreaMaskAdjusters.push_back(labAreaMaskX);
     labAreaMaskY = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_Y"), -100, 100, 0.1, 0));
-    labAreaMaskAdjusters.insert(labAreaMaskY);
+    labAreaMaskAdjusters.push_back(labAreaMaskY);
     labAreaMaskWidth = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_WIDTH"), 1, 200, 0.1, 100));
     labAreaMaskWidth->setLogScale(10, 1);
-    labAreaMaskAdjusters.insert(labAreaMaskWidth);
+    labAreaMaskAdjusters.push_back(labAreaMaskWidth);
     labAreaMaskHeight = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_HEIGHT"), 1, 200, 0.1, 100));
     labAreaMaskHeight->setLogScale(10, 1);
-    labAreaMaskAdjusters.insert(labAreaMaskHeight);
+    labAreaMaskAdjusters.push_back(labAreaMaskHeight);
     labAreaMaskAngle = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ANGLE"), 0, 180, 0.1, 0));
-    labAreaMaskAdjusters.insert(labAreaMaskAngle);
+    labAreaMaskAdjusters.push_back(labAreaMaskAngle);
     labAreaMaskFeather = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_FEATHER"), 0, 100, 0.1, 0));
-    labAreaMaskAdjusters.insert(labAreaMaskFeather);
+    labAreaMaskAdjusters.push_back(labAreaMaskFeather);
     labAreaMaskRoundness = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ROUNDNESS"), 0, 100, 0.1, 0));
-    labAreaMaskAdjusters.insert(labAreaMaskRoundness);
+    labAreaMaskAdjusters.push_back(labAreaMaskRoundness);
 
     for (auto a : labAreaMaskAdjusters) {
         a->setAdjusterListener(this);
@@ -1432,7 +1432,7 @@ void ColorToning::adjusterChanged(Adjuster* a, double newval)
         listener->panelChanged(EvLabRegionPower, a->getTextValue());
     } else if (a == labRegionMaskBlur) {
         listener->panelChanged(EvLabRegionMaskBlur, a->getTextValue());
-    } else if (labAreaMaskAdjusters.find(a) != labAreaMaskAdjusters.end()) {
+    } else if (std::find(labAreaMaskAdjusters.begin(), labAreaMaskAdjusters.end(), a) != labAreaMaskAdjusters.end()) {
         labRegionUpdateAreaMask(false);
         listener->panelChanged(EvLabRegionAreaMask, M("GENERAL_CHANGED"));
     }

@@ -6,7 +6,6 @@
 #define _COLORTONING_H_
 
 #include <gtkmm.h>
-#include <unordered_set>
 #include "adjuster.h"
 #include "toolpanel.h"
 #include "guiutils.h"
@@ -195,7 +194,7 @@ private:
     Adjuster *labAreaMaskAngle;
     Adjuster *labAreaMaskFeather;
     Adjuster *labAreaMaskRoundness;
-    std::unordered_set<Adjuster *> labAreaMaskAdjusters;
+    std::vector<Adjuster *> labAreaMaskAdjusters;
     rtengine::procparams::ColorToningParams::LabCorrectionRegion::AreaMask defaultAreaMask;
 
     IdleRegister idle_register;
