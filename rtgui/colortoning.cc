@@ -382,7 +382,10 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionList->set_activate_on_single_click(true);
     labRegionSelectionConn = labRegionList->get_selection()->signal_changed().connect(sigc::mem_fun(this, &ColorToning::onLabRegionSelectionChanged));
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*labRegionList, Gtk::PACK_EXPAND_WIDGET);
+    Gtk::ScrolledWindow *scroll = Gtk::manage(new Gtk::ScrolledWindow());
+    scroll->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_NEVER);
+    scroll->add(*labRegionList);
+    hb->pack_start(*scroll, Gtk::PACK_EXPAND_WIDGET);
     Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
     labRegionAdd = Gtk::manage(new Gtk::Button());
     labRegionAdd->add(*Gtk::manage(new RTImage("add-small.png")));
