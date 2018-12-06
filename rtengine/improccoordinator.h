@@ -392,15 +392,16 @@ public:
         return customTransformOut;
     }
 
-    struct DenoiseInfoStore {
-        DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {}
-        float chM;
-        float max_r[9];
-        float max_b[9];
-        float ch_M[9];
-        bool valid;
+    /* struct DenoiseInfoStore { */
+    /*     DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {} */
+    /*     float chM; */
+    /*     float max_r[9]; */
+    /*     float max_b[9]; */
+    /*     float ch_M[9]; */
+    /*     bool valid; */
 
-    } denoiseInfoStore;
+    /* } */
+    ImProcFunctions::DenoiseInfoStore denoiseInfoStore;
 
 };
 }

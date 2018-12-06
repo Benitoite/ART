@@ -98,12 +98,12 @@ DirPyrDenoise::DirPyrDenoise () : FoldableToolPanel(this, "dirpyrdenoise", M("TP
     ctboxC2 = Gtk::manage (new Gtk::HBox ());
     Gtk::Label* labmC2 = Gtk::manage (new Gtk::Label (M("TP_DIRPYRDENOISE_CHROMINANCE_METHOD") + ":"));
     ctboxC2->pack_start (*labmC2, Gtk::PACK_SHRINK, 1);
-    ctboxC2->set_tooltip_markup (M("TP_DIRPYRDENOISE_CHROMINANCE_METHODADVANCED_TOOLTIP"));
+//    ctboxC2->set_tooltip_markup (M("TP_DIRPYRDENOISE_CHROMINANCE_METHODADVANCED_TOOLTIP"));
 
     C2method = Gtk::manage (new MyComboBoxText ());
     C2method->append (M("TP_DIRPYRDENOISE_CHROMINANCE_MANUAL"));
     C2method->append (M("TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL"));
-    C2method->append (M("TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW"));
+    // C2method->append (M("TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW"));
     C2method->set_active(0);
     C2methodconn = C2method->signal_changed().connect ( sigc::mem_fun(*this, &DirPyrDenoise::C2methodChanged) );
 
@@ -160,9 +160,9 @@ DirPyrDenoise::DirPyrDenoise () : FoldableToolPanel(this, "dirpyrdenoise", M("TP
     luma->hide();
     Ldetail->show();
 
-    NoiseLabels->show();
-    TileLabels->show();
-    PrevLabels->show();
+    // NoiseLabels->show();
+    // TileLabels->show();
+    // PrevLabels->show();
     chroma->show();
     redchro->show();
     bluechro->show();
@@ -265,9 +265,9 @@ DirPyrDenoise::DirPyrDenoise () : FoldableToolPanel(this, "dirpyrdenoise", M("TP
         chromaVBox->pack_start (*ctboxC2);
     }
 
-    chromaVBox->pack_start (*NoiseLabels);
-    chromaVBox->pack_start (*TileLabels);
-    chromaVBox->pack_start (*PrevLabels);
+    // chromaVBox->pack_start (*NoiseLabels);
+    // chromaVBox->pack_start (*TileLabels);
+    // chromaVBox->pack_start (*PrevLabels);
 
     chromaVBox->pack_start (*chroma);
     chromaVBox->pack_start (*redchro);
@@ -687,7 +687,7 @@ void DirPyrDenoise::write (ProcParams* pp, ParamsEdited* pedited)
         pedited->dirpyrDenoise.dmethod  = dmethod->get_active_row_number() != 2;
         pedited->dirpyrDenoise.Lmethod  = Lmethod->get_active_row_number() != 2;
         pedited->dirpyrDenoise.Cmethod  = Cmethod->get_active_row_number() != 4;
-        pedited->dirpyrDenoise.C2method  = C2method->get_active_row_number() != 3;
+        pedited->dirpyrDenoise.C2method  = C2method->get_active_row_number() != 2; //3;
         pedited->dirpyrDenoise.smethod  = smethod->get_active_row_number() != 2;
         pedited->dirpyrDenoise.medmethod  = medmethod->get_active_row_number() != 6;
         pedited->dirpyrDenoise.rgbmethod  = rgbmethod->get_active_row_number() != 2;
@@ -734,8 +734,8 @@ void DirPyrDenoise::write (ProcParams* pp, ParamsEdited* pedited)
             pp->dirpyrDenoise.C2method = "MANU";
         } else if (C2method->get_active_row_number() == 1) {
             pp->dirpyrDenoise.C2method = "AUTO";
-        } else if (C2method->get_active_row_number() == 2) {
-            pp->dirpyrDenoise.C2method = "PREV";
+        // } else if (C2method->get_active_row_number() == 2) {
+        //     pp->dirpyrDenoise.C2method = "PREV";
         }
     }
 
@@ -843,17 +843,17 @@ void DirPyrDenoise::CmethodChanged ()
             chroma->set_sensitive(true);
             redchro->set_sensitive(true);
             bluechro->set_sensitive(true);
-            NoiseLabels->show();
-            TileLabels->hide();
-            PrevLabels->hide();
+            // NoiseLabels->show();
+            // TileLabels->hide();
+            // PrevLabels->hide();
 
         } else if(Cmethod->get_active_row_number() == 1) {          // AUT
             chroma->show();
             redchro->show();
             bluechro->show();
-            NoiseLabels->show();
-            TileLabels->hide();
-            PrevLabels->hide();
+            // NoiseLabels->show();
+            // TileLabels->hide();
+            // PrevLabels->hide();
 
             chroma->set_sensitive(false);
             redchro->set_sensitive(false);
@@ -862,9 +862,9 @@ void DirPyrDenoise::CmethodChanged ()
             chroma->hide();
             redchro->hide();
             bluechro->hide();
-            NoiseLabels->hide();
-            TileLabels->hide();
-            PrevLabels->hide();
+            // NoiseLabels->hide();
+            // TileLabels->hide();
+            // PrevLabels->hide();
 
             chroma->set_sensitive(false);
             redchro->set_sensitive(false);
@@ -873,9 +873,9 @@ void DirPyrDenoise::CmethodChanged ()
             chroma->show();
             redchro->show();
             bluechro->show();
-            NoiseLabels->show();
-            TileLabels->show();
-            PrevLabels->show();
+            // NoiseLabels->show();
+            // TileLabels->show();
+            // PrevLabels->show();
 
             chroma->set_sensitive(false);
             redchro->set_sensitive(false);
@@ -899,32 +899,32 @@ void DirPyrDenoise::C2methodChanged ()
             chroma->set_sensitive(true);
             redchro->set_sensitive(true);
             bluechro->set_sensitive(true);
-            NoiseLabels->show();
-            TileLabels->hide();
-            PrevLabels->hide();
+            // NoiseLabels->show();
+            // TileLabels->hide();
+            // PrevLabels->hide();
 
         } else if(C2method->get_active_row_number() == 1) {         // AUTO
             chroma->show();
             redchro->show();
             bluechro->show();
-            NoiseLabels->show();
-            TileLabels->hide();
-            PrevLabels->hide();
+            // NoiseLabels->show();
+            // TileLabels->hide();
+            // PrevLabels->hide();
 
             chroma->set_sensitive(false);
             redchro->set_sensitive(false);
             bluechro->set_sensitive(false);
-        } else if(C2method->get_active_row_number() == 2) {         // PREV
-            chroma->show();
-            redchro->show();
-            bluechro->show();
-            NoiseLabels->show();
-            TileLabels->hide();
-            PrevLabels->hide();
+        // } else if(C2method->get_active_row_number() == 2) {         // PREV
+        //     chroma->show();
+        //     redchro->show();
+        //     bluechro->show();
+        //     // NoiseLabels->show();
+        //     // TileLabels->hide();
+        //     // PrevLabels->hide();
 
-            chroma->set_sensitive(false);
-            redchro->set_sensitive(false);
-            bluechro->set_sensitive(false);
+        //     chroma->set_sensitive(false);
+        //     redchro->set_sensitive(false);
+        //     bluechro->set_sensitive(false);
         }
 
 
