@@ -43,7 +43,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
     impulsedenoise      = Gtk::manage (new ImpulseDenoise ());
     defringe            = Gtk::manage (new Defringe ());
-    dirpyrdenoise       = Gtk::manage (new DirPyrDenoise ());
+    denoise             = Gtk::manage (new Denoise ());
     epd                 = Gtk::manage (new EdgePreservingDecompositionUI ());
     sharpening          = Gtk::manage (new Sharpening ());
     localContrast       = Gtk::manage(new LocalContrast());
@@ -127,7 +127,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (exposurePanel, lcurve);
     addPanel (advancedPanel, colorappearance);
     addPanel (detailsPanel, impulsedenoise);
-    addPanel (detailsPanel, dirpyrdenoise);
+    addPanel (detailsPanel, denoise);
     addPanel (detailsPanel, defringe);
     addPanel (detailsPanel, dirpyrequalizer);
     addPanel (detailsPanel, dehaze);
@@ -539,7 +539,7 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         ipc->setXtransAutoContrastListener (xtransprocess);
         ipc->setAutoWBListener (whitebalance);
         ipc->setAutoColorTonListener (colortoning);
-        ipc->setAutoChromaListener (dirpyrdenoise);
+        ipc->setAutoChromaListener (denoise);
         ipc->setWaveletListener (wavelet);
         ipc->setRetinexListener (retinex);
         ipc->setSizeListener (crop);

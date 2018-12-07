@@ -4163,9 +4163,9 @@ void ImProcFunctions::chromiLuminanceCurve (PipetteBuffer *pipetteBuffer, int pW
     //increase saturation after denoise : ...approximation
     float factnoise = 1.f;
 
-    if (params->dirpyrDenoise.enabled) {
-        factnoise = (1.f + params->dirpyrDenoise.chroma / 500.f); //levels=5
-//      if(yyyy) factnoise=(1.f+params->dirpyrDenoise.chroma/100.f);//levels=7
+    if (params->denoise.enabled) {
+        factnoise = (1.f + params->denoise.chrominance / 500.f); //levels=5
+//      if(yyyy) factnoise=(1.f+params->denoise.chrominance/100.f);//levels=7
     }
 
     const float scaleConst = 100.0f / 100.1f;

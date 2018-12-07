@@ -3301,14 +3301,14 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->denoise.luminance, "Denoise", "Luminance", denoise.luminance, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.luminanceCurve, "Denoise", "LuminanceCurve", denoise.luminanceCurve, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.luminanceDetail, "Denoise", "LuminanceDetail", denoise.luminanceDetail, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.chrominanceMethod, "Denoise", "ChrominanceMethod", denoise.chrominanceMethod, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominanceMethod, "Denoise", "ChrominanceMethod", int(denoise.chrominanceMethod), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominance, "Denoise", "Chrominance", denoise.chrominance, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceCurve, "Denoise", "ChrominanceCurve", denoise.chrominanceCurve, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceRedGreen, "Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceBlueYellow, "Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianEnabled, "Denoise", "MedianEnabled", denoise.medianEnabled, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianType, "Denoise", "MedianType", int(denoise.medianType), keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.medianMethod, "Denoise", "MedianMethod", denoise.medianMethod, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.medianMethod, "Denoise", "MedianMethod", int(denoise.medianMethod), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianIterations, "Denoise", "MedianIterations", denoise.medianIterations, keyFile);
 
 // EPD
@@ -4268,6 +4268,13 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Ldetail", pedited, denoise.luminanceDetail, pedited->denoise.luminanceDetail);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Chroma", pedited, denoise.chrominance, pedited->denoise.chrominance);
                 Glib::ustring val;
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Method", pedited, val, pedited->denoise.colorSpace)) {
+                    if (val == "RGB") {
+                        denoise.colorSpace = DenoiseParams::ColorSpace::RGB;
+                    } else {
+                        denoise.colorSpace = DenoiseParams::ColorSpace::LAB;
+                    }
+                }
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LMethod", pedited, val, pedited->denoise.luminanceMethod)) {
                     if (val == "CUR") {
                         denoise.luminanceMethod = DenoiseParams::LuminanceMethod::CURVE;
@@ -4283,7 +4290,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     }
                 }
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "SMethod", pedited, val, pedited->denoise.aggressive)) {
-                    aggressive = (val == "shalbi");
+                    denoise.aggressive = (val == "shalbi");
                 }
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MedMethod", pedited, val, pedited->denoise.medianType)) {
                     const std::vector<Glib::ustring> medtps = { "soft", "33", "55soft", "55", "77", "99" };
@@ -4293,10 +4300,10 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     }
                 }
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MethodMed", pedited, val, pedited->denoise.medianMethod)) {
-                    const std::vector<Glib::ustring> med = { "Lonly", "ab", "Lab", "RGB", "Lpab" };
+                    const std::vector<Glib::ustring> med = { "Lonly", "ab", "Lpab", "Lab", "RGB" };
                     auto it = std::find(med.begin(), med.end(), val);
                     if (it != med.end()) {
-                        denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(it - medtps.begin());
+                        denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(it - med.begin());
                     }
                 }
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LCurve", pedited, denoise.luminanceCurve, pedited->denoise.luminanceCurve);

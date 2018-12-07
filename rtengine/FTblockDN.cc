@@ -420,7 +420,7 @@ void do_median_denoise(float **src, float **dst, float upperBound, int width, in
 } // namespace
 
 
-void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp &currWB, DenoiseInfoStore &store, procparams::DirPyrDenoiseParams &dnparams)
+void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp &currWB, DenoiseInfoStore &store, procparams::DenoiseParams &dnparams)
 {
     float autoNR = settings->nrauto;
     float autoNRmax = settings->nrautomax;
@@ -468,7 +468,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
 
     assert(settings->leveldnautsimpl == 0);
     
-    if (!store.valid && dnparams.C2method == "AUTO") {
+    if (!store.valid && dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::AUTOMATIC) {
         MyTime t1aue, t2aue;
         t1aue.set();
 
@@ -670,9 +670,9 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
         }
 
 //                  printf("DCROP skip=%d cha=%f red=%f bl=%f \n",skip, chM,maxr,maxb);
-        dnparams.chroma = chM / (autoNR * multip * adjustr);
-        dnparams.redchro = maxr;
-        dnparams.bluechro = maxb;
+        dnparams.chrominance = chM / (autoNR * multip * adjustr);
+        dnparams.chrominanceRedGreen = maxr;
+        dnparams.chrominanceBlueYellow = maxb;
         store.valid = true;
 
         if (settings->verbose) {
@@ -684,19 +684,19 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
 }
 
 
-void ImProcFunctions::denoise(int kall, ImageSource *imgsrc, const ColorTemp &currWB, Imagefloat *img, const DenoiseInfoStore &store, const procparams::DirPyrDenoiseParams &dnparams)
+void ImProcFunctions::denoise(int kall, ImageSource *imgsrc, const ColorTemp &currWB, Imagefloat *img, const DenoiseInfoStore &store, const procparams::DenoiseParams &dnparams)
 {
-    procparams::DirPyrDenoiseParams denoiseParams = dnparams;
+    procparams::DenoiseParams denoiseParams = dnparams;
     NoiseCurve noiseLCurve;
     NoiseCurve noiseCCurve;
     denoiseParams.getCurves(noiseLCurve, noiseCCurve);
-    if (denoiseParams.Lmethod == "CUR") {
+    if (denoiseParams.luminanceMethod == procparams::DenoiseParams::LuminanceMethod::CURVE) {
         if (noiseLCurve) {
-            denoiseParams.luma = 0.5f;    //very small value to init process - select curve or slider
+            denoiseParams.luminance = 0.5f;    //very small value to init process - select curve or slider
         } else {
-            denoiseParams.luma = 0.0f;
+            denoiseParams.luminance = 0.0f;
         }
-    } else if (denoiseParams.Lmethod == "SLI") {
+    } else {
         noiseLCurve.Reset();
     }
 
@@ -783,7 +783,7 @@ enum nrquality {QUALITY_STANDARD, QUALITY_HIGH};
 
 namespace {
 
-void adjust_params(procparams::DirPyrDenoiseParams &dnparams, double scale)
+void adjust_params(procparams::DenoiseParams &dnparams, double scale)
 {
     if (scale <= 1.0) {
         return;
@@ -792,59 +792,41 @@ void adjust_params(procparams::DirPyrDenoiseParams &dnparams, double scale)
     double scale_factor = 1.0 / scale;
     double noise_factor_c = scale_factor;
     double noise_factor_l = std::pow(scale_factor, scale_factor);
-    dnparams.luma *= noise_factor_l;
-    //dnparams.Ldetail += (100 - dnparams.Ldetail) * scale_factor;
-    dnparams.Ldetail += dnparams.Ldetail * noise_factor_l;
-    if (dnparams.C2method == "MANU") {
-        dnparams.chroma *= noise_factor_c;
-        dnparams.redchro *= noise_factor_c;
-        dnparams.bluechro *= noise_factor_c;
+    dnparams.luminance *= noise_factor_l;
+    dnparams.luminanceDetail += dnparams.luminanceDetail * noise_factor_l;
+    if (dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::MANUAL) {
+        dnparams.chrominance *= noise_factor_c;
+        dnparams.chrominanceRedGreen *= noise_factor_c;
+        dnparams.chrominanceBlueYellow *= noise_factor_c;
     }
     if (scale > 2) {
-        dnparams.smethod = "shal"; // QUALITY_STANDARD
+        dnparams.aggressive = false;
     }
-    // auto &lcurve = dnparams.lcurve;
 
-    // for (size_t i = 2; i < lcurve.size(); i += 4) {
-    //     lcurve[i] *= min(noise_factor /* * scale_factor*/, 1.0);
-    // }
-
-    // noiseLCurve.Set (lcurve);
-    const char *medmethods[] = { "soft", "33", "55soft", "55", "77", "99" };
-
-    if (dnparams.median) {
-        auto &key = dnparams.methodmed == "RGB" ? dnparams.rgbmethod : dnparams.medmethod;
-
-        for (int i = 1; i < int (sizeof (medmethods) / sizeof (const char *)); ++i) {
-            if (key == medmethods[i]) {
-                int j = i - int (1.0 / scale_factor);
-
-                if (j < 0) {
-                    dnparams.median = false;
-                } else {
-                    key = medmethods[j];
-                }
-
-                break;
-            }
+    if (dnparams.medianEnabled) {
+        int j = int(dnparams.medianType) - int(1.0 / scale_factor);
+        if (j < 0) {
+            dnparams.medianEnabled = false;
+        } else {
+            dnparams.medianType = static_cast<procparams::DenoiseParams::MedianType>(j);
         }
-    }    
+    }
 }
 
 } // namespace
 
-void ImProcFunctions::RGB_denoise(int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DirPyrDenoiseParams & orig_dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi)
+void ImProcFunctions::RGB_denoise(int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DenoiseParams & orig_dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi)
 {
 BENCHFUN
 //#ifdef _DEBUG
     MyTime t1e, t2e;
     t1e.set();
 
-    procparams::DirPyrDenoiseParams dnparams(orig_dnparams);
+    procparams::DenoiseParams dnparams(orig_dnparams);
     adjust_params(dnparams, scale);    
 
 //#endif
-    if (dnparams.luma == 0 && dnparams.chroma == 0  && !dnparams.median && !noiseLCurve && !noiseCCurve) {
+    if (dnparams.luminance == 0 && dnparams.chrominance == 0  && !dnparams.medianEnabled && !noiseLCurve && !noiseCCurve) {
         //nothing to do; copy src to dst or do nothing in case src == dst
         if (src != dst) {
             src->copyData(dst);
@@ -860,11 +842,11 @@ BENCHFUN
 
     MyMutex::MyLock lock(*fftwMutex);
 
-    const nrquality nrQuality = (dnparams.smethod == "shal") ? QUALITY_STANDARD : QUALITY_HIGH;//shrink method
+    const nrquality nrQuality = (!dnparams.aggressive) ? QUALITY_STANDARD : QUALITY_HIGH;//shrink method
     const float qhighFactor = (nrQuality == QUALITY_HIGH) ? 1.f / static_cast<float>(settings->nrhigh) : 1.0f;
     const bool useNoiseCCurve = (noiseCCurve && noiseCCurve.getSum() > 5.f);
     const bool useNoiseLCurve = (noiseLCurve && noiseLCurve.getSum() >= 7.f);
-    const bool autoch = (settings->leveldnautsimpl == 1 && (dnparams.Cmethod == "AUT" || dnparams.Cmethod == "PRE")) || (settings->leveldnautsimpl == 0 && (dnparams.C2method == "AUTO" || dnparams.C2method == "PREV"));
+    const bool autoch = dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::AUTOMATIC;
 
     float** lumcalc = nullptr;
     float* lumcalcBuffer = nullptr;
@@ -874,34 +856,27 @@ BENCHFUN
     bool ponder = false;
     float ponderCC = 1.f;
 
-    if (settings->leveldnautsimpl == 1 && params->dirpyrDenoise.Cmethod == "PON") {
-        ponder = true;
-        ponderCC = 0.5f;
-    }
-
-    if (settings->leveldnautsimpl == 1 && params->dirpyrDenoise.Cmethod == "PRE") {
-        ponderCC = 0.5f;
-    }
-
-    if (settings->leveldnautsimpl == 0 && params->dirpyrDenoise.Cmethod == "PREV") {
-        ponderCC = 0.5f;
-    }
-
     int metchoice = 0;
-
-    if (dnparams.methodmed == "Lonly") {
+    switch (dnparams.medianMethod) {
+    case procparams::DenoiseParams::MedianMethod::LUMINANCE:
         metchoice = 1;
-    } else if (dnparams.methodmed == "Lab") {
+        break;
+    case procparams::DenoiseParams::MedianMethod::LAB:
         metchoice = 2;
-    } else if (dnparams.methodmed == "ab") {
+        break;
+    case procparams::DenoiseParams::MedianMethod::CHROMINANCE:
         metchoice = 3;
-    } else if (dnparams.methodmed == "Lpab") {
+        break;
+    case procparams::DenoiseParams::MedianMethod::LAB_WEIGHTED:
         metchoice = 4;
+        break;
+    default:
+        metchoice = 0;
     }
 
-    const bool denoiseMethodRgb = (dnparams.dmethod == "RGB");
+    const bool denoiseMethodRgb = (dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::RGB);
     // init luma noisevarL
-    const float noiseluma = static_cast<float>(dnparams.luma);
+    const float noiseluma = static_cast<float>(dnparams.luminance);
     const float noisevarL = (useNoiseLCurve && (denoiseMethodRgb || !isRAW)) ? static_cast<float>(SQR(((noiseluma + 1.0) / 125.0) * (10. + (noiseluma + 1.0) / 25.0))) : static_cast<float>(SQR((noiseluma / 125.0) * (1.0 + noiseluma / 25.0)));
     const bool denoiseLuminance = (noisevarL > 0.00001f);
 
@@ -987,7 +962,7 @@ BENCHFUN
 
     const short int imheight = src->getHeight(), imwidth = src->getWidth();
 
-    if (dnparams.luma != 0 || dnparams.chroma != 0 || dnparams.methodmed == "Lab" || dnparams.methodmed == "Lonly") {
+    if (dnparams.luminance != 0 || dnparams.chrominance != 0 || dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LAB || dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LUMINANCE) {
         // gamma transform for input data
         float gam = dnparams.gamma;
         float gamthresh = 0.001f;
@@ -1024,7 +999,7 @@ BENCHFUN
         }
 
         const float gain = pow(2.0f, float(expcomp));
-        float params_Ldetail = min(float(dnparams.Ldetail), 99.9f); // max out to avoid div by zero when using noisevar_Ldetail as divisor
+        float params_Ldetail = min(float(dnparams.luminanceDetail), 99.9f); // max out to avoid div by zero when using noisevar_Ldetail as divisor
         float noisevar_Ldetail = SQR(static_cast<float>(SQR(100. - params_Ldetail) + 50.*(100. - params_Ldetail)) * TS * 0.5f);
 
         array2D<float> tilemask_in(TS, TS);
@@ -1231,19 +1206,19 @@ BENCHFUN
                         int height = tilebottom - tiletop;
                         int width2 = (width + 1) / 2;
                         float realred, realblue;
-                        float interm_med = static_cast<float>(dnparams.chroma) / 10.0;
+                        float interm_med = static_cast<float>(dnparams.chrominance) / 10.0;
                         float intermred, intermblue;
 
-                        if (dnparams.redchro > 0.) {
-                            intermred = (dnparams.redchro / 10.);
+                        if (dnparams.chrominanceRedGreen > 0.) {
+                            intermred = (dnparams.chrominanceRedGreen / 10.);
                         } else {
-                            intermred = static_cast<float>(dnparams.redchro) / 7.0;     //increase slower than linear for more sensit
+                            intermred = static_cast<float>(dnparams.chrominanceRedGreen) / 7.0;     //increase slower than linear for more sensit
                         }
 
-                        if (dnparams.bluechro > 0.) {
-                            intermblue = (dnparams.bluechro / 10.);
+                        if (dnparams.chrominanceBlueYellow > 0.) {
+                            intermblue = (dnparams.chrominanceBlueYellow / 10.);
                         } else {
-                            intermblue = static_cast<float>(dnparams.bluechro) / 7.0;     //increase slower than linear for more sensit
+                            intermblue = static_cast<float>(dnparams.chrominanceBlueYellow) / 7.0;     //increase slower than linear for more sensit
                         }
 
                         if (ponder && kall == 2) {
@@ -1457,19 +1432,15 @@ BENCHFUN
                         //binary 1 or 0 for each level, eg subsampling = 0 means no subsampling, 1 means subsample
                         //the first level only, 7 means subsample the first three levels, etc.
                         //actual implementation only works with subsampling set to 1
-                        float interm_medT = static_cast<float>(dnparams.chroma) / 10.0;
+                        float interm_medT = static_cast<float>(dnparams.chrominance) / 10.0;
                         bool execwavelet = true;
 
-                        if (!denoiseLuminance && interm_medT < 0.05f && dnparams.median && (dnparams.methodmed == "Lab" || dnparams.methodmed == "Lonly")) {
+                        if (!denoiseLuminance && interm_medT < 0.05f && dnparams.medianEnabled && (dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LAB || dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LUMINANCE)) {
                             execwavelet = false;    //do not exec wavelet if sliders luminance and chroma are very small and median need
                         }
 
                         //we considered user don't want wavelet
-                        if (settings->leveldnautsimpl == 1 && dnparams.Cmethod != "MAN") {
-                            execwavelet = true;
-                        }
-
-                        if (settings->leveldnautsimpl == 0 && dnparams.C2method != "MANU") {
+                        if (dnparams.chrominanceMethod != procparams::DenoiseParams::ChrominanceMethod::MANUAL) {
                             execwavelet = true;
                         }
 
@@ -1837,7 +1808,7 @@ BENCHFUN
                                 }
                             }
 
-                            if ((metchoice == 1 || metchoice == 2 || metchoice == 3 || metchoice == 4) && dnparams.median) {
+                            if ((metchoice == 1 || metchoice == 2 || metchoice == 3 || metchoice == 4) && dnparams.medianEnabled) {
                                 float** tmL;
                                 int wid = labdn->W;
                                 int hei = labdn->H;
@@ -1850,57 +1821,64 @@ BENCHFUN
                                 Median medianTypeL = Median::TYPE_3X3_SOFT;
                                 Median medianTypeAB = Median::TYPE_3X3_SOFT;
 
-                                if (dnparams.medmethod == "soft") {
+                                switch (dnparams.medianType) {
+                                case procparams::DenoiseParams::MedianType::TYPE_3X3_SOFT:
                                     if (metchoice != 4) {
                                         medianTypeL = medianTypeAB = Median::TYPE_3X3_SOFT;
                                     } else {
                                         medianTypeL = Median::TYPE_3X3_SOFT;
                                         medianTypeAB = Median::TYPE_3X3_SOFT;
                                     }
-                                } else if (dnparams.medmethod == "33") {
+                                    break;
+                                case procparams::DenoiseParams::MedianType::TYPE_3X3_STRONG:
                                     if (metchoice != 4) {
                                         medianTypeL = medianTypeAB = Median::TYPE_3X3_STRONG;
                                     } else {
                                         medianTypeL = Median::TYPE_3X3_SOFT;
                                         medianTypeAB = Median::TYPE_3X3_STRONG;
                                     }
-                                } else if (dnparams.medmethod == "55soft") {
+                                    break;
+                                case procparams::DenoiseParams::MedianType::TYPE_5X5_SOFT:
                                     if (metchoice != 4) {
                                         medianTypeL = medianTypeAB = Median::TYPE_5X5_SOFT;
                                     } else {
                                         medianTypeL = Median::TYPE_3X3_SOFT;
                                         medianTypeAB = Median::TYPE_5X5_SOFT;
                                     }
-                                } else if (dnparams.medmethod == "55") {
+                                    break;
+                                case procparams::DenoiseParams::MedianType::TYPE_5X5_STRONG:                                    
                                     if (metchoice != 4) {
                                         medianTypeL = medianTypeAB = Median::TYPE_5X5_STRONG;
                                     } else {
                                         medianTypeL = Median::TYPE_3X3_STRONG;
                                         medianTypeAB = Median::TYPE_5X5_STRONG;
                                     }
-                                } else if (dnparams.medmethod == "77") {
+                                    break;
+                                case procparams::DenoiseParams::MedianType::TYPE_7X7:
                                     if (metchoice != 4) {
                                         medianTypeL = medianTypeAB = Median::TYPE_7X7;
                                     } else {
                                         medianTypeL = Median::TYPE_3X3_STRONG;
                                         medianTypeAB = Median::TYPE_7X7;
                                     }
-                                } else if (dnparams.medmethod == "99") {
+                                    break;
+                                case procparams::DenoiseParams::MedianType::TYPE_9X9:
                                     if (metchoice != 4) {
                                         medianTypeL = medianTypeAB = Median::TYPE_9X9;
                                     } else {
                                         medianTypeL = Median::TYPE_5X5_SOFT;
                                         medianTypeAB = Median::TYPE_9X9;
                                     }
+                                    break;
                                 }
 
                                 if (metchoice == 1 || metchoice == 2 || metchoice == 4) {
-                                    Median_Denoise(labdn->L, labdn->L, wid, hei, medianTypeL, dnparams.passes, denoiseNestedLevels, tmL);
+                                    Median_Denoise(labdn->L, labdn->L, wid, hei, medianTypeL, dnparams.medianIterations, denoiseNestedLevels, tmL);
                                 }
 
                                 if (metchoice == 2 || metchoice == 3 || metchoice == 4) {
-                                    Median_Denoise(labdn->a, labdn->a, wid, hei, medianTypeAB, dnparams.passes, denoiseNestedLevels, tmL);
-                                    Median_Denoise(labdn->b, labdn->b, wid, hei, medianTypeAB, dnparams.passes, denoiseNestedLevels, tmL);
+                                    Median_Denoise(labdn->a, labdn->a, wid, hei, medianTypeAB, dnparams.medianIterations, denoiseNestedLevels, tmL);
+                                    Median_Denoise(labdn->b, labdn->b, wid, hei, medianTypeAB, dnparams.medianIterations, denoiseNestedLevels, tmL);
                                 }
 
                                 for (int i = 0; i < hei; ++i) {
@@ -2167,7 +2145,7 @@ BENCHFUN
 
 
 //median 3x3 in complement on RGB
-    if (dnparams.methodmed == "RGB" && dnparams.median) {
+    if (dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::RGB && dnparams.medianEnabled) {
 //printf("RGB den\n");
         int wid = dst->getWidth(), hei = dst->getHeight();
         float** tm;
@@ -2179,7 +2157,7 @@ BENCHFUN
 
         Imagefloat *source;
 
-        if (dnparams.luma == 0 && dnparams.chroma == 0) {
+        if (dnparams.luminance == 0 && dnparams.chrominance == 0) {
             source = dst;
         } else {
             source = src;
@@ -2188,19 +2166,24 @@ BENCHFUN
         int methmed = 0;
         int border = 1;
 
-        if (dnparams.rgbmethod == "soft") {
+        switch (dnparams.medianType) {
+        case procparams::DenoiseParams::MedianType::TYPE_3X3_SOFT:
             methmed = 0;
-        } else if (dnparams.rgbmethod == "33") {
+            break;
+        case procparams::DenoiseParams::MedianType::TYPE_3X3_STRONG:
             methmed = 1;
-        } else if (dnparams.rgbmethod == "55") {
+            break;
+        case procparams::DenoiseParams::MedianType::TYPE_5X5_SOFT:
             methmed = 3;
             border = 2;
-        } else if (dnparams.rgbmethod == "55soft") {
+            break;
+        default:
             methmed = 2;
             border = 2;
+            break;
         }
 
-        for (int iteration = 1; iteration <= dnparams.passes; ++iteration) {
+        for (int iteration = 1; iteration <= dnparams.medianIterations; ++iteration) {
 
             #pragma omp parallel
             {
@@ -3361,7 +3344,7 @@ void ImProcFunctions::WaveletDenoiseAll_info(int levwav, wavelet_decomposition &
     }
 }
 
-void ImProcFunctions::RGB_denoise_infoGamCurve(const procparams::DirPyrDenoiseParams & dnparams, bool isRAW, LUTf &gamcurve, float &gam, float &gamthresh, float &gamslope)
+void ImProcFunctions::RGB_denoise_infoGamCurve(const procparams::DenoiseParams & dnparams, bool isRAW, LUTf &gamcurve, float &gam, float &gamthresh, float &gamslope)
 {
     gam = dnparams.gamma;
     gamthresh = 0.001f;
@@ -3374,7 +3357,7 @@ void ImProcFunctions::RGB_denoise_infoGamCurve(const procparams::DirPyrDenoisePa
         }
     }
 
-    bool denoiseMethodRgb = (dnparams.dmethod == "RGB");
+    bool denoiseMethodRgb = (dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::RGB);
 
     if (denoiseMethodRgb) {
         gamslope = exp(log(static_cast<double>(gamthresh)) / gam) / gamthresh;
@@ -3389,7 +3372,7 @@ void ImProcFunctions::calcautodn_info(float &chaut, float &delta, int Nb, int le
 
     float reducdelta = 1.f;
 
-    if (params->dirpyrDenoise.smethod == "shalbi") {
+    if (params->denoise.aggressive) {
         reducdelta = static_cast<float>(settings->nrhigh);
     }
 
@@ -3526,9 +3509,9 @@ void ImProcFunctions::calcautodn_info(float &chaut, float &delta, int Nb, int le
 
 }
 
-void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc, const bool isRAW, LUTf &gamcurve, float gam, float gamthresh, float gamslope, const procparams::DirPyrDenoiseParams & dnparams, const double expcomp, float &chaut, int &Nb,  float &redaut, float &blueaut, float &maxredaut, float &maxblueaut, float &minredaut, float &minblueaut, float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc, bool multiThread)
+void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc, const bool isRAW, LUTf &gamcurve, float gam, float gamthresh, float gamslope, const procparams::DenoiseParams & dnparams, const double expcomp, float &chaut, int &Nb,  float &redaut, float &blueaut, float &maxredaut, float &maxblueaut, float &minredaut, float &minblueaut, float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc, bool multiThread)
 {
-    if ((settings->leveldnautsimpl == 1 && dnparams.Cmethod == "MAN") || (settings->leveldnautsimpl == 0 && dnparams.C2method == "MANU")) {
+    if (dnparams.chrominanceMethod != procparams::DenoiseParams::ChrominanceMethod::AUTOMATIC) {
         //nothing to do
         return;
     }
@@ -3589,7 +3572,7 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
 
     const int imheight = src->getHeight(), imwidth = src->getWidth();
 
-    bool denoiseMethodRgb = (dnparams.dmethod == "RGB");
+    bool denoiseMethodRgb = (dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::RGB);
 
     const float gain = pow(2.0f, float(expcomp));
 
@@ -3658,19 +3641,19 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
             }
 
             float realred, realblue;
-            float interm_med = static_cast<float>(dnparams.chroma) / 10.0;
+            float interm_med = static_cast<float>(dnparams.chrominance) / 10.0;
             float intermred, intermblue;
 
-            if (dnparams.redchro > 0.) {
-                intermred = (dnparams.redchro / 10.);
+            if (dnparams.chrominanceRedGreen > 0.) {
+                intermred = (dnparams.chrominanceRedGreen / 10.);
             } else {
-                intermred = static_cast<float>(dnparams.redchro) / 7.0;     //increase slower than linear for more sensit
+                intermred = static_cast<float>(dnparams.chrominanceRedGreen) / 7.0;     //increase slower than linear for more sensit
             }
 
-            if (dnparams.bluechro > 0.) {
-                intermblue = (dnparams.bluechro / 10.);
+            if (dnparams.chrominanceBlueYellow > 0.) {
+                intermblue = (dnparams.chrominanceBlueYellow / 10.);
             } else {
-                intermblue = static_cast<float>(dnparams.bluechro) / 7.0;     //increase slower than linear for more sensit
+                intermblue = static_cast<float>(dnparams.chrominanceBlueYellow) / 7.0;     //increase slower than linear for more sensit
             }
 
             realred = interm_med + intermred;
@@ -3891,7 +3874,7 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
 
             int schoice = 0;//shrink method
 
-            if (dnparams.smethod == "shalbi") {
+            if (dnparams.aggressive) {
                 schoice = 2;
             }
 

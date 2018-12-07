@@ -214,7 +214,7 @@ private:
         
 
         imgsrc->setCurrentFrame (params.raw.bayersensor.imageNum);
-        imgsrc->preprocess ( params.raw, params.lensProf, params.coarse, params.dirpyrDenoise.enabled);
+        imgsrc->preprocess ( params.raw, params.lensProf, params.coarse, params.denoise.enabled);
 
         if (pl) {
             pl->setProgress (0.20);
@@ -271,8 +271,8 @@ private:
             currWB.update (rm, gm, bm, params.wb.equal, params.wb.tempBias);
         }
 
-        if (params.dirpyrDenoise.enabled) {
-            ipf.denoiseComputeParams(imgsrc, currWB, dnstore, params.dirpyrDenoise);
+        if (params.denoise.enabled) {
+            ipf.denoiseComputeParams(imgsrc, currWB, dnstore, params.denoise);
         }
         
         baseImg = new Imagefloat (fw, fh);
@@ -334,8 +334,8 @@ private:
         procparams::ProcParams& params = job->pparams;
         ImProcFunctions &ipf = *(ipf_p.get());
 
-        if (params.dirpyrDenoise.enabled) {
-            ipf.denoise(2, imgsrc, currWB, baseImg, dnstore, params.dirpyrDenoise);
+        if (params.denoise.enabled) {
+            ipf.denoise(2, imgsrc, currWB, baseImg, dnstore, params.denoise);
         }
     }
 

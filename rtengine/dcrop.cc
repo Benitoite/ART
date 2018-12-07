@@ -165,7 +165,7 @@ void Crop::update(int todo)
     Imagefloat* baseCrop = origCrop;
 
     bool needstransform  = parent->ipf.needsTransform();
-    bool show_denoise = params.dirpyrDenoise.enabled && (skip == 1 || options.denoiseZoomedOut);
+    bool show_denoise = params.denoise.enabled && (skip == 1 || options.denoiseZoomedOut);
 
     if (todo & (M_INIT | M_LINDENOISE | M_HDR)) {
         MyMutex::MyLock lock(parent->minit);  // Also used in improccoord
@@ -180,18 +180,18 @@ void Crop::update(int todo)
         parent->imgsrc->getImage(parent->currWB, tr, origCrop, pp, params.toneCurve, params.raw);
 
         if (show_denoise) {
-            parent->ipf.denoiseComputeParams(parent->imgsrc, parent->currWB, parent->denoiseInfoStore, params.dirpyrDenoise);
+            parent->ipf.denoiseComputeParams(parent->imgsrc, parent->currWB, parent->denoiseInfoStore, params.denoise);
         }
 
         if ((!isDetailWindow) && parent->adnListener && show_denoise) {
-            parent->adnListener->chromaChanged(params.dirpyrDenoise.chroma, params.dirpyrDenoise.redchro, params.dirpyrDenoise.bluechro);
+            parent->adnListener->chromaChanged(params.denoise.chrominance, params.denoise.chrominanceRedGreen, params.denoise.chrominanceBlueYellow);
         }
 
         if ((todo & M_LINDENOISE) && show_denoise) {
-            parent->ipf.denoise(0, parent->imgsrc, parent->currWB, origCrop, parent->denoiseInfoStore, params.dirpyrDenoise);
+            parent->ipf.denoise(0, parent->imgsrc, parent->currWB, origCrop, parent->denoiseInfoStore, params.denoise);
 
-            if (parent->adnListener && params.dirpyrDenoise.C2method == "AUTO") {
-                parent->adnListener->chromaChanged(params.dirpyrDenoise.chroma, params.dirpyrDenoise.redchro, params.dirpyrDenoise.bluechro);
+            if (parent->adnListener && params.denoise.chrominanceMethod == DenoiseParams::ChrominanceMethod::AUTOMATIC) {
+                parent->adnListener->chromaChanged(params.denoise.chrominance, params.denoise.chrominanceRedGreen, params.denoise.chrominanceBlueYellow);
             }                
         }
 
@@ -215,7 +215,7 @@ void Crop::update(int todo)
 
             // fattal needs to work on the full image. So here we get the full
             // image from imgsrc, and replace the denoised crop in case
-            if (!params.dirpyrDenoise.enabled && skip == 1 && parent->drcomp_11_dcrop_cache) {
+            if (!params.denoise.enabled && skip == 1 && parent->drcomp_11_dcrop_cache) {
                 f = parent->drcomp_11_dcrop_cache;
                 need_drcomp = false;
             } else {
@@ -226,7 +226,7 @@ void Crop::update(int todo)
                 parent->imgsrc->getImage(parent->currWB, tr, f, pp, params.toneCurve, params.raw);
                 parent->imgsrc->convertColorSpace(f, params.icm, parent->currWB);
 
-                if (params.dirpyrDenoise.enabled) {
+                if (params.denoise.enabled) {
                     // copy the denoised crop
                     int oy = trafy / skip;
                     int ox = trafx / skip;

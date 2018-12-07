@@ -34,7 +34,7 @@
 #include "shadowshighlights.h"
 #include "impulsedenoise.h"
 #include "defringe.h"
-#include "dirpyrdenoise.h"
+#include "denoise.h"
 #include "epd.h"
 #include "sharpening.h"
 #include "labcurve.h"
@@ -126,7 +126,7 @@ protected:
     LocalContrast *localContrast;
     Defringe* defringe;
     ImpulseDenoise* impulsedenoise;
-    DirPyrDenoise* dirpyrdenoise;
+    Denoise* denoise;
     EdgePreservingDecompositionUI *epd;
     Sharpening* sharpening;
     SharpenEdge* sharpenEdge;

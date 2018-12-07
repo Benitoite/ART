@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -713,39 +714,6 @@ struct ImpulseDenoiseParams {
  * Parameters of the directional pyramid denoising
  */
 struct DenoiseParams {
-    std::vector<double>   lcurve;
-    std::vector<double>   cccurve;
-
-    bool    enabled;
-    bool    enhance;
-    bool    median;
-
-    bool    perform;
-    double  luma;
-    double  Ldetail;
-    double  chroma;
-    double  redchro;
-    double  bluechro;
-    double  gamma;
-    Glib::ustring dmethod;
-    Glib::ustring Lmethod;
-    Glib::ustring Cmethod;
-    Glib::ustring C2method;
-    Glib::ustring smethod;
-    Glib::ustring medmethod;
-    Glib::ustring methodmed;
-    Glib::ustring rgbmethod;
-    int  passes;
-
-    DenoiseParams();
-
-    bool operator ==(const DenoiseParams& other) const;
-    bool operator !=(const DenoiseParams& other) const;
-
-    void getCurves(NoiseCurve& lCurve, NoiseCurve& cCurve) const;
-
-};
-struct DenoiseParams {
     enum class ColorSpace {
         RGB,
         LAB
@@ -773,9 +741,9 @@ struct DenoiseParams {
     enum class MedianMethod {
         LUMINANCE,
         CHROMINANCE,
+        LAB_WEIGHTED,
         LAB,
-        RGB,
-        LAB_WEIGHTED
+        RGB
     };
     
     bool enabled;

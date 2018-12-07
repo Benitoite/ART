@@ -746,7 +746,7 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
     }
 
     if (!dirpyrden->get_active ()) {
-        filterPE.dirpyrDenoise   = falsePE.dirpyrDenoise;
+        filterPE.denoise = falsePE.denoise;
     }
 
     if (!wavelet->get_active ()) {

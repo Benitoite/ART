@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _DIRPYRDENOISE_H_
-#define _DIRPYRDENOISE_H_
+#pragma once
 
 #include <gtkmm.h>
 #include "adjuster.h"
@@ -28,7 +28,7 @@
 #include "guiutils.h"
 #include "options.h"
 
-class DirPyrDenoise final :
+class Denoise final :
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
@@ -37,48 +37,62 @@ class DirPyrDenoise final :
     public ColorProvider
 {
 public:
-    DirPyrDenoise ();
-    ~DirPyrDenoise () override;
+    Denoise();
+    ~Denoise() override;
 
-    void read           (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write          (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    void setDefaults    (const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) override;
-    void setBatchMode   (bool batchMode) override;
-    void curveChanged   (CurveEditor* ce) override;
-    void setEditProvider     (EditDataProvider *provider) override;
-    void autoOpenCurve  () override;
+    void read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
+    void write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
+    void setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) override;
+    void setBatchMode(bool batchMode) override;
+    void curveChanged(CurveEditor* ce) override;
+    void setEditProvider(EditDataProvider *provider) override;
+    void autoOpenCurve() override;
 
-    void adjusterChanged (Adjuster* a, double newval) override;
+    void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void enabledChanged  () override;
-    void medianChanged  ();
-    void chromaChanged (double autchroma, double autred, double autblue) override;
-    bool chromaComputed_ ();
-    void noiseChanged (double nresid, double highresid) override;
-    bool noiseComputed_ ();
-    void noiseTilePrev (int tileX, int tileY, int prevX, int prevY, int sizeT, int sizeP) override;
-    bool TilePrevComputed_ ();
+    void enabledChanged() override;
 
-//    void perform_toggled  ();
-    void updateNoiseLabel      ();
-    void LmethodChanged      ();
-    void CmethodChanged      ();
-    void C2methodChanged      ();
-    void updateTileLabel      ();
-    void updatePrevLabel      ();
+    void chromaChanged(double autchroma, double autred, double autblue) override;
+    bool chromaComputed(double chroma, double red, double blue);
+    
+    void noiseChanged(double nresid, double highresid) override {}
+    void noiseTilePrev(int tileX, int tileY, int prevX, int prevY, int sizeT, int sizeP) override {}
 
-    void dmethodChanged      ();
-    void medmethodChanged      ();
-    void methodmedChanged      ();
-    void rgbmethodChanged      ();
-    void smethodChanged      ();
-    void colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
+    void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
 
-    void setAdjusterBehavior (bool lumaadd, bool lumdetadd, bool chromaadd, bool chromaredadd, bool chromablueadd, bool gammaadd, bool passesadd);
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    Glib::ustring getSettingString ();
+    void setAdjusterBehavior(bool lumaadd, bool lumdetadd, bool chromaadd, bool chromaredadd, bool chromablueadd, bool gammaadd, bool passesadd);
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+    Glib::ustring getSettingString();
 
 private:
+    void colorSpaceChanged();
+    void aggressiveChanged();
+    void luminanceMethodChanged();
+    void chrominanceMethodChanged();
+    void medianTypeChanged();
+    void medianMethodChanged();
+    void medianEnabledToggled();
+    
+    MyComboBoxText *colorSpace;
+    MyComboBoxText *aggressive;
+    Adjuster *gamma;
+    MyComboBoxText *luminanceMethod;
+    CurveEditorGroup *luminanceEditorGroup;
+    FlatCurveEditor *luminanceCurve;
+    Adjuster *luminance;
+    Adjuster *luminanceDetail;
+    MyComboBoxText *chrominanceMethod;
+    CurveEditorGroup *chrominanceEditorGroup;
+    FlatCurveEditor *chrominanceCurve;
+    Adjuster *chrominance;
+    Adjuster *chrominanceRedGreen;
+    Adjuster *chrominanceBlueYellow;
+    Gtk::CheckButton *medianEnabled;
+    MyComboBoxText *medianType;
+    MyComboBoxText *medianMethod;
+    Adjuster *medianIterations;
+
+#if 0
     CurveEditorGroup* NoiscurveEditorG;
     CurveEditorGroup* CCcurveEditorG;
     Adjuster* luma;
@@ -134,8 +148,8 @@ private:
     int nextprevY;
     int nextsizeT;
     int nextsizeP;
+#endif
 
     IdleRegister idle_register;
 };
 
-#endif

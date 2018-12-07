@@ -391,49 +391,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
             imgsrc->getImage(currWB, tr, orig_prev, pp, params.toneCurve, params.raw);
             denoiseInfoStore.valid = false;
-            //ColorTemp::CAT02 (orig_prev, &params) ;
-            //   printf("orig_prevW=%d\n  scale=%d",orig_prev->width, scale);
-            /* Issue 2785, disabled some 1:1 tools
-                    if (todo & M_LINDENOISE) {
-                        DirPyrDenoiseParams denoiseParams = params.dirpyrDenoise;
-                        if (denoiseParams.enabled && (scale==1)) {
-                            Imagefloat *calclum = NULL ;
-    
-                            denoiseParams.getCurves(noiseLCurve,noiseCCurve);
-                            int nbw=6;//nb tile W
-                            int nbh=4;//
-    
-                            float ch_M[nbw*nbh];
-                            float max_r[nbw*nbh];
-                            float max_b[nbw*nbh];
-    
-                            if(denoiseParams.Lmethod == "CUR") {
-                                if(noiseLCurve)
-                                    denoiseParams.luma = 0.5f;
-                                else
-                                    denoiseParams.luma = 0.0f;
-                            } else if(denoiseParams.Lmethod == "SLI")
-                                noiseLCurve.Reset();
-    
-    
-                            if(noiseLCurve || noiseCCurve){//only allocate memory if enabled and scale=1
-                                // we only need image reduced to 1/4 here
-                                calclum = new Imagefloat ((pW+1)/2, (pH+1)/2);//for luminance denoise curve
-                                for(int ii=0;ii<pH;ii+=2){
-                                    for(int jj=0;jj<pW;jj+=2){
-                                        calclum->r(ii>>1,jj>>1) = orig_prev->r(ii,jj);
-                                        calclum->g(ii>>1,jj>>1) = orig_prev->g(ii,jj);
-                                        calclum->b(ii>>1,jj>>1) = orig_prev->b(ii,jj);
-                                    }
-                                }
-                                imgsrc->convertColorSpace(calclum, params.icm, currWB);//calculate values after colorspace conversion
-                            }
-    
-                            int kall=1;
-                            ipf.RGB_denoise(kall, orig_prev, orig_prev, calclum, ch_M, max_r, max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, chaut, redaut, blueaut, maxredaut, maxblueaut, nresi, highresi);
-                        }
-                    }
-            */
             imgsrc->convertColorSpace(orig_prev, params.icm, currWB);
     
             ipf.firstAnalysis(orig_prev, params, vhist16);

@@ -1161,7 +1161,7 @@ void FileCatalog::developRequested(const std::vector<FileBrowserEntry*>& tbe, bo
                     }
 
                     if (options.fastexport_bypass_dirpyrDenoise) {
-                        params.dirpyrDenoise.enabled = false;
+                        params.denoise.enabled = false;
                     }
 
                     if (options.fastexport_bypass_dirpyrequalizer) {
