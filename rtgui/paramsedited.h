@@ -348,33 +348,27 @@ public:
 
 };
 
-class DirPyrDenoiseParamsEdited
+class DenoiseParamsEdited
 {
 
 public:
     bool enabled;
-    bool enhance;
-    bool median;
-    bool Ldetail;
-    bool luma;
-    bool chroma;
-    bool redchro;
-    bool bluechro;
+    bool colorSpace;
+    bool aggressive;
     bool gamma;
-    bool lcurve;
-    bool cccurve;
-
-//    bool perform;
-    bool dmethod;
-    bool Lmethod;
-    bool Cmethod;
-    bool C2method;
-    bool smethod;
-    bool medmethod;
-    bool methodmed;
-    bool rgbmethod;
-    bool passes;
-
+    bool luminanceMethod;
+    bool luminance;
+    bool luminanceCurve;
+    bool luminanceDetail;
+    bool chrominanceMethod;
+    bool chrominance;
+    bool chrominanceCurve;
+    bool chrominanceRedGreen;
+    bool chrominanceBlueYellow;
+    bool medianEnabled;
+    bool medianType;
+    bool medianMethod;
+    bool medianIterations;
 };
 
 class EPDParamsEdited
@@ -879,7 +873,7 @@ public:
     //LumaDenoiseParamsEdited       lumaDenoise;
     //ColorDenoiseParamsEdited      colorDenoise;
     DefringeParamsEdited          defringe;
-    DirPyrDenoiseParamsEdited     dirpyrDenoise;
+    DenoiseParamsEdited           denoise;
     EPDParamsEdited               epd;
     FattalToneMappingParamsEdited fattal;
     LogEncodingParamsEdited       logenc;

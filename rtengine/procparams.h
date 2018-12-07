@@ -712,7 +712,7 @@ struct ImpulseDenoiseParams {
 /**
  * Parameters of the directional pyramid denoising
  */
-struct DirPyrDenoiseParams {
+struct DenoiseParams {
     std::vector<double>   lcurve;
     std::vector<double>   cccurve;
 
@@ -737,10 +737,74 @@ struct DirPyrDenoiseParams {
     Glib::ustring rgbmethod;
     int  passes;
 
-    DirPyrDenoiseParams();
+    DenoiseParams();
 
-    bool operator ==(const DirPyrDenoiseParams& other) const;
-    bool operator !=(const DirPyrDenoiseParams& other) const;
+    bool operator ==(const DenoiseParams& other) const;
+    bool operator !=(const DenoiseParams& other) const;
+
+    void getCurves(NoiseCurve& lCurve, NoiseCurve& cCurve) const;
+
+};
+struct DenoiseParams {
+    enum class ColorSpace {
+        RGB,
+        LAB
+    };
+    
+    enum class ChrominanceMethod {
+        MANUAL,
+        AUTOMATIC
+    };
+
+    enum class LuminanceMethod {
+        SLIDER,
+        CURVE
+    };
+
+    enum class MedianType {
+        TYPE_3X3_SOFT,
+        TYPE_3X3_STRONG,
+        TYPE_5X5_SOFT,
+        TYPE_5X5_STRONG,
+        TYPE_7X7,
+        TYPE_9X9
+    };
+
+    enum class MedianMethod {
+        LUMINANCE,
+        CHROMINANCE,
+        LAB,
+        RGB,
+        LAB_WEIGHTED
+    };
+    
+    bool enabled;
+
+    ColorSpace colorSpace;
+
+    bool aggressive;
+    double gamma;
+
+    LuminanceMethod luminanceMethod;
+    double luminance;
+    std::vector<double> luminanceCurve;
+    double luminanceDetail;
+
+    ChrominanceMethod chrominanceMethod;
+    double chrominance;
+    std::vector<double> chrominanceCurve;
+    double chrominanceRedGreen;
+    double chrominanceBlueYellow;
+
+    bool medianEnabled;
+    MedianType medianType;
+    MedianMethod medianMethod;
+    int medianIterations;
+
+    DenoiseParams();
+
+    bool operator ==(const DenoiseParams& other) const;
+    bool operator !=(const DenoiseParams& other) const;
 
     void getCurves(NoiseCurve& lCurve, NoiseCurve& cCurve) const;
 
@@ -1498,7 +1562,7 @@ public:
     ColorAppearanceParams   colorappearance;
     DefringeParams          defringe;        ///< Defringing parameters
     ImpulseDenoiseParams    impulseDenoise;  ///< Impulse denoising parameters
-    DirPyrDenoiseParams     dirpyrDenoise;   ///< Directional Pyramid denoising parameters
+    DenoiseParams           denoise;   ///< Directional Pyramid denoising parameters
     EPDParams               epd;             ///< Edge Preserving Decomposition parameters
     FattalToneMappingParams fattal;          ///< Dynamic Range Compression
     LogEncodingParams       logenc;

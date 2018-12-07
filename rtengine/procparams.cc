@@ -1473,8 +1473,14 @@ bool ImpulseDenoiseParams::operator !=(const ImpulseDenoiseParams& other) const
     return !(*this == other);
 }
 
-DirPyrDenoiseParams::DirPyrDenoiseParams() :
-    lcurve{
+DenoiseParams::DenoiseParams() :
+    enabled(false),
+    colorSpace(ColorSpace::LAB),
+    aggressive(false),
+    gamma(1.7),
+    luminanceMethod(LuminanceMethod::SLIDER),
+    luminance(0),
+    luminanceCurve{
         FCT_MinMaxCPoints,
         0.05,
         0.15,
@@ -1485,7 +1491,10 @@ DirPyrDenoiseParams::DirPyrDenoiseParams() :
         0.35,
         0.35
     },
-    cccurve{
+    luminanceDetail(0),
+    chrominanceMethod(ChrominanceMethod::AUTOMATIC),
+    chrominance(15),
+    chrominanceCurve{
         FCT_MinMaxCPoints,
         0.05,
         0.50,
@@ -1496,64 +1505,95 @@ DirPyrDenoiseParams::DirPyrDenoiseParams() :
         0.35,
         0.35
     },
-    enabled(false),
-    enhance(false),
-    median(false),
-    perform(false),
-    luma(0),
-    Ldetail(0),
-    chroma(15),
-    redchro(0),
-    bluechro(0),
-    gamma(1.7),
-    dmethod("Lab"),
-    Lmethod("SLI"),
-    Cmethod("MAN"),
-    C2method("AUTO"),
-    smethod("shal"),
-    medmethod("soft"),
-    methodmed("none"),
-    rgbmethod("soft"),
-    passes(1)
+    chrominanceRedGreen(0),
+    chrominanceBlueYellow(0),
+    medianEnabled(false),
+    medianType(MedianType::TYPE_3X3_SOFT),
+    medianMethod(MedianMethod::CHROMINANCE),
+    medianIterations(1)
 {
 }
 
-bool DirPyrDenoiseParams::operator ==(const DirPyrDenoiseParams& other) const
+// DenoiseParams::DenoiseParams() :
+//     luminanceCurve{
+//         FCT_MinMaxCPoints,
+//         0.05,
+//         0.15,
+//         0.35,
+//         0.35,
+//         0.55,
+//         0.04,
+//         0.35,
+//         0.35
+//     },
+//     chrominanceCurve{
+//         FCT_MinMaxCPoints,
+//         0.05,
+//         0.50,
+//         0.35,
+//         0.35,
+//         0.35,
+//         0.05,
+//         0.35,
+//         0.35
+//     },
+//     enabled(false),
+//     enhance(false),
+//     median(false),
+//     perform(false),
+//     luma(0),
+//     Ldetail(0),
+//     chroma(15),
+//     redchro(0),
+//     bluechro(0),
+//     gamma(1.7),
+//     dmethod("Lab"),
+//     Lmethod("SLI"),
+//     Cmethod("MAN"),
+//     C2method("AUTO"),
+//     smethod("shal"),
+//     medmethod("soft"),
+//     methodmed("none"),
+//     rgbmethod("soft"),
+//     passes(1)
+// {
+// }
+
+
+bool DenoiseParams::operator ==(const DenoiseParams& other) const
 {
     return
-        lcurve == other.lcurve
-        && cccurve == other.cccurve
-        && enabled == other.enabled
-        && enhance == other.enhance
-        && median == other.median
-        && perform == other.perform
-        && luma == other.luma
-        && Ldetail == other.Ldetail
-        && chroma == other.chroma
-        && redchro == other.redchro
-        && bluechro == other.bluechro
+        enabled == other.enabled
+        && colorSpace == other.colorSpace
+        && aggressive == other.aggressive
         && gamma == other.gamma
-        && dmethod == other.dmethod
-        && Lmethod == other.Lmethod
-        && Cmethod == other.Cmethod
-        && C2method == other.C2method
-        && smethod == other.smethod
-        && medmethod == other.medmethod
-        && methodmed == other.methodmed
-        && rgbmethod == other.rgbmethod
-        && passes == other.passes;
+        && luminanceMethod == other.luminanceMethod
+        && luminance == other.luminance
+        && luminanceCurve == other.luminanceCurve
+        && luminanceDetail == other.luminanceDetail
+        && chrominanceMethod == other.chrominanceMethod
+        && chrominance == other.chrominance
+        && chrominanceCurve == other.chrominanceCurve
+        && chrominanceRedGreen == other.chrominanceRedGreen
+        && chrominanceBlueYellow == other.chrominanceBlueYellow
+        && medianEnabled == other.medianEnabled
+        && medianType == other.medianType
+        && medianMethod == other.medianMethod
+        && medianIterations == other.medianIterations;
 }
 
-bool DirPyrDenoiseParams::operator !=(const DirPyrDenoiseParams& other) const
+
+bool DenoiseParams::operator !=(const DenoiseParams& other) const
 {
     return !(*this == other);
 }
 
-void DirPyrDenoiseParams::getCurves(NoiseCurve &lCurve, NoiseCurve &cCurve) const
+void DenoiseParams::getCurves(NoiseCurve &lCurve, NoiseCurve &cCurve) const
 {
-    lCurve.Set(this->lcurve);
-    cCurve.Set(this->cccurve);
+    lCurve.Set(luminanceCurve);
+    cCurve.Set(chrominanceCurve);
 }
+
 
 EPDParams::EPDParams() :
     enabled(false),
@@ -2882,7 +2922,7 @@ void ProcParams::setDefaults()
 
     impulseDenoise = ImpulseDenoiseParams();
 
-    dirpyrDenoise = DirPyrDenoiseParams();
+    denoise = DenoiseParams();
 
     epd = EPDParams();
 
@@ -3252,37 +3292,24 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->dehaze.showDepthMap, "Dehaze", "ShowDepthMap", dehaze.showDepthMap, keyFile);        
         saveToKeyfile(!pedited || pedited->dehaze.depth, "Dehaze", "Depth", dehaze.depth, keyFile);        
 
-// Directional pyramid denoising
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.enabled, "Directional Pyramid Denoising", "Enabled", dirpyrDenoise.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.enhance, "Directional Pyramid Denoising", "Enhance", dirpyrDenoise.enhance, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.median, "Directional Pyramid Denoising", "Median", dirpyrDenoise.median, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.luma, "Directional Pyramid Denoising", "Luma", dirpyrDenoise.luma, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.Ldetail, "Directional Pyramid Denoising", "Ldetail", dirpyrDenoise.Ldetail, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.chroma, "Directional Pyramid Denoising", "Chroma", dirpyrDenoise.chroma, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.dmethod, "Directional Pyramid Denoising", "Method", dirpyrDenoise.dmethod, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.Lmethod, "Directional Pyramid Denoising", "LMethod", dirpyrDenoise.Lmethod, keyFile);
-
-        if (dirpyrDenoise.Cmethod == "PRE") {
-            dirpyrDenoise.Cmethod = "MAN"; // Never save 'auto chroma preview mode' to pp3
-        }
-
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.Cmethod, "Directional Pyramid Denoising", "CMethod", dirpyrDenoise.Cmethod, keyFile);
-
-        if (dirpyrDenoise.C2method == "PREV") {
-            dirpyrDenoise.C2method = "MANU";
-        }
-
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.C2method, "Directional Pyramid Denoising", "C2Method", dirpyrDenoise.C2method, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.smethod, "Directional Pyramid Denoising", "SMethod", dirpyrDenoise.smethod, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.medmethod, "Directional Pyramid Denoising", "MedMethod", dirpyrDenoise.medmethod, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.rgbmethod, "Directional Pyramid Denoising", "RGBMethod", dirpyrDenoise.rgbmethod, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.methodmed, "Directional Pyramid Denoising", "MethodMed", dirpyrDenoise.methodmed, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.redchro, "Directional Pyramid Denoising", "Redchro", dirpyrDenoise.redchro, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.bluechro, "Directional Pyramid Denoising", "Bluechro", dirpyrDenoise.bluechro, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.gamma, "Directional Pyramid Denoising", "Gamma", dirpyrDenoise.gamma, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.passes, "Directional Pyramid Denoising", "Passes", dirpyrDenoise.passes, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.lcurve, "Directional Pyramid Denoising", "LCurve", dirpyrDenoise.lcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrDenoise.cccurve, "Directional Pyramid Denoising", "CCCurve", dirpyrDenoise.cccurve, keyFile);
+// Denoising
+        saveToKeyfile(!pedited || pedited->denoise.enabled, "Denoise", "Enabled", denoise.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.colorSpace, "Denoise", "ColorSpace", denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? "lab" : "rgb", keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.aggressive, "Denoise", "Aggressive", denoise.aggressive, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.gamma, "Denoise", "Gamma", denoise.gamma, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.luminanceMethod, "Denoise", "LuminanceMethod", int(denoise.luminanceMethod), keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.luminance, "Denoise", "Luminance", denoise.luminance, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.luminanceCurve, "Denoise", "LuminanceCurve", denoise.luminanceCurve, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.luminanceDetail, "Denoise", "LuminanceDetail", denoise.luminanceDetail, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominanceMethod, "Denoise", "ChrominanceMethod", denoise.chrominanceMethod, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominance, "Denoise", "Chrominance", denoise.chrominance, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominanceCurve, "Denoise", "ChrominanceCurve", denoise.chrominanceCurve, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominanceRedGreen, "Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominanceBlueYellow, "Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.medianEnabled, "Denoise", "MedianEnabled", denoise.medianEnabled, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.medianType, "Denoise", "MedianType", int(denoise.medianType), keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.medianMethod, "Denoise", "MedianMethod", denoise.medianMethod, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.medianIterations, "Denoise", "MedianIterations", denoise.medianIterations, keyFile);
 
 // EPD
         saveToKeyfile(!pedited || pedited->epd.enabled, "EPD", "Enabled", epd.enabled, keyFile);
@@ -4233,40 +4260,84 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Impulse Denoising", "Threshold", pedited, impulseDenoise.thresh, pedited->impulseDenoise.thresh);
         }
 
-        if (keyFile.has_group("Directional Pyramid Denoising")) { //TODO: No longer an accurate description for FT denoise
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Enabled", pedited, dirpyrDenoise.enabled, pedited->dirpyrDenoise.enabled);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Enhance", pedited, dirpyrDenoise.enhance, pedited->dirpyrDenoise.enhance);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Median", pedited, dirpyrDenoise.median, pedited->dirpyrDenoise.median);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Luma", pedited, dirpyrDenoise.luma, pedited->dirpyrDenoise.luma);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Ldetail", pedited, dirpyrDenoise.Ldetail, pedited->dirpyrDenoise.Ldetail);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Chroma", pedited, dirpyrDenoise.chroma, pedited->dirpyrDenoise.chroma);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Method", pedited, dirpyrDenoise.dmethod, pedited->dirpyrDenoise.dmethod);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LMethod", pedited, dirpyrDenoise.Lmethod, pedited->dirpyrDenoise.Lmethod);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "CMethod", pedited, dirpyrDenoise.Cmethod, pedited->dirpyrDenoise.Cmethod);
-
-            if (dirpyrDenoise.Cmethod == "PRE") {
-                dirpyrDenoise.Cmethod = "MAN"; // Never load 'auto chroma preview mode' from pp3
+        if (ppVersion < 346) {
+            if (keyFile.has_group("Directional Pyramid Denoising")) { //TODO: No longer an accurate description for FT denoise
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Enabled", pedited, denoise.enabled, pedited->denoise.enabled);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Median", pedited, denoise.medianEnabled, pedited->denoise.medianEnabled);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Luma", pedited, denoise.luminance, pedited->denoise.luminance);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Ldetail", pedited, denoise.luminanceDetail, pedited->denoise.luminanceDetail);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Chroma", pedited, denoise.chrominance, pedited->denoise.chrominance);
+                Glib::ustring val;
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LMethod", pedited, val, pedited->denoise.luminanceMethod)) {
+                    if (val == "CUR") {
+                        denoise.luminanceMethod = DenoiseParams::LuminanceMethod::CURVE;
+                    } else {
+                        denoise.luminanceMethod = DenoiseParams::LuminanceMethod::SLIDER;
+                    }
+                }
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "C2Method", pedited, val, pedited->denoise.chrominanceMethod)) {
+                    if (val == "MANU") {
+                        denoise.chrominanceMethod = DenoiseParams::ChrominanceMethod::MANUAL;
+                    } else {
+                        denoise.chrominanceMethod = DenoiseParams::ChrominanceMethod::AUTOMATIC;
+                    }
+                }
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "SMethod", pedited, val, pedited->denoise.aggressive)) {
+                    aggressive = (val == "shalbi");
+                }
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MedMethod", pedited, val, pedited->denoise.medianType)) {
+                    const std::vector<Glib::ustring> medtps = { "soft", "33", "55soft", "55", "77", "99" };
+                    auto it = std::find(medtps.begin(), medtps.end(), val);
+                    if (it != medtps.end()) {
+                        denoise.medianType = static_cast<DenoiseParams::MedianType>(it - medtps.begin());
+                    }
+                }
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MethodMed", pedited, val, pedited->denoise.medianMethod)) {
+                    const std::vector<Glib::ustring> med = { "Lonly", "ab", "Lab", "RGB", "Lpab" };
+                    auto it = std::find(med.begin(), med.end(), val);
+                    if (it != med.end()) {
+                        denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(it - medtps.begin());
+                    }
+                }
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LCurve", pedited, denoise.luminanceCurve, pedited->denoise.luminanceCurve);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "CCCurve", pedited, denoise.chrominanceCurve, pedited->denoise.chrominanceCurve);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Redchro", pedited, denoise.chrominanceRedGreen, pedited->denoise.chrominanceRedGreen);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Bluechro", pedited, denoise.chrominanceBlueYellow, pedited->denoise.chrominanceBlueYellow);
+                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Passes", pedited, denoise.medianIterations, pedited->denoise.medianIterations);
             }
-
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "C2Method", pedited, dirpyrDenoise.C2method, pedited->dirpyrDenoise.C2method);
-
-            if (dirpyrDenoise.C2method == "PREV") {
-                dirpyrDenoise.C2method = "MANU";
+        } else {
+            if (keyFile.has_group("Denoise")) {
+                assignFromKeyfile(keyFile, "Denoise", "Enabled", pedited, denoise.enabled, pedited->denoise.enabled);
+                int val;
+                Glib::ustring sval;
+                if (assignFromKeyfile(keyFile, "Denoise", "ColorSpace", pedited, sval, pedited->denoise.colorSpace)) {
+                    denoise.colorSpace = sval == "rgb" ? DenoiseParams::ColorSpace::RGB : DenoiseParams::ColorSpace::LAB;
+                }
+                assignFromKeyfile(keyFile, "Denoise", "Aggressive", pedited, denoise.aggressive, pedited->denoise.aggressive);
+                assignFromKeyfile(keyFile, "Denoise", "Gamma", pedited, denoise.gamma, pedited->denoise.gamma);
+                if (assignFromKeyfile(keyFile, "Denoise", "LuminanceMethod", pedited, val, pedited->denoise.luminanceMethod)) {
+                    denoise.luminanceMethod = static_cast<DenoiseParams::LuminanceMethod>(val);
+                }
+                assignFromKeyfile(keyFile, "Denoise", "Luminance", pedited, denoise.luminance, pedited->denoise.luminance);
+                assignFromKeyfile(keyFile, "Denoise", "LuminanceCurve", pedited, denoise.luminanceCurve, pedited->denoise.luminanceCurve);
+                assignFromKeyfile(keyFile, "Denoise", "LuminanceDetail", pedited, denoise.luminanceDetail, pedited->denoise.luminanceDetail);
+                if (assignFromKeyfile(keyFile, "Denoise", "ChrominanceMethod", pedited, val, pedited->denoise.chrominanceMethod)) {
+                    denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(val);
+                }
+                assignFromKeyfile(keyFile, "Denoise", "Chrominance", pedited, denoise.chrominance, pedited->denoise.chrominance);
+                assignFromKeyfile(keyFile, "Denoise", "ChrominanceCurve", pedited, denoise.chrominanceCurve, pedited->denoise.chrominanceCurve);
+                assignFromKeyfile(keyFile, "Denoise", "ChrominanceRedGreen", pedited, denoise.chrominanceRedGreen, pedited->denoise.chrominanceRedGreen);
+                assignFromKeyfile(keyFile, "Denoise", "ChrominanceBlueYellow", pedited, denoise.chrominanceBlueYellow, pedited->denoise.chrominanceBlueYellow);
+                assignFromKeyfile(keyFile, "Denoise", "MedianEnabled", pedited, denoise.medianEnabled, pedited->denoise.medianEnabled);
+                if (assignFromKeyfile(keyFile, "Denoise", "MedianType", pedited, val, pedited->denoise.medianType)) {
+                    denoise.medianType = static_cast<DenoiseParams::MedianType>(val);
+                }
+                if (assignFromKeyfile(keyFile, "Denoise", "MedianMethod", pedited, val, pedited->denoise.medianMethod)) {
+                    denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(val);
+                }
+                assignFromKeyfile(keyFile, "Denoise", "MedianIterations", pedited, denoise.medianIterations, pedited->denoise.medianIterations);
             }
-
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "SMethod", pedited, dirpyrDenoise.smethod, pedited->dirpyrDenoise.smethod);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MedMethod", pedited, dirpyrDenoise.medmethod, pedited->dirpyrDenoise.medmethod);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MethodMed", pedited, dirpyrDenoise.methodmed, pedited->dirpyrDenoise.methodmed);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "RGBMethod", pedited, dirpyrDenoise.rgbmethod, pedited->dirpyrDenoise.rgbmethod);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LCurve", pedited, dirpyrDenoise.lcurve, pedited->dirpyrDenoise.lcurve);
-
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "CCCurve", pedited, dirpyrDenoise.cccurve, pedited->dirpyrDenoise.cccurve);
-
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Redchro", pedited, dirpyrDenoise.redchro, pedited->dirpyrDenoise.redchro);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Bluechro", pedited, dirpyrDenoise.bluechro, pedited->dirpyrDenoise.bluechro);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Gamma", pedited, dirpyrDenoise.gamma, pedited->dirpyrDenoise.gamma);
-            assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Passes", pedited, dirpyrDenoise.passes, pedited->dirpyrDenoise.passes);
-        }
+        }            
 
         if (keyFile.has_group("EPD")) {
             assignFromKeyfile(keyFile, "EPD", "Enabled", pedited, epd.enabled, pedited->epd.enabled);
@@ -5395,7 +5466,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && wb == other.wb
         && colorappearance == other.colorappearance
         && impulseDenoise == other.impulseDenoise
-        && dirpyrDenoise == other.dirpyrDenoise
+        && denoise == other.denoise
         && epd == other.epd
         && fattal == other.fattal
         && logenc == other.logenc

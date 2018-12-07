@@ -257,27 +257,23 @@ void ParamsEdited::set(bool v)
     defringe.huecurve          = v;
     impulseDenoise.enabled     = v;
     impulseDenoise.thresh      = v;
-    dirpyrDenoise.enabled      = v;
-    dirpyrDenoise.enhance      = v;
-//  dirpyrDenoise.perform      = v;
-    dirpyrDenoise.lcurve      = v;
-    dirpyrDenoise.cccurve      = v;
-    dirpyrDenoise.median      = v;
-    dirpyrDenoise.luma         = v;
-    dirpyrDenoise.Ldetail      = v;
-    dirpyrDenoise.chroma       = v;
-    dirpyrDenoise.redchro      = v;
-    dirpyrDenoise.bluechro     = v;
-    dirpyrDenoise.gamma        = v;
-    dirpyrDenoise.passes        = v;
-    dirpyrDenoise.dmethod      = v;
-    dirpyrDenoise.Lmethod      = v;
-    dirpyrDenoise.Cmethod      = v;
-    dirpyrDenoise.C2method      = v;
-    dirpyrDenoise.smethod      = v;
-    dirpyrDenoise.medmethod      = v;
-    dirpyrDenoise.methodmed      = v;
-    dirpyrDenoise.rgbmethod      = v;
+    denoise.enabled = v;
+    denoise.colorSpace = v;
+    denoise.aggressive = v;
+    denoise.gamma = v;
+    denoise.luminanceMethod = v;
+    denoise.luminance = v;
+    denoise.luminanceCurve = v;
+    denoise.luminanceDetail = v;
+    denoise.chrominanceMethod = v;
+    denoise.chrominance = v;
+    denoise.chrominanceCurve = v;
+    denoise.chrominanceRedGreen = v;
+    denoise.chrominanceBlueYellow = v;
+    denoise.medianEnabled = v;
+    denoise.medianType = v;
+    denoise.medianMethod = v;
+    denoise.medianIterations = v;
     epd.enabled                = v;
     epd.strength            = v;
     epd.gamma            = v;
@@ -840,27 +836,23 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         impulseDenoise.enabled = impulseDenoise.enabled && p.impulseDenoise.enabled == other.impulseDenoise.enabled;
         impulseDenoise.thresh = impulseDenoise.thresh && p.impulseDenoise.thresh == other.impulseDenoise.thresh;
 
-        dirpyrDenoise.enabled = dirpyrDenoise.enabled && p.dirpyrDenoise.enabled == other.dirpyrDenoise.enabled;
-        dirpyrDenoise.enhance = dirpyrDenoise.enhance && p.dirpyrDenoise.enhance == other.dirpyrDenoise.enhance;
-        dirpyrDenoise.median = dirpyrDenoise.median && p.dirpyrDenoise.median == other.dirpyrDenoise.median;
-//       dirpyrDenoise.perform = dirpyrDenoise.perform && p.dirpyrDenoise.perform == other.dirpyrDenoise.perform;
-        dirpyrDenoise.luma = dirpyrDenoise.luma && p.dirpyrDenoise.luma == other.dirpyrDenoise.luma;
-        dirpyrDenoise.lcurve = dirpyrDenoise.lcurve && p.dirpyrDenoise.lcurve == other.dirpyrDenoise.lcurve;
-        dirpyrDenoise.cccurve = dirpyrDenoise.cccurve && p.dirpyrDenoise.cccurve == other.dirpyrDenoise.cccurve;
-        dirpyrDenoise.Ldetail = dirpyrDenoise.Ldetail && p.dirpyrDenoise.Ldetail == other.dirpyrDenoise.Ldetail;
-        dirpyrDenoise.chroma = dirpyrDenoise.chroma && p.dirpyrDenoise.chroma == other.dirpyrDenoise.chroma;
-        dirpyrDenoise.redchro = dirpyrDenoise.redchro && p.dirpyrDenoise.redchro == other.dirpyrDenoise.redchro;
-        dirpyrDenoise.bluechro = dirpyrDenoise.bluechro && p.dirpyrDenoise.bluechro == other.dirpyrDenoise.bluechro;
-        dirpyrDenoise.gamma = dirpyrDenoise.gamma && p.dirpyrDenoise.gamma == other.dirpyrDenoise.gamma;
-        dirpyrDenoise.passes = dirpyrDenoise.passes && p.dirpyrDenoise.passes == other.dirpyrDenoise.passes;
-        dirpyrDenoise.dmethod = dirpyrDenoise.dmethod && p.dirpyrDenoise.dmethod == other.dirpyrDenoise.dmethod;
-        dirpyrDenoise.Lmethod = dirpyrDenoise.Lmethod && p.dirpyrDenoise.Lmethod == other.dirpyrDenoise.Lmethod;
-        dirpyrDenoise.Cmethod = dirpyrDenoise.Cmethod && p.dirpyrDenoise.Cmethod == other.dirpyrDenoise.Cmethod;
-        dirpyrDenoise.C2method = dirpyrDenoise.C2method && p.dirpyrDenoise.C2method == other.dirpyrDenoise.C2method;
-        dirpyrDenoise.smethod = dirpyrDenoise.smethod && p.dirpyrDenoise.smethod == other.dirpyrDenoise.smethod;
-        dirpyrDenoise.medmethod = dirpyrDenoise.medmethod && p.dirpyrDenoise.medmethod == other.dirpyrDenoise.medmethod;
-        dirpyrDenoise.methodmed = dirpyrDenoise.methodmed && p.dirpyrDenoise.methodmed == other.dirpyrDenoise.methodmed;
-        dirpyrDenoise.rgbmethod = dirpyrDenoise.rgbmethod && p.dirpyrDenoise.rgbmethod == other.dirpyrDenoise.rgbmethod;
+        SETVAL_(denoise.enabled);
+        SETVAL_(denoise.colorSpace);
+        SETVAL_(denoise.aggressive);
+        SETVAL_(denoise.gamma);
+        SETVAL_(denoise.luminanceMethod);
+        SETVAL_(denoise.luminance);
+        SETVAL_(denoise.luminanceCurve);
+        SETVAL_(denoise.luminanceDetail);
+        SETVAL_(denoise.chrominanceMethod);
+        SETVAL_(denoise.chrominance);
+        SETVAL_(denoise.chrominanceCurve);
+        SETVAL_(denoise.chrominanceRedGreen);
+        SETVAL_(denoise.chrominanceBlueYellow);
+        SETVAL_(denoise.medianEnabled);
+        SETVAL_(denoise.medianType);
+        SETVAL_(denoise.medianMethod);
+        SETVAL_(denoise.medianIterations);
 
         epd.enabled = epd.enabled && p.epd.enabled == other.epd.enabled;
         epd.strength = epd.strength && p.epd.strength == other.epd.strength;
@@ -2037,86 +2029,23 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.impulseDenoise.thresh  = mods.impulseDenoise.thresh;
     }
 
-    if (dirpyrDenoise.enabled) {
-        toEdit.dirpyrDenoise.enabled  = mods.dirpyrDenoise.enabled;
-    }
-
-    if (dirpyrDenoise.enhance) {
-        toEdit.dirpyrDenoise.enhance  = mods.dirpyrDenoise.enhance;
-    }
-
-    if (dirpyrDenoise.median) {
-        toEdit.dirpyrDenoise.median   = mods.dirpyrDenoise.median;
-    }
-
-    if (dirpyrDenoise.luma) {
-        toEdit.dirpyrDenoise.luma     = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_LUMA] ? toEdit.dirpyrDenoise.luma + mods.dirpyrDenoise.luma : mods.dirpyrDenoise.luma;
-    }
-
-    if (dirpyrDenoise.lcurve) {
-        toEdit.dirpyrDenoise.lcurve       = mods.dirpyrDenoise.lcurve;
-    }
-
-    if (dirpyrDenoise.cccurve) {
-        toEdit.dirpyrDenoise.cccurve      = mods.dirpyrDenoise.cccurve;
-    }
-
-    if (dirpyrDenoise.Ldetail) {
-        toEdit.dirpyrDenoise.Ldetail  = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_LUMDET] ? toEdit.dirpyrDenoise.Ldetail + mods.dirpyrDenoise.Ldetail : mods.dirpyrDenoise.Ldetail;
-    }
-
-    if (dirpyrDenoise.chroma) {
-        toEdit.dirpyrDenoise.chroma       = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_CHROMA] ? toEdit.dirpyrDenoise.chroma + mods.dirpyrDenoise.chroma : mods.dirpyrDenoise.chroma;
-    }
-
-    if (dirpyrDenoise.redchro) {
-        toEdit.dirpyrDenoise.redchro  = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_CHROMARED] ? toEdit.dirpyrDenoise.redchro + mods.dirpyrDenoise.redchro : mods.dirpyrDenoise.redchro;
-    }
-
-    if (dirpyrDenoise.bluechro) {
-        toEdit.dirpyrDenoise.bluechro = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_CHROMABLUE] ? toEdit.dirpyrDenoise.bluechro + mods.dirpyrDenoise.bluechro : mods.dirpyrDenoise.bluechro;
-    }
-
-    if (dirpyrDenoise.gamma) {
-        toEdit.dirpyrDenoise.gamma        = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_GAMMA] ? toEdit.dirpyrDenoise.gamma + mods.dirpyrDenoise.gamma : mods.dirpyrDenoise.gamma;
-    }
-
-    if (dirpyrDenoise.passes) {
-        toEdit.dirpyrDenoise.passes       = dontforceSet && options.baBehav[ADDSET_DIRPYRDN_PASSES] ? toEdit.dirpyrDenoise.passes + mods.dirpyrDenoise.passes : mods.dirpyrDenoise.passes;
-    }
-
-//  if (dirpyrDenoise.perform)              toEdit.dirpyrDenoise.perform    = mods.dirpyrDenoise.perform;
-    if (dirpyrDenoise.dmethod) {
-        toEdit.dirpyrDenoise.dmethod      = mods.dirpyrDenoise.dmethod;
-    }
-
-    if (dirpyrDenoise.Lmethod) {
-        toEdit.dirpyrDenoise.Lmethod      = mods.dirpyrDenoise.Lmethod;
-    }
-
-    if (dirpyrDenoise.Cmethod) {
-        toEdit.dirpyrDenoise.Cmethod      = mods.dirpyrDenoise.Cmethod;
-    }
-
-    if (dirpyrDenoise.C2method) {
-        toEdit.dirpyrDenoise.C2method     = mods.dirpyrDenoise.C2method;
-    }
-
-    if (dirpyrDenoise.smethod) {
-        toEdit.dirpyrDenoise.smethod      = mods.dirpyrDenoise.smethod;
-    }
-
-    if (dirpyrDenoise.medmethod) {
-        toEdit.dirpyrDenoise.medmethod        = mods.dirpyrDenoise.medmethod;
-    }
-
-    if (dirpyrDenoise.methodmed) {
-        toEdit.dirpyrDenoise.methodmed        = mods.dirpyrDenoise.methodmed;
-    }
-
-    if (dirpyrDenoise.rgbmethod) {
-        toEdit.dirpyrDenoise.rgbmethod        = mods.dirpyrDenoise.rgbmethod;
-    }
+    SETVAL_(denoise.enabled);
+    SETVAL_(denoise.colorSpace);
+    SETVAL_(denoise.aggressive);
+    ADDSETVAL_(denoise.gamma, ADDSET_DIRPYRDN_GAMMA);
+    SETVAL_(denoise.luminanceMethod);
+    ADDSETVAL_(denoise.luminance, ADDSET_DIRPYRDN_LUMA);
+    SETVAL_(denoise.luminanceCurve);
+    ADDSETVAL_(denoise.luminanceDetail, ADDSET_DIRPYRDN_LUMDET);
+    SETVAL_(denoise.chrominanceMethod);
+    ADDSETVAL_(denoise.chrominance, ADDSET_DIRPYRDN_CHROMA);
+    SETVAL_(denoise.chrominanceCurve);
+    ADDSETVAL_(denoise.chrominanceRedGreen, ADDSET_DIRPYRDN_CHROMARED);
+    ADDSETVAL_(denoise.chrominanceBlueYellow, ADDSET_DIRPYRDN_CHROMABLUE);
+    SETVAL_(denoise.medianEnabled);
+    SETVAL_(denoise.medianType);
+    SETVAL_(denoise.medianMethod);
+    ADDSETVAL_(denoise.medianIterations, ADDSET_DIRPYRDN_PASSES);
 
     if (epd.enabled) {
         toEdit.epd.enabled                = mods.epd.enabled;
