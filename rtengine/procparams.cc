@@ -3294,7 +3294,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Denoising
         saveToKeyfile(!pedited || pedited->denoise.enabled, "Denoise", "Enabled", denoise.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.colorSpace, "Denoise", "ColorSpace", denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? "lab" : "rgb", keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.colorSpace, "Denoise", "ColorSpace", Glib::ustring(denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? "Lab" : "RGB"), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.aggressive, "Denoise", "Aggressive", denoise.aggressive, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.gamma, "Denoise", "Gamma", denoise.gamma, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.luminanceMethod, "Denoise", "LuminanceMethod", int(denoise.luminanceMethod), keyFile);
@@ -4318,7 +4318,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 int val;
                 Glib::ustring sval;
                 if (assignFromKeyfile(keyFile, "Denoise", "ColorSpace", pedited, sval, pedited->denoise.colorSpace)) {
-                    denoise.colorSpace = sval == "rgb" ? DenoiseParams::ColorSpace::RGB : DenoiseParams::ColorSpace::LAB;
+                    denoise.colorSpace = (sval == "RGB" ? DenoiseParams::ColorSpace::RGB : DenoiseParams::ColorSpace::LAB);
                 }
                 assignFromKeyfile(keyFile, "Denoise", "Aggressive", pedited, denoise.aggressive, pedited->denoise.aggressive);
                 assignFromKeyfile(keyFile, "Denoise", "Gamma", pedited, denoise.gamma, pedited->denoise.gamma);

@@ -715,8 +715,8 @@ struct ImpulseDenoiseParams {
  */
 struct DenoiseParams {
     enum class ColorSpace {
-        RGB,
-        LAB
+        LAB,
+        RGB
     };
     
     enum class ChrominanceMethod {

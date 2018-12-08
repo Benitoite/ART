@@ -269,6 +269,7 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
     gamma->setValue(pp->denoise.gamma);
     luminanceMethod->set_active(int(pp->denoise.luminanceMethod));
     luminanceMethodChanged();
+    luminance->setValue(pp->denoise.luminance);
     luminanceCurve->setCurve(pp->denoise.luminanceCurve);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
 
@@ -277,6 +278,7 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
     chrominance->setValue(pp->denoise.chrominance);
     chrominanceRedGreen->setValue(pp->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->setValue(pp->denoise.chrominanceBlueYellow);
+    chrominanceCurve->setCurve(pp->denoise.chrominanceCurve);
 
     medianEnabled->set_active(pp->denoise.medianEnabled);
     medianType->set_active(int(pp->denoise.medianType));
