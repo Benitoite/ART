@@ -3429,7 +3429,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
     }
 
     if (!params->logenc.enabled) {
-        guidedFilter(lab);
         shadowsHighlights(lab);
     }
 }

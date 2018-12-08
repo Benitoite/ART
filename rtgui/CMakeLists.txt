@@ -157,7 +157,6 @@ set(NONCLISOURCEFILES
     labgrid.cc
     softlight.cc
     dehaze.cc
-    guidedfilter.cc
     logencoding.cc
     areamask.cc
     )

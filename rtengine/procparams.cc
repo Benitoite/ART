@@ -1507,57 +1507,18 @@ DenoiseParams::DenoiseParams() :
     },
     chrominanceRedGreen(0),
     chrominanceBlueYellow(0),
-    medianEnabled(false),
+    smoothingEnabled(false),
+    smoothingMethod(SmoothingMethod::MEDIAN),
     medianType(MedianType::TYPE_3X3_SOFT),
     medianMethod(MedianMethod::CHROMINANCE),
-    medianIterations(1)
+    medianIterations(1),
+    guidedRadius(4),
+    guidedEpsilon(10),
+    guidedIterations(1),
+    guidedLumaBlend(0),
+    guidedChromaBlend(100)
 {
 }
-
-// DenoiseParams::DenoiseParams() :
-//     luminanceCurve{
-//         FCT_MinMaxCPoints,
-//         0.05,
-//         0.15,
-//         0.35,
-//         0.35,
-//         0.55,
-//         0.04,
-//         0.35,
-//         0.35
-//     },
-//     chrominanceCurve{
-//         FCT_MinMaxCPoints,
-//         0.05,
-//         0.50,
-//         0.35,
-//         0.35,
-//         0.35,
-//         0.05,
-//         0.35,
-//         0.35
-//     },
-//     enabled(false),
-//     enhance(false),
-//     median(false),
-//     perform(false),
-//     luma(0),
-//     Ldetail(0),
-//     chroma(15),
-//     redchro(0),
-//     bluechro(0),
-//     gamma(1.7),
-//     dmethod("Lab"),
-//     Lmethod("SLI"),
-//     Cmethod("MAN"),
-//     C2method("AUTO"),
-//     smethod("shal"),
-//     medmethod("soft"),
-//     methodmed("none"),
-//     rgbmethod("soft"),
-//     passes(1)
-// {
-// }
 
 
 bool DenoiseParams::operator ==(const DenoiseParams& other) const
@@ -1576,10 +1537,16 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && chrominanceCurve == other.chrominanceCurve
         && chrominanceRedGreen == other.chrominanceRedGreen
         && chrominanceBlueYellow == other.chrominanceBlueYellow
-        && medianEnabled == other.medianEnabled
+        && smoothingEnabled == other.smoothingEnabled
+        && smoothingMethod == other.smoothingMethod
         && medianType == other.medianType
         && medianMethod == other.medianMethod
-        && medianIterations == other.medianIterations;
+        && medianIterations == other.medianIterations
+        && guidedRadius == other.guidedRadius
+        && guidedEpsilon == other.guidedEpsilon
+        && guidedIterations == other.guidedIterations
+        && guidedLumaBlend == other.guidedLumaBlend
+        && guidedChromaBlend == other.guidedChromaBlend;
 }
 
 
@@ -2573,45 +2540,6 @@ bool DehazeParams::operator !=(const DehazeParams& other) const
 }
 
 
-GuidedFilterParams::GuidedFilterParams():
-    enabled(false),
-    smoothingRadius(0),
-    smoothingEpsilon(10.0),
-    smoothingIterations(1),
-    smoothingLumaBlend(100),
-    smoothingChromaBlend(100),
-    decompRadius(0),
-    decompEpsilon(1.0),
-    decompDetailBoost(0),
-    decompBaseCurve1({ DCT_Linear }),
-    decompBaseCurve2({ DCT_Linear })
-{
-}
-
-
-bool GuidedFilterParams::operator==(const GuidedFilterParams &other) const
-{
-    return
-        enabled == other.enabled
-        && smoothingRadius == other.smoothingRadius
-        && smoothingEpsilon == other.smoothingEpsilon
-        && smoothingIterations == other.smoothingIterations
-        && smoothingLumaBlend == other.smoothingLumaBlend
-        && smoothingChromaBlend == other.smoothingChromaBlend
-        && decompRadius == other.decompRadius
-        && decompEpsilon == other.decompEpsilon
-        && decompBaseCurve1 == other.decompBaseCurve1
-        && decompBaseCurve2 == other.decompBaseCurve2
-        && decompDetailBoost == other.decompDetailBoost;
-}
-
-
-bool GuidedFilterParams::operator!=(const GuidedFilterParams &other) const
-{
-    return !(*this == other);
-}
-
-
 RAWParams::BayerSensor::BayerSensor() :
     method(getMethodString(Method::AMAZE)),
     border(4),
@@ -2974,8 +2902,6 @@ void ProcParams::setDefaults()
 
     dehaze = DehazeParams();
 
-    guidedfilter = GuidedFilterParams();
-
     raw = RAWParams();
 
     metadata = MetaDataParams();
@@ -3306,10 +3232,16 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->denoise.chrominanceCurve, "Denoise", "ChrominanceCurve", denoise.chrominanceCurve, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceRedGreen, "Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceBlueYellow, "Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.medianEnabled, "Denoise", "MedianEnabled", denoise.medianEnabled, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.smoothingEnabled, "Denoise", "SmoothingEnabled", denoise.smoothingEnabled, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.smoothingMethod, "Denoise", "SmoothingMethod", int(denoise.smoothingMethod), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianType, "Denoise", "MedianType", int(denoise.medianType), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianMethod, "Denoise", "MedianMethod", int(denoise.medianMethod), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianIterations, "Denoise", "MedianIterations", denoise.medianIterations, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedRadius, "Denoise", "GuidedRadius", denoise.guidedRadius, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedEpsilon, "Denoise", "GuidedEpsilon", denoise.guidedEpsilon, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedIterations, "Denoise", "GuidedIterations", denoise.guidedIterations, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedLumaBlend, "Denoise", "GuidedLumaBlend", denoise.guidedLumaBlend, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedChromaBlend, "Denoise", "GuidedChromaBlend", denoise.guidedChromaBlend, keyFile);
 
 // EPD
         saveToKeyfile(!pedited || pedited->epd.enabled, "EPD", "Enabled", epd.enabled, keyFile);
@@ -3341,22 +3273,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->sh.stonalwidth, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
         saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
         saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
-
-// Guided filter
-        {
-            const char *section = "Guided Filter";
-            saveToKeyfile(!pedited || pedited->guidedfilter.enabled, section, "Enabled", guidedfilter.enabled, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingRadius, section, "SmoothingRadius", guidedfilter.smoothingRadius, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingEpsilon, section, "SmoothingEpsilon", guidedfilter.smoothingEpsilon, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingIterations, section, "SmoothingIterations", guidedfilter.smoothingIterations, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingLumaBlend, section, "SmoothingLumaBlend", guidedfilter.smoothingLumaBlend, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.smoothingChromaBlend, section, "SmoothingChromaBlend", guidedfilter.smoothingChromaBlend, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.decompRadius, section, "DecompRadius", guidedfilter.decompRadius, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.decompEpsilon, section, "DecompEpsilon", guidedfilter.decompEpsilon, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.decompBaseCurve1, section, "DecompBaseCurve1", guidedfilter.decompBaseCurve1, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.decompBaseCurve2, section, "DecompBaseCurve2", guidedfilter.decompBaseCurve2, keyFile);
-            saveToKeyfile(!pedited || pedited->guidedfilter.decompDetailBoost, section, "DecompDetailBoost", guidedfilter.decompDetailBoost, keyFile);
-        }
 
 // Crop
         saveToKeyfile(!pedited || pedited->crop.enabled, "Crop", "Enabled", crop.enabled, keyFile);
@@ -4263,7 +4179,12 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
         if (ppVersion < 346) {
             if (keyFile.has_group("Directional Pyramid Denoising")) { //TODO: No longer an accurate description for FT denoise
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Enabled", pedited, denoise.enabled, pedited->denoise.enabled);
-                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Median", pedited, denoise.medianEnabled, pedited->denoise.medianEnabled);
+                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Median", pedited, denoise.smoothingEnabled, pedited->denoise.smoothingEnabled)) {
+                    if (pedited) {
+                        pedited->denoise.smoothingMethod = true;
+                    }
+                    denoise.smoothingMethod = DenoiseParams::SmoothingMethod::MEDIAN;
+                }
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Luma", pedited, denoise.luminance, pedited->denoise.luminance);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Ldetail", pedited, denoise.luminanceDetail, pedited->denoise.luminanceDetail);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Chroma", pedited, denoise.chrominance, pedited->denoise.chrominance);
@@ -4335,7 +4256,10 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceCurve", pedited, denoise.chrominanceCurve, pedited->denoise.chrominanceCurve);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceRedGreen", pedited, denoise.chrominanceRedGreen, pedited->denoise.chrominanceRedGreen);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceBlueYellow", pedited, denoise.chrominanceBlueYellow, pedited->denoise.chrominanceBlueYellow);
-                assignFromKeyfile(keyFile, "Denoise", "MedianEnabled", pedited, denoise.medianEnabled, pedited->denoise.medianEnabled);
+                assignFromKeyfile(keyFile, "Denoise", "SmoothingEnabled", pedited, denoise.smoothingEnabled, pedited->denoise.smoothingEnabled);
+                if (assignFromKeyfile(keyFile, "Denoise", "SmoothingMethod", pedited, val, pedited->denoise.smoothingMethod)) {
+                    denoise.smoothingMethod = static_cast<DenoiseParams::SmoothingMethod>(val);
+                }
                 if (assignFromKeyfile(keyFile, "Denoise", "MedianType", pedited, val, pedited->denoise.medianType)) {
                     denoise.medianType = static_cast<DenoiseParams::MedianType>(val);
                 }
@@ -4343,6 +4267,11 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(val);
                 }
                 assignFromKeyfile(keyFile, "Denoise", "MedianIterations", pedited, denoise.medianIterations, pedited->denoise.medianIterations);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedRadius", pedited, denoise.guidedRadius, pedited->denoise.guidedRadius);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedEpsilon", pedited, denoise.guidedEpsilon, pedited->denoise.guidedEpsilon);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedIterations", pedited, denoise.guidedIterations, pedited->denoise.guidedIterations);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedLumaBlend", pedited, denoise.guidedLumaBlend, pedited->denoise.guidedLumaBlend);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedChromaBlend", pedited, denoise.guidedChromaBlend, pedited->denoise.guidedChromaBlend);
             }
         }            
 
@@ -4404,21 +4333,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     pedited->localContrast.radius = true;
                 }
             }
-        }
-
-        if (keyFile.has_group("Guided Filter")) {
-            const char *section = "Guided Filter";
-            assignFromKeyfile(keyFile, section, "Enabled", pedited, guidedfilter.enabled, pedited->guidedfilter.enabled);
-            assignFromKeyfile(keyFile, section, "SmoothingRadius", pedited, guidedfilter.smoothingRadius, pedited->guidedfilter.smoothingRadius);
-            assignFromKeyfile(keyFile, section, "SmoothingEpsilon", pedited, guidedfilter.smoothingEpsilon, pedited->guidedfilter.smoothingEpsilon);
-            assignFromKeyfile(keyFile, section, "SmoothingIterations", pedited, guidedfilter.smoothingIterations, pedited->guidedfilter.smoothingIterations);
-            assignFromKeyfile(keyFile, section, "SmoothingLumaBlend", pedited, guidedfilter.smoothingLumaBlend, pedited->guidedfilter.smoothingLumaBlend);
-            assignFromKeyfile(keyFile, section, "SmoothingChromaBlend", pedited, guidedfilter.smoothingChromaBlend, pedited->guidedfilter.smoothingChromaBlend);
-            assignFromKeyfile(keyFile, section, "DecompRadius", pedited, guidedfilter.decompRadius, pedited->guidedfilter.decompRadius);
-            assignFromKeyfile(keyFile, section, "DecompEpsilon", pedited, guidedfilter.decompEpsilon, pedited->guidedfilter.decompEpsilon);
-            assignFromKeyfile(keyFile, section, "DecompBaseCurve1", pedited, guidedfilter.decompBaseCurve1, pedited->guidedfilter.decompBaseCurve1);
-            assignFromKeyfile(keyFile, section, "DecompBaseCurve2", pedited, guidedfilter.decompBaseCurve2, pedited->guidedfilter.decompBaseCurve2);
-            assignFromKeyfile(keyFile, section, "DecompDetailBoost", pedited, guidedfilter.decompDetailBoost, pedited->guidedfilter.decompDetailBoost);
         }
 
         if (keyFile.has_group("Crop")) {
@@ -5505,8 +5419,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && metadata == other.metadata
         && exif == other.exif
         && iptc == other.iptc
-        && dehaze == other.dehaze
-        && guidedfilter == other.guidedfilter;
+        && dehaze == other.dehaze;
 }
 
 bool ProcParams::operator !=(const ProcParams& other) const

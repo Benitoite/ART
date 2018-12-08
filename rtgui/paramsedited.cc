@@ -270,10 +270,16 @@ void ParamsEdited::set(bool v)
     denoise.chrominanceCurve = v;
     denoise.chrominanceRedGreen = v;
     denoise.chrominanceBlueYellow = v;
-    denoise.medianEnabled = v;
+    denoise.smoothingEnabled = v;
+    denoise.smoothingMethod = v;
     denoise.medianType = v;
     denoise.medianMethod = v;
     denoise.medianIterations = v;
+    denoise.guidedRadius = v;
+    denoise.guidedEpsilon = v;
+    denoise.guidedIterations = v;
+    denoise.guidedLumaBlend = v;
+    denoise.guidedChromaBlend = v;
     epd.enabled                = v;
     epd.strength            = v;
     epd.gamma            = v;
@@ -576,17 +582,6 @@ void ParamsEdited::set(bool v)
     dehaze.strength = v;
     dehaze.showDepthMap = v;
     dehaze.depth = v;
-    guidedfilter.enabled = v;
-    guidedfilter.smoothingRadius = v;
-    guidedfilter.smoothingEpsilon = v;
-    guidedfilter.smoothingIterations = v;
-    guidedfilter.smoothingLumaBlend = v;
-    guidedfilter.smoothingChromaBlend = v;
-    guidedfilter.decompRadius = v;
-    guidedfilter.decompEpsilon = v;
-    guidedfilter.decompBaseCurve1 = v;
-    guidedfilter.decompBaseCurve2 = v;
-    guidedfilter.decompDetailBoost = v;
     metadata.mode = v;
 
     exif = v;
@@ -849,10 +844,16 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(denoise.chrominanceCurve);
         SETVAL_(denoise.chrominanceRedGreen);
         SETVAL_(denoise.chrominanceBlueYellow);
-        SETVAL_(denoise.medianEnabled);
+        SETVAL_(denoise.smoothingEnabled);
+        SETVAL_(denoise.smoothingMethod);
         SETVAL_(denoise.medianType);
         SETVAL_(denoise.medianMethod);
         SETVAL_(denoise.medianIterations);
+        SETVAL_(denoise.guidedRadius);
+        SETVAL_(denoise.guidedEpsilon);
+        SETVAL_(denoise.guidedIterations);
+        SETVAL_(denoise.guidedLumaBlend);
+        SETVAL_(denoise.guidedChromaBlend);
 
         epd.enabled = epd.enabled && p.epd.enabled == other.epd.enabled;
         epd.strength = epd.strength && p.epd.strength == other.epd.strength;
@@ -1151,18 +1152,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         dehaze.strength = dehaze.strength && p.dehaze.strength == other.dehaze.strength;
         dehaze.showDepthMap = dehaze.showDepthMap && p.dehaze.showDepthMap == other.dehaze.showDepthMap;
         dehaze.depth = dehaze.depth && p.dehaze.depth == other.dehaze.depth;
-
-        SETVAL_(guidedfilter.enabled);
-        SETVAL_(guidedfilter.smoothingRadius);
-        SETVAL_(guidedfilter.smoothingEpsilon);
-        SETVAL_(guidedfilter.smoothingIterations);
-        SETVAL_(guidedfilter.smoothingLumaBlend);
-        SETVAL_(guidedfilter.smoothingChromaBlend);
-        SETVAL_(guidedfilter.decompRadius);
-        SETVAL_(guidedfilter.decompEpsilon);
-        SETVAL_(guidedfilter.decompBaseCurve1);
-        SETVAL_(guidedfilter.decompBaseCurve2);
-        SETVAL_(guidedfilter.decompDetailBoost);
 
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
@@ -2042,10 +2031,16 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(denoise.chrominanceCurve);
     ADDSETVAL_(denoise.chrominanceRedGreen, ADDSET_DIRPYRDN_CHROMARED);
     ADDSETVAL_(denoise.chrominanceBlueYellow, ADDSET_DIRPYRDN_CHROMABLUE);
-    SETVAL_(denoise.medianEnabled);
+    SETVAL_(denoise.smoothingEnabled);
+    SETVAL_(denoise.smoothingMethod);
     SETVAL_(denoise.medianType);
     SETVAL_(denoise.medianMethod);
     ADDSETVAL_(denoise.medianIterations, ADDSET_DIRPYRDN_PASSES);
+    SETVAL_(denoise.guidedRadius);
+    SETVAL_(denoise.guidedEpsilon);
+    SETVAL_(denoise.guidedIterations);
+    SETVAL_(denoise.guidedLumaBlend);
+    SETVAL_(denoise.guidedChromaBlend);
 
     if (epd.enabled) {
         toEdit.epd.enabled                = mods.epd.enabled;
@@ -3136,18 +3131,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     if (dehaze.showDepthMap) {
         toEdit.dehaze.showDepthMap     = mods.dehaze.showDepthMap;
     }
-
-    SETVAL_(guidedfilter.enabled);
-    SETVAL_(guidedfilter.smoothingRadius);
-    SETVAL_(guidedfilter.smoothingEpsilon);
-    SETVAL_(guidedfilter.smoothingIterations);
-    SETVAL_(guidedfilter.smoothingLumaBlend);
-    SETVAL_(guidedfilter.smoothingChromaBlend);
-    SETVAL_(guidedfilter.decompRadius);
-    SETVAL_(guidedfilter.decompEpsilon);
-    SETVAL_(guidedfilter.decompBaseCurve1);
-    SETVAL_(guidedfilter.decompBaseCurve2);
-    SETVAL_(guidedfilter.decompDetailBoost);
 
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;

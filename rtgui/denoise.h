@@ -71,8 +71,16 @@ private:
     void chrominanceMethodChanged();
     void medianTypeChanged();
     void medianMethodChanged();
-    void medianEnabledToggled();
+    void smoothingEnabledToggled();
+    void smoothingMethodChanged();
     
+    rtengine::ProcEvent EvSmoothingMethod;
+    rtengine::ProcEvent EvGuidedRadius;
+    rtengine::ProcEvent EvGuidedEpsilon;
+    rtengine::ProcEvent EvGuidedIterations;
+    rtengine::ProcEvent EvGuidedLumaBlend;
+    rtengine::ProcEvent EvGuidedChromaBlend;
+
     MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
     Adjuster *gamma;
@@ -87,68 +95,18 @@ private:
     Adjuster *chrominance;
     Adjuster *chrominanceRedGreen;
     Adjuster *chrominanceBlueYellow;
-    Gtk::CheckButton *medianEnabled;
+    MyExpander *smoothingEnabled;
+    MyComboBoxText *smoothingMethod;
+    Gtk::VBox *medianBox;
     MyComboBoxText *medianType;
     MyComboBoxText *medianMethod;
     Adjuster *medianIterations;
-
-#if 0
-    CurveEditorGroup* NoiscurveEditorG;
-    CurveEditorGroup* CCcurveEditorG;
-    Adjuster* luma;
-    Adjuster* Ldetail;
-    Adjuster* chroma;
-    Adjuster* redchro;
-    Adjuster* bluechro;
-    Adjuster* gamma;
-    Adjuster* passes;
-    FlatCurveEditor* lshape;
-    FlatCurveEditor* ccshape;
-
-    sigc::connection medianConn;
-    Gtk::CheckButton* median;
-    bool lastmedian;
-    Gtk::Label*    NoiseLabels;
-    Gtk::Label*    TileLabels;
-    Gtk::Label*    PrevLabels;
-
-//    Gtk::CheckButton* perform;
-//    bool lastperform;
-//    sigc::connection perfconn;
-    MyComboBoxText*   dmethod;
-    sigc::connection  dmethodconn;
-    MyComboBoxText*   Lmethod;
-    sigc::connection  Lmethodconn;
-    MyComboBoxText*   Cmethod;
-    sigc::connection  Cmethodconn;
-    MyComboBoxText*   C2method;
-    sigc::connection  C2methodconn;
-    MyComboBoxText*   smethod;
-    sigc::connection  smethodconn;
-    MyComboBoxText*   medmethod;
-    sigc::connection  medmethodconn;
-    Gtk::HBox* ctbox;
-    MyComboBoxText*   methodmed;
-    sigc::connection  methodmedconn;
-    Gtk::HBox* ctboxm;
-    MyComboBoxText*   rgbmethod;
-    sigc::connection  rgbmethodconn;
-    Gtk::HBox* ctboxrgb;
-    double nextchroma;
-    double nextred;
-    double nextblue;
-    double nextnresid;
-    double nexthighresid;
-    Gtk::HBox* ctboxL;
-    Gtk::HBox* ctboxC;
-    Gtk::HBox* ctboxC2;
-    int nexttileX;
-    int nexttileY;
-    int nextprevX;
-    int nextprevY;
-    int nextsizeT;
-    int nextsizeP;
-#endif
+    Gtk::VBox *guidedBox;
+    Adjuster *guidedRadius;
+    Adjuster *guidedEpsilon;
+    Adjuster *guidedIterations;
+    Adjuster *guidedLumaBlend;
+    Adjuster *guidedChromaBlend;
 
     IdleRegister idle_register;
 };

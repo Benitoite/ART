@@ -365,10 +365,16 @@ public:
     bool chrominanceCurve;
     bool chrominanceRedGreen;
     bool chrominanceBlueYellow;
-    bool medianEnabled;
+    bool smoothingEnabled;
+    bool smoothingMethod;
     bool medianType;
     bool medianMethod;
     bool medianIterations;
+    bool guidedRadius;
+    bool guidedEpsilon;
+    bool guidedIterations;
+    bool guidedLumaBlend;
+    bool guidedChromaBlend;
 };
 
 class EPDParamsEdited
@@ -741,20 +747,6 @@ public:
     bool depth;
 };
 
-struct GuidedFilterParamsEdited {
-    bool enabled;
-    bool smoothingRadius;
-    bool smoothingEpsilon;
-    bool smoothingIterations;
-    bool smoothingLumaBlend;
-    bool smoothingChromaBlend;
-    bool decompRadius;
-    bool decompEpsilon;
-    bool decompBaseCurve1;
-    bool decompBaseCurve2;
-    bool decompDetailBoost;
-};
-
 
 class RAWParamsEdited
 {
@@ -901,7 +893,6 @@ public:
     FilmSimulationParamsEdited    filmSimulation;
     SoftLightParamsEdited         softlight;
     DehazeParamsEdited            dehaze;
-    GuidedFilterParamsEdited      guidedfilter;
     MetaDataParamsEdited          metadata;
     bool                          exif;
     bool                          iptc;

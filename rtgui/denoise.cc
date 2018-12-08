@@ -21,22 +21,25 @@
 #include <cmath>
 #include "edit.h"
 #include "guiutils.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 extern Options options;
 
 Denoise::Denoise():
-    FoldableToolPanel(this, "dirpyrdenoise", M("TP_DIRPYRDENOISE_LABEL"), true, true)//,
-//    lastmedian(false)
+    FoldableToolPanel(this, "dirpyrdenoise", M("TP_DIRPYRDENOISE_LABEL"), true, true)
 {
+    auto m = ProcEventMapper::getInstance();
+    EvSmoothingMethod = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_SMOOTHING_METHOD");
+    EvGuidedRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_RADIUS");
+    EvGuidedEpsilon = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_EPSILON");
+    EvGuidedIterations = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_ITERATIONS");
+    EvGuidedLumaBlend = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_BLEND");
+    EvGuidedChromaBlend = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_BLEND");
+
     std::vector<GradientMilestone> milestones;
     CurveListener::setMulti(true);
-    // nextnresid = 0.;
-    // nexthighresid = 0.;
-    // nextchroma = 15.;
-    // nextred = 0.;
-    // nextblue = 0.;
 
     std::vector<double> defaultCurve;
 
@@ -153,8 +156,6 @@ Denoise::Denoise():
     chromaFrame->add(*chromaVBox);
     pack_start(*chromaFrame);
 
-    //-----------------------------------------
-
     luminance->hide();
     luminanceDetail->show();
 
@@ -162,17 +163,19 @@ Denoise::Denoise():
     chrominanceRedGreen->show();
     chrominanceBlueYellow->show();
 
-    // ---- Median FIltering ----
+    smoothingEnabled = Gtk::manage(new MyExpander(true, M("TP_DENOISE_SMOOTHING")));
+    ToolParamBlock *smoothing = Gtk::manage(new ToolParamBlock());
 
-    Gtk::Frame *medianFrame = Gtk::manage(new Gtk::Frame());
-    medianFrame->set_label_align(0.025, 0.5);
+    smoothingMethod = Gtk::manage(new MyComboBoxText());
+    smoothingMethod->append(M("TP_DENOISE_SMOOTHING_MEDIAN"));
+    smoothingMethod->append(M("TP_DENOISE_SMOOTHING_GUIDED"));
+    hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start(*Gtk::manage (new Gtk::Label(M("TP_DENOISE_SMOOTHING_METHOD") + ":")), Gtk::PACK_SHRINK, 1);
+    hb->pack_start(*smoothingMethod);
+    smoothing->pack_start(*hb);
 
-    Gtk::VBox *medianVBox = Gtk::manage(new Gtk::VBox());
-    medianVBox->set_spacing(2);
-
-    medianEnabled = Gtk::manage(new Gtk::CheckButton(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_LABEL") + ":"));
-    medianEnabled->set_active (true);
-    medianFrame->set_label_widget(*medianEnabled);
+    medianBox = Gtk::manage(new Gtk::VBox());
+    medianBox->set_spacing(2);
 
     medianMethod = Gtk::manage(new MyComboBoxText());
     medianMethod->append(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_LUMINANCE"));
@@ -196,21 +199,48 @@ Denoise::Denoise():
     hb = Gtk::manage(new Gtk::HBox());
     hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MEDIAN_METHOD") + ":")), Gtk::PACK_SHRINK, 1);
     hb->pack_start(*medianMethod);
-    medianVBox->pack_start(*hb);
+    medianBox->pack_start(*hb);
 
     hb = Gtk::manage(new Gtk::HBox());
     hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MEDIAN_TYPE") + ":")), Gtk::PACK_SHRINK, 1);
     hb->pack_start(*medianType);
-    medianVBox->pack_start(*hb);
+    medianBox->pack_start(*hb);
 
     medianIterations = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_MEDIAN_PASSES"), 1.0, 3.0, 1., 1.));
     medianIterations->set_tooltip_text(M("TP_DIRPYRDENOISE_MEDIAN_PASSES_TOOLTIP"));
-    medianIterations->setAdjusterListener (this);
+    medianIterations->setAdjusterListener(this);
     medianIterations->show();
-    medianVBox->pack_start(*medianIterations);
+    medianBox->pack_start(*medianIterations);
 
-    medianFrame->add(*medianVBox);
-    pack_start(*medianFrame);
+    smoothing->pack_start(*medianBox);
+
+    guidedBox = Gtk::manage(new Gtk::VBox());
+    
+    guidedRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 100, 1, 0));
+    guidedRadius->setLogScale(100, 0);
+    guidedRadius->setAdjusterListener(this);
+    guidedBox->pack_start(*guidedRadius);
+    
+    guidedEpsilon = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_EPSILON"), 1.0, 20.0, 0.1, 10.0));
+    guidedEpsilon->setAdjusterListener(this);
+    guidedBox->pack_start(*guidedEpsilon);
+    
+    guidedLumaBlend = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_LUMA_BLEND"), 0, 100, 1, 0));
+    guidedLumaBlend->setAdjusterListener(this);
+    guidedBox->pack_start(*guidedLumaBlend);
+    
+    guidedChromaBlend = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_CHROMA_BLEND"), 0, 100, 1, 0));
+    guidedChromaBlend->setAdjusterListener(this);
+    guidedBox->pack_start(*guidedChromaBlend);
+
+    guidedIterations = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_ITERATIONS"), 1, 3, 1, 1));
+    guidedIterations->setAdjusterListener(this);
+    guidedBox->pack_start(*guidedIterations);
+    
+    smoothing->pack_start(*guidedBox);
+    smoothingEnabled->add(*smoothing, false);
+    smoothingEnabled->setLevel(2);
+    pack_start(*smoothingEnabled);
 
     colorSpace->signal_changed().connect(sigc::mem_fun(*this, &Denoise::colorSpaceChanged));
     aggressive->signal_changed().connect(sigc::mem_fun(*this, &Denoise::aggressiveChanged));
@@ -218,7 +248,8 @@ Denoise::Denoise():
     chrominanceMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::chrominanceMethodChanged));
     medianType->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianTypeChanged));
     medianMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianMethodChanged));
-    medianEnabled->signal_toggled().connect(sigc::mem_fun(*this, &Denoise::medianEnabledToggled));
+    smoothingMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::smoothingMethodChanged));
+    smoothingEnabled->signal_enabled_toggled().connect(sigc::mem_fun(*this, &Denoise::smoothingEnabledToggled));
 }
 
 
@@ -246,6 +277,7 @@ void Denoise::chromaChanged (double autchroma, double autred, double autblue)
 
     idle_register.add(func, d);
 }
+
 
 bool Denoise::chromaComputed(double chroma, double red, double blue)
 {
@@ -280,10 +312,19 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
     chrominanceBlueYellow->setValue(pp->denoise.chrominanceBlueYellow);
     chrominanceCurve->setCurve(pp->denoise.chrominanceCurve);
 
-    medianEnabled->set_active(pp->denoise.medianEnabled);
+    smoothingEnabled->setEnabled(pp->denoise.smoothingEnabled);
+    smoothingMethod->set_active(int(pp->denoise.smoothingMethod));
+    smoothingMethodChanged();
+    
     medianType->set_active(int(pp->denoise.medianType));
     medianMethod->set_active(int(pp->denoise.medianMethod));
     medianIterations->setValue(pp->denoise.medianIterations);
+
+    guidedRadius->setValue(pp->denoise.guidedRadius);
+    guidedEpsilon->setValue(pp->denoise.guidedEpsilon);
+    guidedIterations->setValue(pp->denoise.guidedIterations);
+    guidedLumaBlend->setValue(pp->denoise.guidedLumaBlend);
+    guidedChromaBlend->setValue(pp->denoise.guidedChromaBlend);
 
     if (pedited) {
         if (!pedited->denoise.colorSpace) {
@@ -310,6 +351,10 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
             medianMethod->set_active(5);
         }
 
+        if (!pedited->denoise.smoothingMethod) {
+            smoothingMethod->set_active(2);
+        }
+
         luminance->setEditedState(pedited->denoise.luminance ? Edited : UnEdited);
         luminanceDetail->setEditedState(pedited->denoise.luminanceDetail ? Edited : UnEdited);
         chrominance->setEditedState(pedited->denoise.chrominance ? Edited : UnEdited);
@@ -319,9 +364,15 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
         gamma->setEditedState(pedited->denoise.gamma ? Edited : UnEdited);
         medianIterations->setEditedState(pedited->denoise.medianIterations ? Edited : UnEdited);
         set_inconsistent(multiImage && !pedited->denoise.enabled);
-        medianEnabled->set_inconsistent(!pedited->denoise.medianEnabled);
+        smoothingEnabled->set_inconsistent(!pedited->denoise.smoothingEnabled);
         chrominanceCurve->setUnChanged(!pedited->denoise.chrominanceCurve);
         luminanceCurve->setUnChanged(!pedited->denoise.luminanceCurve);
+
+        guidedRadius->setEditedState(pedited->denoise.guidedRadius ? Edited : UnEdited);
+        guidedEpsilon->setEditedState(pedited->denoise.guidedEpsilon ? Edited : UnEdited);
+        guidedIterations->setEditedState(pedited->denoise.guidedIterations ? Edited : UnEdited);
+        guidedLumaBlend->setEditedState(pedited->denoise.guidedLumaBlend ? Edited : UnEdited);
+        guidedChromaBlend->setEditedState(pedited->denoise.guidedChromaBlend ? Edited : UnEdited);
     }
     enableListener ();
 }
@@ -363,7 +414,10 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
     pp->denoise.chrominance = chrominance->getValue();
     pp->denoise.chrominanceRedGreen = chrominanceRedGreen->getValue();
     pp->denoise.chrominanceBlueYellow = chrominanceBlueYellow->getValue();
-    pp->denoise.medianEnabled = medianEnabled->get_active();
+    pp->denoise.smoothingEnabled = smoothingEnabled->getEnabled();
+    if (smoothingMethod->get_active_row_number() < 2) {
+        pp->denoise.smoothingMethod = static_cast<DenoiseParams::SmoothingMethod>(smoothingMethod->get_active_row_number());
+    }
     if (medianType->get_active_row_number() < 6) {
         pp->denoise.medianType = static_cast<DenoiseParams::MedianType>(medianType->get_active_row_number());
     }
@@ -371,6 +425,11 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
         pp->denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(medianMethod->get_active_row_number());
     }
     pp->denoise.medianIterations = medianIterations->getValue();
+    pp->denoise.guidedRadius = guidedRadius->getValue();
+    pp->denoise.guidedEpsilon = guidedEpsilon->getValue();
+    pp->denoise.guidedIterations = guidedIterations->getValue();
+    pp->denoise.guidedLumaBlend = guidedLumaBlend->getValue();
+    pp->denoise.guidedChromaBlend = guidedChromaBlend->getValue();
 
     if (pedited) {
         pedited->denoise.enabled  = !get_inconsistent();
@@ -386,10 +445,16 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
         pedited->denoise.chrominanceCurve = !chrominanceCurve->isUnChanged();
         pedited->denoise.chrominanceRedGreen = chrominanceRedGreen->getEditedState();
         pedited->denoise.chrominanceBlueYellow = chrominanceBlueYellow->getEditedState();
-        pedited->denoise.medianEnabled = !medianEnabled->get_inconsistent();
+        pedited->denoise.smoothingEnabled = !smoothingEnabled->get_inconsistent();
+        pedited->denoise.smoothingMethod = smoothingMethod->get_active_row_number() != 2;
         pedited->denoise.medianType = medianType->get_active_row_number() != 6;
         pedited->denoise.medianMethod = medianMethod->get_active_row_number() != 5;
         pedited->denoise.medianIterations = medianIterations->getEditedState();
+        pedited->denoise.guidedRadius = guidedRadius->getEditedState();
+        pedited->denoise.guidedEpsilon = guidedEpsilon->getEditedState();
+        pedited->denoise.guidedIterations = guidedIterations->getEditedState();
+        pedited->denoise.guidedLumaBlend = guidedLumaBlend->getEditedState();
+        pedited->denoise.guidedChromaBlend = guidedChromaBlend->getEditedState();
     }
 }
 
@@ -465,7 +530,7 @@ void Denoise::aggressiveChanged()
 
 void Denoise::medianTypeChanged()
 {
-    if (listener && (multiImage || getEnabled())  && medianEnabled->get_active()) {
+    if (listener && (multiImage || getEnabled())  && smoothingEnabled->getEnabled()) {
         listener->panelChanged(EvDPDNmedmet, medianType->get_active_text());
     }
 }
@@ -473,7 +538,7 @@ void Denoise::medianTypeChanged()
 
 void Denoise::medianMethodChanged()
 {
-    if (listener && (multiImage || getEnabled())  && medianEnabled->get_active()) {
+    if (listener && (multiImage || getEnabled())  && smoothingEnabled->getEnabled()) {
         listener->panelChanged(EvDPDNmetmed, medianMethod->get_active_text());
     }
 }
@@ -488,6 +553,11 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
     chrominanceBlueYellow->setDefault(defParams->denoise.chrominanceBlueYellow);
     gamma->setDefault(defParams->denoise.gamma);
     medianIterations->setDefault(defParams->denoise.medianIterations);
+    guidedRadius->setDefault(defParams->denoise.guidedRadius);
+    guidedEpsilon->setDefault(defParams->denoise.guidedEpsilon);
+    guidedIterations->setDefault(defParams->denoise.guidedIterations);
+    guidedLumaBlend->setDefault(defParams->denoise.guidedLumaBlend);
+    guidedChromaBlend->setDefault(defParams->denoise.guidedChromaBlend);
 
     if (pedited) {
         luminance->setDefaultEditedState(pedited->denoise.luminance ? Edited : UnEdited);
@@ -497,6 +567,11 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
         chrominanceBlueYellow->setDefaultEditedState(pedited->denoise.chrominanceBlueYellow ? Edited : UnEdited);
         gamma->setDefaultEditedState(pedited->denoise.gamma ? Edited : UnEdited);
         medianIterations->setDefaultEditedState(pedited->denoise.medianIterations ? Edited : UnEdited);
+        guidedRadius->setDefaultEditedState(pedited->denoise.guidedRadius ? Edited : UnEdited);
+        guidedEpsilon->setDefaultEditedState(pedited->denoise.guidedEpsilon ? Edited : UnEdited);
+        guidedIterations->setDefaultEditedState(pedited->denoise.guidedIterations ? Edited : UnEdited);
+        guidedLumaBlend->setDefaultEditedState(pedited->denoise.guidedLumaBlend ? Edited : UnEdited);
+        guidedChromaBlend->setDefaultEditedState(pedited->denoise.guidedChromaBlend ? Edited : UnEdited);
     } else {
         luminance->setDefaultEditedState(Irrelevant);
         luminanceDetail->setDefaultEditedState(Irrelevant);
@@ -505,6 +580,11 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
         chrominanceBlueYellow->setDefaultEditedState(Irrelevant);
         gamma->setDefaultEditedState(Irrelevant);
         medianIterations->setDefaultEditedState(Irrelevant);
+        guidedRadius->setDefaultEditedState(Irrelevant);
+        guidedEpsilon->setDefaultEditedState(Irrelevant);
+        guidedIterations->setDefaultEditedState(Irrelevant);
+        guidedLumaBlend->setDefaultEditedState(Irrelevant);
+        guidedChromaBlend->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -526,9 +606,19 @@ void Denoise::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDPDNbluechro, costr);
         } else if (a == gamma) {
             listener->panelChanged(EvDPDNGamma, costr);
-        } else if (a == medianIterations && medianEnabled->get_active()) {
+        } else if (a == medianIterations && smoothingEnabled->getEnabled()) {
             listener->panelChanged(EvDPDNpasses, costr);
-        }
+        } else if (a == guidedRadius && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedRadius, costr);
+        } else if (a == guidedEpsilon && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedEpsilon, costr);
+        } else if (a == guidedIterations && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedIterations, costr);
+        } else if (a == guidedLumaBlend && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedLumaBlend, costr);
+        } else if (a == guidedChromaBlend && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedChromaBlend, costr);
+        } 
     }
 }
 
@@ -551,10 +641,10 @@ void Denoise::enabledChanged()
 }
 
 
-void Denoise::medianEnabledToggled()
+void Denoise::smoothingEnabledToggled()
 {
     if (listener) {
-        if (medianEnabled->get_active()) {
+        if (smoothingEnabled->getEnabled()) {
             listener->panelChanged(EvDPDNmedian, M("GENERAL_ENABLED"));
         } else {
             listener->panelChanged(EvDPDNmedian, M("GENERAL_DISABLED"));
@@ -575,6 +665,11 @@ void Denoise::setBatchMode(bool batchMode)
     medianIterations->showEditedCB ();
     luminanceEditorGroup->setBatchMode (batchMode);
     chrominanceEditorGroup->setBatchMode (batchMode);
+    guidedRadius->showEditedCB();
+    guidedEpsilon->showEditedCB();
+    guidedIterations->showEditedCB();
+    guidedLumaBlend->showEditedCB();
+    guidedChromaBlend->showEditedCB();
 
     colorSpace->append (M("GENERAL_UNCHANGED"));
     aggressive->append (M("GENERAL_UNCHANGED"));
@@ -582,6 +677,7 @@ void Denoise::setBatchMode(bool batchMode)
     chrominanceMethod->append (M("GENERAL_UNCHANGED"));
     medianMethod->append (M("GENERAL_UNCHANGED"));
     medianType->append (M("GENERAL_UNCHANGED"));
+    smoothingMethod->append(M("GENERAL_UNCHANGED"));
 }
 
 
@@ -652,4 +748,26 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
     chrominanceBlueYellow->trimValue(pp->denoise.chrominanceBlueYellow);
     gamma->trimValue(pp->denoise.gamma);
     medianIterations->trimValue(pp->denoise.medianIterations);
+    guidedRadius->trimValue(pp->denoise.guidedRadius);
+    guidedEpsilon->trimValue(pp->denoise.guidedEpsilon);
+    guidedIterations->trimValue(pp->denoise.guidedIterations);
+    guidedLumaBlend->trimValue(pp->denoise.guidedLumaBlend);
+    guidedChromaBlend->trimValue(pp->denoise.guidedChromaBlend);
+}
+
+
+void Denoise::smoothingMethodChanged()
+{
+    if (!batchMode) {
+        if (smoothingMethod->get_active_row_number() == 0) {
+            medianBox->show();
+            guidedBox->hide();
+        } else if (smoothingMethod->get_active_row_number() == 1) {
+            medianBox->hide();
+            guidedBox->show();
+        }
+    }
+    if (listener) {
+        listener->panelChanged(EvSmoothingMethod, M("GENERAL_CHANGED"));
+    }
 }

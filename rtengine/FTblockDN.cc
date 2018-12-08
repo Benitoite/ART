@@ -722,6 +722,8 @@ void ImProcFunctions::denoise(int kall, ImageSource *imgsrc, const ColorTemp &cu
     float nresi, highresi;
     DenoiseInfoStore &dnstore = const_cast<DenoiseInfoStore &>(store);
     RGB_denoise(kall, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
+
+    guidedSmoothing(img);
 }
 
 
@@ -803,14 +805,16 @@ void adjust_params(procparams::DenoiseParams &dnparams, double scale)
         dnparams.aggressive = false;
     }
 
-    if (dnparams.medianEnabled) {
+    if (dnparams.smoothingEnabled) {
         int j = int(dnparams.medianType) - int(1.0 / scale_factor);
-        if (j < 0) {
-            dnparams.medianEnabled = false;
+        if (j < 0 && dnparams.smoothingMethod == procparams::DenoiseParams::SmoothingMethod::MEDIAN) {
+            dnparams.smoothingEnabled = false;
         } else {
             dnparams.medianType = static_cast<procparams::DenoiseParams::MedianType>(j);
         }
     }
+
+    // guided params don't need to be adjusted here, they are already scaled in ImProcFunctions::guidedSmoothing
 }
 
 } // namespace
@@ -826,7 +830,8 @@ BENCHFUN
     adjust_params(dnparams, scale);    
 
 //#endif
-    if (dnparams.luminance == 0 && dnparams.chrominance == 0  && !dnparams.medianEnabled && !noiseLCurve && !noiseCCurve) {
+    const bool medianEnabled = dnparams.smoothingEnabled && dnparams.smoothingMethod == procparams::DenoiseParams::SmoothingMethod::MEDIAN;
+    if (dnparams.luminance == 0 && dnparams.chrominance == 0 && !medianEnabled && !noiseLCurve && !noiseCCurve) {
         //nothing to do; copy src to dst or do nothing in case src == dst
         if (src != dst) {
             src->copyData(dst);
@@ -1435,7 +1440,7 @@ BENCHFUN
                         float interm_medT = static_cast<float>(dnparams.chrominance) / 10.0;
                         bool execwavelet = true;
 
-                        if (!denoiseLuminance && interm_medT < 0.05f && dnparams.medianEnabled && (dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LAB || dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LUMINANCE)) {
+                        if (!denoiseLuminance && interm_medT < 0.05f && medianEnabled && (dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LAB || dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::LUMINANCE)) {
                             execwavelet = false;    //do not exec wavelet if sliders luminance and chroma are very small and median need
                         }
 
@@ -1808,7 +1813,7 @@ BENCHFUN
                                 }
                             }
 
-                            if ((metchoice == 1 || metchoice == 2 || metchoice == 3 || metchoice == 4) && dnparams.medianEnabled) {
+                            if ((metchoice == 1 || metchoice == 2 || metchoice == 3 || metchoice == 4) && medianEnabled) {
                                 float** tmL;
                                 int wid = labdn->W;
                                 int hei = labdn->H;
@@ -2145,7 +2150,7 @@ BENCHFUN
 
 
 //median 3x3 in complement on RGB
-    if (dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::RGB && dnparams.medianEnabled) {
+    if (dnparams.medianMethod == procparams::DenoiseParams::MedianMethod::RGB && medianEnabled) {
 //printf("RGB den\n");
         int wid = dst->getWidth(), hei = dst->getHeight();
         float** tm;

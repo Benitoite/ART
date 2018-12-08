@@ -68,7 +68,6 @@ public:
 
     // options in wavelet
     Gtk::CheckButton* wavelet;
-    Gtk::CheckButton *guidedfilter;
 
     // options in color:
     Gtk::CheckButton* icm;
@@ -141,7 +140,6 @@ public:
     sigc::connection metadataConn, exifchConn, iptcConn, icmConn;
     sigc::connection df_fileConn, df_AutoSelectConn, ff_fileConn, ff_AutoSelectConn, ff_BlurRadiusConn, ff_BlurTypeConn, ff_ClipControlConn;
     sigc::connection raw_caredblueConn, raw_ca_autocorrectConn, raw_ca_avoid_colourshiftconn, raw_hotpix_filtConn, raw_deadpix_filtConn, raw_pdaf_lines_filterConn, raw_linenoiseConn, raw_greenthreshConn, raw_ccStepsConn, raw_methodConn, raw_borderConn, raw_imagenumConn, raw_dcb_iterationsConn, raw_lmmse_iterationsConn, raw_pixelshiftConn, raw_dcb_enhanceConn, raw_exposConn, raw_preserConn, raw_blackConn;
-    sigc::connection guidedfilterConn;
 
 public:
     PartialPasteDlg (const Glib::ustring &title, Gtk::Window* parent);
