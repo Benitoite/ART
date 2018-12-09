@@ -290,7 +290,7 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         lparams.blackEv = xlogf(vmin/gray) / log2 - black_headroom;
         float dynamic_range = std::abs(lmin) + dr_headroom;
         lparams.whiteEv = dynamic_range + lparams.blackEv;
-        float b = find_brightness(std::abs(lparams.blackEv) / dynamic_range, 0.18);
+        float b = find_brightness(std::abs(lparams.blackEv) / dynamic_range, 0.18 * std::pow(2, dr_headroom));
         if (b > 0.f) {
             lparams.base = std::log(b) / log2;
         } else {
