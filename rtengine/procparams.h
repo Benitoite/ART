@@ -776,11 +776,10 @@ struct DenoiseParams {
     MedianMethod medianMethod;
     int medianIterations;
 
-    int guidedRadius;
-    double guidedEpsilon;
-    int guidedIterations;
-    int guidedLumaBlend;
-    int guidedChromaBlend;
+    int guidedLumaRadius;
+    int guidedChromaRadius;
+    int guidedLumaStrength;
+    int guidedChromaStrength;
 
     DenoiseParams();
 

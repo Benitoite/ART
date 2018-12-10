@@ -370,11 +370,10 @@ public:
     bool medianType;
     bool medianMethod;
     bool medianIterations;
-    bool guidedRadius;
-    bool guidedEpsilon;
-    bool guidedIterations;
-    bool guidedLumaBlend;
-    bool guidedChromaBlend;
+    bool guidedLumaRadius;
+    bool guidedLumaStrength;
+    bool guidedChromaRadius;
+    bool guidedChromaStrength;
 };
 
 class EPDParamsEdited

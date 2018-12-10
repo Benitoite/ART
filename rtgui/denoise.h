@@ -75,11 +75,10 @@ private:
     void smoothingMethodChanged();
     
     rtengine::ProcEvent EvSmoothingMethod;
-    rtengine::ProcEvent EvGuidedRadius;
-    rtengine::ProcEvent EvGuidedEpsilon;
-    rtengine::ProcEvent EvGuidedIterations;
-    rtengine::ProcEvent EvGuidedLumaBlend;
-    rtengine::ProcEvent EvGuidedChromaBlend;
+    rtengine::ProcEvent EvGuidedLumaRadius;
+    rtengine::ProcEvent EvGuidedLumaStrength;
+    rtengine::ProcEvent EvGuidedChromaRadius;
+    rtengine::ProcEvent EvGuidedChromaStrength;
 
     MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
@@ -102,11 +101,10 @@ private:
     MyComboBoxText *medianMethod;
     Adjuster *medianIterations;
     Gtk::VBox *guidedBox;
-    Adjuster *guidedRadius;
-    Adjuster *guidedEpsilon;
-    Adjuster *guidedIterations;
-    Adjuster *guidedLumaBlend;
-    Adjuster *guidedChromaBlend;
+    Adjuster *guidedLumaRadius;
+    Adjuster *guidedLumaStrength;
+    Adjuster *guidedChromaRadius;
+    Adjuster *guidedChromaStrength;
 
     IdleRegister idle_register;
 };

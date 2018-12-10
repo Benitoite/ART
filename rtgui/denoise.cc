@@ -32,11 +32,10 @@ Denoise::Denoise():
 {
     auto m = ProcEventMapper::getInstance();
     EvSmoothingMethod = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_SMOOTHING_METHOD");
-    EvGuidedRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_RADIUS");
-    EvGuidedEpsilon = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_EPSILON");
-    EvGuidedIterations = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_ITERATIONS");
-    EvGuidedLumaBlend = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_BLEND");
-    EvGuidedChromaBlend = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_BLEND");
+    EvGuidedLumaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_RADIUS");
+    EvGuidedLumaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_STRENGTH");
+    EvGuidedChromaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS");
+    EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
 
     std::vector<GradientMilestone> milestones;
     CurveListener::setMulti(true);
@@ -215,28 +214,41 @@ Denoise::Denoise():
     smoothing->pack_start(*medianBox);
 
     guidedBox = Gtk::manage(new Gtk::VBox());
-    
-    guidedRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 100, 1, 0));
-    guidedRadius->setLogScale(100, 0);
-    guidedRadius->setAdjusterListener(this);
-    guidedBox->pack_start(*guidedRadius);
-    
-    guidedEpsilon = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_EPSILON"), 1.0, 20.0, 0.1, 10.0));
-    guidedEpsilon->setAdjusterListener(this);
-    guidedBox->pack_start(*guidedEpsilon);
-    
-    guidedLumaBlend = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_LUMA_BLEND"), 0, 100, 1, 0));
-    guidedLumaBlend->setAdjusterListener(this);
-    guidedBox->pack_start(*guidedLumaBlend);
-    
-    guidedChromaBlend = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_CHROMA_BLEND"), 0, 100, 1, 0));
-    guidedChromaBlend->setAdjusterListener(this);
-    guidedBox->pack_start(*guidedChromaBlend);
 
-    guidedIterations = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_ITERATIONS"), 1, 3, 1, 1));
-    guidedIterations->setAdjusterListener(this);
-    guidedBox->pack_start(*guidedIterations);
+    lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
+    lumaFrame->set_label_align(0.025, 0.5);
+    lumaVBox = Gtk::manage(new Gtk::VBox());
+    lumaVBox->set_spacing(2);
     
+    guidedLumaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 100, 1, 0));
+    guidedLumaRadius->setLogScale(100, 0);
+    guidedLumaRadius->setAdjusterListener(this);
+    lumaVBox->pack_start(*guidedLumaRadius);
+    
+    guidedLumaStrength = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_STRENGTH"), 0, 100, 1, 0));
+    guidedLumaStrength->setAdjusterListener(this);
+    lumaVBox->pack_start(*guidedLumaStrength);
+
+    lumaFrame->add(*lumaVBox);
+    guidedBox->pack_start(*lumaFrame);
+
+    chromaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_CHROMINANCE_FRAME")));
+    chromaFrame->set_label_align(0.025, 0.5);
+    chromaVBox = Gtk::manage(new Gtk::VBox());
+    chromaVBox->set_spacing(2);
+    
+    guidedChromaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 100, 1, 0));
+    guidedChromaRadius->setLogScale(100, 0);
+    guidedChromaRadius->setAdjusterListener(this);
+    chromaVBox->pack_start(*guidedChromaRadius);
+
+    guidedChromaStrength = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_STRENGTH"), 0, 100, 1, 0));
+    guidedChromaStrength->setAdjusterListener(this);
+    chromaVBox->pack_start(*guidedChromaStrength);
+
+    chromaFrame->add(*chromaVBox);
+    guidedBox->pack_start(*chromaFrame);
+
     smoothing->pack_start(*guidedBox);
     smoothingEnabled->add(*smoothing, false);
     smoothingEnabled->setLevel(2);
@@ -320,11 +332,10 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
     medianMethod->set_active(int(pp->denoise.medianMethod));
     medianIterations->setValue(pp->denoise.medianIterations);
 
-    guidedRadius->setValue(pp->denoise.guidedRadius);
-    guidedEpsilon->setValue(pp->denoise.guidedEpsilon);
-    guidedIterations->setValue(pp->denoise.guidedIterations);
-    guidedLumaBlend->setValue(pp->denoise.guidedLumaBlend);
-    guidedChromaBlend->setValue(pp->denoise.guidedChromaBlend);
+    guidedLumaRadius->setValue(pp->denoise.guidedLumaRadius);
+    guidedLumaStrength->setValue(pp->denoise.guidedLumaStrength);
+    guidedChromaRadius->setValue(pp->denoise.guidedChromaRadius);
+    guidedChromaStrength->setValue(pp->denoise.guidedChromaStrength);
 
     if (pedited) {
         if (!pedited->denoise.colorSpace) {
@@ -368,11 +379,10 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
         chrominanceCurve->setUnChanged(!pedited->denoise.chrominanceCurve);
         luminanceCurve->setUnChanged(!pedited->denoise.luminanceCurve);
 
-        guidedRadius->setEditedState(pedited->denoise.guidedRadius ? Edited : UnEdited);
-        guidedEpsilon->setEditedState(pedited->denoise.guidedEpsilon ? Edited : UnEdited);
-        guidedIterations->setEditedState(pedited->denoise.guidedIterations ? Edited : UnEdited);
-        guidedLumaBlend->setEditedState(pedited->denoise.guidedLumaBlend ? Edited : UnEdited);
-        guidedChromaBlend->setEditedState(pedited->denoise.guidedChromaBlend ? Edited : UnEdited);
+        guidedLumaRadius->setEditedState(pedited->denoise.guidedLumaRadius ? Edited : UnEdited);
+        guidedLumaStrength->setEditedState(pedited->denoise.guidedLumaStrength ? Edited : UnEdited);
+        guidedChromaRadius->setEditedState(pedited->denoise.guidedChromaRadius ? Edited : UnEdited);
+        guidedChromaStrength->setEditedState(pedited->denoise.guidedChromaStrength ? Edited : UnEdited);
     }
     enableListener ();
 }
@@ -425,11 +435,10 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
         pp->denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(medianMethod->get_active_row_number());
     }
     pp->denoise.medianIterations = medianIterations->getValue();
-    pp->denoise.guidedRadius = guidedRadius->getValue();
-    pp->denoise.guidedEpsilon = guidedEpsilon->getValue();
-    pp->denoise.guidedIterations = guidedIterations->getValue();
-    pp->denoise.guidedLumaBlend = guidedLumaBlend->getValue();
-    pp->denoise.guidedChromaBlend = guidedChromaBlend->getValue();
+    pp->denoise.guidedLumaRadius = guidedLumaRadius->getValue();
+    pp->denoise.guidedLumaStrength = guidedLumaStrength->getValue();
+    pp->denoise.guidedChromaRadius = guidedChromaRadius->getValue();
+    pp->denoise.guidedChromaStrength = guidedChromaStrength->getValue();
 
     if (pedited) {
         pedited->denoise.enabled  = !get_inconsistent();
@@ -450,11 +459,10 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
         pedited->denoise.medianType = medianType->get_active_row_number() != 6;
         pedited->denoise.medianMethod = medianMethod->get_active_row_number() != 5;
         pedited->denoise.medianIterations = medianIterations->getEditedState();
-        pedited->denoise.guidedRadius = guidedRadius->getEditedState();
-        pedited->denoise.guidedEpsilon = guidedEpsilon->getEditedState();
-        pedited->denoise.guidedIterations = guidedIterations->getEditedState();
-        pedited->denoise.guidedLumaBlend = guidedLumaBlend->getEditedState();
-        pedited->denoise.guidedChromaBlend = guidedChromaBlend->getEditedState();
+        pedited->denoise.guidedLumaRadius = guidedLumaRadius->getEditedState();
+        pedited->denoise.guidedLumaStrength = guidedLumaStrength->getEditedState();
+        pedited->denoise.guidedChromaRadius = guidedChromaRadius->getEditedState();
+        pedited->denoise.guidedChromaStrength = guidedChromaStrength->getEditedState();
     }
 }
 
@@ -553,11 +561,10 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
     chrominanceBlueYellow->setDefault(defParams->denoise.chrominanceBlueYellow);
     gamma->setDefault(defParams->denoise.gamma);
     medianIterations->setDefault(defParams->denoise.medianIterations);
-    guidedRadius->setDefault(defParams->denoise.guidedRadius);
-    guidedEpsilon->setDefault(defParams->denoise.guidedEpsilon);
-    guidedIterations->setDefault(defParams->denoise.guidedIterations);
-    guidedLumaBlend->setDefault(defParams->denoise.guidedLumaBlend);
-    guidedChromaBlend->setDefault(defParams->denoise.guidedChromaBlend);
+    guidedLumaRadius->setDefault(defParams->denoise.guidedLumaRadius);
+    guidedLumaStrength->setDefault(defParams->denoise.guidedLumaStrength);
+    guidedChromaRadius->setDefault(defParams->denoise.guidedChromaRadius);
+    guidedChromaStrength->setDefault(defParams->denoise.guidedChromaStrength);
 
     if (pedited) {
         luminance->setDefaultEditedState(pedited->denoise.luminance ? Edited : UnEdited);
@@ -567,11 +574,10 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
         chrominanceBlueYellow->setDefaultEditedState(pedited->denoise.chrominanceBlueYellow ? Edited : UnEdited);
         gamma->setDefaultEditedState(pedited->denoise.gamma ? Edited : UnEdited);
         medianIterations->setDefaultEditedState(pedited->denoise.medianIterations ? Edited : UnEdited);
-        guidedRadius->setDefaultEditedState(pedited->denoise.guidedRadius ? Edited : UnEdited);
-        guidedEpsilon->setDefaultEditedState(pedited->denoise.guidedEpsilon ? Edited : UnEdited);
-        guidedIterations->setDefaultEditedState(pedited->denoise.guidedIterations ? Edited : UnEdited);
-        guidedLumaBlend->setDefaultEditedState(pedited->denoise.guidedLumaBlend ? Edited : UnEdited);
-        guidedChromaBlend->setDefaultEditedState(pedited->denoise.guidedChromaBlend ? Edited : UnEdited);
+        guidedLumaRadius->setDefaultEditedState(pedited->denoise.guidedLumaRadius ? Edited : UnEdited);
+        guidedLumaStrength->setDefaultEditedState(pedited->denoise.guidedLumaStrength ? Edited : UnEdited);
+        guidedChromaRadius->setDefaultEditedState(pedited->denoise.guidedChromaRadius ? Edited : UnEdited);
+        guidedChromaStrength->setDefaultEditedState(pedited->denoise.guidedChromaStrength ? Edited : UnEdited);
     } else {
         luminance->setDefaultEditedState(Irrelevant);
         luminanceDetail->setDefaultEditedState(Irrelevant);
@@ -580,11 +586,10 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
         chrominanceBlueYellow->setDefaultEditedState(Irrelevant);
         gamma->setDefaultEditedState(Irrelevant);
         medianIterations->setDefaultEditedState(Irrelevant);
-        guidedRadius->setDefaultEditedState(Irrelevant);
-        guidedEpsilon->setDefaultEditedState(Irrelevant);
-        guidedIterations->setDefaultEditedState(Irrelevant);
-        guidedLumaBlend->setDefaultEditedState(Irrelevant);
-        guidedChromaBlend->setDefaultEditedState(Irrelevant);
+        guidedLumaRadius->setDefaultEditedState(Irrelevant);
+        guidedLumaStrength->setDefaultEditedState(Irrelevant);
+        guidedChromaRadius->setDefaultEditedState(Irrelevant);
+        guidedChromaStrength->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -608,16 +613,14 @@ void Denoise::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDPDNGamma, costr);
         } else if (a == medianIterations && smoothingEnabled->getEnabled()) {
             listener->panelChanged(EvDPDNpasses, costr);
-        } else if (a == guidedRadius && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedRadius, costr);
-        } else if (a == guidedEpsilon && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedEpsilon, costr);
-        } else if (a == guidedIterations && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedIterations, costr);
-        } else if (a == guidedLumaBlend && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedLumaBlend, costr);
-        } else if (a == guidedChromaBlend && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedChromaBlend, costr);
+        } else if (a == guidedLumaRadius && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedLumaRadius, costr);
+        } else if (a == guidedLumaStrength && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedLumaStrength, costr);
+        } else if (a == guidedChromaRadius && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedChromaRadius, costr);
+        } else if (a == guidedChromaStrength && smoothingEnabled->getEnabled()) {
+            listener->panelChanged(EvGuidedChromaStrength, costr);
         } 
     }
 }
@@ -665,11 +668,10 @@ void Denoise::setBatchMode(bool batchMode)
     medianIterations->showEditedCB ();
     luminanceEditorGroup->setBatchMode (batchMode);
     chrominanceEditorGroup->setBatchMode (batchMode);
-    guidedRadius->showEditedCB();
-    guidedEpsilon->showEditedCB();
-    guidedIterations->showEditedCB();
-    guidedLumaBlend->showEditedCB();
-    guidedChromaBlend->showEditedCB();
+    guidedLumaRadius->showEditedCB();
+    guidedLumaStrength->showEditedCB();
+    guidedChromaRadius->showEditedCB();
+    guidedChromaStrength->showEditedCB();
 
     colorSpace->append (M("GENERAL_UNCHANGED"));
     aggressive->append (M("GENERAL_UNCHANGED"));
@@ -748,11 +750,10 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
     chrominanceBlueYellow->trimValue(pp->denoise.chrominanceBlueYellow);
     gamma->trimValue(pp->denoise.gamma);
     medianIterations->trimValue(pp->denoise.medianIterations);
-    guidedRadius->trimValue(pp->denoise.guidedRadius);
-    guidedEpsilon->trimValue(pp->denoise.guidedEpsilon);
-    guidedIterations->trimValue(pp->denoise.guidedIterations);
-    guidedLumaBlend->trimValue(pp->denoise.guidedLumaBlend);
-    guidedChromaBlend->trimValue(pp->denoise.guidedChromaBlend);
+    guidedLumaRadius->trimValue(pp->denoise.guidedLumaRadius);
+    guidedLumaStrength->trimValue(pp->denoise.guidedLumaStrength);
+    guidedChromaRadius->trimValue(pp->denoise.guidedChromaRadius);
+    guidedChromaStrength->trimValue(pp->denoise.guidedChromaStrength);
 }
 
 

@@ -1512,11 +1512,10 @@ DenoiseParams::DenoiseParams() :
     medianType(MedianType::TYPE_3X3_SOFT),
     medianMethod(MedianMethod::CHROMINANCE),
     medianIterations(1),
-    guidedRadius(4),
-    guidedEpsilon(10),
-    guidedIterations(1),
-    guidedLumaBlend(0),
-    guidedChromaBlend(100)
+    guidedLumaRadius(4),
+    guidedChromaRadius(4),
+    guidedLumaStrength(0),
+    guidedChromaStrength(100)
 {
 }
 
@@ -1542,11 +1541,10 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && medianType == other.medianType
         && medianMethod == other.medianMethod
         && medianIterations == other.medianIterations
-        && guidedRadius == other.guidedRadius
-        && guidedEpsilon == other.guidedEpsilon
-        && guidedIterations == other.guidedIterations
-        && guidedLumaBlend == other.guidedLumaBlend
-        && guidedChromaBlend == other.guidedChromaBlend;
+        && guidedLumaRadius == other.guidedLumaRadius
+        && guidedChromaRadius == other.guidedChromaRadius
+        && guidedLumaStrength == other.guidedLumaStrength
+        && guidedChromaStrength == other.guidedChromaStrength;
 }
 
 
@@ -3237,11 +3235,10 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->denoise.medianType, "Denoise", "MedianType", int(denoise.medianType), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianMethod, "Denoise", "MedianMethod", int(denoise.medianMethod), keyFile);
         saveToKeyfile(!pedited || pedited->denoise.medianIterations, "Denoise", "MedianIterations", denoise.medianIterations, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.guidedRadius, "Denoise", "GuidedRadius", denoise.guidedRadius, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.guidedEpsilon, "Denoise", "GuidedEpsilon", denoise.guidedEpsilon, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.guidedIterations, "Denoise", "GuidedIterations", denoise.guidedIterations, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.guidedLumaBlend, "Denoise", "GuidedLumaBlend", denoise.guidedLumaBlend, keyFile);
-        saveToKeyfile(!pedited || pedited->denoise.guidedChromaBlend, "Denoise", "GuidedChromaBlend", denoise.guidedChromaBlend, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedLumaRadius, "Denoise", "GuidedLumaRadius", denoise.guidedLumaRadius, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedChromaRadius, "Denoise", "GuidedChromaRadius", denoise.guidedChromaRadius, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedLumaStrength, "Denoise", "GuidedLumaStrength", denoise.guidedLumaStrength, keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.guidedChromaStrength, "Denoise", "GuidedChromaStrength", denoise.guidedChromaStrength, keyFile);
 
 // EPD
         saveToKeyfile(!pedited || pedited->epd.enabled, "EPD", "Enabled", epd.enabled, keyFile);
@@ -4267,11 +4264,10 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(val);
                 }
                 assignFromKeyfile(keyFile, "Denoise", "MedianIterations", pedited, denoise.medianIterations, pedited->denoise.medianIterations);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedRadius", pedited, denoise.guidedRadius, pedited->denoise.guidedRadius);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedEpsilon", pedited, denoise.guidedEpsilon, pedited->denoise.guidedEpsilon);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedIterations", pedited, denoise.guidedIterations, pedited->denoise.guidedIterations);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedLumaBlend", pedited, denoise.guidedLumaBlend, pedited->denoise.guidedLumaBlend);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedChromaBlend", pedited, denoise.guidedChromaBlend, pedited->denoise.guidedChromaBlend);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedLumaRadius", pedited, denoise.guidedLumaRadius, pedited->denoise.guidedLumaRadius);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedChromaRadius", pedited, denoise.guidedChromaRadius, pedited->denoise.guidedChromaRadius);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedLumaStrength", pedited, denoise.guidedLumaStrength, pedited->denoise.guidedLumaStrength);
+                assignFromKeyfile(keyFile, "Denoise", "GuidedChromaStrength", pedited, denoise.guidedChromaStrength, pedited->denoise.guidedChromaStrength);
             }
         }            
 

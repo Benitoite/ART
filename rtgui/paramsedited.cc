@@ -275,11 +275,10 @@ void ParamsEdited::set(bool v)
     denoise.medianType = v;
     denoise.medianMethod = v;
     denoise.medianIterations = v;
-    denoise.guidedRadius = v;
-    denoise.guidedEpsilon = v;
-    denoise.guidedIterations = v;
-    denoise.guidedLumaBlend = v;
-    denoise.guidedChromaBlend = v;
+    denoise.guidedLumaRadius = v;
+    denoise.guidedLumaStrength = v;
+    denoise.guidedChromaRadius = v;
+    denoise.guidedChromaStrength = v;
     epd.enabled                = v;
     epd.strength            = v;
     epd.gamma            = v;
@@ -849,11 +848,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(denoise.medianType);
         SETVAL_(denoise.medianMethod);
         SETVAL_(denoise.medianIterations);
-        SETVAL_(denoise.guidedRadius);
-        SETVAL_(denoise.guidedEpsilon);
-        SETVAL_(denoise.guidedIterations);
-        SETVAL_(denoise.guidedLumaBlend);
-        SETVAL_(denoise.guidedChromaBlend);
+        SETVAL_(denoise.guidedLumaRadius);
+        SETVAL_(denoise.guidedLumaStrength);
+        SETVAL_(denoise.guidedChromaRadius);
+        SETVAL_(denoise.guidedChromaStrength);
 
         epd.enabled = epd.enabled && p.epd.enabled == other.epd.enabled;
         epd.strength = epd.strength && p.epd.strength == other.epd.strength;
@@ -2036,11 +2034,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(denoise.medianType);
     SETVAL_(denoise.medianMethod);
     ADDSETVAL_(denoise.medianIterations, ADDSET_DIRPYRDN_PASSES);
-    SETVAL_(denoise.guidedRadius);
-    SETVAL_(denoise.guidedEpsilon);
-    SETVAL_(denoise.guidedIterations);
-    SETVAL_(denoise.guidedLumaBlend);
-    SETVAL_(denoise.guidedChromaBlend);
+    SETVAL_(denoise.guidedLumaRadius);
+    SETVAL_(denoise.guidedLumaStrength);
+    SETVAL_(denoise.guidedChromaRadius);
+    SETVAL_(denoise.guidedChromaStrength);
 
     if (epd.enabled) {
         toEdit.epd.enabled                = mods.epd.enabled;
