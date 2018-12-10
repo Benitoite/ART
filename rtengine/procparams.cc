@@ -1512,7 +1512,7 @@ DenoiseParams::DenoiseParams() :
     medianType(MedianType::TYPE_3X3_SOFT),
     medianMethod(MedianMethod::CHROMINANCE),
     medianIterations(1),
-    guidedLumaRadius(4),
+    guidedLumaRadius(2),
     guidedChromaRadius(4),
     guidedLumaStrength(0),
     guidedChromaStrength(100)
