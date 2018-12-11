@@ -53,6 +53,41 @@ enum RenderingIntent {
     RI__COUNT
 };
 
+
+class LabCorrectionMask {
+public:
+    std::vector<double> hueMask;
+    std::vector<double> chromaticityMask;
+    std::vector<double> lightnessMask;
+    double maskBlur;
+    struct AreaMask {
+        bool enabled;
+        bool inverted;
+        double x; // [-100,100], with 0 as center of the image
+        double y; // [-100,100]
+        double width; // [0,200], with 100 as image width
+        double height; // [0,200]
+        double angle; // in degrees
+        double feather; // [0,100]
+        double roundness; // [0,100] (0 = rectangle, 100 = ellipse)
+        AreaMask();
+        bool operator==(const AreaMask &other) const;
+        bool operator!=(const AreaMask &other) const;
+        bool isTrivial() const;
+    };
+    AreaMask areaMask;
+
+    LabCorrectionMask();
+    bool operator==(const LabCorrectionMask &other) const;
+    bool operator!=(const LabCorrectionMask &other) const;
+
+    bool load(const Glib::KeyFile &keyfile, const Glib::ustring &group_name,
+              const Glib::ustring &prefix, const Glib::ustring &suffix);
+    void save(Glib::KeyFile &keyfile, const Glib::ustring &group_name,
+              const Glib::ustring &prefix, const Glib::ustring &suffix);
+};
+
+
 namespace procparams
 {
 
@@ -462,33 +497,14 @@ struct ColorToningParams {
         double slope;
         double offset;
         double power;
-        std::vector<double> hueMask;
-        std::vector<double> chromaticityMask;
-        std::vector<double> lightnessMask;
-        double maskBlur;
         int channel;
-        struct AreaMask {
-            bool enabled;
-            bool inverted;
-            double x; // [-100,100], with 0 as center of the image
-            double y; // [-100,100]
-            double width; // [0,200], with 100 as image width
-            double height; // [0,200]
-            double angle; // in degrees
-            double feather; // [0,100]
-            double roundness; // [0,100] (0 = rectangle, 100 = ellipse)
-            AreaMask();
-            bool operator==(const AreaMask &other) const;
-            bool operator!=(const AreaMask &other) const;
-            bool isTrivial() const;
-        };
-        AreaMask areaMask;
 
         LabCorrectionRegion();
         bool operator==(const LabCorrectionRegion &other) const;
         bool operator!=(const LabCorrectionRegion &other) const;
     };
     std::vector<LabCorrectionRegion> labregions;
+    std::vector<LabCorrectionMask> labmasks;
     int labregionsShowMask;
     
     ColorToningParams();
