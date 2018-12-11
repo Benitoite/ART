@@ -404,7 +404,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionDown->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionDownPressed));
     add_button(labRegionDown, vb);
     labRegionCopy = Gtk::manage(new Gtk::Button());
-    labRegionCopy->add(*Gtk::manage(new RTImage("arrow-right-small.png")));
+    labRegionCopy->add(*Gtk::manage(new RTImage("copy-small.png")));
     labRegionCopy->signal_clicked().connect(sigc::mem_fun(*this, &ColorToning::labRegionCopyPressed));
     add_button(labRegionCopy, vb);
     hb->pack_start(*vb, Gtk::PACK_SHRINK);
