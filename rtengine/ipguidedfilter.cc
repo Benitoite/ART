@@ -38,7 +38,7 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         const int W = R.width();
         const int H = R.height();
         int r = max(int(radius / scale), 1);
-        const float epsilon = luminance ? 0.001f : 0.25f;
+        const float epsilon = luminance ? 0.001f : 0.1f / float(min(r, 10));
         array2D<float> iR(W, H, R, 0);
         array2D<float> iG(W, H, G, 0);
         array2D<float> iB(W, H, B, 0);
