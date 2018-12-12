@@ -25,7 +25,7 @@
 #include "toolpanel.h"
 
 
-class LabMasksPanel: public Gtk::VBox {
+class LabMasksPanel: public Gtk::VBox, public AdjusterListener {
 public:
     LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent h_mask, rtengine::ProcEvent c_mask, rtengine::ProcEvent l_mask, rtengine::ProcEvent blur, rtengine::ProcEvent area_mask);
     virtual ~LabMasksPanel();
@@ -39,10 +39,25 @@ public:
     virtual bool moveUpPressed(int idx);
     virtual bool moveDownPressed(int idx);
 
+    virtual int getColumnCount();
+    virtual Glib::ustring getColumnHeader(int col);
+    virtual Glib::ustring getColumnContent(int col, int row);
+
     void setMasks(const std::vector<rtengine::LabCorrectionMask> &masks);
     void getMasks(std::vector<rtengine::LabCorrectionMask> &masks);
+    int getSelected();
 
+    void adjusterChanged(Adjuster *a, double newval) override;
+    void adjusterAutoToggled(Adjuster *a, bool newval) override;
+    
 private:
+    void onSelectionChanged();
+    void onAddPressed();
+    void onRemovePressed();
+    void onUpPressed();
+    void onDownPressed();
+    void onCopyPressed();
+    
     std::vector<rtengine::LabCorrectionMask> masks_;
     int selected_;
 
@@ -63,7 +78,7 @@ private:
     FlatCurveEditor *lightnessMask;
     Adjuster *maskBlur;
     Gtk::CheckButton *showMask;
-    sigc::connection selectionConn;
+//    sigc::connection selectionConn;
     MyExpander *areaMask;
     Gtk::ToggleButton *areaMaskToggle;
     Gtk::CheckButton *areaMaskInverted;
