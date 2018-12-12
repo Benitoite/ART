@@ -14,7 +14,7 @@
 #include "thresholdadjuster.h"
 #include "colorprovider.h"
 #include "labgrid.h"
-#include "areamask.h"
+#include "labmaskspanel.h"
 
 class ColorToning final :
     public ToolParamBlock,
@@ -24,7 +24,6 @@ class ColorToning final :
     public ColorProvider,
     public ThresholdAdjusterListener,
     public AdjusterListener,
-    public AreaMask,
     public PParamsChangeListener
 {
 public:
@@ -63,11 +62,7 @@ public:
     void setListener(ToolPanelListener *tpl) override;
 
     void setEditProvider(EditDataProvider *provider) override;
-    float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3) override;
 
-    bool button1Released() override;
-    void switchOffEditMode() override;
-    
     PParamsChangeListener *getPParamsChangeListener() override { return this; }
     void procParamsChanged(
         const rtengine::procparams::ProcParams* params,
@@ -77,22 +72,9 @@ public:
     void clearParamChanges() override {}
     
 private:
-    void onLabRegionSelectionChanged();
-    void labRegionAddPressed();
-    void labRegionRemovePressed();
-    void labRegionUpPressed();
-    void labRegionDownPressed();
-    void labRegionCopyPressed();
-    void labRegionShowMaskChanged();
     void labRegionChannelChanged();
-    void labRegionPopulateList();
-    void labRegionShow(int idx, bool list_only=false);
+    void labRegionShow(int idx);
     void labRegionGet(int idx);
-    void labAreaMaskToggleChanged();
-    void labAreaMaskInvertedChanged();
-    void labRegionUpdateAreaMask(bool from_mask);
-    void labAreaMaskEnableToggled();
-    void labAreaMaskUpdateDefaults(const rtengine::procparams::ProcParams *pp);
 
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
@@ -163,39 +145,16 @@ private:
     rtengine::ProcEvent EvLabRegionChannel;
     rtengine::ProcEvent EvLabRegionAreaMask;
 
+    friend class LabRegionMasksPanel;
+    LabMasksPanel *labMasks;
     Gtk::VBox *labRegionBox;
-    Gtk::ListViewText *labRegionList;
-    Gtk::Button *labRegionAdd;
-    Gtk::Button *labRegionRemove;
-    Gtk::Button *labRegionUp;
-    Gtk::Button *labRegionDown;
-    Gtk::Button *labRegionCopy;
     LabGrid *labRegionAB;
     Adjuster *labRegionSaturation;
     Adjuster *labRegionSlope;
     Adjuster *labRegionOffset;
     Adjuster *labRegionPower;
     MyComboBoxText *labRegionChannel;
-    FlatCurveEditor *labRegionHueMask;
-    FlatCurveEditor *labRegionChromaticityMask;
-    FlatCurveEditor *labRegionLightnessMask;
-    Adjuster *labRegionMaskBlur;
-    Gtk::CheckButton *labRegionShowMask;
     std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
-    int labRegionSelected;
-    sigc::connection labRegionSelectionConn;
-    MyExpander *labAreaMask;
-    Gtk::ToggleButton *labAreaMaskToggle;
-    Gtk::CheckButton *labAreaMaskInverted;
-    Adjuster *labAreaMaskX;
-    Adjuster *labAreaMaskY;
-    Adjuster *labAreaMaskWidth;
-    Adjuster *labAreaMaskHeight;
-    Adjuster *labAreaMaskAngle;
-    Adjuster *labAreaMaskFeather;
-    Adjuster *labAreaMaskRoundness;
-    std::vector<Adjuster *> labAreaMaskAdjusters;
-    rtengine::procparams::ColorToningParams::LabCorrectionRegion::AreaMask defaultAreaMask;
 
     IdleRegister idle_register;
 };
