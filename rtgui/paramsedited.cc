@@ -1604,6 +1604,7 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
 
     if (colorToning.labregions) {
         toEdit.colorToning.labregions = mods.colorToning.labregions;
+        toEdit.colorToning.labmasks = mods.colorToning.labmasks;
     }
 
     if (colorToning.labregionsShowMask) {
