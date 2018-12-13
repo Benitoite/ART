@@ -213,8 +213,8 @@ void LabMasksPanel::onSelectionChanged()
     if (!s.empty()) {
         int idx = s[0];
         // update the selected values
-        maskGet(idx);
-        cp_->selectionChanging(idx);
+        maskGet(selected_);
+        cp_->selectionChanging(selected_);
         selected_ = idx;
         maskShow(selected_);
         if (showMask->get_active()) {

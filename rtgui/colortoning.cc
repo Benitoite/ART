@@ -588,6 +588,7 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
     clshape->setCurve (pp->colorToning.clcurve);
     cl2shape->setCurve (pp->colorToning.cl2curve);
 
+    assert(pp->colorToning.labregions.size() == pp->colorToning.labmasks.size());    
     labRegionData = pp->colorToning.labregions;
     auto m = pp->colorToning.labmasks;
     if (labRegionData.empty()) {
@@ -736,6 +737,8 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
 //    labRegionShow(labRegionSelected, true);
     pp->colorToning.labregions = labRegionData;
     labMasks->getMasks(pp->colorToning.labmasks, pp->colorToning.labregionsShowMask);
+    assert(pp->colorToning.labregions.size() == pp->colorToning.labmasks.size());
+    
     // if (labRegionShowMask->get_active()) {
     //     pp->colorToning.labregionsShowMask = labRegionSelected;
     // } else {

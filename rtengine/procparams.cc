@@ -5117,6 +5117,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 colorToning.labregions = std::move(lg);
                 colorToning.labmasks = std::move(lm);
             }
+            assert(colorToning.labregions.size() == colorToning.labmasks.size());
             assignFromKeyfile(keyFile, "ColorToning", "LabRegionsShowMask", pedited, colorToning.labregionsShowMask, pedited->colorToning.labregionsShowMask);
         }
 
