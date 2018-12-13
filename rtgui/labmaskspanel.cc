@@ -32,18 +32,15 @@ inline bool hasMask(const std::vector<double> &dflt, const std::vector<double> &
 } // namespace
 
 
-LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, rtengine::ProcEvent h_mask, rtengine::ProcEvent c_mask, rtengine::ProcEvent l_mask, rtengine::ProcEvent blur, rtengine::ProcEvent show, rtengine::ProcEvent area_mask):
+LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     Gtk::VBox(),
+    cp_(cp),
     masks_(),
-    selected_(0),
-    EvMaskList(mask_list),
-    EvHMask(h_mask),
-    EvCMask(c_mask),
-    EvLMask(l_mask),
-    EvMaskBlur(blur),
-    EvShowMask(show),
-    EvAreaMask(area_mask)
+    selected_(0)
 {
+    Gtk::Widget *child = cp_->getWidget();
+    cp_->getEvents(EvMaskList, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask);
+    
     CurveListener::setMulti(true);
     
     const auto add_button =
@@ -57,15 +54,15 @@ LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, 
             box->pack_start(*btn, false, false);
         };
     
-    int n = getColumnCount();
+    int n = cp_->getColumnCount();
     list = Gtk::manage(new Gtk::ListViewText(n+2));
     list->set_size_request(-1, 150);
     list->set_can_focus(false);
     list->set_column_title(0, "#");
-    for (int i = 0, i < n; ++i) {
-        list->set_column_title(i+1, getColumnHeader(i));
+    for (int i = 0; i < n; ++i) {
+        list->set_column_title(i+1, cp_->getColumnHeader(i));
     }
-    list->set_column_title(n+1, M("TP_LABMASKS_MASK_COLUMN"));
+    list->set_column_title(n+1, M("TP_LABMASKS_MASK"));
     list->set_activate_on_single_click(true);
     selectionConn = list->get_selection()->signal_changed().connect(sigc::mem_fun(this, &LabMasksPanel::onSelectionChanged));
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
@@ -101,25 +98,25 @@ LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, 
 
     pack_start(*Gtk::manage(new Gtk::HSeparator()));
 
-    maskEditorGroup = Gtk::manage(new CurveEditorGroup("", M("TP_COLORTONING_LABREGION_MASK"), 0.7));
+    maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LABMASKS_MASK"), 0.7));
     maskEditorGroup->setCurveListener(this);
 
     rtengine::LabCorrectionMask default_params;
 
-    hueMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_HUEMASK"), nullptr, false, true));
+    hueMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_HUE"), nullptr, false, true));
     hueMask->setIdentityValue(0.);
     hueMask->setResetCurve(FlatCurveType(default_params.hueMask[0]), default_params.hueMask);
     hueMask->setCurveColorProvider(this, ID_LABREGION_HUE);
     hueMask->setBottomBarColorProvider(this, ID_LABREGION_HUE);
     hueMask->setEditID(EUID_Lab_HHCurve, BT_SINGLEPLANE_FLOAT);
 
-    chromaticityMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_CHROMATICITYMASK"), nullptr, false, false));
+    chromaticityMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_CHROMATICITY"), nullptr, false, false));
     chromaticityMask->setIdentityValue(0.);
     chromaticityMask->setResetCurve(FlatCurveType(default_params.chromaticityMask[0]), default_params.chromaticityMask);
     chromaticityMask->setBottomBarColorProvider(this, ID_LABREGION_HUE+1);
     chromaticityMask->setEditID(EUID_Lab_CCurve, BT_SINGLEPLANE_FLOAT);
 
-    lightnessMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_COLORTONING_LABREGION_LIGHTNESSMASK"), nullptr, false, false));
+    lightnessMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_LIGHTNESS"), nullptr, false, false));
     lightnessMask->setIdentityValue(0.);
     lightnessMask->setResetCurve(FlatCurveType(default_params.lightnessMask[0]), default_params.lightnessMask);
     std::vector<GradientMilestone> milestones = {
@@ -133,19 +130,17 @@ LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, 
     maskEditorGroup->show();
     pack_start(*maskEditorGroup, Gtk::PACK_SHRINK, 2);
 
-    maskBlur = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_MASKBLUR"), -10, 100, 0.1, 0));
+    maskBlur = Gtk::manage(new Adjuster(M("TP_LABMASKS_BLUR"), -10, 100, 0.1, 0));
     maskBlur->setLogScale(10, 0);
     maskBlur->setAdjusterListener(this);
     pack_start(*maskBlur);
 
-    // TODO
-
-    areaMask = Gtk::manage(new MyExpander(true, M("TP_COLORTONING_LABREGION_AREAMASK")));
+    areaMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_AREA")));
     areaMask->signal_enabled_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskEnableToggled));
     ToolParamBlock *area = Gtk::manage(new ToolParamBlock());
     hb = Gtk::manage(new Gtk::HBox());
 
-    areaMaskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_AREAMASK_INVERTED")));
+    areaMaskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_AREA_INVERTED")));
     areaMaskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskInvertedChanged));
     hb->pack_start(*areaMaskInverted, Gtk::PACK_EXPAND_WIDGET);
 
@@ -157,21 +152,21 @@ LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, 
     hb->pack_start(*areaMaskToggle, Gtk::PACK_SHRINK, 0);
     area->pack_start(*hb);
 
-    areaMaskX = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_X"), -100, 100, 0.1, 0));
+    areaMaskX = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_X"), -100, 100, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskX);
-    areaMaskY = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_Y"), -100, 100, 0.1, 0));
+    areaMaskY = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_Y"), -100, 100, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskY);
-    areaMaskWidth = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_WIDTH"), 1, 200, 0.1, 100));
+    areaMaskWidth = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_WIDTH"), 1, 200, 0.1, 100));
     areaMaskWidth->setLogScale(10, 1);
     areaMaskAdjusters.push_back(areaMaskWidth);
-    areaMaskHeight = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_HEIGHT"), 1, 200, 0.1, 100));
+    areaMaskHeight = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_HEIGHT"), 1, 200, 0.1, 100));
     areaMaskHeight->setLogScale(10, 1);
     areaMaskAdjusters.push_back(areaMaskHeight);
-    areaMaskAngle = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ANGLE"), 0, 180, 0.1, 0));
+    areaMaskAngle = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ANGLE"), 0, 180, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskAngle);
-    areaMaskFeather = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_FEATHER"), 0, 100, 0.1, 0));
+    areaMaskFeather = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_FEATHER"), 0, 100, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskFeather);
-    areaMaskRoundness = Gtk::manage(new Adjuster(M("TP_COLORTONING_LABREGION_AREAMASK_ROUNDNESS"), 0, 100, 0.1, 0));
+    areaMaskRoundness = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ROUNDNESS"), 0, 100, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskRoundness);
 
     for (auto a : areaMaskAdjusters) {
@@ -183,7 +178,7 @@ LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, 
     areaMask->setLevel(2);
     pack_start(*areaMask);
 
-    showMask = Gtk::manage(new Gtk::CheckButton(M("TP_COLORTONING_LABREGION_SHOWMASK")));
+    showMask = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_SHOW")));
     showMask->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onShowMaskChanged));
     pack_start(*showMask, Gtk::PACK_SHRINK, 4);
 
@@ -191,22 +186,11 @@ LabMasksPanel::LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, 
 }
 
 
-LabMasksPanel::~LabMasksPanel()
-{
-}
-
-
 ToolPanelListener *LabMasksPanel::getListener()
 {
     if (listenerDisabled.empty() || !listenerDisabled.back()) {
-        return listener();
+        return cp_->listener();
     }
-    return nullptr;
-}
-
-
-ToolPanelListener *LabMasksPanel::listener()
-{
     return nullptr;
 }
 
@@ -230,7 +214,7 @@ void LabMasksPanel::onSelectionChanged()
         int idx = s[0];
         // update the selected values
         maskGet(idx);
-        selectionChanging(idx);
+        cp_->selectionChanging(idx);
         selected_ = idx;
         maskShow(selected_);
         if (showMask->get_active()) {
@@ -265,7 +249,7 @@ void LabMasksPanel::maskGet(int idx)
 
 void LabMasksPanel::onAddPressed()
 {
-    if (!addPressed()) {
+    if (!cp_->addPressed()) {
         return;
     }
     
@@ -284,15 +268,15 @@ void LabMasksPanel::onAddPressed()
 
 void LabMasksPanel::onRemovePressed()
 {
-    if (list->size() == 0 || !removePressed(selected_)) {
+    if (list->size() == 0 || !cp_->removePressed(selected_)) {
         return;
     }
     
     if (list->size() > 1) {
         masks_.erase(masks_.begin() + selected_);
-        selected_ = LIM(selected_-1, 0, int(masks_.size()-1));
+        selected_ = rtengine::LIM(selected_-1, 0, int(masks_.size()-1));
     } else {
-        masks_[0] = procparams::LabCorrectionMask();
+        masks_[0] = rtengine::LabCorrectionMask();
         masks_[0].areaMask = defaultAreaMask;
     }
     populateList();
@@ -307,7 +291,7 @@ void LabMasksPanel::onRemovePressed()
 
 void LabMasksPanel::onUpPressed()
 {
-    if (selected_ > 0 && moveUpPressed(selected_)) {
+    if (selected_ > 0 && cp_->moveUpPressed(selected_)) {
         auto r = masks_[selected_];
         masks_.erase(masks_.begin() + selected_);
         --selected_;
@@ -324,7 +308,7 @@ void LabMasksPanel::onUpPressed()
 
 void LabMasksPanel::onDownPressed()
 {
-    if (selected_ < int(masks_.size()-1) && moveDownPressed(selected_)) {
+    if (selected_ < int(masks_.size()-1) && cp_->moveDownPressed(selected_)) {
         auto r = masks_[selected_];
         masks_.erase(masks_.begin() + selected_);
         ++selected_;
@@ -341,7 +325,7 @@ void LabMasksPanel::onDownPressed()
 
 void LabMasksPanel::onCopyPressed()
 {
-    if (selected_ < int(masks_.size()) && copyPressed(selected_)) {
+    if (selected_ < int(masks_.size()) && cp_->copyPressed(selected_)) {
         auto r = masks_[selected_];
         masks_.push_back(r);
         selected_ = masks_.size()-1;
@@ -370,12 +354,12 @@ void LabMasksPanel::populateList()
     list->clear_items();
     rtengine::LabCorrectionMask dflt;
 
-    int n = getColumnCount();
+    int n = cp_->getColumnCount();
     for (size_t i = 0; i < masks_.size(); ++i) {
         auto &r = masks_[i];
         auto j = list->append(std::to_string(i+1));
         for (int c = 0; c < n; ++c) {
-            list->set_text(j, c+1, getColumnContent(c, j));
+            list->set_text(j, c+1, cp_->getColumnContent(c, j));
         }
         Glib::ustring am("");
         if (!r.areaMask.isTrivial()) {
@@ -399,10 +383,10 @@ void LabMasksPanel::populateList()
 void LabMasksPanel::maskShow(int idx, bool list_only)
 {
     disableListener();
-    rtengine::LabMasksPanelParams::LabCorrectionRegion dflt;
+    rtengine::LabCorrectionMask dflt;
     auto &r = masks_[idx];
     if (!list_only) {
-        selectionChanged(idx);
+        cp_->selectionChanged(idx);
         hueMask->setCurve(r.hueMask);
         chromaticityMask->setCurve(r.chromaticityMask);
         lightnessMask->setCurve(r.lightnessMask);
@@ -423,9 +407,9 @@ void LabMasksPanel::maskShow(int idx, bool list_only)
         areaMaskRoundness->setValue(r.areaMask.roundness);
         updateAreaMask(false);
     }
-    int n = getColumnCount();
+    int n = cp_->getColumnCount();
     for (int c = 0; c < n; ++c) {
-        list->set_text(idx, c+1, getColumnContent(c, idx));
+        list->set_text(idx, c+1, cp_->getColumnContent(c, idx));
     }
     Glib::ustring am("");
     if (!r.areaMask.isTrivial()) {
@@ -517,7 +501,7 @@ void LabMasksPanel::switchOffEditMode()
 }
 
 
-void LabMasksPanel::areaMaskEnableToggled()
+void LabMasksPanel::onAreaMaskEnableToggled()
 {
     auto l = getListener();
     if (l) {
@@ -540,7 +524,7 @@ void LabMasksPanel::updateAreaMaskDefaults(const rtengine::procparams::ProcParam
         return;
     }
 
-    defaultAreaMask = rtengine::procparams::LabCorrectionMask::AreaMask();
+    defaultAreaMask = rtengine::LabCorrectionMask::AreaMask();
     if (!params->crop.enabled) {
         return;
     }
@@ -575,7 +559,7 @@ void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
     }
 
     if (a == maskBlur) {
-        lr->panelChanged(EvLabRegionMaskBlur, a->getTextValue());
+        l->panelChanged(EvMaskBlur, a->getTextValue());
     } else if (std::find(areaMaskAdjusters.begin(), areaMaskAdjusters.end(), a) != areaMaskAdjusters.end()) {
         updateAreaMask(false);
         l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
@@ -583,61 +567,8 @@ void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
 }
 
 
-void LabMasksPanel::selectionChanging(int idx)
+void LabMasksPanel::adjusterAutoToggled(Adjuster *a, bool newval)
 {
-}
-
-
-void LabMasksPanel::selectionChanged(int idx)
-{
-}
-
-
-bool LabMasksPanel::addPressed()
-{
-    return true;
-}
-
-
-bool LabMasksPanel::removePressed(int idx)
-{
-    return true;
-}
-
-
-bool LabMasksPanel::copyPressed(int idx)
-{
-    return true;
-}
-
-
-bool LabMasksPanel::moveUpPressed(int idx)
-{
-    return true;
-}
-
-
-bool LabMasksPanel::moveDownPressed(int idx)
-{
-    return true;
-}
-
-
-int LabMasksPanel::getColumnCount()
-{
-    return 0;
-}
-
-
-Glib::ustring getColumnHeader(int col)
-{
-    return "";
-}
-
-
-Glib::ustring LabMasksPanel::getColumnContent(int col, int row)
-{
-    return "";
 }
 
 
@@ -653,7 +584,7 @@ void LabMasksPanel::setMasks(const std::vector<rtengine::LabCorrectionMask> &mas
         showMask->set_active(false);
     }
     populateList();
-    showMask(selected_);
+    maskShow(selected_);
     enableListener();
 }
         
@@ -692,10 +623,10 @@ void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::El
         if (x < 0.f) {
             x += 1.f;
         }
-        x = log2lin(x, 3.f);
-        Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
+        x = rtengine::log2lin(x, 3.f);
+        rtengine::Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
     } else if (callerId == ID_LABREGION_HUE+1) {
-        Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);        
+        rtengine::Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);
     }
 
     caller->ccRed = double(R);
@@ -707,13 +638,13 @@ void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::El
 float LabMasksPanel::blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3)
 {
     if (ce == chromaticityMask && chan1 > 0.f) {
-        return lin2log(chan1, 10.f);
+        return rtengine::lin2log(chan1, 10.f);
     } else if (ce == hueMask && chan1 > 0.f) {
         float x = chan1 + 1.f/6.f;
         if (x > 1.f) {
             x -= 1.f;
         }
-        return lin2log(x, 3.f);
+        return rtengine::lin2log(x, 3.f);
     }
     return CurveListener::blendPipetteValues(ce, chan1, chan2, chan3);
 }

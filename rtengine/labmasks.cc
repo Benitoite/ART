@@ -28,6 +28,7 @@
 #include "coord.h"
 #include "gauss.h"
 #include "color.h"
+#include "curves.h"
 
 
 namespace rtengine {
@@ -133,7 +134,7 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
 } // namespace
 
 
-bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, bool multithread, int show_mask_idx, std::vector<array2D<float>> &Lmask, std::vector<array2D<float>> &abmask)
+bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> &Lmask, std::vector<array2D<float>> &abmask)
 {
     int n = masks.size();
     if (show_mask_idx >= n) {
@@ -159,8 +160,9 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
         }
     }
 
-    abmask.resize(n);
-    Lmask.resize(n);
+    assert(abmask.size() == size_t(n));
+    assert(Lmask.size() == size_t(n));
+    
     for (int i = begin_idx; i < end_idx; ++i) {
         abmask[i](lab->W, lab->H);
         Lmask[i](lab->W, lab->H);
@@ -235,9 +237,9 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
     }
 
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(guide, masks[i].areaMask, offset_x, offset_y, full_width, full_height, multiThread)) {
+        if (generate_area_mask(guide, masks[i].areaMask, offset_x, offset_y, full_width, full_height, multithread)) {
 #ifdef _OPENMP
-#           pragma omp parallel for if (multiThread)
+#           pragma omp parallel for if (multithread)
 #endif
             for (int y = 0; y < lab->H; ++y) {
                 for (int x = 0; x < lab->W; ++x) {
@@ -250,7 +252,7 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
 
     if (show_mask_idx >= 0) {
 #ifdef _OPENMP
-        #pragma omp parallel for if (multiThread)
+        #pragma omp parallel for if (multithread)
 #endif
         for (int y = 0; y < lab->H; ++y) {
             for (int x = 0; x < lab->W; ++x) {

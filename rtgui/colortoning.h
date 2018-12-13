@@ -70,6 +70,8 @@ public:
         const Glib::ustring& descr,
         const ParamsEdited* paramsEdited = nullptr) override;
     void clearParamChanges() override {}
+
+    void updateGeometry(int fullWidth, int fullHeight);
     
 private:
     void labRegionChannelChanged();
@@ -145,7 +147,8 @@ private:
     rtengine::ProcEvent EvLabRegionChannel;
     rtengine::ProcEvent EvLabRegionAreaMask;
 
-    friend class LabRegionMasksPanel;
+    friend class LabRegionMasksContentProvider;
+    std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
     LabMasksPanel *labMasks;
     Gtk::VBox *labRegionBox;
     LabGrid *labRegionAB;

@@ -25,6 +25,32 @@
 #include "toolpanel.h"
 #include "areamask.h"
 #include "colorprovider.h"
+#include "curvelistener.h"
+#include "curveeditorgroup.h"
+#include "curveeditor.h"
+
+
+class LabMasksContentProvider {
+public:
+    virtual ~LabMasksContentProvider() {}
+
+    virtual Gtk::Widget *getWidget() = 0;
+    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) = 0;
+
+    virtual ToolPanelListener *listener() = 0;
+
+    virtual void selectionChanging(int idx) = 0;
+    virtual void selectionChanged(int idx) = 0;
+    virtual bool addPressed() = 0;
+    virtual bool removePressed(int idx) = 0;
+    virtual bool copyPressed(int idx) = 0;
+    virtual bool moveUpPressed(int idx) = 0;
+    virtual bool moveDownPressed(int idx) = 0;
+
+    virtual int getColumnCount() = 0;
+    virtual Glib::ustring getColumnHeader(int col) = 0;
+    virtual Glib::ustring getColumnContent(int col, int row) = 0;
+};
 
 
 class LabMasksPanel:
@@ -34,22 +60,7 @@ class LabMasksPanel:
     public ColorProvider,
     public AreaMask {
 public:
-    LabMasksPanel(Gtk::Widget *child, rtengine::ProcEvent mask_list, rtengine::ProcEvent h_mask, rtengine::ProcEvent c_mask, rtengine::ProcEvent l_mask, rtengine::ProcEvent blur, rtengine::ProcEvent show, rtengine::ProcEvent area_mask);
-    virtual ~LabMasksPanel();
-
-    virtual ToolPanelListener *listener();
-
-    virtual void selectionChanging(int idx);
-    virtual void selectionChanged(int idx);
-    virtual bool addPressed();
-    virtual bool removePressed(int idx);
-    virtual bool copyPressed(int idx);
-    virtual bool moveUpPressed(int idx);
-    virtual bool moveDownPressed(int idx);
-
-    virtual int getColumnCount();
-    virtual Glib::ustring getColumnHeader(int col);
-    virtual Glib::ustring getColumnContent(int col, int row);
+    LabMasksPanel(LabMasksContentProvider *cp);
 
     void setMasks(const std::vector<rtengine::LabCorrectionMask> &masks, int show_mask_idx);
     void getMasks(std::vector<rtengine::LabCorrectionMask> &masks, int &show_mask_idx);
@@ -64,7 +75,7 @@ public:
 
     bool button1Released() override;
     void switchOffEditMode() override;
-    void setEditProvider(EditDataProvider *provider) override;
+    void setEditProvider(EditDataProvider *provider);
     void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
 
     void updateAreaMaskDefaults(const rtengine::procparams::ProcParams* params);
@@ -88,7 +99,8 @@ private:
 
     void disableListener();
     void enableListener();
-    
+
+    LabMasksContentProvider *cp_;
     std::vector<rtengine::LabCorrectionMask> masks_;
     int selected_;
 
@@ -125,5 +137,5 @@ private:
     Adjuster *areaMaskRoundness;
     std::vector<Adjuster *> areaMaskAdjusters;
     std::vector<bool> listenerDisabled;
-    rtengine::procparams::LabCorrectionMask::AreaMask defaultAreaMask;
+    rtengine::LabCorrectionMask::AreaMask defaultAreaMask;
 };

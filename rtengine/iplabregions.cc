@@ -47,7 +47,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
     std::vector<array2D<float>> abmask(n);
     std::vector<array2D<float>> Lmask(n);
 
-    if (!generateLabMasks(lab, params->colorToning.labmasks, offset_x, offset_y, full_width, full_height, multiThread, show_mask_idx, Lmask, abmask)) {
+    if (!generateLabMasks(lab, params->colorToning.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, Lmask, abmask)) {
         return; // show mask is active, nothing more to do
     }
     

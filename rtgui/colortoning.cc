@@ -25,23 +25,30 @@ inline float round_ab(float v)
 // LabRegionMasksPanel
 //-----------------------------------------------------------------------------
 
-class LabRegionMasksPanel: public LabMasksPanel {
-    typedef LabMasksPanel Super;
+class LabRegionMasksContentProvider: public LabMasksContentProvider {
 public:
-    LabRegionMasksPanel(ColorToning *parent):
-        Super(parent->labRegionBox,
-              parent->EvLabRegionList,
-              parent->EvLabRegionHueMask,
-              parent->EvLabRegionChromaticityMask,
-              parent->EvLabRegionLightnessMask,
-              parent->EvLabRegionMaskBlur,
-              parent->EvLabRegionShowMask,
-              parent->EvLabRegionAreaMask),
+    LabRegionMasksContentProvider(ColorToning *parent):
         parent_(parent)
     {
     }
 
-    ToolPanelListener *listener()
+    Gtk::Widget *getWidget() override
+    {
+        return parent_->labRegionBox;
+    }
+
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) override
+    {
+        mask_list = parent_->EvLabRegionList;
+        h_mask = parent_->EvLabRegionHueMask;
+        c_mask = parent_->EvLabRegionChromaticityMask;
+        l_mask = parent_->EvLabRegionLightnessMask;
+        blur = parent_->EvLabRegionMaskBlur;
+        show = parent_->EvLabRegionShowMask;
+        area_mask = parent_->EvLabRegionAreaMask;
+    }
+
+    ToolPanelListener *listener() override
     {
         if (parent_->getEnabled()) {
             return parent_->listener;
@@ -49,35 +56,35 @@ public:
         return nullptr;
     }
 
-    void selectionChanging(int idx)
+    void selectionChanging(int idx) override
     {
         parent_->labRegionGet(idx);
     }
 
-    void selectionChanged(int idx)
+    void selectionChanged(int idx) override
     {
         parent_->labRegionShow(idx);
     }
 
-    bool addPressed()
+    bool addPressed() override
     {
         parent_->labRegionData.push_back(rtengine::ColorToningParams::LabCorrectionRegion());
         return true;
     }
 
-    bool removePressed(int idx)
+    bool removePressed(int idx) override
     {
         parent_->labRegionData.erase(parent_->labRegionData.begin() + idx);
         return true;
     }
     
-    bool copyPressed(int idx)
+    bool copyPressed(int idx) override
     {
         parent_->labRegionData.push_back(parent_->labRegionData[idx]);
         return true;
     }
     
-    bool moveUpPressed(int idx)
+    bool moveUpPressed(int idx) override
     {
         auto r = parent_->labRegionData[idx];
         parent_->labRegionData.erase(parent_->labRegionData.begin() + idx);
@@ -86,7 +93,7 @@ public:
         return true;
     }
     
-    bool moveDownPressed(int idx)
+    bool moveDownPressed(int idx) override
     {
         auto r = parent_->labRegionData[idx];
         parent_->labRegionData.erase(parent_->labRegionData.begin() + idx);
@@ -95,17 +102,17 @@ public:
         return true;
     }
 
-    int getColumnCount()
+    int getColumnCount() override
     {
         return 1;
     }
     
-    Glib::ustring getColumnHeader(int col)
+    Glib::ustring getColumnHeader(int col) override
     {
         return M("TP_COLORTONING_LABREGION_LIST_TITLE");
     }
     
-    Glib::ustring getColumnContent(int col, int row)
+    Glib::ustring getColumnContent(int col, int row) override
     {
         auto &r = parent_->labRegionData[row];
         const char *ch = "";
@@ -119,7 +126,7 @@ public:
         default:
             ch = "";
         }
-        return Glib::ustring::compose("a=%1 b=%2 S=%3%4\ns=%5 o=%6 p=%7", round_ab(r.a), round_ab(r.b), r.saturation, ch, r.slope, r.offset, r.power);
+        return Glib::ustring::compose("a=%1 b=%2 S=%3\ns=%4 o=%5 p=%6%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power, ch);
     }
 
 private:
@@ -448,17 +455,6 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     //------------------------------------------------------------------------
     // LAB regions
 
-    const auto add_button =
-        [&](Gtk::Button *btn, Gtk::Box *box) -> void
-        {
-            setExpandAlignProperties(btn, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_START);
-            btn->set_relief(Gtk::RELIEF_NONE);
-            btn->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
-            btn->set_can_focus(false);
-            btn->set_size_request(-1, 20);
-            box->pack_start(*btn, false, false);
-        };
-    
     EvLabRegionList = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_LIST");
     EvLabRegionAB = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_AB");
     EvLabRegionSaturation = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_COLORTONING_LABREGION_SATURATION");
@@ -495,7 +491,7 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionPower->setLogScale(4, 0.1);
     labRegionBox->pack_start(*labRegionPower);
 
-    hb = Gtk::manage(new Gtk::HBox());
+    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
     labRegionChannel = Gtk::manage(new MyComboBoxText());
     labRegionChannel->append(M("TP_COLORTONING_LABREGION_CHANNEL_ALL"));
     labRegionChannel->append(M("TP_COLORTONING_LABREGION_CHANNEL_R"));
@@ -513,7 +509,8 @@ ColorToning::ColorToning () : FoldableToolPanel(this, "colortoning", M("TP_COLOR
     labRegionOffset->delay = options.adjusterMaxDelay;
     labRegionPower->delay = options.adjusterMaxDelay;
 
-    labMasks = Gtk::manage(new LabRegionMasksPanel(this));
+    labMasksContentProvider.reset(new LabRegionMasksContentProvider(this));
+    labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
     pack_start(*labMasks, Gtk::PACK_EXPAND_WIDGET, 4);
     //------------------------------------------------------------------------
     
@@ -1474,7 +1471,6 @@ void ColorToning::labRegionChannelChanged()
 void ColorToning::setEditProvider(EditDataProvider *provider)
 {
     labMasks->setEditProvider(provider);
-    AreaMask::setEditProvider(provider);
 }
 
 
@@ -1485,4 +1481,10 @@ void ColorToning::procParamsChanged(
     const ParamsEdited* paramsEdited)
 {
     labMasks->updateAreaMaskDefaults(params);
+}
+
+
+void ColorToning::updateGeometry(int fw, int fh)
+{
+    labMasks->updateGeometry(fw, fh);
 }

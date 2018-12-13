@@ -743,41 +743,6 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 const double ColorToningParams::LABGRID_CORR_MAX = 12000.f;
 const double ColorToningParams::LABGRID_CORR_SCALE = 3.f;
 
-ColorToningParams::LabCorrectionRegion::AreaMask::AreaMask():
-    enabled(false),
-    inverted(false),
-    x(0),
-    y(0),
-    width(100),
-    height(100),
-    angle(0),
-    feather(0),
-    roundness(0)
-{
-}
-
-
-bool ColorToningParams::LabCorrectionRegion::AreaMask::operator==(const AreaMask &other) const
-{
-    return
-        enabled == other.enabled
-        && inverted == other.inverted
-        && x == other.x
-        && y == other.y
-        && width == other.width
-        && height == other.height
-        && angle == other.angle
-        && feather == other.feather
-        && roundness == other.roundness;
-}
-
-
-bool ColorToningParams::LabCorrectionRegion::AreaMask::operator!=(const AreaMask &other) const
-{
-    return !(*this == other);
-}
-
-
 ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
     a(0),
     b(0),
@@ -785,49 +750,8 @@ ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
     slope(1),
     offset(0),
     power(1),
-    hueMask{
-        FCT_MinMaxCPoints,
-            0.166666667,
-            1.,
-            0.35,
-            0.35,
-            0.8287775246,
-            1.,
-            0.35,
-            0.35
-    },
-    chromaticityMask{
-        FCT_MinMaxCPoints,
-            0.,
-            1.,
-            0.35,
-            0.35,
-            1.,
-            1.,
-            0.35,
-            0.35
-            },
-    lightnessMask{
-        FCT_MinMaxCPoints,
-            0.,
-            1.,
-            0.35,
-            0.35,
-            1.,
-            1.,
-            0.35,
-            0.35
-            },
-    maskBlur(0),
-    channel(ColorToningParams::LabCorrectionRegion::CHAN_ALL),
-    areaMask()
+    channel(ColorToningParams::LabCorrectionRegion::CHAN_ALL)
 {
-}
-
-
-bool ColorToningParams::LabCorrectionRegion::AreaMask::isTrivial() const
-{
-    return !enabled || (*this == AreaMask());
 }
 
 
@@ -839,12 +763,7 @@ bool ColorToningParams::LabCorrectionRegion::operator==(const LabCorrectionRegio
         && slope == other.slope
         && offset == other.offset
         && power == other.power
-        && hueMask == other.hueMask
-        && chromaticityMask == other.chromaticityMask
-        && lightnessMask == other.lightnessMask
-        && maskBlur == other.maskBlur
-        && channel == other.channel
-        && areaMask == other.areaMask;
+        && channel == other.channel;
 }
 
 
@@ -969,6 +888,7 @@ bool ColorToningParams::operator ==(const ColorToningParams& other) const
         && labgridAHigh == other.labgridAHigh
         && labgridBHigh == other.labgridBHigh
         && labregions == other.labregions
+        && labmasks == other.labmasks
         && labregionsShowMask == other.labregionsShowMask;
 }
 
@@ -3704,7 +3624,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionOffset_") + n, l.offset, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionPower_") + n, l.power, keyFile);
                 putToKeyfile("ColorToning", Glib::ustring("LabRegionChannel_") + n, l.channel, keyFile);
-                colorToning.labmasks[n].save(keyFile, "ColorToning", "LabRegion", Glib::ustring("_") + n);
+                colorToning.labmasks[j].save(keyFile, "ColorToning", "LabRegion", Glib::ustring("_") + n);
             }
         }
         saveToKeyfile(!pedited || pedited->colorToning.labregionsShowMask, "ColorToning", "LabRegionsShowMask", colorToning.labregionsShowMask, keyFile);
