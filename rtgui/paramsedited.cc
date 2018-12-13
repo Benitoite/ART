@@ -3030,7 +3030,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     }
 
     SETVAL_(dirpyrequalizer.enabled);
-    SETVAL_(dirpyrequalizer.levels);
+    if (dirpyrequalizer.levels) {
+        toEdit.dirpyrequalizer.levels = mods.dirpyrequalizer.levels;
+        toEdit.dirpyrequalizer.labmasks = mods.dirpyrequalizer.labmasks;
+    }
     SETVAL_(dirpyrequalizer.showMask);
 
     if (hsvequalizer.enabled) {

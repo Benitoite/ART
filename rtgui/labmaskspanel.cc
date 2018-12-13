@@ -584,6 +584,8 @@ void LabMasksPanel::adjusterAutoToggled(Adjuster *a, bool newval)
 void LabMasksPanel::setMasks(const std::vector<rtengine::LabCorrectionMask> &masks, int show_mask_idx)
 {
     disableListener();
+    ConnectionBlocker b(selectionConn);
+    
     masks_ = masks;
     selected_ = 0;
     if (show_mask_idx >= 0) {
