@@ -79,6 +79,11 @@ public:
     void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
 
     void updateAreaMaskDefaults(const rtengine::procparams::ProcParams* params);
+
+    void setEdited(bool yes);
+    bool getEdited();
+
+    void updateSelected();
     
 private:
     ToolPanelListener *getListener();
@@ -95,7 +100,7 @@ private:
     void onShowMaskChanged();
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
-    void maskShow(int idx, bool list_only=false);
+    void maskShow(int idx, bool list_only=false, bool unsub=true);
 
     void disableListener();
     void enableListener();
@@ -138,4 +143,5 @@ private:
     std::vector<Adjuster *> areaMaskAdjusters;
     std::vector<bool> listenerDisabled;
     rtengine::LabCorrectionMask::AreaMask defaultAreaMask;
+    bool listEdited;
 };

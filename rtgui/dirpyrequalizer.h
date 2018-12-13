@@ -25,32 +25,51 @@
 #include "toolpanel.h"
 #include "thresholdadjuster.h"
 #include "colorprovider.h"
+#include "labmaskspanel.h"
 
-class DirPyrEqualizer : public ToolParamBlock, public ThresholdAdjusterListener, public AdjusterListener, public FoldableToolPanel
+class DirPyrEqualizer : public ToolParamBlock, public ThresholdAdjusterListener, public AdjusterListener, public FoldableToolPanel, public PParamsChangeListener
+
 {
 
 protected:
+    void levelsGet(int idx);
+    void levelsShow(int idx);
+    
+    rtengine::ProcEvent EvList;
+    rtengine::ProcEvent EvHueMask;
+    rtengine::ProcEvent EvChromaticityMask;
+    rtengine::ProcEvent EvLightnessMask;
+    rtengine::ProcEvent EvMaskBlur;
+    rtengine::ProcEvent EvShowMask;
+    rtengine::ProcEvent EvAreaMask;
 
-    Gtk::CheckButton * gamutlab;
+    std::vector<rtengine::procparams::DirPyrEqualizerParams::Levels> levelsData;
+    int showMaskIdx;
+
+    friend class DirPyrEqMasksContentProvider;
+    std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
+    LabMasksPanel *labMasks;
+    Gtk::VBox *box;
+    //Gtk::CheckButton * gamutlab;
     Adjuster* multiplier[6];
     Adjuster* threshold;
-    Adjuster* skinprotect;
-    ThresholdAdjuster* hueskin;
+    // Adjuster* skinprotect;
+    // ThresholdAdjuster* hueskin;
     //  MyComboBoxText*   algo;
     //  sigc::connection  algoconn;
     //  Gtk::Label*       alLabel;
     //  Gtk::HBox*        algoHBox;
 
-    sigc::connection  gamutlabConn;
-    sigc::connection lumaneutralPressedConn;
-    sigc::connection lumacontrastPlusPressedConn;
-    sigc::connection lumacontrastMinusPressedConn;
-    sigc::connection  cbdlMethodConn;
-    Gtk::Label* labmcd;
-    Gtk::HBox* cdbox;
-    MyComboBoxText*   cbdlMethod;
+    // sigc::connection  gamutlabConn;
+    // sigc::connection lumaneutralPressedConn;
+    // sigc::connection lumacontrastPlusPressedConn;
+    // sigc::connection lumacontrastMinusPressedConn;
+    // sigc::connection  cbdlMethodConn;
+    // Gtk::Label* labmcd;
+    // Gtk::HBox* cdbox;
+    // MyComboBoxText*   cbdlMethod;
 
-    bool lastgamutlab;
+    // bool lastgamutlab;
 
 public:
 
@@ -63,20 +82,30 @@ public:
     void setBatchMode        (bool batchMode) override;
     void setAdjusterBehavior (bool multiplieradd, bool thresholdadd, bool skinadd);
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    void cbdlMethodChanged();
     void adjusterChanged (Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void enabledChanged() override;
-    void gamutlabToggled ();
     void lumaneutralPressed ();
     void lumacontrastPlusPressed ();
     void lumacontrastMinusPressed ();
 
-    void adjusterChanged(ThresholdAdjuster* a, double newBottom, double newTop) override;
-    void adjusterChanged(ThresholdAdjuster* a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override;
-    void adjusterChanged(ThresholdAdjuster* a, int newBottom, int newTop) override;
-    void adjusterChanged(ThresholdAdjuster* a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override;
-    void adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int newTopL, int newBottomR, int newTopR) override;
+    void setEditProvider(EditDataProvider *provider) override;
+
+    PParamsChangeListener *getPParamsChangeListener() override { return this; }
+    void procParamsChanged(
+        const rtengine::procparams::ProcParams* params,
+        const rtengine::ProcEvent& ev,
+        const Glib::ustring& descr,
+        const ParamsEdited* paramsEdited = nullptr) override;
+    void clearParamChanges() override {}
+
+    void updateGeometry(int fullWidth, int fullHeight);
+
+    void adjusterChanged(ThresholdAdjuster* a, double newBottom, double newTop) override {}
+    void adjusterChanged(ThresholdAdjuster* a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override {}
+    void adjusterChanged(ThresholdAdjuster* a, int newBottom, int newTop) override {}
+    void adjusterChanged(ThresholdAdjuster* a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override {}
+    void adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int newTopL, int newBottomR, int newTopR) override {}
 };
 
 #endif

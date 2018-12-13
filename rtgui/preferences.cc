@@ -353,11 +353,11 @@ Gtk::Widget* Preferences::getBatchProcPanel ()
     appendBehavList (mi, M ("TP_VIGNETTING_STRENGTH"), ADDSET_VIGN_STRENGTH, false);
     appendBehavList (mi, M ("TP_VIGNETTING_CENTER_X") + ", " + M ("TP_VIGNETTING_CENTER_Y"), ADDSET_VIGN_CENTER, false);
 
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_DIRPYREQUALIZER_LABEL"));
-    appendBehavList (mi, M ("TP_EXPOSURE_CONTRAST"), ADDSET_DIRPYREQ, true);
-    appendBehavList (mi, M ("TP_DIRPYREQUALIZER_THRESHOLD"), ADDSET_DIRPYREQ_THRESHOLD, true);
-    appendBehavList (mi, M ("TP_DIRPYREQUALIZER_SKIN"), ADDSET_DIRPYREQ_SKINPROTECT, true);
+    // mi = behModel->append ();
+    // mi->set_value (behavColumns.label, M ("TP_DIRPYREQUALIZER_LABEL"));
+    // appendBehavList (mi, M ("TP_EXPOSURE_CONTRAST"), ADDSET_DIRPYREQ, true);
+    // appendBehavList (mi, M ("TP_DIRPYREQUALIZER_THRESHOLD"), ADDSET_DIRPYREQ_THRESHOLD, true);
+    // appendBehavList (mi, M ("TP_DIRPYREQUALIZER_SKIN"), ADDSET_DIRPYREQ_SKINPROTECT, true);
 
     mi = behModel->append ();
     mi->set_value (behavColumns.label, M ("TP_WAVELET_LABEL"));

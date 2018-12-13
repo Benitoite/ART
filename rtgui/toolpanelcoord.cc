@@ -485,6 +485,7 @@ void ToolPanelCoordinator::profileChange(
         // updating the "on preview" geometry
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
         colortoning->updateGeometry(fw, fh);
+        dirpyrequalizer->updateGeometry(fw, fh);
     }
 
     // start the IPC processing

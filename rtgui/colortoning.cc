@@ -22,7 +22,7 @@ inline float round_ab(float v)
 
 
 //-----------------------------------------------------------------------------
-// LabRegionMasksPanel
+// LabRegionMasksContentProvider
 //-----------------------------------------------------------------------------
 
 class LabRegionMasksContentProvider: public LabMasksContentProvider {
@@ -624,8 +624,21 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
         labgrid->setEdited(pedited->colorToning.labgridALow || pedited->colorToning.labgridBLow || pedited->colorToning.labgridAHigh || pedited->colorToning.labgridBHigh);
 
         // TODO
-//        labRegionAB->setEdited(pedited->colorToning.labregions);
-//        labRegionShowMask->set_inconsistent(!pedited->colorToning.labregionsShowMask);
+        if (pedited->colorToning.labregions) {
+            labRegionAB->setEdited(true);
+            labRegionSaturation->setEditedState(Edited);
+            labRegionSlope->setEditedState(Edited);
+            labRegionOffset->setEditedState(Edited);
+            labRegionPower->setEditedState(Edited);
+            labMasks->setEdited(true);
+        } else {
+            labRegionAB->setEdited(false);
+            labRegionSaturation->setEditedState(UnEdited);
+            labRegionSlope->setEditedState(UnEdited);
+            labRegionOffset->setEditedState(UnEdited);
+            labRegionPower->setEditedState(UnEdited);
+            labMasks->setEdited(false);
+        }
     }
 
     redlow->setValue    (pp->colorToning.redlow);
@@ -734,17 +747,12 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
     pp->colorToning.labgridBHigh *= ColorToningParams::LABGRID_CORR_MAX;
 
     labRegionGet(labMasks->getSelected());
-//    labRegionShow(labRegionSelected, true);
+    labMasks->updateSelected();
+    
     pp->colorToning.labregions = labRegionData;
     labMasks->getMasks(pp->colorToning.labmasks, pp->colorToning.labregionsShowMask);
     assert(pp->colorToning.labregions.size() == pp->colorToning.labmasks.size());
     
-    // if (labRegionShowMask->get_active()) {
-    //     pp->colorToning.labregionsShowMask = labRegionSelected;
-    // } else {
-    //     pp->colorToning.labregionsShowMask = -1;
-    // }
-
     if (pedited) {
         pedited->colorToning.redlow     = redlow->getEditedState ();
         pedited->colorToning.greenlow   = greenlow->getEditedState ();
@@ -772,9 +780,8 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
 
         pedited->colorToning.labgridALow = pedited->colorToning.labgridBLow = pedited->colorToning.labgridAHigh = pedited->colorToning.labgridBHigh = labgrid->getEdited();
 
-        // TODO
-//        pedited->colorToning.labregions = labRegionAB->getEdited();
-//        pedited->colorToning.labregionsShowMask = !labRegionShowMask->get_inconsistent();
+        pedited->colorToning.labregions = labRegionAB->getEdited() || labMasks->getEdited() || labRegionSaturation->getEditedState() || labRegionSlope->getEditedState() || labRegionOffset->getEditedState() || labRegionPower->getEditedState() || labRegionChannel->get_active_text() != M("GENERAL_UNCHANGED");
+        pedited->colorToning.labregionsShowMask = labMasks->getEdited();
     }
 
     if (method->get_active_row_number() == 0) {
@@ -1449,7 +1456,6 @@ void ColorToning::labRegionShow(int idx)
     if (disable) {
         disableListener();
     }
-    rtengine::ColorToningParams::LabCorrectionRegion dflt;
     auto &r = labRegionData[idx];
     labRegionAB->setParams(0, 0, r.a, r.b, false);
     labRegionSaturation->setValue(r.saturation);

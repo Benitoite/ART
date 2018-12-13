@@ -1282,12 +1282,20 @@ struct WaveletParams {
 */
 struct DirPyrEqualizerParams {
     bool enabled;
-    bool gamutlab;
-    double mult[6];
-    double threshold;
-    double skinprotect;
-    Threshold<int> hueskin;
-    Glib::ustring cbdlMethod;
+    // bool gamutlab;
+    struct Levels {
+        double mult[6];
+        double threshold;
+        Levels();
+        bool operator==(const Levels &other) const;
+        bool operator!=(const Levels &other) const;
+    };
+    std::vector<Levels> levels;
+    std::vector<LabCorrectionMask> labmasks;
+    int showMask;
+    // double skinprotect;
+    // Threshold<int> hueskin;
+    // Glib::ustring cbdlMethod;
 
     DirPyrEqualizerParams();
 

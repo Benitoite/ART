@@ -284,7 +284,7 @@ void Crop::update(int todo)
     }
 
     // transform
-    if (needstransform || ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled)) {
+    if (needstransform) {// || ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled)) {
         if (!transCrop) {
             transCrop = new Imagefloat(cropw, croph);
         }
@@ -308,16 +308,16 @@ void Crop::update(int todo)
         transCrop = nullptr;
     }
 
-    if ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
+    // if ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
 
-        const int W = baseCrop->getWidth();
-        const int H = baseCrop->getHeight();
-        LabImage labcbdl(W, H);
-        parent->ipf.rgb2lab(*baseCrop, labcbdl, params.icm.workingProfile);
-        parent->ipf.dirpyrequalizer(&labcbdl, skip);
-        parent->ipf.lab2rgb(labcbdl, *baseCrop, params.icm.workingProfile);
+    //     const int W = baseCrop->getWidth();
+    //     const int H = baseCrop->getHeight();
+    //     LabImage labcbdl(W, H);
+    //     parent->ipf.rgb2lab(*baseCrop, labcbdl, params.icm.workingProfile);
+    //     parent->ipf.dirpyrequalizer(&labcbdl, skip);
+    //     parent->ipf.lab2rgb(labcbdl, *baseCrop, params.icm.workingProfile);
 
-    }
+    // }
 
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
@@ -408,15 +408,17 @@ void Crop::update(int todo)
             }
         }
 
+        parent->ipf.contrastByDetailLevels(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+
         //   if (skip==1) {
         WaveletParams WaveParams = params.wavelet;
 
-        if (params.dirpyrequalizer.cbdlMethod == "aft") {
-            if (((params.colorappearance.enabled && !settings->autocielab)  || (!params.colorappearance.enabled))) {
-                parent->ipf.dirpyrequalizer(labnCrop, skip);
-                //  parent->ipf.Lanczoslab (labnCrop,labnCrop , 1.f/skip);
-            }
-        }
+        // if (params.dirpyrequalizer.cbdlMethod == "aft") {
+        //     if (((params.colorappearance.enabled && !settings->autocielab)  || (!params.colorappearance.enabled))) {
+        //         parent->ipf.dirpyrequalizer(labnCrop, skip);
+        //         //  parent->ipf.Lanczoslab (labnCrop,labnCrop , 1.f/skip);
+        //     }
+        // }
 
         int kall = 0;
         int minwin = min(labnCrop->W, labnCrop->H);

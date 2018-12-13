@@ -418,7 +418,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         // Remove transformation if unneeded
         bool needstransform = ipf.needsTransform();
     
-        if ((needstransform || ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled))) {
+        if ((needstransform)) {// || ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled))) {
             assert(oprevi);
             Imagefloat *op = oprevi;
             oprevi = new Imagefloat(pW, pH);
@@ -431,14 +431,14 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             }
         }
     
-        if ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
-            const int W = oprevi->getWidth();
-            const int H = oprevi->getHeight();
-            LabImage labcbdl(W, H);
-            ipf.rgb2lab(*oprevi, labcbdl, params.icm.workingProfile);
-            ipf.dirpyrequalizer(&labcbdl, scale);
-            ipf.lab2rgb(labcbdl, *oprevi, params.icm.workingProfile);
-        }
+        // if ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
+        //     const int W = oprevi->getWidth();
+        //     const int H = oprevi->getHeight();
+        //     LabImage labcbdl(W, H);
+        //     ipf.rgb2lab(*oprevi, labcbdl, params.icm.workingProfile);
+        //     ipf.dirpyrequalizer(&labcbdl, scale);
+        //     ipf.lab2rgb(labcbdl, *oprevi, params.icm.workingProfile);
+        // }
     
         readyphase++;
         progress("Preparing shadow/highlight map...", 100 * readyphase / numofphases);
@@ -742,14 +742,18 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                         }
                     }
             */
-            if (params.dirpyrequalizer.cbdlMethod == "aft") {
-                if (((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled))) {
-                    progress("Pyramid wavelet...", 100 * readyphase / numofphases);
-                    ipf.dirpyrequalizer(nprevl, scale);
-                    //ipf.Lanczoslab (ip_wavelet(LabImage * lab, LabImage * dst, const procparams::EqualizerParams & eqparams), nprevl, 1.f/scale);
-                    readyphase++;
-                }
-            }
+
+            ipf.contrastByDetailLevels(nprevl);
+            readyphase++;
+                    
+            // if (params.dirpyrequalizer.cbdlMethod == "aft") {
+            //     if (((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled))) {
+            //         progress("Pyramid wavelet...", 100 * readyphase / numofphases);
+            //         ipf.dirpyrequalizer(nprevl, scale);
+            //         //ipf.Lanczoslab (ip_wavelet(LabImage * lab, LabImage * dst, const procparams::EqualizerParams & eqparams), nprevl, 1.f/scale);
+            //         readyphase++;
+            //     }
+            // }
     
     
             wavcontlutili = false;

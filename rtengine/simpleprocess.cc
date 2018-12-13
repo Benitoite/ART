@@ -378,14 +378,14 @@ private:
         //ImProcFunctions ipf (&params, true);
         ImProcFunctions &ipf = * (ipf_p.get());
 
-        if (params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
-            const int W = baseImg->getWidth();
-            const int H = baseImg->getHeight();
-            LabImage labcbdl (W, H);
-            ipf.rgb2lab (*baseImg, labcbdl, params.icm.workingProfile);
-            ipf.dirpyrequalizer (&labcbdl, 1);
-            ipf.lab2rgb (labcbdl, *baseImg, params.icm.workingProfile);
-        }
+        // if (params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
+        //     const int W = baseImg->getWidth();
+        //     const int H = baseImg->getHeight();
+        //     LabImage labcbdl (W, H);
+        //     ipf.rgb2lab (*baseImg, labcbdl, params.icm.workingProfile);
+        //     ipf.dirpyrequalizer (&labcbdl, 1);
+        //     ipf.lab2rgb (labcbdl, *baseImg, params.icm.workingProfile);
+        // }
 
         //gamma TRC working
         if (params.icm.workingTRC == "Custom") { //exec TRC IN free
@@ -587,13 +587,13 @@ private:
 
         params.wavelet.getCurves (wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL );
 
-
-        // directional pyramid wavelet
-        if (params.dirpyrequalizer.cbdlMethod == "aft") {
-            if ((params.colorappearance.enabled && !settings->autocielab)  || !params.colorappearance.enabled) {
-                ipf.dirpyrequalizer (labView, 1);    //TODO: this is the luminance tonecurve, not the RGB one
-            }
-        }
+        ipf.contrastByDetailLevels(labView);
+        // // directional pyramid wavelet
+        // if (params.dirpyrequalizer.cbdlMethod == "aft") {
+        //     if ((params.colorappearance.enabled && !settings->autocielab)  || !params.colorappearance.enabled) {
+        //         ipf.dirpyrequalizer (labView, 1);    //TODO: this is the luminance tonecurve, not the RGB one
+        //     }
+        // }
 
         bool wavcontlutili = false;
 

@@ -703,12 +703,14 @@ class DirPyrEqualizerParamsEdited
 
 public:
     bool enabled;
-    bool gamutlab;
-    bool mult[6];
-    bool cbdlMethod;
-    bool threshold;
-    bool skinprotect;
-    bool hueskin;
+    bool levels;
+    bool showMask;
+    // bool gamutlab;
+    // bool mult[6];
+    // bool cbdlMethod;
+    // bool threshold;
+    // bool skinprotect;
+    // bool hueskin;
     //     bool algo;
 };
 

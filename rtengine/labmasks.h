@@ -27,6 +27,6 @@
 
 namespace rtengine {
 
-bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> &Lmask, std::vector<array2D<float>> &abmask);
+bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> *Lmask, std::vector<array2D<float>> *abmask);
 
 } // namespace rtengine

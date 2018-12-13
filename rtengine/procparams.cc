@@ -2462,9 +2462,8 @@ void WaveletParams::getCurves(
 
 }
 
-DirPyrEqualizerParams::DirPyrEqualizerParams() :
-    enabled(false),
-    gamutlab(false),
+
+DirPyrEqualizerParams::Levels::Levels():
     mult{
         1.0,
         1.0,
@@ -2473,31 +2472,62 @@ DirPyrEqualizerParams::DirPyrEqualizerParams() :
         1.0,
         1.0
     },
-    threshold(0.2),
-    skinprotect(0.0),
-    hueskin (-5, 25, 170, 120, false),
-    cbdlMethod("bef")
+    threshold(0.2)
 {
 }
+
+
+bool DirPyrEqualizerParams::Levels::operator==(const Levels &other) const
+{
+    for (int i = 0; i < 6; ++i) {
+        if (mult[i] != other.mult[i]) {
+            return false;
+        }
+    }
+    return threshold == other.threshold;
+}
+
+
+bool DirPyrEqualizerParams::Levels::operator!=(const Levels &other) const
+{
+    return !(*this == other);
+}
+
+
+DirPyrEqualizerParams::DirPyrEqualizerParams() :
+    enabled(false),
+    levels{Levels()},
+    labmasks{LabCorrectionMask()},
+    showMask(-1)
+    // threshold(0.2),
+    // skinprotect(0.0),
+    // hueskin (-5, 25, 170, 120, false),
+    // cbdlMethod("bef")
+{
+}
+
 
 bool DirPyrEqualizerParams::operator ==(const DirPyrEqualizerParams& other) const
 {
     return
         enabled == other.enabled
-        && gamutlab == other.gamutlab
-        && [this, &other]() -> bool
-            {
-                for (unsigned int i = 0; i < 6; ++i) {
-                    if (mult[i] != other.mult[i]) {
-                        return false;
-                    }
-                }
-                return true;
-            }()
-        && threshold == other.threshold
-        && skinprotect == other.skinprotect
-        && hueskin == other.hueskin
-        && cbdlMethod == other.cbdlMethod;
+        && levels == other.levels
+        && labmasks == other.labmasks
+        && showMask == other.showMask;
+        // && gamutlab == other.gamutlab
+        // && [this, &other]() -> bool
+        //     {
+        //         for (unsigned int i = 0; i < 6; ++i) {
+        //             if (mult[i] != other.mult[i]) {
+        //                 return false;
+        //             }
+        //         }
+        //         return true;
+        //     }()
+        // && threshold == other.threshold
+        // && skinprotect == other.skinprotect
+        // && hueskin == other.hueskin
+        // && cbdlMethod == other.cbdlMethod;
 }
 
 bool DirPyrEqualizerParams::operator !=(const DirPyrEqualizerParams& other) const
@@ -3547,19 +3577,32 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Directional pyramid equalizer
         saveToKeyfile(!pedited || pedited->dirpyrequalizer.enabled, "Directional Pyramid Equalizer", "Enabled", dirpyrequalizer.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrequalizer.gamutlab, "Directional Pyramid Equalizer", "Gamutlab", dirpyrequalizer.gamutlab, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrequalizer.cbdlMethod, "Directional Pyramid Equalizer", "cbdlMethod", dirpyrequalizer.cbdlMethod, keyFile);
-
-        for (int i = 0; i < 6; i++) {
-            std::stringstream ss;
-            ss << "Mult" << i;
-
-            saveToKeyfile(!pedited || pedited->dirpyrequalizer.mult[i], "Directional Pyramid Equalizer", ss.str(), dirpyrequalizer.mult[i], keyFile);
+        if (!pedited || pedited->dirpyrequalizer.levels) {
+            for (size_t j = 0; j < dirpyrequalizer.levels.size(); ++j) {
+                std::string n = std::to_string(j+1);
+                auto &l = dirpyrequalizer.levels[j];
+                for (int i = 0; i < 6; ++i) {
+                    putToKeyfile("Directional Pyramid Equalizer", Glib::ustring("Mult") + std::to_string(i) + "_" + n, l.mult[i], keyFile);
+                }
+                putToKeyfile("Directional Pyramid Equalizer", Glib::ustring("Threshold_") + n, l.threshold, keyFile);
+                dirpyrequalizer.labmasks[j].save(keyFile, "Directional Pyramid Equalizer", "", Glib::ustring("_") + n);
+            }
         }
+        saveToKeyfile(!pedited || pedited->dirpyrequalizer.showMask, "Directional Pyramid Equalizer", "ShowMask", dirpyrequalizer.showMask, keyFile);
+        
+        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.gamutlab, "Directional Pyramid Equalizer", "Gamutlab", dirpyrequalizer.gamutlab, keyFile);
+        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.cbdlMethod, "Directional Pyramid Equalizer", "cbdlMethod", dirpyrequalizer.cbdlMethod, keyFile);
 
-        saveToKeyfile(!pedited || pedited->dirpyrequalizer.threshold, "Directional Pyramid Equalizer", "Threshold", dirpyrequalizer.threshold, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrequalizer.skinprotect, "Directional Pyramid Equalizer", "Skinprotect", dirpyrequalizer.skinprotect, keyFile);
-        saveToKeyfile(!pedited || pedited->dirpyrequalizer.hueskin, "Directional Pyramid Equalizer", "Hueskin", dirpyrequalizer.hueskin.toVector(), keyFile);
+        // for (int i = 0; i < 6; i++) {
+        //     std::stringstream ss;
+        //     ss << "Mult" << i;
+
+        //     saveToKeyfile(!pedited || pedited->dirpyrequalizer.mult[i], "Directional Pyramid Equalizer", ss.str(), dirpyrequalizer.mult[i], keyFile);
+        // }
+
+        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.threshold, "Directional Pyramid Equalizer", "Threshold", dirpyrequalizer.threshold, keyFile);
+        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.skinprotect, "Directional Pyramid Equalizer", "Skinprotect", dirpyrequalizer.skinprotect, keyFile);
+        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.hueskin, "Directional Pyramid Equalizer", "Hueskin", dirpyrequalizer.hueskin.toVector(), keyFile);
 
 // HSV Equalizer
         saveToKeyfile(!pedited || pedited->hsvequalizer.enabled, "HSV Equalizer", "Enabled", hsvequalizer.enabled, keyFile);
@@ -4879,62 +4922,110 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
         }
 
         if (keyFile.has_group("Directional Pyramid Equalizer")) {
-            assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Enabled", pedited, dirpyrequalizer.enabled, pedited->dirpyrequalizer.enabled);
-            assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Gamutlab", pedited, dirpyrequalizer.gamutlab, pedited->dirpyrequalizer.gamutlab);
-            assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "cbdlMethod", pedited, dirpyrequalizer.cbdlMethod, pedited->dirpyrequalizer.cbdlMethod);
+            if (ppVersion < 347) {
+                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Enabled", pedited, dirpyrequalizer.enabled, pedited->dirpyrequalizer.enabled);
+//                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Gamutlab", pedited, dirpyrequalizer.gamutlab, pedited->dirpyrequalizer.gamutlab);
+//                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "cbdlMethod", pedited, dirpyrequalizer.cbdlMethod, pedited->dirpyrequalizer.cbdlMethod);
 
-            if (keyFile.has_key("Directional Pyramid Equalizer", "Hueskin")) {
-                const std::vector<int> thresh = keyFile.get_integer_list("Directional Pyramid Equalizer", "Hueskin");
+                // if (keyFile.has_key("Directional Pyramid Equalizer", "Hueskin")) {
+                //     const std::vector<int> thresh = keyFile.get_integer_list("Directional Pyramid Equalizer", "Hueskin");
 
-                if (thresh.size() >= 4) {
-                    dirpyrequalizer.hueskin.setValues(thresh[0], thresh[1], min(thresh[2], 300), min(thresh[3], 300));
-                }
+                //     if (thresh.size() >= 4) {
+                //         dirpyrequalizer.hueskin.setValues(thresh[0], thresh[1], min(thresh[2], 300), min(thresh[3], 300));
+                //     }
 
-                if (pedited) {
-                    pedited->dirpyrequalizer.hueskin = true;
-                }
-            }
+                //     if (pedited) {
+                //         pedited->dirpyrequalizer.hueskin = true;
+                //     }
+                // }
 
-            if (ppVersion < 316) {
-                for (int i = 0; i < 5; i ++) {
-                    std::stringstream ss;
-                    ss << "Mult" << i;
+                dirpyrequalizer.levels = {DirPyrEqualizerParams::Levels()};
+                dirpyrequalizer.labmasks = {LabCorrectionMask()};
 
-                    if (keyFile.has_key("Directional Pyramid Equalizer", ss.str())) {
-                        if (i == 4) {
-                            dirpyrequalizer.threshold = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
+                auto &l = dirpyrequalizer.levels[0];
 
-                            if (pedited) {
-                                pedited->dirpyrequalizer.threshold = true;
-                            }
-                        } else {
-                            dirpyrequalizer.mult[i] = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
+                if (ppVersion < 316) {
+                    for (int i = 0; i < 5; i ++) {
+                        std::stringstream ss;
+                        ss << "Mult" << i;
 
-                            if (pedited) {
-                                pedited->dirpyrequalizer.mult[i] = true;
+                        if (keyFile.has_key("Directional Pyramid Equalizer", ss.str())) {
+                            if (i == 4) {
+                                l.threshold = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
+
+                                if (pedited) {
+                                    pedited->dirpyrequalizer.levels = true;
+                                }
+                            } else {
+                                l.mult[i] = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
+
+                                if (pedited) {
+                                    pedited->dirpyrequalizer.levels = true;
+                                }
                             }
                         }
                     }
-                }
 
-                dirpyrequalizer.mult[4] = 1.0;
+                    l.mult[4] = 1.0;
+                } else {
+                    // 5 level wavelet + dedicated threshold parameter
+                    for (int i = 0; i < 6; i ++) {
+                        std::stringstream ss;
+                        ss << "Mult" << i;
+
+                        if (keyFile.has_key("Directional Pyramid Equalizer", ss.str())) {
+                            l.mult[i] = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
+
+                            if (pedited) {
+                                pedited->dirpyrequalizer.levels = true;
+                            }
+                        }
+                    }
+
+                    assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Threshold", pedited, l.threshold, pedited->dirpyrequalizer.levels);
+//                    assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Skinprotect", pedited, dirpyrequalizer.skinprotect, pedited->dirpyrequalizer.skinprotect);
+                    // TODO - port skin protection from old pp3's
+                }
             } else {
-                // 5 level wavelet + dedicated threshold parameter
-                for (int i = 0; i < 6; i ++) {
-                    std::stringstream ss;
-                    ss << "Mult" << i;
-
-                    if (keyFile.has_key("Directional Pyramid Equalizer", ss.str())) {
-                        dirpyrequalizer.mult[i] = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
-
-                        if (pedited) {
-                            pedited->dirpyrequalizer.mult[i] = true;
+                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Enabled", pedited, dirpyrequalizer.enabled, pedited->dirpyrequalizer.enabled);
+                
+                std::vector<DirPyrEqualizerParams::Levels> ll;
+                std::vector<LabCorrectionMask> lm;
+                bool found = false;
+                bool done = false;
+                for (int i = 1; !done; ++i) {
+                    DirPyrEqualizerParams::Levels cur;
+                    LabCorrectionMask curmask;
+                    done = true;
+                    std::string n = std::to_string(i);
+                    for (int j = 0; j < 6; ++j) {
+                        if (assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", Glib::ustring("Mult") + std::to_string(j) + "_" + n, pedited, cur.mult[j], pedited->dirpyrequalizer.levels)) {
+                            found = true;
+                            done = false;
                         }
                     }
+                    if (assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", Glib::ustring("Threshold_") + n, pedited, cur.threshold, pedited->dirpyrequalizer.levels)) {
+                        found = true;
+                        done = false;
+                    }
+                    if (curmask.load(keyFile, "Directional Pyramid Equalizer", "", Glib::ustring("_") + n)) {
+                        found = true;
+                        done = false;
+                        if (pedited) {
+                            pedited->dirpyrequalizer.levels = true;
+                        }
+                    }
+                    if (!done) {
+                        ll.emplace_back(cur);
+                        lm.emplace_back(curmask);
+                    }
                 }
-
-                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Threshold", pedited, dirpyrequalizer.threshold, pedited->dirpyrequalizer.threshold);
-                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Skinprotect", pedited, dirpyrequalizer.skinprotect, pedited->dirpyrequalizer.skinprotect);
+                if (found) {
+                    dirpyrequalizer.levels = std::move(ll);
+                    dirpyrequalizer.labmasks = std::move(lm);
+                }
+                assert(dirpyrequalizer.levels.size() == dirpyrequalizer.labmasks.size());
+                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "ShowMask", pedited, dirpyrequalizer.showMask, pedited->dirpyrequalizer.showMask);
             }
         }
 

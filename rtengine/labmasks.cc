@@ -134,7 +134,7 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
 } // namespace
 
 
-bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> &Lmask, std::vector<array2D<float>> &abmask)
+bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> *Lmask, std::vector<array2D<float>> *abmask)
 {
     int n = masks.size();
     if (show_mask_idx >= n) {
@@ -160,12 +160,16 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
         }
     }
 
-    assert(abmask.size() == size_t(n));
-    assert(Lmask.size() == size_t(n));
+    assert(!abmask || abmask->size() == size_t(n));
+    assert(!Lmask || Lmask->size() == size_t(n));
     
     for (int i = begin_idx; i < end_idx; ++i) {
-        abmask[i](lab->W, lab->H);
-        Lmask[i](lab->W, lab->H);
+        if (abmask) {
+            (*abmask)[i](lab->W, lab->H);
+        }
+        if (Lmask) {
+            (*Lmask)[i](lab->W, lab->H);
+        }
     }
 
     array2D<float> guide(lab->W, lab->H);
@@ -214,7 +218,12 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
                     auto &cm = cmask[i];
                     auto &lm = lmask[i];
                     float blend = LIM01((hm ? hm->getVal(h) : 1.f) * (cm ? cm->getVal(c) : 1.f) * (lm ? lm->getVal(l) : 1.f));
-                    Lmask[i][y][x] = abmask[i][y][x] = blend;
+                    if (Lmask) {
+                        (*Lmask)[i][y][x] = blend;
+                    }
+                    if (abmask) {
+                        (*abmask)[i][y][x] = blend;
+                    }
                 }
             }
         }
@@ -225,8 +234,12 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
         blur = blur < 0.f ? -1.f/blur : 1.f + blur;
         int r1 = max(int(4 / scale * blur + 0.5), 1);
         int r2 = max(int(25 / scale * blur + 0.5), 1);
-        rtengine::guidedFilter(guide, abmask[i], abmask[i], r1, 0.001, multithread);
-        rtengine::guidedFilter(guide, Lmask[i], Lmask[i], r2, 0.0001, multithread);
+        if (abmask) {
+            rtengine::guidedFilter(guide, (*abmask)[i], (*abmask)[i], r1, 0.001, multithread);
+        }
+        if (Lmask) {
+            rtengine::guidedFilter(guide, (*Lmask)[i], (*Lmask)[i], r2, 0.0001, multithread);
+        }
     }
 
     if (full_width < 0) {
@@ -243,20 +256,26 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
 #endif
             for (int y = 0; y < lab->H; ++y) {
                 for (int x = 0; x < lab->W; ++x) {
-                    abmask[i][y][x] *= guide[y][x];
-                    Lmask[i][y][x] *= guide[y][x];
+                    if (abmask) {
+                        (*abmask)[i][y][x] *= guide[y][x];
+                    }
+                    if (Lmask) {
+                        (*Lmask)[i][y][x] *= guide[y][x];
+                    }
                 }
             }
         }
     }
 
     if (show_mask_idx >= 0) {
+        auto *smask = abmask ? abmask : Lmask;
+        
 #ifdef _OPENMP
         #pragma omp parallel for if (multithread)
 #endif
         for (int y = 0; y < lab->H; ++y) {
             for (int x = 0; x < lab->W; ++x) {
-                auto blend = abmask[show_mask_idx][y][x];
+                auto blend = smask ? (*smask)[show_mask_idx][y][x] : 0.f;
                 lab->a[y][x] = 0.f;
                 lab->b[y][x] = blend * 42000.f;
                 lab->L[y][x] = LIM(lab->L[y][x] + 32768.f * blend, 0.f, 32768.f);

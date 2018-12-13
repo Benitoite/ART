@@ -500,7 +500,7 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
 
         const bool epdEnabled = params->epd.enabled;
         bool ciedata = (params->colorappearance.datacie && pW != 1) && ! ((params->colorappearance.tonecie && (epdEnabled)) || (params->sharpening.enabled && settings->autocielab && execsharp)
-                       || (params->dirpyrequalizer.enabled && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
+                       || (false/*params->dirpyrequalizer.enabled*/ && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
                        || (params->impulseDenoise.enabled && settings->autocielab) ||  (params->colorappearance.badpixsl > 0 && settings->autocielab));
 
         ColorTemp::temp2mulxyz (params->wb.temperature, params->wb.method, Xw, Zw); //compute white Xw Yw Zw  : white current WB
@@ -929,7 +929,7 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
         const float coe = pow_F (fl, 0.25f);
         const float QproFactor = ( 0.4f / c ) * ( aw + 4.0f ) ;
         const bool LabPassOne = ! ((params->colorappearance.tonecie && (epdEnabled)) || (params->sharpening.enabled && settings->autocielab && execsharp)
-                                   || (params->dirpyrequalizer.enabled && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
+                                   || (false/*params->dirpyrequalizer.enabled*/ && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
                                    || (params->impulseDenoise.enabled && settings->autocielab) ||  (params->colorappearance.badpixsl > 0 && settings->autocielab));
         //printf("coQ=%f\n", coefQ);
 
@@ -1628,7 +1628,7 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
 
         if (settings->autocielab) {
             if ((params->colorappearance.tonecie && (epdEnabled)) || (params->sharpening.enabled && settings->autocielab && execsharp)
-                    || (params->dirpyrequalizer.enabled && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
+                    || (false/*params->dirpyrequalizer.enabled*/ && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
                     || (params->impulseDenoise.enabled && settings->autocielab) ||  (params->colorappearance.badpixsl > 0 && settings->autocielab)) {
 
 
@@ -1643,6 +1643,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
                     }
 
 //if(params->dirpyrequalizer.enabled) if(execsharp) {
+//-----------------------------------------------------------------------------
+#if 0 // ALBERTO
+//-----------------------------------------------------------------------------
                 if (params->dirpyrequalizer.enabled && params->dirpyrequalizer.gamutlab && rtt) { //remove artifacts by gaussian blur - skin control, but not for thumbs
                     constexpr float artifact = 4.f;
                     constexpr float chrom = 50.f;
@@ -1652,6 +1655,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
                     badpixcam (ncie, artifact / scale, 5, 2, chrom, hotbad);  //enabled remove artifacts for cbDL
                     lab->reallocLab();
                 }
+//-----------------------------------------------------------------------------
+#endif // ALBERTO
+//-----------------------------------------------------------------------------
 
 //if(params->colorappearance.badpixsl > 0) { int mode=params->colorappearance.badpixsl;
                 if (params->colorappearance.badpixsl > 0 && execsharp) {
@@ -1680,6 +1686,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
                     }
 
 //if(params->dirpyrequalizer.enabled) if(execsharp) {
+//---------------------------------------------------------------------------
+#if 0 // ALBERTO
+//---------------------------------------------------------------------------
                 if (params->dirpyrequalizer.enabled /*&& execsharp*/)  {
 //  if(params->dirpyrequalizer.algo=="FI") choice=0;
 //  else if(params->dirpyrequalizer.algo=="LA") choice=1;
@@ -1700,6 +1709,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
                                                             }
                                                             */
                 }
+//---------------------------------------------------------------------------
+#endif // ALBERTO
+//---------------------------------------------------------------------------
 
                 const float Qredi = ( 4.0f / c_)  * ( a_w + 4.0f );
                 const float co_e = (pow_F (f_l, 0.25f));
@@ -1725,7 +1737,7 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
         }
 
         if ((params->colorappearance.tonecie && (epdEnabled)) || (params->sharpening.enabled && settings->autocielab && execsharp)
-                || (params->dirpyrequalizer.enabled && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
+                || (false/*params->dirpyrequalizer.enabled*/ && settings->autocielab) || (params->defringe.enabled && settings->autocielab)  || (params->sharpenMicro.enabled && settings->autocielab)
                 || (params->impulseDenoise.enabled && settings->autocielab) ||  (params->colorappearance.badpixsl > 0 && settings->autocielab)) {
 
             ciedata = (params->colorappearance.datacie && pW != 1);
@@ -2256,7 +2268,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer
     }
     bool hasgammabw = gammabwr != 1.f || gammabwg != 1.f || gammabwb != 1.f;
 
-    if (hasColorToning || blackwhite || (params->dirpyrequalizer.cbdlMethod == "bef" && params->dirpyrequalizer.enabled)) {
+    if (hasColorToning || blackwhite) {// || (params->dirpyrequalizer.cbdlMethod == "bef" && params->dirpyrequalizer.enabled)) {
         tmpImage = new Imagefloat (working->getWidth(), working->getHeight());
     }
 
@@ -4889,25 +4901,6 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
     }
 }
 
-void ImProcFunctions::dirpyrequalizer (LabImage* lab, int scale)
-{
-    if (params->dirpyrequalizer.enabled && lab->W >= 8 && lab->H >= 8) {
-        float b_l = static_cast<float> (params->dirpyrequalizer.hueskin.getBottomLeft()) / 100.f;
-        float t_l = static_cast<float> (params->dirpyrequalizer.hueskin.getTopLeft()) / 100.f;
-        float t_r = static_cast<float> (params->dirpyrequalizer.hueskin.getTopRight()) / 100.f;
-        //      if     (params->dirpyrequalizer.algo=="FI") choice=0;
-        //      else if(params->dirpyrequalizer.algo=="LA") choice=1;
-
-        if (params->dirpyrequalizer.gamutlab && params->dirpyrequalizer.skinprotect != 0) {
-            constexpr float artifact = 4.f;
-            constexpr float chrom = 50.f;
-            ImProcFunctions::badpixlab (lab, artifact / scale, 5, chrom);    //for artifacts
-        }
-
-        //dirpyrLab_equalizer(lab, lab, params->dirpyrequalizer.mult);
-        dirpyr_equalizer (lab->L, lab->L, lab->W, lab->H, lab->a, lab->b, params->dirpyrequalizer.mult, params->dirpyrequalizer.threshold, params->dirpyrequalizer.skinprotect, b_l, t_l, t_r, scale);
-    }
-}
 void ImProcFunctions::EPDToneMapCIE (CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates, int skip)
 {
 

@@ -18,76 +18,159 @@
  */
 
 #include "dirpyrequalizer.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-DirPyrEqualizer::DirPyrEqualizer () : FoldableToolPanel(this, "dirpyrequalizer", M("TP_DIRPYREQUALIZER_LABEL"), true, true)
+
+//-----------------------------------------------------------------------------
+// DirPyrEqMasksContentProvider
+//-----------------------------------------------------------------------------
+
+class DirPyrEqMasksContentProvider: public LabMasksContentProvider {
+public:
+    DirPyrEqMasksContentProvider(DirPyrEqualizer *parent):
+        parent_(parent)
+    {
+    }
+
+    Gtk::Widget *getWidget() override
+    {
+        return parent_->box;
+    }
+
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) override
+    {
+        mask_list = parent_->EvList;
+        h_mask = parent_->EvHueMask;
+        c_mask = parent_->EvChromaticityMask;
+        l_mask = parent_->EvLightnessMask;
+        blur = parent_->EvMaskBlur;
+        show = parent_->EvShowMask;
+        area_mask = parent_->EvAreaMask;
+    }
+
+    ToolPanelListener *listener() override
+    {
+        if (parent_->getEnabled()) {
+            return parent_->listener;
+        }
+        return nullptr;
+    }
+
+    void selectionChanging(int idx) override
+    {
+        parent_->levelsGet(idx);
+    }
+
+    void selectionChanged(int idx) override
+    {
+        parent_->levelsShow(idx);
+    }
+
+    bool addPressed() override
+    {
+        parent_->levelsData.push_back(DirPyrEqualizerParams::Levels());
+        return true;
+    }
+
+    bool removePressed(int idx) override
+    {
+        parent_->levelsData.erase(parent_->levelsData.begin() + idx);
+        return true;
+    }
+    
+    bool copyPressed(int idx) override
+    {
+        parent_->levelsData.push_back(parent_->levelsData[idx]);
+        return true;
+    }
+    
+    bool moveUpPressed(int idx) override
+    {
+        auto r = parent_->levelsData[idx];
+        parent_->levelsData.erase(parent_->levelsData.begin() + idx);
+        --idx;
+        parent_->levelsData.insert(parent_->levelsData.begin() + idx, r);
+        return true;
+    }
+    
+    bool moveDownPressed(int idx) override
+    {
+        auto r = parent_->levelsData[idx];
+        parent_->levelsData.erase(parent_->levelsData.begin() + idx);
+        ++idx;
+        parent_->levelsData.insert(parent_->levelsData.begin() + idx, r);
+        return true;
+    }
+
+    int getColumnCount() override
+    {
+        return 1;
+    }
+    
+    Glib::ustring getColumnHeader(int col) override
+    {
+        return M("TP_CBDL_LIST_TITLE");
+    }
+    
+    Glib::ustring getColumnContent(int col, int row) override
+    {
+        auto &r = parent_->levelsData[row];
+
+        return Glib::ustring::compose(
+            "%1 %2 %3\n%4 %5 %6 [%7]",
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[0]),
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[1]),
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[2]),
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[3]),
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[4]),
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[5]),
+            Glib::ustring::format(std::fixed, std::setprecision(2), r.threshold));
+    }
+
+private:
+    DirPyrEqualizer *parent_;
+};
+
+
+//-----------------------------------------------------------------------------
+// DirPyrEqualizer
+//-----------------------------------------------------------------------------
+
+DirPyrEqualizer::DirPyrEqualizer(): FoldableToolPanel(this, "dirpyrequalizer", M("TP_DIRPYREQUALIZER_LABEL"), true, true)
 {
-
-    std::vector<GradientMilestone> milestones;
-
-    float r, g, b;
-    Color::hsv2rgb01(0.7500, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.    , r, g, b) ); // hsv: 0.75   rad: -0.9
-    Color::hsv2rgb01(0.8560, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.1470, r, g, b) ); // hsv: 0.856  rad: -0.4
-    Color::hsv2rgb01(0.9200, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.2353, r, g, b) ); // hsv: 0.92   rad: -0.1
-    Color::hsv2rgb01(0.9300, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.2647, r, g, b) ); // hsv: 0.93   rad:  0
-    Color::hsv2rgb01(0.9600, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.3380, r, g, b) ); // hsv: 0.96   rad:  0.25
-    Color::hsv2rgb01(1.0000, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.4412, r, g, b) ); // hsv: 1.     rad:  0.6
-    Color::hsv2rgb01(0.0675, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.6176, r, g, b) ); // hsv: 0.0675 rad:  1.2
-    Color::hsv2rgb01(0.0900, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.6764, r, g, b) ); // hsv: 0.09   rad:  1.4
-    Color::hsv2rgb01(0.1700, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.7647, r, g, b) ); // hsv: 0.17   rad:  1.7
-    Color::hsv2rgb01(0.2650, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(0.8824, r, g, b) ); // hsv: 0.265  rad:  2.1
-    Color::hsv2rgb01(0.3240, 0.5, 0.5, r, g, b);
-    milestones.push_back( GradientMilestone(1.    , r, g, b) ); // hsv: 0.324  rad:  2.5
-
-    Gtk::VBox * cbVBox = Gtk::manage ( new Gtk::VBox());
-    cbVBox->set_border_width(4);
-    cbVBox->set_spacing(2);
-
-    cdbox = Gtk::manage (new Gtk::HBox ());
-    labmcd = Gtk::manage (new Gtk::Label (M("TP_CBDL_METHOD") + ":"));
-    cdbox->pack_start (*labmcd, Gtk::PACK_SHRINK, 1);
-
-    cbdlMethod = Gtk::manage (new MyComboBoxText ());
-    cbdlMethod->append (M("TP_CBDL_BEF"));
-    cbdlMethod->append (M("TP_CBDL_AFT"));
-    cbdlMethod->set_active(0);
-    cbdlMethodConn = cbdlMethod->signal_changed().connect ( sigc::mem_fun(*this, &DirPyrEqualizer::cbdlMethodChanged) );
-    cbdlMethod->set_tooltip_markup (M("TP_CBDL_METHOD_TOOLTIP"));
-    cdbox->pack_start(*cbdlMethod);
-    cbVBox->pack_start(*cdbox);
-    pack_start(*cbVBox);
+    auto m = ProcEventMapper::getInstance();
+    EvList = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_LIST");
+    EvHueMask = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_HUEMASK");
+    EvChromaticityMask = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_MASKBLUR");
+    EvShowMask = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_SHOWMASK");
+    EvAreaMask = m->newEvent(SHARPENING, "HISTORY_MSG_CBDL_AREAMASK");
+    
+    box = Gtk::manage(new Gtk::VBox());
 
     Gtk::HBox * buttonBox1 = Gtk::manage (new Gtk::HBox(true, 10));
-    pack_start(*buttonBox1);
+    box->pack_start(*buttonBox1);
 
     Gtk::Button * lumacontrastMinusButton = Gtk::manage (new Gtk::Button(M("TP_DIRPYREQUALIZER_LUMACONTRAST_MINUS")));
     buttonBox1->pack_start(*lumacontrastMinusButton);
-    lumacontrastMinusPressedConn = lumacontrastMinusButton->signal_pressed().connect( sigc::mem_fun(*this, &DirPyrEqualizer::lumacontrastMinusPressed));
+    lumacontrastMinusButton->signal_pressed().connect( sigc::mem_fun(*this, &DirPyrEqualizer::lumacontrastMinusPressed));
 
     Gtk::Button * lumaneutralButton = Gtk::manage (new Gtk::Button(M("TP_DIRPYREQUALIZER_LUMANEUTRAL")));
     buttonBox1->pack_start(*lumaneutralButton);
-    lumaneutralPressedConn = lumaneutralButton->signal_pressed().connect( sigc::mem_fun(*this, &DirPyrEqualizer::lumaneutralPressed));
+    lumaneutralButton->signal_pressed().connect( sigc::mem_fun(*this, &DirPyrEqualizer::lumaneutralPressed));
 
     Gtk::Button * lumacontrastPlusButton = Gtk::manage (new Gtk::Button(M("TP_DIRPYREQUALIZER_LUMACONTRAST_PLUS")));
     buttonBox1->pack_start(*lumacontrastPlusButton);
-    lumacontrastPlusPressedConn = lumacontrastPlusButton->signal_pressed().connect( sigc::mem_fun(*this, &DirPyrEqualizer::lumacontrastPlusPressed));
+    lumacontrastPlusButton->signal_pressed().connect( sigc::mem_fun(*this, &DirPyrEqualizer::lumacontrastPlusPressed));
 
     buttonBox1->show_all_children();
 
     Gtk::HSeparator *separator2 = Gtk::manage (new  Gtk::HSeparator());
-    pack_start(*separator2, Gtk::PACK_SHRINK, 2);
+    box->pack_start(*separator2, Gtk::PACK_SHRINK, 2);
 
     for(int i = 0; i < 6; i++) {
         Glib::ustring ss;
@@ -101,56 +184,24 @@ DirPyrEqualizer::DirPyrEqualizer () : FoldableToolPanel(this, "dirpyrequalizer",
 
         multiplier[i] = Gtk::manage ( new Adjuster (ss, 0, 4, 0.01, 1.0) );
         multiplier[i]->setAdjusterListener(this);
-        pack_start(*multiplier[i]);
+        box->pack_start(*multiplier[i]);
     }
 
     Gtk::HSeparator *separator3 = Gtk::manage (new  Gtk::HSeparator());
-    pack_start(*separator3, Gtk::PACK_SHRINK, 2);
+    box->pack_start(*separator3, Gtk::PACK_SHRINK, 2);
 
     threshold = Gtk::manage ( new Adjuster (M("TP_DIRPYREQUALIZER_THRESHOLD"), 0, 1, 0.01, 0.2) );
     threshold->setAdjusterListener(this);
-    pack_start(*threshold);
+    box->pack_start(*threshold);
 
-    Gtk::HSeparator *separator4 = Gtk::manage (new  Gtk::HSeparator());
-    pack_start(*separator4, Gtk::PACK_SHRINK, 2);
-    /*
-        algoHBox = Gtk::manage (new Gtk::HBox ());
-        algoHBox->set_spacing (2);
-        algoHBox->set_tooltip_markup (M("TP_DIRPYREQUALIZER_ALGO_TOOLTIP"));
-    */
-//    alLabel = Gtk::manage (new Gtk::Label (M("TP_DIRPYREQUALIZER_ALGO")+":"));
-//  algoHBox->pack_start (*alLabel, Gtk::PACK_SHRINK);
-    /*
-        algo = Gtk::manage (new MyComboBoxText ());
-        algo->append (M("TP_DIRPYREQUALIZER_ALGO_FI"));
-        algo->append (M("TP_DIRPYREQUALIZER_ALGO_LA"));
-        algo->set_active (1);
-    //  algoHBox->pack_start (*algo);
-    //  pack_start(*algoHBox);
-        algoconn = algo->signal_changed().connect ( sigc::mem_fun(*this, &DirPyrEqualizer::algoChanged) );
-    */
-    hueskin = Gtk::manage (new ThresholdAdjuster (M("TP_DIRPYREQUALIZER_HUESKIN"), -40., 210., -5., 25., 170., 120., 0, false));        //default (b_l 0, t_l 30, b_r 170, t_r 120);
-    hueskin->set_tooltip_markup (M("TP_DIRPYREQUALIZER_HUESKIN_TOOLTIP"));
-
-    hueskin->setBgGradient(milestones);
-    pack_start(*hueskin);
-
-    skinprotect = Gtk::manage ( new Adjuster (M("TP_DIRPYREQUALIZER_SKIN"), -100, 100, 1, 0.) );
-    skinprotect->setAdjusterListener(this);
-    pack_start(*skinprotect);
-    skinprotect->set_tooltip_markup (M("TP_DIRPYREQUALIZER_SKIN_TOOLTIP"));
-
-    gamutlab = Gtk::manage (new Gtk::CheckButton (M("TP_DIRPYREQUALIZER_ARTIF")));
-    gamutlab->set_active (true);
-    pack_start(*gamutlab);
-    gamutlabConn = gamutlab->signal_toggled().connect( sigc::mem_fun(*this, &DirPyrEqualizer::gamutlabToggled) );
-    gamutlab->set_tooltip_markup (M("TP_DIRPYREQUALIZER_TOOLTIP"));
-
-    hueskin->setAdjusterListener (this);
+    labMasksContentProvider.reset(new DirPyrEqMasksContentProvider(this));
+    labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
+    pack_start(*labMasks, Gtk::PACK_EXPAND_WIDGET, 4);   
 
     show_all_children ();
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 }
+
 
 DirPyrEqualizer::~DirPyrEqualizer ()
 {
@@ -159,190 +210,103 @@ DirPyrEqualizer::~DirPyrEqualizer ()
 
 void DirPyrEqualizer::read (const ProcParams* pp, const ParamsEdited* pedited)
 {
-
-    disableListener ();
-    cbdlMethodConn.block(true);
-
-    if (pedited) {
-
-        set_inconsistent (multiImage && !pedited->dirpyrequalizer.enabled);
-        gamutlab->set_inconsistent (!pedited->dirpyrequalizer.gamutlab);
-
-        if (!pedited->dirpyrequalizer.cbdlMethod) {
-            cbdlMethod->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-
-        for(int i = 0; i < 6; i++) {
-            multiplier[i]->setEditedState (pedited->dirpyrequalizer.mult[i] ? Edited : UnEdited);
-        }
-
-        threshold->setEditedState (pedited->dirpyrequalizer.threshold ? Edited : UnEdited);
-        skinprotect->setEditedState (pedited->dirpyrequalizer.skinprotect ? Edited : UnEdited);
-        hueskin->setEditedState     (pedited->dirpyrequalizer.hueskin ? Edited : UnEdited);
-    }
+    disableListener();
 
     setEnabled(pp->dirpyrequalizer.enabled);
 
-    /*
-        algoconn.block(true);
-        if (pedited && !pedited->dirpyrequalizer.algo)
-            algo->set_active (2);
-        else if (pp->dirpyrequalizer.algo=="FI")
-            algo->set_active (0);
-        else if (pp->dirpyrequalizer.algo=="LA")
-            algo->set_active (1);
-        algoconn.block(false);
-        algoChanged();
-    */
-    gamutlabConn.block (true);
-    gamutlab->set_active (pp->dirpyrequalizer.gamutlab);
-    gamutlab->set_sensitive (pp->dirpyrequalizer.skinprotect != 0);
-    gamutlabConn.block (false);
-    lastgamutlab = pp->dirpyrequalizer.gamutlab;
-
-    for (int i = 0; i < 6; i++) {
-        multiplier[i]->setValue(pp->dirpyrequalizer.mult[i]);
+    levelsData = pp->dirpyrequalizer.levels;
+    auto m = pp->dirpyrequalizer.labmasks;
+    if (levelsData.empty()) {
+        levelsData.emplace_back(rtengine::DirPyrEqualizerParams::Levels());
+        m.emplace_back(rtengine::LabCorrectionMask());
+    }
+    labMasks->updateAreaMaskDefaults(pp);
+    labMasks->setMasks(m, pp->dirpyrequalizer.showMask);
+        
+    
+    if (pedited) {
+        set_inconsistent(multiImage && !pedited->dirpyrequalizer.enabled);
+        if (pedited->dirpyrequalizer.levels) {
+            labMasks->setEdited(true);
+            for (int i = 0; i < 6; i++) {
+                multiplier[i]->setEditedState(Edited);
+            }
+            threshold->setEditedState(Edited);
+        } else {
+            labMasks->setEdited(false);
+            for (int i = 0; i < 6; i++) {
+                multiplier[i]->setEditedState(UnEdited);
+            }
+            threshold->setEditedState(UnEdited);
+        }
     }
 
-    threshold->setValue(pp->dirpyrequalizer.threshold);
-    skinprotect->setValue(pp->dirpyrequalizer.skinprotect);
-    hueskin->setValue<int>(pp->dirpyrequalizer.hueskin);
-
-    if (pp->dirpyrequalizer.cbdlMethod == "bef") {
-        cbdlMethod->set_active (0);
-    } else if (pp->dirpyrequalizer.cbdlMethod == "aft") {
-        cbdlMethod->set_active (1);
-    }
-
-    cbdlMethodChanged ();
-    cbdlMethodConn.block(false);
-
-    enableListener ();
+    enableListener();
 }
+
 
 void DirPyrEqualizer::write (ProcParams* pp, ParamsEdited* pedited)
 {
-
     pp->dirpyrequalizer.enabled = getEnabled();
-    pp->dirpyrequalizer.gamutlab = gamutlab->get_active ();
-    pp->dirpyrequalizer.hueskin        = hueskin->getValue<int> ();
 
-    for (int i = 0; i < 6; i++) {
-        pp->dirpyrequalizer.mult[i] = multiplier[i]->getValue();
-    }
+    levelsGet(labMasks->getSelected());
+    pp->dirpyrequalizer.levels = levelsData;
+    labMasks->getMasks(pp->dirpyrequalizer.labmasks, pp->dirpyrequalizer.showMask);
+    assert(pp->dirpyrequalizer.levels.size() == pp->dirpyrequalizer.labmasks.size());
 
-    pp->dirpyrequalizer.threshold = threshold->getValue();
-    pp->dirpyrequalizer.skinprotect = skinprotect->getValue();
-
+    labMasks->updateSelected();
+        
     if (pedited) {
-
-        pedited->dirpyrequalizer.enabled =  !get_inconsistent();
-        pedited->dirpyrequalizer.hueskin        = hueskin->getEditedState ();
-        pedited->dirpyrequalizer.cbdlMethod    = cbdlMethod->get_active_text() != M("GENERAL_UNCHANGED");
-
-        for(int i = 0; i < 6; i++) {
-            pedited->dirpyrequalizer.mult[i] = multiplier[i]->getEditedState();
+        pedited->dirpyrequalizer.enabled = !get_inconsistent();
+        pedited->dirpyrequalizer.levels = labMasks->getEdited() || threshold->getEditedState();
+        for (int i = 0; i < 6; i++) {
+            if (multiplier[i]->getEditedState()) {
+                pedited->dirpyrequalizer.levels = true;
+            }
         }
-
-        pedited->dirpyrequalizer.threshold = threshold->getEditedState();
-        pedited->dirpyrequalizer.skinprotect = skinprotect->getEditedState();
-//       pedited->dirpyrequalizer.algo          = algo->get_active_text()!=M("GENERAL_UNCHANGED");
     }
-
-
-    if (cbdlMethod->get_active_row_number() == 0) {
-        pp->dirpyrequalizer.cbdlMethod = "bef";
-    } else if (cbdlMethod->get_active_row_number() == 1) {
-        pp->dirpyrequalizer.cbdlMethod = "aft";
-    }
-
-    /*    if (algo->get_active_row_number()==0)
-            pp->dirpyrequalizer.algo = "FI";
-        else if (algo->get_active_row_number()==1)
-            pp->dirpyrequalizer.algo = "LA";
-            */
 }
-/*
-void DirPyrEqualizer::algoChanged () {
-    if (listener && (multiImage||enabled->get_active()) ) {
-        listener->panelChanged (EvDirPyrEqualizeralg, algo->get_active_text ());}
-}
-*/
+
+
 void DirPyrEqualizer::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
 {
 
-    for (int i = 0; i < 6; i++) {
-        multiplier[i]->setDefault(defParams->dirpyrequalizer.mult[i]);
-    }
+    if (defParams->dirpyrequalizer.levels.size() == 1) {
+        for (int i = 0; i < 6; i++) {
+            multiplier[i]->setDefault(defParams->dirpyrequalizer.levels[0].mult[i]);
+        }
 
-    threshold->setDefault(defParams->dirpyrequalizer.threshold);
-    hueskin->setDefault<int> (defParams->dirpyrequalizer.hueskin);
+        threshold->setDefault(defParams->dirpyrequalizer.levels[0].threshold);
+    }
 
     if (pedited) {
         for (int i = 0; i < 6; i++) {
-            multiplier[i]->setDefaultEditedState(pedited->dirpyrequalizer.mult[i] ? Edited : UnEdited);
+            multiplier[i]->setDefaultEditedState(pedited->dirpyrequalizer.levels ? Edited : UnEdited);
         }
 
-        threshold->setDefaultEditedState(pedited->dirpyrequalizer.threshold ? Edited : UnEdited);
-        skinprotect->setDefaultEditedState(pedited->dirpyrequalizer.skinprotect ? Edited : UnEdited);
-        hueskin->setDefaultEditedState  (pedited->dirpyrequalizer.hueskin ? Edited : UnEdited);
+        threshold->setDefaultEditedState(pedited->dirpyrequalizer.levels ? Edited : UnEdited);
     } else {
         for (int i = 0; i < 6; i++) {
             multiplier[i]->setDefaultEditedState(Irrelevant);
         }
 
         threshold->setDefaultEditedState(Irrelevant);
-        skinprotect->setDefaultEditedState(Irrelevant);
-        hueskin->setDefaultEditedState (Irrelevant);
     }
 }
 
-void DirPyrEqualizer::adjusterChanged(ThresholdAdjuster* a, double newBottom, double newTop)
-{
-}
-
-void DirPyrEqualizer::adjusterChanged(ThresholdAdjuster* a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight)
-{
-}
-
-void DirPyrEqualizer::adjusterChanged(ThresholdAdjuster* a, int newBottom, int newTop)
-{
-}
-
-void DirPyrEqualizer::adjusterChanged(ThresholdAdjuster* a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight)
-{
-    if (listener && (multiImage || getEnabled()) ) {
-        listener->panelChanged (EvDirPyrEqualizerHueskin, hueskin->getHistoryString());
-    }
-}
-
-void DirPyrEqualizer::adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int newTopL, int newBottomR, int newTopR)
-{
-}
 
 void DirPyrEqualizer::setBatchMode (bool batchMode)
 {
-
-    ToolPanel::setBatchMode (batchMode);
+    // TODO
+    ToolPanel::setBatchMode(batchMode);
 
     for (int i = 0; i < 6; i++) {
         multiplier[i]->showEditedCB();
     }
 
     threshold->showEditedCB();
-    skinprotect->showEditedCB();
-    hueskin->showEditedCB ();
-//   algo->append (M("GENERAL_UNCHANGED"));
+    labMasks->setBatchMode();
 }
-
-void DirPyrEqualizer::cbdlMethodChanged()
-{
-
-    if (listener) {
-        listener->panelChanged (EvcbdlMethod, cbdlMethod->get_active_text ());
-    }
-}
-
 
 
 void DirPyrEqualizer::adjusterChanged(Adjuster* a, double newval)
@@ -352,12 +316,6 @@ void DirPyrEqualizer::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged (EvDirPyrEqualizerThreshold,
                                     Glib::ustring::compose("%1",
                                             Glib::ustring::format(std::fixed, std::setprecision(2), threshold->getValue()))
-                                   );
-        } else if (a == skinprotect) {
-            gamutlab->set_sensitive (skinprotect->getValue() != 0);
-            listener->panelChanged (EvDirPyrEqualizerSkin,
-                                    Glib::ustring::compose("%1",
-                                            Glib::ustring::format(std::fixed, std::setprecision(2), skinprotect->getValue()))
                                    );
         } else {
             listener->panelChanged (EvDirPyrEqualizer,
@@ -373,9 +331,11 @@ void DirPyrEqualizer::adjusterChanged(Adjuster* a, double newval)
     }
 }
 
+
 void DirPyrEqualizer::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
+
 
 void DirPyrEqualizer::enabledChanged ()
 {
@@ -391,30 +351,6 @@ void DirPyrEqualizer::enabledChanged ()
     }
 }
 
-void DirPyrEqualizer::gamutlabToggled ()
-{
-
-    if (batchMode) {
-        if (gamutlab->get_inconsistent()) {
-            gamutlab->set_inconsistent (false);
-            gamutlabConn.block (true);
-            gamutlab->set_active (false);
-            gamutlabConn.block (false);
-        } else if (lastgamutlab) {
-            gamutlab->set_inconsistent (true);
-        }
-
-        lastgamutlab = gamutlab->get_active ();
-    }
-
-    if (listener) {
-        if (gamutlab->get_active ()) {
-            listener->panelChanged (EvDirPyrEqlgamutlab, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged (EvDirPyrEqlgamutlab, M("GENERAL_DISABLED"));
-        }
-    }
-}
 
 void DirPyrEqualizer::lumaneutralPressed ()
 {
@@ -447,24 +383,66 @@ void DirPyrEqualizer::lumacontrastMinusPressed ()
     }
 }
 
+
 void DirPyrEqualizer::setAdjusterBehavior (bool multiplieradd, bool thresholdadd, bool skinadd)
 {
-
-    for (int i = 0; i < 6; i++) {
-        multiplier[i]->setAddMode(multiplieradd);
-    }
-
-    threshold->setAddMode(thresholdadd);
-    skinprotect->setAddMode(skinadd);
 }
 
 void DirPyrEqualizer::trimValues (rtengine::procparams::ProcParams* pp)
 {
+}
 
-    for (int i = 0; i < 6; i++) {
-        multiplier[i]->trimValue(pp->dirpyrequalizer.mult[i]);
+
+void DirPyrEqualizer::setEditProvider(EditDataProvider *provider)
+{
+    labMasks->setEditProvider(provider);
+}
+
+
+void DirPyrEqualizer::procParamsChanged(
+    const rtengine::procparams::ProcParams* params,
+    const rtengine::ProcEvent& ev,
+    const Glib::ustring& descr,
+    const ParamsEdited* paramsEdited)
+{
+    labMasks->updateAreaMaskDefaults(params);
+}
+
+
+void DirPyrEqualizer::updateGeometry(int fw, int fh)
+{
+    labMasks->updateGeometry(fw, fh);
+}
+
+
+void DirPyrEqualizer::levelsGet(int idx)
+{
+    if (idx < 0 || size_t(idx) >= levelsData.size()) {
+        return;
+    }
+    
+    auto &r = levelsData[idx];
+    for (int i = 0; i < 6; ++i) {
+        r.mult[i] = multiplier[i]->getValue();
+    }
+    r.threshold = threshold->getValue();
+}
+
+
+void DirPyrEqualizer::levelsShow(int idx)
+{
+    const bool disable = listener;
+    if (disable) {
+        disableListener();
     }
 
-    threshold->trimValue(pp->dirpyrequalizer.threshold);
-    skinprotect->trimValue(pp->dirpyrequalizer.skinprotect);
+    auto &r = levelsData[idx];
+    for (int i = 0; i < 6; ++i) {
+        multiplier[i]->setValue(r.mult[i]);
+    }
+    threshold->setValue(r.threshold);
+    
+    if (disable) {
+        enableListener();
+    }
 }

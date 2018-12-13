@@ -22,7 +22,7 @@
 
 namespace {
 
-constexpr int ID_LABREGION_HUE = 5;
+constexpr int ID_HUE_MASK = 5;
 
 inline bool hasMask(const std::vector<double> &dflt, const std::vector<double> &mask)
 {
@@ -36,7 +36,8 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     Gtk::VBox(),
     cp_(cp),
     masks_(),
-    selected_(0)
+    selected_(0),
+    listEdited(false)
 {
     Gtk::Widget *child = cp_->getWidget();
     cp_->getEvents(EvMaskList, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask);
@@ -94,8 +95,8 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     hb->pack_start(*vb, Gtk::PACK_SHRINK);
     pack_start(*hb, true, true);
 
+    pack_start(*Gtk::manage(new Gtk::HSeparator()));
     pack_start(*child);
-
     pack_start(*Gtk::manage(new Gtk::HSeparator()));
 
     maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LABMASKS_MASK"), 0.7));
@@ -106,14 +107,14 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     hueMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_HUE"), nullptr, false, true));
     hueMask->setIdentityValue(0.);
     hueMask->setResetCurve(FlatCurveType(default_params.hueMask[0]), default_params.hueMask);
-    hueMask->setCurveColorProvider(this, ID_LABREGION_HUE);
-    hueMask->setBottomBarColorProvider(this, ID_LABREGION_HUE);
+    hueMask->setCurveColorProvider(this, ID_HUE_MASK);
+    hueMask->setBottomBarColorProvider(this, ID_HUE_MASK);
     hueMask->setEditID(EUID_Lab_HHCurve, BT_SINGLEPLANE_FLOAT);
 
     chromaticityMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_CHROMATICITY"), nullptr, false, false));
     chromaticityMask->setIdentityValue(0.);
     chromaticityMask->setResetCurve(FlatCurveType(default_params.chromaticityMask[0]), default_params.chromaticityMask);
-    chromaticityMask->setBottomBarColorProvider(this, ID_LABREGION_HUE+1);
+    chromaticityMask->setBottomBarColorProvider(this, ID_HUE_MASK+1);
     chromaticityMask->setEditID(EUID_Lab_CCurve, BT_SINGLEPLANE_FLOAT);
 
     lightnessMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_LIGHTNESS"), nullptr, false, false));
@@ -252,7 +253,8 @@ void LabMasksPanel::onAddPressed()
     if (!cp_->addPressed()) {
         return;
     }
-    
+
+    listEdited = true;
     selected_ = masks_.size();
     masks_.push_back(rtengine::LabCorrectionMask());
     masks_.back().areaMask = defaultAreaMask;
@@ -272,6 +274,7 @@ void LabMasksPanel::onRemovePressed()
         return;
     }
     
+    listEdited = true;
     if (list->size() > 1) {
         masks_.erase(masks_.begin() + selected_);
         selected_ = rtengine::LIM(selected_-1, 0, int(masks_.size()-1));
@@ -292,6 +295,8 @@ void LabMasksPanel::onRemovePressed()
 void LabMasksPanel::onUpPressed()
 {
     if (selected_ > 0 && cp_->moveUpPressed(selected_)) {
+        listEdited = true;
+        
         auto r = masks_[selected_];
         masks_.erase(masks_.begin() + selected_);
         --selected_;
@@ -309,6 +314,8 @@ void LabMasksPanel::onUpPressed()
 void LabMasksPanel::onDownPressed()
 {
     if (selected_ < int(masks_.size()-1) && cp_->moveDownPressed(selected_)) {
+        listEdited = true;
+        
         auto r = masks_[selected_];
         masks_.erase(masks_.begin() + selected_);
         ++selected_;
@@ -326,6 +333,8 @@ void LabMasksPanel::onDownPressed()
 void LabMasksPanel::onCopyPressed()
 {
     if (selected_ < int(masks_.size()) && cp_->copyPressed(selected_)) {
+        listEdited = true;
+        
         auto r = masks_[selected_];
         masks_.push_back(r);
         selected_ = masks_.size()-1;
@@ -380,7 +389,7 @@ void LabMasksPanel::populateList()
 }
 
 
-void LabMasksPanel::maskShow(int idx, bool list_only)
+void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
 {
     disableListener();
     rtengine::LabCorrectionMask dflt;
@@ -392,7 +401,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only)
         lightnessMask->setCurve(r.lightnessMask);
         maskBlur->setValue(r.maskBlur);
 
-        if (isCurrentSubscriber()) {
+        if (unsub && isCurrentSubscriber()) {
             unsubscribe();
         }
         areaMaskToggle->set_active(false);
@@ -618,14 +627,14 @@ void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::El
 {
     float R = 0.f, G = 0.f, B = 0.f;
 
-    if (callerId == ID_LABREGION_HUE) {
+    if (callerId == ID_HUE_MASK) {
         float x = valX - 1.f/6.f;
         if (x < 0.f) {
             x += 1.f;
         }
         x = rtengine::log2lin(x, 3.f);
         rtengine::Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
-    } else if (callerId == ID_LABREGION_HUE+1) {
+    } else if (callerId == ID_HUE_MASK+1) {
         rtengine::Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);
     }
 
@@ -647,4 +656,44 @@ float LabMasksPanel::blendPipetteValues(CurveEditor *ce, float chan1, float chan
         return rtengine::lin2log(x, 3.f);
     }
     return CurveListener::blendPipetteValues(ce, chan1, chan2, chan3);
+}
+
+
+void LabMasksPanel::setEdited(bool yes)
+{
+    listEdited = yes;
+    hueMask->setUnChanged(!yes);
+    chromaticityMask->setUnChanged(!yes);
+    lightnessMask->setUnChanged(!yes);
+    maskBlur->setEditedState(yes ? Edited : UnEdited);
+    showMask->set_inconsistent(!yes);
+    areaMask->set_inconsistent(!yes);
+    areaMaskInverted->set_inconsistent(!yes);
+    for (auto a : areaMaskAdjusters) {
+        a->setEditedState(yes ? Edited : UnEdited);
+    }
+}
+
+
+bool LabMasksPanel::getEdited()
+{
+    for (auto a : areaMaskAdjusters) {
+        if (a->getEditedState() == Edited) {
+            return true;
+        }
+    }
+    return listEdited
+        || !hueMask->isUnChanged()
+        || !chromaticityMask->isUnChanged()
+        || !lightnessMask->isUnChanged()
+        || maskBlur->getEditedState() == Edited
+        || !showMask->get_inconsistent()
+        || !areaMask->get_inconsistent()
+        || !areaMaskInverted->get_inconsistent();
+}
+
+
+void LabMasksPanel::updateSelected()
+{
+    maskShow(selected_, true, false);
 }

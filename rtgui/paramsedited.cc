@@ -556,18 +556,9 @@ void ParamsEdited::set(bool v)
     }
 
     dirpyrequalizer.enabled = v;
-    dirpyrequalizer.gamutlab = v;
-    dirpyrequalizer.cbdlMethod = v;
+    dirpyrequalizer.levels = v;
+    dirpyrequalizer.showMask = v;
 
-
-    for (int i = 0; i < 6; i++) {
-        dirpyrequalizer.mult[i] = v;
-    }
-
-    dirpyrequalizer.threshold = v;
-    dirpyrequalizer.skinprotect = v;
-    dirpyrequalizer.hueskin = v;
-    //dirpyrequalizer.algo = v;
     hsvequalizer.enabled = v;
     hsvequalizer.hcurve = v;
     hsvequalizer.scurve = v;
@@ -1125,18 +1116,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
             wavelet.ch[i] = wavelet.ch[i] && p.wavelet.ch[i] == other.wavelet.ch[i];
         }
 
-        dirpyrequalizer.enabled = dirpyrequalizer.enabled && p.dirpyrequalizer.enabled == other.dirpyrequalizer.enabled;
-        dirpyrequalizer.gamutlab = dirpyrequalizer.gamutlab && p.dirpyrequalizer.gamutlab == other.dirpyrequalizer.gamutlab;
-        dirpyrequalizer.cbdlMethod = dirpyrequalizer.cbdlMethod && p.dirpyrequalizer.cbdlMethod == other.dirpyrequalizer.cbdlMethod;
+        SETVAL_(dirpyrequalizer.enabled);
+        SETVAL_(dirpyrequalizer.levels);
+        SETVAL_(dirpyrequalizer.showMask);
 
-        for (int i = 0; i < 6; i++) {
-            dirpyrequalizer.mult[i] = dirpyrequalizer.mult[i] && p.dirpyrequalizer.mult[i] == other.dirpyrequalizer.mult[i];
-        }
-
-        dirpyrequalizer.threshold = dirpyrequalizer.threshold && p.dirpyrequalizer.threshold == other.dirpyrequalizer.threshold;
-        dirpyrequalizer.skinprotect = dirpyrequalizer.skinprotect && p.dirpyrequalizer.skinprotect == other.dirpyrequalizer.skinprotect;
-        //    dirpyrequalizer.algo = dirpyrequalizer.algo && p.dirpyrequalizer.algo == other.dirpyrequalizer.algo;
-        dirpyrequalizer.hueskin = dirpyrequalizer.hueskin && p.dirpyrequalizer.hueskin == other.dirpyrequalizer.hueskin;
         hsvequalizer.enabled = hsvequalizer.enabled && p.hsvequalizer.enabled == other.hsvequalizer.enabled;
         hsvequalizer.hcurve = hsvequalizer.hcurve && p.hsvequalizer.hcurve == other.hsvequalizer.hcurve;
         hsvequalizer.scurve = hsvequalizer.scurve && p.hsvequalizer.scurve == other.hsvequalizer.scurve;
@@ -3046,38 +3029,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.wavelet.strength = dontforceSet && options.baBehav[ADDSET_WA_STRENGTH] ? toEdit.wavelet.strength + mods.wavelet.strength : mods.wavelet.strength;
     }
 
+    SETVAL_(dirpyrequalizer.enabled);
+    SETVAL_(dirpyrequalizer.levels);
+    SETVAL_(dirpyrequalizer.showMask);
 
-    if (dirpyrequalizer.enabled) {
-        toEdit.dirpyrequalizer.enabled    = mods.dirpyrequalizer.enabled;
-    }
-
-    if (dirpyrequalizer.gamutlab) {
-        toEdit.dirpyrequalizer.gamutlab   = mods.dirpyrequalizer.gamutlab;
-    }
-
-    if (dirpyrequalizer.cbdlMethod) {
-        toEdit.dirpyrequalizer.cbdlMethod   = mods.dirpyrequalizer.cbdlMethod;
-    }
-
-    for (int i = 0; i < 6; i++) {
-        if (dirpyrequalizer.mult[i]) {
-            toEdit.dirpyrequalizer.mult[i]    = dontforceSet && options.baBehav[ADDSET_DIRPYREQ] ? toEdit.dirpyrequalizer.mult[i] + mods.dirpyrequalizer.mult[i] : mods.dirpyrequalizer.mult[i];
-        }
-    }
-
-    if (dirpyrequalizer.threshold) {
-        toEdit.dirpyrequalizer.threshold = dontforceSet && options.baBehav[ADDSET_DIRPYREQ_THRESHOLD] ? toEdit.dirpyrequalizer.threshold + mods.dirpyrequalizer.threshold : mods.dirpyrequalizer.threshold;
-    }
-
-    if (dirpyrequalizer.skinprotect) {
-        toEdit.dirpyrequalizer.skinprotect = dontforceSet && options.baBehav[ADDSET_DIRPYREQ_SKINPROTECT] ? toEdit.dirpyrequalizer.skinprotect + mods.dirpyrequalizer.skinprotect : mods.dirpyrequalizer.skinprotect;
-    }
-
-    if (dirpyrequalizer.hueskin) {
-        toEdit.dirpyrequalizer.hueskin    = mods.dirpyrequalizer.hueskin;
-    }
-
-//  if (dirpyrequalizer.algo)       toEdit.dirpyrequalizer.algo     = mods.dirpyrequalizer.algo;
     if (hsvequalizer.enabled) {
         toEdit.hsvequalizer.enabled = mods.hsvequalizer.enabled;
     }

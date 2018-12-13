@@ -105,7 +105,7 @@ public:
 
     void impulsedenoise(LabImage* lab);   //Emil's impulse denoise
 
-    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
+//    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
     void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
 
     void ip_wavelet(LabImage * lab, LabImage * dst, int kall, const procparams::WaveletParams & waparams, const WavCurve & wavCLVCcurve, const WavOpacityCurveRG & waOpacityCurveRG, const WavOpacityCurveBY & waOpacityCurveBY,  const WavOpacityCurveW & waOpacityCurveW, const WavOpacityCurveWL & waOpacityCurveWL, LUTf &wavclCurve, int skip);
@@ -131,6 +131,7 @@ public:
     void labColorCorrectionRegions(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void logEncoding(LabImage *lab, LUTu *histToneCurve=nullptr);
     void workingtrc(const Imagefloat* src, Imagefloat* dst, int cw, int ch, int mul, const Glib::ustring &profile, double gampos, double slpos, cmsHTRANSFORM &transform, bool normalizeIn = true, bool normalizeOut = true, bool keepTransForm = false) const;
+    void contrastByDetailLevels(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
