@@ -102,6 +102,13 @@ public:
         return true;
     }
 
+    bool resetPressed() override
+    {
+        parent_->labRegionData = { ColorToningParams::LabCorrectionRegion() };
+        parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
+        return true;
+    }
+
     int getColumnCount() override
     {
         return 1;

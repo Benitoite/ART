@@ -86,6 +86,13 @@ public:
         parent_->levelsData.push_back(parent_->levelsData[idx]);
         return true;
     }
+
+    bool resetPressed() override
+    {
+        parent_->levelsData = { DirPyrEqualizerParams::Levels() };
+        parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
+        return true;
+    }
     
     bool moveUpPressed(int idx) override
     {

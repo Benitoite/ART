@@ -72,6 +72,10 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     scroll->add(*list);
     hb->pack_start(*scroll, Gtk::PACK_EXPAND_WIDGET);
     Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
+    reset = Gtk::manage(new Gtk::Button());
+    reset->add(*Gtk::manage(new RTImage("undo-small.png")));
+    reset->signal_clicked().connect(sigc::mem_fun(*this, &LabMasksPanel::onResetPressed));
+    add_button(reset, vb);
     add = Gtk::manage(new Gtk::Button());
     add->add(*Gtk::manage(new RTImage("add-small.png")));
     add->signal_clicked().connect(sigc::mem_fun(*this, &LabMasksPanel::onAddPressed));
@@ -270,18 +274,13 @@ void LabMasksPanel::onAddPressed()
 
 void LabMasksPanel::onRemovePressed()
 {
-    if (list->size() == 0 || !cp_->removePressed(selected_)) {
+    if (list->size() <= 1 || !cp_->removePressed(selected_)) {
         return;
     }
     
     listEdited = true;
-    if (list->size() > 1) {
-        masks_.erase(masks_.begin() + selected_);
-        selected_ = rtengine::LIM(selected_-1, 0, int(masks_.size()-1));
-    } else {
-        masks_[0] = rtengine::LabCorrectionMask();
-        masks_[0].areaMask = defaultAreaMask;
-    }
+    masks_.erase(masks_.begin() + selected_);
+    selected_ = rtengine::LIM(selected_-1, 0, int(masks_.size()-1));
     populateList();
     maskShow(selected_);
 
@@ -340,6 +339,18 @@ void LabMasksPanel::onCopyPressed()
         selected_ = masks_.size()-1;
         populateList();
 
+        auto l = getListener();
+        if (l) {
+            l->panelChanged(EvMaskList, M("HISTORY_CHANGED"));
+        }
+    }
+}
+
+
+void LabMasksPanel::onResetPressed()
+{
+    if (cp_->resetPressed()) {
+        listEdited = true;
         auto l = getListener();
         if (l) {
             l->panelChanged(EvMaskList, M("HISTORY_CHANGED"));

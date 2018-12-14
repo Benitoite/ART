@@ -46,6 +46,7 @@ public:
     virtual bool copyPressed(int idx) = 0;
     virtual bool moveUpPressed(int idx) = 0;
     virtual bool moveDownPressed(int idx) = 0;
+    virtual bool resetPressed() = 0;
 
     virtual int getColumnCount() = 0;
     virtual Glib::ustring getColumnHeader(int col) = 0;
@@ -94,6 +95,7 @@ private:
     void onUpPressed();
     void onDownPressed();
     void onCopyPressed();
+    void onResetPressed();
     void onAreaMaskEnableToggled();
     void onAreaMaskInvertedChanged();
     void onAreaMaskToggleChanged();
@@ -118,6 +120,7 @@ private:
     rtengine::ProcEvent EvAreaMask;
 
     Gtk::ListViewText *list;
+    Gtk::Button *reset;
     Gtk::Button *add;
     Gtk::Button *remove;
     Gtk::Button *up;
