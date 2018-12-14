@@ -95,6 +95,14 @@ void ImageIO::setMetadata (const rtexif::TagDirectory* eroot)
         td->keepTag(0x02bc);  // XMP
 
         exifRoot = td;
+
+        if (!iptc) {
+            rtexif::Tag* t = exifRoot->getTag(0x83BB);
+            if (t) {
+                iptc = iptc_data_new_from_data ((unsigned char*)t->getValue (), (unsigned)t->getValueSize ());
+            }
+        }
+            
     }
 }
 
