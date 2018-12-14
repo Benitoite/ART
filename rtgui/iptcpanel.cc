@@ -318,8 +318,11 @@ IPTCPanel::IPTCPanel ()
     setExpandAlignProperties(scrolledWindow, false, true, Gtk::ALIGN_FILL, Gtk::ALIGN_FILL);
     scrolledWindow->set_shadow_type(Gtk::SHADOW_NONE);
     scrolledWindow->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_ALWAYS);
-    scrolledWindow->property_window_placement().set_value(Gtk::CORNER_TOP_RIGHT);
-    scrolledWindow->add(*iptc);
+
+    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start(*iptc, Gtk::PACK_EXPAND_WIDGET, 4);
+    hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_SHRINK, 2); // a few extra space on the right
+    scrolledWindow->add(*hb);
 
     pack_start (*scrolledWindow);
 
