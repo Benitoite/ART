@@ -587,7 +587,7 @@ private:
 
         params.wavelet.getCurves (wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL );
 
-        ipf.contrastByDetailLevels(labView);
+        ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         // // directional pyramid wavelet
         // if (params.dirpyrequalizer.cbdlMethod == "aft") {
         //     if ((params.colorappearance.enabled && !settings->autocielab)  || !params.colorappearance.enabled) {
