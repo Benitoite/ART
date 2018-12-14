@@ -623,20 +623,11 @@ void ColorToning::read (const ProcParams* pp, const ParamsEdited* pedited)
 
         labgrid->setEdited(pedited->colorToning.labgridALow || pedited->colorToning.labgridBLow || pedited->colorToning.labgridAHigh || pedited->colorToning.labgridBHigh);
 
-        // TODO
         if (pedited->colorToning.labregions) {
             labRegionAB->setEdited(true);
-            labRegionSaturation->setEditedState(Edited);
-            labRegionSlope->setEditedState(Edited);
-            labRegionOffset->setEditedState(Edited);
-            labRegionPower->setEditedState(Edited);
             labMasks->setEdited(true);
         } else {
             labRegionAB->setEdited(false);
-            labRegionSaturation->setEditedState(UnEdited);
-            labRegionSlope->setEditedState(UnEdited);
-            labRegionOffset->setEditedState(UnEdited);
-            labRegionPower->setEditedState(UnEdited);
             labMasks->setEdited(false);
         }
     }
@@ -780,7 +771,7 @@ void ColorToning::write (ProcParams* pp, ParamsEdited* pedited)
 
         pedited->colorToning.labgridALow = pedited->colorToning.labgridBLow = pedited->colorToning.labgridAHigh = pedited->colorToning.labgridBHigh = labgrid->getEdited();
 
-        pedited->colorToning.labregions = labRegionAB->getEdited() || labMasks->getEdited() || labRegionSaturation->getEditedState() || labRegionSlope->getEditedState() || labRegionOffset->getEditedState() || labRegionPower->getEditedState() || labRegionChannel->get_active_text() != M("GENERAL_UNCHANGED");
+        pedited->colorToning.labregions = labRegionAB->getEdited() || labMasks->getEdited();
         pedited->colorToning.labregionsShowMask = labMasks->getEdited();
     }
 
@@ -1392,12 +1383,16 @@ void ColorToning::adjusterChanged(Adjuster* a, double newval)
     } else if (a == strength) {
         listener->panelChanged (EvColorToningStrength, a->getTextValue());
     } else if (a == labRegionSaturation) {
+        labRegionAB->setEdited(true);
         listener->panelChanged(EvLabRegionSaturation, a->getTextValue());
     } else if (a == labRegionSlope) {
+        labRegionAB->setEdited(true);
         listener->panelChanged(EvLabRegionSlope, a->getTextValue());
     } else if (a == labRegionOffset) {
+        labRegionAB->setEdited(true);
         listener->panelChanged(EvLabRegionOffset, a->getTextValue());
     } else if (a == labRegionPower) {
+        labRegionAB->setEdited(true);
         listener->panelChanged(EvLabRegionPower, a->getTextValue());
     }
 }
@@ -1472,6 +1467,7 @@ void ColorToning::labRegionShow(int idx)
 void ColorToning::labRegionChannelChanged()
 {
     if (listener) {
+        labMasks->setEdited(true);        
         listener->panelChanged(EvLabRegionChannel, labRegionChannel->get_active_text());
     }
 }

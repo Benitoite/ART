@@ -620,8 +620,7 @@ int LabMasksPanel::getSelected()
 
 void LabMasksPanel::setBatchMode()
 {
-    areaMask->hide();
-    maskEditorGroup->setBatchMode(true);
+    areaMaskToggle->hide();
 }
 
 

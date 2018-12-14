@@ -228,16 +228,8 @@ void DirPyrEqualizer::read (const ProcParams* pp, const ParamsEdited* pedited)
         set_inconsistent(multiImage && !pedited->dirpyrequalizer.enabled);
         if (pedited->dirpyrequalizer.levels) {
             labMasks->setEdited(true);
-            for (int i = 0; i < 6; i++) {
-                multiplier[i]->setEditedState(Edited);
-            }
-            threshold->setEditedState(Edited);
         } else {
             labMasks->setEdited(false);
-            for (int i = 0; i < 6; i++) {
-                multiplier[i]->setEditedState(UnEdited);
-            }
-            threshold->setEditedState(UnEdited);
         }
     }
 
@@ -258,12 +250,7 @@ void DirPyrEqualizer::write (ProcParams* pp, ParamsEdited* pedited)
         
     if (pedited) {
         pedited->dirpyrequalizer.enabled = !get_inconsistent();
-        pedited->dirpyrequalizer.levels = labMasks->getEdited() || threshold->getEditedState();
-        for (int i = 0; i < 6; i++) {
-            if (multiplier[i]->getEditedState()) {
-                pedited->dirpyrequalizer.levels = true;
-            }
-        }
+        pedited->dirpyrequalizer.levels = labMasks->getEdited();
     }
 }
 
@@ -297,14 +284,7 @@ void DirPyrEqualizer::setDefaults (const ProcParams* defParams, const ParamsEdit
 
 void DirPyrEqualizer::setBatchMode (bool batchMode)
 {
-    // TODO
     ToolPanel::setBatchMode(batchMode);
-
-    for (int i = 0; i < 6; i++) {
-        multiplier[i]->showEditedCB();
-    }
-
-    threshold->showEditedCB();
     labMasks->setBatchMode();
 }
 
@@ -312,6 +292,7 @@ void DirPyrEqualizer::setBatchMode (bool batchMode)
 void DirPyrEqualizer::adjusterChanged(Adjuster* a, double newval)
 {
     if (listener && getEnabled()) {
+        labMasks->setEdited(true);
         if (a == threshold) {
             listener->panelChanged (EvDirPyrEqualizerThreshold,
                                     Glib::ustring::compose("%1",
