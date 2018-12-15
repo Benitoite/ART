@@ -120,7 +120,7 @@ Denoise::Denoise():
     chrominanceMethod->append(M("TP_DIRPYRDENOISE_CHROMINANCE_MANUAL"));
     chrominanceMethod->append(M("TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL"));
     chrominanceMethod->set_active(0);
-    chrominanceMethod->set_tooltip_markup (M("TP_DIRPYRDENOISE_CHROMINANCE_METHOD_TOOLTIP"));
+//    chrominanceMethod->set_tooltip_markup (M("TP_DIRPYRDENOISE_CHROMINANCE_METHOD_TOOLTIP"));
     hb->pack_start(*chrominanceMethod);
     chromaVBox->pack_start(*hb);
 
