@@ -47,7 +47,22 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         guidedFilter(G, G, G, r, epsilon, multithread);
         guidedFilter(B, B, B, r, epsilon, multithread);
 
-        float blend = LIM01(float(strength) / 100.f);
+        const float blend = LIM01(float(strength) / 100.f);
+
+//         array2D<float> cmask;
+//         if (luminance) {
+//             cmask(W, H);
+//             float contrast = 1.f;
+// #ifdef _OPENMP
+// #           pragma omp parallel for if (multithread)
+// #endif
+//             for (int y = 0; y < H; ++y) {
+//                 for (int x = 0; x < W; ++x) {
+//                     cmask[y][x] = Color::rgbLuminance(iR[y][x], iG[y][x], iB[y][x], ws);
+//                 }
+//             }
+//             buildBlendMask(cmask, cmask, W, H, contrast);
+//         }
 
 #ifdef _OPENMP
         #pragma omp parallel for if (multithread)
@@ -62,10 +77,11 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                 float ib = iB[y][x];
                 float Y = Color::rgbLuminance(rr, gg, bb, ws);
                 float iY = Color::rgbLuminance(ir, ig, ib, ws);
-                float oY = luminance ? intp(blend, Y, iY) : iY;
-                rr = luminance ? ir - iY : intp(blend, rr - Y, ir - iY); 
-                gg = luminance ? ig - iY : intp(blend, gg - Y, ig - iY); 
-                bb = luminance ? ib - iY : intp(blend, bb - Y, ib - iY);
+                const float bf = blend;//luminance ? blend * (1.f - cmask[y][x]) : blend;
+                float oY = luminance ? intp(bf, Y, iY) : iY;
+                rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
+                gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
+                bb = luminance ? ib - iY : intp(bf, bb - Y, ib - iY);
                 R[y][x] = oY + rr;
                 G[y][x] = oY + gg;
                 B[y][x] = oY + bb;
