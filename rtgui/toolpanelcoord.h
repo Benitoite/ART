@@ -81,6 +81,7 @@
 #include "localcontrast.h"
 #include "softlight.h"
 #include "dehaze.h"
+#include "grain.h"
 #include "logencoding.h"
 #include "guiutils.h"
 
@@ -138,6 +139,7 @@ protected:
     HSVEqualizer* hsvequalizer;
     SoftLight *softlight;
     Dehaze *dehaze;
+    FilmGrain *grain;
     FilmSimulation *filmSimulation;
     SensorBayer * sensorbayer;
     SensorXTrans * sensorxtrans;

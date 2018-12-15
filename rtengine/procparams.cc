@@ -2625,6 +2625,28 @@ bool DehazeParams::operator !=(const DehazeParams& other) const
 }
 
 
+GrainParams::GrainParams():
+    enabled(false),
+    iso(400),
+    strength(25),
+    scale(100)
+{
+}
+
+bool GrainParams::operator==(const GrainParams &other) const
+{
+    return enabled == other.enabled
+        && iso == other.iso
+        && strength == other.strength
+        && scale == other.scale;
+}
+
+bool GrainParams::operator!=(const GrainParams &other) const
+{
+    return !(*this == other);
+}
+
+
 RAWParams::BayerSensor::BayerSensor() :
     method(getMethodString(Method::AMAZE)),
     border(4),
@@ -2986,6 +3008,8 @@ void ProcParams::setDefaults()
     softlight = SoftLightParams();
 
     dehaze = DehazeParams();
+
+    grain = GrainParams();
 
     raw = RAWParams();
 
@@ -3671,6 +3695,12 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
             }
         }
         saveToKeyfile(!pedited || pedited->colorToning.labregionsShowMask, "ColorToning", "LabRegionsShowMask", colorToning.labregionsShowMask, keyFile);
+
+// Grain
+        saveToKeyfile(!pedited || pedited->grain.enabled, "Grain", "Enabled", grain.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->grain.iso, "Grain", "ISO", grain.iso, keyFile);
+        saveToKeyfile(!pedited || pedited->grain.strength, "Grain", "Strength", grain.strength, keyFile);
+        saveToKeyfile(!pedited || pedited->grain.scale, "Grain", "Scale", grain.scale, keyFile);
 
 // Raw
         saveToKeyfile(!pedited || pedited->raw.darkFrame, "RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
@@ -5212,6 +5242,13 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "ColorToning", "LabRegionsShowMask", pedited, colorToning.labregionsShowMask, pedited->colorToning.labregionsShowMask);
         }
 
+        if (keyFile.has_group("Grain")) {
+            assignFromKeyfile(keyFile, "Grain", "Enabled", pedited, grain.enabled, pedited->grain.enabled);
+            assignFromKeyfile(keyFile, "Grain", "ISO", pedited, grain.iso, pedited->grain.iso);
+            assignFromKeyfile(keyFile, "Grain", "Strength", pedited, grain.strength, pedited->grain.strength);
+            assignFromKeyfile(keyFile, "Grain", "Scale", pedited, grain.scale, pedited->grain.scale);
+        }        
+
         if (keyFile.has_group("RAW")) {
             if (keyFile.has_key("RAW", "DarkFrame")) {
                 raw.dark_frame = expandRelativePath(fname, "", keyFile.get_string("RAW", "DarkFrame"));
@@ -5511,7 +5548,8 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && metadata == other.metadata
         && exif == other.exif
         && iptc == other.iptc
-        && dehaze == other.dehaze;
+        && dehaze == other.dehaze
+        && grain == other.grain;
 }
 
 bool ProcParams::operator !=(const ProcParams& other) const

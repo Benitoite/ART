@@ -137,6 +137,7 @@ public:
     void logEncoding(LabImage *lab, LUTu *histToneCurve=nullptr);
     void workingtrc(const Imagefloat* src, Imagefloat* dst, int cw, int ch, int mul, const Glib::ustring &profile, double gampos, double slpos, cmsHTRANSFORM &transform, bool normalizeIn = true, bool normalizeOut = true, bool keepTransForm = false) const;
     void contrastByDetailLevels(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    void filmGrain(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------

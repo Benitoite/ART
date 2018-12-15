@@ -503,6 +503,7 @@ void Crop::update(int todo)
 
         parent->ipf.softLight(labnCrop);
         parent->ipf.localContrast(labnCrop);
+        parent->ipf.filmGrain(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
         
         //     }
 

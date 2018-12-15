@@ -1358,6 +1358,19 @@ struct DehazeParams {
 };
 
 
+struct GrainParams {
+    bool enabled;
+    int iso;
+    int strength;
+    int scale;
+
+    GrainParams();
+
+    bool operator==(const GrainParams &other) const;
+    bool operator!=(const GrainParams &other) const;
+};
+
+
 /**
   * Parameters for RAW demosaicing, common to all sensor type
   */
@@ -1573,6 +1586,7 @@ public:
     FilmSimulationParams    filmSimulation;  ///< film simulation parameters
     SoftLightParams         softlight;       ///< softlight parameters
     DehazeParams            dehaze;          ///< dehaze parameters
+    GrainParams             grain;
     int                     rank;            ///< Custom image quality ranking
     int                     colorlabel;      ///< Custom color label
     bool                    inTrash;         ///< Marks deleted image

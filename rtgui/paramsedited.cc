@@ -572,6 +572,10 @@ void ParamsEdited::set(bool v)
     dehaze.strength = v;
     dehaze.showDepthMap = v;
     dehaze.depth = v;
+    grain.enabled = v;
+    grain.iso = v;
+    grain.strength = v;
+    grain.scale = v;
     metadata.mode = v;
 
     exif = v;
@@ -1133,6 +1137,11 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         dehaze.strength = dehaze.strength && p.dehaze.strength == other.dehaze.strength;
         dehaze.showDepthMap = dehaze.showDepthMap && p.dehaze.showDepthMap == other.dehaze.showDepthMap;
         dehaze.depth = dehaze.depth && p.dehaze.depth == other.dehaze.depth;
+
+        SETVAL_(grain.enabled);
+        SETVAL_(grain.iso);
+        SETVAL_(grain.strength);
+        SETVAL_(grain.scale);
 
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
@@ -3087,6 +3096,11 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     if (dehaze.showDepthMap) {
         toEdit.dehaze.showDepthMap     = mods.dehaze.showDepthMap;
     }
+
+    SETVAL_(grain.enabled);
+    SETVAL_(grain.iso);
+    SETVAL_(grain.strength);
+    SETVAL_(grain.scale);
 
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;

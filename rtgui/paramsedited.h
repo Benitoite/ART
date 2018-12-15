@@ -749,6 +749,16 @@ public:
 };
 
 
+class GrainParamsEdited
+{
+public:
+    bool enabled;
+    bool iso;
+    bool strength;
+    bool scale;
+};
+
+
 class RAWParamsEdited
 {
 
@@ -894,6 +904,7 @@ public:
     FilmSimulationParamsEdited    filmSimulation;
     SoftLightParamsEdited         softlight;
     DehazeParamsEdited            dehaze;
+    GrainParamsEdited             grain;
     MetaDataParamsEdited          metadata;
     bool                          exif;
     bool                          iptc;

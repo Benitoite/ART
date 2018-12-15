@@ -160,6 +160,7 @@ set(NONCLISOURCEFILES
     logencoding.cc
     areamask.cc
     labmaskspanel.cc
+    grain.cc
     )
 
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")

@@ -607,6 +607,7 @@ private:
 
         ipf.softLight(labView);
         ipf.localContrast(labView);
+        ipf.filmGrain(labView);
 
         //Colorappearance and tone-mapping associated
 
