@@ -182,6 +182,9 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 break;
             }
     }
+
+    ipf.setPipetteBuffer(nullptr);
+    
     if (((todo & ALL) == ALL) || (todo & M_MONITOR) || panningRelatedChange || (highDetailNeeded && options.prevdemo != PD_Sidecar)) {
         bwAutoR = bwAutoG = bwAutoB = -9000.f;
     
@@ -617,7 +620,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 // DCPProfile *dcpProf = imgsrc->getDCP(params.icm, as);
                 // ipf.setDCPProfile(dcpProf, as);
     
-                ipf.rgbProc (oprevi, oprevl, nullptr, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
+                ipf.rgbProc (oprevi, oprevl, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
                             rCurve, gCurve, bCurve, colourToningSatLimit, colourToningSatLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, beforeToneCurveBW, afterToneCurveBW, rrm, ggm, bbm, bwAutoR, bwAutoG, bwAutoB, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, histToneCurve);
     
                 if (params.blackwhite.enabled && params.blackwhite.autoc && abwListener) {
@@ -685,7 +688,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             progress("Applying Color Boost...", 100 * readyphase / numofphases);
             histCCurve.clear();
             histLCurve.clear();
-            ipf.chromiLuminanceCurve(nullptr, pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
+            ipf.chromiLuminanceCurve(pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
             ipf.vibrance(oprevl);
             ipf.labColorCorrectionRegions(oprevl);
         }

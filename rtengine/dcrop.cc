@@ -161,6 +161,7 @@ void Crop::update(int todo)
 
     // Tells to the ImProcFunctions' tool what is the preview scale, which may lead to some simplifications
     parent->ipf.setScale(skip);
+    parent->ipf.setPipetteBuffer(this);
 
     Imagefloat* baseCrop = origCrop;
 
@@ -340,7 +341,7 @@ void Crop::update(int todo)
         // DCPProfile *dcpProf = parent->imgsrc->getDCP(params.icm, as);
 
         LUTu histToneCurve;
-        parent->ipf.rgbProc (workingCrop, laboCrop, this, parent->hltonecurve, parent->shtonecurve, parent->tonecurve, 
+        parent->ipf.rgbProc (workingCrop, laboCrop, parent->hltonecurve, parent->shtonecurve, parent->tonecurve, 
                             params.toneCurve.saturation, parent->rCurve, parent->gCurve, parent->bCurve, parent->colourToningSatLimit, parent->colourToningSatLimitOpacity, parent->ctColorCurve, parent->ctOpacityCurve, parent->opautili, parent->clToningcurve, parent->cl2Toningcurve,
                             parent->customToneCurve1, parent->customToneCurve2, parent->beforeToneCurveBW, parent->afterToneCurveBW, rrm, ggm, bbm,
                             parent->bwAutoR, parent->bwAutoG, parent->bwAutoB, histToneCurve);
@@ -375,7 +376,7 @@ void Crop::update(int todo)
         bool cclutili = parent->cclutili;
 
         LUTu dummy;
-        parent->ipf.chromiLuminanceCurve(this, 1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+        parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
         parent->ipf.vibrance(laboCrop);
         parent->ipf.labColorCorrectionRegions(laboCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
     }

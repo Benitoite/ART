@@ -35,9 +35,25 @@ namespace rtengine {
 
 void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
 {
+    PlanarWhateverData<float> *editWhatever = nullptr;
+    EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
+
+    if ((eid == EUID_LabMasks_H1 || eid == EUID_LabMasks_C1 || eid == EUID_LabMasks_L1) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+        editWhatever = pipetteBuffer->getSinglePlaneBuffer();
+    }
+    
     if (!params->colorToning.enabled || params->colorToning.method != "LabRegions") {
+        if (editWhatever) {
+            editWhatever->fill(0.f);
+        }
         return;
     }
+
+    if (editWhatever) {
+        LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H1);
+        fillPipetteLabMasks(lab, editWhatever, id, multiThread);
+    }
+    
     int n = params->colorToning.labregions.size();
     int show_mask_idx = params->colorToning.labregionsShowMask;
     if (show_mask_idx >= n) {

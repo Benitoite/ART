@@ -51,6 +51,8 @@ public:
     virtual int getColumnCount() = 0;
     virtual Glib::ustring getColumnHeader(int col) = 0;
     virtual Glib::ustring getColumnContent(int col, int row) = 0;
+
+    virtual void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) = 0;
 };
 
 

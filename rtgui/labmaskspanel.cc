@@ -108,18 +108,21 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     rtengine::LabCorrectionMask default_params;
 
+    EditUniqueID eh, ec, el;
+    cp_->getEditIDs(eh, ec, el);
+
     hueMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_HUE"), nullptr, false, true));
     hueMask->setIdentityValue(0.);
     hueMask->setResetCurve(FlatCurveType(default_params.hueMask[0]), default_params.hueMask);
     hueMask->setCurveColorProvider(this, ID_HUE_MASK);
     hueMask->setBottomBarColorProvider(this, ID_HUE_MASK);
-    hueMask->setEditID(EUID_Lab_HHCurve, BT_SINGLEPLANE_FLOAT);
+    hueMask->setEditID(eh, BT_SINGLEPLANE_FLOAT);
 
     chromaticityMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_CHROMATICITY"), nullptr, false, false));
     chromaticityMask->setIdentityValue(0.);
     chromaticityMask->setResetCurve(FlatCurveType(default_params.chromaticityMask[0]), default_params.chromaticityMask);
     chromaticityMask->setBottomBarColorProvider(this, ID_HUE_MASK+1);
-    chromaticityMask->setEditID(EUID_Lab_CCurve, BT_SINGLEPLANE_FLOAT);
+    chromaticityMask->setEditID(ec, BT_SINGLEPLANE_FLOAT);
 
     lightnessMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_LIGHTNESS"), nullptr, false, false));
     lightnessMask->setIdentityValue(0.);
@@ -129,7 +132,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
         GradientMilestone(1., 1., 1., 1.)
     };
     lightnessMask->setBottomBarBgGradient(milestones);
-    lightnessMask->setEditID(EUID_Lab_LCurve, BT_SINGLEPLANE_FLOAT);
+    lightnessMask->setEditID(el, BT_SINGLEPLANE_FLOAT);
 
     maskEditorGroup->curveListComplete();
     maskEditorGroup->show();

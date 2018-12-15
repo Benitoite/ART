@@ -288,4 +288,29 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
     return true;
 }
 
+
+void fillPipetteLabMasks(LabImage *lab, PlanarWhateverData<float>* editWhatever, LabMasksEditID id, bool multithread)
+{
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < lab->H; ++y) {
+        for (int x = 0; x < lab->W; ++x) {
+            float v = 0.f;
+            switch (id) {
+            case LabMasksEditID::H:
+                v = Color::huelab_to_huehsv2(xatan2f(lab->b[y][x], lab->a[y][x]));
+                break;
+            case LabMasksEditID::C:
+                v = LIM01<float>(std::sqrt(SQR(lab->a[y][x]) + SQR(lab->b[y][x]) + 0.001f) / 48000.f);
+                break;
+            case LabMasksEditID::L:
+                v = LIM01<float>(lab->L[y][x] / 32768.f);
+                break;
+            }
+            editWhatever->v(y, x) = v;
+        }
+    }
+}
+
 } // namespace rtengine

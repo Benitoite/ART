@@ -137,6 +137,13 @@ public:
             Glib::ustring::format(std::fixed, std::setprecision(2), r.threshold));
     }
 
+    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
+    {
+        hcurve = EUID_LabMasks_H2;
+        ccurve = EUID_LabMasks_C2;
+        lcurve = EUID_LabMasks_L2;
+    }
+
 private:
     DirPyrEqualizer *parent_;
 };

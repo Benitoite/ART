@@ -1980,15 +1980,15 @@ void ImProcFunctions::moyeqt (Imagefloat* working, float &moyS, float &eqty)
 }
 
 
-void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer *pipetteBuffer, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
+void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili,  LUTf & clToningcurve, LUTf & cl2Toningcurve,
                                const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2, const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, LUTu &histToneCurve )
 {
-    rgbProc (working, lab, pipetteBuffer, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2,  customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh, histToneCurve);
+    rgbProc (working, lab, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2,  customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh, histToneCurve);
 }
 
 // Process RGB image and convert to LAB space
-void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, PipetteBuffer *pipetteBuffer, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
+void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clToningcurve, LUTf & cl2Toningcurve,
                                const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, double expcomp, int hlcompr, int hlcomprthresh, LUTu &histToneCurve )
 {
@@ -3945,7 +3945,7 @@ void ImProcFunctions::luminanceCurve (LabImage* lold, LabImage* lnew, LUTf & cur
 
 
 
-void ImProcFunctions::chromiLuminanceCurve (PipetteBuffer *pipetteBuffer, int pW, LabImage* lold, LabImage* lnew, LUTf & acurve, LUTf & bcurve, LUTf & satcurve, LUTf & lhskcurve, LUTf & clcurve, LUTf & curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLCurve)
+void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* lnew, LUTf & acurve, LUTf & bcurve, LUTf & satcurve, LUTf & lhskcurve, LUTf & clcurve, LUTf & curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLCurve)
 {
 
     int W = lold->W;
@@ -3975,42 +3975,6 @@ void ImProcFunctions::chromiLuminanceCurve (PipetteBuffer *pipetteBuffer, int pW
         }
     }
 
-    //-------------------------------------------------------------------------
-    // support for pipettes for the new LabRegions color toning mode this is a
-    // hack to fill the pipette buffers also when
-    // !params->labCurve.enabled. It is ugly, but it's the smallest code
-    // change that I could find
-    //-------------------------------------------------------------------------
-    class TempParams {
-        const ProcParams **p_;
-        const ProcParams *old_;
-        ProcParams tmp_;
-
-    public:
-        explicit TempParams(const ProcParams **p): p_(p)
-        {
-            old_ = *p;
-            tmp_.labCurve.enabled = true;
-            *p_ = &tmp_;
-        }
-
-        ~TempParams()
-        {
-            *p_ = old_;
-        }
-    };
-    std::unique_ptr<TempParams> tempparams;
-    bool pipette_for_colortoning_labregions =
-        editPipette &&
-        params->colorToning.enabled && params->colorToning.method == "LabRegions";
-    if (!params->labCurve.enabled && pipette_for_colortoning_labregions) {
-        utili = autili = butili = ccutili = cclutili = clcutili = false;
-        tempparams.reset(new TempParams(&params));
-        curve.makeIdentity();
-    }
-    //-------------------------------------------------------------------------
-
-    
     if (!params->labCurve.enabled) {
         if (editPipette && (editID == EUID_Lab_LCurve || editID == EUID_Lab_aCurve || editID == EUID_Lab_bCurve || editID == EUID_Lab_LHCurve || editID == EUID_Lab_CHCurve || editID == EUID_Lab_HHCurve || editID == EUID_Lab_CLCurve || editID == EUID_Lab_CCurve || editID == EUID_Lab_LCCurve)) {
             // fill pipette buffer with zeros to avoid crashes

@@ -45,7 +45,12 @@ enum EditUniqueID {
     EUID_BlackWhiteBeforeCurve,
     EUID_BlackWhiteAfterCurve,
     EUID_WW_HHCurve,
-
+    EUID_LabMasks_H1,
+    EUID_LabMasks_C1,
+    EUID_LabMasks_L1,
+    EUID_LabMasks_H2,
+    EUID_LabMasks_C2,
+    EUID_LabMasks_L2
 };
 
 /// @brief Editing mechanisms

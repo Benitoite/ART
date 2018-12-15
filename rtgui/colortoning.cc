@@ -136,6 +136,13 @@ public:
         return Glib::ustring::compose("a=%1 b=%2 S=%3\ns=%4 o=%5 p=%6%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power, ch);
     }
 
+    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
+    {
+        hcurve = EUID_LabMasks_H1;
+        ccurve = EUID_LabMasks_C1;
+        lcurve = EUID_LabMasks_L1;
+    }
+
 private:
     ColorToning *parent_;
 };

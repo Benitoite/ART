@@ -30,7 +30,19 @@ namespace rtengine {
 
 void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
 {
+    PlanarWhateverData<float> *editWhatever = nullptr;
+    EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
+
+    if ((eid == EUID_LabMasks_H2 || eid == EUID_LabMasks_C2 || eid == EUID_LabMasks_L2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+        editWhatever = pipetteBuffer->getSinglePlaneBuffer();
+    }
+    
     if (params->dirpyrequalizer.enabled && lab->W >= 8 && lab->H >= 8) {
+        if (editWhatever) {
+            LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
+            fillPipetteLabMasks(lab, editWhatever, id, multiThread);
+        }
+        
         int n = params->dirpyrequalizer.levels.size();
         int show_mask_idx = params->dirpyrequalizer.showMask;
         if (show_mask_idx >= n) {
@@ -59,6 +71,8 @@ void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
                 }
             }
         }
+    } else if (editWhatever) {
+        editWhatever->fill(0.f);
     }
 }
 

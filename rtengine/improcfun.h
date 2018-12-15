@@ -56,7 +56,7 @@ public:
     // constructor/destructor and initialization/state manipulation
     //----------------------------------------------------------------------
     ImProcFunctions(const ProcParams* iparams, bool imultiThread = true)
-        : monitorTransform(nullptr), params(iparams), scale(1), multiThread(imultiThread), dcpProf(nullptr), dcpApplyState(nullptr), lumimul{} {}
+        : monitorTransform(nullptr), params(iparams), scale(1), multiThread(imultiThread), dcpProf(nullptr), dcpApplyState(nullptr), pipetteBuffer(nullptr), lumimul{} {}
     ~ImProcFunctions();
     
     void setScale(double iscale);
@@ -68,6 +68,11 @@ public:
         dcpProf = dcp;
         dcpApplyState = &as;
     }
+
+    void setPipetteBuffer(PipetteBuffer *pb)
+    {
+        pipetteBuffer = pb;
+    }
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
@@ -75,10 +80,10 @@ public:
     //----------------------------------------------------------------------
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
-    void rgbProc(Imagefloat* working, LabImage* lab, PipetteBuffer *pipetteBuffer, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
+    void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                            int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clcurve, LUTf & cl2curve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
                  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, LUTu &histToneCurve);
-    void rgbProc(Imagefloat* working, LabImage* lab, PipetteBuffer *pipetteBuffer, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
+    void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                            int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clcurve, LUTf & cl2curve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
                  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob,
                  double expcomp, int hlcompr, int hlcomprthresh, LUTu &histToneCurve);
@@ -88,7 +93,7 @@ public:
                         LUTu &histLCAM, LUTu &histCCAM, LUTf & CAMBrightCurveJ, LUTf & CAMBrightCurveQ, float &mean, int Iterates, int scale, bool execsharp, float &d, float &dj, float &yb, int rtt,
                         bool showSharpMask = false);
     
-    void chromiLuminanceCurve(PipetteBuffer *pipetteBuffer, int pW, LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLurve);
+    void chromiLuminanceCurve(int pW, LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLurve);
     
     void vibrance(LabImage* lab);         //Jacques' vibrance
     
@@ -189,6 +194,8 @@ private:
 
     DCPProfile *dcpProf;
     const DCPProfile::ApplyState *dcpApplyState;
+
+    PipetteBuffer *pipetteBuffer;
 
     double lumimul[3];
     
