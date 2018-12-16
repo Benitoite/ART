@@ -108,8 +108,8 @@ public:
         const double strength = (gp.strength / 100.0);
         const double octaves = 3;
         const double wd = std::min(fw, fh);
-        const double zoom = (1.0 + 8 * (double(gp.iso) / GRAIN_SCALE_FACTOR) / 100.0) / 800.0 * (double(gp.scale) / 100.0);
-        const double s = std::max(scale / 3.0, 1.0);
+        const double zoom = (1.0 + 8 * (double(gp.iso) / GRAIN_SCALE_FACTOR) / 100.0) / 800.0;
+        const double s = std::max(scale / 3.0, 1.0) / (double(std::max(gp.scale, 1)) / 100.0);
 
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
