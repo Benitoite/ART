@@ -145,6 +145,7 @@ private:
     Adjuster *areaMaskAngle;
     Adjuster *areaMaskFeather;
     Adjuster *areaMaskRoundness;
+    Adjuster *areaMaskContrast;
     std::vector<Adjuster *> areaMaskAdjusters;
     std::vector<bool> listenerDisabled;
     rtengine::LabCorrectionMask::AreaMask defaultAreaMask;

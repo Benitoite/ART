@@ -310,7 +310,8 @@ LabCorrectionMask::AreaMask::AreaMask():
     height(100),
     angle(0),
     feather(0),
-    roundness(0)
+    roundness(0),
+    contrast(1)
 {
 }
 
@@ -326,7 +327,8 @@ bool LabCorrectionMask::AreaMask::operator==(const AreaMask &other) const
         && height == other.height
         && angle == other.angle
         && feather == other.feather
-        && roundness == other.roundness;
+        && roundness == other.roundness
+        && contrast == other.contrast;
 }
 
 
@@ -414,6 +416,7 @@ bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &
     assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskAngle" + suffix, true, areaMask.angle, ret);
     assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, true, areaMask.feather, ret);
     assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskRoundness" + suffix, true, areaMask.roundness, ret);
+    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, true, areaMask.contrast, ret);
     return ret;
 }
 
@@ -432,7 +435,8 @@ void LabCorrectionMask::save(Glib::KeyFile &keyfile, const Glib::ustring &group_
     putToKeyfile(group_name, prefix + "AreaMaskHeight" + suffix, areaMask.height, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskAngle" + suffix, areaMask.angle, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskRoundness" + suffix, areaMask.roundness, keyfile);    
+    putToKeyfile(group_name, prefix + "AreaMaskRoundness" + suffix, areaMask.roundness, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast, keyfile);
 }
 
 

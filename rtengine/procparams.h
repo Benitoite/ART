@@ -70,6 +70,7 @@ public:
         double angle; // in degrees
         double feather; // [0,100]
         double roundness; // [0,100] (0 = rectangle, 100 = ellipse)
+        int contrast;
         AreaMask();
         bool operator==(const AreaMask &other) const;
         bool operator!=(const AreaMask &other) const;

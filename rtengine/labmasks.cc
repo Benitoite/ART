@@ -54,7 +54,7 @@ void fastlin2log(float *x, float factor, float base, int w)
 #endif
 
 
-bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask &area, int ox, int oy, int width, int height, bool multithread)
+bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask &area, int ox, int oy, int width, int height, float blur, bool multithread)
 {
     if (area.isTrivial()) {
         return false;
@@ -74,12 +74,14 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
     float a_max = std::sqrt(2) * a_min;
     float a = a_max - area.roundness / 100.0 * (a_max - a_min);
 
-    float bgcolor = area.inverted ? 1.f : 0.f;
+    float bgcolor = 1.f; //area.inverted ? 1.f : (float(area.feather) / 100.f);//0.f;
     float fgcolor = 1.f - bgcolor;
+    float fillcolor = 1.f; //area.inverted ? 1.f : 0.f;
 
     // first fill with background
+    array2D<float> guide(mask.width(), mask.height(), mask, 0);
     float *maskdata = mask;
-    std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
+    std::fill(maskdata, maskdata + (mask.width() * mask.height()), fillcolor); //bgcolor);
 
     const auto get = [&](int x, int y) -> Coord
                      {
@@ -119,13 +121,41 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
         }
     }
 
+    // guided feathering and contrast
+    int radius = std::max(int(area.feather / 100.0 * std::min(a_min, b_min)), 1);
+    guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
+    const auto contrast =
+        [&area](float x) -> float
+        {
+            constexpr float s = 1.f;
+            constexpr float a = 0.5f;
+            float y = 0.f;
+            if (x <= 0.5f) {
+                y = a * std::pow(x/a, area.contrast);
+            } else {
+                y = 1.f - (1-a) * std::pow((1 - x) / (1 - a), area.contrast);
+            }
+            return s*y + (1.f-s)*x;
+        };
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < mask.height(); ++y) {
+        for (int x = 0; x < mask.width(); ++x) {
+            float v = mask[y][x];
+            if (!area.inverted) {
+                v = 1.f - v;
+            }
+            mask[y][x] = contrast(v);
+        }
+    }
+
     // and blur
-    float radius = area.feather / 100.0 * std::min(a_min, b_min);
-    if (radius > 1) {
+    if (blur > 0.f) {
 #ifdef _OPENMP
 #       pragma omp parallel if (multithread)
 #endif
-        gaussianBlur(mask, mask, mask.width(), mask.height(), radius);
+        gaussianBlur(mask, mask, mask.width(), mask.height(), blur);
     }
 
     return true;
@@ -250,7 +280,7 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
     }
 
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(guide, masks[i].areaMask, offset_x, offset_y, full_width, full_height, multithread)) {
+        if (generate_area_mask(guide, masks[i].areaMask, offset_x, offset_y, full_width, full_height, masks[i].maskBlur, multithread)) {
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif

@@ -176,6 +176,8 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMaskAdjusters.push_back(areaMaskFeather);
     areaMaskRoundness = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ROUNDNESS"), 0, 100, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskRoundness);
+    areaMaskContrast = Gtk::manage(new Adjuster(M("TP_EXPOSURE_CONTRAST"), -100, 100, 1, 0));
+    areaMaskAdjusters.push_back(areaMaskContrast);
 
     for (auto a : areaMaskAdjusters) {
         a->setAdjusterListener(this);
@@ -252,6 +254,7 @@ void LabMasksPanel::maskGet(int idx)
     r.areaMask.angle = areaMaskAngle->getValue();
     r.areaMask.feather = areaMaskFeather->getValue();
     r.areaMask.roundness = areaMaskRoundness->getValue();
+    r.areaMask.contrast = areaMaskContrast->getValue();
 }
 
 
@@ -428,6 +431,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         areaMaskAngle->setValue(r.areaMask.angle);
         areaMaskFeather->setValue(r.areaMask.feather);
         areaMaskRoundness->setValue(r.areaMask.roundness);
+        areaMaskContrast->setValue(r.areaMask.contrast);
         updateAreaMask(false);
     }
     int n = cp_->getColumnCount();
