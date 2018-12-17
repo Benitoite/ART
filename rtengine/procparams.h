@@ -780,8 +780,9 @@ struct DenoiseParams {
     double luminanceDetail;
 
     ChrominanceMethod chrominanceMethod;
+    double chrominanceAutoFactor;
     double chrominance;
-    std::vector<double> chrominanceCurve;
+    std::vector<double> chrominanceCurve; // not used anymore
     double chrominanceRedGreen;
     double chrominanceBlueYellow;
 

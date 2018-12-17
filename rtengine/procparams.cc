@@ -1550,6 +1550,7 @@ DenoiseParams::DenoiseParams() :
     },
     luminanceDetail(0),
     chrominanceMethod(ChrominanceMethod::AUTOMATIC),
+    chrominanceAutoFactor(1),
     chrominance(15),
     chrominanceCurve{
         FCT_MinMaxCPoints,
@@ -1589,6 +1590,7 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && luminanceCurve == other.luminanceCurve
         && luminanceDetail == other.luminanceDetail
         && chrominanceMethod == other.chrominanceMethod
+        && chrominanceAutoFactor == other.chrominanceAutoFactor
         && chrominance == other.chrominance
         && chrominanceCurve == other.chrominanceCurve
         && chrominanceRedGreen == other.chrominanceRedGreen
@@ -3337,6 +3339,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->denoise.luminanceCurve, "Denoise", "LuminanceCurve", denoise.luminanceCurve, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.luminanceDetail, "Denoise", "LuminanceDetail", denoise.luminanceDetail, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceMethod, "Denoise", "ChrominanceMethod", int(denoise.chrominanceMethod), keyFile);
+        saveToKeyfile(!pedited || pedited->denoise.chrominanceAutoFactor, "Denoise", "ChrominanceAutoFactor", denoise.chrominanceAutoFactor, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominance, "Denoise", "Chrominance", denoise.chrominance, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceCurve, "Denoise", "ChrominanceCurve", denoise.chrominanceCurve, keyFile);
         saveToKeyfile(!pedited || pedited->denoise.chrominanceRedGreen, "Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen, keyFile);
@@ -4367,6 +4370,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 if (assignFromKeyfile(keyFile, "Denoise", "ChrominanceMethod", pedited, val, pedited->denoise.chrominanceMethod)) {
                     denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(val);
                 }
+                assignFromKeyfile(keyFile, "Denoise", "ChrominanceAutoFactor", pedited, denoise.chrominanceAutoFactor, pedited->denoise.chrominanceAutoFactor);
                 assignFromKeyfile(keyFile, "Denoise", "Chrominance", pedited, denoise.chrominance, pedited->denoise.chrominance);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceCurve", pedited, denoise.chrominanceCurve, pedited->denoise.chrominanceCurve);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceRedGreen", pedited, denoise.chrominanceRedGreen, pedited->denoise.chrominanceRedGreen);

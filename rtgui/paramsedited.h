@@ -361,6 +361,7 @@ public:
     bool luminanceCurve;
     bool luminanceDetail;
     bool chrominanceMethod;
+    bool chrominanceAutoFactor;
     bool chrominance;
     bool chrominanceCurve;
     bool chrominanceRedGreen;

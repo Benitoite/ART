@@ -266,6 +266,7 @@ void ParamsEdited::set(bool v)
     denoise.luminanceCurve = v;
     denoise.luminanceDetail = v;
     denoise.chrominanceMethod = v;
+    denoise.chrominanceAutoFactor = v;
     denoise.chrominance = v;
     denoise.chrominanceCurve = v;
     denoise.chrominanceRedGreen = v;
@@ -834,6 +835,7 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(denoise.luminanceCurve);
         SETVAL_(denoise.luminanceDetail);
         SETVAL_(denoise.chrominanceMethod);
+        SETVAL_(denoise.chrominanceAutoFactor);
         SETVAL_(denoise.chrominance);
         SETVAL_(denoise.chrominanceCurve);
         SETVAL_(denoise.chrominanceRedGreen);
@@ -2018,6 +2020,7 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(denoise.luminanceCurve);
     ADDSETVAL_(denoise.luminanceDetail, ADDSET_DIRPYRDN_LUMDET);
     SETVAL_(denoise.chrominanceMethod);
+    SETVAL_(denoise.chrominanceAutoFactor);
     ADDSETVAL_(denoise.chrominance, ADDSET_DIRPYRDN_CHROMA);
     SETVAL_(denoise.chrominanceCurve);
     ADDSETVAL_(denoise.chrominanceRedGreen, ADDSET_DIRPYRDN_CHROMARED);

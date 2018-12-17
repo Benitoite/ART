@@ -36,6 +36,7 @@ Denoise::Denoise():
     EvGuidedLumaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_STRENGTH");
     EvGuidedChromaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS");
     EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
+    EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
 
     std::vector<GradientMilestone> milestones;
     CurveListener::setMulti(true);
@@ -124,6 +125,7 @@ Denoise::Denoise():
     hb->pack_start(*chrominanceMethod);
     chromaVBox->pack_start(*hb);
 
+    chrominanceAutoFactor = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_CHROMINANCE_AUTO_FACTOR"), 0, 1, 0.01, 1));
     chrominance = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_CHROMINANCE_MASTER"), 0, 100, 0.01, 15));
     chrominanceRedGreen = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN"), -100, 100, 0.1, 0));
     chrominanceBlueYellow = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_CHROMINANCE_BLUEYELLOW"), -100, 100, 0.1, 0));
@@ -132,26 +134,28 @@ Denoise::Denoise():
     chrominanceRedGreen->setLogScale(100, 0, true);
     chrominanceBlueYellow->setLogScale(100, 0, true);
 
+    chromaVBox->pack_start(*chrominanceAutoFactor);
     chromaVBox->pack_start(*chrominance);
     chromaVBox->pack_start(*chrominanceRedGreen);
     chromaVBox->pack_start(*chrominanceBlueYellow);
 
     luminance->setAdjusterListener(this);
     luminanceDetail->setAdjusterListener(this);
+    chrominanceAutoFactor->setAdjusterListener(this);
     chrominance->setAdjusterListener(this);
     chrominanceRedGreen->setAdjusterListener(this);
     chrominanceBlueYellow->setAdjusterListener(this);
 
-    chrominanceEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastDenoiseCurvesDir, M("TP_DIRPYRDENOISE_CHROMINANCE_CURVE"), 0.7));
-    chrominanceEditorGroup->setCurveListener (this);
-    defaultCurve = rtengine::DenoiseParams().chrominanceCurve;
-    chrominanceCurve = static_cast<FlatCurveEditor*>(chrominanceEditorGroup->addCurve(CT_Flat, "", nullptr, false, false));
-    chrominanceCurve->setIdentityValue(0.);
-    chrominanceCurve->setResetCurve(FlatCurveType(defaultCurve.at(0)), defaultCurve);
-    chrominanceCurve->setTooltip(M("TP_DIRPYRDENOISE_CHROMINANCE_CURVE_TOOLTIP"));
-    chrominanceCurve->setBottomBarColorProvider(this, 2);
-    chrominanceEditorGroup->curveListComplete();
-    chromaVBox->pack_start(*chrominanceEditorGroup, Gtk::PACK_SHRINK, 4);
+    // chrominanceEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastDenoiseCurvesDir, M("TP_DIRPYRDENOISE_CHROMINANCE_CURVE"), 0.7));
+    // chrominanceEditorGroup->setCurveListener (this);
+    // defaultCurve = rtengine::DenoiseParams().chrominanceCurve;
+    // chrominanceCurve = static_cast<FlatCurveEditor*>(chrominanceEditorGroup->addCurve(CT_Flat, "", nullptr, false, false));
+    // chrominanceCurve->setIdentityValue(0.);
+    // chrominanceCurve->setResetCurve(FlatCurveType(defaultCurve.at(0)), defaultCurve);
+    // chrominanceCurve->setTooltip(M("TP_DIRPYRDENOISE_CHROMINANCE_CURVE_TOOLTIP"));
+    // chrominanceCurve->setBottomBarColorProvider(this, 2);
+    // chrominanceEditorGroup->curveListComplete();
+    // chromaVBox->pack_start(*chrominanceEditorGroup, Gtk::PACK_SHRINK, 4);
     chromaFrame->add(*chromaVBox);
     pack_start(*chromaFrame);
 
@@ -319,10 +323,11 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
 
     chrominanceMethod->set_active(int(pp->denoise.chrominanceMethod));
     chrominanceMethodChanged();
+    chrominanceAutoFactor->setValue(pp->denoise.chrominanceAutoFactor);
     chrominance->setValue(pp->denoise.chrominance);
     chrominanceRedGreen->setValue(pp->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->setValue(pp->denoise.chrominanceBlueYellow);
-    chrominanceCurve->setCurve(pp->denoise.chrominanceCurve);
+    // chrominanceCurve->setCurve(pp->denoise.chrominanceCurve);
 
     smoothingEnabled->setEnabled(pp->denoise.smoothingEnabled);
     smoothingMethod->set_active(int(pp->denoise.smoothingMethod));
@@ -368,6 +373,7 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
 
         luminance->setEditedState(pedited->denoise.luminance ? Edited : UnEdited);
         luminanceDetail->setEditedState(pedited->denoise.luminanceDetail ? Edited : UnEdited);
+        chrominanceAutoFactor->setEditedState(pedited->denoise.chrominanceAutoFactor ? Edited : UnEdited);
         chrominance->setEditedState(pedited->denoise.chrominance ? Edited : UnEdited);
         chrominanceRedGreen->setEditedState(pedited->denoise.chrominanceRedGreen ? Edited : UnEdited);
         chrominanceBlueYellow->setEditedState(pedited->denoise.chrominanceBlueYellow ? Edited : UnEdited);
@@ -376,7 +382,7 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
         medianIterations->setEditedState(pedited->denoise.medianIterations ? Edited : UnEdited);
         set_inconsistent(multiImage && !pedited->denoise.enabled);
         smoothingEnabled->set_inconsistent(!pedited->denoise.smoothingEnabled);
-        chrominanceCurve->setUnChanged(!pedited->denoise.chrominanceCurve);
+        // chrominanceCurve->setUnChanged(!pedited->denoise.chrominanceCurve);
         luminanceCurve->setUnChanged(!pedited->denoise.luminanceCurve);
 
         guidedLumaRadius->setEditedState(pedited->denoise.guidedLumaRadius ? Edited : UnEdited);
@@ -391,14 +397,14 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
 void Denoise::setEditProvider(EditDataProvider *provider)
 {
     luminanceCurve->setEditProvider(provider);
-    chrominanceCurve->setEditProvider(provider);
+    // chrominanceCurve->setEditProvider(provider);
 }
 
 
 void Denoise::autoOpenCurve ()
 {
     luminanceCurve->openIfNonlinear();
-    chrominanceCurve->openIfNonlinear();
+    // chrominanceCurve->openIfNonlinear();
 }
 
 
@@ -422,6 +428,7 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
         pp->denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(chrominanceMethod->get_active_row_number());
     }
     pp->denoise.chrominance = chrominance->getValue();
+    pp->denoise.chrominanceAutoFactor = chrominanceAutoFactor->getValue();
     pp->denoise.chrominanceRedGreen = chrominanceRedGreen->getValue();
     pp->denoise.chrominanceBlueYellow = chrominanceBlueYellow->getValue();
     pp->denoise.smoothingEnabled = smoothingEnabled->getEnabled();
@@ -451,7 +458,8 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
         pedited->denoise.luminanceDetail = luminanceDetail->getEditedState();
         pedited->denoise.chrominanceMethod = chrominanceMethod->get_active_row_number() != 2;
         pedited->denoise.chrominance = chrominance->getEditedState();
-        pedited->denoise.chrominanceCurve = !chrominanceCurve->isUnChanged();
+        // pedited->denoise.chrominanceCurve = !chrominanceCurve->isUnChanged();
+        pedited->denoise.chrominanceAutoFactor = chrominanceAutoFactor->getEditedState();
         pedited->denoise.chrominanceRedGreen = chrominanceRedGreen->getEditedState();
         pedited->denoise.chrominanceBlueYellow = chrominanceBlueYellow->getEditedState();
         pedited->denoise.smoothingEnabled = !smoothingEnabled->get_inconsistent();
@@ -475,9 +483,9 @@ void Denoise::curveChanged(CurveEditor* ce)
             listener->panelChanged(EvDPDNLCurve, M("HISTORY_CUSTOMCURVE"));
         }
 
-        if (ce == chrominanceCurve) {
-            listener->panelChanged(EvDPDNCCCurve, M("HISTORY_CUSTOMCURVE"));
-        }
+        // if (ce == chrominanceCurve) {
+        //     listener->panelChanged(EvDPDNCCCurve, M("HISTORY_CUSTOMCURVE"));
+        // }
     }
 }
 
@@ -515,10 +523,12 @@ void Denoise::chrominanceMethodChanged()
             chrominance->set_sensitive(true);
             chrominanceRedGreen->set_sensitive(true);
             chrominanceBlueYellow->set_sensitive(true);
+            chrominanceAutoFactor->hide();
         } else if (chrominanceMethod->get_active_row_number() == 1) {
             chrominance->set_sensitive(false);
             chrominanceRedGreen->set_sensitive(false);
             chrominanceBlueYellow->set_sensitive(false);
+            chrominanceAutoFactor->show();
         }
     }
 
@@ -557,6 +567,7 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
     luminance->setDefault(defParams->denoise.luminance);
     luminanceDetail->setDefault(defParams->denoise.luminanceDetail);
     chrominance->setDefault(defParams->denoise.chrominance);
+    chrominanceAutoFactor->setDefault(defParams->denoise.chrominanceAutoFactor);
     chrominanceRedGreen->setDefault(defParams->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->setDefault(defParams->denoise.chrominanceBlueYellow);
     gamma->setDefault(defParams->denoise.gamma);
@@ -570,6 +581,7 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
         luminance->setDefaultEditedState(pedited->denoise.luminance ? Edited : UnEdited);
         luminanceDetail->setDefaultEditedState(pedited->denoise.luminanceDetail ? Edited : UnEdited);
         chrominance->setDefaultEditedState(pedited->denoise.chrominance ? Edited : UnEdited);
+        chrominanceAutoFactor->setDefaultEditedState(pedited->denoise.chrominanceAutoFactor ? Edited : UnEdited);
         chrominanceRedGreen->setDefaultEditedState(pedited->denoise.chrominanceRedGreen ? Edited : UnEdited);
         chrominanceBlueYellow->setDefaultEditedState(pedited->denoise.chrominanceBlueYellow ? Edited : UnEdited);
         gamma->setDefaultEditedState(pedited->denoise.gamma ? Edited : UnEdited);
@@ -582,6 +594,7 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
         luminance->setDefaultEditedState(Irrelevant);
         luminanceDetail->setDefaultEditedState(Irrelevant);
         chrominance->setDefaultEditedState(Irrelevant);
+        chrominanceAutoFactor->setDefaultEditedState(Irrelevant);
         chrominanceRedGreen->setDefaultEditedState(Irrelevant);
         chrominanceBlueYellow->setDefaultEditedState(Irrelevant);
         gamma->setDefaultEditedState(Irrelevant);
@@ -621,7 +634,9 @@ void Denoise::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvGuidedChromaRadius, costr);
         } else if (a == guidedChromaStrength && smoothingEnabled->getEnabled()) {
             listener->panelChanged(EvGuidedChromaStrength, costr);
-        } 
+        } else if (a == chrominanceAutoFactor) {
+            listener->panelChanged(EvChrominanceAutoFactor, costr);
+        }
     }
 }
 
@@ -662,12 +677,13 @@ void Denoise::setBatchMode(bool batchMode)
     luminance->showEditedCB ();
     luminanceDetail->showEditedCB ();
     chrominance->showEditedCB ();
+    chrominanceAutoFactor->showEditedCB();
     chrominanceRedGreen->showEditedCB ();
     chrominanceBlueYellow->showEditedCB ();
     gamma->showEditedCB ();
     medianIterations->showEditedCB ();
     luminanceEditorGroup->setBatchMode (batchMode);
-    chrominanceEditorGroup->setBatchMode (batchMode);
+    // chrominanceEditorGroup->setBatchMode (batchMode);
     guidedLumaRadius->showEditedCB();
     guidedLumaStrength->showEditedCB();
     guidedChromaRadius->showEditedCB();
@@ -746,6 +762,7 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
     luminance->trimValue(pp->denoise.luminance);
     luminanceDetail->trimValue(pp->denoise.luminanceDetail);
     chrominance->trimValue(pp->denoise.chrominance);
+    chrominanceAutoFactor->trimValue(pp->denoise.chrominanceAutoFactor);
     chrominanceRedGreen->trimValue(pp->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->trimValue(pp->denoise.chrominanceBlueYellow);
     gamma->trimValue(pp->denoise.gamma);

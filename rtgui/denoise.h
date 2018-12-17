@@ -79,6 +79,7 @@ private:
     rtengine::ProcEvent EvGuidedLumaStrength;
     rtengine::ProcEvent EvGuidedChromaRadius;
     rtengine::ProcEvent EvGuidedChromaStrength;
+    rtengine::ProcEvent EvChrominanceAutoFactor;
 
     MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
@@ -89,8 +90,9 @@ private:
     Adjuster *luminance;
     Adjuster *luminanceDetail;
     MyComboBoxText *chrominanceMethod;
-    CurveEditorGroup *chrominanceEditorGroup;
-    FlatCurveEditor *chrominanceCurve;
+    Adjuster *chrominanceAutoFactor;
+//    CurveEditorGroup *chrominanceEditorGroup;
+//    FlatCurveEditor *chrominanceCurve;
     Adjuster *chrominance;
     Adjuster *chrominanceRedGreen;
     Adjuster *chrominanceBlueYellow;

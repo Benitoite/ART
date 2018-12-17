@@ -673,6 +673,11 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
         dnparams.chrominance = chM / (autoNR * multip * adjustr);
         dnparams.chrominanceRedGreen = maxr;
         dnparams.chrominanceBlueYellow = maxb;
+
+        dnparams.chrominance *= dnparams.chrominanceAutoFactor;
+        dnparams.chrominanceRedGreen *= dnparams.chrominanceAutoFactor;
+        dnparams.chrominanceBlueYellow *= dnparams.chrominanceAutoFactor;
+        
         store.valid = true;
 
         if (settings->verbose) {
