@@ -64,6 +64,7 @@ class LabMasksPanel:
     public AreaMask {
 public:
     LabMasksPanel(LabMasksContentProvider *cp);
+    ~LabMasksPanel();
 
     void setMasks(const std::vector<rtengine::LabCorrectionMask> &masks, int show_mask_idx);
     void getMasks(std::vector<rtengine::LabCorrectionMask> &masks, int &show_mask_idx);
@@ -136,6 +137,7 @@ private:
     Gtk::CheckButton *showMask;
     sigc::connection selectionConn;
     MyExpander *areaMask;
+    Gtk::HBox *areaMaskButtonsHb;
     Gtk::ToggleButton *areaMaskToggle;
     Gtk::CheckButton *areaMaskInverted;
     Adjuster *areaMaskX;

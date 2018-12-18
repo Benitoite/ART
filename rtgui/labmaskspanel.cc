@@ -147,12 +147,13 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMask->signal_enabled_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskEnableToggled));
     ToolParamBlock *area = Gtk::manage(new ToolParamBlock());
     hb = Gtk::manage(new Gtk::HBox());
+    areaMaskButtonsHb = hb;
 
     areaMaskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_AREA_INVERTED")));
     areaMaskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskInvertedChanged));
     hb->pack_start(*areaMaskInverted, Gtk::PACK_EXPAND_WIDGET);
 
-    areaMaskToggle = Gtk::manage(new Gtk::ToggleButton());
+    areaMaskToggle = new Gtk::ToggleButton();
     areaMaskToggle->get_style_context()->add_class("independent");
     areaMaskToggle->add(*Gtk::manage(new RTImage("crosshair-adjust.png")));
     areaMaskToggle->set_tooltip_text(M("EDIT_OBJECT_TOOLTIP"));
@@ -193,6 +194,12 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     pack_start(*showMask, Gtk::PACK_SHRINK, 4);
 
     maskBlur->delay = options.adjusterMaxDelay;
+}
+
+
+LabMasksPanel::~LabMasksPanel()
+{
+    delete areaMaskToggle;
 }
 
 
@@ -638,7 +645,7 @@ int LabMasksPanel::getSelected()
 
 void LabMasksPanel::setBatchMode()
 {
-    areaMaskToggle->hide();
+    removeIfThere(areaMaskButtonsHb, areaMaskToggle, false);
 }
 
 
