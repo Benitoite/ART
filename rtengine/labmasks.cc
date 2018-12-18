@@ -124,16 +124,20 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
     // guided feathering and contrast
     int radius = std::max(int(area.feather / 100.0 * std::min(a_min, b_min)), 1);
     guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
+    const float c = float(area.contrast) / 4.f;
     const auto contrast =
-        [&area](float x) -> float
+        [c](float x) -> float
         {
+            if (c <= 0) {
+                return x;
+            }
             constexpr float s = 1.f;
             constexpr float a = 0.5f;
             float y = 0.f;
             if (x <= 0.5f) {
-                y = a * std::pow(x/a, area.contrast);
+                y = a * std::pow(x/a, c);
             } else {
-                y = 1.f - (1-a) * std::pow((1 - x) / (1 - a), area.contrast);
+                y = 1.f - (1-a) * std::pow((1 - x) / (1 - a), c);
             }
             return s*y + (1.f-s)*x;
         };
@@ -142,11 +146,12 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
 #endif
     for (int y = 0; y < mask.height(); ++y) {
         for (int x = 0; x < mask.width(); ++x) {
-            float v = mask[y][x];
+            float v = LIM01(mask[y][x]);
             if (!area.inverted) {
                 v = 1.f - v;
             }
             mask[y][x] = contrast(v);
+            assert(mask[y][x] == mask[y][x]);
         }
     }
 

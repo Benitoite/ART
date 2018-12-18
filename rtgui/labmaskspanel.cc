@@ -176,7 +176,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMaskAdjusters.push_back(areaMaskFeather);
     areaMaskRoundness = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ROUNDNESS"), 0, 100, 0.1, 0));
     areaMaskAdjusters.push_back(areaMaskRoundness);
-    areaMaskContrast = Gtk::manage(new Adjuster(M("TP_EXPOSURE_CONTRAST"), -100, 100, 1, 0));
+    areaMaskContrast = Gtk::manage(new Adjuster(M("TP_EXPOSURE_CONTRAST"), 0, 100, 1, 0));
     areaMaskAdjusters.push_back(areaMaskContrast);
 
     for (auto a : areaMaskAdjusters) {

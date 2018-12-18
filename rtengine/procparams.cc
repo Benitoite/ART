@@ -311,7 +311,7 @@ LabCorrectionMask::AreaMask::AreaMask():
     angle(0),
     feather(0),
     roundness(0),
-    contrast(1)
+    contrast(0)
 {
 }
 
