@@ -811,20 +811,9 @@ void LabMasksPanel::onAreaShapeSelectionChanged()
 
         auto sel = areaMaskShapes->get_selected();
         unsigned int newidx = sel.empty() ? area_shape_index_ : sel[0];
+
         if (newidx != area_shape_index_) {
-            area_shape_index_ = newidx;
-            auto &ns = masks_[selected_].areaMask.shapes[newidx];
-            center_x_ = ns.x;
-            center_y_ = ns.y;
-            width_ = ns.width;
-            height_ = ns.height;
-            angle_ = ns.angle;
-            updateGeometry();
-            updateAreaMask(true);
-            if (areaMaskToggle->get_active()) {
-                areaMaskToggle->set_active(false);
-                areaMaskToggle->set_active(true);
-            }
+            areaShapeSelect(newidx, false);
         }
         enableListener();
     }
@@ -834,6 +823,7 @@ void LabMasksPanel::onAreaShapeSelectionChanged()
 void LabMasksPanel::onAreaShapeResetPressed()
 {
     if (selected_ < masks_.size()) {
+        listEdited = true;
         disableListener();
         masks_[selected_].areaMask.shapes = {defaultAreaShape};
         area_shape_index_ = 0;
@@ -858,9 +848,10 @@ void LabMasksPanel::onAreaShapeResetPressed()
 void LabMasksPanel::onAreaShapeAddPressed()
 {
     if (selected_ < masks_.size()) {
+        listEdited = true;
         masks_[selected_].areaMask.shapes.push_back(defaultAreaShape);
-        area_shape_index_ = masks_[selected_].areaMask.shapes.size()-1;
-        populateShapeList(selected_, area_shape_index_);
+        populateShapeList(selected_, -1);
+        areaShapeSelect(masks_[selected_].areaMask.shapes.size()-1, true);
         maskShow(selected_, true);        
         auto l = getListener();
         if (l && areaMask->getEnabled()) {
@@ -873,9 +864,10 @@ void LabMasksPanel::onAreaShapeAddPressed()
 void LabMasksPanel::onAreaShapeRemovePressed()
 {
     if (selected_ < masks_.size() && area_shape_index_ < masks_[selected_].areaMask.shapes.size() && masks_[selected_].areaMask.shapes.size() > 1) {
+        listEdited = true;
         masks_[selected_].areaMask.shapes.erase(masks_[selected_].areaMask.shapes.begin() + area_shape_index_);
-        populateShapeList(selected_, area_shape_index_);
-        onAreaShapeSelectionChanged();
+        populateShapeList(selected_, -1);
+        areaShapeSelect(area_shape_index_ > 0 ? area_shape_index_ - 1 : 0, true);
         maskShow(selected_, true);        
         auto l = getListener();
         if (l && areaMask->getEnabled()) {
@@ -898,9 +890,11 @@ void LabMasksPanel::populateShapeList(int idx, int sel)
                 "%1 %2 %3 %4 %5 %6",
                 a.x, a.y, a.width, a.height, a.angle, a.roundness));
     }
-    Gtk::TreePath pth;
-    pth.push_back(sel);
-    areaMaskShapes->get_selection()->select(pth);
+    if (sel >= 0) {
+        Gtk::TreePath pth;
+        pth.push_back(sel);
+        areaMaskShapes->get_selection()->select(pth);
+    }
 }
 
 
@@ -915,6 +909,7 @@ void LabMasksPanel::onAreaMaskCopyPressed()
 void LabMasksPanel::onAreaMaskPastePressed()
 {
     if (selected_ < masks_.size() && clipboard.hasAreaMask()) {
+        listEdited = true;
         disableListener();
         masks_[selected_].areaMask = clipboard.getAreaMask();
         area_shape_index_ = 0;
@@ -935,5 +930,30 @@ void LabMasksPanel::onAreaMaskPastePressed()
         if (l && areaMask->getEnabled()) {
             l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
         }
+    }
+}
+
+
+void LabMasksPanel::areaShapeSelect(int sel, bool update_list)
+{
+    area_shape_index_ = sel;
+    auto &ns = masks_[selected_].areaMask.shapes[sel];
+    center_x_ = ns.x;
+    center_y_ = ns.y;
+    width_ = ns.width;
+    height_ = ns.height;
+    angle_ = ns.angle;
+    updateGeometry();
+    updateAreaMask(true);
+    if (areaMaskToggle->get_active()) {
+        areaMaskToggle->set_active(false);
+        areaMaskToggle->set_active(true);
+    }
+
+    if (update_list) {
+        ConnectionBlocker b(shapeSelectionConn);
+        Gtk::TreePath pth;
+        pth.push_back(sel);
+        areaMaskShapes->get_selection()->select(pth);
     }
 }

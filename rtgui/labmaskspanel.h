@@ -115,6 +115,7 @@ private:
     void maskGet(int idx);
     void maskShow(int idx, bool list_only=false, bool unsub=true);
     void populateShapeList(int idx, int sel);
+    void areaShapeSelect(int idx, bool update_list);
 
     void disableListener();
     void enableListener();
