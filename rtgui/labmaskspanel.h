@@ -103,16 +103,21 @@ private:
     void onAreaMaskInvertedChanged();
     void onAreaMaskToggleChanged();
     void onShowMaskChanged();
+    void onAreaShapeSelectionChanged();
+    void onAreaShapeResetPressed();
+    void onAreaShapeAddPressed();
+    void onAreaShapeRemovePressed();
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
     void maskShow(int idx, bool list_only=false, bool unsub=true);
+    void populateShapeList(int idx, int sel);
 
     void disableListener();
     void enableListener();
 
     LabMasksContentProvider *cp_;
     std::vector<rtengine::LabCorrectionMask> masks_;
-    int selected_;
+    unsigned int selected_;
 
     rtengine::ProcEvent EvMaskList;
     rtengine::ProcEvent EvHMask;
@@ -138,16 +143,22 @@ private:
     sigc::connection selectionConn;
     MyExpander *areaMask;
     Gtk::HBox *areaMaskButtonsHb;
+    Gtk::ListViewText *areaMaskShapes;
+    sigc::connection shapeSelectionConn;
+    Gtk::Button *areaMaskReset;
+    Gtk::Button *areaMaskAdd;
+    Gtk::Button *areaMaskRemove;
+    unsigned int area_shape_index_;
     Gtk::ToggleButton *areaMaskToggle;
     Gtk::CheckButton *areaMaskInverted;
+    Adjuster *areaMaskFeather;
+    Adjuster *areaMaskContrast;
     Adjuster *areaMaskX;
     Adjuster *areaMaskY;
     Adjuster *areaMaskWidth;
     Adjuster *areaMaskHeight;
     Adjuster *areaMaskAngle;
-    Adjuster *areaMaskFeather;
     Adjuster *areaMaskRoundness;
-    Adjuster *areaMaskContrast;
     std::vector<Adjuster *> areaMaskAdjusters;
     std::vector<bool> listenerDisabled;
     rtengine::LabCorrectionMask::AreaMask defaultAreaMask;

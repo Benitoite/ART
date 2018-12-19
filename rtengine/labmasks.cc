@@ -54,9 +54,9 @@ void fastlin2log(float *x, float factor, float base, int w)
 #endif
 
 
-bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask &area, int ox, int oy, int width, int height, float blur, bool multithread)
+bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &mask, const std::vector<LabCorrectionMask::AreaMask> &areaMask, bool enabled, bool inverted, double feather, int contrast, float blur, bool multithread)
 {
-    if (area.isTrivial()) {
+    if (!enabled || areaMask.empty() || (areaMask.size() == 1 && areaMask[0].isTrivial() && !feather && !contrast)) {
         return false;
     }
 
@@ -64,56 +64,64 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
     float h2 = float(height) / 2;
 
     Coord origin(ox, oy);
-    Coord center(w2 + area.x / 100.0 * w2, h2 + area.y / 100.0 * h2);
-    float area_w = area.width / 100.0 * width;
-    float area_h = area.height / 100.0 * height;
-    
-    float a_min = area_w / 2;
-    float b_min = area_h / 2;
-    float r = b_min / a_min;
-    float a_max = std::sqrt(2) * a_min;
-    float a = a_max - area.roundness / 100.0 * (a_max - a_min);
 
-    float bgcolor = 1.f; //area.inverted ? 1.f : (float(area.feather) / 100.f);//0.f;
-    float fgcolor = 1.f - bgcolor;
-    float fillcolor = 1.f; //area.inverted ? 1.f : 0.f;
+    const auto inside =
+        [&](int x, int y) -> bool
+        {
+            return (x >= 0 && x < mask.width() &&
+                    y >= 0 && y < mask.height());
+        };
+
+    const int dir[] = { 1, 1, 1, -1, -1, 1, -1, -1 };
+
+    constexpr float bgcolor = 1.f;
+    constexpr float fgcolor = 1.f - bgcolor;
 
     // first fill with background
     array2D<float> guide(mask.width(), mask.height(), mask, 0);
     float *maskdata = mask;
-    std::fill(maskdata, maskdata + (mask.width() * mask.height()), fillcolor); //bgcolor);
+    std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
 
-    const auto get = [&](int x, int y) -> Coord
-                     {
-                         PolarCoord p(Coord(x, y));
-                         double r, a;
-                         p.get(r, a);
-                         p.set(r, a - area.angle);
-                         Coord ret(p);
+    float min_feather = RT_INFINITY;
+
+    for (const auto &area : areaMask) {
+        Coord center(w2 + area.x / 100.0 * w2, h2 + area.y / 100.0 * h2);
+        float area_w = area.width / 100.0 * width;
+        float area_h = area.height / 100.0 * height;
+    
+        float a_min = area_w / 2;
+        float b_min = area_h / 2;
+        float r = b_min / a_min;
+        float a_max = std::sqrt(2) * a_min;
+        float a = a_max - area.roundness / 100.0 * (a_max - a_min);
+
+        min_feather = std::min(a_min, b_min);
+
+        const auto get =
+            [&](int x, int y) -> Coord
+            {
+                PolarCoord p(Coord(x, y));
+                double r, a;
+                p.get(r, a);
+                p.set(r, a - area.angle);
+                Coord ret(p);
                          ret += center;
-                         ret -= origin;
-                         return ret;
-                     };
+                ret -= origin;
+                return ret;
+            };
 
-    const auto inside = [&](int x, int y) -> bool
-                        {
-                            return (x >= 0 && x < mask.width() &&
-                                    y >= 0 && y < mask.height());
-                        };
-
-    const int dir[] = { 1, 1, 1, -1, -1, 1, -1, -1 };
-
-    // draw the (bounded) ellipse
-    for (int x = 0, n = int(a_min); x < n; ++x) {
-        int yy = r * std::sqrt(a*a - float(x*x));
-        for (int y = 0, m = std::min(yy, int(b_min)); y < m; ++y) {
-            for (int d = 0; d < 4; ++d) {
-                int dx = dir[2*d], dy = dir[2*d+1];
-                Coord point = get(dx * x, dy * y);
-                for (int i = -1; i < 2; ++i) {
-                    for (int j = -1; j < 2; ++j) {
-                        if (inside(point.x+i, point.y+j)) {
-                            mask[point.y+j][point.x+i] = fgcolor;
+        // draw the (bounded) ellipse
+        for (int x = 0, n = int(a_min); x < n; ++x) {
+            int yy = r * std::sqrt(a*a - float(x*x));
+            for (int y = 0, m = std::min(yy, int(b_min)); y < m; ++y) {
+                for (int d = 0; d < 4; ++d) {
+                    int dx = dir[2*d], dy = dir[2*d+1];
+                    Coord point = get(dx * x, dy * y);
+                    for (int i = -1; i < 2; ++i) {
+                        for (int j = -1; j < 2; ++j) {
+                            if (inside(point.x+i, point.y+j)) {
+                                mask[point.y+j][point.x+i] = fgcolor;
+                            }
                         }
                     }
                 }
@@ -122,10 +130,10 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
     }
 
     // guided feathering and contrast
-    int radius = std::max(int(area.feather / 100.0 * std::min(a_min, b_min)), 1);
+    int radius = std::max(int(feather / 100.0 * min_feather), 1);
     guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
-    const float c = float(area.contrast) / 4.f;
-    const auto contrast =
+    const float c = float(contrast) / 4.f;
+    const auto get_contrast =
         [c](float x) -> float
         {
             if (c <= 0) {
@@ -147,10 +155,10 @@ bool generate_area_mask(array2D<float> &mask, const LabCorrectionMask::AreaMask 
     for (int y = 0; y < mask.height(); ++y) {
         for (int x = 0; x < mask.width(); ++x) {
             float v = LIM01(mask[y][x]);
-            if (!area.inverted) {
+            if (!inverted) {
                 v = 1.f - v;
             }
-            mask[y][x] = contrast(v);
+            mask[y][x] = get_contrast(v);
             assert(mask[y][x] == mask[y][x]);
         }
     }
@@ -285,7 +293,7 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
     }
 
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(guide, masks[i].areaMask, offset_x, offset_y, full_width, full_height, masks[i].maskBlur, multithread)) {
+        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].areaInverted, masks[i].areaFeather, masks[i].areaContrast, masks[i].maskBlur, multithread)) {
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif

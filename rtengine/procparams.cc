@@ -302,16 +302,12 @@ namespace rtengine
 
 
 LabCorrectionMask::AreaMask::AreaMask():
-    enabled(false),
-    inverted(false),
     x(0),
     y(0),
     width(100),
     height(100),
     angle(0),
-    feather(0),
-    roundness(0),
-    contrast(0)
+    roundness(0)
 {
 }
 
@@ -319,16 +315,12 @@ LabCorrectionMask::AreaMask::AreaMask():
 bool LabCorrectionMask::AreaMask::operator==(const AreaMask &other) const
 {
     return
-        enabled == other.enabled
-        && inverted == other.inverted
-        && x == other.x
+        x == other.x
         && y == other.y
         && width == other.width
         && height == other.height
         && angle == other.angle
-        && feather == other.feather
-        && roundness == other.roundness
-        && contrast == other.contrast;
+        && roundness == other.roundness;
 }
 
 
@@ -340,7 +332,7 @@ bool LabCorrectionMask::AreaMask::operator!=(const AreaMask &other) const
 
 bool LabCorrectionMask::AreaMask::isTrivial() const
 {
-    return !enabled || (*this == AreaMask());
+    return (*this == AreaMask());
 }
 
 
@@ -379,7 +371,11 @@ LabCorrectionMask::LabCorrectionMask():
             0.35
             },
     maskBlur(0),
-    areaMask()
+    areaMask{AreaMask()},
+    areaEnabled(false),
+    areaInverted(false),
+    areaFeather(0),
+    areaContrast(0)
 {
 }
 
@@ -390,7 +386,11 @@ bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
         && chromaticityMask == other.chromaticityMask
         && lightnessMask == other.lightnessMask
         && maskBlur == other.maskBlur
-        && areaMask == other.areaMask;
+        && areaMask == other.areaMask
+        && areaEnabled == other.areaEnabled
+        && areaInverted == other.areaInverted
+        && areaFeather == other.areaFeather
+        && areaContrast == other.areaContrast;
 }
 
 
@@ -407,16 +407,31 @@ bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &
     assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, true, chromaticityMask, ret);
     assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, true, lightnessMask, ret);
     assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, true, maskBlur, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, true, areaMask.enabled, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskInverted" + suffix, true, areaMask.inverted, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskX" + suffix, true, areaMask.x, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskY" + suffix, true, areaMask.y, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskWidth" + suffix, true, areaMask.width, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskHeight" + suffix, true, areaMask.height, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskAngle" + suffix, true, areaMask.angle, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, true, areaMask.feather, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskRoundness" + suffix, true, areaMask.roundness, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, true, areaMask.contrast, ret);
+    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, true, areaEnabled, ret);
+    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskInverted" + suffix, true, areaInverted, ret);
+    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, true, areaFeather, ret);
+    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, true, areaContrast, ret);
+    std::vector<AreaMask> am;
+    for (int i = 0; ; ++i) {
+        AreaMask a;
+        bool found = false;
+        std::string n = i ? std::string("_") + std::to_string(i) + "_" : "";
+        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "X" + suffix, true, a.x, found);
+        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Y" + suffix, true, a.y, found);
+        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Width" + suffix, true, a.width, found);
+        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Height" + suffix, true, a.height, found);
+        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, true, a.angle, found);
+        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Roundness" + suffix, true, a.roundness, found);
+        if (found) {
+            am.emplace_back(a);
+            ret = true;
+        } else {
+            break;
+        }
+    }
+    if (!am.empty()) {
+        areaMask = std::move(am);
+    }
     return ret;
 }
 
@@ -427,16 +442,20 @@ void LabCorrectionMask::save(Glib::KeyFile &keyfile, const Glib::ustring &group_
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask, keyfile);
     putToKeyfile(group_name, prefix + "LightnessMask" + suffix, lightnessMask, keyfile);
     putToKeyfile(group_name, prefix + "MaskBlur" + suffix, maskBlur, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskEnabled" + suffix, areaMask.enabled, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskInverted" + suffix, areaMask.inverted, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskX" + suffix, areaMask.x, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskY" + suffix, areaMask.y, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskWidth" + suffix, areaMask.width, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskHeight" + suffix, areaMask.height, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskAngle" + suffix, areaMask.angle, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskRoundness" + suffix, areaMask.roundness, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskEnabled" + suffix, areaEnabled, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskInverted" + suffix, areaInverted, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskFeather" + suffix, areaFeather, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskContrast" + suffix, areaContrast, keyfile);
+    for (size_t i = 0; i < areaMask.size(); ++i) {
+        auto &a = areaMask[i];
+        std::string n = i ? std::string("_") + std::to_string(i) + "_" : "";
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "X" + suffix, a.x, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Y" + suffix, a.y, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Width" + suffix, a.width, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Height" + suffix, a.height, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Angle" + suffix, a.angle, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness, keyfile);
+    }
 }
 
 
