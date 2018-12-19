@@ -46,13 +46,15 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     CurveListener::setMulti(true);
     
     const auto add_button =
-        [](Gtk::Button *btn, Gtk::Box *box) -> void
+        [](Gtk::Button *btn, Gtk::Box *box, int h=20) -> void
         {
             setExpandAlignProperties(btn, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_START);
             btn->set_relief(Gtk::RELIEF_NONE);
             btn->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
             btn->set_can_focus(false);
-            btn->set_size_request(-1, 20);
+            if (h > 0) {
+                btn->set_size_request(-1, h);
+            }
             box->pack_start(*btn, false, false);
         };
     
@@ -153,6 +155,18 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMaskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_AREA_INVERTED")));
     areaMaskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskInvertedChanged));
     hb->pack_start(*areaMaskInverted, Gtk::PACK_EXPAND_WIDGET);
+
+    areaMaskCopy = Gtk::manage(new Gtk::Button());
+    areaMaskCopy->add(*Gtk::manage(new RTImage("copy.png")));
+    areaMaskCopy->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_COPY_TOOLTIP"));
+    areaMaskCopy->signal_clicked().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskCopyPressed));
+    add_button(areaMaskCopy, hb, 24);
+    
+    areaMaskPaste = Gtk::manage(new Gtk::Button());
+    areaMaskPaste->add(*Gtk::manage(new RTImage("paste.png")));
+    areaMaskPaste->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_PASTE_TOOLTIP"));
+    areaMaskPaste->signal_clicked().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskPastePressed));
+    add_button(areaMaskPaste, hb, 24);
 
     areaMaskToggle = new Gtk::ToggleButton();
     areaMaskToggle->get_style_context()->add_class("independent");
@@ -300,11 +314,11 @@ void LabMasksPanel::maskGet(int idx)
     r.lightnessMask = lightnessMask->getCurve();
     r.maskBlur = maskBlur->getValue();
     r.areaEnabled = areaMask->getEnabled();
-    r.areaInverted = areaMaskInverted->get_active();
-    r.areaFeather = areaMaskFeather->getValue();
-    r.areaContrast = areaMaskContrast->getValue();
-    if (area_shape_index_ < r.areaMask.size()) {
-        auto &a = r.areaMask[area_shape_index_];
+    r.areaMask.inverted = areaMaskInverted->get_active();
+    r.areaMask.feather = areaMaskFeather->getValue();
+    r.areaMask.contrast = areaMaskContrast->getValue();
+    if (area_shape_index_ < r.areaMask.shapes.size()) {
+        auto &a = r.areaMask.shapes[area_shape_index_];
         a.x = areaMaskX->getValue();
         a.y = areaMaskY->getValue();
         a.width = areaMaskWidth->getValue();
@@ -323,8 +337,8 @@ void LabMasksPanel::onAddPressed()
 
     listEdited = true;
     selected_ = masks_.size();
-    masks_.push_back(rtengine::LabCorrectionMask());
-    masks_.back().areaMask = {defaultAreaMask};
+    masks_.push_back(rtengine::procparams::LabCorrectionMask());
+    masks_.back().areaMask.shapes = {defaultAreaShape};
     populateList();
     area_shape_index_ = 0;
     maskShow(selected_);
@@ -437,7 +451,7 @@ void LabMasksPanel::populateList()
 {
     ConnectionBlocker b(selectionConn);
     list->clear_items();
-    rtengine::LabCorrectionMask dflt;
+    rtengine::procparams::LabCorrectionMask dflt;
 
     int n = cp_->getColumnCount();
     for (size_t i = 0; i < masks_.size(); ++i) {
@@ -447,10 +461,8 @@ void LabMasksPanel::populateList()
             list->set_text(j, c+1, cp_->getColumnContent(c, j));
         }
         Glib::ustring am("");
-        if (r.areaMask.size() == 1 ? !r.areaMask[0].isTrivial() : r.areaMask.size() > 0) {
-            am = Glib::ustring::compose("\n%1 shape%2",
-                                        r.areaMask.size(),
-                                        r.areaMask.size() > 1 ? "s" : "");
+        if (!r.areaMask.isTrivial()) {
+            am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
         }
         list->set_text(
             j, n+1, Glib::ustring::compose(
@@ -467,7 +479,7 @@ void LabMasksPanel::populateList()
 void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
 {
     disableListener();
-    rtengine::LabCorrectionMask dflt;
+    rtengine::procparams::LabCorrectionMask dflt;
     auto &r = masks_[idx];
     if (!list_only) {
         cp_->selectionChanged(idx);
@@ -481,11 +493,11 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         }
         areaMaskToggle->set_active(false);
         areaMask->setEnabled(r.areaEnabled);
-        areaMaskInverted->set_active(r.areaInverted);
-        areaMaskFeather->setValue(r.areaFeather);
-        areaMaskContrast->setValue(r.areaContrast);
-        if (area_shape_index_ < r.areaMask.size()) {
-            auto &a = r.areaMask[area_shape_index_];
+        areaMaskInverted->set_active(r.areaMask.inverted);
+        areaMaskFeather->setValue(r.areaMask.feather);
+        areaMaskContrast->setValue(r.areaMask.contrast);
+        if (area_shape_index_ < r.areaMask.shapes.size()) {
+            auto &a = r.areaMask.shapes[area_shape_index_];
             areaMaskX->setValue(a.x);
             areaMaskY->setValue(a.y);
             areaMaskWidth->setValue(a.width);
@@ -502,9 +514,9 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         list->set_text(idx, c+1, cp_->getColumnContent(c, idx));
     }
     Glib::ustring am("");
-    if (r.areaMask.size() == 1 ? !r.areaMask[0].isTrivial() : r.areaMask.size() > 0) {
-        am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.size(),
-                                    r.areaMask.size() > 1 ? "s" : "");
+    if (!r.areaMask.isTrivial()) {
+        am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
+                                    r.areaMask.shapes.size() > 1 ? "s" : "");
     }
     list->set_text(
         idx, n+1, Glib::ustring::compose(
@@ -614,15 +626,15 @@ void LabMasksPanel::updateAreaMaskDefaults(const rtengine::procparams::ProcParam
         return;
     }
 
-    defaultAreaMask = rtengine::LabCorrectionMask::AreaMask();
+    defaultAreaShape = rtengine::procparams::AreaMask::Shape();
     if (!params->crop.enabled) {
         return;
     }
 
-    defaultAreaMask.width = double(params->crop.w)/double(imW) * 100.0;
-    defaultAreaMask.height = double(params->crop.h)/double(imH) * 100.0;
-    defaultAreaMask.x = (double(params->crop.x + params->crop.w * 0.5) / (imW * 0.5) - 1) * 100.0;
-    defaultAreaMask.y = (double(params->crop.y + params->crop.h * 0.5) / (imH * 0.5) - 1) * 100.0;
+    defaultAreaShape.width = double(params->crop.w)/double(imW) * 100.0;
+    defaultAreaShape.height = double(params->crop.h)/double(imH) * 100.0;
+    defaultAreaShape.x = (double(params->crop.x + params->crop.w * 0.5) / (imW * 0.5) - 1) * 100.0;
+    defaultAreaShape.y = (double(params->crop.y + params->crop.h * 0.5) / (imH * 0.5) - 1) * 100.0;
 }
 
 
@@ -655,6 +667,7 @@ void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
         populateShapeList(selected_, area_shape_index_);
         l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
     }
+    maskShow(selected_, true);
 }
 
 
@@ -663,7 +676,7 @@ void LabMasksPanel::adjusterAutoToggled(Adjuster *a, bool newval)
 }
 
 
-void LabMasksPanel::setMasks(const std::vector<rtengine::LabCorrectionMask> &masks, int show_mask_idx)
+void LabMasksPanel::setMasks(const std::vector<rtengine::procparams::LabCorrectionMask> &masks, int show_mask_idx)
 {
     disableListener();
     ConnectionBlocker b(selectionConn);
@@ -683,7 +696,7 @@ void LabMasksPanel::setMasks(const std::vector<rtengine::LabCorrectionMask> &mas
 }
         
 
-void LabMasksPanel::getMasks(std::vector<rtengine::LabCorrectionMask> &masks, int &show_mask_idx)
+void LabMasksPanel::getMasks(std::vector<rtengine::procparams::LabCorrectionMask> &masks, int &show_mask_idx)
 {
     maskGet(selected_);
     masks = masks_;
@@ -785,10 +798,10 @@ void LabMasksPanel::updateSelected()
 
 void LabMasksPanel::onAreaShapeSelectionChanged()
 {
-    if (selected_ < masks_.size() && area_shape_index_ < masks_[selected_].areaMask.size()) {
+    if (selected_ < masks_.size() && area_shape_index_ < masks_[selected_].areaMask.shapes.size()) {
         disableListener();
         
-        auto &s = masks_[selected_].areaMask[area_shape_index_];
+        auto &s = masks_[selected_].areaMask.shapes[area_shape_index_];
         updateAreaMask(false);
         s.x = center_x_;
         s.y = center_y_;
@@ -800,7 +813,7 @@ void LabMasksPanel::onAreaShapeSelectionChanged()
         unsigned int newidx = sel.empty() ? area_shape_index_ : sel[0];
         if (newidx != area_shape_index_) {
             area_shape_index_ = newidx;
-            auto &ns = masks_[selected_].areaMask[newidx];
+            auto &ns = masks_[selected_].areaMask.shapes[newidx];
             center_x_ = ns.x;
             center_y_ = ns.y;
             width_ = ns.width;
@@ -822,16 +835,17 @@ void LabMasksPanel::onAreaShapeResetPressed()
 {
     if (selected_ < masks_.size()) {
         disableListener();
-        masks_[selected_].areaMask = { defaultAreaMask };
+        masks_[selected_].areaMask.shapes = {defaultAreaShape};
         area_shape_index_ = 0;
-        center_x_ = defaultAreaMask.x;
-        center_y_ = defaultAreaMask.y;
-        width_ = defaultAreaMask.width;
-        height_ = defaultAreaMask.height;
-        angle_ = defaultAreaMask.angle;
+        center_x_ = defaultAreaShape.x;
+        center_y_ = defaultAreaShape.y;
+        width_ = defaultAreaShape.width;
+        height_ = defaultAreaShape.height;
+        angle_ = defaultAreaShape.angle;
         updateGeometry();
         updateAreaMask(true);
         populateShapeList(selected_, area_shape_index_);
+        maskShow(selected_, true);        
         enableListener();
         auto l = getListener();
         if (l && areaMask->getEnabled()) {
@@ -844,9 +858,10 @@ void LabMasksPanel::onAreaShapeResetPressed()
 void LabMasksPanel::onAreaShapeAddPressed()
 {
     if (selected_ < masks_.size()) {
-        masks_[selected_].areaMask.push_back(defaultAreaMask);
-        area_shape_index_ = masks_[selected_].areaMask.size()-1;
+        masks_[selected_].areaMask.shapes.push_back(defaultAreaShape);
+        area_shape_index_ = masks_[selected_].areaMask.shapes.size()-1;
         populateShapeList(selected_, area_shape_index_);
+        maskShow(selected_, true);        
         auto l = getListener();
         if (l && areaMask->getEnabled()) {
             l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
@@ -857,10 +872,11 @@ void LabMasksPanel::onAreaShapeAddPressed()
 
 void LabMasksPanel::onAreaShapeRemovePressed()
 {
-    if (selected_ < masks_.size() && area_shape_index_ < masks_[selected_].areaMask.size() && masks_[selected_].areaMask.size() > 1) {
-        masks_[selected_].areaMask.erase(masks_[selected_].areaMask.begin() + area_shape_index_);
+    if (selected_ < masks_.size() && area_shape_index_ < masks_[selected_].areaMask.shapes.size() && masks_[selected_].areaMask.shapes.size() > 1) {
+        masks_[selected_].areaMask.shapes.erase(masks_[selected_].areaMask.shapes.begin() + area_shape_index_);
         populateShapeList(selected_, area_shape_index_);
         onAreaShapeSelectionChanged();
+        maskShow(selected_, true);        
         auto l = getListener();
         if (l && areaMask->getEnabled()) {
             l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
@@ -874,8 +890,8 @@ void LabMasksPanel::populateShapeList(int idx, int sel)
     ConnectionBlocker b(shapeSelectionConn);
     areaMaskShapes->clear_items();
     auto &r = masks_[idx];
-    for (size_t i = 0; i < r.areaMask.size(); ++i) {
-        auto &a = r.areaMask[i];
+    for (size_t i = 0; i < r.areaMask.shapes.size(); ++i) {
+        auto &a = r.areaMask.shapes[i];
         auto j = areaMaskShapes->append(std::to_string(i+1));
         areaMaskShapes->set_text(
             j, 1, Glib::ustring::compose(
@@ -885,4 +901,39 @@ void LabMasksPanel::populateShapeList(int idx, int sel)
     Gtk::TreePath pth;
     pth.push_back(sel);
     areaMaskShapes->get_selection()->select(pth);
+}
+
+
+void LabMasksPanel::onAreaMaskCopyPressed()
+{
+    if (selected_ < masks_.size()) {
+        clipboard.setAreaMask(masks_[selected_].areaMask);
+    }
+}
+
+
+void LabMasksPanel::onAreaMaskPastePressed()
+{
+    if (selected_ < masks_.size() && clipboard.hasAreaMask()) {
+        disableListener();
+        masks_[selected_].areaMask = clipboard.getAreaMask();
+        area_shape_index_ = 0;
+        if (area_shape_index_ < masks_[selected_].areaMask.shapes.size()) {
+            auto &a = masks_[selected_].areaMask.shapes[0];
+            center_x_ = a.x;
+            center_y_ = a.y;
+            width_ = a.width;
+            height_ = a.height;
+            angle_ = a.angle;
+            updateGeometry();
+            updateAreaMask(true);
+        }
+        populateShapeList(selected_, area_shape_index_);
+        maskShow(selected_, true);        
+        enableListener();
+        auto l = getListener();
+        if (l && areaMask->getEnabled()) {
+            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        }
+    }
 }

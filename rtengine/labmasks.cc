@@ -33,6 +33,9 @@
 
 namespace rtengine {
 
+using procparams::AreaMask;
+using procparams::LabCorrectionMask;
+
 namespace {
 
 #ifdef __SSE2__
@@ -54,9 +57,9 @@ void fastlin2log(float *x, float factor, float base, int w)
 #endif
 
 
-bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &mask, const std::vector<LabCorrectionMask::AreaMask> &areaMask, bool enabled, bool inverted, double feather, int contrast, float blur, bool multithread)
+bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &mask, const AreaMask &areaMask, bool enabled, float blur, bool multithread)
 {
-    if (!enabled || areaMask.empty() || (areaMask.size() == 1 && areaMask[0].isTrivial() && !feather && !contrast)) {
+    if (!enabled || areaMask.shapes.empty() || areaMask.isTrivial()) {
         return false;
     }
 
@@ -84,7 +87,7 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
 
     float min_feather = RT_INFINITY;
 
-    for (const auto &area : areaMask) {
+    for (const auto &area : areaMask.shapes) {
         Coord center(w2 + area.x / 100.0 * w2, h2 + area.y / 100.0 * h2);
         float area_w = area.width / 100.0 * width;
         float area_h = area.height / 100.0 * height;
@@ -130,10 +133,10 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
     }
 
     // guided feathering and contrast
-    int radius = std::max(int(feather / 100.0 * min_feather), 1);
+    int radius = std::max(int(areaMask.feather / 100.0 * min_feather), 1);
     guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
-    const float c = float(contrast) / 4.f;
-    const auto get_contrast =
+    const float c = float(areaMask.contrast) / 4.f;
+    const auto contrast =
         [c](float x) -> float
         {
             if (c <= 0) {
@@ -155,10 +158,10 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
     for (int y = 0; y < mask.height(); ++y) {
         for (int x = 0; x < mask.width(); ++x) {
             float v = LIM01(mask[y][x]);
-            if (!inverted) {
+            if (!areaMask.inverted) {
                 v = 1.f - v;
             }
-            mask[y][x] = get_contrast(v);
+            mask[y][x] = contrast(v);
             assert(mask[y][x] == mask[y][x]);
         }
     }
@@ -293,7 +296,7 @@ bool generateLabMasks(LabImage *lab, const std::vector<LabCorrectionMask> &masks
     }
 
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].areaInverted, masks[i].areaFeather, masks[i].areaContrast, masks[i].maskBlur, multithread)) {
+        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur, multithread)) {
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif

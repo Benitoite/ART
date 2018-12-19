@@ -54,29 +54,40 @@ enum RenderingIntent {
 };
 
 
-class LabCorrectionMask {
-public:
-    std::vector<double> hueMask;
-    std::vector<double> chromaticityMask;
-    std::vector<double> lightnessMask;
-    double maskBlur;
-    struct AreaMask {
+namespace procparams {
+
+struct AreaMask {
+    struct Shape {
         double x; // [-100,100], with 0 as center of the image
         double y; // [-100,100]
         double width; // [0,200], with 100 as image width
         double height; // [0,200]
         double angle; // in degrees
         double roundness; // [0,100] (0 = rectangle, 100 = ellipse)
-        AreaMask();
-        bool operator==(const AreaMask &other) const;
-        bool operator!=(const AreaMask &other) const;
-        bool isTrivial() const;
+        Shape();
+        bool operator==(const Shape &other) const;
+        bool operator!=(const Shape &other) const;
     };
-    std::vector<AreaMask> areaMask;
+    bool inverted;
+    double feather; // [0,100]
+    int contrast; // [0,100]
+    std::vector<Shape> shapes;
+        
+    AreaMask();
+    bool operator==(const AreaMask &other) const;
+    bool operator!=(const AreaMask &other) const;
+    bool isTrivial() const;
+};
+
+
+class LabCorrectionMask {
+public:
+    std::vector<double> hueMask;
+    std::vector<double> chromaticityMask;
+    std::vector<double> lightnessMask;
+    double maskBlur;
     bool areaEnabled;
-    bool areaInverted;
-    double areaFeather; // [0,100]
-    int areaContrast; // [0, 100]
+    AreaMask areaMask;
 
     LabCorrectionMask();
     bool operator==(const LabCorrectionMask &other) const;
@@ -89,8 +100,8 @@ public:
 };
 
 
-namespace procparams
-{
+
+
 
 template<typename T>
 class Threshold final

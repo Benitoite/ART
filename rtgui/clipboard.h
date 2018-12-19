@@ -1,4 +1,5 @@
-/*
+/*  -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _CLIPBOARD_
-#define _CLIPBOARD_
+#pragma once
 
 #include <vector>
 #include "../rtengine/rtengine.h"
@@ -26,9 +26,8 @@
 #include "myflatcurve.h"
 #include "mydiagonalcurve.h"
 
-class Clipboard
-{
-
+class Clipboard {
+private:
     bool _hasIPTC;
     rtengine::procparams::IPTCPairs iptc;
     rtengine::procparams::PartialProfile partProfile;
@@ -36,81 +35,104 @@ class Clipboard
     FlatCurveType hasFlatCurveDataType;
     std::vector<double> diagonalCurve;
     std::vector<double> flatCurve;
-
+    rtengine::procparams::AreaMask areaMask;
 
 public:
-    void                                               setIPTC (const rtengine::procparams::IPTCPairs& iptcc)
+    void setIPTC(const rtengine::procparams::IPTCPairs& iptcc)
     {
         iptc = iptcc;
         _hasIPTC = true;
     }
-    const rtengine::procparams::IPTCPairs&             getIPTC ()
+    
+    const rtengine::procparams::IPTCPairs &getIPTC()
     {
         return iptc;
     }
-    bool                                               hasIPTC ()
+    
+    bool hasIPTC()
     {
         return _hasIPTC;
     }
 
-    void                                               setPartialProfile   (const rtengine::procparams::PartialProfile& pprofile);
-    const rtengine::procparams::PartialProfile&        getPartialProfile   ()
+    void setPartialProfile(const rtengine::procparams::PartialProfile& pprofile);
+    const rtengine::procparams::PartialProfile &getPartialProfile()
     {
         return partProfile;
-    };
-    void                                               setProcParams       (const rtengine::procparams::ProcParams& pparams);
-    const rtengine::procparams::ProcParams&            getProcParams       ()
+    }
+    
+    void setProcParams(const rtengine::procparams::ProcParams& pparams);
+    const rtengine::procparams::ProcParams &getProcParams()
     {
         return *partProfile.pparams;
     }
-    const ParamsEdited&                                getParamsEdited     ()
+
+    const ParamsEdited &getParamsEdited()
     {
         return *partProfile.pedited;
     }
-    bool                                               hasProcParams       ()
+    
+    bool hasProcParams()
     {
         return partProfile.pparams;
     }
-    bool                                               hasPEdited          ()
+    
+    bool hasPEdited()
     {
         return partProfile.pedited;
     }
 
-    void                                               setDiagonalCurveData (std::vector<double>& p, DiagonalCurveType type )
+    void setDiagonalCurveData(std::vector<double> &p, DiagonalCurveType type)
     {
         diagonalCurve = p;
         hasDiagonalCurveDataType = type;
         return;
     }
-    const std::vector<double> &                        getDiagonalCurveData ()
+    
+    const std::vector<double> &getDiagonalCurveData()
     {
         return diagonalCurve;
     }
-    DiagonalCurveType                                  hasDiagonalCurveData ()
+    
+    DiagonalCurveType hasDiagonalCurveData()
     {
         return hasDiagonalCurveDataType;
     }
 
-    void                                               setFlatCurveData (std::vector<double>& p, FlatCurveType type )
+    void setFlatCurveData(std::vector<double> &p, FlatCurveType type)
     {
         flatCurve = p;
         hasFlatCurveDataType = type;
         return;
     }
-    const std::vector<double> &                        getFlatCurveData ()
+    
+    const std::vector<double> &getFlatCurveData()
     {
         return flatCurve;
     }
-    FlatCurveType                                      hasFlatCurveData ()
+    
+    FlatCurveType hasFlatCurveData()
     {
         return hasFlatCurveDataType;
     }
 
-    Clipboard ();
-    ~Clipboard ();
+    bool hasAreaMask()
+    {
+        return !areaMask.isTrivial();
+    }
 
+    const rtengine::procparams::AreaMask &getAreaMask()
+    {
+        return areaMask;
+    }
+
+    void setAreaMask(const rtengine::procparams::AreaMask &am)
+    {
+        areaMask = am;
+    }
+
+    Clipboard();
+    ~Clipboard();
 };
 
 extern Clipboard clipboard;
 
-#endif

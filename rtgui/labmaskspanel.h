@@ -28,6 +28,7 @@
 #include "curvelistener.h"
 #include "curveeditorgroup.h"
 #include "curveeditor.h"
+#include "clipboard.h"
 
 
 class LabMasksContentProvider {
@@ -66,8 +67,8 @@ public:
     LabMasksPanel(LabMasksContentProvider *cp);
     ~LabMasksPanel();
 
-    void setMasks(const std::vector<rtengine::LabCorrectionMask> &masks, int show_mask_idx);
-    void getMasks(std::vector<rtengine::LabCorrectionMask> &masks, int &show_mask_idx);
+    void setMasks(const std::vector<rtengine::procparams::LabCorrectionMask> &masks, int show_mask_idx);
+    void getMasks(std::vector<rtengine::procparams::LabCorrectionMask> &masks, int &show_mask_idx);
     int getSelected();
 
     void adjusterChanged(Adjuster *a, double newval) override;
@@ -107,6 +108,9 @@ private:
     void onAreaShapeResetPressed();
     void onAreaShapeAddPressed();
     void onAreaShapeRemovePressed();
+    void onAreaMaskCopyPressed();
+    void onAreaMaskPastePressed();
+    
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
     void maskShow(int idx, bool list_only=false, bool unsub=true);
@@ -116,7 +120,7 @@ private:
     void enableListener();
 
     LabMasksContentProvider *cp_;
-    std::vector<rtengine::LabCorrectionMask> masks_;
+    std::vector<rtengine::procparams::LabCorrectionMask> masks_;
     unsigned int selected_;
 
     rtengine::ProcEvent EvMaskList;
@@ -150,6 +154,8 @@ private:
     Gtk::Button *areaMaskRemove;
     unsigned int area_shape_index_;
     Gtk::ToggleButton *areaMaskToggle;
+    Gtk::Button *areaMaskCopy;
+    Gtk::Button *areaMaskPaste;
     Gtk::CheckButton *areaMaskInverted;
     Adjuster *areaMaskFeather;
     Adjuster *areaMaskContrast;
@@ -161,6 +167,6 @@ private:
     Adjuster *areaMaskRoundness;
     std::vector<Adjuster *> areaMaskAdjusters;
     std::vector<bool> listenerDisabled;
-    rtengine::LabCorrectionMask::AreaMask defaultAreaMask;
+    rtengine::procparams::AreaMask::Shape defaultAreaShape;
     bool listEdited;
 };
