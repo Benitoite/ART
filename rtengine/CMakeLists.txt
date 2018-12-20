@@ -137,6 +137,7 @@ set(RTENGINESOURCEFILES
     labmasks.cc
     ipcbdl.cc
     ipgrain.cc
+    ipdenoise.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)
