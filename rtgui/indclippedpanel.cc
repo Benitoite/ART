@@ -119,6 +119,8 @@ void IndicateClippedPanel::buttonToggled (Gtk::ToggleButton* tb)
     connClippedS.block(true);
     connClippedH.block(true);
 
+    bool shm = previewSharpMask->get_active();
+
     if (tb == previewFocusMask) {
         if (indClippedS->get_active()) {
             indClippedS->set_active(false);
@@ -140,7 +142,9 @@ void IndicateClippedPanel::buttonToggled (Gtk::ToggleButton* tb)
         previewSharpMask->set_active(false);
     }
 
-    imageArea->sharpMaskSelected(previewSharpMask->get_active());
+    if (tb == previewSharpMask || previewSharpMask->get_active() != shm) {
+        imageArea->sharpMaskSelected(previewSharpMask->get_active());
+    }
     previewFocusMask->set_image(previewFocusMask->get_active() ? *iFon : *iFoff);
     previewSharpMask->set_image(previewSharpMask->get_active() ? *iSon : *iSoff);
 
