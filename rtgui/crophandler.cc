@@ -401,6 +401,7 @@ void CropHandler::setDetailedCrop(
                 return FALSE;
             };
 
+            cropPixbuf.clear();            
             idle_register.add(func, this/*, G_PRIORITY_HIGH_IDLE*/);
         }
     }
