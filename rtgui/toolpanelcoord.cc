@@ -107,7 +107,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (exposurePanel, toneCurve);
     addPanel (colorPanel, vibrance);
     addPanel (colorPanel, chmixer);
-    addPanel (colorPanel, blackwhite);
+    //addPanel (colorPanel, blackwhite);
     addPanel (exposurePanel, logenc);
     addPanel (exposurePanel, shadowshighlights);
     addPanel (detailsPanel, sharpening);
@@ -118,13 +118,15 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (colorPanel, filmSimulation);
     addPanel (colorPanel, softlight);
     addPanel (colorPanel, rgbcurves);
+    addPanel(colorPanel, lcurve);
     addPanel (colorPanel, colortoning);
     addPanel (exposurePanel, epd);
     addPanel (exposurePanel, fattal);
     addPanel (advancedPanel, retinex);
     addPanel (exposurePanel, pcvignette);
     addPanel (exposurePanel, gradient);
-    addPanel (exposurePanel, lcurve);
+    //addPanel (exposurePanel, lcurve);
+    addPanel(exposurePanel, blackwhite);
     addPanel (advancedPanel, colorappearance);
     addPanel (detailsPanel, impulsedenoise);
     addPanel (detailsPanel, denoise);

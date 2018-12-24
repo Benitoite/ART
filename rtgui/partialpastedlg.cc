@@ -159,7 +159,8 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[0]->pack_start (*fattal, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*pcvignette, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*gradient, Gtk::PACK_SHRINK, 2);
-    vboxes[0]->pack_start (*labcurve, Gtk::PACK_SHRINK, 2);
+    //vboxes[0]->pack_start (*labcurve, Gtk::PACK_SHRINK, 2);
+    vboxes[0]->pack_start(*blackwhite, Gtk::PACK_SHRINK, 2);
 
     //DETAIL
     vboxes[1]->pack_start (*detail, Gtk::PACK_SHRINK, 2);
@@ -181,11 +182,12 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[2]->pack_start (*icm, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*vibrance, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*chmixer, Gtk::PACK_SHRINK, 2);
-    vboxes[2]->pack_start (*blackwhite, Gtk::PACK_SHRINK, 2);
+    //vboxes[2]->pack_start (*blackwhite, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*hsveq, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*filmSimulation, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*softlight, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*rgbcurves, Gtk::PACK_SHRINK, 2);
+    vboxes[2]->pack_start (*labcurve, Gtk::PACK_SHRINK, 2);    
     vboxes[2]->pack_start (*colortoning, Gtk::PACK_SHRINK, 2);
 
     //LENS
@@ -519,7 +521,8 @@ void PartialPasteDlg::basicToggled ()
     ConnectionBlocker fattalBlocker(fattalConn);
     ConnectionBlocker pcvignetteBlocker(pcvignetteConn);
     ConnectionBlocker gradientBlocker(gradientConn);
-    ConnectionBlocker labcurveBlocker(labcurveConn);
+    //ConnectionBlocker labcurveBlocker(labcurveConn);
+    ConnectionBlocker blackwhiteBlocker(chmixerbwConn);
 
     basic->set_inconsistent (false);
 
@@ -531,7 +534,8 @@ void PartialPasteDlg::basicToggled ()
     fattal->set_active (basic->get_active ());
     pcvignette->set_active (basic->get_active ());
     gradient->set_active (basic->get_active ());
-    labcurve->set_active (basic->get_active ());
+    //labcurve->set_active (basic->get_active ());
+    blackwhite->set_active(basic->get_active());
 }
 
 void PartialPasteDlg::detailToggled ()
@@ -582,19 +586,21 @@ void PartialPasteDlg::colorToggled ()
     ConnectionBlocker icmBlocker(icmConn);
     ConnectionBlocker vibranceBlocker(vibranceConn);
     ConnectionBlocker chmixerBlocker(chmixerConn);
-    ConnectionBlocker chmixerbwBlocker(chmixerbwConn);
+    //ConnectionBlocker chmixerbwBlocker(chmixerbwConn);
     ConnectionBlocker hsveqBlocker(hsveqConn);
     ConnectionBlocker filmSimulationBlocker(filmSimulationConn);
     ConnectionBlocker softlightBlocker(softlightConn);
     ConnectionBlocker rgbcurvesBlocker(rgbcurvesConn);
     ConnectionBlocker colortoningBlocker(colortoningConn);
-
+    ConnectionBlocker labcurveBlocker(labcurveConn);
+    
     color->set_inconsistent (false);
 
     icm->set_active (color->get_active ());
     vibrance->set_active (color->get_active ());
     chmixer->set_active (color->get_active ());
-    blackwhite->set_active (color->get_active ());
+    //blackwhite->set_active (color->get_active ());
+    labcurve->set_active(color->get_active());
     hsveq->set_active (color->get_active ());
     filmSimulation->set_active (color->get_active ());
     softlight->set_active (color->get_active ());
