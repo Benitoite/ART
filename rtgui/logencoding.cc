@@ -56,6 +56,9 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     blackEv->setAdjusterListener(this);
     base->setAdjusterListener(this);
 
+    whiteEv->setLogScale(16, 0);
+    blackEv->setLogScale(2, -8);
+
     grayPoint->show();
     autocompute->show();
     whiteEv->show();
