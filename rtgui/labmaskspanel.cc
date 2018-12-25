@@ -635,6 +635,12 @@ void LabMasksPanel::updateAreaMaskDefaults(const rtengine::procparams::ProcParam
     defaultAreaShape.height = double(params->crop.h)/double(imH) * 100.0;
     defaultAreaShape.x = (double(params->crop.x + params->crop.w * 0.5) / (imW * 0.5) - 1) * 100.0;
     defaultAreaShape.y = (double(params->crop.y + params->crop.h * 0.5) / (imH * 0.5) - 1) * 100.0;
+
+    if (masks_.size() == 1 && !masks_[0].areaEnabled && masks_[0].areaMask.isTrivial()) {
+        masks_[0].areaMask.shapes = {defaultAreaShape};
+        areaShapeSelect(0, false);
+        populateShapeList(selected_, area_shape_index_);
+    }
 }
 
 
@@ -882,13 +888,16 @@ void LabMasksPanel::populateShapeList(int idx, int sel)
     ConnectionBlocker b(shapeSelectionConn);
     areaMaskShapes->clear_items();
     auto &r = masks_[idx];
+    const auto rd =
+        [](double v) -> double
+        {
+            return int(v * 10) / 10.0;
+        };
+    
     for (size_t i = 0; i < r.areaMask.shapes.size(); ++i) {
         auto &a = r.areaMask.shapes[i];
         auto j = areaMaskShapes->append(std::to_string(i+1));
-        areaMaskShapes->set_text(
-            j, 1, Glib::ustring::compose(
-                "%1 %2 %3 %4 %5 %6",
-                a.x, a.y, a.width, a.height, a.angle, a.roundness));
+        areaMaskShapes->set_text(j, 1, Glib::ustring::compose("%1 %2 %3 %4 %5 %6", rd(a.x), rd(a.y), rd(a.width), rd(a.height), rd(a.angle), rd(a.roundness)));
     }
     if (sel >= 0) {
         Gtk::TreePath pth;
