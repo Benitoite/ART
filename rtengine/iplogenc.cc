@@ -248,20 +248,21 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
 
 void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams)
 {
+    constexpr int SCALE = 4;
     int fw, fh, tr = TR_NONE;
     imgsrc->getFullSize(fw, fh, tr);
-    PreviewProps pp(0, 0, fw, fh, 10);
-    Imagefloat img(int(fw / 10 + 0.5), int(fh / 10 + 0.5));
+    PreviewProps pp(0, 0, fw, fh, SCALE);
+    Imagefloat img(int(fw / SCALE + 0.5), int(fh / SCALE + 0.5));
     imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, params->toneCurve, params->raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
     std::vector<float> data;
-    data.reserve(fw/10 * fh/10 * 2);
+    data.reserve(fw/SCALE * fh/SCALE * 2);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
-    for (int y = 0, h = fh / 10; y < h; ++y) {
-        for (int x = 0, w = fw / 10; x < w; ++x) {
+    for (int y = 0, h = fh / SCALE; y < h; ++y) {
+        for (int x = 0, w = fw / SCALE; x < w; ++x) {
             float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
             if (l > 0.f) {
                 data.push_back(l);
@@ -278,8 +279,8 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     float vmin = data[0];
     float vmax = data[n-1];
 
-    constexpr float dr_headroom = 0.5f;
-    constexpr float black_headroom = 0.5f;
+    constexpr float dr_headroom = 0.3f;
+    constexpr float black_headroom = 0.2f;
     
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
