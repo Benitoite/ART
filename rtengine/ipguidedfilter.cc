@@ -23,6 +23,7 @@
 #include "rt_math.h"
 #include "rt_algo.h"
 #include "curves.h"
+#include "labmasks.h"
 #include <iostream>
 #include <queue>
 
@@ -32,13 +33,12 @@ namespace rtengine {
 
 namespace {
 
-void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, bool luminance, int radius, int strength, double scale, bool multithread)
+void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, bool luminance, int radius, float epsilon, int strength, double scale, bool multithread)
 {
     if (radius > 0 && strength > 0) {
         const int W = R.width();
         const int H = R.height();
         int r = max(int(radius / scale), 1);
-        const float epsilon = luminance ? 0.001f : 0.1f / float(min(r, 10));
         array2D<float> iR(W, H, R, 0);
         array2D<float> iG(W, H, G, 0);
         array2D<float> iB(W, H, B, 0);
@@ -48,21 +48,6 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         guidedFilter(B, B, B, r, epsilon, multithread);
 
         const float blend = LIM01(float(strength) / 100.f);
-
-//         array2D<float> cmask;
-//         if (luminance) {
-//             cmask(W, H);
-//             float contrast = 1.f;
-// #ifdef _OPENMP
-// #           pragma omp parallel for if (multithread)
-// #endif
-//             for (int y = 0; y < H; ++y) {
-//                 for (int x = 0; x < W; ++x) {
-//                     cmask[y][x] = Color::rgbLuminance(iR[y][x], iG[y][x], iB[y][x], ws);
-//                 }
-//             }
-//             buildBlendMask(cmask, cmask, W, H, contrast);
-//         }
 
 #ifdef _OPENMP
         #pragma omp parallel for if (multithread)
@@ -77,7 +62,7 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                 float ib = iB[y][x];
                 float Y = Color::rgbLuminance(rr, gg, bb, ws);
                 float iY = Color::rgbLuminance(ir, ig, ib, ws);
-                const float bf = blend;//luminance ? blend * (1.f - cmask[y][x]) : blend;
+                const float bf = blend;
                 float oY = luminance ? intp(bf, Y, iY) : iY;
                 rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
                 gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
@@ -109,10 +94,81 @@ void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
-    guided_smoothing(R, G, B, ws, false, params->denoise.guidedChromaRadius, params->denoise.guidedChromaStrength, scale, multiThread);
-    guided_smoothing(R, G, B, ws, true, params->denoise.guidedLumaRadius, params->denoise.guidedLumaStrength, scale, multiThread);
+    int r = max(int(params->denoise.guidedChromaRadius / scale), 1);
+    guided_smoothing(R, G, B, ws, false, params->denoise.guidedChromaRadius, 0.1f / float(min(r, 10)), params->denoise.guidedChromaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, true, params->denoise.guidedLumaRadius, 0.001f, params->denoise.guidedLumaStrength, scale, multiThread);
     
     rgb->normalizeFloatTo65535();
+}
+
+
+void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
+{
+    PlanarWhateverData<float> *editWhatever = nullptr;
+    EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
+
+    if ((eid == EUID_LabMasks_H3 || eid == EUID_LabMasks_C3 || eid == EUID_LabMasks_L3) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+        editWhatever = pipetteBuffer->getSinglePlaneBuffer();
+    }
+    
+    if (params->smoothing.enabled) {
+        if (editWhatever) {
+            LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H3);
+            fillPipetteLabMasks(lab, editWhatever, id, multiThread);
+        }
+        
+        int n = params->smoothing.regions.size();
+        int show_mask_idx = params->smoothing.showMask;
+        if (show_mask_idx >= n) {
+            show_mask_idx = -1;
+        }
+        std::vector<array2D<float>> Lmask(n);
+        std::vector<array2D<float>> abmask(n);
+        if (!generateLabMasks(lab, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &Lmask, &abmask)) {
+            return; // show mask is active, nothing more to do
+        }
+
+        Imagefloat rgb(lab->W, lab->H);
+
+        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+        
+        for (int i = 0; i < n; ++i) {
+            lab2rgb(*lab, rgb, params->icm.workingProfile);
+            rgb.normalizeFloatTo1();
+            
+            auto &r = params->smoothing.regions[i];
+
+            const int W = rgb.getWidth();
+            const int H = rgb.getHeight();
+            array2D<float> R(W, H, rgb.r.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> G(W, H, rgb.g.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> B(W, H, rgb.b.ptrs, ARRAY2D_BYREFERENCE);
+            
+            guided_smoothing(R, G, B, ws, false, r.chromaRadius, r.chromaStrength, scale, multiThread);
+            guided_smoothing(R, G, B, ws, true, r.lumaRadius, r.lumaStrength, scale, multiThread);
+            const auto &Lblend = Lmask[i];
+            const auto &abblend = abmask[i];
+
+            rgb.normalizeFloatTo65535();
+            rgb2lab(rgb, *lab, params->icm.workingProfile);
+            
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int y = 0; y < lab->H; ++y) {
+                for (int x = 0; x < lab->W; ++x) {
+                    float l = lab->L[y][x];
+                    float ll, aa, bb;
+                    Color::rgb2lab(R[y][x], G[y][x], B[y][x], ll, aa, bb, ws);
+                    lab->L[y][x] = intp(Lblend[y][x], ll, lab->L[y][x]);
+                    lab->a[y][x] = intp(abblend[y][x], aa, lab->a[y][x]);
+                    lab->b[y][x] = intp(abblend[y][x], bb, lab->b[y][x]);
+                }
+            }
+        }
+    } else if (editWhatever) {
+        editWhatever->fill(0.f);
+    }
 }
 
 } // namespace rtengine

@@ -619,6 +619,21 @@ public:
     static void RGB2Lab(float *X, float *Y, float *Z, float *L, float *a, float *b, const float wp[3][3], int width);
     static void RGB2L(float *X, float *Y, float *Z, float *L, const float wp[3][3], int width);
 
+    static void rgb2lab(float R, float G, float B, float &l, float &a, float &b, const double ws[3][3])
+    {
+        float x, y, z;
+        rgbxyz(R, G, B, x, y, z, ws);
+        XYZ2Lab(x, y, z, l, a, b);
+    }
+
+    void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const double iws[3][3])
+    {
+        float x, y, z;
+        Lab2XYZ(l, a, b, x, y, z);
+        xyz2rgb(x, y, z, R, G, B, iws);
+    }
+    
+
     /**
     * @brief Convert Lab in Yuv
     * @param L L channel [0 ; 32768] ; L can be negative rarely or superior 32768

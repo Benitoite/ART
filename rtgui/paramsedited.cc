@@ -577,6 +577,9 @@ void ParamsEdited::set(bool v)
     grain.iso = v;
     grain.strength = v;
     grain.scale = v;
+    smoothing.enabled = v;
+    smoothing.regions = v;
+    smoothing.showMask = v;
     metadata.mode = v;
 
     exif = v;
@@ -1144,6 +1147,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(grain.iso);
         SETVAL_(grain.strength);
         SETVAL_(grain.scale);
+
+        SETVAL_(smoothing.enabled);
+        SETVAL_(smoothing.regions);
+        SETVAL_(smoothing.showMask);
 
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
@@ -3104,6 +3111,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(grain.iso);
     SETVAL_(grain.strength);
     SETVAL_(grain.scale);
+
+    SETVAL_(smoothing.enabled);
+    SETVAL_(smoothing.regions);
+    SETVAL_(smoothing.showMask);
 
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;

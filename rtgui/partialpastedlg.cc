@@ -68,6 +68,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     dirpyreq    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYREQUALIZER")));
     dehaze = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DEHAZE")) );
     grain = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_GRAIN")));
+    smoothing = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_SMOOTHING")));
 
     // Advanced Settings:
     retinex     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RETINEX")));
@@ -175,6 +176,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[1]->pack_start (*dirpyreq, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*dehaze, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*grain, Gtk::PACK_SHRINK, 2);
+    vboxes[1]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
 
     //COLOR
     vboxes[2]->pack_start (*color, Gtk::PACK_SHRINK, 2);
@@ -338,6 +340,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     dirpyreqConn    = dirpyreq->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     dehazeConn    = dehaze->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     grainConn    = grain->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
+    smoothingConn = smoothing->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
 
     // Advanced Settings:
     retinexConn     = retinex->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
@@ -551,6 +554,7 @@ void PartialPasteDlg::detailToggled ()
     ConnectionBlocker dirpyreqBlocker(dirpyreqConn);
     ConnectionBlocker dehazeBlocker(dehazeConn);
     ConnectionBlocker grainBlocker(grainConn);
+    ConnectionBlocker smoothingBlocker(smoothingConn);
 
     detail->set_inconsistent (false);
 
@@ -564,6 +568,7 @@ void PartialPasteDlg::detailToggled ()
     dirpyreq->set_active (detail->get_active ());
     dehaze->set_active (detail->get_active ());
     grain->set_active (detail->get_active ());
+    smoothing->set_active(detail->get_active());
 }
 
 void PartialPasteDlg::advancedToggled ()
@@ -793,6 +798,10 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!grain->get_active ()) {
         filterPE.grain = falsePE.grain;
+    }
+
+    if (!smoothing->get_active()) {
+        filterPE.smoothing = falsePE.smoothing;
     }
     
     if (!rgbcurves->get_active ()) {

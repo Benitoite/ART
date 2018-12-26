@@ -1384,6 +1384,31 @@ struct GrainParams {
 };
 
 
+struct GuidedSmoothingParams {
+    struct Region {
+        int lumaRadius;
+        int lumaEpsilon;
+        int lumaStrength;
+        int chromaRadius;
+        int chromaEpsilon;
+        int chromaStrength;
+
+        Region();
+        bool operator==(const Region &other) const;
+        bool operator!=(const Region &other) const;
+    };
+    bool enabled;
+    std::vector<Region> regions;
+    std::vector<LabCorrectionMask> labmasks;
+    int showMask;
+
+    GuidedSmoothingParams();
+
+    bool operator==(const GuidedSmoothingParams &other) const;
+    bool operator!=(const GuidedSmoothingParams &other) const;
+};
+
+
 /**
   * Parameters for RAW demosaicing, common to all sensor type
   */
@@ -1600,6 +1625,7 @@ public:
     SoftLightParams         softlight;       ///< softlight parameters
     DehazeParams            dehaze;          ///< dehaze parameters
     GrainParams             grain;
+    GuidedSmoothingParams   smoothing;
     int                     rank;            ///< Custom image quality ranking
     int                     colorlabel;      ///< Custom color label
     bool                    inTrash;         ///< Marks deleted image

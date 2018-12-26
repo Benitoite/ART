@@ -760,6 +760,15 @@ public:
 };
 
 
+class GuidedSmoothingParamsEdited
+{
+public:
+    bool enabled;
+    bool regions;
+    bool showMask;
+};
+
+
 class RAWParamsEdited
 {
 
@@ -906,6 +915,7 @@ public:
     SoftLightParamsEdited         softlight;
     DehazeParamsEdited            dehaze;
     GrainParamsEdited             grain;
+    GuidedSmoothingParamsEdited   smoothing;
     MetaDataParamsEdited          metadata;
     bool                          exif;
     bool                          iptc;

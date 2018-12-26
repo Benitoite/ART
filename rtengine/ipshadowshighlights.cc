@@ -28,22 +28,6 @@ namespace rtengine {
 
 namespace {
 
-inline void rgb2lab(float R, float G, float B, float &l, float &a, float &b, const TMatrix &ws)
-{
-    float x, y, z;
-    Color::rgbxyz(R, G, B, x, y, z, ws);
-    Color::XYZ2Lab(x, y, z, l, a, b);
-}
-
-
-inline void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const TMatrix &iws)
-{
-    float x, y, z;
-    Color::Lab2XYZ(l, a, b, x, y, z);
-    Color::xyz2rgb(x, y, z, R, G, B, iws);
-}
-
-
 class LabImageAdapter {
 public:
     LabImageAdapter(LabImage *img, const Glib::ustring &working_profile):
@@ -77,12 +61,12 @@ public:
 
     inline void get_RGB(int y, int x, float &r, float &g, float &b)
     {
-        lab2rgb(img_->L[y][x], img_->a[y][x], img_->b[y][x], r, g, b, iws_);
+        Color::lab2rgb(img_->L[y][x], img_->a[y][x], img_->b[y][x], r, g, b, iws_);
     }
 
     inline void set_RGB(int y, int x, float r, float g, float b)
     {
-        rgb2lab(r, g, b, img_->L[y][x], img_->a[y][x], img_->b[y][x], ws_);
+        Color::rgb2lab(r, g, b, img_->L[y][x], img_->a[y][x], img_->b[y][x], ws_);
     }
     
 private:
@@ -107,18 +91,18 @@ public:
     inline float get_L(int y, int x)
     {
         float l, a, b;
-        rgb2lab(img_->r(y, x), img_->g(y, x), img_->b(y, x), l, a, b, ws_);
+        Color::rgb2lab(img_->r(y, x), img_->g(y, x), img_->b(y, x), l, a, b, ws_);
         return l;
     }
 
     inline void get_Lab(int y, int x, float &l, float &a, float &b)
     {
-        rgb2lab(img_->r(y, x), img_->g(y, x), img_->b(y, x), l, a, b, ws_);
+        Color::rgb2lab(img_->r(y, x), img_->g(y, x), img_->b(y, x), l, a, b, ws_);
     }
 
     inline void set_Lab(int y, int x, float l, float a, float b)
     {
-        lab2rgb(l, a, b, img_->r(y, x), img_->g(y, x), img_->b(y, x), iws_);
+        Color::lab2rgb(l, a, b, img_->r(y, x), img_->g(y, x), img_->b(y, x), iws_);
     }
 
     inline void get_RGB(int y, int x, float &r, float &g, float &b)
@@ -223,13 +207,13 @@ public:
                     for (int c = 0; c < 65536; ++c) {
                         float l, a, b;
                         float R = c, G = c, B = c;
-                        rgb2lab(R, G, B, l, a, b, ws_);
+                        Color::rgb2lab(R, G, B, l, a, b, ws_);
                         auto base = pow_F(l / 32768.f, gamma);
                         if (!hl) {
                             base = sh_contrast.getVal(base);
                         }
                         l = base * 32768.f;
-                        lab2rgb(l, a, b, R, G, B, iws_);
+                        Color::lab2rgb(l, a, b, R, G, B, iws_);
                         f[c] = G;
                     }
                 }

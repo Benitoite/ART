@@ -2686,6 +2686,58 @@ bool GrainParams::operator!=(const GrainParams &other) const
 }
 
 
+GuidedSmoothingParams::Region::Region():
+    lumaRadius(0),
+    lumaEpsilon(10),
+    lumaStrength(0),
+    chromaRadius(0),
+    chromaEpsilon(1),
+    chromaStrength(0)
+{
+}
+
+
+bool GuidedSmoothingParams::Region::operator==(const Region &other) const
+{
+    return lumaRadius == other.lumaRadius
+        && lumaEpsilon == other.lumaEpsilon
+        && lumaStrength == other.lumaStrength
+        && chromaRadius == other.chromaRadius
+        && chromaEpsilon == other.chromaEpsilon
+        && chromaStrength == other.chromaStrength;
+}
+
+
+bool GuidedSmoothingParams::operator!=(const Region &other) const
+{
+    return !(*this == other);
+}
+
+
+GuidedSmoothingParams::GuidedSmoothingParams():
+    enabled(false),
+    regions{Region()},
+    labmasks{LabCorrectionMask()},
+    showMask(-1)
+{
+}
+
+
+bool GuidedSmoothingParams::operator==(const GuidedSmoothingParams &other) const
+{
+    return enabled == other.enabled
+        && regions == other.regions
+        && labmasks == other.labmasks
+        && showMask == other.showMask;
+}
+
+
+bool GuidedSmoothingParams::operator!=(const GuidedSmoothingParams &other) const
+{
+    return !(*this == other);
+}
+
+
 RAWParams::BayerSensor::BayerSensor() :
     method(getMethodString(Method::AMAZE)),
     border(4),
@@ -3049,6 +3101,8 @@ void ProcParams::setDefaults()
     dehaze = DehazeParams();
 
     grain = GrainParams();
+
+    smoothing = GuidedSmoothingParams();
 
     raw = RAWParams();
 
@@ -3653,20 +3707,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
             }
         }
         saveToKeyfile(!pedited || pedited->dirpyrequalizer.showMask, "Directional Pyramid Equalizer", "ShowMask", dirpyrequalizer.showMask, keyFile);
-        
-        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.gamutlab, "Directional Pyramid Equalizer", "Gamutlab", dirpyrequalizer.gamutlab, keyFile);
-        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.cbdlMethod, "Directional Pyramid Equalizer", "cbdlMethod", dirpyrequalizer.cbdlMethod, keyFile);
-
-        // for (int i = 0; i < 6; i++) {
-        //     std::stringstream ss;
-        //     ss << "Mult" << i;
-
-        //     saveToKeyfile(!pedited || pedited->dirpyrequalizer.mult[i], "Directional Pyramid Equalizer", ss.str(), dirpyrequalizer.mult[i], keyFile);
-        // }
-
-        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.threshold, "Directional Pyramid Equalizer", "Threshold", dirpyrequalizer.threshold, keyFile);
-        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.skinprotect, "Directional Pyramid Equalizer", "Skinprotect", dirpyrequalizer.skinprotect, keyFile);
-        // saveToKeyfile(!pedited || pedited->dirpyrequalizer.hueskin, "Directional Pyramid Equalizer", "Hueskin", dirpyrequalizer.hueskin.toVector(), keyFile);
 
 // HSV Equalizer
         saveToKeyfile(!pedited || pedited->hsvequalizer.enabled, "HSV Equalizer", "Enabled", hsvequalizer.enabled, keyFile);
@@ -3742,6 +3782,24 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->grain.strength, "Grain", "Strength", grain.strength, keyFile);
         saveToKeyfile(!pedited || pedited->grain.scale, "Grain", "Scale", grain.scale, keyFile);
 
+
+// Smoothing
+        saveToKeyfile(!pedited || pedited->smoothing.enabled, "GuidedSmoothing", "Enabled", smoothing.enabled, keyFile);
+        if (!pedited || pedited->smoothing.regions) {
+            for (size_t j = 0; j < smoothing.regions.size(); ++j) {
+                std::string n = std::to_string(j+1);
+                auto &l = smoothing.regions[j];
+                putToKeyfile("GuidedSmoothing", Glib::ustring("LumaRadius_") + n, l.lumaRadius, keyFile);
+                putToKeyfile("GuidedSmoothing", Glib::ustring("LumaEpsilon_") + n, l.lumaEpsilon, keyFile);
+                putToKeyfile("GuidedSmoothing", Glib::ustring("LumaStrength_") + n, l.lumaStrength, keyFile);
+                putToKeyfile("GuidedSmoothing", Glib::ustring("ChromaRadius_") + n, l.chromaRadius, keyFile);
+                putToKeyfile("GuidedSmoothing", Glib::ustring("ChromaEpsilon_") + n, l.chromaEpsilon, keyFile);
+                putToKeyfile("GuidedSmoothing", Glib::ustring("ChromaStrength_") + n, l.chromaStrength, keyFile);
+                smoothing.labmasks[j].save(keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n);
+            }
+        }
+        saveToKeyfile(!pedited || pedited->smoothing.showMask, "GuidedSmoothing", "ShowMask", smoothing.showMask, keyFile);
+        
 // Raw
         saveToKeyfile(!pedited || pedited->raw.darkFrame, "RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
         saveToKeyfile(!pedited || pedited->raw.df_autoselect, "RAW", "DarkFrameAuto", raw.df_autoselect, keyFile);
@@ -5288,7 +5346,63 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Grain", "ISO", pedited, grain.iso, pedited->grain.iso);
             assignFromKeyfile(keyFile, "Grain", "Strength", pedited, grain.strength, pedited->grain.strength);
             assignFromKeyfile(keyFile, "Grain", "Scale", pedited, grain.scale, pedited->grain.scale);
-        }        
+        }
+
+        if (keyFile.has_group("GuidedSmoothing")) {
+            assignFromKeyfile(keyFile, "GuidedSmoothing", "Enabled", pedited, smoothing.enabled, pedited->smoothing.enabled);
+                
+            std::vector<GuidedSmoothing::Region> ll;
+            std::vector<LabCorrectionMask> lm;
+            bool found = false;
+            bool done = false;
+            for (int i = 1; !done; ++i) {
+                GuidedSmoothing::Region cur;
+                LabCorrectionMask curmask;
+                done = true;
+                std::string n = std::to_string(i);
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("LumaRadius_") + n, pedited, cur.lumaRadius, pedited->smoothing.regions)) {
+                        found = true;
+                        done = false;
+                }
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("LumaEpsilon_") + n, pedited, cur.lumaEpsilon, pedited->smoothing.regions)) {
+                        found = true;
+                        done = false;
+                }
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("LumaStrength_") + n, pedited, cur.lumaStrength, pedited->smoothing.regions)) {
+                        found = true;
+                        done = false;
+                }
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("ChromaRadius_") + n, pedited, cur.chromaRadius, pedited->smoothing.regions)) {
+                        found = true;
+                        done = false;
+                }
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("ChromaEpsilon_") + n, pedited, cur.chromaEpsilon, pedited->smoothing.regions)) {
+                        found = true;
+                        done = false;
+                }
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("ChromaStrength_") + n, pedited, cur.chromaStrength, pedited->smoothing.regions)) {
+                        found = true;
+                        done = false;
+                }
+                if (curmask.load(keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n)) {
+                    found = true;
+                    done = false;
+                    if (pedited) {
+                        pedited->smoothing.levels = true;
+                    }
+                }
+                if (!done) {
+                    ll.emplace_back(cur);
+                    lm.emplace_back(curmask);
+                }
+            }
+            if (found) {
+                smoothing.regions = std::move(ll);
+                smoothing.labmasks = std::move(lm);
+            }
+            assert(smoothing.regions.size() == smoothing.labmasks.size());
+            assignFromKeyfile(keyFile, "GuidedSmoothing", "ShowMask", pedited, smoothing.showMask, pedited->smoothing.showMask);
+        }                
 
         if (keyFile.has_group("RAW")) {
             if (keyFile.has_key("RAW", "DarkFrame")) {
@@ -5590,7 +5704,8 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && exif == other.exif
         && iptc == other.iptc
         && dehaze == other.dehaze
-        && grain == other.grain;
+        && grain == other.grain
+        && smoothing == other.smoothing;
 }
 
 bool ProcParams::operator !=(const ProcParams& other) const
