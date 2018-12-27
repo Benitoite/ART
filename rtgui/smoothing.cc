@@ -153,18 +153,18 @@ private:
 Smoothing::Smoothing(): FoldableToolPanel(this, "smoothing", M("TP_SMOOTHING_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvEnabled = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_ENABLED");
-    EvChannel = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_CHANNEL");
-    EvRadius = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_RADIUS");
-    EvEpsilon = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_EPSILON");
+    EvEnabled = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_ENABLED");
+    EvChannel = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_CHANNEL");
+    EvRadius = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_RADIUS");
+    EvEpsilon = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_EPSILON");
 
-    EvList = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_LIST");
-    EvHueMask = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_HUEMASK");
-    EvChromaticityMask = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_CHROMATICITYMASK");
-    EvLightnessMask = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_LIGHTNESSMASK");
-    EvMaskBlur = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_MASKBLUR");
-    EvShowMask = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_SHOWMASK");
-    EvAreaMask = m->newEvent(RGBCURVE, "HISTORY_MSG_SMOOTHING_AREAMASK");
+    EvList = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_LIST");
+    EvHueMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_HUEMASK");
+    EvChromaticityMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_MASKBLUR");
+    EvShowMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_SHOWMASK");
+    EvAreaMask = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SMOOTHING_AREAMASK");
 
     box = Gtk::manage(new Gtk::VBox());
 

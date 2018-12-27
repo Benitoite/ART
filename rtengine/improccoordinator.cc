@@ -622,7 +622,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
                 ipf.rgbProc (oprevi, oprevl, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
                             rCurve, gCurve, bCurve, colourToningSatLimit, colourToningSatLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, beforeToneCurveBW, afterToneCurveBW, rrm, ggm, bbm, bwAutoR, bwAutoG, bwAutoB, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, histToneCurve);
-                ipf.guidedSmoothing(oprevl);
     
                 if (params.blackwhite.enabled && params.blackwhite.autoc && abwListener) {
                     if (settings->verbose) {
@@ -692,6 +691,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             ipf.chromiLuminanceCurve(pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
             ipf.vibrance(oprevl);
             ipf.labColorCorrectionRegions(oprevl);
+            ipf.guidedSmoothing(oprevl);
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {

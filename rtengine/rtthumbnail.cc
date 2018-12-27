@@ -1360,7 +1360,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     LUTu histToneCurve;
     ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
-    ipf.guidedSmoothing(labView);
 
     // freeing up some memory
     customToneCurve1.Reset();
@@ -1399,6 +1398,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     ipf.vibrance (labView);
     ipf.labColorCorrectionRegions(labView);
+    ipf.guidedSmoothing(labView);
     ipf.logEncoding(labView);
 
     if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || !params.colorappearance.enabled) {
