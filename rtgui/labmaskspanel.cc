@@ -514,7 +514,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         list->set_text(idx, c+1, cp_->getColumnContent(c, idx));
     }
     Glib::ustring am("");
-    if (!r.areaMask.isTrivial()) {
+    if (r.areaEnabled && !r.areaMask.isTrivial()) {
         am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
                                     r.areaMask.shapes.size() > 1 ? "s" : "");
     }
@@ -814,6 +814,7 @@ void LabMasksPanel::onAreaShapeSelectionChanged()
         s.width = width_;
         s.height = height_;
         s.angle = angle_;
+        s.roundness = areaMaskRoundness->getValue();
 
         auto sel = areaMaskShapes->get_selected();
         unsigned int newidx = sel.empty() ? area_shape_index_ : sel[0];
@@ -855,9 +856,11 @@ void LabMasksPanel::onAreaShapeAddPressed()
 {
     if (selected_ < masks_.size()) {
         listEdited = true;
-        masks_[selected_].areaMask.shapes.push_back(defaultAreaShape);
+        auto &am = masks_[selected_].areaMask;
+        auto s = am.shapes.empty() ? defaultAreaShape : am.shapes.back();
+        am.shapes.push_back(s);
         populateShapeList(selected_, -1);
-        areaShapeSelect(masks_[selected_].areaMask.shapes.size()-1, true);
+        areaShapeSelect(am.shapes.size()-1, true);
         maskShow(selected_, true);        
         auto l = getListener();
         if (l && areaMask->getEnabled()) {
@@ -954,6 +957,7 @@ void LabMasksPanel::areaShapeSelect(int sel, bool update_list)
     angle_ = ns.angle;
     updateGeometry();
     updateAreaMask(true);
+    areaMaskRoundness->setValue(ns.roundness);
     if (areaMaskToggle->get_active()) {
         areaMaskToggle->set_active(false);
         areaMaskToggle->set_active(true);
