@@ -256,8 +256,8 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, params->toneCurve, params->raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
-    std::vector<float> data;
-    data.reserve(fw/SCALE * fh/SCALE * 2);
+    float vmin = RT_INFINITY;
+    float vmax = -RT_INFINITY;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
@@ -265,19 +265,11 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         for (int x = 0, w = fw / SCALE; x < w; ++x) {
             float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
             if (l > 0.f) {
-                data.push_back(l);
+                vmin = std::min(vmin, l);
+                vmax = std::max(vmax, l);
             }
         }
     }
-
-    std::sort(data.begin(), data.end());
-    int n = data.size();
-    if (!n) {
-        return;
-    }
-    
-    float vmin = data[0];
-    float vmax = data[n-1];
 
     constexpr float dr_headroom = 0.5f;
     constexpr float black_headroom = 0.5f;
