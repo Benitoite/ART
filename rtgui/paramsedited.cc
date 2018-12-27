@@ -3113,7 +3113,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(grain.scale);
 
     SETVAL_(smoothing.enabled);
-    SETVAL_(smoothing.regions);
+    if (smoothing.regions) {
+        toEdit.smoothing.regions = mods.smoothing.regions;
+        toEdit.smoothing.labmasks = mods.smoothing.labmasks;
+    }
     SETVAL_(smoothing.showMask);
 
     if (metadata.mode) {

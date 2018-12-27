@@ -83,6 +83,7 @@
 #include "dehaze.h"
 #include "grain.h"
 #include "logencoding.h"
+#include "smoothing.h"
 #include "guiutils.h"
 
 class ImageEditorCoordinator;
@@ -140,6 +141,7 @@ protected:
     SoftLight *softlight;
     Dehaze *dehaze;
     FilmGrain *grain;
+    Smoothing *smoothing;
     FilmSimulation *filmSimulation;
     SensorBayer * sensorbayer;
     SensorXTrans * sensorxtrans;

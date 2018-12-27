@@ -1386,12 +1386,14 @@ struct GrainParams {
 
 struct GuidedSmoothingParams {
     struct Region {
-        int lumaRadius;
-        int lumaEpsilon;
-        int lumaStrength;
-        int chromaRadius;
-        int chromaEpsilon;
-        int chromaStrength;
+        enum class Channel {
+            LUMINANCE,
+            CHROMINANCE,
+            RGB
+        };
+        Channel channel;
+        int radius;
+        int epsilon;
 
         Region();
         bool operator==(const Region &other) const;

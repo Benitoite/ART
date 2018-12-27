@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  RawTherapee is free software: you can redistribute it and/or modify
@@ -50,26 +51,8 @@ protected:
     std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
     LabMasksPanel *labMasks;
     Gtk::VBox *box;
-    //Gtk::CheckButton * gamutlab;
     Adjuster* multiplier[6];
     Adjuster* threshold;
-    // Adjuster* skinprotect;
-    // ThresholdAdjuster* hueskin;
-    //  MyComboBoxText*   algo;
-    //  sigc::connection  algoconn;
-    //  Gtk::Label*       alLabel;
-    //  Gtk::HBox*        algoHBox;
-
-    // sigc::connection  gamutlabConn;
-    // sigc::connection lumaneutralPressedConn;
-    // sigc::connection lumacontrastPlusPressedConn;
-    // sigc::connection lumacontrastMinusPressedConn;
-    // sigc::connection  cbdlMethodConn;
-    // Gtk::Label* labmcd;
-    // Gtk::HBox* cdbox;
-    // MyComboBoxText*   cbdlMethod;
-
-    // bool lastgamutlab;
 
 public:
 

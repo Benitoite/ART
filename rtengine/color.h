@@ -626,7 +626,7 @@ public:
         XYZ2Lab(x, y, z, l, a, b);
     }
 
-    void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const double iws[3][3])
+    static void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const double iws[3][3])
     {
         float x, y, z;
         Lab2XYZ(l, a, b, x, y, z);

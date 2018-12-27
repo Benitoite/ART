@@ -33,7 +33,13 @@ namespace rtengine {
 
 namespace {
 
-void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, bool luminance, int radius, float epsilon, int strength, double scale, bool multithread)
+enum class Channel {
+    L,
+    C,
+    LC
+};
+
+void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
 {
     if (radius > 0 && strength > 0) {
         const int W = R.width();
@@ -60,16 +66,23 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                 float ir = iR[y][x];
                 float ig = iG[y][x];
                 float ib = iB[y][x];
-                float Y = Color::rgbLuminance(rr, gg, bb, ws);
-                float iY = Color::rgbLuminance(ir, ig, ib, ws);
                 const float bf = blend;
-                float oY = luminance ? intp(bf, Y, iY) : iY;
-                rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
-                gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
-                bb = luminance ? ib - iY : intp(bf, bb - Y, ib - iY);
-                R[y][x] = oY + rr;
-                G[y][x] = oY + gg;
-                B[y][x] = oY + bb;
+                if (chan == Channel::LC) {
+                    R[y][x] = intp(bf, rr, ir);
+                    G[y][x] = intp(bf, gg, ig);
+                    B[y][x] = intp(bf, bb, ib);
+                } else {
+                    const bool luminance = (chan == Channel::L);
+                    float Y = Color::rgbLuminance(rr, gg, bb, ws);
+                    float iY = Color::rgbLuminance(ir, ig, ib, ws);
+                    float oY = luminance ? intp(bf, Y, iY) : iY;
+                    rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
+                    gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
+                    bb = luminance ? ib - iY : intp(bf, bb - Y, ib - iY);
+                    R[y][x] = oY + rr;
+                    G[y][x] = oY + gg;
+                    B[y][x] = oY + bb;
+                }
             }
         }
     }
@@ -95,8 +108,8 @@ void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
     int r = max(int(params->denoise.guidedChromaRadius / scale), 1);
-    guided_smoothing(R, G, B, ws, false, params->denoise.guidedChromaRadius, 0.1f / float(min(r, 10)), params->denoise.guidedChromaStrength, scale, multiThread);
-    guided_smoothing(R, G, B, ws, true, params->denoise.guidedLumaRadius, 0.001f, params->denoise.guidedLumaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, Channel::C, params->denoise.guidedChromaRadius, 0.1f / float(min(r, 10)), params->denoise.guidedChromaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, Channel::L, params->denoise.guidedLumaRadius, 0.001f, params->denoise.guidedLumaStrength, scale, multiThread);
     
     rgb->normalizeFloatTo65535();
 }
@@ -122,9 +135,8 @@ void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
         if (show_mask_idx >= n) {
             show_mask_idx = -1;
         }
-        std::vector<array2D<float>> Lmask(n);
-        std::vector<array2D<float>> abmask(n);
-        if (!generateLabMasks(lab, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &Lmask, &abmask)) {
+        std::vector<array2D<float>> mask(n);
+        if (!generateLabMasks(lab, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, nullptr, &mask)) {
             return; // show mask is active, nothing more to do
         }
 
@@ -143,26 +155,22 @@ void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
             array2D<float> R(W, H, rgb.r.ptrs, ARRAY2D_BYREFERENCE);
             array2D<float> G(W, H, rgb.g.ptrs, ARRAY2D_BYREFERENCE);
             array2D<float> B(W, H, rgb.b.ptrs, ARRAY2D_BYREFERENCE);
-            
-            guided_smoothing(R, G, B, ws, false, r.chromaRadius, r.chromaStrength, scale, multiThread);
-            guided_smoothing(R, G, B, ws, true, r.lumaRadius, r.lumaStrength, scale, multiThread);
-            const auto &Lblend = Lmask[i];
-            const auto &abblend = abmask[i];
 
-            rgb.normalizeFloatTo65535();
-            rgb2lab(rgb, *lab, params->icm.workingProfile);
+            const float epsilon = 0.001f * std::pow(2, -r.epsilon);
+            guided_smoothing(R, G, B, ws, Channel(int(r.channel)), r.radius, epsilon, 100, scale, multiThread);
+            
+            const auto &blend = mask[i];
             
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
 #endif
             for (int y = 0; y < lab->H; ++y) {
                 for (int x = 0; x < lab->W; ++x) {
-                    float l = lab->L[y][x];
                     float ll, aa, bb;
-                    Color::rgb2lab(R[y][x], G[y][x], B[y][x], ll, aa, bb, ws);
-                    lab->L[y][x] = intp(Lblend[y][x], ll, lab->L[y][x]);
-                    lab->a[y][x] = intp(abblend[y][x], aa, lab->a[y][x]);
-                    lab->b[y][x] = intp(abblend[y][x], bb, lab->b[y][x]);
+                    Color::rgb2lab(R[y][x] * 65535.f, G[y][x] * 65535.f, B[y][x] * 65535.f, ll, aa, bb, ws);
+                    lab->L[y][x] = intp(blend[y][x], ll, lab->L[y][x]);
+                    lab->a[y][x] = intp(blend[y][x], aa, lab->a[y][x]);
+                    lab->b[y][x] = intp(blend[y][x], bb, lab->b[y][x]);
                 }
             }
         }

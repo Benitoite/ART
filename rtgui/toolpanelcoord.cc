@@ -79,6 +79,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     softlight           = Gtk::manage(new SoftLight());
     dehaze              = Gtk::manage(new Dehaze());
     grain               = Gtk::manage(new FilmGrain());
+    smoothing           = Gtk::manage(new Smoothing());
     sensorbayer         = Gtk::manage (new SensorBayer ());
     sensorxtrans        = Gtk::manage (new SensorXTrans ());
     bayerprocess        = Gtk::manage (new BayerProcess ());
@@ -134,6 +135,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (detailsPanel, dirpyrequalizer);
     addPanel (detailsPanel, dehaze);
     addPanel (detailsPanel, grain);
+    addPanel(detailsPanel, smoothing);
     addPanel (advancedPanel, wavelet);
     addPanel (transformPanel, crop);
     addPanel (transformPanel, resize);
@@ -490,6 +492,7 @@ void ToolPanelCoordinator::profileChange(
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
         colortoning->updateGeometry(fw, fh);
         dirpyrequalizer->updateGeometry(fw, fh);
+        smoothing->updateGeometry(fw, fh);
     }
 
     // start the IPC processing

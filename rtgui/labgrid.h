@@ -39,8 +39,8 @@
 #pragma once
 
 #include <gtkmm.h>
-#include "eventmapper.h"
 #include "toolpanel.h"
+#include "eventmapper.h"
 
 
 class LabGridArea: public Gtk::DrawingArea, public BackBuffer {
