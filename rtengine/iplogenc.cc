@@ -31,6 +31,8 @@
 
 namespace rtengine {
 
+extern const Settings *settings;
+
 namespace {
 
 template <class Curve>
@@ -253,37 +255,46 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     imgsrc->getFullSize(fw, fh, tr);
     PreviewProps pp(0, 0, fw, fh, SCALE);
     Imagefloat img(int(fw / SCALE + 0.5), int(fh / SCALE + 0.5));
-    imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, params->toneCurve, params->raw);
+    ProcParams neutral;
+    neutral.toneCurve.clampOOG = false;
+    imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, neutral.toneCurve, neutral.raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
     float vmin = RT_INFINITY;
     float vmax = -RT_INFINITY;
 
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    constexpr float noise = 1e-5 * 65535.f;
 
     for (int y = 0, h = fh / SCALE; y < h; ++y) {
         for (int x = 0, w = fw / SCALE; x < w; ++x) {
-            float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
-            if (l > 0.f) {
-                vmin = std::min(vmin, l);
-                vmax = std::max(vmax, l);
+            // float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
+            // if (l > 0.f) {
+            //     vmin = std::min(vmin, l);
+            //     vmax = std::max(vmax, l);
+            // }
+            float m = max(0.f, img.r(y, x), img.g(y, x), img.b(y, x));
+            if (m > noise) {
+                vmin = min(vmin, m);
+                vmax = max(vmax, m);
             }
         }
     }
 
-    constexpr float dr_headroom = 0.5f;
-    constexpr float black_headroom = 0.5f;
-    
+    vmin /= 65535.f;
+    vmax /= 65535.f;
+
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
-        const float noise = pow_F(2.f, -16.f);
         const float gray = float(lparams.grayPoint) / 100.f;
-        vmin = max(vmin / vmax, noise);
-        float lmin = xlogf(vmin) / log2;
-        lparams.blackEv = xlogf(vmin/gray) / log2 - black_headroom;
-        float dynamic_range = std::abs(lmin) + dr_headroom;
-        lparams.whiteEv = dynamic_range + lparams.blackEv;
-        float b = find_brightness(std::abs(lparams.blackEv) / dynamic_range, 0.18 * std::pow(2, dr_headroom));
+        float dynamic_range = -xlogf(vmin / vmax) / log2;
+        if (settings->verbose) {
+            std::cout << "AutoLog: min = " << vmin << ", max = " << vmax
+                      << ", DR = " << dynamic_range << std::endl;
+        }
+        lparams.whiteEv = xlogf(vmax / gray) / log2;
+        lparams.blackEv = lparams.whiteEv - dynamic_range;
+        constexpr float target_gray = 0.18;
+        float b = find_brightness(std::abs(lparams.blackEv) / dynamic_range, target_gray);
         if (b > 0.f) {
             lparams.base = std::log(b) / log2;
         } else {
