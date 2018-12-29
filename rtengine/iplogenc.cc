@@ -239,7 +239,7 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
             float g = CLIP(img->g(y, x));
             float b = CLIP(img->b(y, x));
 
-            int y = CLIP<int>(Color::rgbLuminance(Color::gamma2curve[r], Color::gamma2curve[g], Color::gamma2curve[b], ws));
+            int y = CLIP<int>(Color::gamma2curve[max(r, g, b)]);
             hist[y >> compression]++;
         }
     }
@@ -250,7 +250,7 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
 
 void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams)
 {
-    constexpr int SCALE = 4;
+    constexpr int SCALE = 10;
     int fw, fh, tr = TR_NONE;
     imgsrc->getFullSize(fw, fh, tr);
     PreviewProps pp(0, 0, fw, fh, SCALE);
@@ -263,25 +263,17 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     float vmin = RT_INFINITY;
     float vmax = -RT_INFINITY;
 
-    constexpr float noise = 1e-5 * 65535.f;
+    constexpr float noise = 1e-5;
 
     for (int y = 0, h = fh / SCALE; y < h; ++y) {
         for (int x = 0, w = fw / SCALE; x < w; ++x) {
-            // float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws);
-            // if (l > 0.f) {
-            //     vmin = std::min(vmin, l);
-            //     vmax = std::max(vmax, l);
-            // }
-            float m = max(0.f, img.r(y, x), img.g(y, x), img.b(y, x));
+            float m = max(0.f, img.r(y, x), img.g(y, x), img.b(y, x)) / 65535.f;
             if (m > noise) {
                 vmin = min(vmin, m);
                 vmax = max(vmax, m);
             }
         }
     }
-
-    vmin /= 65535.f;
-    vmax /= 65535.f;
 
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
