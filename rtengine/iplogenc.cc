@@ -228,7 +228,6 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
 {
     hist.clear();
     const int compression = log2(65536 / hist.getSize());
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(profile);
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
