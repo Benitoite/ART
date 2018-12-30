@@ -84,6 +84,7 @@
 #include "grain.h"
 #include "logencoding.h"
 #include "smoothing.h"
+#include "colorcorrection.h"
 #include "guiutils.h"
 
 class ImageEditorCoordinator;
@@ -136,12 +137,11 @@ protected:
     RGBCurves* rgbcurves;
     ColorToning* colortoning;
     Wavelet * wavelet;
-    DirPyrEqualizer* dirpyrequalizer;
+    //DirPyrEqualizer* dirpyrequalizer;
     HSVEqualizer* hsvequalizer;
     SoftLight *softlight;
     Dehaze *dehaze;
     FilmGrain *grain;
-    Smoothing *smoothing;
     FilmSimulation *filmSimulation;
     SensorBayer * sensorbayer;
     SensorXTrans * sensorxtrans;
@@ -158,6 +158,9 @@ protected:
     FattalToneMapping *fattal;
     LogEncoding *logenc;
     MetaDataPanel* metadata;
+    Smoothing *smoothing;
+    ColorCorrection *colorcorrection;
+    DirPyrEqualizer *cbdl;
 
     std::vector<PParamsChangeListener*> paramcListeners;
 
@@ -170,6 +173,7 @@ protected:
     ToolVBox* transformPanel;
     ToolVBox* rawPanel;
     ToolVBox* advancedPanel;
+    ToolVBox* localPanel;
     ToolBar* toolBar;
 
     TextOrIcon* toiE;
@@ -179,9 +183,10 @@ protected:
     TextOrIcon* toiR;
     TextOrIcon* toiM;
     TextOrIcon* toiW;
+    TextOrIcon* toiL;
 
-    Gtk::Image* imgPanelEnd[6];
-    Gtk::VBox* vbPanelEnd[6];
+    Gtk::Image* imgPanelEnd[7];
+    Gtk::VBox* vbPanelEnd[7];
 
     Gtk::ScrolledWindow* exposurePanelSW;
     Gtk::ScrolledWindow* detailsPanelSW;
@@ -189,6 +194,7 @@ protected:
     Gtk::ScrolledWindow* transformPanelSW;
     Gtk::ScrolledWindow* rawPanelSW;
     Gtk::ScrolledWindow* advancedPanelSW;
+    Gtk::ScrolledWindow* localPanelSW;
 
     std::vector<MyExpander*> expList;
 

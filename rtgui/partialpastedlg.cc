@@ -45,6 +45,9 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     raw         ->set_name("PartialPasteHeader");
     advanced    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_ADVANCEDGROUP")));
     advanced    ->set_name("PartialPasteHeader");
+    local = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_LOCALGROUP")));
+    local->set_name("PartialPasteHeader");
+    
 
     // Basic Settings:
     wb          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_WHITEBALANCE")));
@@ -65,10 +68,9 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     impden      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_IMPULSEDENOISE")));
     dirpyrden   = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYRDENOISE")));
     defringe    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DEFRINGE")));
-    dirpyreq    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYREQUALIZER")));
+    //dirpyreq    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYREQUALIZER")));
     dehaze = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DEHAZE")) );
     grain = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_GRAIN")));
-    smoothing = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_SMOOTHING")));
 
     // Advanced Settings:
     retinex     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RETINEX")));
@@ -106,6 +108,11 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     exifch      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EXIFCHANGES")));
     iptc        = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_IPTCINFO")));
 
+    // Local settings:
+    colorcorrection = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_COLORCORRECTION")));
+    cbdl = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYREQUALIZER")));
+    smoothing = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_SMOOTHING")));
+
     // Raw Settings:
     raw_method          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RAW_DMETHOD")));
     raw_imagenum        = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RAW_IMAGENUM")));
@@ -139,10 +146,10 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     raw_caredblue       = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RAWCACORR_CAREDBLUE")));
     raw_ca_avoid_colourshift = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RAWCACORR_AVOIDCOLORSHIFT")));
 
-    Gtk::VBox* vboxes[8];
-    Gtk::HSeparator* hseps[8];
+    Gtk::VBox* vboxes[9];
+    Gtk::HSeparator* hseps[9];
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         vboxes[i] = Gtk::manage (new Gtk::VBox ());
         vboxes[i]->set_name("PartialPasteGroupContainer");
         hseps[i] = Gtk::manage (new Gtk::HSeparator ());
@@ -173,7 +180,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[1]->pack_start (*impden, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*dirpyrden, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*defringe, Gtk::PACK_SHRINK, 2);
-    vboxes[1]->pack_start (*dirpyreq, Gtk::PACK_SHRINK, 2);
+    //vboxes[1]->pack_start (*dirpyreq, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*dehaze, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*grain, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
@@ -218,47 +225,54 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[5]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
     vboxes[5]->pack_start (*wavelet, Gtk::PACK_SHRINK, 2);
 
+    //LOCAL
+    vboxes[6]->pack_start(*local, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start(*hseps[6], Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start(*colorcorrection, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start(*cbdl, Gtk::PACK_SHRINK, 2);
+
     //META
-    vboxes[6]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*hseps[6], Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start(*metadata, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*exifch, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*iptc, Gtk::PACK_SHRINK, 2);
+    vboxes[7]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
+    vboxes[7]->pack_start (*hseps[7], Gtk::PACK_SHRINK, 2);
+    vboxes[7]->pack_start(*metadata, Gtk::PACK_SHRINK, 2);
+    vboxes[7]->pack_start (*exifch, Gtk::PACK_SHRINK, 2);
+    vboxes[7]->pack_start (*iptc, Gtk::PACK_SHRINK, 2);
 
     //RAW
-    vboxes[7]->pack_start (*raw, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*hseps[7], Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_method, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_border, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_imagenum, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_pixelshift, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_ccSteps, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_dcb_iterations, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_dcb_enhance, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_lmmse_iterations, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
-    vboxes[7]->pack_start (*raw_linenoise, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_greenthresh, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_hotpix_filt, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_deadpix_filt, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_pdaf_lines_filter, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
-    vboxes[7]->pack_start (*raw_expos, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_preser, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_black, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
-    vboxes[7]->pack_start (*df_file, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*df_AutoSelect, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
-    vboxes[7]->pack_start (*ff_file, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*ff_AutoSelect, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*ff_BlurType, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*ff_BlurRadius, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*ff_ClipControl, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
-    vboxes[7]->pack_start (*raw_ca_autocorrect, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_caredblue, Gtk::PACK_SHRINK, 2);
-    vboxes[7]->pack_start (*raw_ca_avoid_colourshift, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*hseps[8], Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_method, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_border, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_imagenum, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_pixelshift, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_ccSteps, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_dcb_iterations, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_dcb_enhance, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_lmmse_iterations, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
+    vboxes[8]->pack_start (*raw_linenoise, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_greenthresh, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_hotpix_filt, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_deadpix_filt, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_pdaf_lines_filter, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
+    vboxes[8]->pack_start (*raw_expos, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_preser, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_black, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
+    vboxes[8]->pack_start (*df_file, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*df_AutoSelect, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
+    vboxes[8]->pack_start (*ff_file, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*ff_AutoSelect, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*ff_BlurType, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*ff_BlurRadius, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*ff_ClipControl, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*Gtk::manage (new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 0);
+    vboxes[8]->pack_start (*raw_ca_autocorrect, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_caredblue, Gtk::PACK_SHRINK, 2);
+    vboxes[8]->pack_start (*raw_ca_avoid_colourshift, Gtk::PACK_SHRINK, 2);
 
     Gtk::VBox* vbCol1 = Gtk::manage (new Gtk::VBox ());
     Gtk::VBox* vbCol2 = Gtk::manage (new Gtk::VBox ());
@@ -268,11 +282,11 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
         vbCol1->pack_start (*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
-    for (int i = 3; i < 7; i++) {
+    for (int i = 3; i < 8; i++) {
         vbCol2->pack_start (*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
-    for (int i = 7; i < 8; i++) {
+    for (int i = 8; i < 9; i++) {
         vbCol3->pack_start (*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
@@ -317,6 +331,8 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     metaConn        = meta->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::metaToggled));
     rawConn         = raw->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::rawToggled));
     advancedConn    = advanced->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::advancedToggled));
+    localConn = local->signal_toggled().connect(sigc::mem_fun(*this, &PartialPasteDlg::localToggled));
+
 
     // Basic Settings
     wbConn          = wb->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
@@ -337,10 +353,9 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     impdenConn      = impden->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     dirpyrdenConn   = dirpyrden->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     defringeConn    = defringe->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
-    dirpyreqConn    = dirpyreq->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
+    //dirpyreqConn    = dirpyreq->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     dehazeConn    = dehaze->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     grainConn    = grain->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
-    smoothingConn = smoothing->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
 
     // Advanced Settings:
     retinexConn     = retinex->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
@@ -377,6 +392,11 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     metadataConn = metadata->signal_toggled().connect(sigc::bind (sigc::mem_fun(*meta, &Gtk::CheckButton::set_inconsistent), true));
     exifchConn      = exifch->signal_toggled().connect (sigc::bind (sigc::mem_fun(*meta, &Gtk::CheckButton::set_inconsistent), true));
     iptcConn        = iptc->signal_toggled().connect (sigc::bind (sigc::mem_fun(*meta, &Gtk::CheckButton::set_inconsistent), true));
+
+    // Local:
+    colorcorrectionConn = colorcorrection->signal_toggled().connect(sigc::bind(sigc::mem_fun(*local, &Gtk::CheckButton::set_inconsistent), true));
+    smoothingConn = smoothing->signal_toggled().connect(sigc::bind(sigc::mem_fun(*local, &Gtk::CheckButton::set_inconsistent), true));
+    cbdlConn = cbdl->signal_toggled().connect(sigc::bind(sigc::mem_fun(*local, &Gtk::CheckButton::set_inconsistent), true));
 
     // Raw Settings:
     raw_methodConn          = raw_method->signal_toggled().connect (sigc::bind (sigc::mem_fun(*raw, &Gtk::CheckButton::set_inconsistent), true));
@@ -429,6 +449,7 @@ void PartialPasteDlg::everythingToggled ()
     ConnectionBlocker metaBlocker(metaConn);
     ConnectionBlocker rawBlocker(rawConn);
     ConnectionBlocker advancedBlocker(advancedConn);
+    ConnectionBlocker localBlocker(localConn);
 
     everything->set_inconsistent (false);
 
@@ -441,6 +462,7 @@ void PartialPasteDlg::everythingToggled ()
     meta->set_active(everything->get_active());
     raw->set_active(everything->get_active());
     advanced->set_active(everything->get_active());
+    local->set_active(everything->get_active());
 
     //toggle group children
     PartialPasteDlg::basicToggled ();
@@ -451,6 +473,7 @@ void PartialPasteDlg::everythingToggled ()
     PartialPasteDlg::metaToggled ();
     PartialPasteDlg::rawToggled ();
     PartialPasteDlg::advancedToggled ();
+    PartialPasteDlg::localToggled();
 }
 
 void PartialPasteDlg::rawToggled ()
@@ -551,10 +574,10 @@ void PartialPasteDlg::detailToggled ()
     ConnectionBlocker impdenBlocker(impdenConn);
     ConnectionBlocker dirpyrdenBlocker(dirpyrdenConn);
     ConnectionBlocker defringeBlocker(defringeConn);
-    ConnectionBlocker dirpyreqBlocker(dirpyreqConn);
+    //ConnectionBlocker dirpyreqBlocker(dirpyreqConn);
     ConnectionBlocker dehazeBlocker(dehazeConn);
     ConnectionBlocker grainBlocker(grainConn);
-    ConnectionBlocker smoothingBlocker(smoothingConn);
+    //ConnectionBlocker smoothingBlocker(smoothingConn);
 
     detail->set_inconsistent (false);
 
@@ -565,10 +588,10 @@ void PartialPasteDlg::detailToggled ()
     impden->set_active (detail->get_active ());
     dirpyrden->set_active (detail->get_active ());
     defringe->set_active (detail->get_active ());
-    dirpyreq->set_active (detail->get_active ());
+    //dirpyreq->set_active (detail->get_active ());
     dehaze->set_active (detail->get_active ());
     grain->set_active (detail->get_active ());
-    smoothing->set_active(detail->get_active());
+    //smoothing->set_active(detail->get_active());
 }
 
 void PartialPasteDlg::advancedToggled ()
@@ -666,6 +689,21 @@ void PartialPasteDlg::metaToggled ()
 }
 
 
+void PartialPasteDlg::localToggled()
+{
+
+    ConnectionBlocker colorcorrectionBlocker(colorcorrectionConn);
+    ConnectionBlocker smoothingBlocker(smoothingConn);
+    ConnectionBlocker cbdlBlocker(cbdlConn);
+
+    local->set_inconsistent(false);
+
+    colorcorrection->set_active(local->get_active());
+    smoothing->set_active(local->get_active());
+    cbdl->set_active(cbdl->get_active());
+}
+
+
 /*
  * Copies the selected items from the source ProcParams+ParamsEdited(optional)
  * to the destination ProcParams.
@@ -748,9 +786,9 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
         filterPE.impulseDenoise  = falsePE.impulseDenoise;
     }
 
-    if (!dirpyreq->get_active ()) {
-        filterPE.dirpyrequalizer = falsePE.dirpyrequalizer;
-    }
+    // if (!dirpyreq->get_active ()) {
+    //     filterPE.dirpyrequalizer = falsePE.dirpyrequalizer;
+    // }
 
     if (!defringe->get_active ()) {
         filterPE.defringe        = falsePE.defringe;
@@ -800,10 +838,6 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
         filterPE.grain = falsePE.grain;
     }
 
-    if (!smoothing->get_active()) {
-        filterPE.smoothing = falsePE.smoothing;
-    }
-    
     if (!rgbcurves->get_active ()) {
         filterPE.rgbCurves    = falsePE.rgbCurves;
     }
@@ -868,6 +902,18 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
         filterPE.iptc = falsePE.iptc;
     }
 
+    if (!colorcorrection->get_active()) {
+        filterPE.colorcorrection = falsePE.colorcorrection;
+    }
+    
+    if (!smoothing->get_active()) {
+        filterPE.smoothing = falsePE.smoothing;
+    }
+    
+    if (!cbdl->get_active()) {
+        filterPE.dirpyrequalizer = falsePE.dirpyrequalizer;
+    }    
+    
     if (!raw_method->get_active ()) {
         filterPE.raw.bayersensor.method   = falsePE.raw.bayersensor.method;
         filterPE.raw.bayersensor.dualDemosaicAutoContrast = falsePE.raw.bayersensor.dualDemosaicAutoContrast;

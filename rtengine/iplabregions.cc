@@ -42,7 +42,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
     
-    if (!params->colorToning.enabled || params->colorToning.method != "LabRegions") {
+    if (!params->colorcorrection.enabled) {
         if (editWhatever) {
             editWhatever->fill(0.f);
         }
@@ -54,8 +54,8 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
         fillPipetteLabMasks(lab, editWhatever, id, multiThread);
     }
     
-    int n = params->colorToning.labregions.size();
-    int show_mask_idx = params->colorToning.labregionsShowMask;
+    int n = params->colorcorrection.regions.size();
+    int show_mask_idx = params->colorcorrection.showMask;
     if (show_mask_idx >= n) {
         show_mask_idx = -1;
     }
@@ -63,7 +63,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
     std::vector<array2D<float>> abmask(n);
     std::vector<array2D<float>> Lmask(n);
 
-    if (!generateLabMasks(lab, params->colorToning.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &Lmask, &abmask)) {
+    if (!generateLabMasks(lab, params->colorcorrection.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &Lmask, &abmask)) {
         return; // show mask is active, nothing more to do
     }
     
@@ -81,7 +81,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
     float power[n];
     int channel[n];
     for (int i = 0; i < n; ++i) {
-        auto &r = params->colorToning.labregions[i];
+        auto &r = params->colorcorrection.regions[i];
         abca[i] = abcoord(r.a);
         abcb[i] = abcoord(r.b);
         rs[i] = 1.f + r.saturation / 100.f;

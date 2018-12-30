@@ -164,7 +164,8 @@ void BatchToolPanelCoordinator::initSession ()
             retinex->setAdjusterBehavior (false, false, false, false, false, false, false);
 
             shadowshighlights->setAdjusterBehavior (false, false);
-            dirpyrequalizer->setAdjusterBehavior (false, false, false);
+            //dirpyrequalizer->setAdjusterBehavior (false, false, false);
+            cbdl->setAdjusterBehavior(false, false, false);
             wavelet->setAdjusterBehavior (false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false);
             denoise->setAdjusterBehavior (false, false, false, false, false, false, false);
             bayerprocess->setAdjusterBehavior(false, false, false, false, false, false);

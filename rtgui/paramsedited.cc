@@ -141,8 +141,6 @@ void ParamsEdited::set(bool v)
     colorToning.labgridBLow = v;
     colorToning.labgridAHigh = v;
     colorToning.labgridBHigh = v;
-    colorToning.labregions = v;
-    colorToning.labregionsShowMask = v;
 
     sharpening.enabled            = v;
     sharpening.contrast           = v;
@@ -580,6 +578,9 @@ void ParamsEdited::set(bool v)
     smoothing.enabled = v;
     smoothing.regions = v;
     smoothing.showMask = v;
+    colorcorrection.enabled = v;
+    colorcorrection.regions = v;
+    colorcorrection.showMask = v;
     metadata.mode = v;
 
     exif = v;
@@ -712,8 +713,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         colorToning.labgridBLow = colorToning.labgridBLow && p.colorToning.labgridBLow == other.colorToning.labgridBLow;
         colorToning.labgridAHigh = colorToning.labgridAHigh && p.colorToning.labgridAHigh == other.colorToning.labgridAHigh;
         colorToning.labgridBHigh = colorToning.labgridBHigh && p.colorToning.labgridBHigh == other.colorToning.labgridBHigh;
-        colorToning.labregions = colorToning.labregions && p.colorToning.labregions == other.colorToning.labregions;
-        colorToning.labregionsShowMask = colorToning.labregionsShowMask && p.colorToning.labregionsShowMask == other.colorToning.labregionsShowMask;
         sharpenEdge.enabled = sharpenEdge.enabled && p.sharpenEdge.enabled == other.sharpenEdge.enabled;
         sharpenEdge.passes = sharpenEdge.passes && p.sharpenEdge.passes == other.sharpenEdge.passes;
         sharpenEdge.amount = sharpenEdge.amount && p.sharpenEdge.amount == other.sharpenEdge.amount;
@@ -1152,6 +1151,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(smoothing.regions);
         SETVAL_(smoothing.showMask);
 
+        SETVAL_(colorcorrection.enabled);
+        SETVAL_(colorcorrection.regions);
+        SETVAL_(colorcorrection.showMask);
+        
         metadata.mode = metadata.mode && p.metadata.mode == other.metadata.mode;
 
 //      How the hell can we handle that???
@@ -1603,15 +1606,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.colorToning.labgridBHigh = mods.colorToning.labgridBHigh;
     }
 
-    if (colorToning.labregions) {
-        toEdit.colorToning.labregions = mods.colorToning.labregions;
-        toEdit.colorToning.labmasks = mods.colorToning.labmasks;
-    }
-
-    if (colorToning.labregionsShowMask) {
-        toEdit.colorToning.labregionsShowMask = mods.colorToning.labregionsShowMask;
-    }
-    
     if (sharpenEdge.enabled) {
         toEdit.sharpenEdge.enabled    = mods.sharpenEdge.enabled;
     }
@@ -3118,6 +3112,13 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.smoothing.labmasks = mods.smoothing.labmasks;
     }
     SETVAL_(smoothing.showMask);
+
+    SETVAL_(colorcorrection.enabled);
+    if (colorcorrection.regions) {
+        toEdit.colorcorrection.regions = mods.colorcorrection.regions;
+        toEdit.colorcorrection.labmasks = mods.colorcorrection.labmasks;
+    }
+    SETVAL_(colorcorrection.showMask);
 
     if (metadata.mode) {
         toEdit.metadata.mode     = mods.metadata.mode;

@@ -162,6 +162,7 @@ set(NONCLISOURCEFILES
     labmaskspanel.cc
     grain.cc
     smoothing.cc
+    colorcorrection.cc
     )
 
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")

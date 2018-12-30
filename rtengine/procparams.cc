@@ -780,36 +780,6 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 const double ColorToningParams::LABGRID_CORR_MAX = 12000.f;
 const double ColorToningParams::LABGRID_CORR_SCALE = 3.f;
 
-ColorToningParams::LabCorrectionRegion::LabCorrectionRegion():
-    a(0),
-    b(0),
-    saturation(0),
-    slope(1),
-    offset(0),
-    power(1),
-    channel(ColorToningParams::LabCorrectionRegion::CHAN_ALL)
-{
-}
-
-
-bool ColorToningParams::LabCorrectionRegion::operator==(const LabCorrectionRegion &other) const
-{
-    return a == other.a
-        && b == other.b
-        && saturation == other.saturation
-        && slope == other.slope
-        && offset == other.offset
-        && power == other.power
-        && channel == other.channel;
-}
-
-
-bool ColorToningParams::LabCorrectionRegion::operator!=(const LabCorrectionRegion &other) const
-{
-    return !(*this == other);
-}
-
-
 ColorToningParams::ColorToningParams() :
     enabled(false),
     autosat(true),
@@ -867,7 +837,7 @@ ColorToningParams::ColorToningParams() :
         1.00,
         1.00
     },
-    method("LabRegions"),
+    method("LabGrid"),
     twocolor("Std"),
     redlow(0.0),
     greenlow(0.0),
@@ -884,10 +854,7 @@ ColorToningParams::ColorToningParams() :
     labgridALow(0.0),
     labgridBLow(0.0),
     labgridAHigh(0.0),
-    labgridBHigh(0.0),
-    labregions{LabCorrectionRegion()},
-    labmasks{LabCorrectionMask()},
-    labregionsShowMask(-1)
+    labgridBHigh(0.0)
 {
 }
 
@@ -923,10 +890,7 @@ bool ColorToningParams::operator ==(const ColorToningParams& other) const
         && labgridALow == other.labgridALow
         && labgridBLow == other.labgridBLow
         && labgridAHigh == other.labgridAHigh
-        && labgridBHigh == other.labgridBHigh
-        && labregions == other.labregions
-        && labmasks == other.labmasks
-        && labregionsShowMask == other.labregionsShowMask;
+        && labgridBHigh == other.labgridBHigh;
 }
 
 bool ColorToningParams::operator !=(const ColorToningParams& other) const
@@ -2732,6 +2696,60 @@ bool GuidedSmoothingParams::operator!=(const GuidedSmoothingParams &other) const
 }
 
 
+ColorCorrectionParams::LabCorrectionRegion::LabCorrectionRegion():
+    a(0),
+    b(0),
+    saturation(0),
+    slope(1),
+    offset(0),
+    power(1),
+    channel(ColorCorrectionParams::LabCorrectionRegion::CHAN_ALL)
+{
+}
+
+
+bool ColorCorrectionParams::LabCorrectionRegion::operator==(const LabCorrectionRegion &other) const
+{
+    return a == other.a
+        && b == other.b
+        && saturation == other.saturation
+        && slope == other.slope
+        && offset == other.offset
+        && power == other.power
+        && channel == other.channel;
+}
+
+
+bool ColorCorrectionParams::LabCorrectionRegion::operator!=(const LabCorrectionRegion &other) const
+{
+    return !(*this == other);
+}
+
+
+ColorCorrectionParams::ColorCorrectionParams():
+    enabled(false),
+    regions{LabCorrectionRegion()},
+    labmasks{LabCorrectionMask()},
+    showMask(-1)
+{
+}
+
+
+bool ColorCorrectionParams::operator==(const ColorCorrectionParams &other) const
+{
+    return enabled == other.enabled
+        && regions == other.regions
+        && labmasks == other.labmasks
+        && showMask == other.showMask;
+}
+
+
+bool ColorCorrectionParams::operator!=(const ColorCorrectionParams &other) const
+{
+    return !(*this == other);
+}
+
+
 RAWParams::BayerSensor::BayerSensor() :
     method(getMethodString(Method::AMAZE)),
     border(4),
@@ -3097,6 +3115,8 @@ void ProcParams::setDefaults()
     grain = GrainParams();
 
     smoothing = GuidedSmoothingParams();
+
+    colorcorrection = ColorCorrectionParams();
 
     raw = RAWParams();
 
@@ -3754,21 +3774,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->colorToning.labgridBLow, "ColorToning", "LabGridBLow", colorToning.labgridBLow, keyFile);
         saveToKeyfile(!pedited || pedited->colorToning.labgridAHigh, "ColorToning", "LabGridAHigh", colorToning.labgridAHigh, keyFile);
         saveToKeyfile(!pedited || pedited->colorToning.labgridBHigh, "ColorToning", "LabGridBHigh", colorToning.labgridBHigh, keyFile);
-        if (!pedited || pedited->colorToning.labregions) {
-            for (size_t j = 0; j < colorToning.labregions.size(); ++j) {
-                std::string n = std::to_string(j+1);
-                auto &l = colorToning.labregions[j];
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionA_") + n, l.a, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionB_") + n, l.b, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionSaturation_") + n, l.saturation, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionSlope_") + n, l.slope, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionOffset_") + n, l.offset, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionPower_") + n, l.power, keyFile);
-                putToKeyfile("ColorToning", Glib::ustring("LabRegionChannel_") + n, l.channel, keyFile);
-                colorToning.labmasks[j].save(keyFile, "ColorToning", "LabRegion", Glib::ustring("_") + n);
-            }
-        }
-        saveToKeyfile(!pedited || pedited->colorToning.labregionsShowMask, "ColorToning", "LabRegionsShowMask", colorToning.labregionsShowMask, keyFile);
 
 // Grain
         saveToKeyfile(!pedited || pedited->grain.enabled, "Grain", "Enabled", grain.enabled, keyFile);
@@ -3790,6 +3795,24 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
             }
         }
         saveToKeyfile(!pedited || pedited->smoothing.showMask, "GuidedSmoothing", "ShowMask", smoothing.showMask, keyFile);
+
+// ColorCorrection
+        saveToKeyfile(!pedited || pedited->colorcorrection.enabled, "ColorCorrection", "Enabled", colorcorrection.enabled, keyFile);
+        if (!pedited || pedited->colorcorrection.regions) {
+            for (size_t j = 0; j < colorcorrection.regions.size(); ++j) {
+                std::string n = std::to_string(j+1);
+                auto &l = colorcorrection.regions[j];
+                putToKeyfile("ColorCorrection", Glib::ustring("A_") + n, l.a, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("B_") + n, l.b, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("Saturation_") + n, l.saturation, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("Slope_") + n, l.slope, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("Offset_") + n, l.offset, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("Power_") + n, l.power, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("Channel_") + n, l.channel, keyFile);
+                colorcorrection.labmasks[j].save(keyFile, "ColorCorrection", "", Glib::ustring("_") + n);
+            }
+        }
+        saveToKeyfile(!pedited || pedited->colorcorrection.showMask, "ColorCorrection", "showMask", colorcorrection.showMask, keyFile);
         
 // Raw
         saveToKeyfile(!pedited || pedited->raw.darkFrame, "RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
@@ -5216,6 +5239,14 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
         if (keyFile.has_group("ColorToning")) {
             assignFromKeyfile(keyFile, "ColorToning", "Enabled", pedited, colorToning.enabled, pedited->colorToning.enabled);
             assignFromKeyfile(keyFile, "ColorToning", "Method", pedited, colorToning.method, pedited->colorToning.method);
+            if (colorToning.method == "LabRegions") {
+                colorToning.method = "LabGrid";
+                colorToning.enabled = false;
+                if (pedited) {
+                    pedited->colorToning.method = true;
+                    pedited->colorToning.enabled = true;
+                }
+            }
             assignFromKeyfile(keyFile, "ColorToning", "Lumamode", pedited, colorToning.lumamode, pedited->colorToning.lumamode);
             assignFromKeyfile(keyFile, "ColorToning", "Twocolor", pedited, colorToning.twocolor, pedited->colorToning.twocolor);
             assignFromKeyfile(keyFile, "ColorToning", "OpacityCurve", pedited, colorToning.opacityCurve, pedited->colorToning.opacityCurve);
@@ -5275,61 +5306,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 colorToning.labgridBLow *= scale;
                 colorToning.labgridBHigh *= scale;
             }
-            std::vector<ColorToningParams::LabCorrectionRegion> lg;
-            std::vector<LabCorrectionMask> lm;
-            bool found = false;
-            bool done = false;
-            for (int i = 1; !done; ++i) {
-                ColorToningParams::LabCorrectionRegion cur;
-                LabCorrectionMask curmask;
-                done = true;
-                std::string n = std::to_string(i);
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionA_") + n, pedited, cur.a, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionB_") + n, pedited, cur.b, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionSaturation_") + n, pedited, cur.saturation, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionSlope_") + n, pedited, cur.slope, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionOffset_") + n, pedited, cur.offset, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionPower_") + n, pedited, cur.power, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, "ColorToning", Glib::ustring("LabRegionChannel_") + n, pedited, cur.channel, pedited->colorToning.labregions)) {
-                    found = true;
-                    done = false;
-                }
-                if (curmask.load(keyFile, "ColorToning", "LabRegion", Glib::ustring("_") + n)) {
-                    found = true;
-                    done = false;
-                    if (pedited) {
-                        pedited->colorToning.labregions = true;
-                    }
-                }
-                if (!done) {
-                    lg.emplace_back(cur);
-                    lm.emplace_back(curmask);
-                }
-            }
-            if (found) {
-                colorToning.labregions = std::move(lg);
-                colorToning.labmasks = std::move(lm);
-            }
-            assert(colorToning.labregions.size() == colorToning.labmasks.size());
-            assignFromKeyfile(keyFile, "ColorToning", "LabRegionsShowMask", pedited, colorToning.labregionsShowMask, pedited->colorToning.labregionsShowMask);
         }
 
         if (keyFile.has_group("Grain")) {
@@ -5383,7 +5359,75 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             }
             assert(smoothing.regions.size() == smoothing.labmasks.size());
             assignFromKeyfile(keyFile, "GuidedSmoothing", "ShowMask", pedited, smoothing.showMask, pedited->smoothing.showMask);
-        }                
+        }
+
+        const char *ccgroup = ppVersion < 348 ? "ColorToning" : "ColorCorrection";
+        if (keyFile.has_group(ccgroup)) {
+            const Glib::ustring prefix = ppVersion < 348 ? "LabRegion" : "";
+            if (ppVersion < 348) {
+                colorcorrection.enabled = colorToning.enabled;
+                if (pedited) {
+                    pedited->colorcorrection.enabled = pedited->colorToning.enabled;
+                } else {
+                    assignFromKeyfile(keyFile, ccgroup, "Enabled", pedited, colorcorrection.enabled, pedited->colorcorrection.enabled);
+                }
+            }
+            std::vector<ColorCorrectionParams::LabCorrectionRegion> lg;
+            std::vector<LabCorrectionMask> lm;
+            bool found = false;
+            bool done = false;
+            for (int i = 1; !done; ++i) {
+                ColorCorrectionParams::LabCorrectionRegion cur;
+                LabCorrectionMask curmask;
+                done = true;
+                std::string n = std::to_string(i);
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("A_") + n, pedited, cur.a, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("B_") + n, pedited, cur.b, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Saturation_") + n, pedited, cur.saturation, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Slope_") + n, pedited, cur.slope, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Offset_") + n, pedited, cur.offset, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Power_") + n, pedited, cur.power, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Channel_") + n, pedited, cur.channel, pedited->colorcorrection.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (curmask.load(keyFile, ccgroup, prefix, Glib::ustring("_") + n)) {
+                    found = true;
+                    done = false;
+                    if (pedited) {
+                        pedited->colorcorrection.regions = true;
+                    }
+                }
+                if (!done) {
+                    lg.emplace_back(cur);
+                    lm.emplace_back(curmask);
+                }
+            }
+            if (found) {
+                colorcorrection.regions = std::move(lg);
+                colorcorrection.labmasks = std::move(lm);
+            }
+            assert(colorcorrection.regions.size() == colorcorrection.labmasks.size());
+            assignFromKeyfile(keyFile, ccgroup, ppVersion < 348 ? "showMask" : "LabRegionsShowMask", pedited, colorcorrection.showMask, pedited->colorcorrection.showMask);
+        }
 
         if (keyFile.has_group("RAW")) {
             if (keyFile.has_key("RAW", "DarkFrame")) {
@@ -5686,7 +5730,8 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && iptc == other.iptc
         && dehaze == other.dehaze
         && grain == other.grain
-        && smoothing == other.smoothing;
+        && smoothing == other.smoothing
+        && colorcorrection == other.colorcorrection;
 }
 
 bool ProcParams::operator !=(const ProcParams& other) const

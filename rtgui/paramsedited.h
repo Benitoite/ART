@@ -178,8 +178,6 @@ public:
     bool labgridBLow;
     bool labgridAHigh;
     bool labgridBHigh;
-    bool labregions;
-    bool labregionsShowMask;
 };
 
 class SharpenEdgeParamsEdited
@@ -769,6 +767,15 @@ public:
 };
 
 
+class ColorCorrectionParamsEdited
+{
+public:
+    bool enabled;
+    bool regions;
+    bool showMask;
+};
+
+
 class RAWParamsEdited
 {
 
@@ -916,6 +923,7 @@ public:
     DehazeParamsEdited            dehaze;
     GrainParamsEdited             grain;
     GuidedSmoothingParamsEdited   smoothing;
+    ColorCorrectionParamsEdited   colorcorrection;
     MetaDataParamsEdited          metadata;
     bool                          exif;
     bool                          iptc;

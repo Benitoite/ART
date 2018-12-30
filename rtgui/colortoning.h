@@ -14,7 +14,6 @@
 #include "thresholdadjuster.h"
 #include "colorprovider.h"
 #include "labgrid.h"
-#include "labmaskspanel.h"
 
 class ColorToning final :
     public ToolParamBlock,
@@ -23,8 +22,7 @@ class ColorToning final :
     public CurveListener,
     public ColorProvider,
     public ThresholdAdjusterListener,
-    public AdjusterListener,
-    public PParamsChangeListener
+    public AdjusterListener
 {
 public:
     ColorToning ();
@@ -61,23 +59,7 @@ public:
 
     void setListener(ToolPanelListener *tpl) override;
 
-    void setEditProvider(EditDataProvider *provider) override;
-
-    PParamsChangeListener *getPParamsChangeListener() override { return this; }
-    void procParamsChanged(
-        const rtengine::procparams::ProcParams* params,
-        const rtengine::ProcEvent& ev,
-        const Glib::ustring& descr,
-        const ParamsEdited* paramsEdited = nullptr) override;
-    void clearParamChanges() override {}
-
-    void updateGeometry(int fullWidth, int fullHeight);
-    
 private:
-    void labRegionChannelChanged();
-    void labRegionShow(int idx);
-    void labRegionGet(int idx);
-
     //Gtk::HSeparator* satLimiterSep;
     Gtk::HSeparator* colorSep;
     CurveEditorGroup* colorCurveEditorG;
@@ -131,33 +113,6 @@ private:
 
     rtengine::ProcEvent EvColorToningLabGridValue;
     LabGrid *labgrid;
-
-    rtengine::ProcEvent EvLabRegionList;
-    rtengine::ProcEvent EvLabRegionAB;
-    rtengine::ProcEvent EvLabRegionSaturation;
-    rtengine::ProcEvent EvLabRegionLightness;
-    rtengine::ProcEvent EvLabRegionSlope;
-    rtengine::ProcEvent EvLabRegionOffset;
-    rtengine::ProcEvent EvLabRegionPower;    
-    rtengine::ProcEvent EvLabRegionHueMask;
-    rtengine::ProcEvent EvLabRegionChromaticityMask;
-    rtengine::ProcEvent EvLabRegionLightnessMask;
-    rtengine::ProcEvent EvLabRegionMaskBlur;
-    rtengine::ProcEvent EvLabRegionShowMask;
-    rtengine::ProcEvent EvLabRegionChannel;
-    rtengine::ProcEvent EvLabRegionAreaMask;
-
-    friend class LabRegionMasksContentProvider;
-    std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
-    LabMasksPanel *labMasks;
-    Gtk::VBox *labRegionBox;
-    LabGrid *labRegionAB;
-    Adjuster *labRegionSaturation;
-    Adjuster *labRegionSlope;
-    Adjuster *labRegionOffset;
-    Adjuster *labRegionPower;
-    MyComboBoxText *labRegionChannel;
-    std::vector<rtengine::ColorToningParams::LabCorrectionRegion> labRegionData;
 
     IdleRegister idle_register;
 };

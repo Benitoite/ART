@@ -37,6 +37,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     transformPanel  = Gtk::manage (new ToolVBox ());
     rawPanel        = Gtk::manage (new ToolVBox ());
     advancedPanel    = Gtk::manage (new ToolVBox ());
+    localPanel = Gtk::manage(new ToolVBox());
 
     coarse              = Gtk::manage (new CoarsePanel ());
     toneCurve           = Gtk::manage (new ToneCurve ());
@@ -73,13 +74,12 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     icm                 = Gtk::manage (new ICMPanel ());
     metadata            = Gtk::manage(new MetaDataPanel());
     wavelet             = Gtk::manage (new Wavelet ());
-    dirpyrequalizer     = Gtk::manage (new DirPyrEqualizer ());
+    //dirpyrequalizer     = Gtk::manage (new DirPyrEqualizer ());
     hsvequalizer        = Gtk::manage (new HSVEqualizer ());
     filmSimulation      = Gtk::manage (new FilmSimulation ());
     softlight           = Gtk::manage(new SoftLight());
     dehaze              = Gtk::manage(new Dehaze());
     grain               = Gtk::manage(new FilmGrain());
-    smoothing           = Gtk::manage(new Smoothing());
     sensorbayer         = Gtk::manage (new SensorBayer ());
     sensorxtrans        = Gtk::manage (new SensorXTrans ());
     bayerprocess        = Gtk::manage (new BayerProcess ());
@@ -94,6 +94,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     xtransrawexposure   = Gtk::manage (new XTransRAWExposure ());
     fattal              = Gtk::manage (new FattalToneMapping());
     logenc              = Gtk::manage(new LogEncoding());
+    colorcorrection = Gtk::manage(new ColorCorrection());
+    smoothing = Gtk::manage(new Smoothing());
+    cbdl = Gtk::manage(new DirPyrEqualizer());
 
     // So Demosaic, Line noise filter, Green Equilibration, Ca-Correction (garder le nom de section identique!) and Black-Level will be moved in a "Bayer sensor" tool,
     // and a separate Demosaic and Black Level tool will be created in an "X-Trans sensor" tool
@@ -132,10 +135,10 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (detailsPanel, impulsedenoise);
     addPanel (detailsPanel, denoise);
     addPanel (detailsPanel, defringe);
-    addPanel (detailsPanel, dirpyrequalizer);
+    //addPanel (detailsPanel, dirpyrequalizer);
     addPanel (detailsPanel, dehaze);
     addPanel (detailsPanel, grain);
-    addPanel(detailsPanel, smoothing);
+    //addPanel(detailsPanel, smoothing);
     addPanel (advancedPanel, wavelet);
     addPanel (transformPanel, crop);
     addPanel (transformPanel, resize);
@@ -160,6 +163,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     addPanel (rawPanel, preprocess);
     addPanel (rawPanel, darkframe);
     addPanel (rawPanel, flatfield);
+    addPanel(localPanel, colorcorrection);
+    addPanel(localPanel, smoothing);
+    addPanel(localPanel, cbdl);
 
     toolPanels.push_back (coarse);
     toolPanels.push_back(metadata);
@@ -174,10 +180,11 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     transformPanelSW   = Gtk::manage (new MyScrolledWindow ());
     rawPanelSW         = Gtk::manage (new MyScrolledWindow ());
     advancedPanelSW     = Gtk::manage (new MyScrolledWindow ());
+    localPanelSW = Gtk::manage(new MyScrolledWindow());
     updateVScrollbars (options.hideTPVScrollbar);
 
     // load panel endings
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         vbPanelEnd[i] = Gtk::manage (new Gtk::VBox ());
         imgPanelEnd[i] = Gtk::manage (new RTImage ("ornament1.png"));
         imgPanelEnd[i]->show ();
@@ -201,6 +208,10 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     advancedPanel->pack_start (*Gtk::manage (new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
     advancedPanel->pack_start (*vbPanelEnd[5], Gtk::PACK_SHRINK, 0);
 
+    localPanelSW->add(*localPanel);
+    localPanel->pack_start(*Gtk::manage(new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
+    localPanel->pack_start(*vbPanelEnd[6], Gtk::PACK_SHRINK, 0);
+    
     transformPanelSW->add (*transformPanel);
     transformPanel->pack_start (*Gtk::manage (new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
     transformPanel->pack_start (*vbPanelEnd[3], Gtk::PACK_SHRINK, 4);
@@ -216,14 +227,16 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), hasChan
     toiT = Gtk::manage (new TextOrIcon ("transform.png", M ("MAIN_TAB_TRANSFORM"), M ("MAIN_TAB_TRANSFORM_TOOLTIP")));
     toiR = Gtk::manage (new TextOrIcon ("bayer.png", M ("MAIN_TAB_RAW"), M ("MAIN_TAB_RAW_TOOLTIP")));
     toiM = Gtk::manage (new TextOrIcon ("metadata.png", M ("MAIN_TAB_METADATA"), M ("MAIN_TAB_METADATA_TOOLTIP")));
+    toiL = Gtk::manage(new TextOrIcon("crosshair-node-curve.png", M("MAIN_TAB_LOCAL"), M("MAIN_TAB_LOCAL_TOOLTIP")));
 
     toolPanelNotebook->append_page (*exposurePanelSW,  *toiE);
     toolPanelNotebook->append_page (*detailsPanelSW,   *toiD);
     toolPanelNotebook->append_page (*colorPanelSW,     *toiC);
-    toolPanelNotebook->append_page (*advancedPanelSW,   *toiW);
+    toolPanelNotebook->append_page(*localPanelSW, *toiL);
     toolPanelNotebook->append_page (*transformPanelSW, *toiT);
     toolPanelNotebook->append_page (*rawPanelSW,       *toiR);
     toolPanelNotebook->append_page (*metadata,    *toiM);
+    toolPanelNotebook->append_page (*advancedPanelSW,   *toiW);
 
     toolPanelNotebook->set_current_page (0);
 
@@ -390,7 +403,7 @@ void ToolPanelCoordinator::panelChanged(const rtengine::ProcEvent& event, const 
         int fw, fh;
         ipc->getInitialImage()->getImageSource()->getFullSize (fw, fh, tr);
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
-        colortoning->updateGeometry(fw, fh);
+        colorcorrection->updateGeometry(fw, fh);
     }
 
     // some transformations make the crop change for convenience
@@ -490,9 +503,9 @@ void ToolPanelCoordinator::profileChange(
     if (event == rtengine::EvPhotoLoaded || event == rtengine::EvProfileChanged || event == rtengine::EvHistoryBrowsed || event == rtengine::EvCTRotate) {
         // updating the "on preview" geometry
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
-        colortoning->updateGeometry(fw, fh);
-        dirpyrequalizer->updateGeometry(fw, fh);
+        colorcorrection->updateGeometry(fw, fh);
         smoothing->updateGeometry(fw, fh);
+        cbdl->updateGeometry(fw, fh);
     }
 
     // start the IPC processing
@@ -898,6 +911,10 @@ bool ToolPanelCoordinator::handleShortcutKey (GdkEventKey* event)
                 toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*advancedPanelSW));
                 return true;
 
+            case GDK_KEY_x:
+                toolPanelNotebook->set_current_page(toolPanelNotebook->page_num(*localPanelSW));
+                return true;
+            
             case GDK_KEY_m:
                 toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*metadata));
                 return true;
@@ -917,6 +934,7 @@ void ToolPanelCoordinator::updateVScrollbars (bool hide)
     transformPanelSW->set_policy    (Gtk::POLICY_AUTOMATIC, policy);
     rawPanelSW->set_policy          (Gtk::POLICY_AUTOMATIC, policy);
     advancedPanelSW->set_policy      (Gtk::POLICY_AUTOMATIC, policy);
+    localPanelSW->set_policy      (Gtk::POLICY_AUTOMATIC, policy);
 
     for (auto currExp : expList) {
         currExp->updateVScrollbars (hide);

@@ -501,24 +501,6 @@ struct ColorToningParams {
     static const double LABGRID_CORR_MAX;
     static const double LABGRID_CORR_SCALE;
 
-    struct LabCorrectionRegion {
-        enum { CHAN_ALL = -1, CHAN_R, CHAN_G, CHAN_B };
-        double a;
-        double b;
-        double saturation;
-        double slope;
-        double offset;
-        double power;
-        int channel;
-
-        LabCorrectionRegion();
-        bool operator==(const LabCorrectionRegion &other) const;
-        bool operator!=(const LabCorrectionRegion &other) const;
-    };
-    std::vector<LabCorrectionRegion> labregions;
-    std::vector<LabCorrectionMask> labmasks;
-    int labregionsShowMask;
-    
     ColorToningParams();
 
     bool operator ==(const ColorToningParams& other) const;
@@ -1411,6 +1393,33 @@ struct GuidedSmoothingParams {
 };
 
 
+struct ColorCorrectionParams {
+    struct LabCorrectionRegion {
+        enum { CHAN_ALL = -1, CHAN_R, CHAN_G, CHAN_B };
+        double a;
+        double b;
+        double saturation;
+        double slope;
+        double offset;
+        double power;
+        int channel;
+
+        LabCorrectionRegion();
+        bool operator==(const LabCorrectionRegion &other) const;
+        bool operator!=(const LabCorrectionRegion &other) const;
+    };
+
+    bool enabled;
+    std::vector<LabCorrectionRegion> regions;
+    std::vector<LabCorrectionMask> labmasks;
+    int showMask;
+
+    ColorCorrectionParams();
+    bool operator==(const ColorCorrectionParams &other) const;
+    bool operator!=(const ColorCorrectionParams &other) const;
+};
+
+
 /**
   * Parameters for RAW demosaicing, common to all sensor type
   */
@@ -1628,6 +1637,7 @@ public:
     DehazeParams            dehaze;          ///< dehaze parameters
     GrainParams             grain;
     GuidedSmoothingParams   smoothing;
+    ColorCorrectionParams   colorcorrection;
     int                     rank;            ///< Custom image quality ranking
     int                     colorlabel;      ///< Custom color label
     bool                    inTrash;         ///< Marks deleted image

@@ -40,6 +40,7 @@ public:
     Gtk::CheckButton* meta;
     Gtk::CheckButton* raw;
     Gtk::CheckButton* advanced;
+    Gtk::CheckButton* local;
 
     // options in basic:
     Gtk::CheckButton* wb;
@@ -63,10 +64,10 @@ public:
     //Gtk::CheckButton* waveq;
     Gtk::CheckButton* dirpyrden;
     Gtk::CheckButton* defringe;
-    Gtk::CheckButton* dirpyreq;
+    //Gtk::CheckButton* dirpyreq;
     Gtk::CheckButton* dehaze;
     Gtk::CheckButton* grain;
-    Gtk::CheckButton* smoothing;
+    //Gtk::CheckButton* smoothing;
 
     // options in wavelet
     Gtk::CheckButton* wavelet;
@@ -102,6 +103,10 @@ public:
     Gtk::CheckButton* exifch;
     Gtk::CheckButton* iptc;
 
+    // options in local:
+    Gtk::CheckButton *colorcorrection;
+    Gtk::CheckButton *cbdl;
+    Gtk::CheckButton *smoothing;
 
     // options in raw:
     Gtk::CheckButton* raw_expos;
@@ -132,11 +137,12 @@ public:
     Gtk::CheckButton* ff_BlurType;
     Gtk::CheckButton* ff_ClipControl;
 
-    sigc::connection everythingConn, basicConn, detailConn, colorConn, lensConn, compositionConn, metaConn, rawConn, advancedConn;
+    sigc::connection everythingConn, basicConn, detailConn, colorConn, lensConn, compositionConn, metaConn, rawConn, advancedConn, localConn;
 
     sigc::connection wbConn, exposureConn, localcontrastConn, shConn, pcvignetteConn, gradientConn, labcurveConn, colorappearanceConn;
     sigc::connection sharpenConn, gradsharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, retinexConn, dehazeConn, logencConn;
-    sigc::connection grainConn, smoothingConn;
+    sigc::connection grainConn;
+    sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
     sigc::connection vibranceConn, chmixerConn, hsveqConn, rgbcurvesConn, chmixerbwConn, colortoningConn, filmSimulationConn, softlightConn;
     sigc::connection distortionConn, cacorrConn, vignettingConn, lcpConn;
     sigc::connection coarserotConn, finerotConn, cropConn, resizeConn, prsharpeningConn, perspectiveConn, commonTransConn;
@@ -158,6 +164,7 @@ public:
     void metaToggled ();
     void rawToggled ();
     void advancedToggled ();
+    void localToggled();
 };
 
 #endif
