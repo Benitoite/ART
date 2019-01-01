@@ -1250,7 +1250,7 @@ SharpenMicroParams::SharpenMicroParams() :
     matrix(false),
     amount(20.0),
     contrast(20.0),
-    uniformity(50.0)
+    uniformity(5)
 {
 }
 
@@ -4310,7 +4310,13 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                     pedited->sharpenMicro.contrast = true;
                 }
             }
-            assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", pedited, sharpenMicro.uniformity, pedited->sharpenMicro.uniformity);
+            if (ppVersion >= 346) {
+                assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", pedited, sharpenMicro.uniformity, pedited->sharpenMicro.uniformity);
+            } else {
+                double temp;
+                assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", pedited, temp, pedited->sharpenMicro.uniformity);
+                sharpenMicro.uniformity = temp / 10;
+            }
         }
 
         if (keyFile.has_group("Vibrance")) {
