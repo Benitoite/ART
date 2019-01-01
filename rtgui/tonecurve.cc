@@ -984,17 +984,17 @@ bool ToneCurve::histmatchingComputed()
     GThreadLock lock;
     disableListener();
     enableAll();
-    brightness->setValue(0);
-    contrast->setValue(0);
-    black->setValue(0);
+    // brightness->setValue(0);
+    // contrast->setValue(0);
+    // black->setValue(0);
 
-    if (!black->getAddMode() && !batchMode) {
-        shcompr->set_sensitive(!((int)black->getValue() == 0));
-    }
+    // if (!black->getAddMode() && !batchMode) {
+    //     shcompr->set_sensitive(!((int)black->getValue() == 0));
+    // }
     
-    if (!hlcompr->getAddMode() && !batchMode) {
-        hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
-    }
+    // if (!hlcompr->getAddMode() && !batchMode) {
+    //     hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
+    // }
 
     if (autolevels->get_active() ) {
         expcomp->setValue(0);
@@ -1004,9 +1004,9 @@ bool ToneCurve::histmatchingComputed()
         autolevels->set_inconsistent(false);
     }
 
-    toneCurveMode->set_active(rtengine::toUnderlying(nextToneCurveMode));
+    // toneCurveMode->set_active(rtengine::toUnderlying(nextToneCurveMode));
     shape->setCurve(nextToneCurve);
-    shape2->setCurve({ DCT_Linear });
+    // shape2->setCurve({ DCT_Linear });
     shape->openIfNonlinear();
 
     enableListener();
