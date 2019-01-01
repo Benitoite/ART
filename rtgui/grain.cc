@@ -25,7 +25,7 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-FilmGrain::FilmGrain(): FoldableToolPanel(this, "grain", M("TP_GRAIN_LABEL"), false, true)
+FilmGrain::FilmGrain(): FoldableToolPanel(this, "grain", M("TP_GRAIN_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvEnabled = m->newEvent(SHARPENING, "HISTORY_MSG_GRAIN_ENABLED");
