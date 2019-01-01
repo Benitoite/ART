@@ -132,6 +132,8 @@ public:
         this->batchMode = batchMode;
     }
 
+    virtual Glib::ustring getToolName () { return toolName; }
+
     virtual PParamsChangeListener *getPParamsChangeListener() { return nullptr; }
 };
 
