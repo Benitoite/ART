@@ -454,6 +454,9 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         || pparams.filmSimulation != pp.filmSimulation
         || pparams.softlight != pp.softlight
         || pparams.dehaze != pp.dehaze
+        || pparams.grain != pp.grain
+        || pparams.smoothing != pp.smoothing
+        || pparams.colorcorrection != pp.colorcorrection
         || whoChangedIt == FILEBROWSER
         || whoChangedIt == BATCHEDITOR;
 
