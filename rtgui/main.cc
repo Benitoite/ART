@@ -153,6 +153,10 @@ int processLineParams ( int argc, char **argv )
 
                     break;
 #endif
+                case '-':
+                    if (currParam.substr(5) == "--gtk" || currParam == "--g-fatal-warnings") {
+                        break;
+                    }
 
                 case 'g':
                     if (currParam == "-gimp") {
