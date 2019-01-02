@@ -103,10 +103,15 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
                 Color::Lab2XYZ(l, a, b, x, y, z);
                 Color::xyz2rgb(x, y, z, rgb[0], rgb[1], rgb[2], iws);
                 for (int i = 0; i < 3; ++i) {
-                    rgb[i] = (pow_F(max((rgb[i] / 65535.f) * slope + offset, 0.f), power)) * 65535.f;
+                    float v = (rgb[i] / 65535.f) * slope + offset;
+                    if (v > 0.f) {
+                        v = pow_F(v, power);
+                    }
+                    rgb[i] = v * 65535.f;
+                    //rgb[i] = (pow_F(max((rgb[i] / 65535.f) * slope + offset, 0.f), power)) * 65535.f;
                 }
                 if (saturation != 1.f) {
-                    float Y = Color::rgbLuminance(rgb[0], rgb[1], rgb[2], ws);
+                    float Y = max(Color::rgbLuminance(rgb[0], rgb[1], rgb[2], ws), 0.f);
                     for (int i = 0; i < 3; ++i) {
                         rgb[i] = max(Y + saturation * (rgb[i] - Y), 0.f);
                     }
@@ -201,10 +206,11 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
                     vfloat l_newv = lv;
-                    vfloat a_newv = vclampf(av + lv * F2V(abca[i]), cm42000v, c42000v);
-                    vfloat b_newv = vclampf(bv + lv * F2V(abcb[i]), cm42000v, c42000v);
+                    vfloat lfv = vmaxf(lv, ZEROV);
+                    vfloat a_newv = /*vclampf*/(av + lfv * F2V(abca[i]));//, cm42000v, c42000v);
+                    vfloat b_newv = /*vclampf*/(bv + lfv * F2V(abcb[i]));//, cm42000v, c42000v);
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i], rs[i]);
-                    l_newv = vmaxf(l_newv, ZEROV);
+                    //l_newv = vmaxf(l_newv, ZEROV);
                     chan_v(lv, av, bv, l_newv, a_newv, b_newv, channel[i]);
                     lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
@@ -223,10 +229,11 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
                 for (int i = 0; i < n; ++i) {
                     float blend = abmask[i][y][x];
                     float l_new = l;
-                    float a_new = LIM(a + l * abca[i], -42000.f, 42000.f);
-                    float b_new = LIM(b + l * abcb[i], -42000.f, 42000.f);
+                    float lf = max(l, 0.f);
+                    float a_new = /*LIM*/(a + lf * abca[i]);//, -42000.f, 42000.f);
+                    float b_new = /*LIM*/(b + lf * abcb[i]);//, -42000.f, 42000.f);
                     CDL(l_new, a_new, b_new, slope[i], offset[i], power[i], rs[i]);
-                    l_new = max(l_new, 0.f);
+                    //l_new = max(l_new, 0.f);
                     chan(l, a, b, l_new, a_new, b_new, channel[i]);
                     l = intp(Lmask[i][y][x], l_new, l);
                     a = intp(blend, a_new, a);
