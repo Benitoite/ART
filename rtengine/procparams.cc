@@ -5372,9 +5372,9 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 colorcorrection.enabled = colorToning.enabled;
                 if (pedited) {
                     pedited->colorcorrection.enabled = pedited->colorToning.enabled;
-                } else {
-                    assignFromKeyfile(keyFile, ccgroup, "Enabled", pedited, colorcorrection.enabled, pedited->colorcorrection.enabled);
                 }
+            } else {
+                assignFromKeyfile(keyFile, ccgroup, "Enabled", pedited, colorcorrection.enabled, pedited->colorcorrection.enabled);
             }
             std::vector<ColorCorrectionParams::LabCorrectionRegion> lg;
             std::vector<LabCorrectionMask> lm;
