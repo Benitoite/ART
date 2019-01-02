@@ -230,16 +230,17 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
 
     if (!run_cpb) {
         if (defProf == DEFPROFILE_DYNAMIC && create && cfs && cfs->exifValid) {
-            rtengine::FramesMetaData* imageMetaData;
-            if (getType() == FT_Raw) {
-                // Should we ask all frame's MetaData ?
-                imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
-            } else {
-                // Should we ask all frame's MetaData ?
-                imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
-            }
-            PartialProfile *pp = ProfileStore::getInstance()->loadDynamicProfile(imageMetaData);
-            delete imageMetaData;
+            // rtengine::FramesMetaData* imageMetaData;
+            // if (getType() == FT_Raw) {
+            //     // Should we ask all frame's MetaData ?
+            //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
+            // } else {
+            //     // Should we ask all frame's MetaData ?
+            //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
+            // }
+            auto imageMetaData = getMetaData();
+            PartialProfile *pp = ProfileStore::getInstance()->loadDynamicProfile(imageMetaData.get());
+//            delete imageMetaData;
             int err = pp->pparams->save(outFName);
             pp->deleteInstance();
             delete pp;
@@ -1088,4 +1089,18 @@ bool Thumbnail::imageLoad(bool loading)
     }
 
     return false;
+}
+
+
+std::shared_ptr<rtengine::FramesMetaData> Thumbnail::getMetaData()
+{
+    rtengine::FramesMetaData* imageMetaData;
+    if (getType() == FT_Raw) {
+        // Should we ask all frame's MetaData ?
+        imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
+    } else {
+        // Should we ask all frame's MetaData ?
+        imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
+    }
+    return std::shared_ptr<rtengine::FramesMetaData>(imageMetaData);
 }

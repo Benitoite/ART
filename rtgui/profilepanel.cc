@@ -39,7 +39,7 @@ void ProfilePanel::cleanup ()
     delete partialProfileDlg;
 }
 
-ProfilePanel::ProfilePanel () : storedPProfile(nullptr), lastFilename(""), imagePath(""), lastSavedPSE(nullptr), customPSE(nullptr)
+ProfilePanel::ProfilePanel () : storedPProfile(nullptr), lastFilename(""), imagePath(""), lastSavedPSE(nullptr), customPSE(nullptr), defaultPSE(nullptr)
 {
 
     tpc = nullptr;
@@ -97,6 +97,7 @@ ProfilePanel::ProfilePanel () : storedPProfile(nullptr), lastFilename(""), image
 
     custom = nullptr;
     lastsaved = nullptr;
+    defprofile = nullptr;
     dontupdate = false;
 
     ProfileStore::getInstance()->addListener(this);
@@ -126,10 +127,18 @@ ProfilePanel::~ProfilePanel ()
         delete lastsaved;
     }
 
+    if (defprofile) {
+        defprofile->deleteInstance();
+        delete defprofile;
+    }
+
     delete profileFillModeOnImage;
     delete profileFillModeOffImage;
     delete lastSavedPSE;
     delete customPSE;
+    if (defaultPSE) {
+        delete defaultPSE;
+    }
 }
 
 bool ProfilePanel::isCustomSelected()
@@ -140,6 +149,11 @@ bool ProfilePanel::isCustomSelected()
 bool ProfilePanel::isLastSavedSelected()
 {
     return profiles->getCurrentLabel() == Glib::ustring ("(" + M("PROFILEPANEL_PLASTSAVED") + ")");
+}
+
+bool ProfilePanel::isDefaultSelected()
+{
+    return profiles->getCurrentLabel() == Glib::ustring ("(" + M("PROFILEPANEL_PDEFAULT") + ")");
 }
 
 Gtk::TreeIter ProfilePanel::getCustomRow()
@@ -221,6 +235,10 @@ void ProfilePanel::updateProfileList ()
 
     // rescan file tree
     profiles->updateProfileList();
+
+    if (defprofile) {
+        addDefaultRow();
+    }
 
     if (custom) {
         addCustomRow();
@@ -328,6 +346,8 @@ void ProfilePanel::save_clicked (GdkEventButton* event)
                 toSave = custom;
             } else if (isLastSavedSelected()) {
                 toSave = lastsaved;
+            } else if (isDefaultSelected()) {
+                toSave = defprofile;
             } else {
                 const ProfileStoreEntry* entry = profiles->getSelectedEntry();
                 toSave = entry ? ProfileStore::getInstance()->getProfile (profiles->getSelectedEntry()) : nullptr;
@@ -401,6 +421,8 @@ void ProfilePanel::copy_clicked (GdkEventButton* event)
         toSave = custom;
     } else if (isLastSavedSelected()) {
         toSave = lastsaved;
+    } else if (isDefaultSelected()) {
+        toSave = defprofile;
     } else {
         const ProfileStoreEntry* entry = profiles->getSelectedEntry();
         toSave = entry ? ProfileStore::getInstance()->getProfile (entry) : nullptr;
@@ -582,6 +604,8 @@ void ProfilePanel::paste_clicked (GdkEventButton* event)
 
         if (isLastSavedSelected()) {
             *custom->pparams = *lastsaved->pparams;
+        } else if (isDefaultSelected()) {
+            *custom->pparams = *defprofile->pparams;
         } else {
             const ProfileStoreEntry* entry = profiles->getSelectedEntry();
 
@@ -599,6 +623,8 @@ void ProfilePanel::paste_clicked (GdkEventButton* event)
         } else if (!isCustomSelected ()) {
             if (isLastSavedSelected()) {
                 *custom->pparams = *lastsaved->pparams;
+            } else if (isDefaultSelected()) {
+                *custom->pparams = *defprofile->pparams;
             } else {
                 const ProfileStoreEntry* entry = profiles->getSelectedEntry();
 
@@ -679,6 +705,8 @@ void ProfilePanel::selection_changed ()
         }
     } else if (isLastSavedSelected()) {
         changeTo (lastsaved, Glib::ustring ("(" + M("PROFILEPANEL_PLASTSAVED") + ")"));
+    } else if (isDefaultSelected()) {
+        changeTo(defprofile, Glib::ustring ("(" + M("PROFILEPANEL_PDEFAULT") + ")"));
     } else {
         const ProfileStoreEntry *pse = profiles->getSelectedEntry();
 
@@ -749,11 +777,11 @@ void ProfilePanel::clearParamChanges()
  * @param profileFullPath   full path of the profile; must start by the virtual root (${G} or ${U}, and without suffix
  * @param lastSaved         pointer to the last saved ProcParam; may be NULL
  */
-void ProfilePanel::initProfile (const Glib::ustring& profileFullPath, ProcParams* lastSaved)
+void ProfilePanel::initProfile (const Glib::ustring& profileFullPath, ProcParams* lastSaved, const rtengine::FramesMetaData *metadata)
 {
 
     const ProfileStoreEntry *pse = nullptr;
-    const PartialProfile *defprofile = nullptr;
+    //const PartialProfile *defprofile = nullptr;
 
     bool ccPrevState = changeconn.block(true);
 
@@ -769,10 +797,28 @@ void ProfilePanel::initProfile (const Glib::ustring& profileFullPath, ProcParams
         lastsaved = nullptr;
     }
 
+    if (defprofile) {
+        defprofile->deleteInstance();
+        delete defprofile;
+        defprofile = nullptr;
+    }
+
     if (lastSaved) {
         ParamsEdited* pe = new ParamsEdited(true);
         // copying the provided last saved profile to ProfilePanel::lastsaved
         lastsaved = new PartialProfile(lastSaved, pe);
+    }
+
+    if (!(pse = ProfileStore::getInstance()->findEntryFromFullPath(profileFullPath))) {
+        // entry not found, pse = the Internal ProfileStoreEntry
+        pse = ProfileStore::getInstance()->getInternalDefaultPSE();
+    }
+
+    if (pse == ProfileStore::getInstance()->getInternalDefaultPSE() && profileFullPath == DEFPROFILE_DYNAMIC) {
+        defprofile = ProfileStore::getInstance()->loadDynamicProfile(metadata);
+    } else {
+        auto *dp = ProfileStore::getInstance()->getProfile (pse);
+        defprofile = new PartialProfile(dp->pparams, dp->pedited, true);
     }
 
     // update the content of the combobox; will add 'custom' and 'lastSaved' if necessary
@@ -785,12 +831,12 @@ void ProfilePanel::initProfile (const Glib::ustring& profileFullPath, ProcParams
         lasSavedEntry = getLastSavedRow();
     }
 
-    if (!(pse = ProfileStore::getInstance()->findEntryFromFullPath(profileFullPath))) {
-        // entry not found, pse = the Internal ProfileStoreEntry
-        pse = ProfileStore::getInstance()->getInternalDefaultPSE();
-    }
+    // if (!(pse = ProfileStore::getInstance()->findEntryFromFullPath(profileFullPath))) {
+    //     // entry not found, pse = the Internal ProfileStoreEntry
+    //     pse = ProfileStore::getInstance()->getInternalDefaultPSE();
+    // }
 
-    defprofile = ProfileStore::getInstance()->getProfile (pse);
+    // defprofile = ProfileStore::getInstance()->getProfile (pse);
 
     // selecting the "Internal" entry
     profiles->setInternalEntry ();
@@ -844,3 +890,15 @@ void ProfilePanel::writeOptions()
     options.filledProfile = fillMode->get_active();
 }
 
+
+Gtk::TreeIter ProfilePanel::addDefaultRow()
+{
+    if (defaultPSE) {
+        profiles->deleteRow(defaultPSE);
+        delete defaultPSE;
+    }
+
+    defaultPSE = new ProfileStoreEntry(Glib::ustring ("(" + M("PROFILEPANEL_PDEFAULT") + ")"), PSET_FILE, 0, 0);
+    Gtk::TreeIter newEntry = profiles->addRow(defaultPSE);
+    return newEntry;
+}

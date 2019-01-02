@@ -1061,7 +1061,8 @@ void EditorPanel::open (Thumbnail* tmb, rtengine::InitialImage* isrc)
 
     // initialize profile
     Glib::ustring defProf = openThm->getType() == FT_Raw ? options.defProfRaw : options.defProfImg;
-    profilep->initProfile (defProf, ldprof);
+    auto metadata = openThm->getMetaData();
+    profilep->initProfile (defProf, ldprof, metadata.get());
     profilep->setInitialFileName (fname);
 
     openThm->addThumbnailListener (this);

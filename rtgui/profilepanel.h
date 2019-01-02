@@ -44,14 +44,17 @@ private:
     Gtk::TreeIter currRow;
     ProfileStoreEntry *lastSavedPSE;
     ProfileStoreEntry *customPSE;
+    ProfileStoreEntry *defaultPSE;
 
     void          profileFillModeToggled ();
     bool          isCustomSelected ();
     bool          isLastSavedSelected ();
+    bool isDefaultSelected();
     Gtk::TreeIter getCustomRow ();
     Gtk::TreeIter getLastSavedRow ();
     Gtk::TreeIter addCustomRow ();
     Gtk::TreeIter addLastSavedRow ();
+    Gtk::TreeIter addDefaultRow();
 
 protected:
 
@@ -63,6 +66,7 @@ protected:
     ProfileStoreComboBox* profiles;
     rtengine::procparams::PartialProfile* custom;
     rtengine::procparams::PartialProfile* lastsaved;
+    rtengine::procparams::PartialProfile *defprofile;
     ProfileChangeListener* tpc;
     bool dontupdate;
     sigc::connection changeconn;
@@ -85,7 +89,7 @@ public:
     void updateProfileList () override;
     void restoreValue() override;
 
-    void initProfile (const Glib::ustring& profileFullPath, rtengine::procparams::ProcParams* lastSaved);
+    void initProfile (const Glib::ustring& profileFullPath, rtengine::procparams::ProcParams* lastSaved, const rtengine::FramesMetaData *metadata);
     void setInitialFileName (const Glib::ustring& filename);
 
     // PParamsChangeListener interface
