@@ -274,6 +274,24 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         }
     }
 
+    if (lparams.autogray) {
+        double tot = 0.f;
+        int n = 0;
+        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+        for (int y = 0, h = fh / SCALE; y < h; ++y) {
+            for (int x = 0, w = fw / SCALE; x < w; ++x) {
+                float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws) / 65535.f;
+                if (l > noise) {
+                    tot += l;
+                    ++n;
+                }
+            }
+        }
+        if (n > 0) {
+            lparams.grayPoint = tot / n * 100.f;
+        }
+    }
+
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
         const float gray = float(lparams.grayPoint) / 100.f;

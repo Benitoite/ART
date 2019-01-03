@@ -821,6 +821,7 @@ struct EPDParams {
 struct LogEncodingParams {
     bool enabled;
     double autocompute;
+    double autogray;
     double grayPoint;
     double blackEv;
     double whiteEv;

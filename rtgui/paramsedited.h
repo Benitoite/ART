@@ -393,6 +393,7 @@ class LogEncodingParamsEdited
 public:
     bool enabled;
     bool autocompute;
+    bool autogray;
     bool grayPoint;
     bool blackEv;
     bool whiteEv;

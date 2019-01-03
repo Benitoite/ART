@@ -30,6 +30,8 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     auto m = ProcEventMapper::getInstance();
     EvEnabled = m->newEvent(RGBCURVE | M_AUTOEXP, "HISTORY_MSG_LOGENC_ENABLED");
     EvAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTO");
+    EvAutoGrayOn = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTOGRAY");
+    EvAutoGrayOff = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTOGRAY");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
     EvGrayPoint = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_GRAY_POINT");
     EvGrayPointAuto = m->newEvent(M_LUMINANCE | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
@@ -41,6 +43,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     autoconn = autocompute->signal_toggled().connect(sigc::mem_fun(*this, &LogEncoding::autocomputeToggled));
     
     grayPoint = Gtk::manage(new Adjuster(M("TP_LOGENC_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
+    grayPoint->addAutoButton();
     blackEv = Gtk::manage(new Adjuster(M("TP_LOGENC_BLACK_EV"), -16.0, 0.0, 0.1, -5.0));
     whiteEv = Gtk::manage(new Adjuster(M("TP_LOGENC_WHITE_EV"), 0.0, 32.0, 0.1, 10.0));
     base = Gtk::manage(new Adjuster(M("TP_LOGENC_BASE"), 0.0, 100.0, 0.1, 3.9));
@@ -91,6 +94,7 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
 
     autocompute->set_active(pp->logenc.autocompute);    
     grayPoint->setValue(pp->logenc.grayPoint);
+    grayPoint->setAutoValue(pp->logenc.autogray);
     blackEv->setValue(pp->logenc.blackEv);
     whiteEv->setValue(pp->logenc.whiteEv);
     base->setValue(pp->logenc.base);
@@ -102,6 +106,7 @@ void LogEncoding::write(ProcParams *pp, ParamsEdited *pedited)
 {
     pp->logenc.enabled = getEnabled();
     pp->logenc.autocompute = autocompute->get_active();
+    pp->logenc.autogray = grayPoint->getAutoValue();
     pp->logenc.grayPoint = grayPoint->getValue();
     pp->logenc.blackEv = blackEv->getValue();
     pp->logenc.whiteEv = whiteEv->getValue();
@@ -159,6 +164,12 @@ void LogEncoding::adjusterChanged(Adjuster* a, double newval)
 
 void LogEncoding::adjusterAutoToggled(Adjuster* a, bool newval)
 {
+    if (listener) {
+        if (a == grayPoint) {
+            auto e = (batchMode || !newval) ? EvAutoGrayOff : EvAutoGrayOn;
+            listener->panelChanged(e, newval ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+        }
+    }
 }
 
 void LogEncoding::enabledChanged ()
@@ -212,7 +223,7 @@ void LogEncoding::logEncodingChanged(const rtengine::LogEncodingParams &params)
     disableListener();
     ConnectionBlocker cbl(autoconn);
 
-    grayPoint->setEnabled(true);
+    //grayPoint->setEnabled(true);
     blackEv->setEnabled(true);
     whiteEv->setEnabled(true);
     base->setEnabled(true);

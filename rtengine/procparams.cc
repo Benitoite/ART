@@ -1652,6 +1652,7 @@ bool EPDParams::operator !=(const EPDParams& other) const
 LogEncodingParams::LogEncodingParams():
     enabled(false),
     autocompute(true),
+    autogray(false),
     grayPoint(18.0),
     blackEv(-5.0),
     whiteEv(10.0),
@@ -1664,6 +1665,7 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
     return
         enabled == other.enabled
         && autocompute == other.autocompute
+        && autogray == other.autogray
         && grayPoint == other.grayPoint
         && blackEv == other.blackEv
         && whiteEv == other.whiteEv
@@ -3479,6 +3481,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 // Log encoding        
         saveToKeyfile(!pedited || pedited->logenc.enabled, "LogEncoding", "Enabled", logenc.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.autocompute, "LogEncoding", "Auto", logenc.autocompute, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.autogray, "LogEncoding", "AutoGray", logenc.autogray, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.grayPoint, "LogEncoding", "GrayPoint", logenc.grayPoint, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.blackEv, "LogEncoding", "BlackEv", logenc.blackEv, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.whiteEv, "LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
@@ -4525,6 +4528,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
         if (keyFile.has_group("LogEncoding")) {
             assignFromKeyfile(keyFile, "LogEncoding", "Enabled", pedited, logenc.enabled, pedited->logenc.enabled);
             assignFromKeyfile(keyFile, "LogEncoding", "Auto", pedited, logenc.autocompute, pedited->logenc.autocompute);
+            assignFromKeyfile(keyFile, "LogEncoding", "AutoGray", pedited, logenc.autogray, pedited->logenc.autogray);
             assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", pedited, logenc.grayPoint, pedited->logenc.grayPoint);
             assignFromKeyfile(keyFile, "LogEncoding", "BlackEv", pedited, logenc.blackEv, pedited->logenc.blackEv);
             assignFromKeyfile(keyFile, "LogEncoding", "WhiteEv", pedited, logenc.whiteEv, pedited->logenc.whiteEv);
