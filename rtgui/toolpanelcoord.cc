@@ -244,7 +244,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     toiT = Gtk::manage (new TextOrIcon ("transform.png", M ("MAIN_TAB_TRANSFORM"), M ("MAIN_TAB_TRANSFORM_TOOLTIP")));
     toiR = Gtk::manage (new TextOrIcon ("bayer.png", M ("MAIN_TAB_RAW"), M ("MAIN_TAB_RAW_TOOLTIP")));
     toiM = Gtk::manage (new TextOrIcon ("metadata.png", M ("MAIN_TAB_METADATA"), M ("MAIN_TAB_METADATA_TOOLTIP")));
-    toiL = Gtk::manage(new TextOrIcon("crosshair-node-curve.png", M("MAIN_TAB_LOCAL"), M("MAIN_TAB_LOCAL_TOOLTIP")));
+    toiL = Gtk::manage(new TextOrIcon("local-edit.png", M("MAIN_TAB_LOCAL"), M("MAIN_TAB_LOCAL_TOOLTIP")));
 
     if (favoritePanelSW) {
         toolPanelNotebook->append_page (*favoritePanelSW,  *toiF);
