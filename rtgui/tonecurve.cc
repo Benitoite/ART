@@ -458,7 +458,7 @@ void ToneCurve::hrenabledChanged ()
             autolevels->set_inconsistent (false);
         }
 
-        setHistmatching(false);
+        //setHistmatching(false);
 
         if (hrenabled->get_active ()) {
             listener->panelChanged (EvHREnabled, M("GENERAL_ENABLED"));
@@ -471,7 +471,7 @@ void ToneCurve::methodChanged ()
 {
 
     if (listener) {
-        setHistmatching(false);
+        //setHistmatching(false);
         if (hrenabled->get_active ()) {
             listener->panelChanged (EvHRMethod, method->get_active_text ());
         }
@@ -549,7 +549,7 @@ void ToneCurve::curveMode1Changed ()
 {
     //if (listener)  listener->panelChanged (EvToneCurveMode, toneCurveMode->get_active_text());
     if (listener) {
-        setHistmatching(false);
+        //setHistmatching(false);
         Glib::signal_idle().connect (sigc::mem_fun(*this, &ToneCurve::curveMode1Changed_));
     }
 }
@@ -567,7 +567,7 @@ void ToneCurve::curveMode2Changed ()
 {
     //if (listener)  listener->panelChanged (EvToneCurveMode, toneCurveMode->get_active_text());
     if (listener) {
-        setHistmatching(false);
+        //setHistmatching(false);
         Glib::signal_idle().connect (sigc::mem_fun(*this, &ToneCurve::curveMode2Changed_));
     }
 }
@@ -611,9 +611,9 @@ void ToneCurve::adjusterChanged(Adjuster* a, double newval)
         return;
     }
 
-    if (a != expcomp && a != hlcompr && a != hlcomprthresh) {
-        setHistmatching(false);
-    }
+    // if (a != expcomp && a != hlcompr && a != hlcomprthresh) {
+    //     setHistmatching(false);
+    // }
     
     Glib::ustring costr;
 

@@ -202,7 +202,6 @@ void LogEncoding::autocomputeToggled()
         if (!batchMode) {
             if (autocompute->get_active()) {
                 listener->panelChanged(EvAuto, M("GENERAL_ENABLED"));
-                grayPoint->setEnabled(false);
                 blackEv->setEnabled(false);
                 whiteEv->setEnabled(false);
                 base->setEnabled(false);
@@ -223,7 +222,6 @@ void LogEncoding::logEncodingChanged(const rtengine::LogEncodingParams &params)
     disableListener();
     ConnectionBlocker cbl(autoconn);
 
-    //grayPoint->setEnabled(true);
     blackEv->setEnabled(true);
     whiteEv->setEnabled(true);
     base->setEnabled(true);
