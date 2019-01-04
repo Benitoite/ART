@@ -188,10 +188,10 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
     #pragma omp parallel if (multiThread)
 #endif
     {
-#ifdef __SSE2__
-        vfloat c42000v = F2V(42000.f);
-        vfloat cm42000v = F2V(-42000.f);
-#endif
+// #ifdef __SSE2__
+//         vfloat c42000v = F2V(42000.f);
+//         vfloat cm42000v = F2V(-42000.f);
+// #endif
 #ifdef _OPENMP
         #pragma omp for
 #endif
