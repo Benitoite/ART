@@ -863,6 +863,10 @@ private:
         int imw, imh;
         double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
 
+        if (scale_factor == 1.f) {
+            return;
+        }
+
         if (params.crop.enabled) {
             int cx = params.crop.x;
             int cy = params.crop.y;
