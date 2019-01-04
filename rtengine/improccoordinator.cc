@@ -471,11 +471,11 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 }
     
                 params.toneCurve.autoexp = false;
-                params.toneCurve.curveMode = ToneCurveParams::TcMode::FILMLIKE;
-                params.toneCurve.curve2 = { 0 };
-                params.toneCurve.brightness = 0;
-                params.toneCurve.contrast = 0;
-                params.toneCurve.black = 0;
+                // params.toneCurve.curveMode = ToneCurveParams::TcMode::FILMLIKE;
+                // params.toneCurve.curve2 = { 0 };
+                // params.toneCurve.brightness = 0;
+                // params.toneCurve.contrast = 0;
+                // params.toneCurve.black = 0;
                 params.toneCurve.fromHistMatching = true;
     
                 if (aeListener) {
