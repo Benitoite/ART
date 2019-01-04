@@ -926,14 +926,19 @@ void LabMasksPanel::onAreaMaskPastePressed()
         masks_[selected_].areaMask = clipboard.getAreaMask();
         area_shape_index_ = 0;
         if (area_shape_index_ < masks_[selected_].areaMask.shapes.size()) {
-            auto &a = masks_[selected_].areaMask.shapes[0];
-            center_x_ = a.x;
-            center_y_ = a.y;
-            width_ = a.width;
-            height_ = a.height;
-            angle_ = a.angle;
+            auto &a = masks_[selected_].areaMask;
+            auto &s = a.shapes[0];
+            center_x_ = s.x;
+            center_y_ = s.y;
+            width_ = s.width;
+            height_ = s.height;
+            angle_ = s.angle;
             updateGeometry();
             updateAreaMask(true);
+            areaMaskFeather->setValue(a.feather);
+            areaMaskContrast->setValue(a.contrast);
+            areaMaskRoundness->setValue(s.roundness);
+            areaMaskInverted->set_active(a.inverted);
         }
         populateShapeList(selected_, area_shape_index_);
         maskShow(selected_, true);        
