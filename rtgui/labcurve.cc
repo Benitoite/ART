@@ -24,6 +24,27 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
+namespace {
+
+constexpr float CCURVE_BASE = 32;
+
+std::vector<double> translate_curve(const std::vector<double> &c, double base, bool to_log)
+{
+    auto ret(c);
+    if (ret.size() > 0 && ret[0] != DCT_Linear && ret[0] != DCT_Parametric) {
+        for (int i = 1, n = ret.size(); i < n; ++i) {
+            if (to_log) {
+                ret[i] = rtengine::lin2log(ret[i], base);
+            } else {
+                ret[i] = rtengine::log2lin(ret[i], base);
+            }
+        }
+    }
+    return ret;
+}
+
+} // namespace
+
 LCurve::LCurve () : FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"), false, true)
 {
 
@@ -276,7 +297,7 @@ void LCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
     lshape->setCurve   (pp->labCurve.lcurve);
     ashape->setCurve   (pp->labCurve.acurve);
     bshape->setCurve   (pp->labCurve.bcurve);
-    ccshape->setCurve  (pp->labCurve.cccurve);
+    ccshape->setCurve  (translate_curve(pp->labCurve.cccurve, CCURVE_BASE, true));
     chshape->setCurve  (pp->labCurve.chcurve);
     lhshape->setCurve  (pp->labCurve.lhcurve);
     hhshape->setCurve  (pp->labCurve.hhcurve);
@@ -361,7 +382,7 @@ void LCurve::write (ProcParams* pp, ParamsEdited* pedited)
     pp->labCurve.lcurve  = lshape->getCurve ();
     pp->labCurve.acurve  = ashape->getCurve ();
     pp->labCurve.bcurve  = bshape->getCurve ();
-    pp->labCurve.cccurve = ccshape->getCurve ();
+    pp->labCurve.cccurve = translate_curve(ccshape->getCurve (), CCURVE_BASE, false);
     pp->labCurve.chcurve = chshape->getCurve ();
     pp->labCurve.lhcurve = lhshape->getCurve ();
     pp->labCurve.hhcurve = hhshape->getCurve ();
@@ -659,7 +680,19 @@ void LCurve::updateCurveBackgroundHistogram(
 )
 {
     lshape->updateBackgroundHistogram (histLCurve);
-    ccshape->updateBackgroundHistogram (histCCurve);
+    LUTu hcc;
+    hcc(histCCurve.getSize());
+    float ub = hcc.getUpperBound();
+    unsigned int prev = 0;
+    for (unsigned int i = 0, n = hcc.getSize(); i < n; ++i) {
+        unsigned int j = rtengine::lin2log(float(i) / ub, CCURVE_BASE) * ub;
+        auto v = histCCurve[i];
+        while (prev <= j) {
+            hcc[prev++] = v;
+        }
+    }
+    ccshape->updateBackgroundHistogram(hcc);
+//    ccshape->updateBackgroundHistogram (histCCurve);
 }
 
 void LCurve::setAdjusterBehavior (bool bradd, bool contradd, bool satadd)
@@ -689,4 +722,13 @@ void LCurve::enabledChanged()
             listener->panelChanged (EvLEnabled, M("GENERAL_DISABLED"));
         }
     }
+}
+
+
+float LCurve::blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3)
+{
+    if (ce == ccshape && chan1 > 0.f) {
+        return rtengine::lin2log(chan1, CCURVE_BASE);
+    }
+    return CurveListener::blendPipetteValues(ce, chan1, chan2, chan3);
 }

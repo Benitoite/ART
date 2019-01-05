@@ -95,6 +95,8 @@ public:
     void colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
 
     void enabledChanged() override;
+
+    float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3) override;
 };
 
 #endif
