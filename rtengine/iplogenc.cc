@@ -259,19 +259,26 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, neutral.toneCurve, neutral.raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
-    float vmin = RT_INFINITY;
+    float vmin = RT_INFINITY, vmin2 = RT_INFINITY;
     float vmax = -RT_INFINITY;
 
     constexpr float noise = 1e-5;
 
     for (int y = 0, h = fh / SCALE; y < h; ++y) {
         for (int x = 0, w = fw / SCALE; x < w; ++x) {
-            float m = max(0.f, img.r(y, x), img.g(y, x), img.b(y, x)) / 65535.f;
+            float r = img.r(y, x), g = img.g(y, x), b = img.b(y, x);
+            float m = max(0.f, r, g, b) / 65535.f;
             if (m > noise) {
+                float l = min(r, g, b) / 65535.f;
                 vmin = min(vmin, m);
                 vmax = max(vmax, m);
+                vmin2 = min(vmin2, l);
             }
         }
+    }
+
+    if (vmin <= vmin2 / 2.f) {
+        vmin = vmin2;
     }
 
     if (lparams.autogray) {
