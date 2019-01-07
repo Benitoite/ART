@@ -281,32 +281,43 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         vmin = vmin2;
     }
 
-    if (lparams.autogray) {
-        double tot = 0.f;
-        int n = 0;
-        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-        for (int y = 0, h = fh / SCALE; y < h; ++y) {
-            for (int x = 0, w = fw / SCALE; x < w; ++x) {
-                float l = Color::rgbLuminance(img.r(y, x), img.g(y, x), img.b(y, x), ws) / 65535.f;
-                if (l > noise) {
-                    tot += l;
-                    ++n;
-                }
-            }
-        }
-        if (n > 0) {
-            lparams.grayPoint = tot / n * 100.f;
-        }
-    }
-
     if (vmax > vmin) {
         const float log2 = xlogf(2.f);
-        const float gray = float(lparams.grayPoint) / 100.f;
         float dynamic_range = -xlogf(vmin / vmax) / log2;
         if (settings->verbose) {
             std::cout << "AutoLog: min = " << vmin << ", max = " << vmax
                       << ", DR = " << dynamic_range << std::endl;
         }
+
+        if (lparams.autogray) {
+            double tot = 0.f;
+            int n = 0;
+            float gmax = vmax / 2.f;
+            float gmin = vmin * std::pow(2.f, std::max((dynamic_range - 1.f) / 2.f, 1.f));
+            if (settings->verbose) {
+                std::cout << "         gray boundaries: " << gmin << ", " << gmax << std::endl;
+            }
+            for (int y = 0, h = fh / SCALE; y < h; ++y) {
+                for (int x = 0, w = fw / SCALE; x < w; ++x) {
+                    float l = img.g(y, x) / 65535.f;
+                    if (l >= gmin && l <= gmax) {
+                        tot += l;
+                        ++n;
+                    }
+                }
+            }
+            if (n > 0) {
+                lparams.grayPoint = tot / n * 100.f;
+                if (settings->verbose) {
+                    std::cout << "         computed gray point from " << n << " samples: " << lparams.grayPoint << std::endl;
+                }
+            } else if (settings->verbose) {
+                std::cout << "         no samples found in range, resorting to default gray point value" << std::endl;
+                lparams.grayPoint = LogEncodingParams().grayPoint;
+            }
+        }
+        
+        float gray = float(lparams.grayPoint) / 100.f;
         lparams.whiteEv = xlogf(vmax / gray) / log2;
         lparams.blackEv = lparams.whiteEv - dynamic_range;
         constexpr float target_gray = 0.18;
