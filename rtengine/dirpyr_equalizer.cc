@@ -40,7 +40,7 @@ extern const Settings* settings;
 
 //sequence of scales
 
-void ImProcFunctions :: dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, int scaleprev)
+void ImProcFunctions :: dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scaleprev)
 {
     int lastlevel = maxlevel;
 
