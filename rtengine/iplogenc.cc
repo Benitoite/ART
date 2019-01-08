@@ -292,8 +292,8 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
         if (lparams.autogray) {
             double tot = 0.f;
             int n = 0;
-            float gmax = vmax / 2.f;
-            float gmin = vmin * std::pow(2.f, std::max((dynamic_range - 1.f) / 2.f, 1.f));
+            float gmax = std::min(vmax / 2.f, 0.25f);
+            float gmin = std::max(vmin * std::pow(2.f, std::max((dynamic_range - 1.f) / 2.f, 1.f)), 0.05f);
             if (settings->verbose) {
                 std::cout << "         gray boundaries: " << gmin << ", " << gmax << std::endl;
             }
