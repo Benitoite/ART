@@ -1428,7 +1428,8 @@ void ImProcCoordinator::process()
             || params.dehaze != nextParams.dehaze
             || params.grain != nextParams.grain
             || params.smoothing != nextParams.smoothing
-            || params.colorcorrection != nextParams.colorcorrection;
+            || params.colorcorrection != nextParams.colorcorrection
+            || (params.denoise != nextParams.denoise && options.denoiseZoomedOut);
 
         params = nextParams;
         int change = changeSinceLast;
