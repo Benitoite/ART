@@ -181,13 +181,13 @@ Gtk::Widget* Preferences::getBatchProcPanel ()
     appendBehavList (mi, M ("TP_EXPOSURE_CONTRAST"), ADDSET_TC_CONTRAST, false);
     appendBehavList (mi, M ("TP_EXPOSURE_SATURATION"), ADDSET_TC_SATURATION, false);
 
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_EPD_LABEL"));
-    appendBehavList (mi, M ("TP_EPD_STRENGTH"), ADDSET_EPD_STRENGTH, false);
-    appendBehavList (mi, M ("TP_EPD_GAMMA"), ADDSET_EPD_GAMMA, false);
-    appendBehavList (mi, M ("TP_EPD_EDGESTOPPING"), ADDSET_EPD_EDGESTOPPING, false);
-    appendBehavList (mi, M ("TP_EPD_SCALE"), ADDSET_EPD_SCALE, false);
-    appendBehavList (mi, M ("TP_EPD_REWEIGHTINGITERATES"), ADDSET_EPD_REWEIGHTINGITERATES, false);
+    // mi = behModel->append ();
+    // mi->set_value (behavColumns.label, M ("TP_EPD_LABEL"));
+    // appendBehavList (mi, M ("TP_EPD_STRENGTH"), ADDSET_EPD_STRENGTH, false);
+    // appendBehavList (mi, M ("TP_EPD_GAMMA"), ADDSET_EPD_GAMMA, false);
+    // appendBehavList (mi, M ("TP_EPD_EDGESTOPPING"), ADDSET_EPD_EDGESTOPPING, false);
+    // appendBehavList (mi, M ("TP_EPD_SCALE"), ADDSET_EPD_SCALE, false);
+    // appendBehavList (mi, M ("TP_EPD_REWEIGHTINGITERATES"), ADDSET_EPD_REWEIGHTINGITERATES, false);
 
     mi = behModel->append ();
     mi->set_value (behavColumns.label, M ("TP_TM_FATTAL_LABEL"));

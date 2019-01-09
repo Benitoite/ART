@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -22,16 +23,10 @@
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
+#include "labmaskspanel.h"
 
-class EdgePreservingDecompositionUI : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class EdgePreservingDecompositionUI : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public PParamsChangeListener
 {
-protected:
-    Adjuster *strength;
-    Adjuster *gamma;
-    Adjuster *edgeStopping;
-    Adjuster *scale;
-    Adjuster *reweightingIterates;
-
 public:
 
     EdgePreservingDecompositionUI();
@@ -45,6 +40,44 @@ public:
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void enabledChanged  () override;
     void setAdjusterBehavior (bool stAdd, bool gAdd, bool esAdd, bool scAdd, bool rAdd);
+
+    void setEditProvider(EditDataProvider *provider) override;
+
+    PParamsChangeListener *getPParamsChangeListener() override { return this; }
+    void procParamsChanged(
+        const rtengine::procparams::ProcParams* params,
+        const rtengine::ProcEvent& ev,
+        const Glib::ustring& descr,
+        const ParamsEdited* paramsEdited = nullptr) override;
+    void clearParamChanges() override {}
+
+    void updateGeometry(int fullWidth, int fullHeight);
+
+private:
+    void regionGet(int idx);
+    void regionShow(int idx);
+    
+    rtengine::ProcEvent EvList;
+    rtengine::ProcEvent EvHueMask;
+    rtengine::ProcEvent EvChromaticityMask;
+    rtengine::ProcEvent EvLightnessMask;
+    rtengine::ProcEvent EvMaskBlur;
+    rtengine::ProcEvent EvShowMask;
+    rtengine::ProcEvent EvAreaMask;
+
+    std::vector<rtengine::procparams::EPDParams::Region> data;
+    int showMaskIdx;
+
+    friend class EPDMasksContentProvider;
+    std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
+    LabMasksPanel *labMasks;
+    
+    Adjuster *strength;
+    Adjuster *gamma;
+    Adjuster *edgeStopping;
+    Adjuster *scale;
+    Adjuster *reweightingIterates;
+    Gtk::VBox *box;
 };
 
 #endif

@@ -698,11 +698,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             nprevl->CopyFrom(oprevl);
     
             ipf.logEncoding(nprevl, &histToneCurve);
+            ipf.toneMapping(nprevl);
     
-            if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
-                ipf.EPDToneMap(nprevl, 5, scale);
-            }
-
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
             readyphase++;
     

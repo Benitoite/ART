@@ -126,7 +126,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (colorPanel, rgbcurves);
     addfavoritePanel(colorPanel, lcurve);
     addfavoritePanel (colorPanel, colortoning);
-    addfavoritePanel (exposurePanel, epd);
+    //addfavoritePanel (exposurePanel, epd);
     addfavoritePanel (exposurePanel, fattal);
     addfavoritePanel (advancedPanel, retinex);
     addfavoritePanel (exposurePanel, pcvignette);
@@ -168,6 +168,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(localPanel, colorcorrection);
     addfavoritePanel(localPanel, smoothing);
     addfavoritePanel(localPanel, cbdl);
+    addfavoritePanel(localPanel, epd);
 
     int favoriteCount = 0;
     for(auto it = favorites.begin(); it != favorites.end(); ++it) {
@@ -538,6 +539,7 @@ void ToolPanelCoordinator::profileChange(
         colorcorrection->updateGeometry(fw, fh);
         smoothing->updateGeometry(fw, fh);
         cbdl->updateGeometry(fw, fh);
+        epd->updateGeometry(fw, fh);
     }
 
     // start the IPC processing

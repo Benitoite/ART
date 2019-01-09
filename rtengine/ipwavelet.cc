@@ -1529,8 +1529,9 @@ void ImProcFunctions::ContrastResid(float * WavCoeffs_L0, struct cont_params &cp
 
 void ImProcFunctions::EPDToneMapResid(float * WavCoeffs_L0,  unsigned int Iterates, int skip, struct cont_params& cp, int W_L, int H_L, float max0, float min0)
 {
+    return;
 
-
+#if 0  
     float stren = cp.tmstrength;
     float edgest = params->epd.edgeStopping;
     float sca = params->epd.scale;
@@ -1579,6 +1580,8 @@ void ImProcFunctions::EPDToneMapResid(float * WavCoeffs_L0,  unsigned int Iterat
     for(int ii = 0; ii < W_L * H_L; ii++) {
         WavCoeffs_L0[ii] = WavCoeffs_L0[ii] * max0 * (1.f / gamm) + min0;
     }
+
+#endif // if 0
 }
 
 void ImProcFunctions::WaveletcontAllLfinal(wavelet_decomposition &WaveletCoeffs_L, struct cont_params &cp, float *mean, float *sigma, float *MaxP, const WavOpacityCurveWL & waOpacityCurveWL)

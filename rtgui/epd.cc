@@ -17,20 +17,153 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "epd.h"
+#include "eventmapper.h"
 #include <iomanip>
 #include <cmath>
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
+//-----------------------------------------------------------------------------
+// EPDMasksContentProvider
+//-----------------------------------------------------------------------------
+
+class EPDMasksContentProvider: public LabMasksContentProvider {
+public:
+    EPDMasksContentProvider(EdgePreservingDecompositionUI *parent):
+        parent_(parent)
+    {
+    }
+
+    Gtk::Widget *getWidget() override
+    {
+        return parent_->box;
+    }
+
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) override
+    {
+        mask_list = parent_->EvList;
+        h_mask = parent_->EvHueMask;
+        c_mask = parent_->EvChromaticityMask;
+        l_mask = parent_->EvLightnessMask;
+        blur = parent_->EvMaskBlur;
+        show = parent_->EvShowMask;
+        area_mask = parent_->EvAreaMask;
+    }
+
+    ToolPanelListener *listener() override
+    {
+        if (parent_->getEnabled()) {
+            return parent_->listener;
+        }
+        return nullptr;
+    }
+
+    void selectionChanging(int idx) override
+    {
+        parent_->regionGet(idx);
+    }
+
+    void selectionChanged(int idx) override
+    {
+        parent_->regionShow(idx);
+    }
+
+    bool addPressed() override
+    {
+        parent_->data.push_back(EPDParams::Region());
+        return true;
+    }
+
+    bool removePressed(int idx) override
+    {
+        parent_->data.erase(parent_->data.begin() + idx);
+        return true;
+    }
+    
+    bool copyPressed(int idx) override
+    {
+        parent_->data.push_back(parent_->data[idx]);
+        return true;
+    }
+
+    bool resetPressed() override
+    {
+        parent_->data = { EPDParams::Region() };
+        parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
+        return true;
+    }
+    
+    bool moveUpPressed(int idx) override
+    {
+        auto r = parent_->data[idx];
+        parent_->data.erase(parent_->data.begin() + idx);
+        --idx;
+        parent_->data.insert(parent_->data.begin() + idx, r);
+        return true;
+    }
+    
+    bool moveDownPressed(int idx) override
+    {
+        auto r = parent_->data[idx];
+        parent_->data.erase(parent_->data.begin() + idx);
+        ++idx;
+        parent_->data.insert(parent_->data.begin() + idx, r);
+        return true;
+    }
+
+    int getColumnCount() override
+    {
+        return 1;
+    }
+    
+    Glib::ustring getColumnHeader(int col) override
+    {
+        return M("TP_EPD_LIST_TITLE");
+    }
+    
+    Glib::ustring getColumnContent(int col, int row) override
+    {
+        auto &r = parent_->data[row];
+
+        return Glib::ustring::compose(
+            "%1 %2 %3 %4 %5", r.strength, r.gamma, r.edgeStopping, r.scale, r.reweightingIterates); 
+    }
+
+    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
+    {
+        hcurve = EUID_LabMasks_H4;
+        ccurve = EUID_LabMasks_C4;
+        lcurve = EUID_LabMasks_L4;
+    }
+
+private:
+    EdgePreservingDecompositionUI *parent_;
+};
+
+
+//-----------------------------------------------------------------------------
+// EPD
+//-----------------------------------------------------------------------------
+
 EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), true, true)
 {
+    auto m = ProcEventMapper::getInstance();
+    EvList = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_LIST");
+    EvHueMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_HUEMASK");
+    EvChromaticityMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_MASKBLUR");
+    EvShowMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_SHOWMASK");
+    EvAreaMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_AREAMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
     gamma = Gtk::manage(new Adjuster (M("TP_EPD_GAMMA"), 0.8, 1.5, 0.01, 1.));
     edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));
     scale = Gtk::manage(new Adjuster (M("TP_EPD_SCALE"), 0.1, 10.0, 0.01, 0.1));
     reweightingIterates = Gtk::manage(new Adjuster (M("TP_EPD_REWEIGHTINGITERATES"), 0, 9, 1, 0));
+
+    box = Gtk::manage(new Gtk::VBox());
 
     strength->setAdjusterListener(this);
     gamma->setAdjusterListener(this);
@@ -44,92 +177,77 @@ EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPa
     scale->show();
     reweightingIterates->show();
 
-    pack_start(*strength);
-    pack_start(*gamma);
-    pack_start(*edgeStopping);
-    pack_start(*scale);
-    pack_start(*reweightingIterates);
+    box->pack_start(*strength);
+    box->pack_start(*gamma);
+    box->pack_start(*edgeStopping);
+    box->pack_start(*scale);
+    box->pack_start(*reweightingIterates);
+
+    labMasksContentProvider.reset(new EPDMasksContentProvider(this));
+    labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
+    pack_start(*labMasks, Gtk::PACK_EXPAND_WIDGET, 4);   
+
+    show_all_children();
 }
 
 void EdgePreservingDecompositionUI::read(const ProcParams *pp, const ParamsEdited *pedited)
 {
     disableListener();
 
-    if(pedited) {
-        strength->setEditedState(pedited->epd.strength ? Edited : UnEdited);
-        gamma->setEditedState(pedited->epd.gamma ? Edited : UnEdited);
-        edgeStopping->setEditedState(pedited->epd.edgeStopping ? Edited : UnEdited);
-        scale->setEditedState(pedited->epd.scale ? Edited : UnEdited);
-        reweightingIterates->setEditedState(pedited->epd.reweightingIterates ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->epd.enabled);
-    }
-
     setEnabled(pp->epd.enabled);
-    strength->set_sensitive (true);
+    data = pp->epd.regions;
+    auto m = pp->epd.labmasks;
+    if (data.empty()) {
+        data.emplace_back(rtengine::EPDParams::Region());
+        m.emplace_back(rtengine::LabCorrectionMask());
+    }
+    labMasks->updateAreaMaskDefaults(pp);
+    labMasks->setMasks(m, pp->epd.showMask);
 
-    if(pp->wavelet.enabled) {
-        if(pp->wavelet.tmrs == 0) {
-            strength->set_sensitive (true);
-            gamma->set_sensitive (true);
+    if (pedited) {
+        set_inconsistent(multiImage && !pedited->epd.enabled);
+        if (pedited->epd.regions) {
+            labMasks->setEdited(true);
         } else {
-            strength->set_sensitive (false);
-            gamma->set_sensitive (false);
+            labMasks->setEdited(false);
         }
     }
-
-    strength->setValue(pp->epd.strength);
-    gamma->setValue(pp->epd.gamma);
-    edgeStopping->setValue(pp->epd.edgeStopping);
-    scale->setValue(pp->epd.scale);
-    reweightingIterates->setValue(pp->epd.reweightingIterates);
 
     enableListener();
 }
 
 void EdgePreservingDecompositionUI::write(ProcParams *pp, ParamsEdited *pedited)
 {
-    pp->epd.strength = strength->getValue();
-    pp->epd.gamma = gamma->getValue();
-    pp->epd.edgeStopping = edgeStopping->getValue();
-    pp->epd.scale = scale->getValue();
-    pp->epd.reweightingIterates = reweightingIterates->getValue();
     pp->epd.enabled = getEnabled();
-    strength->set_sensitive (true);
 
-    if(pp->wavelet.enabled) {
-        if(pp->wavelet.tmrs == 0) {
-            strength->set_sensitive (true);
-            gamma->set_sensitive (true);
-        } else {
-            strength->set_sensitive (false);
-            gamma->set_sensitive (false);
-        }
-    }
+    regionGet(labMasks->getSelected());
+    pp->epd.regions = data;
 
-    if(pedited) {
-        pedited->epd.strength = strength->getEditedState();
-        pedited->epd.gamma = gamma->getEditedState();
-        pedited->epd.edgeStopping = edgeStopping->getEditedState();
-        pedited->epd.scale = scale->getEditedState();
-        pedited->epd.reweightingIterates = reweightingIterates->getEditedState();
+    labMasks->getMasks(pp->epd.labmasks, pp->epd.showMask);
+    assert(pp->epd.regions.size() == pp->epd.labmasks.size());
+
+    labMasks->updateSelected();
+        
+    if (pedited) {
         pedited->epd.enabled = !get_inconsistent();
+        pedited->epd.regions = labMasks->getEdited();
     }
 }
 
 void EdgePreservingDecompositionUI::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
 {
-    strength->setDefault(defParams->epd.strength);
-    gamma->setDefault(defParams->epd.gamma);
-    edgeStopping->setDefault(defParams->epd.edgeStopping);
-    scale->setDefault(defParams->epd.scale);
-    reweightingIterates->setDefault(defParams->epd.reweightingIterates);
+    strength->setDefault(defParams->epd.regions[0].strength);
+    gamma->setDefault(defParams->epd.regions[0].gamma);
+    edgeStopping->setDefault(defParams->epd.regions[0].edgeStopping);
+    scale->setDefault(defParams->epd.regions[0].scale);
+    reweightingIterates->setDefault(defParams->epd.regions[0].reweightingIterates);
 
     if(pedited) {
-        strength->setDefaultEditedState(pedited->epd.strength ? Edited : UnEdited);
-        gamma->setDefaultEditedState(pedited->epd.gamma ? Edited : UnEdited);
-        edgeStopping->setDefaultEditedState(pedited->epd.edgeStopping ? Edited : UnEdited);
-        scale->setDefaultEditedState(pedited->epd.scale ? Edited : UnEdited);
-        reweightingIterates->setDefaultEditedState(pedited->epd.reweightingIterates ? Edited : UnEdited);
+        strength->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
+        gamma->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
+        edgeStopping->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
+        scale->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
+        reweightingIterates->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
     } else {
         strength->setDefaultEditedState(Irrelevant);
         gamma->setDefaultEditedState(Irrelevant);
@@ -142,6 +260,8 @@ void EdgePreservingDecompositionUI::setDefaults(const ProcParams *defParams, con
 void EdgePreservingDecompositionUI::adjusterChanged(Adjuster* a, double newval)
 {
     if (listener && getEnabled()) {
+        labMasks->setEdited(true);
+
         if(a == strength) {
             listener->panelChanged(EvEPDStrength, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
         } else if(a == gamma) {
@@ -176,19 +296,66 @@ void EdgePreservingDecompositionUI::enabledChanged ()
 void EdgePreservingDecompositionUI::setBatchMode(bool batchMode)
 {
     ToolPanel::setBatchMode(batchMode);
-
-    strength->showEditedCB();
-    gamma->showEditedCB();
-    edgeStopping->showEditedCB();
-    scale->showEditedCB();
-    reweightingIterates->showEditedCB();
+    labMasks->setBatchMode();
 }
 
 void EdgePreservingDecompositionUI::setAdjusterBehavior (bool stAdd, bool gAdd, bool esAdd, bool scAdd, bool rAdd)
 {
-    strength->setAddMode(stAdd);
-    gamma->setAddMode(gAdd);
-    edgeStopping->setAddMode(esAdd);
-    scale->setAddMode(scAdd);
-    reweightingIterates->setAddMode(rAdd);
+}
+
+
+void EdgePreservingDecompositionUI::setEditProvider(EditDataProvider *provider)
+{
+    labMasks->setEditProvider(provider);
+}
+
+
+void EdgePreservingDecompositionUI::procParamsChanged(
+    const rtengine::procparams::ProcParams* params,
+    const rtengine::ProcEvent& ev,
+    const Glib::ustring& descr,
+    const ParamsEdited* paramsEdited)
+{
+    labMasks->updateAreaMaskDefaults(params);
+}
+
+
+void EdgePreservingDecompositionUI::updateGeometry(int fw, int fh)
+{
+    labMasks->updateGeometry(fw, fh);
+}
+
+
+void EdgePreservingDecompositionUI::regionGet(int idx)
+{
+    if (idx < 0 || size_t(idx) >= data.size()) {
+        return;
+    }
+    
+    auto &r = data[idx];
+    r.strength = strength->getValue();
+    r.gamma = gamma->getValue();
+    r.edgeStopping = edgeStopping->getValue();
+    r.scale = scale->getValue();
+    r.reweightingIterates = reweightingIterates->getValue();
+}
+
+
+void EdgePreservingDecompositionUI::regionShow(int idx)
+{
+    const bool disable = listener;
+    if (disable) {
+        disableListener();
+    }
+
+    auto &r = data[idx];
+    strength->setValue(r.strength);
+    gamma->setValue(r.gamma);
+    edgeStopping->setValue(r.edgeStopping);
+    scale->setValue(r.scale);
+    reweightingIterates->setValue(r.reweightingIterates);
+    
+    if (disable) {
+        enableListener();
+    }
 }

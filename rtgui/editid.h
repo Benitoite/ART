@@ -53,7 +53,10 @@ enum EditUniqueID {
     EUID_LabMasks_L2,
     EUID_LabMasks_H3,
     EUID_LabMasks_C3,
-    EUID_LabMasks_L3
+    EUID_LabMasks_L3,
+    EUID_LabMasks_H4,
+    EUID_LabMasks_C4,
+    EUID_LabMasks_L4
 };
 
 /// @brief Editing mechanisms

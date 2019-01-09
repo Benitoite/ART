@@ -437,10 +437,11 @@ ColorAppearance::ColorAppearance () : FoldableToolPanel (this, "colorappearance"
     colorh->set_tooltip_markup (M ("TP_COLORAPP_HUE_TOOLTIP"));
     p2VBox->pack_start (*colorh);
 
-    tonecie = Gtk::manage (new Gtk::CheckButton (M ("TP_COLORAPP_TONECIE")));
-    tonecie->set_tooltip_markup (M ("TP_COLORAPP_TONECIE_TOOLTIP"));
-    tonecieconn = tonecie->signal_toggled().connect ( sigc::mem_fun (*this, &ColorAppearance::tonecie_toggled) );
-    p2VBox->pack_start (*tonecie);
+    // tonecie = Gtk::manage (new Gtk::CheckButton (M ("TP_COLORAPP_TONECIE")));
+    tonecie = new Gtk::CheckButton (M ("TP_COLORAPP_TONECIE"));
+    // tonecie->set_tooltip_markup (M ("TP_COLORAPP_TONECIE_TOOLTIP"));
+    // tonecieconn = tonecie->signal_toggled().connect ( sigc::mem_fun (*this, &ColorAppearance::tonecie_toggled) );
+    // p2VBox->pack_start (*tonecie);
     /*
         sharpcie = Gtk::manage (new Gtk::CheckButton (M("TP_COLORAPP_SHARPCIE")));
         sharpcie->set_tooltip_markup (M("TP_COLORAPP_SHARPCIE_TOOLTIP"));
@@ -717,6 +718,7 @@ ColorAppearance::~ColorAppearance ()
     delete curveEditorG;
     delete curveEditorG2;
     delete curveEditorG3;
+    delete tonecie;
 }
 
 void ColorAppearance::foldAllButMe (GdkEventButton* event, MyExpander *expander)

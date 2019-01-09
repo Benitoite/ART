@@ -280,11 +280,13 @@ void ParamsEdited::set(bool v)
     denoise.guidedChromaRadius = v;
     denoise.guidedChromaStrength = v;
     epd.enabled                = v;
-    epd.strength            = v;
-    epd.gamma            = v;
-    epd.edgeStopping        = v;
-    epd.scale               = v;
-    epd.reweightingIterates = v;
+    epd.regions = v;
+    epd.showMask = v;
+    // epd.strength            = v;
+    // epd.gamma            = v;
+    // epd.edgeStopping        = v;
+    // epd.scale               = v;
+    // epd.reweightingIterates = v;
     fattal.enabled   = v;
     fattal.threshold = v;
     fattal.amount    = v;
@@ -856,11 +858,13 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(denoise.guidedChromaStrength);
 
         epd.enabled = epd.enabled && p.epd.enabled == other.epd.enabled;
-        epd.strength = epd.strength && p.epd.strength == other.epd.strength;
-        epd.gamma = epd.gamma && p.epd.gamma == other.epd.gamma;
-        epd.edgeStopping = epd.edgeStopping && p.epd.edgeStopping == other.epd.edgeStopping;
-        epd.scale = epd.scale && p.epd.scale == other.epd.scale;
-        epd.reweightingIterates = epd.reweightingIterates && p.epd.reweightingIterates == other.epd.reweightingIterates;
+        SETVAL_(epd.regions);
+        SETVAL_(epd.showMask);
+        // epd.strength = epd.strength && p.epd.strength == other.epd.strength;
+        // epd.gamma = epd.gamma && p.epd.gamma == other.epd.gamma;
+        // epd.edgeStopping = epd.edgeStopping && p.epd.edgeStopping == other.epd.edgeStopping;
+        // epd.scale = epd.scale && p.epd.scale == other.epd.scale;
+        // epd.reweightingIterates = epd.reweightingIterates && p.epd.reweightingIterates == other.epd.reweightingIterates;
 
         fattal.enabled = fattal.enabled && p.fattal.enabled == other.fattal.enabled;
         fattal.threshold = fattal.threshold && p.fattal.threshold == other.fattal.threshold;
@@ -2044,29 +2048,35 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(denoise.guidedChromaRadius);
     SETVAL_(denoise.guidedChromaStrength);
 
-    if (epd.enabled) {
-        toEdit.epd.enabled                = mods.epd.enabled;
+    SETVAL_(epd.enabled);
+    if (epd.regions) {
+        toEdit.epd.regions = mods.epd.regions;
+        toEdit.epd.labmasks = mods.epd.labmasks;
     }
+    SETVAL_(epd.showMask);
+    // if (epd.enabled) {
+    //     toEdit.epd.enabled                = mods.epd.enabled;
+    // }
 
-    if (epd.strength) {
-        toEdit.epd.strength               = mods.epd.strength;
-    }
+    // if (epd.strength) {
+    //     toEdit.epd.strength               = mods.epd.strength;
+    // }
 
-    if (epd.gamma) {
-        toEdit.epd.gamma              = mods.epd.gamma;
-    }
+    // if (epd.gamma) {
+    //     toEdit.epd.gamma              = mods.epd.gamma;
+    // }
 
-    if (epd.edgeStopping) {
-        toEdit.epd.edgeStopping           = mods.epd.edgeStopping;
-    }
+    // if (epd.edgeStopping) {
+    //     toEdit.epd.edgeStopping           = mods.epd.edgeStopping;
+    // }
 
-    if (epd.scale) {
-        toEdit.epd.scale              = mods.epd.scale;
-    }
+    // if (epd.scale) {
+    //     toEdit.epd.scale              = mods.epd.scale;
+    // }
 
-    if (epd.reweightingIterates) {
-        toEdit.epd.reweightingIterates    = mods.epd.reweightingIterates;
-    }
+    // if (epd.reweightingIterates) {
+    //     toEdit.epd.reweightingIterates    = mods.epd.reweightingIterates;
+    // }
 
     if (fattal.enabled) {
         toEdit.fattal.enabled = mods.fattal.enabled;

@@ -1622,8 +1622,7 @@ void DenoiseParams::getCurves(NoiseCurve &lCurve, NoiseCurve &cCurve) const
 }
 
 
-EPDParams::EPDParams() :
-    enabled(false),
+EPDParams::Region::Region():
     strength(0.5),
     gamma(1.0),
     edgeStopping(1.4),
@@ -1632,15 +1631,36 @@ EPDParams::EPDParams() :
 {
 }
 
-bool EPDParams::operator ==(const EPDParams& other) const
+
+bool EPDParams::Region::operator==(const Region &other) const
 {
-    return
-        enabled == other.enabled
-        && strength == other.strength
+    return strength == other.strength
         && gamma == other.gamma
         && edgeStopping == other.edgeStopping
         && scale == other.scale
         && reweightingIterates == other.reweightingIterates;
+}
+
+
+bool EPDParams::Region::operator!=(const Region &other) const
+{
+    return !(*this == other);
+}
+
+
+EPDParams::EPDParams() :
+    enabled(false),
+    showMask(-1)
+{
+}
+
+bool EPDParams::operator ==(const EPDParams& other) const
+{
+    return
+        enabled == other.enabled
+        && regions == other.regions
+        && labmasks == other.labmasks
+        && showMask == other.showMask;
 }
 
 bool EPDParams::operator !=(const EPDParams& other) const
@@ -3397,7 +3417,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->colorappearance.greensc, "Color appearance", "Greensc", colorappearance.greensc, keyFile);
         saveToKeyfile(!pedited || pedited->colorappearance.ybout, "Color appearance", "Ybout", colorappearance.ybout, keyFile);
         saveToKeyfile(!pedited || pedited->colorappearance.datacie, "Color appearance", "Datacie", colorappearance.datacie, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.tonecie, "Color appearance", "Tonecie", colorappearance.tonecie, keyFile);
+//        saveToKeyfile(!pedited || pedited->colorappearance.tonecie, "Color appearance", "Tonecie", colorappearance.tonecie, keyFile);
 
         const std::map<ColorAppearanceParams::TcMode, const char*> ca_mapping = {
             {ColorAppearanceParams::TcMode::LIGHT, "Lightness"},
@@ -3466,11 +3486,19 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // EPD
         saveToKeyfile(!pedited || pedited->epd.enabled, "EPD", "Enabled", epd.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->epd.strength, "EPD", "Strength", epd.strength, keyFile);
-        saveToKeyfile(!pedited || pedited->epd.gamma, "EPD", "Gamma", epd.gamma, keyFile);
-        saveToKeyfile(!pedited || pedited->epd.edgeStopping, "EPD", "EdgeStopping", epd.edgeStopping, keyFile);
-        saveToKeyfile(!pedited || pedited->epd.scale, "EPD", "Scale", epd.scale, keyFile);
-        saveToKeyfile(!pedited || pedited->epd.reweightingIterates, "EPD", "ReweightingIterates", epd.reweightingIterates, keyFile);
+        if (!pedited || pedited->epd.regions) {
+            for (size_t j = 0; j < epd.regions.size(); ++j) {
+                std::string n = j ? std::string("_") + std::to_string(j) : std::string("");
+                auto &r = epd.regions[j];
+                putToKeyfile("EPD", Glib::ustring("Strength") + n, r.strength, keyFile);
+                putToKeyfile("EPD", Glib::ustring("Gamma") + n, r.gamma, keyFile);
+                putToKeyfile("EPD", Glib::ustring("EdgeStopping") + n, r.edgeStopping, keyFile);
+                putToKeyfile("EPD", Glib::ustring("Scale") + n, r.scale, keyFile);
+                putToKeyfile("EPD", Glib::ustring("ReweightingIterates") + n, r.reweightingIterates, keyFile);
+                epd.labmasks[j].save(keyFile, "EPD", "", n);
+            }
+        }
+        saveToKeyfile(!pedited || pedited->epd.showMask, "EPD", "showMask", epd.showMask, keyFile);
 
 // Fattal
         saveToKeyfile(!pedited || pedited->fattal.enabled, "FattalToneMapping", "Enabled", fattal.enabled, keyFile);
@@ -3678,7 +3706,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->wavelet.EDmethod, "Wavelet", "EDMethod", wavelet.EDmethod, keyFile);
         saveToKeyfile(!pedited || pedited->wavelet.NPmethod, "Wavelet", "NPMethod", wavelet.NPmethod, keyFile);
         saveToKeyfile(!pedited || pedited->wavelet.BAmethod, "Wavelet", "BAMethod", wavelet.BAmethod, keyFile);
-        saveToKeyfile(!pedited || pedited->wavelet.TMmethod, "Wavelet", "TMMethod", wavelet.TMmethod, keyFile);
+//        saveToKeyfile(!pedited || pedited->wavelet.TMmethod, "Wavelet", "TMMethod", wavelet.TMmethod, keyFile);
         saveToKeyfile(!pedited || pedited->wavelet.chro, "Wavelet", "ChromaLink", wavelet.chro, keyFile);
         saveToKeyfile(!pedited || pedited->wavelet.ccwcurve, "Wavelet", "ContrastCurve", wavelet.ccwcurve, keyFile);
         saveToKeyfile(!pedited || pedited->wavelet.pastlev, "Wavelet", "Pastlev", wavelet.pastlev.toVector(), keyFile);
@@ -4374,7 +4402,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Color appearance", "Greensc", pedited, colorappearance.greensc, pedited->colorappearance.greensc);
             assignFromKeyfile(keyFile, "Color appearance", "Ybout", pedited, colorappearance.ybout, pedited->colorappearance.ybout);
             assignFromKeyfile(keyFile, "Color appearance", "Datacie", pedited, colorappearance.datacie, pedited->colorappearance.datacie);
-            assignFromKeyfile(keyFile, "Color appearance", "Tonecie", pedited, colorappearance.tonecie, pedited->colorappearance.tonecie);
+//            assignFromKeyfile(keyFile, "Color appearance", "Tonecie", pedited, colorappearance.tonecie, pedited->colorappearance.tonecie);
 
             const std::map<std::string, ColorAppearanceParams::TcMode> tc_mapping = {
                 {"Lightness", ColorAppearanceParams::TcMode::LIGHT},
@@ -4511,11 +4539,55 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group("EPD")) {
             assignFromKeyfile(keyFile, "EPD", "Enabled", pedited, epd.enabled, pedited->epd.enabled);
-            assignFromKeyfile(keyFile, "EPD", "Strength", pedited, epd.strength, pedited->epd.strength);
-            assignFromKeyfile(keyFile, "EPD", "Gamma", pedited, epd.gamma, pedited->epd.gamma);
-            assignFromKeyfile(keyFile, "EPD", "EdgeStopping", pedited, epd.edgeStopping, pedited->epd.edgeStopping);
-            assignFromKeyfile(keyFile, "EPD", "Scale", pedited, epd.scale, pedited->epd.scale);
-            assignFromKeyfile(keyFile, "EPD", "ReweightingIterates", pedited, epd.reweightingIterates, pedited->epd.reweightingIterates);
+                
+            std::vector<EPDParams::Region> ll;
+            std::vector<LabCorrectionMask> lm;
+            bool found = false;
+            bool done = false;
+            for (int i = 0; !done; ++i) {
+                EPDParams::Region cur;
+                LabCorrectionMask curmask;
+                done = true;
+                std::string n = i ? std::string("_") + std::to_string(i) : std::string("");
+                int c;
+                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Strength") + n, pedited, cur.strength, pedited->epd.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Gamma") + n, pedited, cur.gamma, pedited->epd.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("EdgeStopping") + n, pedited, cur.edgeStopping, pedited->epd.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Scale") + n, pedited, cur.scale, pedited->epd.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("ReweightingIterates") + n, pedited, cur.reweightingIterates, pedited->epd.regions)) {
+                    found = true;
+                    done = false;
+                }
+                if (curmask.load(keyFile, "EPD", "", n)) {
+                    found = true;
+                    done = false;
+                    if (pedited) {
+                        pedited->epd.regions = true;
+                    }
+                }
+                if (!done) {
+                    ll.emplace_back(cur);
+                    lm.emplace_back(curmask);
+                }
+            }
+            if (found) {
+                epd.regions = std::move(ll);
+                epd.labmasks = std::move(lm);
+            }
+            assert(epd.regions.size() == epd.labmasks.size());
+            assignFromKeyfile(keyFile, "EPD", "ShowMask", pedited, epd.showMask, pedited->epd.showMask);
         }
 
         if (keyFile.has_group("FattalToneMapping")) {
@@ -4868,7 +4940,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Wavelet", "EDMethod", pedited, wavelet.EDmethod, pedited->wavelet.EDmethod);
             assignFromKeyfile(keyFile, "Wavelet", "NPMethod", pedited, wavelet.NPmethod, pedited->wavelet.NPmethod);
             assignFromKeyfile(keyFile, "Wavelet", "BAMethod", pedited, wavelet.BAmethod, pedited->wavelet.BAmethod);
-            assignFromKeyfile(keyFile, "Wavelet", "TMMethod", pedited, wavelet.TMmethod, pedited->wavelet.TMmethod);
+//            assignFromKeyfile(keyFile, "Wavelet", "TMMethod", pedited, wavelet.TMmethod, pedited->wavelet.TMmethod);
             assignFromKeyfile(keyFile, "Wavelet", "HSMethod", pedited, wavelet.HSmethod, pedited->wavelet.HSmethod);
             assignFromKeyfile(keyFile, "Wavelet", "DirMethod", pedited, wavelet.Dirmethod, pedited->wavelet.Dirmethod);
             assignFromKeyfile(keyFile, "Wavelet", "ResidualcontShadow", pedited, wavelet.rescon, pedited->wavelet.rescon);

@@ -111,7 +111,8 @@ public:
     void impulsedenoise(LabImage* lab);   //Emil's impulse denoise
 
 //    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
-    void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
+//    void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
+    void toneMapping(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
 
     void ip_wavelet(LabImage * lab, LabImage * dst, int kall, const procparams::WaveletParams & waparams, const WavCurve & wavCLVCcurve, const WavOpacityCurveRG & waOpacityCurveRG, const WavOpacityCurveBY & waOpacityCurveBY,  const WavOpacityCurveW & waOpacityCurveW, const WavOpacityCurveWL & waOpacityCurveWL, LUTf &wavclCurve, int skip);
 
@@ -226,6 +227,7 @@ private:
 
     void dirpyrdenoise(LabImage* src);    //Emil's pyramid denoise
 
+    void EPDToneMap(LabImage *lab, double strength, double gamma, double edgeStopping, double scale, int reweightingIterates);
     void EPDToneMapResid(float * WavCoeffs_L0, unsigned int Iterates,  int skip, struct cont_params& cp, int W_L, int H_L, float max0, float min0);
     void CompressDR(float *Source, int W_L, int H_L, float Compression, float DetailBoost);
     void ContrastResid(float * WavCoeffs_L0, struct cont_params &cp, int W_L, int H_L, float max0, float min0);

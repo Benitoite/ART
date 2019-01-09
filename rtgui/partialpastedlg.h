@@ -48,7 +48,6 @@ public:
     Gtk::CheckButton* localcontrast;
     Gtk::CheckButton* logenc;
     Gtk::CheckButton* sh;
-    Gtk::CheckButton* epd;
     Gtk::CheckButton* fattal;
     Gtk::CheckButton* retinex;
     Gtk::CheckButton* pcvignette;
@@ -107,6 +106,7 @@ public:
     Gtk::CheckButton *colorcorrection;
     Gtk::CheckButton *cbdl;
     Gtk::CheckButton *smoothing;
+    Gtk::CheckButton* epd;
 
     // options in raw:
     Gtk::CheckButton* raw_expos;

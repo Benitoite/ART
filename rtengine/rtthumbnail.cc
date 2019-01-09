@@ -1400,11 +1400,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     ipf.labColorCorrectionRegions(labView);
     ipf.guidedSmoothing(labView);
     ipf.logEncoding(labView);
-
-    if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || !params.colorappearance.enabled) {
-        ipf.EPDToneMap (labView, 5, 6);
-    }
-
+    ipf.toneMapping(labView);
     ipf.softLight(labView);
     ipf.localContrast(labView);
 

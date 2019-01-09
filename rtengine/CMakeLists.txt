@@ -138,6 +138,7 @@ set(RTENGINESOURCEFILES
     ipcbdl.cc
     ipgrain.cc
     ipdenoise.cc
+    iptonemapping.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)

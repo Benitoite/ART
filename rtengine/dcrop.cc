@@ -367,6 +367,11 @@ void Crop::update(int todo)
         }
     }*/
 
+    int offset_x = cropx / skip;
+    int offset_y = cropy / skip;
+    int full_width = parent->getFullWidth() / skip;
+    int full_height = parent->getFullHeight() / skip;
+    
     // apply luminance operations
     if (todo & M_LUMACURVE) {
         bool utili = parent->utili;
@@ -379,18 +384,15 @@ void Crop::update(int todo)
         LUTu dummy;
         parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
         parent->ipf.vibrance(laboCrop);
-        parent->ipf.labColorCorrectionRegions(laboCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
-        parent->ipf.guidedSmoothing(laboCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+        parent->ipf.labColorCorrectionRegions(laboCrop, offset_x, offset_y, full_width, full_height);
+        parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
         labnCrop->CopyFrom(laboCrop);
 
         parent->ipf.logEncoding(labnCrop);
-        
-        if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
-            parent->ipf.EPDToneMap(labnCrop, 5, skip);
-        }
+        parent->ipf.toneMapping(labnCrop, offset_x, offset_y, full_width, full_height);
 
         //parent->ipf.EPDToneMap(labnCrop, 5, 1);    //Go with much fewer than normal iterates for fast redisplay.
         // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
@@ -411,7 +413,7 @@ void Crop::update(int todo)
             }
         }
 
-        parent->ipf.contrastByDetailLevels(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+        parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
 
         //   if (skip==1) {
         WaveletParams WaveParams = params.wavelet;

@@ -118,7 +118,8 @@ Wavelet::Wavelet() :
     EDmethod(Gtk::manage(new MyComboBoxText())),
     BAmethod(Gtk::manage(new MyComboBoxText())),
     NPmethod(Gtk::manage(new MyComboBoxText())),
-    TMmethod(Gtk::manage(new MyComboBoxText())),
+    //TMmethod(Gtk::manage(new MyComboBoxText())),
+    TMmethod(new MyComboBoxText()),
     HSmethod(Gtk::manage(new MyComboBoxText())),
     CLmethod(Gtk::manage(new MyComboBoxText())),
     Backmethod(Gtk::manage(new MyComboBoxText())),
@@ -639,18 +640,18 @@ Wavelet::Wavelet() :
     resBox->pack_start(*reschro);
 
 
-    Gtk::Label* const labmTM = Gtk::manage(new Gtk::Label(M("TP_WAVELET_TMTYPE") + ":"));
-    Gtk::HBox* const ctboxTM = Gtk::manage(new Gtk::HBox());
-    ctboxTM->pack_start (*labmTM, Gtk::PACK_SHRINK, 1);
+    // Gtk::Label* const labmTM = Gtk::manage(new Gtk::Label(M("TP_WAVELET_TMTYPE") + ":"));
+    // Gtk::HBox* const ctboxTM = Gtk::manage(new Gtk::HBox());
+    // ctboxTM->pack_start (*labmTM, Gtk::PACK_SHRINK, 1);
 
-    Gtk::HSeparator* const separatorR0 = Gtk::manage (new  Gtk::HSeparator());
-    resBox->pack_start(*separatorR0, Gtk::PACK_SHRINK, 2);
+    // Gtk::HSeparator* const separatorR0 = Gtk::manage (new  Gtk::HSeparator());
+    // resBox->pack_start(*separatorR0, Gtk::PACK_SHRINK, 2);
 
     TMmethod->append (M("TP_WAVELET_COMPCONT"));
     TMmethod->append (M("TP_WAVELET_COMPTM"));
-    TMmethodconn = TMmethod->signal_changed().connect ( sigc::mem_fun(*this, &Wavelet::TMmethodChanged) );
-    ctboxTM->pack_start(*TMmethod);
-    resBox->pack_start (*ctboxTM);
+    // TMmethodconn = TMmethod->signal_changed().connect ( sigc::mem_fun(*this, &Wavelet::TMmethodChanged) );
+    // ctboxTM->pack_start(*TMmethod);
+    // resBox->pack_start (*ctboxTM);
 
     tmrs->set_tooltip_text (M("TP_WAVELET_TMSTRENGTH_TOOLTIP"));
 
@@ -882,7 +883,7 @@ Wavelet::~Wavelet ()
     delete curveEditorG;
     delete opacityCurveEditorW;
     delete opacityCurveEditorWL;
-
+    delete TMmethod;
 }
 
 void Wavelet::wavChanged (double nlevel)

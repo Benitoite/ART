@@ -804,12 +804,22 @@ struct DenoiseParams {
 
 // EPD related parameters.
 struct EPDParams {
+    struct Region {
+        double strength;
+        double gamma;
+        double edgeStopping;
+        double scale;
+        int    reweightingIterates;
+
+        Region();
+        bool operator==(const Region &other) const;
+        bool operator!=(const Region &other) const;
+    };
+
     bool   enabled;
-    double strength;
-    double gamma;
-    double edgeStopping;
-    double scale;
-    int    reweightingIterates;
+    std::vector<Region> regions;
+    std::vector<LabCorrectionMask> labmasks;
+    int showMask;
 
     EPDParams();
 

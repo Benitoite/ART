@@ -54,7 +54,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     exposure    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EXPOSURE")));
     logenc      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_LOG")));
     sh          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_SHADOWSHIGHLIGHTS")));
-    epd         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EPD")));
     fattal      = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_TM_FATTAL")));
     pcvignette  = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_PCVIGNETTE")));
     gradient    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_GRADIENT")));
@@ -112,6 +111,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     colorcorrection = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_COLORCORRECTION")));
     cbdl = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYREQUALIZER")));
     smoothing = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_SMOOTHING")));
+    epd         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EPD")));
 
     // Raw Settings:
     raw_method          = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RAW_DMETHOD")));
@@ -163,7 +163,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[0]->pack_start (*exposure, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*logenc, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*sh, Gtk::PACK_SHRINK, 2);
-    vboxes[0]->pack_start (*epd, Gtk::PACK_SHRINK, 2);
+    //vboxes[0]->pack_start (*epd, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*fattal, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*pcvignette, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*gradient, Gtk::PACK_SHRINK, 2);
@@ -183,7 +183,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     //vboxes[1]->pack_start (*dirpyreq, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*dehaze, Gtk::PACK_SHRINK, 2);
     vboxes[1]->pack_start (*grain, Gtk::PACK_SHRINK, 2);
-    vboxes[1]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
+    //vboxes[1]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
 
     //COLOR
     vboxes[2]->pack_start (*color, Gtk::PACK_SHRINK, 2);
@@ -231,6 +231,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[6]->pack_start(*colorcorrection, Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start(*cbdl, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start(*epd, Gtk::PACK_SHRINK, 2);
 
     //META
     vboxes[7]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
@@ -339,7 +340,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     exposureConn    = exposure->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     logencConn      = logenc->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     shConn          = sh->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
-    epdConn         = epd->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     fattalConn      = fattal->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     pcvignetteConn  = pcvignette->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
     gradientConn    = gradient->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
@@ -397,6 +397,7 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     colorcorrectionConn = colorcorrection->signal_toggled().connect(sigc::bind(sigc::mem_fun(*local, &Gtk::CheckButton::set_inconsistent), true));
     smoothingConn = smoothing->signal_toggled().connect(sigc::bind(sigc::mem_fun(*local, &Gtk::CheckButton::set_inconsistent), true));
     cbdlConn = cbdl->signal_toggled().connect(sigc::bind(sigc::mem_fun(*local, &Gtk::CheckButton::set_inconsistent), true));
+    epdConn         = epd->signal_toggled().connect (sigc::bind (sigc::mem_fun(*basic, &Gtk::CheckButton::set_inconsistent), true));
 
     // Raw Settings:
     raw_methodConn          = raw_method->signal_toggled().connect (sigc::bind (sigc::mem_fun(*raw, &Gtk::CheckButton::set_inconsistent), true));
@@ -543,7 +544,7 @@ void PartialPasteDlg::basicToggled ()
     ConnectionBlocker exposureBlocker(exposureConn);
     ConnectionBlocker logencBlocker(logencConn);
     ConnectionBlocker shBlocker(shConn);
-    ConnectionBlocker epdBlocker(epdConn);
+    //ConnectionBlocker epdBlocker(epdConn);
     ConnectionBlocker fattalBlocker(fattalConn);
     ConnectionBlocker pcvignetteBlocker(pcvignetteConn);
     ConnectionBlocker gradientBlocker(gradientConn);
@@ -556,7 +557,7 @@ void PartialPasteDlg::basicToggled ()
     exposure->set_active (basic->get_active ());
     logenc->set_active (basic->get_active ());
     sh->set_active (basic->get_active ());
-    epd->set_active (basic->get_active ());
+    //epd->set_active (basic->get_active ());
     fattal->set_active (basic->get_active ());
     pcvignette->set_active (basic->get_active ());
     gradient->set_active (basic->get_active ());
@@ -695,12 +696,14 @@ void PartialPasteDlg::localToggled()
     ConnectionBlocker colorcorrectionBlocker(colorcorrectionConn);
     ConnectionBlocker smoothingBlocker(smoothingConn);
     ConnectionBlocker cbdlBlocker(cbdlConn);
+    ConnectionBlocker epdBlocker(epdConn);    
 
     local->set_inconsistent(false);
 
     colorcorrection->set_active(local->get_active());
     smoothing->set_active(local->get_active());
     cbdl->set_active(cbdl->get_active());
+    epd->set_active (basic->get_active ());
 }
 
 

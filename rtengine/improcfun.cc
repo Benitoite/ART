@@ -4867,6 +4867,9 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
 
 void ImProcFunctions::EPDToneMapCIE (CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates, int skip)
 {
+    return;
+
+#if 0 // AG
 
     if (!params->epd.enabled) {
         return;
@@ -4966,13 +4969,17 @@ void ImProcFunctions::EPDToneMapCIE (CieImage *ncie, float a_w, float c_, int Wi
                     delete [] Qpr2;
 
     */
+
+#endif // if 0 AG
 }
 
 
 //Map tones by way of edge preserving decomposition. Is this the right way to include source?
 //#include "EdgePreservingDecomposition.cc"
-void ImProcFunctions::EPDToneMap (LabImage *lab, unsigned int Iterates, int skip)
+void ImProcFunctions::EPDToneMap(LabImage *lab, double strength, double gamma, double edgeStopping, double scale, int reweightingIterates)
 {
+    unsigned int Iterates = 5;
+    constexpr int skip = 1;
     //Hasten access to the parameters.
 //  EPDParams *p = (EPDParams *)(&params->epd);
 
@@ -4982,15 +4989,16 @@ void ImProcFunctions::EPDToneMap (LabImage *lab, unsigned int Iterates, int skip
         return;
     }
 
-    if (params->wavelet.enabled  && params->wavelet.tmrs != 0) {
-        return;
-    }
+    // if (params->wavelet.enabled  && params->wavelet.tmrs != 0) {
+    //     return;
+    // }
 
-    float stren = params->epd.strength;
-    float edgest = params->epd.edgeStopping;
-    float sca = params->epd.scale;
-    float gamm = params->epd.gamma;
-    float rew = params->epd.reweightingIterates;
+    float stren = strength; //params->epd.strength;
+    float edgest = edgeStopping; //params->epd.edgeStopping;
+    float sca = scale / this->scale; //params->epd.scale;
+    float gamm = gamma; // params->epd.gamma;
+    float rew = reweightingIterates; //params->epd.reweightingIterates;
+    
     //Pointers to whole data and size of it.
     float *L = lab->L[0];
     float *a = lab->a[0];

@@ -549,10 +549,7 @@ private:
         ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
         ipf.guidedSmoothing(labView);
         ipf.logEncoding(labView);
-
-        if ((params.colorappearance.enabled && !params.colorappearance.tonecie) || (!params.colorappearance.enabled)) {
-            ipf.EPDToneMap (labView, 5, 1);
-        }
+        ipf.toneMapping(labView);
 
         if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
             ipf.impulsedenoise (labView);
