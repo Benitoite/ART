@@ -1650,6 +1650,8 @@ bool EPDParams::Region::operator!=(const Region &other) const
 
 EPDParams::EPDParams() :
     enabled(false),
+    regions{Region()},
+    labmasks{LabCorrectionMask()},
     showMask(-1)
 {
 }
@@ -4549,7 +4551,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 LabCorrectionMask curmask;
                 done = true;
                 std::string n = i ? std::string("_") + std::to_string(i) : std::string("");
-                int c;
                 if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Strength") + n, pedited, cur.strength, pedited->epd.regions)) {
                     found = true;
                     done = false;
