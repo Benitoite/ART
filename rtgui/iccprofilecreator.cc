@@ -1364,13 +1364,18 @@ void ICCProfileCreator::savePressed()
     if (profileVersion == "v2") {
         //write in tag 'dmdd' values of current gamma and slope to retrieve after in Output profile
         std::wostringstream wGammaSlopeParam;
-        wGammaSlopeParam << sGammaSlopeParam;
+        if (appendParamsToDesc) {
+            wGammaSlopeParam << sGammaSlopeParam;
+        } else {
+            wGammaSlopeParam << " ";
+        }
+        auto ws = wGammaSlopeParam.str();
 
         cmsMLU *dmdd = cmsMLUalloc(nullptr, 1);
 
         // Language code (2 letters code) : https://www.iso.org/obp/ui/
         // Country code (2 letters code)  : http://www.loc.gov/standards/iso639-2/php/code_list.php
-        if (sGammaSlopeParam.is_ascii()) {
+        if (appendParamsToDesc && sGammaSlopeParam.is_ascii()) {
             if (cmsMLUsetASCII(dmdd, "en", "US", sGammaSlopeParam.c_str())) {
                 if (!v2except) {
                     if (!cmsWriteTag(newProfile, cmsSigProfileDescriptionTag, dmdd)) {
@@ -1383,7 +1388,7 @@ void ICCProfileCreator::savePressed()
 
                 }
             }
-        } else if (cmsMLUsetWide(dmdd, "en", "US", wGammaSlopeParam.str().c_str())) {
+        } else if (cmsMLUsetWide(dmdd, "en", "US", ws.c_str())) {
             if (!v2except) {
                 if (!cmsWriteTag(newProfile, cmsSigDeviceModelDescTag, dmdd)) {
                     printf("Error: Can't write cmsSigDeviceModelDescTag!\n");
