@@ -1527,62 +1527,57 @@ void ImProcFunctions::ContrastResid(float * WavCoeffs_L0, struct cont_params &cp
 
 
 
-void ImProcFunctions::EPDToneMapResid(float * WavCoeffs_L0,  unsigned int Iterates, int skip, struct cont_params& cp, int W_L, int H_L, float max0, float min0)
-{
-    return;
+// void ImProcFunctions::EPDToneMapResid(float * WavCoeffs_L0,  unsigned int Iterates, int skip, struct cont_params& cp, int W_L, int H_L, float max0, float min0)
+// {
+//     float stren = cp.tmstrength;
+//     float edgest = params->epd.edgeStopping;
+//     float sca = params->epd.scale;
+//     float gamm = params->wavelet.gamma;
+//     float rew = params->epd.reweightingIterates;
+//     EdgePreservingDecomposition epd2(W_L, H_L);
+//     cp.TMmeth = 2; //default after testing
 
-#if 0  
-    float stren = cp.tmstrength;
-    float edgest = params->epd.edgeStopping;
-    float sca = params->epd.scale;
-    float gamm = params->wavelet.gamma;
-    float rew = params->epd.reweightingIterates;
-    EdgePreservingDecomposition epd2(W_L, H_L);
-    cp.TMmeth = 2; //default after testing
+//     if(cp.TMmeth == 1) {
+//         min0 = 0.0f;
+//         max0 = 32768.f;
+//     } else if (cp.TMmeth == 2) {
+//         min0 = 0.0f;
+//     }
 
-    if(cp.TMmeth == 1) {
-        min0 = 0.0f;
-        max0 = 32768.f;
-    } else if (cp.TMmeth == 2) {
-        min0 = 0.0f;
-    }
+//     //  max0=32768.f;
+// #ifdef _OPENMP
+//     #pragma omp parallel for
+// #endif
 
-    //  max0=32768.f;
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
+//     for(int i = 0; i < W_L * H_L; i++) {
+//         WavCoeffs_L0[i] = (WavCoeffs_L0[i] - min0) / max0;
+//         WavCoeffs_L0[i] *= gamm;
+//     }
 
-    for(int i = 0; i < W_L * H_L; i++) {
-        WavCoeffs_L0[i] = (WavCoeffs_L0[i] - min0) / max0;
-        WavCoeffs_L0[i] *= gamm;
-    }
+//     float Compression = expf(-stren);       //This modification turns numbers symmetric around 0 into exponents.
+//     float DetailBoost = stren;
 
-    float Compression = expf(-stren);       //This modification turns numbers symmetric around 0 into exponents.
-    float DetailBoost = stren;
+//     if(stren < 0.0f) {
+//         DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
+//     }
 
-    if(stren < 0.0f) {
-        DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
-    }
-
-    //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
-    if(Iterates == 0) {
-        Iterates = (unsigned int)(edgest * 15.0f);
-    }
+//     //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
+//     if(Iterates == 0) {
+//         Iterates = (unsigned int)(edgest * 15.0f);
+//     }
 
 
-    epd2.CompressDynamicRange(WavCoeffs_L0, (float)sca / skip, edgest, Compression, DetailBoost, Iterates, rew);
+//     epd2.CompressDynamicRange(WavCoeffs_L0, (float)sca / skip, edgest, Compression, DetailBoost, Iterates, rew);
 
-    //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
-#ifdef _OPENMP
-    #pragma omp parallel for            // removed schedule(dynamic,10)
-#endif
+//     //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
+// #ifdef _OPENMP
+//     #pragma omp parallel for            // removed schedule(dynamic,10)
+// #endif
 
-    for(int ii = 0; ii < W_L * H_L; ii++) {
-        WavCoeffs_L0[ii] = WavCoeffs_L0[ii] * max0 * (1.f / gamm) + min0;
-    }
-
-#endif // if 0
-}
+//     for(int ii = 0; ii < W_L * H_L; ii++) {
+//         WavCoeffs_L0[ii] = WavCoeffs_L0[ii] * max0 * (1.f / gamm) + min0;
+//     }
+// }
 
 void ImProcFunctions::WaveletcontAllLfinal(wavelet_decomposition &WaveletCoeffs_L, struct cont_params &cp, float *mean, float *sigma, float *MaxP, const WavOpacityCurveWL & waOpacityCurveWL)
 {
@@ -1668,11 +1663,11 @@ void ImProcFunctions::WaveletcontAllL(LabImage * labco, float ** varhue, float *
     //      printf("MAXmax0=%f MINmin0=%f\n",max0,min0);
 
 //tone mapping
-    if(cp.tonemap && cp.contmet == 2  && cp.resena) {
-        //iterate = 5
-        EPDToneMapResid(WavCoeffs_L0, 5, skip, cp, W_L, H_L, max0, min0);
+    // if(cp.tonemap && cp.contmet == 2  && cp.resena) {
+    //     //iterate = 5
+    //     EPDToneMapResid(WavCoeffs_L0, 5, skip, cp, W_L, H_L, max0, min0);
 
-    }
+    // }
 
 //end tonemapping
 

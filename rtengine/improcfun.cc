@@ -494,7 +494,7 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
         float fl, n, nbb, ncb, aw; //d
         float xwd, ywd, zwd, xws, yws, zws;
         int alg = 0;
-        bool algepd = false;
+        // bool algepd = false;
         double Xwout, Zwout;
         double Xwsc, Zwsc;
 
@@ -559,10 +559,10 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
             alg = 1;
         } else if (params->colorappearance.algo == "QM")  {
             alg = 2;
-            algepd = true;
+            // algepd = true;
         } else { /*if(params->colorappearance.algo == "ALL")*/
             alg = 3;
-            algepd = true;
+            // algepd = true;
         }
 
         xwd = 100.f * Xwout;
@@ -1742,11 +1742,11 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
 
             ciedata = (params->colorappearance.datacie && pW != 1);
 
-            if (epdEnabled  && params->colorappearance.tonecie && algepd) {
-                lab->deleteLab();
-                EPDToneMapCIE (ncie, a_w, c_, width, height, minQ, maxQ, Iterates, scale );
-                lab->reallocLab();
-            }
+            // if (epdEnabled  && params->colorappearance.tonecie && algepd) {
+            //     lab->deleteLab();
+            //     EPDToneMapCIE (ncie, a_w, c_, width, height, minQ, maxQ, Iterates, scale );
+            //     lab->reallocLab();
+            // }
 
             //EPDToneMapCIE adated to CIECAM
 
@@ -4865,229 +4865,221 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
     }
 }
 
-void ImProcFunctions::EPDToneMapCIE (CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates, int skip)
-{
-    return;
+// void ImProcFunctions::EPDToneMapCIE (CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates, int skip)
+// {
 
-#if 0 // AG
+//     if (!params->epd.enabled) {
+//         return;
+//     }
 
-    if (!params->epd.enabled) {
-        return;
-    }
+//     if (params->wavelet.enabled  && params->wavelet.tmrs != 0) {
+//         return;
+//     }
 
-    if (params->wavelet.enabled  && params->wavelet.tmrs != 0) {
-        return;
-    }
+//     float stren = params->epd.strength;
+//     float edgest = params->epd.edgeStopping;
+//     float sca = params->epd.scale;
+//     float gamm = params->epd.gamma;
+//     float rew = params->epd.reweightingIterates;
+//     float Qpro = ( 4.0 / c_)  * ( a_w + 4.0 ) ; //estimate Q max if J=100.0
+//     float *Qpr = ncie->Q_p[0];
 
-    float stren = params->epd.strength;
-    float edgest = params->epd.edgeStopping;
-    float sca = params->epd.scale;
-    float gamm = params->epd.gamma;
-    float rew = params->epd.reweightingIterates;
-    float Qpro = ( 4.0 / c_)  * ( a_w + 4.0 ) ; //estimate Q max if J=100.0
-    float *Qpr = ncie->Q_p[0];
+//     if (settings->verbose) {
+//         printf ("minQ=%f maxQ=%f  Qpro=%f\n", minQ, maxQ, Qpro);
+//     }
 
-    if (settings->verbose) {
-        printf ("minQ=%f maxQ=%f  Qpro=%f\n", minQ, maxQ, Qpro);
-    }
+//     if (maxQ > Qpro) {
+//         Qpro = maxQ;
+//     }
 
-    if (maxQ > Qpro) {
-        Qpro = maxQ;
-    }
+//     EdgePreservingDecomposition epd (Wid, Hei);
 
-    EdgePreservingDecomposition epd (Wid, Hei);
+//     #pragma omp parallel for
 
-    #pragma omp parallel for
+//     for (int i = 0; i < Hei; i++)
+//         for (int j = 0; j < Wid; j++) {
+//             ncie->Q_p[i][j] = gamm * ncie->Q_p[i][j] / (Qpro);
+//         }
 
-    for (int i = 0; i < Hei; i++)
-        for (int j = 0; j < Wid; j++) {
-            ncie->Q_p[i][j] = gamm * ncie->Q_p[i][j] / (Qpro);
-        }
+//     float Compression = expf (-stren);      //This modification turns numbers symmetric around 0 into exponents.
+//     float DetailBoost = stren;
 
-    float Compression = expf (-stren);      //This modification turns numbers symmetric around 0 into exponents.
-    float DetailBoost = stren;
+//     if (stren < 0.0f) {
+//         DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
+//     }
 
-    if (stren < 0.0f) {
-        DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
-    }
+//     //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
+//     if (Iterates == 0) {
+//         Iterates = (unsigned int) (edgest * 15.0);
+//     }
 
-    //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
-    if (Iterates == 0) {
-        Iterates = (unsigned int) (edgest * 15.0);
-    }
+//     //Jacques Desmis : always Iterates=5 for compatibility images between preview and output
 
-    //Jacques Desmis : always Iterates=5 for compatibility images between preview and output
+//     epd.CompressDynamicRange (Qpr, sca / (float)skip, edgest, Compression, DetailBoost, Iterates, rew);
 
-    epd.CompressDynamicRange (Qpr, sca / (float)skip, edgest, Compression, DetailBoost, Iterates, rew);
+//     //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
+//     float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
+// #ifndef _DEBUG
+//     #pragma omp parallel for schedule(dynamic,10)
+// #endif
 
-    //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
-    float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
-#ifndef _DEBUG
-    #pragma omp parallel for schedule(dynamic,10)
-#endif
+//     for (int i = 0; i < Hei; i++)
+//         for (int j = 0; j < Wid; j++) {
+//             ncie->Q_p[i][j] = (ncie->Q_p[i][j] * Qpro) / gamm;
+//             ncie->M_p[i][j] *= s;
+//         }
 
-    for (int i = 0; i < Hei; i++)
-        for (int j = 0; j < Wid; j++) {
-            ncie->Q_p[i][j] = (ncie->Q_p[i][j] * Qpro) / gamm;
-            ncie->M_p[i][j] *= s;
-        }
+//     /*
+//         float *Qpr2 = new float[Wid*((heir)+1)];
 
-    /*
-        float *Qpr2 = new float[Wid*((heir)+1)];
+//             for (int i=heir; i<Hei; i++)
+//                 for (int j=0; j<Wid; j++) { Qpr2[(i-heir)*Wid+j]=ncie->Q_p[i][j];}
+//         if(minQ>0.0) minQ=0.0;//normally minQ always > 0...
+//     //  EdgePreservingDecomposition epd = EdgePreservingDecomposition(Wid, Hei);
+//     //EdgePreservingDecomposition epd = EdgePreservingDecomposition(Wid, Hei/2);
+//         for(i = N2; i != N; i++)
+//     //  for(i = begh*Wid; i != N; i++)
+//             //Qpr[i] = (Qpr[i]-minQ)/(maxQ+1.0);
+//             Qpr2[i-N2] = (Qpr2[i-N2]-minQ)/(Qpro+1.0);
 
-            for (int i=heir; i<Hei; i++)
-                for (int j=0; j<Wid; j++) { Qpr2[(i-heir)*Wid+j]=ncie->Q_p[i][j];}
-        if(minQ>0.0) minQ=0.0;//normally minQ always > 0...
-    //  EdgePreservingDecomposition epd = EdgePreservingDecomposition(Wid, Hei);
-    //EdgePreservingDecomposition epd = EdgePreservingDecomposition(Wid, Hei/2);
-        for(i = N2; i != N; i++)
-    //  for(i = begh*Wid; i != N; i++)
-            //Qpr[i] = (Qpr[i]-minQ)/(maxQ+1.0);
-            Qpr2[i-N2] = (Qpr2[i-N2]-minQ)/(Qpro+1.0);
+//         float Compression2 = expf(-stren);      //This modification turns numbers symmetric around 0 into exponents.
+//         float DetailBoost2 = stren;
+//         if(stren < 0.0f) DetailBoost2 = 0.0f;   //Go with effect of exponent only if uncompressing.
 
-        float Compression2 = expf(-stren);      //This modification turns numbers symmetric around 0 into exponents.
-        float DetailBoost2 = stren;
-        if(stren < 0.0f) DetailBoost2 = 0.0f;   //Go with effect of exponent only if uncompressing.
-
-        //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
-        if(Iterates == 0) Iterates = (unsigned int)(edgest*15.0);
+//         //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
+//         if(Iterates == 0) Iterates = (unsigned int)(edgest*15.0);
 
 
-        epd.CompressDynamicRange(Qpr2, sca/(float)skip, edgest, Compression2, DetailBoost2, Iterates, rew, Qpr2);
+//         epd.CompressDynamicRange(Qpr2, sca/(float)skip, edgest, Compression2, DetailBoost2, Iterates, rew, Qpr2);
 
-        //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
-         float s2 = (1.0f + 38.7889f)*powf(Compression, 1.5856f)/(1.0f + 38.7889f*powf(Compression, 1.5856f));
-            for (int i=heir; i<Hei; i++)
-        //  for (int i=begh; i<endh; i++)
-                for (int j=0; j<Wid; j++) {
-                ncie->Q_p[i][j]=Qpr2[(i-heir)*Wid+j]*Qpro + minQ;
-            //  Qpr[i*Wid+j]=Qpr[i*Wid+j]*maxQ + minQ;
-            //  ncie->J_p[i][j]=(100.0* Qpr[i*Wid+j]*Qpr[i*Wid+j]) /(w_h*w_h);
+//         //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
+//          float s2 = (1.0f + 38.7889f)*powf(Compression, 1.5856f)/(1.0f + 38.7889f*powf(Compression, 1.5856f));
+//             for (int i=heir; i<Hei; i++)
+//         //  for (int i=begh; i<endh; i++)
+//                 for (int j=0; j<Wid; j++) {
+//                 ncie->Q_p[i][j]=Qpr2[(i-heir)*Wid+j]*Qpro + minQ;
+//             //  Qpr[i*Wid+j]=Qpr[i*Wid+j]*maxQ + minQ;
+//             //  ncie->J_p[i][j]=(100.0* Qpr[i*Wid+j]*Qpr[i*Wid+j]) /(w_h*w_h);
 
-                ncie->M_p[i][j]*=s2;
-            }
-                    delete [] Qpr2;
+//                 ncie->M_p[i][j]*=s2;
+//             }
+//                     delete [] Qpr2;
 
-    */
-
-#endif // if 0 AG
-}
+//     */
+// }
 
 
 //Map tones by way of edge preserving decomposition. Is this the right way to include source?
 //#include "EdgePreservingDecomposition.cc"
-void ImProcFunctions::EPDToneMap(LabImage *lab, double strength, double gamma, double edgeStopping, double scale, int reweightingIterates)
-{
-    unsigned int Iterates = 5;
-    constexpr int skip = 1;
-    //Hasten access to the parameters.
-//  EPDParams *p = (EPDParams *)(&params->epd);
+// void ImProcFunctions::EPDToneMap (LabImage *lab, unsigned int Iterates, int skip)
+// {
+//     //Hasten access to the parameters.
+// //  EPDParams *p = (EPDParams *)(&params->epd);
 
-    //Enabled? Leave now if not.
-//  if(!p->enabled) return;
-    if (!params->epd.enabled) {
-        return;
-    }
+//     //Enabled? Leave now if not.
+// //  if(!p->enabled) return;
+//     if (!params->epd.enabled) {
+//         return;
+//     }
 
-    // if (params->wavelet.enabled  && params->wavelet.tmrs != 0) {
-    //     return;
-    // }
+//     if (params->wavelet.enabled  && params->wavelet.tmrs != 0) {
+//         return;
+//     }
 
-    float stren = strength; //params->epd.strength;
-    float edgest = edgeStopping; //params->epd.edgeStopping;
-    float sca = scale / this->scale; //params->epd.scale;
-    float gamm = gamma; // params->epd.gamma;
-    float rew = reweightingIterates; //params->epd.reweightingIterates;
-    
-    //Pointers to whole data and size of it.
-    float *L = lab->L[0];
-    float *a = lab->a[0];
-    float *b = lab->b[0];
-    size_t N = lab->W * lab->H;
-    EdgePreservingDecomposition epd (lab->W, lab->H);
+//     float stren = params->epd.strength;
+//     float edgest = params->epd.edgeStopping;
+//     float sca = params->epd.scale;
+//     float gamm = params->epd.gamma;
+//     float rew = params->epd.reweightingIterates;
+//     //Pointers to whole data and size of it.
+//     float *L = lab->L[0];
+//     float *a = lab->a[0];
+//     float *b = lab->b[0];
+//     size_t N = lab->W * lab->H;
+//     EdgePreservingDecomposition epd (lab->W, lab->H);
 
-    //Due to the taking of logarithms, L must be nonnegative. Further, scale to 0 to 1 using nominal range of L, 0 to 15 bit.
-    float minL = FLT_MAX;
-    float maxL = 0.f;
-    #pragma omp parallel
-    {
-        float lminL = FLT_MAX;
-        float lmaxL = 0.f;
-        #pragma omp for
+//     //Due to the taking of logarithms, L must be nonnegative. Further, scale to 0 to 1 using nominal range of L, 0 to 15 bit.
+//     float minL = FLT_MAX;
+//     float maxL = 0.f;
+//     #pragma omp parallel
+//     {
+//         float lminL = FLT_MAX;
+//         float lmaxL = 0.f;
+//         #pragma omp for
 
-        for (size_t i = 0; i < N; i++) {
-            if (L[i] < lminL) {
-                lminL = L[i];
-            }
+//         for (size_t i = 0; i < N; i++) {
+//             if (L[i] < lminL) {
+//                 lminL = L[i];
+//             }
 
-            if (L[i] > lmaxL) {
-                lmaxL = L[i];
-            }
-        }
+//             if (L[i] > lmaxL) {
+//                 lmaxL = L[i];
+//             }
+//         }
 
-        #pragma omp critical
-        {
-            if (lminL < minL) {
-                minL = lminL;
-            }
+//         #pragma omp critical
+//         {
+//             if (lminL < minL) {
+//                 minL = lminL;
+//             }
 
-            if (lmaxL > maxL) {
-                maxL = lmaxL;
-            }
-        }
-    }
+//             if (lmaxL > maxL) {
+//                 maxL = lmaxL;
+//             }
+//         }
+//     }
 
-    if (minL > 0.0f) {
-        minL = 0.0f;    //Disable the shift if there are no negative numbers. I wish there were just no negative numbers to begin with.
-    }
+//     if (minL > 0.0f) {
+//         minL = 0.0f;    //Disable the shift if there are no negative numbers. I wish there were just no negative numbers to begin with.
+//     }
 
-    if (maxL == 0.f) { // avoid division by zero
-        maxL = 1.f;
-    }
+//     if (maxL == 0.f) { // avoid division by zero
+//         maxL = 1.f;
+//     }
 
-    #pragma omp parallel for
+//     #pragma omp parallel for
 
-    for (size_t i = 0; i < N; ++i)
-        //{L[i] = (L[i] - minL)/32767.0f;
-    {
-        L[i] = (L[i] - minL) / maxL;
-        L[i] *= gamm;
-    }
+//     for (size_t i = 0; i < N; ++i)
+//         //{L[i] = (L[i] - minL)/32767.0f;
+//     {
+//         L[i] = (L[i] - minL) / maxL;
+//         L[i] *= gamm;
+//     }
 
-    //Some interpretations.
-    float Compression = expf (-stren);      //This modification turns numbers symmetric around 0 into exponents.
-    float DetailBoost = stren;
+//     //Some interpretations.
+//     float Compression = expf (-stren);      //This modification turns numbers symmetric around 0 into exponents.
+//     float DetailBoost = stren;
 
-    if (stren < 0.0f) {
-        DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
-    }
+//     if (stren < 0.0f) {
+//         DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
+//     }
 
-    //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
-    if (Iterates == 0) {
-        Iterates = (unsigned int) (edgest * 15.0f);
-    }
+//     //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
+//     if (Iterates == 0) {
+//         Iterates = (unsigned int) (edgest * 15.0f);
+//     }
 
-    /* Debuggery. Saves L for toying with outside of RT.
-    char nm[64];
-    sprintf(nm, "%ux%ufloat.bin", lab->W, lab->H);
-    FILE *f = fopen(nm, "wb");
-    fwrite(L, N, sizeof(float), f);
-    fclose(f);*/
+//     /* Debuggery. Saves L for toying with outside of RT.
+//     char nm[64];
+//     sprintf(nm, "%ux%ufloat.bin", lab->W, lab->H);
+//     FILE *f = fopen(nm, "wb");
+//     fwrite(L, N, sizeof(float), f);
+//     fclose(f);*/
 
-    epd.CompressDynamicRange (L, sca / float (skip), edgest, Compression, DetailBoost, Iterates, rew);
+//     epd.CompressDynamicRange (L, sca / float (skip), edgest, Compression, DetailBoost, Iterates, rew);
 
-    //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
-    float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
-#ifdef _OPENMP
-    #pragma omp parallel for            // removed schedule(dynamic,10)
-#endif
+//     //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
+//     float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
+// #ifdef _OPENMP
+//     #pragma omp parallel for            // removed schedule(dynamic,10)
+// #endif
 
-    for (size_t ii = 0; ii < N; ++ii) {
-        a[ii] *= s;
-        b[ii] *= s;
-        L[ii] = L[ii] * maxL * (1.f / gamm) + minL;
-    }
-}
+//     for (size_t ii = 0; ii < N; ++ii) {
+//         a[ii] *= s;
+//         b[ii] *= s;
+//         L[ii] = L[ii] * maxL * (1.f / gamm) + minL;
+//     }
+// }
 
 
 void ImProcFunctions::getAutoExp  (const LUTu &histogram, int histcompr, double clip,

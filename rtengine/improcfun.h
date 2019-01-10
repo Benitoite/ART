@@ -227,8 +227,7 @@ private:
 
     void dirpyrdenoise(LabImage* src);    //Emil's pyramid denoise
 
-    void EPDToneMap(LabImage *lab, double strength, double gamma, double edgeStopping, double scale, int reweightingIterates);
-    void EPDToneMapResid(float * WavCoeffs_L0, unsigned int Iterates,  int skip, struct cont_params& cp, int W_L, int H_L, float max0, float min0);
+//    void EPDToneMapResid(float * WavCoeffs_L0, unsigned int Iterates,  int skip, struct cont_params& cp, int W_L, int H_L, float max0, float min0);
     void CompressDR(float *Source, int W_L, int H_L, float Compression, float DetailBoost);
     void ContrastResid(float * WavCoeffs_L0, struct cont_params &cp, int W_L, int H_L, float max0, float min0);
 
@@ -305,7 +304,7 @@ private:
     void sharpeningcam(CieImage* ncie, float** buffer, bool showMask = false);
     void MLmicrocontrastcam(CieImage* ncie);   //Manuel's microcontrast
     void impulsedenoisecam(CieImage* ncie, float **buffers[3]);
-    void EPDToneMapCIE(CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates = 0, int skip = 1);
+//    void EPDToneMapCIE(CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates = 0, int skip = 1);
         
     void calcVignettingParams(int oW, int oH, const VignettingParams& vignetting, double &w2, double &h2, double& maxRadius, double &v, double &b, double &mul);
 
