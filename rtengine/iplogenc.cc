@@ -259,7 +259,7 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, neutral.toneCurve, neutral.raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
-    float vmin = RT_INFINITY, vmin2 = RT_INFINITY;
+    float vmin = RT_INFINITY;
     float vmax = -RT_INFINITY;
 
     constexpr float noise = 1e-5;
@@ -270,15 +270,10 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
             float m = max(0.f, r, g, b) / 65535.f;
             if (m > noise) {
                 float l = min(r, g, b) / 65535.f;
-                vmin = min(vmin, m);
+                vmin = min(vmin, l > noise ? l : m);
                 vmax = max(vmax, m);
-                vmin2 = min(vmin2, l);
             }
         }
-    }
-
-    if (vmin <= vmin2 / 2.f) {
-        vmin = vmin2;
     }
 
     if (vmax > vmin) {
