@@ -27,21 +27,21 @@ class LogEncoding: public ToolParamBlock, public AdjusterListener, public rtengi
 {
 protected:
     Gtk::ToggleButton *autocompute;
-    Adjuster *grayPoint;
+    Adjuster *sourceGray;
+    Adjuster *targetGray;
     Adjuster *blackEv;
     Adjuster *whiteEv;
-    Adjuster *base;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAuto;
     rtengine::ProcEvent EvAutoGrayOn;
     rtengine::ProcEvent EvAutoGrayOff;
     rtengine::ProcEvent EvAutoBatch;
-    rtengine::ProcEvent EvGrayPoint;
-    rtengine::ProcEvent EvGrayPointAuto;
+    rtengine::ProcEvent EvSourceGray;
+    rtengine::ProcEvent EvSourceGrayAuto;
+    rtengine::ProcEvent EvTargetGray;
     rtengine::ProcEvent EvBlackEv;
     rtengine::ProcEvent EvWhiteEv;
-    rtengine::ProcEvent EvBase;
 
     sigc::connection autoconn;
     

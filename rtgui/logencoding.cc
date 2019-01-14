@@ -33,46 +33,45 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     EvAutoGrayOn = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTOGRAY");
     EvAutoGrayOff = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTOGRAY");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
-    EvGrayPoint = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_GRAY_POINT");
-    EvGrayPointAuto = m->newEvent(M_LUMINANCE | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvSourceGray = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_SOURCE_GRAY");
+    EvSourceGrayAuto = m->newEvent(M_LUMINANCE | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvTargetGray = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_TARGET_GRAY");
     EvBlackEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BLACK_EV");
     EvWhiteEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_WHITE_EV");
-    EvBase = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BASE");
 
     autocompute = Gtk::manage(new Gtk::ToggleButton(M("TP_LOGENC_AUTO")));
     autoconn = autocompute->signal_toggled().connect(sigc::mem_fun(*this, &LogEncoding::autocomputeToggled));
     
-    grayPoint = Gtk::manage(new Adjuster(M("TP_LOGENC_GRAY_POINT"), 1.0, 100.0, 0.1, 18.0));
-    grayPoint->addAutoButton();
+    sourceGray = Gtk::manage(new Adjuster(M("TP_LOGENC_SOURCE_GRAY"), 1.0, 100.0, 0.1, 18.0));
+    sourceGray->addAutoButton();
+    targetGray = Gtk::manage(new Adjuster(M("TP_LOGENC_TARGET_GRAY"), 5.0, 80.0, 0.1, 18.0));
     blackEv = Gtk::manage(new Adjuster(M("TP_LOGENC_BLACK_EV"), -16.0, 0.0, 0.1, -5.0));
     whiteEv = Gtk::manage(new Adjuster(M("TP_LOGENC_WHITE_EV"), 0.0, 32.0, 0.1, 10.0));
-    base = Gtk::manage(new Adjuster(M("TP_LOGENC_BASE"), 0.0, 100.0, 0.1, 3.9));
-    base->setLogScale(10, 0);
 
-    grayPoint->delay = options.adjusterMaxDelay;
+    sourceGray->delay = options.adjusterMaxDelay;
     blackEv->delay = options.adjusterMaxDelay;
     whiteEv->delay = options.adjusterMaxDelay;
-    base->delay = options.adjusterMaxDelay;
+    targetGray->delay = options.adjusterMaxDelay;
     
     whiteEv->setAdjusterListener(this);
-    grayPoint->setAdjusterListener(this);
+    sourceGray->setAdjusterListener(this);
     blackEv->setAdjusterListener(this);
-    base->setAdjusterListener(this);
+    targetGray->setAdjusterListener(this);
 
     whiteEv->setLogScale(16, 0);
     blackEv->setLogScale(2, -8);
 
-    grayPoint->show();
+    sourceGray->show();
     autocompute->show();
     whiteEv->show();
     blackEv->show();
-    base->show();
+    targetGray->show();
 
-    pack_start(*grayPoint);
+    pack_start(*sourceGray);
+    pack_start(*targetGray);
     pack_start(*autocompute);
     pack_start(*blackEv);
     pack_start(*whiteEv);
-    pack_start(*base);
 }
 
 
@@ -82,10 +81,10 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
     ConnectionBlocker cbl(autoconn);
 
     if (pedited) {
-        grayPoint->setEditedState(pedited->logenc.grayPoint ? Edited : UnEdited);
+        sourceGray->setEditedState(pedited->logenc.sourceGray ? Edited : UnEdited);
         blackEv->setEditedState(pedited->logenc.blackEv ? Edited : UnEdited);
         whiteEv->setEditedState(pedited->logenc.whiteEv ? Edited : UnEdited);
-        base->setEditedState(pedited->logenc.base ? Edited : UnEdited);
+        targetGray->setEditedState(pedited->logenc.targetGray ? Edited : UnEdited);
         set_inconsistent(multiImage && !pedited->logenc.enabled);
         autocompute->set_inconsistent(!pedited->logenc.autocompute);
     }
@@ -93,11 +92,11 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
     setEnabled(pp->logenc.enabled);
 
     autocompute->set_active(pp->logenc.autocompute);    
-    grayPoint->setValue(pp->logenc.grayPoint);
-    grayPoint->setAutoValue(pp->logenc.autogray);
+    sourceGray->setValue(pp->logenc.sourceGray);
+    sourceGray->setAutoValue(pp->logenc.autogray);
     blackEv->setValue(pp->logenc.blackEv);
     whiteEv->setValue(pp->logenc.whiteEv);
-    base->setValue(pp->logenc.base);
+    targetGray->setValue(pp->logenc.targetGray);
 
     enableListener();
 }
@@ -106,58 +105,58 @@ void LogEncoding::write(ProcParams *pp, ParamsEdited *pedited)
 {
     pp->logenc.enabled = getEnabled();
     pp->logenc.autocompute = autocompute->get_active();
-    pp->logenc.autogray = grayPoint->getAutoValue();
-    pp->logenc.grayPoint = grayPoint->getValue();
+    pp->logenc.autogray = sourceGray->getAutoValue();
+    pp->logenc.sourceGray = sourceGray->getValue();
     pp->logenc.blackEv = blackEv->getValue();
     pp->logenc.whiteEv = whiteEv->getValue();
-    pp->logenc.base = base->getValue();
+    pp->logenc.targetGray = targetGray->getValue();
 
     if (pedited) {
         pedited->logenc.enabled = !get_inconsistent();
         pedited->logenc.autocompute = !autocompute->get_inconsistent();
-        pedited->logenc.grayPoint = grayPoint->getEditedState();
+        pedited->logenc.sourceGray = sourceGray->getEditedState();
         pedited->logenc.blackEv = blackEv->getEditedState();
         pedited->logenc.whiteEv = whiteEv->getEditedState();
-        pedited->logenc.base = base->getEditedState();
+        pedited->logenc.targetGray = targetGray->getEditedState();
     }
 }
 
 void LogEncoding::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
 {
-    grayPoint->setDefault(defParams->logenc.grayPoint);
+    sourceGray->setDefault(defParams->logenc.sourceGray);
     blackEv->setDefault(defParams->logenc.blackEv);
     whiteEv->setDefault(defParams->logenc.whiteEv);
-    base->setDefault(defParams->logenc.base);
+    targetGray->setDefault(defParams->logenc.targetGray);
     
     if (pedited) {
-        grayPoint->setDefaultEditedState(pedited->logenc.grayPoint ? Edited : UnEdited);
+        sourceGray->setDefaultEditedState(pedited->logenc.sourceGray ? Edited : UnEdited);
         blackEv->setDefaultEditedState(pedited->logenc.blackEv ? Edited : UnEdited);
         whiteEv->setDefaultEditedState(pedited->logenc.whiteEv ? Edited : UnEdited);
-        base->setDefaultEditedState(pedited->logenc.base ? Edited : UnEdited);
+        targetGray->setDefaultEditedState(pedited->logenc.targetGray ? Edited : UnEdited);
     } else {
-        grayPoint->setDefaultEditedState(Irrelevant);
+        sourceGray->setDefaultEditedState(Irrelevant);
         blackEv->setDefaultEditedState(Irrelevant);
         whiteEv->setDefaultEditedState(Irrelevant);
-        base->setDefaultEditedState(Irrelevant);
+        targetGray->setDefaultEditedState(Irrelevant);
     }
 }
 
 void LogEncoding::adjusterChanged(Adjuster* a, double newval)
 {
     ConnectionBlocker cbl(autoconn);
-    if (a != grayPoint) {
+    if (a != sourceGray && a != targetGray) {
         autocompute->set_active(false);
     }
     
     if (listener && getEnabled()) {
-        if (a == grayPoint) {
-            listener->panelChanged(autocompute->get_active() ? EvGrayPointAuto : EvGrayPoint, a->getTextValue());
+        if (a == sourceGray) {
+            listener->panelChanged(autocompute->get_active() ? EvSourceGrayAuto : EvSourceGray, a->getTextValue());
         } else if (a == blackEv) {
             listener->panelChanged(EvBlackEv, a->getTextValue());
         } else if (a == whiteEv) {
             listener->panelChanged(EvWhiteEv, a->getTextValue());
-        } else if (a == base) {
-            listener->panelChanged(EvBase, a->getTextValue());
+        } else if (a == targetGray) {
+            listener->panelChanged(EvTargetGray, a->getTextValue());
         }
     }
 }
@@ -165,7 +164,7 @@ void LogEncoding::adjusterChanged(Adjuster* a, double newval)
 void LogEncoding::adjusterAutoToggled(Adjuster* a, bool newval)
 {
     if (listener) {
-        if (a == grayPoint) {
+        if (a == sourceGray) {
             auto e = (batchMode || !newval) ? EvAutoGrayOff : EvAutoGrayOn;
             listener->panelChanged(e, newval ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
         }
@@ -189,10 +188,10 @@ void LogEncoding::setBatchMode(bool batchMode)
 {
     ToolPanel::setBatchMode(batchMode);
 
-    grayPoint->showEditedCB();
+    sourceGray->showEditedCB();
     blackEv->showEditedCB();
     whiteEv->showEditedCB();
-    base->showEditedCB();
+    targetGray->showEditedCB();
 }
 
 
@@ -204,7 +203,7 @@ void LogEncoding::autocomputeToggled()
                 listener->panelChanged(EvAuto, M("GENERAL_ENABLED"));
                 blackEv->setEnabled(false);
                 whiteEv->setEnabled(false);
-                base->setEnabled(false);
+                //targetGray->setEnabled(false);
             } else {
                 listener->panelChanged(EvAuto, M("GENERAL_DISABLED"));
             }
@@ -224,12 +223,12 @@ void LogEncoding::logEncodingChanged(const rtengine::LogEncodingParams &params)
 
     blackEv->setEnabled(true);
     whiteEv->setEnabled(true);
-    base->setEnabled(true);
+//    targetGray->setEnabled(true);
 
-    grayPoint->setValue(params.grayPoint);
+    sourceGray->setValue(params.sourceGray);
     blackEv->setValue(params.blackEv);
     whiteEv->setValue(params.whiteEv);
-    base->setValue(params.base);
+//    targetGray->setValue(params.targetGray);
     
     enableListener();
 }

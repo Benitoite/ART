@@ -96,7 +96,7 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
 }
 
 
-float find_brightness(float source_gray, float target_gray)
+float find_gray(float source_gray, float target_gray)
 {
     // find a base such that log2lin(base, source_gray) = target_gray
     // log2lin is (base^source_gray - 1) / (base - 1), so we solve
@@ -156,19 +156,19 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
         return;
     }
 
-    const float gray = params->logenc.grayPoint / 100.f;
+    const float gray = params->logenc.sourceGray / 100.f;
     const float shadows_range = params->logenc.blackEv;
     const float dynamic_range = params->logenc.whiteEv - params->logenc.blackEv;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
     const bool brightness_enabled = params->toneCurve.brightness;
-    const float brightness = 1.f + params->toneCurve.brightness / 100.f; //params->toneCurve.brightness <= 0 ? -params->toneCurve.brightness / 10.f : 1.f / (1.f + params->toneCurve.brightness);// / 10.f);
-//    const float base = pow_F(2.f, brightness);
+    const float brightness = 1.f + params->toneCurve.brightness / 100.f;
     const bool contrast_enabled = params->toneCurve.contrast;
-    const float contrast = 1.f + params->toneCurve.contrast / 100.f; //params->toneCurve.contrast >= 0 ? 1.f + params->toneCurve.contrast / 100.f : 1.f/(1.f - params->toneCurve.contrast / 50.f);
+    const float contrast = 1.f + params->toneCurve.contrast / 100.f;
     const bool saturation_enabled = params->toneCurve.saturation;
     const float saturation = 1.f + params->toneCurve.saturation / 100.f;
-    const float norm = params->logenc.base > 0 ? pow_F(2.f, params->logenc.base) : 0;
+    const float b = params->logenc.targetGray > 1 && params->logenc.targetGray < 100 && dynamic_range > 0 ? find_gray(std::abs(params->logenc.blackEv) / dynamic_range, params->logenc.targetGray / 100.f) : 0.f;
+    const float norm = b > 0 ? b : 0;
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
     const auto apply =
@@ -188,9 +188,6 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
             if (norm > 0.f) {
                 x = xlog2lin(x, norm);
             }
-            // if (brightness_enabled) {
-            //     x = xlog2lin(x, base);
-            // }
             return x * 65535.f;
         };
 
@@ -216,6 +213,10 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
                 Color::filmlike_clip(&r, &g, &b);
             }
             
+            assert(r == r);
+            assert(g == g);
+            assert(b == b);
+
             rgb->r(y, x) = r;
             rgb->g(y, x) = g;
             rgb->b(y, x) = b;
@@ -302,26 +303,19 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
                 }
             }
             if (n > 0) {
-                lparams.grayPoint = tot / n * 100.f;
+                lparams.sourceGray = tot / n * 100.f;
                 if (settings->verbose) {
-                    std::cout << "         computed gray point from " << n << " samples: " << lparams.grayPoint << std::endl;
+                    std::cout << "         computed gray point from " << n << " samples: " << lparams.sourceGray << std::endl;
                 }
             } else if (settings->verbose) {
                 std::cout << "         no samples found in range, resorting to default gray point value" << std::endl;
-                lparams.grayPoint = LogEncodingParams().grayPoint;
+                lparams.sourceGray = LogEncodingParams().sourceGray;
             }
         }
         
-        float gray = float(lparams.grayPoint) / 100.f;
+        float gray = float(lparams.sourceGray) / 100.f;
         lparams.whiteEv = xlogf(vmax / gray) / log2;
         lparams.blackEv = lparams.whiteEv - dynamic_range;
-        constexpr float target_gray = 0.18;
-        float b = find_brightness(std::abs(lparams.blackEv) / dynamic_range, target_gray);
-        if (b > 0.f) {
-            lparams.base = std::log(b) / log2;
-        } else {
-            lparams.base = 0;
-        }
     }
 }
 

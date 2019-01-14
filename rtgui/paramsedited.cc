@@ -294,10 +294,10 @@ void ParamsEdited::set(bool v)
     logenc.enabled   = v;
     logenc.autocompute = v;
     logenc.autogray = v;
-    logenc.grayPoint = v;
+    logenc.sourceGray = v;
     logenc.blackEv = v;
     logenc.whiteEv = v;
-    logenc.base = v;
+    logenc.targetGray = v;
     sh.enabled       = v;
     sh.highlights    = v;
     sh.htonalwidth   = v;
@@ -873,10 +873,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(logenc.enabled);
         SETVAL_(logenc.autocompute);
         SETVAL_(logenc.autogray);
-        SETVAL_(logenc.grayPoint);
+        SETVAL_(logenc.sourceGray);
         SETVAL_(logenc.blackEv);
         SETVAL_(logenc.whiteEv);
-        SETVAL_(logenc.base);
+        SETVAL_(logenc.targetGray);
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
         sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
@@ -2097,10 +2097,10 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     SETVAL_(logenc.enabled);
     SETVAL_(logenc.autocompute);
     SETVAL_(logenc.autogray);
-    SETVAL_(logenc.grayPoint);
+    SETVAL_(logenc.sourceGray);
     SETVAL_(logenc.blackEv);
     SETVAL_(logenc.whiteEv);
-    SETVAL_(logenc.base);
+    SETVAL_(logenc.targetGray);
 
     if (sh.enabled) {
         toEdit.sh.enabled         = mods.sh.enabled;

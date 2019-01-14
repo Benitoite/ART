@@ -1675,10 +1675,10 @@ LogEncodingParams::LogEncodingParams():
     enabled(false),
     autocompute(true),
     autogray(false),
-    grayPoint(18.0),
+    sourceGray(18.0),
+    targetGray(18.0),
     blackEv(-5.0),
-    whiteEv(10.0),
-    base(3.9)
+    whiteEv(10.0)
 {
 }
 
@@ -1688,10 +1688,10 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
         enabled == other.enabled
         && autocompute == other.autocompute
         && autogray == other.autogray
-        && grayPoint == other.grayPoint
+        && sourceGray == other.sourceGray
         && blackEv == other.blackEv
         && whiteEv == other.whiteEv
-        && base == other.base;
+        && targetGray == other.targetGray;
 }
 
 bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
@@ -3512,10 +3512,10 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->logenc.enabled, "LogEncoding", "Enabled", logenc.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.autocompute, "LogEncoding", "Auto", logenc.autocompute, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.autogray, "LogEncoding", "AutoGray", logenc.autogray, keyFile);
-        saveToKeyfile(!pedited || pedited->logenc.grayPoint, "LogEncoding", "GrayPoint", logenc.grayPoint, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.sourceGray, "LogEncoding", "SourceGray", logenc.sourceGray, keyFile);
+        saveToKeyfile(!pedited || pedited->logenc.targetGray, "LogEncoding", "TargetGray", logenc.targetGray, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.blackEv, "LogEncoding", "BlackEv", logenc.blackEv, keyFile);
         saveToKeyfile(!pedited || pedited->logenc.whiteEv, "LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
-        saveToKeyfile(!pedited || pedited->logenc.base, "LogEncoding", "Base", logenc.base, keyFile);
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
@@ -4602,10 +4602,14 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "LogEncoding", "Enabled", pedited, logenc.enabled, pedited->logenc.enabled);
             assignFromKeyfile(keyFile, "LogEncoding", "Auto", pedited, logenc.autocompute, pedited->logenc.autocompute);
             assignFromKeyfile(keyFile, "LogEncoding", "AutoGray", pedited, logenc.autogray, pedited->logenc.autogray);
-            assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", pedited, logenc.grayPoint, pedited->logenc.grayPoint);
+            if (ppVersion < 349) {
+                assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", pedited, logenc.sourceGray, pedited->logenc.sourceGray);
+            } else {
+                assignFromKeyfile(keyFile, "LogEncoding", "SourceGray", pedited, logenc.sourceGray, pedited->logenc.sourceGray);
+                assignFromKeyfile(keyFile, "LogEncoding", "TargetGray", pedited, logenc.targetGray, pedited->logenc.targetGray);
+            }
             assignFromKeyfile(keyFile, "LogEncoding", "BlackEv", pedited, logenc.blackEv, pedited->logenc.blackEv);
             assignFromKeyfile(keyFile, "LogEncoding", "WhiteEv", pedited, logenc.whiteEv, pedited->logenc.whiteEv);
-            assignFromKeyfile(keyFile, "LogEncoding", "Base", pedited, logenc.base, pedited->logenc.base);
         }
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {

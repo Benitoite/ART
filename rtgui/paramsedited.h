@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -396,10 +397,10 @@ public:
     bool enabled;
     bool autocompute;
     bool autogray;
-    bool grayPoint;
+    bool sourceGray;
+    bool targetGray;
     bool blackEv;
     bool whiteEv;
-    bool base;
 };
 
 

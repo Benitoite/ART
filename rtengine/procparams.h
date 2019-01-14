@@ -832,10 +832,10 @@ struct LogEncodingParams {
     bool enabled;
     double autocompute;
     double autogray;
-    double grayPoint;
+    double sourceGray;
+    double targetGray;
     double blackEv;
     double whiteEv;
-    double base;
 
     LogEncodingParams();
 
