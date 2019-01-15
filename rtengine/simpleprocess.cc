@@ -547,9 +547,9 @@ private:
 
         ipf.vibrance (labView);
         ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
-        ipf.guidedSmoothing(labView);
+        ipf.guidedSmoothing(labView, oX, oY, oW, oH);
         ipf.logEncoding(labView);
-        ipf.toneMapping(labView);
+        ipf.toneMapping(labView, oX, oY, oW, oH);
 
         if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
             ipf.impulsedenoise (labView);
