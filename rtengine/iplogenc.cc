@@ -262,15 +262,16 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 
     float vmin = RT_INFINITY;
     float vmax = -RT_INFINITY;
+    const float ec = std::pow(2.f, params->toneCurve.expcomp);
 
     constexpr float noise = 1e-5;
 
     for (int y = 0, h = fh / SCALE; y < h; ++y) {
         for (int x = 0, w = fw / SCALE; x < w; ++x) {
             float r = img.r(y, x), g = img.g(y, x), b = img.b(y, x);
-            float m = max(0.f, r, g, b) / 65535.f;
+            float m = max(0.f, r, g, b) / 65535.f * ec;
             if (m > noise) {
-                float l = min(r, g, b) / 65535.f;
+                float l = min(r, g, b) / 65535.f * ec;
                 vmin = min(vmin, l > noise ? l : m);
                 vmax = max(vmax, m);
             }
