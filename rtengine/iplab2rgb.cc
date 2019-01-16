@@ -39,9 +39,9 @@ inline void copyAndClampLine(const float *src, unsigned char *dst, const int W)
         float r = src[iy] * MAXVALF;
         float g = src[iy+1] * MAXVALF;
         float b = src[iy+2] * MAXVALF;
-        if (r > MAXVALF || g > MAXVALF || b > MAXVALF) {
-            Color::filmlike_clip(&r, &g, &b);
-        }
+        // if (r > MAXVALF || g > MAXVALF || b > MAXVALF) {
+        //     Color::filmlike_clip(&r, &g, &b);
+        // }
         dst[iy] = uint16ToUint8Rounded(CLIP(r));
         dst[iy+1] = uint16ToUint8Rounded(CLIP(g));
         dst[iy+2] = uint16ToUint8Rounded(CLIP(b));
@@ -71,9 +71,9 @@ inline void copyAndClamp(const LabImage *src, unsigned char *dst, const double r
             Color::Lab2XYZ(rL[j], ra[j], rb[j], x_, y_, z_ );
             Color::xyz2rgb(x_, y_, z_, R, G, B, rgb_xyz);
 
-            if (R > MAXVALF || G > MAXVALF || B > MAXVALF) {
-                Color::filmlike_clip(&R, &G, &B);
-            }
+            // if (R > MAXVALF || G > MAXVALF || B > MAXVALF) {
+            //     Color::filmlike_clip(&R, &G, &B);
+            // }
 
             dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[R]);
             dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[G]);
