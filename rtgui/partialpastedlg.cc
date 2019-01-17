@@ -702,8 +702,8 @@ void PartialPasteDlg::localToggled()
 
     colorcorrection->set_active(local->get_active());
     smoothing->set_active(local->get_active());
-    cbdl->set_active(cbdl->get_active());
-    epd->set_active (basic->get_active ());
+    cbdl->set_active(local->get_active());
+    epd->set_active (local->get_active ());
 }
 
 
