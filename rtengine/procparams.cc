@@ -114,7 +114,12 @@ void getFromKeyfile(
     bool& value
 )
 {
-    value = keyfile.get_boolean(group_name, key);
+    try {
+        value = keyfile.get_boolean(group_name, key);
+    } catch (Glib::KeyFileError &e) {
+        int v = keyfile.get_integer(group_name, key);
+        value = v;
+    }
 }
 
 void getFromKeyfile(
