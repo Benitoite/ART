@@ -109,7 +109,7 @@ private:
 
         stage_denoise();
         stage_transform();
-        return stage_finish();
+        return stage_finish(false);
     }
 
     Imagefloat *fast_pipeline()
@@ -131,7 +131,7 @@ private:
         stage_transform();
         stage_early_resize();
         stage_denoise();
-        return stage_finish();
+        return stage_finish(true);
     }
 
     bool stage_init(bool is_fast)
@@ -372,7 +372,7 @@ private:
         }
     }
 
-    Imagefloat *stage_finish()
+    Imagefloat *stage_finish(bool is_fast)
     {
         procparams::ProcParams& params = job->pparams;
         //ImProcFunctions ipf (&params, true);
@@ -572,6 +572,7 @@ private:
         }
 
         if (((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) && params.sharpening.enabled) {
+            std::cout << "SHARPENING" << std::endl;
             ipf.sharpening (labView, params.sharpening);
 
         }
@@ -682,7 +683,7 @@ private:
         // crop and convert to rgb16
         int cx = 0, cy = 0, cw = labView->W, ch = labView->H;
 
-        if (params.crop.enabled) {
+        if (params.crop.enabled && !is_fast) {
             cx = params.crop.x;
             cy = params.crop.y;
             cw = params.crop.w;
@@ -706,7 +707,7 @@ private:
             }
         }
 
-        if (labResize) { // resize lab data
+        if (labResize && !is_fast) { // resize lab data
             if ((labView->W != imw || labView->H != imh) &&
                 (params.resize.allowUpscaling || (labView->W >= imw && labView->H >= imh))) {
                 // resize image
@@ -717,7 +718,9 @@ private:
             }
             cw = labView->W;
             ch = labView->H;
+        }
 
+        if (labResize || is_fast) {
             if (params.prsharpening.enabled) {
                 for (int i = 0; i < ch; i++) {
                     for (int j = 0; j < cw; j++) {
@@ -725,6 +728,7 @@ private:
                     }
                 }
                 ipf.sharpening (labView, params.prsharpening);
+                std::cout << "PRSHARPENING" << std::endl;
             }
         }
 
@@ -912,9 +916,9 @@ private:
         procparams::ProcParams &params = job->pparams;
         procparams::ProcParams defaultparams;
 
-        if (params.prsharpening.enabled) { //!params.sharpening.enabled) {
-            params.sharpening = params.prsharpening;
-        }
+        // if (params.prsharpening.enabled) { //!params.sharpening.enabled) {
+        //     params.sharpening = params.prsharpening;
+        // }
             
         ImProcFunctions &ipf = *(ipf_p.get());
         ipf.setScale(1.0 / scale_factor);

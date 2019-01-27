@@ -159,7 +159,8 @@ extern const Settings* settings;
 
 void ImProcFunctions::deconvsharpening (float** luminance, float** tmp, int W, int H, const SharpeningParams &sharpenParam)
 {
-    if (sharpenParam.deconvamount == 0 && sharpenParam.blurradius < 0.25f) {
+    const auto blurradius = sharpenParam.blurradius / scale;
+    if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
         return;
     }
 BENCHFUN
@@ -180,14 +181,14 @@ BENCHFUN
     buildBlendMask(luminance, blend, W, H, contrast, 1.f);
     JaggedArray<float>* blurbuffer = nullptr;
 
-    if (sharpenParam.blurradius >= 0.25f) {
+    if (blurradius >= 0.25f) {
         blurbuffer = new JaggedArray<float>(W, H);
         JaggedArray<float> &blur = *blurbuffer;
 #ifdef _OPENMP
         #pragma omp parallel
 #endif
         {
-            gaussianBlur(tmpI, blur, W, H, sharpenParam.blurradius);
+            gaussianBlur(tmpI, blur, W, H, blurradius);
 #ifdef _OPENMP
             #pragma omp for
 #endif
@@ -229,7 +230,7 @@ BENCHFUN
             }
         }
 
-        if (sharpenParam.blurradius >= 0.25f) {
+        if (blurradius >= 0.25f) {
             JaggedArray<float> &blur = *blurbuffer;
 #ifdef _OPENMP
         #pragma omp for
@@ -296,12 +297,13 @@ BENCHFUN
 
     JaggedArray<float> blur(W, H);
 
-    if (sharpenParam.blurradius >= 0.25f) {
+    const auto blurradius = sharpenParam.blurradius / scale;
+    if (blurradius >= 0.25f) {
 #ifdef _OPENMP
         #pragma omp parallel
 #endif
         {
-            gaussianBlur(lab->L, blur, W, H, sharpenParam.blurradius);
+            gaussianBlur(lab->L, blur, W, H, blurradius);
 #ifdef _OPENMP
             #pragma omp for
 #endif
@@ -376,7 +378,7 @@ BENCHFUN
         delete [] b3;
     }
 
-    if (sharpenParam.blurradius >= 0.25f) {
+    if (blurradius >= 0.25f) {
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
