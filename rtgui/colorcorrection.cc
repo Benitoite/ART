@@ -190,7 +190,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     saturation->setAdjusterListener(this);
     box->pack_start(*saturation);
 
-    slope = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_SLOPE"), 0.1, 4.0, 0.001, 1));
+    slope = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_SLOPE"), 0.1, 10.0, 0.001, 1));
     slope->setLogScale(4, 0.1);
     slope->setAdjusterListener(this);
     box->pack_start(*slope);
