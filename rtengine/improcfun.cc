@@ -777,7 +777,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
                     hist16Qthr.clear();
                 }
 
+#ifdef _OPENMP
                 #pragma omp for reduction(+:sum)
+#endif
 
 
                 for (int i = 0; i < height; i++)
@@ -846,7 +848,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
                         //can be used in case of...
                     }
 
+#ifdef _OPENMP
                 #pragma omp critical
+#endif
                 {
                     if (needJ) {
                         hist16J += hist16Jthr;
@@ -995,7 +999,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
         int bufferLength = ((width + 3) / 4) * 4; // bufferLength has to be a multiple of 4
 #endif
 #ifndef _DEBUG
+#ifdef _OPENMP
         #pragma omp parallel
+#endif
 #endif
         {
             float minQThr = 10000.f;
@@ -1010,7 +1016,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
             float sbuffer[bufferLength] ALIGNED16;
 #endif
 #ifndef _DEBUG
+#ifdef _OPENMP
             #pragma omp for schedule(dynamic, 16)
+#endif
 #endif
 
             for (int i = 0; i < height; i++) {
@@ -1618,7 +1626,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
 #endif
             }
 
+#ifdef _OPENMP
             #pragma omp critical
+#endif
             {
                 if (minQThr < minQ) {
                     minQ = minQThr;
@@ -1743,11 +1753,15 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
 
 
 #ifndef _DEBUG
+#ifdef _OPENMP
                 #pragma omp parallel
+#endif
 #endif
                 {
 #ifndef _DEBUG
+#ifdef _OPENMP
                     #pragma omp for schedule(dynamic, 10)
+#endif
 #endif
 
                     for (int i = 0; i < height; i++) // update CieImages with new values after sharpening, defringe, contrast by detail level
@@ -1780,7 +1794,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
             const float co_e = (pow_F (f_l, 0.25f)) + eps;
 
 #ifndef _DEBUG
+#ifdef _OPENMP
             #pragma omp parallel
+#endif
 #endif
             {
 #ifdef __SSE2__
@@ -1794,7 +1810,9 @@ void ImProcFunctions::ciecam_02float (CieImage* ncie, float adap, int pW, int pw
 #endif
 
 #ifndef _DEBUG
+#ifdef _OPENMP
                 #pragma omp for schedule(dynamic, 10)
+#endif
 #endif
 
                 for (int i = 0; i < height; i++) { // update CIECAM with new values after tone-mapping
@@ -3958,7 +3976,9 @@ void ImProcFunctions::luminanceCurve (LabImage* lold, LabImage* lnew, LUTf & cur
     int W = lold->W;
     int H = lold->H;
 
+#ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
+#endif
 
     for (int i = 0; i < H; i++)
         for (int j = 0; j < W; j++) {
@@ -4188,17 +4208,21 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
         {wprof[2][0], wprof[2][1], wprof[2][2]}
     };
 
+#ifdef _OPENMP
 #ifdef _DEBUG
     #pragma omp parallel default(shared) firstprivate(lold, lnew, MunsDebugInfo, pW) if (multiThread)
 #else
     #pragma omp parallel if (multiThread)
+#endif
 #endif
     {
 #ifdef __SSE2__
         float HHBuffer[W] ALIGNED16;
         float CCBuffer[W] ALIGNED16;
 #endif
+#ifdef _OPENMP
         #pragma omp for schedule(dynamic, 16)
+#endif
 
         for (int i = 0; i < H; i++) {
             if (avoidColorShift)
@@ -4919,7 +4943,9 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
 
 //     EdgePreservingDecomposition epd (Wid, Hei);
 
-//     #pragma omp parallel for
+//#ifdef _OPENMP
+//    #pragma omp parallel for
+//#endif
 
 //     for (int i = 0; i < Hei; i++)
 //         for (int j = 0; j < Wid; j++) {
@@ -4945,8 +4971,10 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
 //     //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
 //     float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
 // #ifndef _DEBUG
-//     #pragma omp parallel for schedule(dynamic,10)
-// #endif
+//#ifdef _OPENMP
+//    #pragma omp parallel for schedule(dynamic,10)
+//#endif
+//#endif
 
 //     for (int i = 0; i < Hei; i++)
 //         for (int j = 0; j < Wid; j++) {
@@ -5026,11 +5054,15 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
 //     //Due to the taking of logarithms, L must be nonnegative. Further, scale to 0 to 1 using nominal range of L, 0 to 15 bit.
 //     float minL = FLT_MAX;
 //     float maxL = 0.f;
-//     #pragma omp parallel
-//     {
-//         float lminL = FLT_MAX;
-//         float lmaxL = 0.f;
-//         #pragma omp for
+//#ifdef _OPENMP
+//    #pragma omp parallel
+//#endif
+//    {
+//        float lminL = FLT_MAX;
+//        float lmaxL = 0.f;
+//#ifdef _OPENMP
+//        #pragma omp for
+//#endif
 
 //         for (size_t i = 0; i < N; i++) {
 //             if (L[i] < lminL) {
@@ -5042,11 +5074,13 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
 //             }
 //         }
 
-//         #pragma omp critical
-//         {
-//             if (lminL < minL) {
-//                 minL = lminL;
-//             }
+//#ifdef _OPENMP
+//        #pragma omp critical
+//#endif
+//        {
+//            if (lminL < minL) {
+//               minL = lminL;
+//            }
 
 //             if (lmaxL > maxL) {
 //                 maxL = lmaxL;
@@ -5062,7 +5096,9 @@ void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom
 //         maxL = 1.f;
 //     }
 
-//     #pragma omp parallel for
+//#ifdef _OPENMP
+//    #pragma omp parallel for
+//#endif
 
 //     for (size_t i = 0; i < N; ++i)
 //         //{L[i] = (L[i] - minL)/32767.0f;

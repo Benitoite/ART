@@ -1843,11 +1843,15 @@ BENCHFUN
 
         for (int iteration = 1; iteration <= dnparams.medianIterations; ++iteration) {
 
+#ifdef _OPENMP
             #pragma omp parallel
+#endif
             {
                 if (methmed < 2)
                 {
+#ifdef _OPENMP
                     #pragma omp for
+#endif
 
                     for (int i = 1; i < hei - 1; ++i) {
                         if (methmed == 0) {
@@ -1862,7 +1866,9 @@ BENCHFUN
                     }
                 } else
                 {
+#ifdef _OPENMP
                     #pragma omp for
+#endif
 
                     for (int i = 2; i < hei - 2; ++i) {
                         if (methmed == 3) {
@@ -1906,7 +1912,9 @@ BENCHFUN
 
                 if (methmed < 2)
                 {
+#ifdef _OPENMP
                     #pragma omp for
+#endif
 
                     for (int i = 1; i < hei - 1; ++i) {
                         if (methmed == 0) {
@@ -1921,7 +1929,9 @@ BENCHFUN
                     }
                 } else
                 {
+#ifdef _OPENMP
                     #pragma omp for
+#endif
 
                     for (int i = 2; i < hei - 2; ++i) {
                         if (methmed == 3) {
@@ -1966,7 +1976,9 @@ BENCHFUN
 
                 if (methmed < 2)
                 {
+#ifdef _OPENMP
                     #pragma omp for
+#endif
 
                     for (int i = 1; i < hei - 1; ++i) {
                         if (methmed == 0) {
@@ -1981,7 +1993,9 @@ BENCHFUN
                     }
                 } else
                 {
+#ifdef _OPENMP
                     #pragma omp for
+#endif
 
                     for (int i = 2; i < hei - 2; ++i) {
                         if (methmed == 3) {

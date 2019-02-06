@@ -284,14 +284,12 @@ void Denoise::chromaChanged (double autchroma, double autred, double autblue)
     };
     Data *d = new Data{this, autchroma, autred, autblue};
         
-    const auto func = [](gpointer data) -> gboolean {
-        Data *d = static_cast<Data *>(data);
-        d->dn->chromaComputed(d->chroma, d->red, d->blue);
-        delete d;
-        return false;
-    };
-
-    idle_register.add(func, d);
+    idle_register.add([d]() -> bool
+                      {
+                          d->dn->chromaComputed(d->chroma, d->red, d->blue);
+                          delete d;
+                          return false;
+                      });
 }
 
 

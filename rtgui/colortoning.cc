@@ -688,12 +688,12 @@ void ColorToning::autoColorTonChanged(int bwct, int satthres, int satprot)
     nextsatth = satthres;
     nextsatpr = satprot;
 
-    const auto func = [](gpointer data) -> gboolean {
-        static_cast<ColorToning*>(data)->CTComp_();
-        return FALSE;
-    };
-
-    idle_register.add(func, this);
+    idle_register.add(
+            [this]() -> bool
+            {
+                CTComp_();
+                return false;
+            });
 }
 
 bool ColorToning::CTComp_ ()

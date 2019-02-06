@@ -273,6 +273,14 @@ private:
 
         if (params.denoise.enabled) {
             ipf.denoiseComputeParams(imgsrc, currWB, dnstore, params.denoise);
+#ifdef _OPENMP
+#endif
+#ifdef _OPENMP
+#endif
+#ifdef _OPENMP
+#endif
+#ifdef _OPENMP
+#endif
         }
         
         baseImg = new Imagefloat (fw, fh);
@@ -336,6 +344,8 @@ private:
 
         if (params.denoise.enabled) {
             ipf.denoise(2, imgsrc, currWB, baseImg, dnstore, params.denoise);
+#ifdef _OPENMP
+#endif
         }
     }
 
@@ -526,7 +536,9 @@ private:
                         hist16thr[ (int) ((labView->L[i][j]))]++;
                     }
 
+#ifdef _OPENMP
                 #pragma omp critical
+#endif
                 {
                     hist16 += hist16thr;
                 }

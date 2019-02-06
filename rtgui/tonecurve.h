@@ -118,7 +118,6 @@ public:
     void clip_changed ();
     bool clip_changed_ ();
     void waitForAutoExp ();
-    bool autoExpComputed_ ();
     void enableAll ();
     void curveChanged (CurveEditor* ce) override;
     void curveMode1Changed ();
@@ -141,7 +140,6 @@ public:
     );
 
     void histmatchingToggled();
-    bool histmatchingComputed();
 
     void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons) override;
     void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) override;
