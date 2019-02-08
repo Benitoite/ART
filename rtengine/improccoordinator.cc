@@ -1400,7 +1400,7 @@ void ImProcCoordinator::process()
     paramsUpdateMutex.lock();
 
     while (changeSinceLast) {
-        const bool panningRelatedChange =
+        const bool panningRelatedChange = true ||
                params.toneCurve != nextParams.toneCurve
             || params.labCurve != nextParams.labCurve
             || params.localContrast != nextParams.localContrast
