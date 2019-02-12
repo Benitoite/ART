@@ -5159,7 +5159,7 @@ void ImProcFunctions::getAutoExp  (const LUTu &histogram, int histcompr, double 
     histogram.getSumAndAverage (sum, ave);
 
     //find median of luminance
-    int median = 0, count = histogram[0];
+    size_t median = 0, count = histogram[0];
 
     while (count < sum / 2) {
         median++;
