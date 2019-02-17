@@ -218,20 +218,20 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[4]->pack_start (*perspective, Gtk::PACK_SHRINK, 2);
     vboxes[4]->pack_start (*commonTrans, Gtk::PACK_SHRINK, 2);
 
-    //ADVANCED
-    vboxes[5]->pack_start (*advanced, Gtk::PACK_SHRINK, 2);
-    vboxes[5]->pack_start (*hseps[5], Gtk::PACK_SHRINK, 2);
-    vboxes[5]->pack_start (*retinex, Gtk::PACK_SHRINK, 2);
-    vboxes[5]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
-    vboxes[5]->pack_start (*wavelet, Gtk::PACK_SHRINK, 2);
-
     //LOCAL
-    vboxes[6]->pack_start(*local, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start(*hseps[6], Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start(*colorcorrection, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start(*cbdl, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start(*epd, Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start(*local, Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start(*hseps[5], Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start(*colorcorrection, Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start(*smoothing, Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start(*cbdl, Gtk::PACK_SHRINK, 2);
+    vboxes[5]->pack_start(*epd, Gtk::PACK_SHRINK, 2);
+
+    //ADVANCED
+    vboxes[6]->pack_start (*advanced, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start (*hseps[6], Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start (*retinex, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
+    vboxes[6]->pack_start (*wavelet, Gtk::PACK_SHRINK, 2);
 
     //META
     vboxes[7]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
