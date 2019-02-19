@@ -4091,17 +4091,8 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
     }
 
 
-    LUTu hist16Clad;
-    LUTu hist16Llad;
-
-    //preparate for histograms CIECAM
-    if (pW != 1) { //only with improccoordinator
-        hist16Clad (65536);
-        hist16Clad.clear();
-        hist16Llad (65536);
-        hist16Llad.clear();
-
-    }
+    const float histLFactor = pW != 1 ? histLCurve.getSize() / 100.f : 1.f;
+    const float histCFactor = pW != 1 ? histCCurve.getSize() / 48000.f : 1.f;
 
 #ifdef _DEBUG
     MyTime t1e, t2e;
@@ -4601,8 +4592,7 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
 
                 //update histogram C
                 if (pW != 1) { //only with improccoordinator
-                    int posp = (int)sqrt (atmp * atmp + btmp * btmp);
-                    hist16Clad[posp]++;
+                    histCCurve[histCFactor * sqrt(atmp * atmp + btmp * btmp)]++;
                 }
 
                 if (editPipette && editID == EUID_Lab_LCCurve) {
@@ -4657,8 +4647,7 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
 
                 //update histo LC
                 if (pW != 1) { //only with improccoordinator
-                    int posl = Lprov1 * 327.68f;
-                    hist16Llad[posl]++;
+                    histLCurve[Lprov1 * histLFactor]++;
                 }
 
                 Chprov1 = sqrt (SQR (atmp) + SQR (btmp)) / 327.68f;
@@ -4744,13 +4733,6 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
             }
         }
     } // end of parallelization
-
-    if (pW != 1) { //only with improccoordinator
-        //update histogram C  with data chromaticity and not with CC curve
-        hist16Clad.compressTo (histCCurve);
-        //update histogram L with data luminance
-        hist16Llad.compressTo (histLCurve);
-    }
 
 #ifdef _DEBUG
 

@@ -2689,6 +2689,7 @@ unsigned CLASS pana_bits_t::operator() (int nbits, unsigned *bytes)
       bytes[byte] = buf[vbits++];
       vbits &= 0x3FFF;
     }
+    return 0;
   } else {
     vbits = (vbits - nbits) & 0x1ffff;
     byte = vbits >> 3 ^ 0x3ff0;
@@ -2700,7 +2701,7 @@ void CLASS panasonic_load_raw()
 {
   pana_bits_t pana_bits(ifp,load_flags, RT_pana_info.encoding);
   int row, col, i, j, sh=0, pred[2], nonz[2];
-  unsigned bytes[16];
+  unsigned bytes[16] = {};
   ushort *raw_block_data;
 
   pana_bits(0, 0);
@@ -10675,14 +10676,14 @@ struct tiff_hdr {
 
 //-----------------------------------------------------------------------------
 /* Taken from LibRaw
- 
+
 LibRaw is free software; you can redistribute it and/or modify
 it under the terms of the one of two licenses as you choose:
 1. GNU LESSER GENERAL PUBLIC LICENSE version 2.1
    (See file LICENSE.LGPL provided in LibRaw distribution archive for details).
 2. COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
    (See file LICENSE.CDDL provided in LibRaw distribution archive for details).
- */ 
+ */
 
 namespace {
 
