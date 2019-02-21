@@ -234,8 +234,8 @@ void BatchToolPanelCoordinator::initSession ()
             if (options.baBehav[ADDSET_TC_SHCOMP]) { pparams.toneCurve.shcompr = 0; }
             if (options.baBehav[ADDSET_TC_CONTRAST]) { pparams.toneCurve.contrast = 0; }
             if (options.baBehav[ADDSET_TC_SATURATION]) { pparams.toneCurve.saturation = 0;}
-            if (options.baBehav[ADDSET_SH_HIGHLIGHTS]) { pparams.sh.highlights = 0; }
-            if (options.baBehav[ADDSET_SH_SHADOWS]) { pparams.sh.shadows = 0; }
+            // if (options.baBehav[ADDSET_SH_HIGHLIGHTS]) { pparams.sh.highlights = 0; }
+            // if (options.baBehav[ADDSET_SH_SHADOWS]) { pparams.sh.shadows = 0; }
             if (options.baBehav[ADDSET_LC_BRIGHTNESS]) { pparams.labCurve.brightness = 0; }
             if (options.baBehav[ADDSET_LC_CONTRAST]) { pparams.labCurve.contrast = 0; }
             if (options.baBehav[ADDSET_LC_CHROMATICITY]) { pparams.labCurve.chromaticity = 0; }

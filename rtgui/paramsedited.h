@@ -419,12 +419,14 @@ class SHParamsEdited
 
 public:
     bool enabled;
-    bool highlights;
-    bool htonalwidth;
-    bool shadows;
-    bool stonalwidth;
-    bool radius;
-    bool lab;
+    bool levels;
+    bool detail;
+    // bool highlights;
+    // bool htonalwidth;
+    // bool shadows;
+    // bool stonalwidth;
+    // bool radius;
+    // bool lab;
 };
 
 class CropParamsEdited

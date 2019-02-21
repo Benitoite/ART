@@ -1729,12 +1729,14 @@ bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) 
 
 SHParams::SHParams() :
     enabled(false),
-    highlights(0),
-    htonalwidth(70),
-    shadows(0),
-    stonalwidth(30),
-    radius(40),
-    lab(false)
+    levels{0,0,0,0,0,0,0,0},
+    detail(1)
+    // highlights(0),
+    // htonalwidth(70),
+    // shadows(0),
+    // stonalwidth(30),
+    // radius(40),
+    // lab(false)
 {
 }
 
@@ -1742,12 +1744,21 @@ bool SHParams::operator ==(const SHParams& other) const
 {
     return
         enabled == other.enabled
-        && highlights == other.highlights
-        && htonalwidth == other.htonalwidth
-        && shadows == other.shadows
-        && stonalwidth == other.stonalwidth
-        && radius == other.radius
-        && lab == other.lab;
+        && levels[0] == other.levels[0]
+        && levels[1] == other.levels[1]
+        && levels[2] == other.levels[2]
+        && levels[3] == other.levels[3]
+        && levels[4] == other.levels[4]
+        && levels[5] == other.levels[5]
+        && levels[6] == other.levels[6]
+        && levels[7] == other.levels[7]
+        && detail == other.detail;
+        // && highlights == other.highlights
+        // && htonalwidth == other.htonalwidth
+        // && shadows == other.shadows
+        // && stonalwidth == other.stonalwidth
+        // && radius == other.radius
+        // && lab == other.lab;
 }
 
 bool SHParams::operator !=(const SHParams& other) const
@@ -3524,12 +3535,16 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->sh.highlights, "Shadows & Highlights", "Highlights", sh.highlights, keyFile);
-        saveToKeyfile(!pedited || pedited->sh.htonalwidth, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth, keyFile);
-        saveToKeyfile(!pedited || pedited->sh.shadows, "Shadows & Highlights", "Shadows", sh.shadows, keyFile);
-        saveToKeyfile(!pedited || pedited->sh.stonalwidth, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
-        saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
-        saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
+        for (int i = 0; i < 8; ++i) {
+            saveToKeyfile(!pedited || pedited->sh.levels, "Shadows & Highlights", "Level" + std::to_string(i), sh.levels[i], keyFile);
+        }
+        saveToKeyfile(!pedited || pedited->sh.detail, "Shadows & Highlights", "Detail", sh.detail, keyFile);
+        // saveToKeyfile(!pedited || pedited->sh.highlights, "Shadows & Highlights", "Highlights", sh.highlights, keyFile);
+        // saveToKeyfile(!pedited || pedited->sh.htonalwidth, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth, keyFile);
+        // saveToKeyfile(!pedited || pedited->sh.shadows, "Shadows & Highlights", "Shadows", sh.shadows, keyFile);
+        // saveToKeyfile(!pedited || pedited->sh.stonalwidth, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
+        // saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
+        // saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
 
 // Crop
         saveToKeyfile(!pedited || pedited->crop.enabled, "Crop", "Enabled", crop.enabled, keyFile);
@@ -4625,37 +4640,41 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Enabled", pedited, sh.enabled, pedited->sh.enabled);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", pedited, sh.highlights, pedited->sh.highlights);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", pedited, sh.htonalwidth, pedited->sh.htonalwidth);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", pedited, sh.shadows, pedited->sh.shadows);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "ShadowTonalWidth", pedited, sh.stonalwidth, pedited->sh.stonalwidth);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Radius", pedited, sh.radius, pedited->sh.radius);
-            if (ppVersion >= 344) {
-                assignFromKeyfile(keyFile, "Shadows & Highlights", "Lab", pedited, sh.lab, pedited->sh.lab);
-            } else {
-                sh.lab = true;
+            for (int i = 0; i < 8; ++i) {
+                assignFromKeyfile(keyFile, "Shadows & Highlights", "Level" + std::to_string(i), pedited, sh.levels[i], pedited->sh.levels);
             }
+            assignFromKeyfile(keyFile, "Shadows & Highlights", "Detail", pedited, sh.detail, pedited->sh.detail);
+            // assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", pedited, sh.highlights, pedited->sh.highlights);
+            // assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", pedited, sh.htonalwidth, pedited->sh.htonalwidth);
+            // assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", pedited, sh.shadows, pedited->sh.shadows);
+            // assignFromKeyfile(keyFile, "Shadows & Highlights", "ShadowTonalWidth", pedited, sh.stonalwidth, pedited->sh.stonalwidth);
+            // assignFromKeyfile(keyFile, "Shadows & Highlights", "Radius", pedited, sh.radius, pedited->sh.radius);
+            // if (ppVersion >= 344) {
+            //     assignFromKeyfile(keyFile, "Shadows & Highlights", "Lab", pedited, sh.lab, pedited->sh.lab);
+            // } else {
+            //     sh.lab = true;
+            // }
 
-            if (keyFile.has_key("Shadows & Highlights", "LocalContrast") && ppVersion < 329) {
-                int lc = keyFile.get_integer("Shadows & Highlights", "LocalContrast");
-                localContrast.amount = float(lc) / 30.;
+            // if (keyFile.has_key("Shadows & Highlights", "LocalContrast") && ppVersion < 329) {
+            //     int lc = keyFile.get_integer("Shadows & Highlights", "LocalContrast");
+            //     localContrast.amount = float(lc) / 30.;
 
-                if (pedited) {
-                    pedited->localContrast.amount = true;
-                }
+            //     if (pedited) {
+            //         pedited->localContrast.amount = true;
+            //     }
 
-                localContrast.enabled = sh.enabled;
+            //     localContrast.enabled = sh.enabled;
 
-                if (pedited) {
-                    pedited->localContrast.enabled = true;
-                }
+            //     if (pedited) {
+            //         pedited->localContrast.enabled = true;
+            //     }
 
-                localContrast.radius = sh.radius;
+            //     localContrast.radius = sh.radius;
 
-                if (pedited) {
-                    pedited->localContrast.radius = true;
-                }
-            }
+            //     if (pedited) {
+            //         pedited->localContrast.radius = true;
+            //     }
+            // }
         }
 
         if (keyFile.has_group("Crop")) {

@@ -861,12 +861,14 @@ struct FattalToneMappingParams {
   */
 struct SHParams {
     bool    enabled;
-    int     highlights;
-    int     htonalwidth;
-    int     shadows;
-    int     stonalwidth;
-    int     radius;
-    bool    lab;
+    int levels[8];
+    int detail;
+    // int     highlights;
+    // int     htonalwidth;
+    // int     shadows;
+    // int     stonalwidth;
+    // int     radius;
+    // bool    lab;
 
     SHParams();
 

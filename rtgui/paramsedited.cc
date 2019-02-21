@@ -299,12 +299,14 @@ void ParamsEdited::set(bool v)
     logenc.whiteEv = v;
     logenc.targetGray = v;
     sh.enabled       = v;
-    sh.highlights    = v;
-    sh.htonalwidth   = v;
-    sh.shadows       = v;
-    sh.stonalwidth   = v;
-    sh.radius        = v;
-    sh.lab           = v;
+    sh.levels = v;
+    sh.detail = v;
+    // sh.highlights    = v;
+    // sh.htonalwidth   = v;
+    // sh.shadows       = v;
+    // sh.stonalwidth   = v;
+    // sh.radius        = v;
+    // sh.lab           = v;
     crop.enabled = v;
     crop.x       = v;
     crop.y       = v;
@@ -879,12 +881,14 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(logenc.targetGray);
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
-        sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
-        sh.htonalwidth = sh.htonalwidth && p.sh.htonalwidth == other.sh.htonalwidth;
-        sh.shadows = sh.shadows && p.sh.shadows == other.sh.shadows;
-        sh.stonalwidth = sh.stonalwidth && p.sh.stonalwidth == other.sh.stonalwidth;
-        sh.radius = sh.radius && p.sh.radius == other.sh.radius;
-        sh.lab = sh.lab && p.sh.lab == other.sh.lab;
+        SETVAL_(sh.levels);
+        SETVAL_(sh.detail);
+        // sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
+        // sh.htonalwidth = sh.htonalwidth && p.sh.htonalwidth == other.sh.htonalwidth;
+        // sh.shadows = sh.shadows && p.sh.shadows == other.sh.shadows;
+        // sh.stonalwidth = sh.stonalwidth && p.sh.stonalwidth == other.sh.stonalwidth;
+        // sh.radius = sh.radius && p.sh.radius == other.sh.radius;
+        // sh.lab = sh.lab && p.sh.lab == other.sh.lab;
         crop.enabled = crop.enabled && p.crop.enabled == other.crop.enabled;
         crop.x = crop.x && p.crop.x == other.crop.x;
         crop.y = crop.y && p.crop.y == other.crop.y;
@@ -2106,29 +2110,36 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.sh.enabled         = mods.sh.enabled;
     }
 
-    if (sh.highlights) {
-        toEdit.sh.highlights  = dontforceSet && options.baBehav[ADDSET_SH_HIGHLIGHTS] ? toEdit.sh.highlights + mods.sh.highlights : mods.sh.highlights;
+    if (sh.levels) {
+        for (int i = 0; i < 8; ++i) {
+            toEdit.sh.levels[i] = mods.sh.levels[i];
+        }
     }
+    SETVAL_(sh.detail);
 
-    if (sh.htonalwidth) {
-        toEdit.sh.htonalwidth     = mods.sh.htonalwidth;
-    }
+    // if (sh.highlights) {
+    //     toEdit.sh.highlights  = dontforceSet && options.baBehav[ADDSET_SH_HIGHLIGHTS] ? toEdit.sh.highlights + mods.sh.highlights : mods.sh.highlights;
+    // }
 
-    if (sh.shadows) {
-        toEdit.sh.shadows         = dontforceSet && options.baBehav[ADDSET_SH_SHADOWS] ? toEdit.sh.shadows + mods.sh.shadows : mods.sh.shadows;
-    }
+    // if (sh.htonalwidth) {
+    //     toEdit.sh.htonalwidth     = mods.sh.htonalwidth;
+    // }
 
-    if (sh.stonalwidth) {
-        toEdit.sh.stonalwidth     = mods.sh.stonalwidth;
-    }
+    // if (sh.shadows) {
+    //     toEdit.sh.shadows         = dontforceSet && options.baBehav[ADDSET_SH_SHADOWS] ? toEdit.sh.shadows + mods.sh.shadows : mods.sh.shadows;
+    // }
 
-    if (sh.radius) {
-        toEdit.sh.radius      = mods.sh.radius;
-    }
+    // if (sh.stonalwidth) {
+    //     toEdit.sh.stonalwidth     = mods.sh.stonalwidth;
+    // }
 
-    if (sh.lab) {
-        toEdit.sh.lab      = mods.sh.lab;
-    }
+    // if (sh.radius) {
+    //     toEdit.sh.radius      = mods.sh.radius;
+    // }
+
+    // if (sh.lab) {
+    //     toEdit.sh.lab      = mods.sh.lab;
+    // }
 
     if (crop.enabled) {
         toEdit.crop.enabled = mods.crop.enabled;

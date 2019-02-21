@@ -27,14 +27,19 @@ class ShadowsHighlights : public ToolParamBlock, public AdjusterListener, public
 {
 
 protected:
-    Adjuster* highlights;
-    Adjuster* h_tonalwidth;
-    Adjuster* shadows;
-    Adjuster* s_tonalwidth;
-    Adjuster* radius;
-    MyComboBoxText *colorspace;
+    // Adjuster* highlights;
+    // Adjuster* h_tonalwidth;
+    // Adjuster* shadows;
+    // Adjuster* s_tonalwidth;
+    // Adjuster* radius;
+    // MyComboBoxText *colorspace;
 
-    rtengine::ProcEvent EvSHColorspace;
+    // rtengine::ProcEvent EvSHColorspace;
+    Adjuster *levels[8];
+    Adjuster *detail;
+
+    rtengine::ProcEvent EvLevels;
+    rtengine::ProcEvent EvDetail;
 
 public:
 
