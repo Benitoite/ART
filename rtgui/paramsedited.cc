@@ -300,7 +300,6 @@ void ParamsEdited::set(bool v)
     logenc.targetGray = v;
     sh.enabled       = v;
     sh.levels = v;
-    sh.detail = v;
     // sh.highlights    = v;
     // sh.htonalwidth   = v;
     // sh.shadows       = v;
@@ -882,7 +881,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
         SETVAL_(sh.levels);
-        SETVAL_(sh.detail);
         // sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
         // sh.htonalwidth = sh.htonalwidth && p.sh.htonalwidth == other.sh.htonalwidth;
         // sh.shadows = sh.shadows && p.sh.shadows == other.sh.shadows;
@@ -2115,7 +2113,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
             toEdit.sh.levels[i] = mods.sh.levels[i];
         }
     }
-    SETVAL_(sh.detail);
 
     // if (sh.highlights) {
     //     toEdit.sh.highlights  = dontforceSet && options.baBehav[ADDSET_SH_HIGHLIGHTS] ? toEdit.sh.highlights + mods.sh.highlights : mods.sh.highlights;

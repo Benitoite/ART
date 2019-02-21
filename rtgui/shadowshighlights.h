@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -27,19 +28,9 @@ class ShadowsHighlights : public ToolParamBlock, public AdjusterListener, public
 {
 
 protected:
-    // Adjuster* highlights;
-    // Adjuster* h_tonalwidth;
-    // Adjuster* shadows;
-    // Adjuster* s_tonalwidth;
-    // Adjuster* radius;
-    // MyComboBoxText *colorspace;
-
-    // rtengine::ProcEvent EvSHColorspace;
-    Adjuster *levels[8];
-    Adjuster *detail;
+    std::array<Adjuster *, 5> levels;
 
     rtengine::ProcEvent EvLevels;
-    rtengine::ProcEvent EvDetail;
 
 public:
 
@@ -56,8 +47,6 @@ public:
 
     void setAdjusterBehavior (bool hadd, bool sadd);
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
-
-    void colorspaceChanged();
 };
 
 #endif

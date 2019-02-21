@@ -327,53 +327,69 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
     array2D<float> GG(W, H);
     array2D<float> BB(W, H);
 
-    const int r = max(int(10 / scale), 1);
-    const float boost = 1.f + pp.detail / 3.f * 10.f;
-    const float epsilon = std::pow(2.f, 2 * (1.f - 10.f)) / 2.f;
+    const int r = max(int(30 / scale), 1);
+    const float epsilon = 1e-4f;
+    const float boost = 2.f;
 
     rtengine::guidedFilter(R, R, RR, r, epsilon, multithread);
     rtengine::guidedFilter(G, G, GG, r, epsilon, multithread);
     rtengine::guidedFilter(B, B, BB, r, epsilon, multithread);
 
+    const auto log2 =
+        [](float x) -> float
+        {
+            static const float l2 = xlogf(2);
+            return xlogf(x) / l2;
+        };
+
+    const auto exp2 =
+        [](float x) -> float
+        {
+            return pow_F(2.f, x);
+        };
+
     const auto GAUSS = [](float b, float x) -> float
                        {
-                           return std::exp((-(x - b) * (x - b) / 4.0f));
+                           return xexpf((-SQR(x - b) / 4.0f));
                        };
 
      // Build the luma channels : band-pass filters with gaussian windows of std 2 EV, spaced by 2 EV
     const float centers[12] = {
         -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
-        -4.0f,  - 2.0f,   0.0f,  2.0f,   4.0f};
+        -4.0f,  -2.0f,   0.0f,  2.0f,   4.0f};
 
-    const auto conv = [](int v) -> float
+    const auto conv = [&](int v) -> float
                       {
-                          return std::exp2f(float(v) / 100.f * 2.5f);
+                          return exp2(float(v) / 100.f * 2.f);
                       };
 
     const float factors[12] = {
         conv(pp.levels[0]), // -18 EV
         conv(pp.levels[0]), // -16 EV
         conv(pp.levels[0]), // -14 EV
-        conv(pp.levels[1]), // -12 EV
-        conv(pp.levels[2]), // -10 EV
-        conv(pp.levels[3]), //  -8 EV
-        conv(pp.levels[4]), //  -6 EV
-        conv(pp.levels[5]), //  -4 EV
-        conv(pp.levels[6]), //  -2 EV
-        conv(pp.levels[7]), //  0 EV
-        conv(pp.levels[7]), //  2 EV
-        conv(pp.levels[7])  //  4 EV
+        conv(pp.levels[0]), // -12 EV
+        conv(pp.levels[0]), // -10 EV
+        conv(pp.levels[0]), //  -8 EV
+        conv(pp.levels[1]), //  -6 EV
+        conv(pp.levels[2]), //  -4 EV
+        conv(pp.levels[3]), //  -2 EV
+        conv(pp.levels[4]), //  0 EV
+        conv(pp.levels[4]), //  2 EV
+        conv(pp.levels[4])  //  4 EV
     };
 
     // For every pixel luminance, the sum of the gaussian masks
     // evenly spaced by 2 EV with 2 EV std should be this constant
-    constexpr float w_sum = 1.772637204826214f;
+    float w_sum = 0.f;
+    for (int i = 0; i < 12; ++i) {
+        w_sum += GAUSS(centers[i], 0.f);
+    }
 
     const auto process_pixel =
         [&](float &r, float &g, float &b) -> void
         {
             // get the luminance of the pixel - just average channels
-            const float luma = max(std::log2f((r + g + b) / 3.0f), -18.0f);
+            const float luma = max(log2(max((r + g + b) / 3.0f, 0.f)), -18.0f);
 
             // build the correction as the sum of the contribution of each luminance channel to current pixel
             float correction = 0.0f;
@@ -388,7 +404,7 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
         };
         
 #ifdef _OPENMP
-#pragma omp parallel for if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {

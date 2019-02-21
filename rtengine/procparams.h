@@ -861,8 +861,7 @@ struct FattalToneMappingParams {
   */
 struct SHParams {
     bool    enabled;
-    int levels[8];
-    int detail;
+    std::array<int, 5> levels;
     // int     highlights;
     // int     htonalwidth;
     // int     shadows;

@@ -420,7 +420,6 @@ class SHParamsEdited
 public:
     bool enabled;
     bool levels;
-    bool detail;
     // bool highlights;
     // bool htonalwidth;
     // bool shadows;

@@ -1729,8 +1729,7 @@ bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) 
 
 SHParams::SHParams() :
     enabled(false),
-    levels{0,0,0,0,0,0,0,0},
-    detail(1)
+    levels{0,0,0,0,0}
     // highlights(0),
     // htonalwidth(70),
     // shadows(0),
@@ -1744,15 +1743,7 @@ bool SHParams::operator ==(const SHParams& other) const
 {
     return
         enabled == other.enabled
-        && levels[0] == other.levels[0]
-        && levels[1] == other.levels[1]
-        && levels[2] == other.levels[2]
-        && levels[3] == other.levels[3]
-        && levels[4] == other.levels[4]
-        && levels[5] == other.levels[5]
-        && levels[6] == other.levels[6]
-        && levels[7] == other.levels[7]
-        && detail == other.detail;
+        && levels == other.levels;
         // && highlights == other.highlights
         // && htonalwidth == other.htonalwidth
         // && shadows == other.shadows
@@ -3535,10 +3526,9 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
-        for (int i = 0; i < 8; ++i) {
+        for (size_t i = 0; i < sh.levels.size(); ++i) {
             saveToKeyfile(!pedited || pedited->sh.levels, "Shadows & Highlights", "Level" + std::to_string(i), sh.levels[i], keyFile);
         }
-        saveToKeyfile(!pedited || pedited->sh.detail, "Shadows & Highlights", "Detail", sh.detail, keyFile);
         // saveToKeyfile(!pedited || pedited->sh.highlights, "Shadows & Highlights", "Highlights", sh.highlights, keyFile);
         // saveToKeyfile(!pedited || pedited->sh.htonalwidth, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth, keyFile);
         // saveToKeyfile(!pedited || pedited->sh.shadows, "Shadows & Highlights", "Shadows", sh.shadows, keyFile);
@@ -4640,10 +4630,9 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Enabled", pedited, sh.enabled, pedited->sh.enabled);
-            for (int i = 0; i < 8; ++i) {
+            for (size_t i = 0; i < sh.levels.size(); ++i) {
                 assignFromKeyfile(keyFile, "Shadows & Highlights", "Level" + std::to_string(i), pedited, sh.levels[i], pedited->sh.levels);
             }
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Detail", pedited, sh.detail, pedited->sh.detail);
             // assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", pedited, sh.highlights, pedited->sh.highlights);
             // assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", pedited, sh.htonalwidth, pedited->sh.htonalwidth);
             // assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", pedited, sh.shadows, pedited->sh.shadows);
