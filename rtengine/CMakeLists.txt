@@ -125,6 +125,7 @@ set(RTENGINESOURCEFILES
     pdaflinesfilter.cc
     gamutwarning.cc
     ipshadowshighlights.cc
+    iptoneequalizer.cc    
     ipsoftlight.cc
     xtrans_demosaic.cc
     vng4_demosaic_RT.cc

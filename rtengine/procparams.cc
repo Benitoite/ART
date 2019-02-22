@@ -1755,6 +1755,28 @@ bool SHParams::operator !=(const SHParams& other) const
     return !(*this == other);
 }
 
+
+ToneEqualizerParams::ToneEqualizerParams():
+    enabled(false),
+    bands{0,0,0,0,0}
+{
+}
+
+
+bool ToneEqualizerParams::operator ==(const ToneEqualizerParams& other) const
+{
+    return
+        enabled == other.enabled
+        && bands == other.bands;
+}
+
+
+bool ToneEqualizerParams::operator !=(const ToneEqualizerParams& other) const
+{
+    return !(*this == other);
+}
+
+
 CropParams::CropParams() :
     enabled(false),
     x(-1),
@@ -3531,6 +3553,12 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
         saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
 
+// ToneEqualizer
+        saveToKeyfile(!pedited || pedited->toneEqualizer.enabled, "ToneEqualizer", "Enabled", toneEqualizer.enabled, keyFile);
+        for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
+            saveToKeyfile(!pedited || pedited->toneEqualizer.bands, "ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i], keyFile);
+        }
+        
 // Crop
         saveToKeyfile(!pedited || pedited->crop.enabled, "Crop", "Enabled", crop.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->crop.x, "Crop", "X", crop.x, keyFile);
@@ -4636,28 +4664,35 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 sh.lab = true;
             }
 
-            if (keyFile.has_key("Shadows & Highlights", "LocalContrast") && ppVersion < 329) {
-                int lc = keyFile.get_integer("Shadows & Highlights", "LocalContrast");
-                localContrast.amount = float(lc) / 30.;
+            // if (keyFile.has_key("Shadows & Highlights", "LocalContrast") && ppVersion < 329) {
+            //     int lc = keyFile.get_integer("Shadows & Highlights", "LocalContrast");
+            //     localContrast.amount = float(lc) / 30.;
 
-                if (pedited) {
-                    pedited->localContrast.amount = true;
-                }
+            //     if (pedited) {
+            //         pedited->localContrast.amount = true;
+            //     }
 
-                localContrast.enabled = sh.enabled;
+            //     localContrast.enabled = sh.enabled;
 
-                if (pedited) {
-                    pedited->localContrast.enabled = true;
-                }
+            //     if (pedited) {
+            //         pedited->localContrast.enabled = true;
+            //     }
 
-                localContrast.radius = sh.radius;
+            //     localContrast.radius = sh.radius;
 
-                if (pedited) {
-                    pedited->localContrast.radius = true;
-                }
-            }
+            //     if (pedited) {
+            //         pedited->localContrast.radius = true;
+            //     }
+            // }
         }
 
+        if (keyFile.has_group("ToneEqualizer")) {
+            assignFromKeyfile(keyFile, "ToneEqualizer", "Enabled", pedited, toneEqualizer.enabled, pedited->toneEqualizer.enabled);
+            for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
+                assignFromKeyfile(keyFile, "ToneEqualizer", "Band" + std::to_string(i), pedited, toneEqualizer.bands[i], pedited->toneEqualizer.bands);
+            }
+        }
+        
         if (keyFile.has_group("Crop")) {
             assignFromKeyfile(keyFile, "Crop", "Enabled", pedited, crop.enabled, pedited->crop.enabled);
             assignFromKeyfile(keyFile, "Crop", "X", pedited, crop.x, pedited->crop.x);
@@ -5798,6 +5833,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && logenc == other.logenc
         && defringe == other.defringe
         && sh == other.sh
+        && toneEqualizer == other.toneEqualizer
         && crop == other.crop
         && coarse == other.coarse
         && rotate == other.rotate

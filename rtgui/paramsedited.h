@@ -427,6 +427,15 @@ public:
     bool lab;
 };
 
+
+class ToneEqualizerParamsEdited
+{
+public:
+    bool enabled;
+    bool bands;
+};
+
+
 class CropParamsEdited
 {
 
@@ -904,6 +913,7 @@ public:
     LogEncodingParamsEdited       logenc;
     ImpulseDenoiseParamsEdited    impulseDenoise;
     SHParamsEdited                sh;
+    ToneEqualizerParamsEdited     toneEqualizer;
     CropParamsEdited              crop;
     CoarseTransformParamsEdited   coarse;
     CommonTransformParamsEdited   commonTrans;

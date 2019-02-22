@@ -1413,6 +1413,7 @@ void ImProcCoordinator::process()
             || params.fattal != nextParams.fattal
             || params.logenc != nextParams.logenc
             || params.sh != nextParams.sh
+            || params.toneEqualizer != nextParams.toneEqualizer
             || params.crop != nextParams.crop
             || params.coarse != nextParams.coarse
             || params.commonTrans != nextParams.commonTrans

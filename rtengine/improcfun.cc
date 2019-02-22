@@ -53,8 +53,13 @@ using namespace rtengine;
 
 
 // begin of helper function for rgbProc()
-void shadowToneCurve(const LUTf &shtonecurve, float *rtemp, float *gtemp, float *btemp, int istart, int tH, int jstart, int tW, int tileSize)
+void shadowToneCurve(const LUTf &shtonecurve, Imagefloat *rgb, bool multiThread)
 {
+    float **rtemp = rgb->r.ptrs;
+    float **gtemp = rgb->g.ptrs;
+    float **btemp = rgb->b.ptrs;
+    int W = rgb->getWidth();
+    int H = rgb->getHeight();
 
 #if defined( __SSE2__ ) && defined( __x86_64__ )
     vfloat cr = F2V(0.299f);
@@ -62,59 +67,65 @@ void shadowToneCurve(const LUTf &shtonecurve, float *rtemp, float *gtemp, float 
     vfloat cb = F2V(0.114f);
 #endif
 
-    for (int i = istart, ti = 0; i < tH; i++, ti++) {
-        int j = jstart, tj = 0;
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
 #if defined( __SSE2__ ) && defined( __x86_64__ )
-
-        for (; j < tW - 3; j += 4, tj += 4) {
-
-            vfloat rv = LVF(rtemp[ti * tileSize + tj]);
-            vfloat gv = LVF(gtemp[ti * tileSize + tj]);
-            vfloat bv = LVF(btemp[ti * tileSize + tj]);
+        for (; x < W - 3; x += 4) {
+            vfloat rv = LVF(rtemp[y][x]);
+            vfloat gv = LVF(gtemp[y][x]);
+            vfloat bv = LVF(btemp[y][x]);
 
             //shadow tone curve
             vfloat Yv = cr * rv + cg * gv + cb * bv;
             vfloat tonefactorv = shtonecurve(Yv);
-            STVF(rtemp[ti * tileSize + tj], rv * tonefactorv);
-            STVF(gtemp[ti * tileSize + tj], gv * tonefactorv);
-            STVF(btemp[ti * tileSize + tj], bv * tonefactorv);
+            STVF(rtemp[y][x], rv * tonefactorv);
+            STVF(gtemp[y][x], gv * tonefactorv);
+            STVF(btemp[y][x], bv * tonefactorv);
         }
-
 #endif
 
-        for (; j < tW; j++, tj++) {
-
-            float r = rtemp[ti * tileSize + tj];
-            float g = gtemp[ti * tileSize + tj];
-            float b = btemp[ti * tileSize + tj];
+        for (; x < W; ++x) {
+            float r = rtemp[y][x];
+            float g = gtemp[y][x];
+            float b = btemp[y][x];
 
             //shadow tone curve
             float Y = (0.299f * r + 0.587f * g + 0.114f * b);
             float tonefactor = shtonecurve[Y];
-            rtemp[ti * tileSize + tj] = rtemp[ti * tileSize + tj] * tonefactor;
-            gtemp[ti * tileSize + tj] = gtemp[ti * tileSize + tj] * tonefactor;
-            btemp[ti * tileSize + tj] = btemp[ti * tileSize + tj] * tonefactor;
+            rtemp[y][x] = rtemp[y][x] * tonefactor;
+            gtemp[y][x] = gtemp[y][x] * tonefactor;
+            btemp[y][x] = btemp[y][x] * tonefactor;
         }
     }
 }
 
-void highlightToneCurve(const LUTf &hltonecurve, float *rtemp, float *gtemp, float *btemp, int istart, int tH, int jstart, int tW, int tileSize, float exp_scale, float comp, float hlrange)
+void highlightToneCurve(const LUTf &hltonecurve, Imagefloat *rgb, float exp_scale, float comp, float hlrange, bool multiThread)
 {
+    float **rtemp = rgb->r.ptrs;
+    float **gtemp = rgb->g.ptrs;
+    float **btemp = rgb->b.ptrs;
+    int W = rgb->getWidth();
+    int H = rgb->getHeight();
 
 #if defined( __SSE2__ ) && defined( __x86_64__ )
     vfloat threev = F2V(3.f);
     vfloat maxvalfv = F2V(MAXVALF);
 #endif
 
-    for (int i = istart, ti = 0; i < tH; i++, ti++) {
-        int j = jstart, tj = 0;
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
 #if defined( __SSE2__ ) && defined( __x86_64__ )
+        for (; x < W - 3; x += 4) {
 
-        for (; j < tW - 3; j += 4, tj += 4) {
-
-            vfloat rv = LVF(rtemp[ti * tileSize + tj]);
-            vfloat gv = LVF(gtemp[ti * tileSize + tj]);
-            vfloat bv = LVF(btemp[ti * tileSize + tj]);
+            vfloat rv = LVF(rtemp[y][x]);
+            vfloat gv = LVF(gtemp[y][x]);
+            vfloat bv = LVF(btemp[y][x]);
 
             //TODO: proper treatment of out-of-gamut colors
             //float tonefactor = hltonecurve[(0.299f*r+0.587f*g+0.114f*b)];
@@ -122,34 +133,33 @@ void highlightToneCurve(const LUTf &hltonecurve, float *rtemp, float *gtemp, flo
 
             if (_mm_movemask_ps((vfloat)maxMask)) {
                 for (int k = 0; k < 4; ++k) {
-                    float r = rtemp[ti * tileSize + tj + k];
-                    float g = gtemp[ti * tileSize + tj + k];
-                    float b = btemp[ti * tileSize + tj + k];
+                    float r = rtemp[y][x + k];
+                    float g = gtemp[y][x + k];
+                    float b = btemp[y][x + k];
                     float tonefactor = ((r < MAXVALF ? hltonecurve[r] : CurveFactory::hlcurve(exp_scale, comp, hlrange, r)) +
                                         (g < MAXVALF ? hltonecurve[g] : CurveFactory::hlcurve(exp_scale, comp, hlrange, g)) +
                                         (b < MAXVALF ? hltonecurve[b] : CurveFactory::hlcurve(exp_scale, comp, hlrange, b))) / 3.0;
 
                     // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-                    rtemp[ti * tileSize + tj + k] = r * tonefactor;
-                    gtemp[ti * tileSize + tj + k] = g * tonefactor;
-                    btemp[ti * tileSize + tj + k] = b * tonefactor;
+                    rtemp[y][x + k] = r * tonefactor;
+                    gtemp[y][x + k] = g * tonefactor;
+                    btemp[y][x + k] = b * tonefactor;
                 }
             } else {
                 vfloat tonefactorv = (hltonecurve.cb(rv) + hltonecurve.cb(gv) + hltonecurve.cb(bv)) / threev;
                 // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-                STVF(rtemp[ti * tileSize + tj], rv * tonefactorv);
-                STVF(gtemp[ti * tileSize + tj], gv * tonefactorv);
-                STVF(btemp[ti * tileSize + tj], bv * tonefactorv);
+                STVF(rtemp[y][x], rv * tonefactorv);
+                STVF(gtemp[y][x], gv * tonefactorv);
+                STVF(btemp[y][x], bv * tonefactorv);
             }
         }
 
 #endif
 
-        for (; j < tW; j++, tj++) {
-
-            float r = rtemp[ti * tileSize + tj];
-            float g = gtemp[ti * tileSize + tj];
-            float b = btemp[ti * tileSize + tj];
+        for (; x < W; ++x) {
+            float r = rtemp[y][x];
+            float g = gtemp[y][x];
+            float b = btemp[y][x];
 
             //TODO: proper treatment of out-of-gamut colors
             //float tonefactor = hltonecurve[(0.299f*r+0.587f*g+0.114f*b)];
@@ -158,9 +168,9 @@ void highlightToneCurve(const LUTf &hltonecurve, float *rtemp, float *gtemp, flo
                                 (b < MAXVALF ? hltonecurve[b] : CurveFactory::hlcurve(exp_scale, comp, hlrange, b))) / 3.0;
 
             // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-            rtemp[ti * tileSize + tj] = r * tonefactor;
-            gtemp[ti * tileSize + tj] = g * tonefactor;
-            btemp[ti * tileSize + tj] = b * tonefactor;
+            rtemp[y][x] = r * tonefactor;
+            gtemp[y][x] = g * tonefactor;
+            btemp[y][x] = b * tonefactor;
         }
     }
 }
@@ -2037,6 +2047,10 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 {
     BENCHFUN
     constexpr int TS = 112;
+
+    std::unique_ptr<Imagefloat> workimage(new Imagefloat(working->getWidth(), working->getHeight()));
+    working->copyData(workimage.get());
+    working = workimage.get();
     
     Imagefloat *tmpImage = nullptr;
 
@@ -2333,6 +2347,31 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 
 //#define TS 112
 
+    if (mixchannels) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < working->getHeight(); ++y) {
+            for (int x = 0; x < working->getWidth(); ++x) {
+                float r = working->r(y, x);
+                float g = working->g(y, x);
+                float b = working->b(y, x);
+
+                float rmix = (r * chMixRR + g * chMixRG + b * chMixRB) / 100.f;
+                float gmix = (r * chMixGR + g * chMixGG + b * chMixGB) / 100.f;
+                float bmix = (r * chMixBR + g * chMixBG + b * chMixBB) / 100.f;
+
+                working->r(y, x) = rmix;
+                working->g(y, x) = gmix;
+                working->b(y, x) = bmix;
+            }
+        }
+    }
+
+    highlightToneCurve(hltonecurve, working, exp_scale, comp, hlrange, multiThread);
+    shadowToneCurve(shtonecurve, working, multiThread);
+    toneEqualizer(working);
+
 #ifdef _OPENMP
     #pragma omp parallel if (multiThread)
 #endif
@@ -2353,7 +2392,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
         // zero out the buffers
         memset(rtemp, 0, 3 * perChannelSizeBytes);
 
-        // Allocating buffer for the PipetteBuffer
         float *editIFloatTmpR = nullptr, *editIFloatTmpG = nullptr, *editIFloatTmpB = nullptr, *editWhateverTmp = nullptr;
 
         if (editImgFloat) {
@@ -2387,8 +2425,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 #ifdef _OPENMP
         #pragma omp for schedule(dynamic) collapse(2)
 #endif
-
-        for (int ii = 0; ii < working->getHeight(); ii += TS)
+        for (int ii = 0; ii < working->getHeight(); ii += TS) {
             for (int jj = 0; jj < working->getWidth(); jj += TS) {
                 istart = ii;
                 jstart = jj;
@@ -2403,29 +2440,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                         btemp[ti * TS + tj] = working->b (i, j);
                     }
                 }
-
-                if (mixchannels) {
-                    for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                            float r = rtemp[ti * TS + tj];
-                            float g = gtemp[ti * TS + tj];
-                            float b = btemp[ti * TS + tj];
-
-                            //if (i==100 & j==100) printf("rgbProc input R= %f  G= %f  B= %f  \n",r,g,b);
-                            float rmix = (r * chMixRR + g * chMixRG + b * chMixRB) / 100.f;
-                            float gmix = (r * chMixGR + g * chMixGG + b * chMixGB) / 100.f;
-                            float bmix = (r * chMixBR + g * chMixBG + b * chMixBB) / 100.f;
-
-                            rtemp[ti * TS + tj] = rmix;
-                            gtemp[ti * TS + tj] = gmix;
-                            btemp[ti * TS + tj] = bmix;
-                        }
-                    }
-                }
-
-                highlightToneCurve(hltonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS, exp_scale, comp, hlrange);
-                shadowToneCurve(shtonecurve, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
-
+                
                 if (dcpProf && dcpApplyState && !params->logenc.enabled) {
                     dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, *dcpApplyState);
                 }
@@ -3101,6 +3116,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                     }
                 }
             }
+        }
 
         if (editIFloatBuffer) {
             free (editIFloatBuffer);

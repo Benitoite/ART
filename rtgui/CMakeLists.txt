@@ -126,6 +126,7 @@ set(NONCLISOURCEFILES
     sensorbayer.cc
     sensorxtrans.cc
     shadowshighlights.cc
+    toneequalizer.cc
     sharpenedge.cc
     sharpening.cc
     sharpenmicro.cc

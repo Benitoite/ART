@@ -305,6 +305,8 @@ void ParamsEdited::set(bool v)
     sh.stonalwidth   = v;
     sh.radius        = v;
     sh.lab           = v;
+    toneEqualizer.enabled = v;
+    toneEqualizer.bands = v;
     crop.enabled = v;
     crop.x       = v;
     crop.y       = v;
@@ -885,6 +887,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         sh.stonalwidth = sh.stonalwidth && p.sh.stonalwidth == other.sh.stonalwidth;
         sh.radius = sh.radius && p.sh.radius == other.sh.radius;
         sh.lab = sh.lab && p.sh.lab == other.sh.lab;
+
+        SETVAL_(toneEqualizer.enabled);
+        SETVAL_(toneEqualizer.bands);
+
         crop.enabled = crop.enabled && p.crop.enabled == other.crop.enabled;
         crop.x = crop.x && p.crop.x == other.crop.x;
         crop.y = crop.y && p.crop.y == other.crop.y;
@@ -2129,6 +2135,14 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     if (sh.lab) {
         toEdit.sh.lab      = mods.sh.lab;
     }
+
+    SETVAL_(toneEqualizer.enabled);
+    SETVAL_(toneEqualizer.bands);
+    // if (toneEqualizer.bands) {
+    //     for (int i = 0; i < 8; ++i) {
+    //         toEdit.toneEqualizer.bands[i] = mods.toneEqualizer.bands[i];
+    //     }
+    // }
 
     if (crop.enabled) {
         toEdit.crop.enabled = mods.crop.enabled;
