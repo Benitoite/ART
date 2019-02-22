@@ -32,6 +32,7 @@
 #include "vibrance.h"
 #include "colorappearance.h"
 #include "shadowshighlights.h"
+#include "toneequalizer.h"
 #include "impulsedenoise.h"
 #include "defringe.h"
 #include "denoise.h"
@@ -125,6 +126,7 @@ protected:
     Crop* crop;
     ToneCurve* toneCurve;
     ShadowsHighlights* shadowshighlights;
+    ToneEqualizer *toneEqualizer;
     LocalContrast *localContrast;
     Defringe* defringe;
     ImpulseDenoise* impulsedenoise;

@@ -133,6 +133,7 @@ public:
     void localContrast(LabImage *lab);
     void shadowsHighlights(LabImage *lab);
     void shadowsHighlights(Imagefloat *rgb);
+    void toneEqualizer(Imagefloat *rgb);
     void softLight(LabImage *lab);
     void labColorCorrectionRegions(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void logEncoding(LabImage *lab, LUTu *histToneCurve=nullptr);

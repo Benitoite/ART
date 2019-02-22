@@ -861,18 +861,28 @@ struct FattalToneMappingParams {
   */
 struct SHParams {
     bool    enabled;
-    std::array<int, 5> levels;
-    // int     highlights;
-    // int     htonalwidth;
-    // int     shadows;
-    // int     stonalwidth;
-    // int     radius;
-    // bool    lab;
+    int     highlights;
+    int     htonalwidth;
+    int     shadows;
+    int     stonalwidth;
+    int     radius;
+    bool    lab;
 
     SHParams();
 
     bool operator ==(const SHParams& other) const;
     bool operator !=(const SHParams& other) const;
+};
+
+
+struct ToneEqualizerParams {
+    bool enabled;
+    std::array<int, 5> bands;
+
+    ToneEqualizerParams();
+
+    bool operator==(const ToneEqualizerParams &other) const;
+    bool operator!=(const ToneEqualizerParams &other) const;
 };
 
 /**
@@ -1626,6 +1636,7 @@ public:
     FattalToneMappingParams fattal;          ///< Dynamic Range Compression
     LogEncodingParams       logenc;
     SHParams                sh;              ///< Shadow/highlight enhancement parameters
+    ToneEqualizerParams     toneEqualizer;
     CropParams              crop;            ///< Crop parameters
     CoarseTransformParams   coarse;          ///< Coarse transformation (90, 180, 270 deg rotation, h/v flipping) parameters
     CommonTransformParams   commonTrans;     ///< Common transformation parameters (autofill)

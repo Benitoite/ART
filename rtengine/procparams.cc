@@ -1729,13 +1729,12 @@ bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) 
 
 SHParams::SHParams() :
     enabled(false),
-    levels{0,0,0,0,0}
-    // highlights(0),
-    // htonalwidth(70),
-    // shadows(0),
-    // stonalwidth(30),
-    // radius(40),
-    // lab(false)
+    highlights(0),
+    htonalwidth(70),
+    shadows(0),
+    stonalwidth(30),
+    radius(40),
+    lab(false)
 {
 }
 
@@ -1743,19 +1742,40 @@ bool SHParams::operator ==(const SHParams& other) const
 {
     return
         enabled == other.enabled
-        && levels == other.levels;
-        // && highlights == other.highlights
-        // && htonalwidth == other.htonalwidth
-        // && shadows == other.shadows
-        // && stonalwidth == other.stonalwidth
-        // && radius == other.radius
-        // && lab == other.lab;
+        && highlights == other.highlights
+        && htonalwidth == other.htonalwidth
+        && shadows == other.shadows
+        && stonalwidth == other.stonalwidth
+        && radius == other.radius
+        && lab == other.lab;
 }
 
 bool SHParams::operator !=(const SHParams& other) const
 {
     return !(*this == other);
 }
+
+
+ToneEqualizerParams::ToneEqualizerParams():
+    enabled(false),
+    bands{0,0,0,0,0}
+{
+}
+
+
+bool ToneEqualizerParams::operator ==(const ToneEqualizerParams& other) const
+{
+    return
+        enabled == other.enabled
+        && bands == other.bands;
+}
+
+
+bool ToneEqualizerParams::operator !=(const ToneEqualizerParams& other) const
+{
+    return !(*this == other);
+}
+
 
 CropParams::CropParams() :
     enabled(false),
@@ -3526,16 +3546,19 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Shadows & highlights
         saveToKeyfile(!pedited || pedited->sh.enabled, "Shadows & Highlights", "Enabled", sh.enabled, keyFile);
-        for (size_t i = 0; i < sh.levels.size(); ++i) {
-            saveToKeyfile(!pedited || pedited->sh.levels, "Shadows & Highlights", "Level" + std::to_string(i), sh.levels[i], keyFile);
-        }
-        // saveToKeyfile(!pedited || pedited->sh.highlights, "Shadows & Highlights", "Highlights", sh.highlights, keyFile);
-        // saveToKeyfile(!pedited || pedited->sh.htonalwidth, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth, keyFile);
-        // saveToKeyfile(!pedited || pedited->sh.shadows, "Shadows & Highlights", "Shadows", sh.shadows, keyFile);
-        // saveToKeyfile(!pedited || pedited->sh.stonalwidth, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
-        // saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
-        // saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
+        saveToKeyfile(!pedited || pedited->sh.highlights, "Shadows & Highlights", "Highlights", sh.highlights, keyFile);
+        saveToKeyfile(!pedited || pedited->sh.htonalwidth, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth, keyFile);
+        saveToKeyfile(!pedited || pedited->sh.shadows, "Shadows & Highlights", "Shadows", sh.shadows, keyFile);
+        saveToKeyfile(!pedited || pedited->sh.stonalwidth, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
+        saveToKeyfile(!pedited || pedited->sh.radius, "Shadows & Highlights", "Radius", sh.radius, keyFile);
+        saveToKeyfile(!pedited || pedited->sh.lab, "Shadows & Highlights", "Lab", sh.lab, keyFile);
 
+// ToneEqualizer
+        saveToKeyfile(!pedited || pedited->toneEqualizer.enabled, "ToneEqualizer", "Enabled", toneEqualizer.enabled, keyFile);
+        for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
+            saveToKeyfile(!pedited || pedited->toneEqualizer.bands, "ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i], keyFile);
+        }
+        
 // Crop
         saveToKeyfile(!pedited || pedited->crop.enabled, "Crop", "Enabled", crop.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->crop.x, "Crop", "X", crop.x, keyFile);
@@ -4630,19 +4653,16 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333) {
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Enabled", pedited, sh.enabled, pedited->sh.enabled);
-            for (size_t i = 0; i < sh.levels.size(); ++i) {
-                assignFromKeyfile(keyFile, "Shadows & Highlights", "Level" + std::to_string(i), pedited, sh.levels[i], pedited->sh.levels);
+            assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", pedited, sh.highlights, pedited->sh.highlights);
+            assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", pedited, sh.htonalwidth, pedited->sh.htonalwidth);
+            assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", pedited, sh.shadows, pedited->sh.shadows);
+            assignFromKeyfile(keyFile, "Shadows & Highlights", "ShadowTonalWidth", pedited, sh.stonalwidth, pedited->sh.stonalwidth);
+            assignFromKeyfile(keyFile, "Shadows & Highlights", "Radius", pedited, sh.radius, pedited->sh.radius);
+            if (ppVersion >= 344) {
+                assignFromKeyfile(keyFile, "Shadows & Highlights", "Lab", pedited, sh.lab, pedited->sh.lab);
+            } else {
+                sh.lab = true;
             }
-            // assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", pedited, sh.highlights, pedited->sh.highlights);
-            // assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", pedited, sh.htonalwidth, pedited->sh.htonalwidth);
-            // assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", pedited, sh.shadows, pedited->sh.shadows);
-            // assignFromKeyfile(keyFile, "Shadows & Highlights", "ShadowTonalWidth", pedited, sh.stonalwidth, pedited->sh.stonalwidth);
-            // assignFromKeyfile(keyFile, "Shadows & Highlights", "Radius", pedited, sh.radius, pedited->sh.radius);
-            // if (ppVersion >= 344) {
-            //     assignFromKeyfile(keyFile, "Shadows & Highlights", "Lab", pedited, sh.lab, pedited->sh.lab);
-            // } else {
-            //     sh.lab = true;
-            // }
 
             // if (keyFile.has_key("Shadows & Highlights", "LocalContrast") && ppVersion < 329) {
             //     int lc = keyFile.get_integer("Shadows & Highlights", "LocalContrast");
@@ -4666,6 +4686,13 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             // }
         }
 
+        if (keyFile.has_group("ToneEqualizer")) {
+            assignFromKeyfile(keyFile, "ToneEqualizer", "Enabled", pedited, toneEqualizer.enabled, pedited->toneEqualizer.enabled);
+            for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
+                assignFromKeyfile(keyFile, "ToneEqualizer", "Band" + std::to_string(i), pedited, toneEqualizer.bands[i], pedited->toneEqualizer.bands);
+            }
+        }
+        
         if (keyFile.has_group("Crop")) {
             assignFromKeyfile(keyFile, "Crop", "Enabled", pedited, crop.enabled, pedited->crop.enabled);
             assignFromKeyfile(keyFile, "Crop", "X", pedited, crop.x, pedited->crop.x);
@@ -5806,6 +5833,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && logenc == other.logenc
         && defringe == other.defringe
         && sh == other.sh
+        && toneEqualizer == other.toneEqualizer
         && crop == other.crop
         && coarse == other.coarse
         && rotate == other.rotate

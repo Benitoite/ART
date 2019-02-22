@@ -341,7 +341,7 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
         }
     }
 
-    // shadowsHighlights(&working);
+    shadowsHighlights(&working);
     
     HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
     if (params->filmSimulation.enabled) {

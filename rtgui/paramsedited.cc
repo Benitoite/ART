@@ -299,13 +299,14 @@ void ParamsEdited::set(bool v)
     logenc.whiteEv = v;
     logenc.targetGray = v;
     sh.enabled       = v;
-    sh.levels = v;
-    // sh.highlights    = v;
-    // sh.htonalwidth   = v;
-    // sh.shadows       = v;
-    // sh.stonalwidth   = v;
-    // sh.radius        = v;
-    // sh.lab           = v;
+    sh.highlights    = v;
+    sh.htonalwidth   = v;
+    sh.shadows       = v;
+    sh.stonalwidth   = v;
+    sh.radius        = v;
+    sh.lab           = v;
+    toneEqualizer.enabled = v;
+    toneEqualizer.bands = v;
     crop.enabled = v;
     crop.x       = v;
     crop.y       = v;
@@ -880,13 +881,16 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         SETVAL_(logenc.targetGray);
 
         sh.enabled = sh.enabled && p.sh.enabled == other.sh.enabled;
-        SETVAL_(sh.levels);
-        // sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
-        // sh.htonalwidth = sh.htonalwidth && p.sh.htonalwidth == other.sh.htonalwidth;
-        // sh.shadows = sh.shadows && p.sh.shadows == other.sh.shadows;
-        // sh.stonalwidth = sh.stonalwidth && p.sh.stonalwidth == other.sh.stonalwidth;
-        // sh.radius = sh.radius && p.sh.radius == other.sh.radius;
-        // sh.lab = sh.lab && p.sh.lab == other.sh.lab;
+        sh.highlights = sh.highlights && p.sh.highlights == other.sh.highlights;
+        sh.htonalwidth = sh.htonalwidth && p.sh.htonalwidth == other.sh.htonalwidth;
+        sh.shadows = sh.shadows && p.sh.shadows == other.sh.shadows;
+        sh.stonalwidth = sh.stonalwidth && p.sh.stonalwidth == other.sh.stonalwidth;
+        sh.radius = sh.radius && p.sh.radius == other.sh.radius;
+        sh.lab = sh.lab && p.sh.lab == other.sh.lab;
+
+        SETVAL_(toneEqualizer.enabled);
+        SETVAL_(toneEqualizer.bands);
+
         crop.enabled = crop.enabled && p.crop.enabled == other.crop.enabled;
         crop.x = crop.x && p.crop.x == other.crop.x;
         crop.y = crop.y && p.crop.y == other.crop.y;
@@ -2108,34 +2112,36 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.sh.enabled         = mods.sh.enabled;
     }
 
-    if (sh.levels) {
-        for (int i = 0; i < 8; ++i) {
-            toEdit.sh.levels[i] = mods.sh.levels[i];
-        }
+    if (sh.highlights) {
+        toEdit.sh.highlights  = dontforceSet && options.baBehav[ADDSET_SH_HIGHLIGHTS] ? toEdit.sh.highlights + mods.sh.highlights : mods.sh.highlights;
     }
 
-    // if (sh.highlights) {
-    //     toEdit.sh.highlights  = dontforceSet && options.baBehav[ADDSET_SH_HIGHLIGHTS] ? toEdit.sh.highlights + mods.sh.highlights : mods.sh.highlights;
-    // }
+    if (sh.htonalwidth) {
+        toEdit.sh.htonalwidth     = mods.sh.htonalwidth;
+    }
 
-    // if (sh.htonalwidth) {
-    //     toEdit.sh.htonalwidth     = mods.sh.htonalwidth;
-    // }
+    if (sh.shadows) {
+        toEdit.sh.shadows         = dontforceSet && options.baBehav[ADDSET_SH_SHADOWS] ? toEdit.sh.shadows + mods.sh.shadows : mods.sh.shadows;
+    }
 
-    // if (sh.shadows) {
-    //     toEdit.sh.shadows         = dontforceSet && options.baBehav[ADDSET_SH_SHADOWS] ? toEdit.sh.shadows + mods.sh.shadows : mods.sh.shadows;
-    // }
+    if (sh.stonalwidth) {
+        toEdit.sh.stonalwidth     = mods.sh.stonalwidth;
+    }
 
-    // if (sh.stonalwidth) {
-    //     toEdit.sh.stonalwidth     = mods.sh.stonalwidth;
-    // }
+    if (sh.radius) {
+        toEdit.sh.radius      = mods.sh.radius;
+    }
 
-    // if (sh.radius) {
-    //     toEdit.sh.radius      = mods.sh.radius;
-    // }
+    if (sh.lab) {
+        toEdit.sh.lab      = mods.sh.lab;
+    }
 
-    // if (sh.lab) {
-    //     toEdit.sh.lab      = mods.sh.lab;
+    SETVAL_(toneEqualizer.enabled);
+    SETVAL_(toneEqualizer.bands);
+    // if (toneEqualizer.bands) {
+    //     for (int i = 0; i < 8; ++i) {
+    //         toEdit.toneEqualizer.bands[i] = mods.toneEqualizer.bands[i];
+    //     }
     // }
 
     if (crop.enabled) {

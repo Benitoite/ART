@@ -2370,7 +2370,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 
     highlightToneCurve(hltonecurve, working, exp_scale, comp, hlrange, multiThread);
     shadowToneCurve(shtonecurve, working, multiThread);
-    shadowsHighlights(working);
+    toneEqualizer(working);
 
 #ifdef _OPENMP
     #pragma omp parallel if (multiThread)
@@ -3499,9 +3499,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
         delete vCurve;
     }
 
-    // if (!params->logenc.enabled) {
-    //     shadowsHighlights(lab);
-    // }
+    if (!params->logenc.enabled) {
+        shadowsHighlights(lab);
+    }
 }
 
 /**
