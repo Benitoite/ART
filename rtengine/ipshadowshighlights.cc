@@ -300,7 +300,7 @@ namespace rtengine {
 
 namespace {
 
-void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams &pp, double scale, bool multithread)
+void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams &pp, const Glib::ustring &workingProfile, double scale, bool multithread)
 {
     // adapted from the tone equalizer of darktable
 /*
@@ -323,17 +323,23 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
     
     const int W = R.width();
     const int H = R.height();
-    array2D<float> RR(W, H);
-    array2D<float> GG(W, H);
-    array2D<float> BB(W, H);
+    array2D<float> Y(W, H);
 
     const int r = max(int(30 / scale), 1);
     const float epsilon = 1e-4f;
-    const float boost = 2.f;
 
-    rtengine::guidedFilter(R, R, RR, r, epsilon, multithread);
-    rtengine::guidedFilter(G, G, GG, r, epsilon, multithread);
-    rtengine::guidedFilter(B, B, BB, r, epsilon, multithread);
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws) / 65535.f;
+        }
+    }
+    
+    rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
 
     const auto log2 =
         [](float x) -> float
@@ -386,10 +392,10 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
     }
 
     const auto process_pixel =
-        [&](float &r, float &g, float &b) -> void
+        [&](float y) -> float
         {
             // get the luminance of the pixel - just average channels
-            const float luma = max(log2(max((r + g + b) / 3.0f, 0.f)), -18.0f);
+            const float luma = max(log2(max(y, 0.f)), -18.0f);
 
             // build the correction as the sum of the contribution of each luminance channel to current pixel
             float correction = 0.0f;
@@ -398,9 +404,7 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
             }
             correction /= w_sum;
 
-            r *= correction;
-            g *= correction;
-            b *= correction;
+            return correction;
         };
         
 #ifdef _OPENMP
@@ -408,16 +412,10 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            float baseR = RR[y][x];
-            float baseG = GG[y][x];
-            float baseB = BB[y][x];
-            float detailR = R[y][x] - baseR;
-            float detailG = G[y][x] - baseG;
-            float detailB = B[y][x] - baseB;
-            process_pixel(baseR, baseG, baseB);
-            R[y][x] = max(baseR + boost * detailR, 1e-5f);
-            G[y][x] = max(baseG + boost * detailG, 1e-5f);
-            B[y][x] = max(baseB + boost * detailB, 1e-5f);
+            float corr = process_pixel(Y[y][x]);
+            R[y][x] *= corr;
+            G[y][x] *= corr;
+            B[y][x] *= corr;
         }
     }
 }
@@ -444,15 +442,15 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)
         return;
     }
     
-    rgb->normalizeFloatTo1();
+//    rgb->normalizeFloatTo1();
 
     array2D<float> R(rgb->getWidth(), rgb->getHeight(), rgb->r.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> G(rgb->getWidth(), rgb->getHeight(), rgb->g.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> B(rgb->getWidth(), rgb->getHeight(), rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
-    sh(R, G, B, params->sh, scale, multiThread);
+    sh(R, G, B, params->sh, params->icm.workingProfile, scale, multiThread);
     
-    rgb->normalizeFloatTo65535();
+//    rgb->normalizeFloatTo65535();
 }
 
 } // namespace rtengine
