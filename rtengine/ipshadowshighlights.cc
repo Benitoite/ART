@@ -323,23 +323,29 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
     
     const int W = R.width();
     const int H = R.height();
-    array2D<float> Y(W, H);
+//    array2D<float> Y(W, H);
+    array2D<float> RR(W, H, R, 0);
+    array2D<float> GG(W, H, G, 0);
+    array2D<float> BB(W, H, B, 0);
 
-    const int r = max(int(100 / scale), 1);
-    const float epsilon = 1e-5f;
+    const int r = max(int(30 / scale), 1);
+    const float epsilon = 0.001f;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
 
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws) / 65535.f;
-        }
-    }
+// #ifdef _OPENMP
+// #   pragma omp parallel for if (multithread)
+// #endif
+//     for (int y = 0; y < H; ++y) {
+//         for (int x = 0; x < W; ++x) {
+//             Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws) / 65535.f;
+//         }
+//     }
     
-    rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
+//    rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
+    rtengine::guidedFilter(RR, RR, RR, r, epsilon, multithread);
+    rtengine::guidedFilter(GG, GG, GG, r, epsilon, multithread);
+    rtengine::guidedFilter(BB, BB, BB, r, epsilon, multithread);
 
     const auto log2 =
         [](float x) -> float
@@ -414,10 +420,17 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            float corr = process_pixel(Y[y][x]);
-            R[y][x] *= corr;
-            G[y][x] *= corr;
-            B[y][x] *= corr;
+            float Y = Color::rgbLuminance(RR[y][x], GG[y][x], BB[y][x], ws);// / 65535.f;
+            float corr = process_pixel(Y); //Y[y][x]);
+            float dR = R[y][x] - RR[y][x];
+            float dG = G[y][x] - GG[y][x];
+            float dB = B[y][x] - BB[y][x];
+            // R[y][x] *= corr;
+            // G[y][x] *= corr;
+            // B[y][x] *= corr;
+            R[y][x] = RR[y][x] * corr + dR * (corr + 0.25f);
+            G[y][x] = GG[y][x] * corr + dG * (corr + 0.25f);
+            B[y][x] = BB[y][x] * corr + dB * (corr + 0.25f);
         }
     }
 }
@@ -444,7 +457,7 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)
         return;
     }
     
-//    rgb->normalizeFloatTo1();
+    rgb->normalizeFloatTo1();
 
     array2D<float> R(rgb->getWidth(), rgb->getHeight(), rgb->r.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> G(rgb->getWidth(), rgb->getHeight(), rgb->g.ptrs, ARRAY2D_BYREFERENCE);
@@ -452,7 +465,7 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)
 
     sh(R, G, B, params->sh, params->icm.workingProfile, scale, multiThread);
     
-//    rgb->normalizeFloatTo65535();
+    rgb->normalizeFloatTo65535();
 }
 
 } // namespace rtengine
