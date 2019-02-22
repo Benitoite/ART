@@ -53,23 +53,23 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 {
     const int W = R.width();
     const int H = R.height();
-    array2D<float> Y(W, H);
+    // array2D<float> Y(W, H);
 
-    const int r = max(int(30 / scale), 1);
-    const float epsilon = 0.001f;
+    // const int r = max(int(30 / scale), 1);
+    // const float epsilon = 0.001f;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
 
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-        }
-    }
+// #ifdef _OPENMP
+// #   pragma omp parallel for if (multithread)
+// #endif
+//     for (int y = 0; y < H; ++y) {
+//         for (int x = 0; x < W; ++x) {
+//             Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+//         }
+//     }
     
-    rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
+    // rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
 
     const auto log2 =
         [](float x) -> float
@@ -186,7 +186,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             return correction;
         };
 #endif // __SSE2__
-    
+
+    array2D<float> Y(W, H);
         
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
@@ -194,43 +195,49 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     for (int y = 0; y < H; ++y) {
         int x = 0;
 #ifdef __SSE2__
-        float ll[4];
+        float l[4];
         for (; x < W - 3; x += 4) {
             for (int i = 0; i < 4; ++i) {
-                ll[i] = Color::rgbLuminance(R[y][x+i], G[y][x+i], B[y][x+i], ws);
+                l[i] = Color::rgbLuminance(R[y][x+i], G[y][x+i], B[y][x+i], ws);
             }
-            vfloat oY = LVFU(ll[0]);
-            vfloat cY = LVFU(Y[y][x]);
+            vfloat cY = LVFU(l[0]);
+            // vfloat cY = oY;//LVFU(Y[y][x]);
             vfloat corr = vprocess_pixel(cY);
-            vfloat corr2 = corr + pow_F(corr / twov, fourv);
-            vfloat dY = oY - cY;
-            vmask m = vmaskf_le(oY, zerov);
-            if (_mm_movemask_ps((vfloat)m)) {
-                for (int i = 0; i < 4; ++i) {
-                    if (oY[i] > 0.f) {
-                        R[y][x+i] = R[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
-                        G[y][x+i] = G[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
-                        B[y][x+i] = B[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
-                    }
-                }
-            } else {
-                STVFU(R[y][x], LVFU(R[y][x]) / oY * (cY * corr + dY * corr2));
-                STVFU(G[y][x], LVFU(G[y][x]) / oY * (cY * corr + dY * corr2));
-                STVFU(B[y][x], LVFU(B[y][x]) / oY * (cY * corr + dY * corr2));
-            }
+            // vfloat corr2 = corr;// + pow_F(corr / twov, fourv);
+            // vfloat dY = oY - cY;
+            // vmask m = vmaskf_le(oY, zerov);
+            // if (_mm_movemask_ps((vfloat)m)) {
+            //     for (int i = 0; i < 4; ++i) {
+            //         if (oY[i] > 0.f) {
+            //             R[y][x+i] = R[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
+            //             G[y][x+i] = G[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
+            //             B[y][x+i] = B[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
+            //         }
+            //     }
+            // } else {
+            //     STVFU(R[y][x], LVFU(R[y][x]) / oY * (cY * corr + dY * corr2));
+            //     STVFU(G[y][x], LVFU(G[y][x]) / oY * (cY * corr + dY * corr2));
+            //     STVFU(B[y][x], LVFU(B[y][x]) / oY * (cY * corr + dY * corr2));
+            // }
+            STVFU(R[y][x], LVFU(R[y][x]) * corr);
+            STVFU(G[y][x], LVFU(G[y][x]) * corr);
+            STVFU(B[y][x], LVFU(B[y][x]) * corr);
         }
 #endif // __SSE2__
         for (; x < W; ++x) {
             float oY = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-            float cY = Y[y][x];
-            float corr = process_pixel(cY);
-            float corr2 = corr + pow_F(corr / 2.f, 4.f);
-            float dY = oY - cY;
-            if (oY > 0.f) {
-                R[y][x] = R[y][x] / oY * (cY * corr + dY * corr2);
-                G[y][x] = G[y][x] / oY * (cY * corr + dY * corr2);
-                B[y][x] = B[y][x] / oY * (cY * corr + dY * corr2);
-            }
+            // float cY = oY;//Y[y][x];
+            float corr = process_pixel(oY);
+            // float corr2 = corr;// + pow_F(corr / 2.f, 4.f);
+            // float dY = oY - cY;
+            // if (oY > 0.f) {
+            //     R[y][x] = R[y][x] / oY * (cY * corr + dY * corr2);
+            //     G[y][x] = G[y][x] / oY * (cY * corr + dY * corr2);
+            //     B[y][x] = B[y][x] / oY * (cY * corr + dY * corr2);
+            // }
+            R[y][x] *= corr;
+            G[y][x] *= corr;
+            B[y][x] *= corr;
         }
     }
 }
