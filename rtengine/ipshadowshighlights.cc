@@ -325,8 +325,8 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
     const int H = R.height();
     array2D<float> Y(W, H);
 
-    const int r = max(int(30 / scale), 1);
-    const float epsilon = 1e-4f;
+    const int r = max(int(100 / scale), 1);
+    const float epsilon = 1e-5f;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
 
@@ -359,10 +359,12 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
                            return xexpf((-SQR(x - b) / 4.0f));
                        };
 
-     // Build the luma channels : band-pass filters with gaussian windows of std 2 EV, spaced by 2 EV
+     // Build the luma channels: band-pass filters with gaussian windows of
+     // std 2 EV, spaced by 2 EV
     const float centers[12] = {
         -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
-        -4.0f,  -2.0f,   0.0f,  2.0f,   4.0f};
+        -4.0f,  -2.0f,   0.0f,  2.0f,   4.0f
+    };
 
     const auto conv = [&](int v) -> float
                       {
@@ -379,9 +381,9 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
         conv(pp.levels[1]), //  -6 EV
         conv(pp.levels[2]), //  -4 EV
         conv(pp.levels[3]), //  -2 EV
-        conv(pp.levels[4]), //  0 EV
-        conv(pp.levels[4]), //  2 EV
-        conv(pp.levels[4])  //  4 EV
+        conv(pp.levels[4]), //   0 EV
+        conv(pp.levels[4]), //   2 EV
+        conv(pp.levels[4])  //   4 EV
     };
 
     // For every pixel luminance, the sum of the gaussian masks

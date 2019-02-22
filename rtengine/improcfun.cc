@@ -2037,6 +2037,14 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 {
     BENCHFUN
     constexpr int TS = 112;
+
+    std::unique_ptr<Imagefloat> drimage;
+    if (params->sh.enabled) {
+        drimage.reset(new Imagefloat(working->getWidth(), working->getHeight()));
+        working->copyData(drimage.get());
+        working = drimage.get();
+        shadowsHighlights(working);
+    }
     
     Imagefloat *tmpImage = nullptr;
 
@@ -3483,9 +3491,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
         delete vCurve;
     }
 
-    if (!params->logenc.enabled) {
-        shadowsHighlights(lab);
-    }
+    // if (!params->logenc.enabled) {
+    //     shadowsHighlights(lab);
+    // }
 }
 
 /**
