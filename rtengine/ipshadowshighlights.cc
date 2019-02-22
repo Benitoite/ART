@@ -323,29 +323,23 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
     
     const int W = R.width();
     const int H = R.height();
-//    array2D<float> Y(W, H);
-    array2D<float> RR(W, H, R, 0);
-    array2D<float> GG(W, H, G, 0);
-    array2D<float> BB(W, H, B, 0);
+    array2D<float> Y(W, H);
 
     const int r = max(int(30 / scale), 1);
     const float epsilon = 0.001f;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
 
-// #ifdef _OPENMP
-// #   pragma omp parallel for if (multithread)
-// #endif
-//     for (int y = 0; y < H; ++y) {
-//         for (int x = 0; x < W; ++x) {
-//             Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws) / 65535.f;
-//         }
-//     }
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        }
+    }
     
-//    rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
-    rtengine::guidedFilter(RR, RR, RR, r, epsilon, multithread);
-    rtengine::guidedFilter(GG, GG, GG, r, epsilon, multithread);
-    rtengine::guidedFilter(BB, BB, BB, r, epsilon, multithread);
+    rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
 
     const auto log2 =
         [](float x) -> float
@@ -369,7 +363,7 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
      // std 2 EV, spaced by 2 EV
     const float centers[12] = {
         -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
-        -4.0f,  -2.0f,   0.0f,  2.0f,   4.0f
+        -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
     };
 
     const auto conv = [&](int v) -> float
@@ -405,7 +399,8 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
             // get the luminance of the pixel - just average channels
             const float luma = max(log2(max(y, 0.f)), -18.0f);
 
-            // build the correction as the sum of the contribution of each luminance channel to current pixel
+            // build the correction as the sum of the contribution of each
+            // luminance channel to current pixel
             float correction = 0.0f;
             for (int c = 0; c < 12; ++c) {
                 correction += GAUSS(centers[c], luma) * factors[c];
@@ -420,17 +415,16 @@ void sh(array2D<float> &R, array2D<float> &G, array2D<float> &B, const SHParams 
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            float Y = Color::rgbLuminance(RR[y][x], GG[y][x], BB[y][x], ws);// / 65535.f;
-            float corr = process_pixel(Y); //Y[y][x]);
-            float dR = R[y][x] - RR[y][x];
-            float dG = G[y][x] - GG[y][x];
-            float dB = B[y][x] - BB[y][x];
-            // R[y][x] *= corr;
-            // G[y][x] *= corr;
-            // B[y][x] *= corr;
-            R[y][x] = RR[y][x] * corr + dR * (corr + 0.25f);
-            G[y][x] = GG[y][x] * corr + dG * (corr + 0.25f);
-            B[y][x] = BB[y][x] * corr + dB * (corr + 0.25f);
+            float oY = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+            float cY = Y[y][x];
+            float corr = process_pixel(cY);
+            float corr2 = corr + 0.25f;
+            float dY = oY - cY;
+            if (oY > 0.f) {
+                R[y][x] = R[y][x] / oY * (cY * corr + dY * corr2);
+                G[y][x] = G[y][x] / oY * (cY * corr + dY * corr2);
+                B[y][x] = B[y][x] / oY * (cY * corr + dY * corr2);
+            }
         }
     }
 }
