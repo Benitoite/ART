@@ -164,9 +164,9 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[0]->pack_start (*exposure, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*logenc, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*sh, Gtk::PACK_SHRINK, 2);
-    vboxes[0]->pack_start (*toneEqualizer, Gtk::PACK_SHRINK, 2);
     //vboxes[0]->pack_start (*epd, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*fattal, Gtk::PACK_SHRINK, 2);
+    vboxes[0]->pack_start (*toneEqualizer, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*pcvignette, Gtk::PACK_SHRINK, 2);
     vboxes[0]->pack_start (*gradient, Gtk::PACK_SHRINK, 2);
     //vboxes[0]->pack_start (*labcurve, Gtk::PACK_SHRINK, 2);
