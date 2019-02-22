@@ -84,11 +84,6 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             return pow_F(2.f, x);
         };
 
-    const auto GAUSS = [](float b, float x) -> float
-                       {
-                           return xexpf((-SQR(x - b) / 4.0f));
-                       };
-
      // Build the luma channels: band-pass filters with gaussian windows of
      // std 2 EV, spaced by 2 EV
     const float centers[12] = {
@@ -116,11 +111,17 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         conv(pp.bands[4])  //   4 EV
     };
 
+    const auto gauss =
+        [](float b, float x) -> float
+        {
+            return xexpf((-SQR(x - b) / 4.0f));
+        };
+
     // For every pixel luminance, the sum of the gaussian masks
     // evenly spaced by 2 EV with 2 EV std should be this constant
     float w_sum = 0.f;
     for (int i = 0; i < 12; ++i) {
-        w_sum += GAUSS(centers[i], 0.f);
+        w_sum += gauss(centers[i], 0.f);
     }
 
     const auto process_pixel =
@@ -133,18 +134,93 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             // luminance channel to current pixel
             float correction = 0.0f;
             for (int c = 0; c < 12; ++c) {
-                correction += GAUSS(centers[c], luma) * factors[c];
+                correction += gauss(centers[c], luma) * factors[c];
             }
             correction /= w_sum;
 
             return correction;
         };
+
+#ifdef __SSE2__
+    vfloat vfactors[12];
+    vfloat vcenters[12];
+    
+    for (int i = 0; i < 12; ++i) {
+        vfactors[i] = F2V(factors[i]);
+        vcenters[i] = F2V(centers[i]);
+    }
+
+    const auto vgauss =
+        [](vfloat b, vfloat x) -> vfloat
+        {
+            static const vfloat fourv = F2V(4.f);
+            return xexpf((-SQR(x - b) / fourv));
+        };
+
+    vfloat zerov = F2V(0.f);
+    vfloat twov = F2V(2.f);
+    vfloat fourv = F2V(4.f);
+    
+    vfloat vw_sum = zerov;
+    for (int i = 0; i < 12; ++i) {
+        vw_sum += vgauss(vcenters[i], zerov);
+    }
+
+    const vfloat noisev = F2V(-18.f);
+    const vfloat xlog2v = F2V(xlogf(2.f));
+    
+    const auto vprocess_pixel =
+        [&](vfloat y) -> vfloat
+        {
+            // get the luminance of the pixel - just average channels
+            const vfloat luma = vmaxf(xlogf(vmaxf(y, zerov))/xlog2v, noisev);
+
+            // build the correction as the sum of the contribution of each
+            // luminance channel to current pixel
+            vfloat correction = zerov;
+            for (int c = 0; c < 12; ++c) {
+                correction += vgauss(vcenters[c], luma) * vfactors[c];
+            }
+            correction /= vw_sum;
+
+            return correction;
+        };
+#endif // __SSE2__
+    
         
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
+        int x = 0;
+#ifdef __SSE2__
+        float ll[4];
+        for (; x < W - 3; x += 4) {
+            for (int i = 0; i < 4; ++i) {
+                ll[i] = Color::rgbLuminance(R[y][x+i], G[y][x+i], B[y][x+i], ws);
+            }
+            vfloat oY = LVFU(ll[0]);
+            vfloat cY = LVFU(Y[y][x]);
+            vfloat corr = vprocess_pixel(cY);
+            vfloat corr2 = corr + pow_F(corr / twov, fourv);
+            vfloat dY = oY - cY;
+            vmask m = vmaskf_le(oY, zerov);
+            if (_mm_movemask_ps((vfloat)m)) {
+                for (int i = 0; i < 4; ++i) {
+                    if (oY[i] > 0.f) {
+                        R[y][x+i] = R[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
+                        G[y][x+i] = G[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
+                        B[y][x+i] = B[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
+                    }
+                }
+            } else {
+                STVFU(R[y][x], LVFU(R[y][x]) / oY * (cY * corr + dY * corr2));
+                STVFU(G[y][x], LVFU(G[y][x]) / oY * (cY * corr + dY * corr2));
+                STVFU(B[y][x], LVFU(B[y][x]) / oY * (cY * corr + dY * corr2));
+            }
+        }
+#endif // __SSE2__
+        for (; x < W; ++x) {
             float oY = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
             float cY = Y[y][x];
             float corr = process_pixel(cY);
