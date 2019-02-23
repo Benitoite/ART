@@ -165,8 +165,6 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 #endif // __SSE2__
 
-    array2D<float> Y(W, H);
-        
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
