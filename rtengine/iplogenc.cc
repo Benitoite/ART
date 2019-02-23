@@ -107,6 +107,10 @@ float find_gray(float source_gray, float target_gray)
     //
     // use a bisection method (maybe later change to Netwon)
 
+    if (source_gray <= 0.f) {
+        return 0.f;
+    }
+
     const auto f =
         [=](float x) -> float
         {
