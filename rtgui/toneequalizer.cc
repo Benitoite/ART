@@ -100,7 +100,7 @@ void ToneEqualizer::adjusterChanged(Adjuster *a, double newval)
     if (listener && getEnabled()) {
         Glib::ustring s;
         for (size_t i = 0; i < bands.size(); ++i) {
-            s += Glib::ustring::format((int)a->getValue()) + " ";
+            s += Glib::ustring::format((int)bands[i]->getValue()) + " ";
         }
         listener->panelChanged(EvBands, s);
     }

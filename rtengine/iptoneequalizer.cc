@@ -43,7 +43,6 @@
 #include "gauss.h"
 #include "sleef.c"
 #include "opthelper.h"
-#include "guidedfilter.h"
 
 namespace rtengine {
 
@@ -53,23 +52,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 {
     const int W = R.width();
     const int H = R.height();
-    // array2D<float> Y(W, H);
-
-    // const int r = max(int(30 / scale), 1);
-    // const float epsilon = 0.001f;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
-
-// #ifdef _OPENMP
-// #   pragma omp parallel for if (multithread)
-// #endif
-//     for (int y = 0; y < H; ++y) {
-//         for (int x = 0; x < W; ++x) {
-//             Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-//         }
-//     }
-    
-    // rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
 
     const auto log2 =
         [](float x) -> float
@@ -85,18 +69,19 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
      // Build the luma channels: band-pass filters with gaussian windows of
-     // std 2 EV, spaced by 2 EV
+     // std 2 EV
     const float centers[12] = {
         -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
         -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
     };
+    constexpr size_t nbands = sizeof(centers) / sizeof(float);
 
     const auto conv = [&](int v) -> float
                       {
                           return exp2(float(v) / 100.f * 2.f);
                       };
 
-    const float factors[12] = {
+    const float factors[] = {
         conv(pp.bands[0]), // -18 EV
         conv(pp.bands[0]), // -16 EV
         conv(pp.bands[0]), // -14 EV
@@ -118,22 +103,21 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
     // For every pixel luminance, the sum of the gaussian masks
-    // evenly spaced by 2 EV with 2 EV std should be this constant
     float w_sum = 0.f;
-    for (int i = 0; i < 12; ++i) {
+    for (size_t i = 0; i < nbands; ++i) {
         w_sum += gauss(centers[i], 0.f);
     }
 
     const auto process_pixel =
         [&](float y) -> float
         {
-            // get the luminance of the pixel - just average channels
+            // operate in log space
             const float luma = max(log2(max(y, 0.f)), -18.0f);
 
             // build the correction as the sum of the contribution of each
             // luminance channel to current pixel
             float correction = 0.0f;
-            for (int c = 0; c < 12; ++c) {
+            for (size_t c = 0; c < nbands; ++c) {
                 correction += gauss(centers[c], luma) * factors[c];
             }
             correction /= w_sum;
@@ -142,10 +126,10 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
 #ifdef __SSE2__
-    vfloat vfactors[12];
-    vfloat vcenters[12];
+    vfloat vfactors[nbands];
+    vfloat vcenters[nbands];
     
-    for (int i = 0; i < 12; ++i) {
+    for (size_t i = 0; i < nbands; ++i) {
         vfactors[i] = F2V(factors[i]);
         vcenters[i] = F2V(centers[i]);
     }
@@ -158,11 +142,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
     vfloat zerov = F2V(0.f);
-    vfloat twov = F2V(2.f);
-    vfloat fourv = F2V(4.f);
-    
     vfloat vw_sum = zerov;
-    for (int i = 0; i < 12; ++i) {
+    for (size_t i = 0; i < nbands; ++i) {
         vw_sum += vgauss(vcenters[i], zerov);
     }
 
@@ -172,13 +153,10 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     const auto vprocess_pixel =
         [&](vfloat y) -> vfloat
         {
-            // get the luminance of the pixel - just average channels
             const vfloat luma = vmaxf(xlogf(vmaxf(y, zerov))/xlog2v, noisev);
 
-            // build the correction as the sum of the contribution of each
-            // luminance channel to current pixel
             vfloat correction = zerov;
-            for (int c = 0; c < 12; ++c) {
+            for (size_t c = 0; c < nbands; ++c) {
                 correction += vgauss(vcenters[c], luma) * vfactors[c];
             }
             correction /= vw_sum;
@@ -201,24 +179,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
                 l[i] = Color::rgbLuminance(R[y][x+i], G[y][x+i], B[y][x+i], ws);
             }
             vfloat cY = LVFU(l[0]);
-            // vfloat cY = oY;//LVFU(Y[y][x]);
             vfloat corr = vprocess_pixel(cY);
-            // vfloat corr2 = corr;// + pow_F(corr / twov, fourv);
-            // vfloat dY = oY - cY;
-            // vmask m = vmaskf_le(oY, zerov);
-            // if (_mm_movemask_ps((vfloat)m)) {
-            //     for (int i = 0; i < 4; ++i) {
-            //         if (oY[i] > 0.f) {
-            //             R[y][x+i] = R[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
-            //             G[y][x+i] = G[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
-            //             B[y][x+i] = B[y][x+i] / oY[i] * (cY[i] * corr[i] + dY[i] * corr2[i]);
-            //         }
-            //     }
-            // } else {
-            //     STVFU(R[y][x], LVFU(R[y][x]) / oY * (cY * corr + dY * corr2));
-            //     STVFU(G[y][x], LVFU(G[y][x]) / oY * (cY * corr + dY * corr2));
-            //     STVFU(B[y][x], LVFU(B[y][x]) / oY * (cY * corr + dY * corr2));
-            // }
             STVFU(R[y][x], LVFU(R[y][x]) * corr);
             STVFU(G[y][x], LVFU(G[y][x]) * corr);
             STVFU(B[y][x], LVFU(B[y][x]) * corr);
@@ -226,15 +187,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 #endif // __SSE2__
         for (; x < W; ++x) {
             float oY = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-            // float cY = oY;//Y[y][x];
             float corr = process_pixel(oY);
-            // float corr2 = corr;// + pow_F(corr / 2.f, 4.f);
-            // float dY = oY - cY;
-            // if (oY > 0.f) {
-            //     R[y][x] = R[y][x] / oY * (cY * corr + dY * corr2);
-            //     G[y][x] = G[y][x] / oY * (cY * corr + dY * corr2);
-            //     B[y][x] = B[y][x] / oY * (cY * corr + dY * corr2);
-            // }
             R[y][x] *= corr;
             G[y][x] *= corr;
             B[y][x] *= corr;
