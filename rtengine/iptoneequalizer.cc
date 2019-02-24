@@ -66,8 +66,9 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         }
     }
 
-    const int r = 15 / scale * (pp.detail >= 0 ? float(1 + pp.detail) : 1.f / float(1 - pp.detail));
-    const float epsilon = 0.035f * std::pow(2, pp.detail);
+    const float detail = float(pp.detail) / 20.f;
+    const int r = 15 / scale * (detail >= 0.f ? 1.f + detail : 1.f / (1.f - detail));
+    const float epsilon = 0.035f * std::pow(2.f, detail);
     if (r > 0) {
         rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
     }
