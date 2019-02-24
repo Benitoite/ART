@@ -28,12 +28,17 @@ ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_T
     auto m = ProcEventMapper::getInstance();
     EvEnabled = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_ENABLED");
     EvBands = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_BANDS");
+    EvDetail = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_DETAIL");
 
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i] = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_BAND_" + std::to_string(i)), -100, 100, 1, 0));
         bands[i]->setAdjusterListener(this);
         pack_start(*bands[i]);
     }
+    pack_start(*Gtk::manage(new Gtk::HSeparator()));
+    detail = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_DETAIL"), -5, 5, 1, 0));
+    detail->setAdjusterListener(this);
+    pack_start(*detail);
     
     show_all_children ();
 }
@@ -48,6 +53,7 @@ void ToneEqualizer::read(const ProcParams *pp, const ParamsEdited *pedited)
         for (size_t i = 0; i < bands.size(); ++i) {
             bands[i]->setEditedState(pedited->toneEqualizer.bands ? Edited : UnEdited);
         }
+        detail->setEditedState(pedited->toneEqualizer.detail ? Edited : UnEdited);
     }
 
     setEnabled(pp->toneEqualizer.enabled);
@@ -55,6 +61,7 @@ void ToneEqualizer::read(const ProcParams *pp, const ParamsEdited *pedited)
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->setValue(pp->toneEqualizer.bands[i]);
     }
+    detail->setValue(pp->toneEqualizer.detail);
     
     enableListener();
 }
@@ -66,6 +73,7 @@ void ToneEqualizer::write(ProcParams *pp, ParamsEdited *pedited)
         pp->toneEqualizer.bands[i] = bands[i]->getValue();
     }
     pp->toneEqualizer.enabled = getEnabled();
+    pp->toneEqualizer.detail = detail->getValue();
 
     if (pedited) {
         pedited->toneEqualizer.enabled = !get_inconsistent();
@@ -73,6 +81,7 @@ void ToneEqualizer::write(ProcParams *pp, ParamsEdited *pedited)
         for (size_t i = 0; i < bands.size(); ++i) {
             pedited->toneEqualizer.bands = pedited->toneEqualizer.bands || bands[i]->getEditedState();
         }
+        pedited->toneEqualizer.detail = detail->getEditedState();
     }
 }
 
@@ -82,15 +91,18 @@ void ToneEqualizer::setDefaults(const ProcParams *defParams, const ParamsEdited 
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->setDefault(defParams->toneEqualizer.bands[i]);
     }
+    detail->setDefault(defParams->toneEqualizer.detail);
 
     if (pedited) {
         for (size_t i = 0; i < bands.size(); ++i) {
             bands[i]->setDefaultEditedState(pedited->toneEqualizer.bands ? Edited : UnEdited);
         }
+        detail->setDefaultEditedState(pedited->toneEqualizer.detail ? Edited : UnEdited);
     } else {
         for (size_t i = 0; i < bands.size(); ++i) {
             bands[i]->setDefaultEditedState(Irrelevant);
         }
+        detail->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -98,11 +110,15 @@ void ToneEqualizer::setDefaults(const ProcParams *defParams, const ParamsEdited 
 void ToneEqualizer::adjusterChanged(Adjuster *a, double newval)
 {
     if (listener && getEnabled()) {
-        Glib::ustring s;
-        for (size_t i = 0; i < bands.size(); ++i) {
-            s += Glib::ustring::format((int)bands[i]->getValue()) + " ";
+        if (a == detail) {
+            listener->panelChanged(EvDetail, Glib::ustring::format(a->getValue()));
+        } else {
+            Glib::ustring s;
+            for (size_t i = 0; i < bands.size(); ++i) {
+                s += Glib::ustring::format((int)bands[i]->getValue()) + " ";
+            }
+            listener->panelChanged(EvBands, s);
         }
-        listener->panelChanged(EvBands, s);
     }
 }
 
@@ -132,6 +148,7 @@ void ToneEqualizer::setBatchMode(bool batchMode)
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->showEditedCB();
     }
+    detail->showEditedCB();
 }
 
 
@@ -140,4 +157,5 @@ void ToneEqualizer::trimValues(rtengine::procparams::ProcParams *pp)
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->trimValue(pp->toneEqualizer.bands[i]);
     }
+    detail->trimValue(pp->toneEqualizer.detail);
 }

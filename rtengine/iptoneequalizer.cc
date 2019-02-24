@@ -55,9 +55,6 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     const int H = R.height();
     array2D<float> Y(W, H);
 
-    const int r = 15 / scale;
-    const float epsilon = 0.035f;
-
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
 
 #ifdef _OPENMP
@@ -69,6 +66,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         }
     }
 
+    const int r = 15 / scale * (pp.detail >= 0 ? float(1 + pp.detail) : 1.f / float(1 - pp.detail));
+    const float epsilon = 0.035f * std::pow(2, pp.detail);
     if (r > 0) {
         rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
     }

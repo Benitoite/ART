@@ -878,6 +878,7 @@ struct SHParams {
 struct ToneEqualizerParams {
     bool enabled;
     std::array<int, 5> bands;
+    int detail;
 
     ToneEqualizerParams();
 

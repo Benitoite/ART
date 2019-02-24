@@ -1758,7 +1758,8 @@ bool SHParams::operator !=(const SHParams& other) const
 
 ToneEqualizerParams::ToneEqualizerParams():
     enabled(false),
-    bands{0,0,0,0,0}
+    bands{0,0,0,0,0},
+    detail(0)
 {
 }
 
@@ -1767,7 +1768,8 @@ bool ToneEqualizerParams::operator ==(const ToneEqualizerParams& other) const
 {
     return
         enabled == other.enabled
-        && bands == other.bands;
+        && bands == other.bands
+        && detail == other.detail;
 }
 
 
@@ -3558,6 +3560,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
             saveToKeyfile(!pedited || pedited->toneEqualizer.bands, "ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i], keyFile);
         }
+        saveToKeyfile(!pedited || pedited->toneEqualizer.detail, "ToneEqualizer", "Detail", toneEqualizer.detail, keyFile);
         
 // Crop
         saveToKeyfile(!pedited || pedited->crop.enabled, "Crop", "Enabled", crop.enabled, keyFile);
@@ -4691,6 +4694,7 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
                 assignFromKeyfile(keyFile, "ToneEqualizer", "Band" + std::to_string(i), pedited, toneEqualizer.bands[i], pedited->toneEqualizer.bands);
             }
+            assignFromKeyfile(keyFile, "ToneEqualizer", "Detail", pedited, toneEqualizer.detail, pedited->toneEqualizer.detail);
         }
         
         if (keyFile.has_group("Crop")) {

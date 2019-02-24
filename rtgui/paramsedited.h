@@ -433,6 +433,7 @@ class ToneEqualizerParamsEdited
 public:
     bool enabled;
     bool bands;
+    bool detail;
 };
 
 
