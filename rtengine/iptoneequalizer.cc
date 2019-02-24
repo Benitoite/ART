@@ -43,6 +43,7 @@
 #include "gauss.h"
 #include "sleef.c"
 #include "opthelper.h"
+#include "guidedfilter.h"
 
 namespace rtengine {
 
@@ -52,8 +53,25 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 {
     const int W = R.width();
     const int H = R.height();
+    array2D<float> Y(W, H);
+
+    const int r = 15 / scale;
+    const float epsilon = 0.035f;
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        }
+    }
+
+    if (r > 0) {
+        rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
+    }
 
     const auto log2 =
         [](float x) -> float
@@ -69,19 +87,18 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
      // Build the luma channels: band-pass filters with gaussian windows of
-     // std 2 EV
+     // std 2 EV, spaced by 2 EV
     const float centers[12] = {
         -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
         -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
     };
-    constexpr size_t nbands = sizeof(centers) / sizeof(float);
 
     const auto conv = [&](int v) -> float
                       {
                           return exp2(float(v) / 100.f * 2.f);
                       };
 
-    const float factors[] = {
+    const float factors[12] = {
         conv(pp.bands[0]), // -18 EV
         conv(pp.bands[0]), // -16 EV
         conv(pp.bands[0]), // -14 EV
@@ -103,21 +120,22 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
     // For every pixel luminance, the sum of the gaussian masks
+    // evenly spaced by 2 EV with 2 EV std should be this constant
     float w_sum = 0.f;
-    for (size_t i = 0; i < nbands; ++i) {
+    for (int i = 0; i < 12; ++i) {
         w_sum += gauss(centers[i], 0.f);
     }
 
     const auto process_pixel =
         [&](float y) -> float
         {
-            // operate in log space
+            // get the luminance of the pixel - just average channels
             const float luma = max(log2(max(y, 0.f)), -18.0f);
 
             // build the correction as the sum of the contribution of each
             // luminance channel to current pixel
             float correction = 0.0f;
-            for (size_t c = 0; c < nbands; ++c) {
+            for (int c = 0; c < 12; ++c) {
                 correction += gauss(centers[c], luma) * factors[c];
             }
             correction /= w_sum;
@@ -126,10 +144,10 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
 #ifdef __SSE2__
-    vfloat vfactors[nbands];
-    vfloat vcenters[nbands];
+    vfloat vfactors[12];
+    vfloat vcenters[12];
     
-    for (size_t i = 0; i < nbands; ++i) {
+    for (int i = 0; i < 12; ++i) {
         vfactors[i] = F2V(factors[i]);
         vcenters[i] = F2V(centers[i]);
     }
@@ -142,8 +160,9 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         };
 
     vfloat zerov = F2V(0.f);
+    
     vfloat vw_sum = zerov;
-    for (size_t i = 0; i < nbands; ++i) {
+    for (int i = 0; i < 12; ++i) {
         vw_sum += vgauss(vcenters[i], zerov);
     }
 
@@ -153,10 +172,13 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     const auto vprocess_pixel =
         [&](vfloat y) -> vfloat
         {
+            // get the luminance of the pixel - just average channels
             const vfloat luma = vmaxf(xlogf(vmaxf(y, zerov))/xlog2v, noisev);
 
+            // build the correction as the sum of the contribution of each
+            // luminance channel to current pixel
             vfloat correction = zerov;
-            for (size_t c = 0; c < nbands; ++c) {
+            for (int c = 0; c < 12; ++c) {
                 correction += vgauss(vcenters[c], luma) * vfactors[c];
             }
             correction /= vw_sum;
@@ -164,19 +186,16 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             return correction;
         };
 #endif // __SSE2__
-
+    
+        
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < H; ++y) {
         int x = 0;
 #ifdef __SSE2__
-        float l[4];
         for (; x < W - 3; x += 4) {
-            for (int i = 0; i < 4; ++i) {
-                l[i] = Color::rgbLuminance(R[y][x+i], G[y][x+i], B[y][x+i], ws);
-            }
-            vfloat cY = LVFU(l[0]);
+            vfloat cY = LVFU(Y[y][x]);
             vfloat corr = vprocess_pixel(cY);
             STVFU(R[y][x], LVFU(R[y][x]) * corr);
             STVFU(G[y][x], LVFU(G[y][x]) * corr);
@@ -184,8 +203,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         }
 #endif // __SSE2__
         for (; x < W; ++x) {
-            float oY = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-            float corr = process_pixel(oY);
+            float cY = Y[y][x];
+            float corr = process_pixel(cY);
             R[y][x] *= corr;
             G[y][x] *= corr;
             B[y][x] *= corr;
