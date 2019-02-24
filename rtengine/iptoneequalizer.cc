@@ -104,7 +104,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         conv(pp.bands[0]), // -14 EV
         conv(pp.bands[0]), // -12 EV
         conv(pp.bands[0]), // -10 EV
-        conv(pp.bands[0]), //  -8 EV
+        conv(pp.bands[1]), //  -8 EV
         conv(pp.bands[1]), //  -6 EV
         conv(pp.bands[2]), //  -4 EV
         conv(pp.bands[3]), //  -2 EV
