@@ -32,6 +32,7 @@
 #include "guidedfilter.h"
 #include "rt_math.h"
 #include "rt_algo.h"
+#include "rescale.h"
 #include <iostream>
 #include <queue>
 
@@ -226,7 +227,6 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     array2D<float> dark(W, H);
 
     int patchsize = max(int(5 / scale), 2);
-    int npatches = 0;
     float ambient[3];
     array2D<float> &t_tilde = dark;
     float max_t = 0.f;
@@ -236,12 +236,27 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         array2D<float> G(W, H);
         array2D<float> B(W, H);
         extract_channels(img, R, G, B, patchsize, 1e-1, multiThread);
+
+        {
+            constexpr int sizecap = 200;
+            float r = float(W)/float(H);
+            int ww = r >= 1.f ? sizecap : float(sizecap) / r;
+            int hh = r >= 1.f ? float(sizecap) * r : sizecap;
+            array2D<float> RR(ww, hh);
+            array2D<float> GG(ww, hh);
+            array2D<float> BB(ww, hh);
+            rescaleNearest(R, RR, multiThread);
+            rescaleNearest(G, GG, multiThread);
+            rescaleNearest(B, BB, multiThread);
+            array2D<float> D(ww, hh);
+            rescaleNearest(dark, D, multiThread);
+
+            patchsize = 2;
+            int npatches = get_dark_channel(RR, GG, BB, D, patchsize, nullptr, false, multiThread);
+            max_t = estimate_ambient_light(RR, GG, BB, D, patchsize, npatches, ambient);
+        }
     
         patchsize = max(max(W, H) / 600, 2);
-        npatches = get_dark_channel(R, G, B, dark, patchsize, nullptr, false, multiThread);
-        DEBUG_DUMP(dark);
-
-        max_t = estimate_ambient_light(R, G, B, dark, patchsize, npatches, ambient);
 
         if (options.rtSettings.verbose) {
             std::cout << "dehaze: ambient light is "
