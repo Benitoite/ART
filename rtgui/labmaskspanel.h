@@ -159,7 +159,7 @@ private:
     Gtk::Button *areaMaskPaste;
     Gtk::CheckButton *areaMaskInverted;
     Adjuster *areaMaskFeather;
-    Adjuster *areaMaskContrast;
+    DiagonalCurveEditor *areaMaskContrast;
     Adjuster *areaMaskX;
     Adjuster *areaMaskY;
     Adjuster *areaMaskWidth;

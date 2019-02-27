@@ -70,7 +70,7 @@ struct AreaMask {
     };
     bool inverted;
     double feather; // [0,100]
-    int contrast; // [0,100]
+    std::vector<double> contrast; // curve
     std::vector<Shape> shapes;
         
     AreaMask();

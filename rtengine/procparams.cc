@@ -337,7 +337,7 @@ bool AreaMask::Shape::operator!=(const Shape &other) const
 AreaMask::AreaMask():
     inverted(false),
     feather(0),
-    contrast(0),
+    contrast{DCT_Linear},
     shapes{Shape()}
 {
 }
@@ -433,6 +433,9 @@ bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &
     assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskInverted" + suffix, true, areaMask.inverted, ret);
     assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, true, areaMask.feather, ret);
     assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, true, areaMask.contrast, ret);
+    if (areaMask.contrast.empty() || areaMask.contrast[0] < DCT_Linear || areaMask.contrast[0] >= DCT_Unchanged) {
+        areaMask.contrast = {DCT_Linear};
+    }
     std::vector<AreaMask::Shape> s;
     for (int i = 0; ; ++i) {
         AreaMask::Shape a;

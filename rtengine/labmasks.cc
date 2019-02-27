@@ -135,22 +135,23 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
     // guided feathering and contrast
     int radius = std::max(int(areaMask.feather / 100.0 * min_feather), 1);
     guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
-    const float c = float(areaMask.contrast) / 4.f;
+    DiagonalCurve curve(areaMask.contrast);
     const auto contrast =
-        [c](float x) -> float
+        [&curve](float x) -> float
         {
-            if (c <= 0) {
-                return x;
-            }
-            constexpr float s = 1.f;
-            constexpr float a = 0.5f;
-            float y = 0.f;
-            if (x <= 0.5f) {
-                y = a * std::pow(x/a, c);
-            } else {
-                y = 1.f - (1-a) * std::pow((1 - x) / (1 - a), c);
-            }
-            return s*y + (1.f-s)*x;
+            return curve.getVal(x);
+            // if (c <= 0) {
+            //     return x;
+            // }
+            // constexpr float s = 1.f;
+            // constexpr float a = 0.5f;
+            // float y = 0.f;
+            // if (x <= 0.5f) {
+            //     y = a * std::pow(x/a, c);
+            // } else {
+            //     y = 1.f - (1-a) * std::pow((1 - x) / (1 - a), c);
+            // }
+            // return s*y + (1.f-s)*x;
         };
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)

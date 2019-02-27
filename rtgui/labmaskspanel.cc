@@ -188,8 +188,18 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     
     areaMaskFeather = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_FEATHER"), 0, 100, 0.1, 0));
     add_adjuster(areaMaskFeather, area);
-    areaMaskContrast = Gtk::manage(new Adjuster(M("TP_EXPOSURE_CONTRAST"), 0, 100, 1, 0));
-    add_adjuster(areaMaskContrast, area);
+
+    CurveEditorGroup *cg = Gtk::manage(new CurveEditorGroup(options.lastToneCurvesDir, M("TP_LABMASKS_AREA_CONTRAST")));
+    cg->setCurveListener(this);
+
+    areaMaskContrast = static_cast<DiagonalCurveEditor *>(cg->addCurve(CT_Diagonal, ""));
+    cg->curveListComplete();
+    if (area) {
+        area->pack_start(*cg, Gtk::PACK_SHRINK, 2);
+    }
+    
+    // areaMaskContrast = Gtk::manage(new Adjuster(M("TP_EXPOSURE_CONTRAST"), 0, 100, 1, 0));
+    // add_adjuster(areaMaskContrast, area);
 
     Gtk::Frame *areaFrame = Gtk::manage(new Gtk::Frame(M("TP_LABMASKS_AREA_SHAPES")));
     areaFrame->set_label_align(0.025, 0.5);
@@ -316,7 +326,7 @@ void LabMasksPanel::maskGet(int idx)
     r.areaEnabled = areaMask->getEnabled();
     r.areaMask.inverted = areaMaskInverted->get_active();
     r.areaMask.feather = areaMaskFeather->getValue();
-    r.areaMask.contrast = areaMaskContrast->getValue();
+    r.areaMask.contrast = areaMaskContrast->getCurve();
     if (area_shape_index_ < r.areaMask.shapes.size()) {
         auto &a = r.areaMask.shapes[area_shape_index_];
         a.x = areaMaskX->getValue();
@@ -495,7 +505,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         areaMask->setEnabled(r.areaEnabled);
         areaMaskInverted->set_active(r.areaMask.inverted);
         areaMaskFeather->setValue(r.areaMask.feather);
-        areaMaskContrast->setValue(r.areaMask.contrast);
+        areaMaskContrast->setCurve(r.areaMask.contrast);
         if (area_shape_index_ < r.areaMask.shapes.size()) {
             auto &a = r.areaMask.shapes[area_shape_index_];
             areaMaskX->setValue(a.x);
@@ -648,7 +658,9 @@ void LabMasksPanel::curveChanged(CurveEditor* ce)
 {
     auto l = getListener();
     if (l) {
-        if (ce == hueMask) {
+        if (ce == areaMaskContrast) {
+            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        } else if (ce == hueMask) {
             l->panelChanged(EvHMask, M("HISTORY_CUSTOMCURVE"));
         } else if (ce == chromaticityMask) {
             l->panelChanged(EvCMask, M("HISTORY_CUSTOMCURVE"));
@@ -775,6 +787,7 @@ void LabMasksPanel::setEdited(bool yes)
     for (auto a : areaMaskAdjusters) {
         a->setEditedState(yes ? Edited : UnEdited);
     }
+    areaMaskContrast->setUnChanged(!yes);
 }
 
 
@@ -792,7 +805,8 @@ bool LabMasksPanel::getEdited()
         || maskBlur->getEditedState() == Edited
         || !showMask->get_inconsistent()
         || !areaMask->get_inconsistent()
-        || !areaMaskInverted->get_inconsistent();
+        || !areaMaskInverted->get_inconsistent()
+        || !areaMaskContrast->isUnChanged();
 }
 
 
@@ -936,7 +950,7 @@ void LabMasksPanel::onAreaMaskPastePressed()
             updateGeometry();
             updateAreaMask(true);
             areaMaskFeather->setValue(a.feather);
-            areaMaskContrast->setValue(a.contrast);
+            areaMaskContrast->setCurve(a.contrast);
             areaMaskRoundness->setValue(s.roundness);
             areaMaskInverted->set_active(a.inverted);
         }
