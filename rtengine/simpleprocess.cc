@@ -584,7 +584,6 @@ private:
         }
 
         if (((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) && params.sharpening.enabled) {
-            std::cout << "SHARPENING" << std::endl;
             ipf.sharpening (labView, params.sharpening);
 
         }
@@ -740,7 +739,6 @@ private:
                     }
                 }
                 ipf.sharpening (labView, params.prsharpening);
-                std::cout << "PRSHARPENING" << std::endl;
             }
         }
 
