@@ -45,6 +45,8 @@
 #include "sleef.c"
 #include "opthelper.h"
 #include "guidedfilter.h"
+#define BENCHMARK
+#include "StopWatch.h"
 
 namespace rtengine {
 
@@ -263,6 +265,197 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<fl
     }
 }
 
+
+void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const ToneEqualizerParams &pp, const Glib::ustring &workingProfile, double scale, bool multithread)
+{
+    const int W = R.width();
+    const int H = R.height();
+    array2D<float> Y(W, H);
+
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        }
+    }
+
+    const int radius = float(pp.detail) / scale + 0.5f;
+    const float epsilon = 0.005f + 0.001f * max(pp.detail - 3, 0);
+
+    const auto log2 =
+        [](float x) -> float
+        {
+            static const float l2 = xlogf(2);
+            return xlogf(x) / l2;
+        };
+
+    const auto exp2 =
+        [](float x) -> float
+        {
+            return pow_F(2.f, x);
+        };
+
+     // Build the luma channels: band-pass filters with gaussian windows of
+     // std 2 EV, spaced by 2 EV
+    const float centers[12] = {
+        -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
+        -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
+    };
+
+    const auto conv = [&](int v) -> float
+                      {
+                          return exp2(float(v) / 100.f * 2.f);
+                      };
+
+    const float factors[12] = {
+        conv(pp.bands[0]), // -18 EV
+        conv(pp.bands[0]), // -16 EV
+        conv(pp.bands[0]), // -14 EV
+        conv(pp.bands[0]), // -12 EV
+        conv(pp.bands[0]), // -10 EV
+        conv(pp.bands[0]), //  -8 EV (Blacks)
+        conv(pp.bands[1]), //  -6 EV (Shadows)
+        conv(pp.bands[2]), //  -4 EV (Midtones)
+        conv(pp.bands[3]), //  -2 EV (Highlights)
+        conv(pp.bands[4]), //   0 EV (Whites)
+        conv(pp.bands[4]), //   2 EV
+        conv(pp.bands[4])  //   4 EV
+    };
+
+    const auto gauss =
+        [](float b, float x) -> float
+        {
+            return xexpf((-SQR(x - b) / 4.0f));
+        };
+
+    // For every pixel luminance, the sum of the gaussian masks
+    // evenly spaced by 2 EV with 2 EV std should be this constant
+    float w_sum = 0.f;
+    for (int i = 0; i < 12; ++i) {
+        w_sum += gauss(centers[i], 0.f);
+    }
+
+    const auto luma =
+        [&](float y) -> float
+        {
+            return max(log2(max(y, 0.f)), -18.0f);
+        };
+
+#ifdef __SSE2__
+    vfloat vfactors[12];
+    vfloat vcenters[12];
+    
+    for (int i = 0; i < 12; ++i) {
+        vfactors[i] = F2V(factors[i]);
+        vcenters[i] = F2V(centers[i]);
+    }
+
+    const auto vgauss =
+        [](vfloat b, vfloat x) -> vfloat
+        {
+            static const vfloat fourv = F2V(4.f);
+            return xexpf((-SQR(x - b) / fourv));
+        };
+
+    vfloat zerov = F2V(0.f);
+    vfloat vw_sum = F2V(w_sum);
+
+    const vfloat noisev = F2V(-18.f);
+    const vfloat xlog2v = F2V(xlogf(2.f));
+    
+    const auto vluma =
+        [&](vfloat y) -> vfloat
+        {
+            return vmaxf(xlogf(vmaxf(y, zerov))/xlog2v, noisev);
+        };
+#endif // __SSE2__
+    
+
+    array2D<float> mask(W, H);
+    array2D<float> corr(W, H);
+    array2D<float> L(W, H);
+
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W - 3; x += 4) {
+            STVFU(corr[y][x], zerov);
+            STVFU(L[y][x], vluma(LVFU(Y[y][x])));
+        }
+#endif
+        for (; x < W; ++x) {
+            corr[y][x] = 0.f;
+            L[y][x] = luma(Y[y][x]);
+        }
+    }
+
+    for (int c = 0; c < 12; ++c) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            int x = 0;
+#ifdef __SSE2__
+            for (; x < W - 3; x += 4) {
+                const vfloat l = LVFU(L[y][x]);
+                STVFU(mask[y][x], vgauss(vcenters[c], l));
+            }
+#endif
+            for (; x < W; ++x) {
+                const float l = L[y][x];
+                mask[y][x] = gauss(centers[c], l);
+            }
+        }
+
+        if (radius > 0) {
+            rtengine::guidedFilter(Y, mask, mask, radius, epsilon, multithread);
+        }
+
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            int x = 0;
+#ifdef __SSE2__
+            for (; x < W - 3; x += 4) {
+                vfloat m = LVFU(mask[y][x]);
+                STVFU(corr[y][x], LVFU(corr[y][x]) + m * vfactors[c]);
+            }
+#endif
+            for (; x < W; ++x) {
+                corr[y][x] += mask[y][x] * factors[c];
+            }
+        }
+    }
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W - 3; x += 4) {
+            vfloat f = LVFU(corr[y][x]) / vw_sum;
+            STVFU(R[y][x], LVFU(R[y][x]) * f);
+            STVFU(G[y][x], LVFU(G[y][x]) * f);
+            STVFU(B[y][x], LVFU(B[y][x]) * f);
+        }
+#endif
+        for (; x < W; ++x) {
+            float f = corr[y][x] / w_sum;
+            R[y][x] *= f;
+            G[y][x] *= f;
+            B[y][x] *= f;
+        }
+    }
+}
+
 } // namespace
 
 
@@ -271,6 +464,8 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     if (!params->toneEqualizer.enabled) {
         return;
     }
+
+    BENCHFUN
 
     rgb->normalizeFloatTo1();
 
@@ -281,6 +476,9 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     array2D<float> G(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
+    if (true) {
+        tone_eq_gf(R, G, B, params->toneEqualizer, params->icm.workingProfile, scale, multiThread);
+    } else {
     array2D<float> Yorig(W, H);
     array2D<float> Ytoned(W, H);
 
@@ -332,6 +530,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
                 B[y][x] *= f;
             }
         }
+    }
     }
     
     rgb->normalizeFloatTo65535();
