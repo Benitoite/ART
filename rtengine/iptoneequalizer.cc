@@ -39,6 +39,7 @@
     along with darktable.  If not, see <http://www.gnu.org/licenses/>.
 */    
 
+#include <array>
 #include "improcfun.h"
 #include "gauss.h"
 #include "sleef.c"
@@ -49,11 +50,56 @@ namespace rtengine {
 
 namespace {
 
-void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const ToneEqualizerParams &pp, const Glib::ustring &workingProfile, double scale, bool multithread)
+typedef std::array<float, 5> KernelRow;
+typedef std::array<KernelRow, 5> Kernel;
+
+void laplacian_filter(const array2D<float> &Yorig, const array2D<float> &Ytoned,
+                      array2D<float> &out, const Kernel &kernel, bool multithread)
+{
+    const int padding = floor(kernel.size() / 2);
+    const int H = Yorig.height();
+    const int W = Yorig.width();
+
+    const auto padidx =
+        [padding](int i, int o, int l) -> int
+        {
+            int ret = i + o - padding;
+            return LIM(ret, 0, l-1);
+        };
+
+#ifdef _OPENMP
+#    pragma omp parallel for if (multithread)
+#endif
+    for(int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            float orig = LIM01(Yorig[y][x]);
+            float toned = LIM01(Ytoned[y][x]);
+
+            float weight = 0.0f;
+
+            // Convolution filter
+            for (size_t m = 0; m < kernel.size(); ++m) {
+                int yy = padidx(y, m, H);
+                for (size_t n = 0; n < kernel.size(); ++n) {
+                    int xx = padidx(x, n, W);
+                    float neighbour_orig = LIM01(Yorig[yy][xx]);
+                    float neighbour_toned = LIM01(Ytoned[yy][xx]);
+                    weight += (neighbour_toned - toned) * (neighbour_orig - orig) * kernel[m][n];
+                }
+            }
+
+            // Corrective ratio to apply on the toned image
+            out[y][x] =  toned / (toned + weight);
+        }
+    }
+}
+
+
+void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<float> &Y, array2D<float> &Yout, const ToneEqualizerParams &pp, const Glib::ustring &workingProfile, double scale, bool multithread)
 {
     const int W = R.width();
     const int H = R.height();
-    array2D<float> Y(W, H);
+    // array2D<float> Y(W, H);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
 
@@ -66,12 +112,12 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         }
     }
 
-    const float detail = float(pp.detail) / 20.f;
-    const int r = 15 / scale * (detail >= 0.f ? 1.f + detail : 1.f / (1.f - detail));
-    const float epsilon = 0.035f * std::pow(2.f, detail);
-    if (r > 0) {
-        rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
-    }
+    // const float detail = float(pp.detail) / 20.f;
+    // const int r = 15 / scale * (detail >= 0.f ? 1.f + detail : 1.f / (1.f - detail));
+    // const float epsilon = 0.035f * std::pow(2.f, detail);
+    // if (r > 0) {
+    //     rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
+    // }
 
     const auto log2 =
         [](float x) -> float
@@ -200,6 +246,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             STVFU(R[y][x], LVFU(R[y][x]) * corr);
             STVFU(G[y][x], LVFU(G[y][x]) * corr);
             STVFU(B[y][x], LVFU(B[y][x]) * corr);
+            STVFU(Yout[y][x], cY * corr);
         }
 #endif // __SSE2__
         for (; x < W; ++x) {
@@ -208,7 +255,11 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             R[y][x] *= corr;
             G[y][x] *= corr;
             B[y][x] *= corr;
+            Yout[y][x] = cY * corr;
         }
+        // for (x = 0; x < W; ++x) {
+        //     Yout[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        // }
     }
 }
 
@@ -223,11 +274,65 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
 
     rgb->normalizeFloatTo1();
 
-    array2D<float> R(rgb->getWidth(), rgb->getHeight(), rgb->r.ptrs, ARRAY2D_BYREFERENCE);
-    array2D<float> G(rgb->getWidth(), rgb->getHeight(), rgb->g.ptrs, ARRAY2D_BYREFERENCE);
-    array2D<float> B(rgb->getWidth(), rgb->getHeight(), rgb->b.ptrs, ARRAY2D_BYREFERENCE);
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+    
+    array2D<float> R(W, H, rgb->r.ptrs, ARRAY2D_BYREFERENCE);
+    array2D<float> G(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
+    array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
-    tone_eq(R, G, B, params->toneEqualizer, params->icm.workingProfile, scale, multiThread);
+    array2D<float> Yorig(W, H);
+    array2D<float> Ytoned(W, H);
+
+    tone_eq(R, G, B, Yorig, Ytoned, params->toneEqualizer, params->icm.workingProfile, scale, multiThread);
+
+    const auto gaussian_coef =
+        [](float x, float mu, float sigma) -> float
+        {
+            return (std::exp(-(x - mu) * (x - mu)/(sigma * sigma) / 2.0f) / (std::sqrt(2.0f * RT_PI) * sigma));
+        };
+
+    const auto normalize =
+        [](KernelRow &kernel) -> void
+        {
+            float sum = 0.0f;
+            for (size_t i = 0; i < kernel.size(); ++i) {
+                sum += kernel[i];
+            }
+            for (size_t i = 0; i < kernel.size(); ++i) {
+                kernel[i] /= sum;
+            }
+        };
+
+
+    if (params->toneEqualizer.detail > 0) {
+        const float sigma = max(params->toneEqualizer.detail, 0) / scale;
+        KernelRow gauss;
+        for (size_t i = 0; i < gauss.size(); ++i) {
+            gauss[i] = gaussian_coef(i - 2.f, 0.f, sigma);
+        }
+        normalize(gauss);
+    
+        Kernel kernel;
+        for (size_t m = 0; m < kernel.size(); ++m) {
+            for (size_t n = 0; n < kernel.size(); ++n) {
+                kernel[m][n] = gauss[m] * gauss[n];
+            }
+        }
+        laplacian_filter(Yorig, Ytoned, Ytoned, kernel, multiThread);
+
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float f = Ytoned[y][x];
+                R[y][x] *= f;
+                G[y][x] *= f;
+                B[y][x] *= f;
+            }
+        }
+    }
     
     rgb->normalizeFloatTo65535();
 }
