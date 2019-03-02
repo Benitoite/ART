@@ -266,6 +266,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<fl
 }
 
 
+#if 1
 void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const ToneEqualizerParams &pp, const Glib::ustring &workingProfile, double scale, bool multithread)
 {
     const int W = R.width();
@@ -284,6 +285,165 @@ void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const T
     }
 
     const int radius = float(pp.detail) / scale + 0.5f;
+    const float epsilon = 0.005f + 0.001f * max(pp.detail - 3, 0);
+    if (radius > 0) {
+        rtengine::guidedFilter(Y, Y, Y, radius, epsilon, multithread);
+    }
+    
+    const auto log2 =
+        [](float x) -> float
+        {
+            static const float l2 = xlogf(2);
+            return xlogf(x) / l2;
+        };
+
+    const auto exp2 =
+        [](float x) -> float
+        {
+            return pow_F(2.f, x);
+        };
+
+     // Build the luma channels: band-pass filters with gaussian windows of
+     // std 2 EV, spaced by 2 EV
+    const float centers[12] = {
+        -18.0f, -16.0f, -14.0f, -12.0f, -10.0f, -8.0f, -6.0f,
+        -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
+    };
+
+    const auto conv = [&](int v) -> float
+                      {
+                          return exp2(float(v) / 100.f * 2.f);
+                      };
+
+    const float factors[12] = {
+        conv(pp.bands[0]), // -18 EV
+        conv(pp.bands[0]), // -16 EV
+        conv(pp.bands[0]), // -14 EV
+        conv(pp.bands[0]), // -12 EV
+        conv(pp.bands[0]), // -10 EV
+        conv(pp.bands[0]), //  -8 EV
+        conv(pp.bands[1]), //  -6 EV
+        conv(pp.bands[2]), //  -4 EV
+        conv(pp.bands[3]), //  -2 EV
+        conv(pp.bands[4]), //   0 EV
+        conv(pp.bands[4]), //   2 EV
+        conv(pp.bands[4])  //   4 EV
+    };
+
+    const auto gauss =
+        [](float b, float x) -> float
+        {
+            return xexpf((-SQR(x - b) / 4.0f));
+        };
+
+    // For every pixel luminance, the sum of the gaussian masks
+    // evenly spaced by 2 EV with 2 EV std should be this constant
+    float w_sum = 0.f;
+    for (int i = 0; i < 12; ++i) {
+        w_sum += gauss(centers[i], 0.f);
+    }
+
+    const auto process_pixel =
+        [&](float y) -> float
+        {
+            // get the luminance of the pixel - just average channels
+            const float luma = max(log2(max(y, 0.f)), -18.0f);
+
+            // build the correction as the sum of the contribution of each
+            // luminance channel to current pixel
+            float correction = 0.0f;
+            for (int c = 0; c < 12; ++c) {
+                correction += gauss(centers[c], luma) * factors[c];
+            }
+            correction /= w_sum;
+
+            return correction;
+        };
+
+#ifdef __SSE2__
+    vfloat vfactors[12];
+    vfloat vcenters[12];
+    
+    for (int i = 0; i < 12; ++i) {
+        vfactors[i] = F2V(factors[i]);
+        vcenters[i] = F2V(centers[i]);
+    }
+
+    const auto vgauss =
+        [](vfloat b, vfloat x) -> vfloat
+        {
+            static const vfloat fourv = F2V(4.f);
+            return xexpf((-SQR(x - b) / fourv));
+        };
+
+    vfloat zerov = F2V(0.f);
+    vfloat vw_sum = F2V(w_sum);
+
+    const vfloat noisev = F2V(-18.f);
+    const vfloat xlog2v = F2V(xlogf(2.f));
+    
+    const auto vprocess_pixel =
+        [&](vfloat y) -> vfloat
+        {
+            // get the luminance of the pixel - just average channels
+            const vfloat luma = vmaxf(xlogf(vmaxf(y, zerov))/xlog2v, noisev);
+
+            // build the correction as the sum of the contribution of each
+            // luminance channel to current pixel
+            vfloat correction = zerov;
+            for (int c = 0; c < 12; ++c) {
+                correction += vgauss(vcenters[c], luma) * vfactors[c];
+            }
+            correction /= vw_sum;
+
+            return correction;
+        };
+#endif // __SSE2__
+    
+        
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W - 3; x += 4) {
+            vfloat cY = LVFU(Y[y][x]);
+            vfloat corr = vprocess_pixel(cY);
+            STVFU(R[y][x], LVFU(R[y][x]) * corr);
+            STVFU(G[y][x], LVFU(G[y][x]) * corr);
+            STVFU(B[y][x], LVFU(B[y][x]) * corr);
+        }
+#endif // __SSE2__
+        for (; x < W; ++x) {
+            float cY = Y[y][x];
+            float corr = process_pixel(cY);
+            R[y][x] *= corr;
+            G[y][x] *= corr;
+            B[y][x] *= corr;
+        }
+    }
+}
+
+#else
+void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const ToneEqualizerParams &pp, const Glib::ustring &workingProfile, double scale, bool multithread)
+{
+    const int W = R.width();
+    const int H = R.height();
+    array2D<float> Y(W, H);
+
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        }
+    }
+
+    int radius = float(pp.detail) / scale + 0.5f;
     const float epsilon = 0.005f + 0.001f * max(pp.detail - 3, 0);
 
     const auto log2 =
@@ -379,6 +539,11 @@ void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const T
     array2D<float> corr(W, H);
     array2D<float> L(W, H);
 
+    if (radius > 0) {
+        rtengine::guidedFilter(Y, Y, Y, radius, epsilon, multithread);
+        radius = 0;
+    }
+
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
@@ -455,6 +620,7 @@ void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const T
         }
     }
 }
+#endif
 
 } // namespace
 
