@@ -74,24 +74,28 @@ void laplacian_filter(const array2D<float> &Yorig, const array2D<float> &Ytoned,
 #endif
     for(int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            float orig = LIM01(Yorig[y][x]);
-            float toned = LIM01(Ytoned[y][x]);
+            float orig = Yorig[y][x];
+            float toned = Ytoned[y][x];
 
             float weight = 0.0f;
+            float corr = pow_F(std::abs(orig-toned), 0.1f);
 
             // Convolution filter
             for (size_t m = 0; m < kernel.size(); ++m) {
                 int yy = padidx(y, m, H);
                 for (size_t n = 0; n < kernel.size(); ++n) {
                     int xx = padidx(x, n, W);
-                    float neighbour_orig = LIM01(Yorig[yy][xx]);
-                    float neighbour_toned = LIM01(Ytoned[yy][xx]);
+                    float neighbour_orig = Yorig[yy][xx];
+                    float neighbour_toned = Ytoned[yy][xx];
                     weight += (neighbour_toned - toned) * (neighbour_orig - orig) * kernel[m][n];
                 }
             }
+            weight *= corr;
 
-            // Corrective ratio to apply on the toned image
-            out[y][x] =  toned / (toned + weight);
+            if (toned + weight != 0.f) {
+                // Corrective ratio to apply on the toned image
+                out[y][x] =  toned / (toned + weight);
+            }
         }
     }
 }
@@ -113,13 +117,6 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<fl
             Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
         }
     }
-
-    // const float detail = float(pp.detail) / 20.f;
-    // const int r = 15 / scale * (detail >= 0.f ? 1.f + detail : 1.f / (1.f - detail));
-    // const float epsilon = 0.035f * std::pow(2.f, detail);
-    // if (r > 0) {
-    //     rtengine::guidedFilter(Y, Y, Y, r, epsilon, multithread);
-    // }
 
     const auto log2 =
         [](float x) -> float
@@ -207,13 +204,9 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<fl
             return xexpf((-SQR(x - b) / fourv));
         };
 
-    vfloat zerov = F2V(0.f);
-    
-    vfloat vw_sum = zerov;
-    for (int i = 0; i < 12; ++i) {
-        vw_sum += vgauss(vcenters[i], zerov);
-    }
-
+    const vfloat zerov = F2V(0.f);
+    const vfloat onev = F2V(1.f);
+    const vfloat vw_sum = F2V(w_sum);
     const vfloat noisev = F2V(-18.f);
     const vfloat xlog2v = F2V(xlogf(2.f));
     
@@ -248,7 +241,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<fl
             STVFU(R[y][x], LVFU(R[y][x]) * corr);
             STVFU(G[y][x], LVFU(G[y][x]) * corr);
             STVFU(B[y][x], LVFU(B[y][x]) * corr);
-            STVFU(Yout[y][x], cY * corr);
+            STVFU(Y[y][x], vminf(vmaxf(cY, zerov), onev));
+            STVFU(Yout[y][x], vminf(vmaxf(cY * corr, zerov), onev));
         }
 #endif // __SSE2__
         for (; x < W; ++x) {
@@ -257,7 +251,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, array2D<fl
             R[y][x] *= corr;
             G[y][x] *= corr;
             B[y][x] *= corr;
-            Yout[y][x] = cY * corr;
+            Y[y][x] = LIM01(cY);
+            Yout[y][x] = LIM01(cY * corr);
         }
         // for (x = 0; x < W; ++x) {
         //     Yout[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
@@ -642,7 +637,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     array2D<float> G(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
-    if (true) {
+    if (false) {
         tone_eq_gf(R, G, B, params->toneEqualizer, params->icm.workingProfile, scale, multiThread);
     } else {
     array2D<float> Yorig(W, H);
