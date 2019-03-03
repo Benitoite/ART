@@ -280,7 +280,7 @@ void tone_eq_gf(array2D<float> &R, array2D<float> &G, array2D<float> &B, const T
     }
 
     const int radius = float(pp.detail) / scale + 0.5f;
-    const float epsilon = 0.005f + 0.001f * max(pp.detail - 3, 0);
+    const float epsilon = 0.01f + 0.002f * max(pp.detail - 3, 0);
     if (radius > 0) {
         rtengine::guidedFilter(Y, Y, Y, radius, epsilon, multithread);
     }
@@ -637,7 +637,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     array2D<float> G(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
-    if (false) {
+    if (true) {
         tone_eq_gf(R, G, B, params->toneEqualizer, params->icm.workingProfile, scale, multiThread);
     } else {
     array2D<float> Yorig(W, H);
@@ -648,7 +648,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     const auto gaussian_coef =
         [](float x, float mu, float sigma) -> float
         {
-            return (std::exp(-(x - mu) * (x - mu)/(sigma * sigma) / 2.0f) / (std::sqrt(2.0f * RT_PI) * sigma));
+            return (std::exp(-SQR(x - mu)/(2.f * SQR(sigma))) / (std::sqrt(2.0f * RT_PI) * sigma));
         };
 
     const auto normalize =
