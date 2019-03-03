@@ -23,7 +23,7 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 
 
-ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_TONE_EQUALIZER_LABEL"), true, true)
+ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_TONE_EQUALIZER_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvEnabled = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_ENABLED");
@@ -36,7 +36,7 @@ ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_T
         pack_start(*bands[i]);
     }
     pack_start(*Gtk::manage(new Gtk::HSeparator()));
-    detail = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_DETAIL"), 0, 10, 1, 0));//-100, 100, 1, 0));
+    detail = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_DETAIL"), -5, 5, 1, 0));
     detail->setAdjusterListener(this);
     pack_start(*detail);
     
