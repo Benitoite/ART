@@ -401,6 +401,7 @@ public:
     bool targetGray;
     bool blackEv;
     bool whiteEv;
+    bool detail;
 };
 
 

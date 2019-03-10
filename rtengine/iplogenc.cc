@@ -28,6 +28,7 @@
 #include "rt_algo.h"
 #include "curves.h"
 #include "clutstore.h"
+#include "guidedfilter.h"
 
 namespace rtengine {
 
@@ -154,7 +155,7 @@ float find_gray(float source_gray, float target_gray)
 // basic log encoding taken from ACESutil.Lin_to_Log2, from
 // https://github.com/ampas/aces-dev
 // (as seen on pixls.us)
-void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
+void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool multithread)
 {
     if (!params->logenc.enabled) {
         return;
@@ -176,9 +177,11 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
     const auto apply =
-        [=](float x) -> float
+        [=](float x, bool scale=true) -> float
         {
-            x /= 65535.f;
+            if (scale) {
+                x /= 65535.f;
+            }
             x = max(x, noise);
             if (brightness_enabled) {
                 x *= brightness;
@@ -192,39 +195,95 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, bool multithread)
             if (norm > 0.f) {
                 x = xlog2lin(x, norm);
             }
-            return x * 65535.f;
+            if (scale) {
+                return x * 65535.f;
+            } else {
+                return x;
+            }
         };
 
+    const int detail = max(params->logenc.detail, 0);
+    if (detail == 0) {
 #ifdef _OPENMP
-    #pragma omp parallel for if (multithread)
+#       pragma omp parallel for if (multithread)
 #endif
-    for (int y = 0; y < rgb->getHeight(); ++y) {
-        for (int x = 0; x < rgb->getWidth(); ++x) {
-            float r = rgb->r(y, x);
-            float g = rgb->g(y, x);
-            float b = rgb->b(y, x);
-            r = apply(r);
-            g = apply(g);
-            b = apply(b);
-            if (saturation_enabled) {
-                float l = Color::rgbLuminance(r, g, b, ws);
-                r = max(l + saturation * (r - l), noise);
-                g = max(l + saturation * (g - l), noise);
-                b = max(l + saturation * (b - l), noise);
-            }
+        for (int y = 0; y < rgb->getHeight(); ++y) {
+            for (int x = 0; x < rgb->getWidth(); ++x) {
+                float r = rgb->r(y, x);
+                float g = rgb->g(y, x);
+                float b = rgb->b(y, x);
+                r = apply(r);
+                g = apply(g);
+                b = apply(b);
+                if (saturation_enabled) {
+                    float l = Color::rgbLuminance(r, g, b, ws);
+                    r = max(l + saturation * (r - l), noise);
+                    g = max(l + saturation * (g - l), noise);
+                    b = max(l + saturation * (b - l), noise);
+                }
 
-            if (OOG(r) || OOG(g) || OOG(b)) {
-                Color::filmlike_clip(&r, &g, &b);
-            }
+                if (OOG(r) || OOG(g) || OOG(b)) {
+                    Color::filmlike_clip(&r, &g, &b);
+                }
             
-            assert(r == r);
-            assert(g == g);
-            assert(b == b);
+                assert(r == r);
+                assert(g == g);
+                assert(b == b);
 
-            rgb->r(y, x) = r;
-            rgb->g(y, x) = g;
-            rgb->b(y, x) = b;
+                rgb->r(y, x) = r;
+                rgb->g(y, x) = g;
+                rgb->b(y, x) = b;
+            }
         }
+    } else {
+        const int W = rgb->getWidth(), H = rgb->getHeight();
+        array2D<float> tmp(W, H);
+        rgb->normalizeFloatTo1();
+            
+        const int radius = float(detail) / scale + 0.5f;
+        const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
+
+        float **chan[3] = { rgb->r.ptrs, rgb->g.ptrs, rgb->b.ptrs };
+        for (int i = 0; i < 3; ++i) {
+            array2D<float> src(W, H, chan[i], ARRAY2D_BYREFERENCE);
+            guidedFilter(src, src, tmp, radius, epsilon, multithread);
+
+#ifdef _OPENMP
+#           pragma omp parallel for if (multithread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    float t = tmp[y][x];
+                    if (t > 0.f) {
+                        float c = apply(t, false);
+                        src[y][x] *= c / t;
+                    }
+                }
+            }
+        }
+
+        
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float &r = rgb->r(y, x);
+                float &g = rgb->g(y, x);
+                float &b = rgb->b(y, x);
+                if (saturation_enabled) {
+                    float l = Color::rgbLuminance(r, g, b, ws);
+                    r = max(l + saturation * (r - l), noise);
+                    g = max(l + saturation * (g - l), noise);
+                    b = max(l + saturation * (b - l), noise);
+                }
+                if (OOG(r) || OOG(g) || OOG(b)) {
+                    Color::filmlike_clip(&r, &g, &b);
+                }
+            }
+        }
+
+        rgb->normalizeFloatTo65535();
     }
 }
 
@@ -334,7 +393,7 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
     Imagefloat working(lab->W, lab->H);
     lab2rgb(*lab, working, params->icm.workingProfile);
 
-    log_encode(&working, params, multiThread);
+    log_encode(&working, params, scale, multiThread);
 
     if (dcpProf && dcpApplyState) {
         for (int y = 0; y < lab->H; ++y) {
