@@ -202,7 +202,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             }
         };
 
-    const int detail = max(params->logenc.detail, 0);
+    const int detail = float(max(params->logenc.detail, 0)) / scale + 0.5f;
     if (detail == 0) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
@@ -240,13 +240,12 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
         array2D<float> tmp(W, H);
         rgb->normalizeFloatTo1();
             
-        const int radius = float(detail) / scale + 0.5f;
-        const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
+        const float epsilon = 0.01f;
 
         float **chan[3] = { rgb->r.ptrs, rgb->g.ptrs, rgb->b.ptrs };
         for (int i = 0; i < 3; ++i) {
             array2D<float> src(W, H, chan[i], ARRAY2D_BYREFERENCE);
-            guidedFilter(src, src, tmp, radius, epsilon, multithread);
+            guidedFilter(src, src, tmp, detail, epsilon, multithread);
 
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
