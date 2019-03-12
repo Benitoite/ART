@@ -212,9 +212,14 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float r = rgb->r(y, x);
                 float g = rgb->g(y, x);
                 float b = rgb->b(y, x);
-                r = apply(r);
-                g = apply(g);
-                b = apply(b);
+                float m = max(r, g, b);
+                if (m > noise) {
+                    float mm = apply(m);
+                    float f = mm / m;
+                    r *= f;
+                    b *= f;
+                    g *= f;
+                }
                 if (saturation_enabled) {
                     float l = Color::rgbLuminance(r, g, b, ws);
                     r = max(l + saturation * (r - l), noise);
@@ -238,28 +243,38 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     } else {
         const int W = rgb->getWidth(), H = rgb->getHeight();
         array2D<float> tmp(W, H);
-        rgb->normalizeFloatTo1();
-            
-        const float epsilon = 0.01f;
-
-        float **chan[3] = { rgb->r.ptrs, rgb->g.ptrs, rgb->b.ptrs };
-        for (int i = 0; i < 3; ++i) {
-            array2D<float> src(W, H, chan[i], ARRAY2D_BYREFERENCE);
-            guidedFilter(src, src, tmp, detail, epsilon, multithread);
-
+        //rgb->normalizeFloatTo1();
 #ifdef _OPENMP
-#           pragma omp parallel for if (multithread)
+#       pragma omp parallel for if (multithread)
 #endif
-            for (int y = 0; y < H; ++y) {
-                for (int x = 0; x < W; ++x) {
-                    float t = tmp[y][x];
-                    if (t > 0.f) {
-                        float c = apply(t, false);
-                        src[y][x] *= c / t;
-                    }
-                }
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                tmp[y][x] = max(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
             }
         }
+            
+        const float epsilon = 0.01f;
+        array2D<float> src(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
+        guidedFilter(tmp, tmp, tmp, detail, epsilon, multithread);
+
+//         float **chan[3] = { rgb->r.ptrs, rgb->g.ptrs, rgb->b.ptrs };
+//         for (int i = 0; i < 3; ++i) {
+//             array2D<float> src(W, H, chan[i], ARRAY2D_BYREFERENCE);
+//             guidedFilter(src, src, tmp, detail, epsilon, multithread);
+
+// #ifdef _OPENMP
+// #           pragma omp parallel for if (multithread)
+// #endif
+//             for (int y = 0; y < H; ++y) {
+//                 for (int x = 0; x < W; ++x) {
+//                     float t = tmp[y][x];
+//                     if (t > 0.f) {
+//                         float c = apply(t, false);
+//                         src[y][x] *= c / t;
+//                     }
+//                 }
+//             }
+//         }
 
         
 #ifdef _OPENMP
@@ -270,6 +285,14 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float &r = rgb->r(y, x);
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
+                float t = tmp[y][x] * 65535.f;
+                if (t > noise) {
+                    float c = apply(t);//, false);
+                    float f = c / t;
+                    r *= f;
+                    g *= f;
+                    b *= f;
+                }
                 if (saturation_enabled) {
                     float l = Color::rgbLuminance(r, g, b, ws);
                     r = max(l + saturation * (r - l), noise);
@@ -282,7 +305,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             }
         }
 
-        rgb->normalizeFloatTo65535();
+        // rgb->normalizeFloatTo65535();
     }
 }
 
