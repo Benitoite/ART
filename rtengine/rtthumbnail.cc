@@ -1394,12 +1394,13 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     CurveFactory::complexsgnCurve (autili, butili, ccutili, cclutili, params.labCurve.acurve, params.labCurve.bcurve, params.labCurve.cccurve,
                                    params.labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, 16);
 
-    ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
-
-    ipf.vibrance (labView);
     ipf.labColorCorrectionRegions(labView);
     ipf.guidedSmoothing(labView);
     ipf.logEncoding(labView);
+    
+    ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+
+    ipf.vibrance (labView);
     ipf.toneMapping(labView);
     ipf.softLight(labView);
     ipf.localContrast(labView);

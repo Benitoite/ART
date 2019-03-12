@@ -330,6 +330,97 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
     }
 }
 
+
+void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, float scale, bool multithread)
+{
+    LUTf curve(65536);
+    int bright = params->toneCurve.brightness;
+    int contr = params->toneCurve.contrast;
+    if (bright || contr) {
+        LUTf curve1(65536);
+        LUTf curve2(65536);
+        LUTu dummy;
+        LUTu hist16(65536);
+        ToneCurve customToneCurve1, customToneCurve2;
+
+        if (contr) {
+            ImProcFunctions ipf(params, multithread);
+            ipf.firstAnalysis(rgb, *params, hist16);
+        }
+        CurveFactory::complexCurve(0, 0, 0, 0, 0, bright, contr,
+                                   { DCT_Linear }, { DCT_Linear },
+                                   hist16, curve1, curve2, curve, dummy,
+                                   customToneCurve1, customToneCurve2, scale);
+    }
+
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+
+    if (params->toneCurve.clampOOG) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int i = 0; i < H; ++i) {
+            for (int j = 0; j < W; ++j) {
+                float &r = rgb->r(i, j);
+                float &g = rgb->g(i, j);
+                float &b = rgb->b(i, j);
+                if (OOG(r) || OOG(g) || OOG(b)) {
+                    Color::filmlike_clip(&r, &g, &b);
+                }
+            }
+        }
+    }
+
+    if (bright || contr) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int i = 0; i < H; ++i) {
+            int j = 0;
+#ifdef __SSE2__
+            vfloat tmpr;
+            vfloat tmpg;
+            vfloat tmpb;
+            for (; j < W - 3; j += 4) {
+                //brightness/contrast
+                STVF(tmpr[0], curve(LVF(rgb->r(i, j))));
+                STVF(tmpg[0], curve(LVF(rgb->g(i, j))));
+                STVF(tmpb[0], curve(LVF(rgb->b(i, j))));
+                for (int k = 0; k < 4; ++k) {
+                    setUnlessOOG(rgb->r(i, j+k), rgb->g(i, j+k), rgb->b(i, j+k), tmpr[k], tmpg[k], tmpb[k]);
+                }
+            }
+#endif
+            for (; j < W; ++j) {
+                //brightness/contrast
+                setUnlessOOG(rgb->r(i, j), rgb->g(i, j), rgb->b(i, j), curve[rgb->r(i, j)], curve[rgb->g(i, j)], curve[rgb->b(i, j)]);
+            }
+        }
+    }
+
+    if (params->toneCurve.saturation) {
+        const float saturation = 1.f + params->toneCurve.saturation / 100.f;
+        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+        const float noise = pow_F(2.f, -16.f);
+        
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int i = 0; i < H; ++i) {
+            for (int j = 0; j < W; ++j) {
+                float &r = rgb->r(i, j);
+                float &g = rgb->g(i, j);
+                float &b = rgb->b(i, j);
+                float l = Color::rgbLuminance(r, g, b, ws);
+                r = max(l + saturation * (r - l), noise);
+                g = max(l + saturation * (g - l), noise);
+                b = max(l + saturation * (b - l), noise);
+            }
+        }
+    }
+}
+
 } // namespace
 
 
@@ -408,14 +499,14 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 
 void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
 {
-    if (!params->logenc.enabled) {
-        return;
-    }
-
     Imagefloat working(lab->W, lab->H);
     lab2rgb(*lab, working, params->icm.workingProfile);
 
-    log_encode(&working, params, scale, multiThread);
+    if (params->logenc.enabled) {
+        log_encode(&working, params, scale, multiThread);
+    } else {
+        brightness_contrast_saturation(&working, params, scale, multiThread);
+    }
 
     if (dcpProf && dcpApplyState) {
         for (int y = 0; y < lab->H; ++y) {
@@ -426,7 +517,7 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
         }
     }
 
-    shadowsHighlights(&working);
+//    shadowsHighlights(&working);
     
     HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
     if (params->filmSimulation.enabled) {
@@ -468,6 +559,8 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
         tc.Set(tcurve2, Color::sRGBGammaCurve);
         apply_tc(&working, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
     }
+
+    shadowsHighlights(&working);
 
     rgb2lab(working, *lab, params->icm.workingProfile);
 }

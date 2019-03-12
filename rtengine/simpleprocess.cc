@@ -547,6 +547,10 @@ private:
             }
         }
 
+        ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
+        ipf.guidedSmoothing(labView, oX, oY, oW, oH);
+        ipf.logEncoding(labView);
+
         bool utili;
         CurveFactory::complexLCurve (params.labCurve.brightness, params.labCurve.contrast, params.labCurve.lcurve, hist16, lumacurve, dummy, 1, utili);
 
@@ -560,9 +564,6 @@ private:
         ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
 
         ipf.vibrance (labView);
-        ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
-        ipf.guidedSmoothing(labView, oX, oY, oW, oH);
-        ipf.logEncoding(labView);
         ipf.toneMapping(labView, oX, oY, oW, oH);
 
         if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {

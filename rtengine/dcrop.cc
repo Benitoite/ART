@@ -374,6 +374,10 @@ void Crop::update(int todo)
     
     // apply luminance operations
     if (todo & M_LUMACURVE) {
+        parent->ipf.labColorCorrectionRegions(laboCrop, offset_x, offset_y, full_width, full_height);
+        parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
+        parent->ipf.logEncoding(laboCrop);
+        
         bool utili = parent->utili;
         bool autili = parent->autili;
         bool butili = parent->butili;
@@ -384,14 +388,11 @@ void Crop::update(int todo)
         LUTu dummy;
         parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
         parent->ipf.vibrance(laboCrop);
-        parent->ipf.labColorCorrectionRegions(laboCrop, offset_x, offset_y, full_width, full_height);
-        parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
         labnCrop->CopyFrom(laboCrop);
 
-        parent->ipf.logEncoding(labnCrop);
         parent->ipf.toneMapping(labnCrop, offset_x, offset_y, full_width, full_height);
 
         //parent->ipf.EPDToneMap(labnCrop, 5, 1);    //Go with much fewer than normal iterates for fast redisplay.

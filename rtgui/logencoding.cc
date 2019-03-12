@@ -28,17 +28,18 @@ using namespace rtengine::procparams;
 LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
+    const auto EVENT = RGBCURVE;
     EvEnabled = m->newEvent(RGBCURVE | M_AUTOEXP, "HISTORY_MSG_LOGENC_ENABLED");
     EvAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTO");
     EvAutoGrayOn = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTOGRAY");
     EvAutoGrayOff = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTOGRAY");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
-    EvSourceGray = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_SOURCE_GRAY");
-    EvSourceGrayAuto = m->newEvent(M_LUMINANCE | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
-    EvTargetGray = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_TARGET_GRAY");
-    EvBlackEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_BLACK_EV");
-    EvWhiteEv = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_WHITE_EV");
-    EvDetail = m->newEvent(M_LUMINANCE, "HISTORY_MSG_LOGENC_DETAIL");
+    EvSourceGray = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_SOURCE_GRAY");
+    EvSourceGrayAuto = m->newEvent(EVENT | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvTargetGray = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_TARGET_GRAY");
+    EvBlackEv = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_BLACK_EV");
+    EvWhiteEv = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_WHITE_EV");
+    EvDetail = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_DETAIL");
 
     autocompute = Gtk::manage(new Gtk::ToggleButton(M("TP_LOGENC_AUTO")));
     autoconn = autocompute->signal_toggled().connect(sigc::mem_fun(*this, &LogEncoding::autocomputeToggled));

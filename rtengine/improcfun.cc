@@ -2171,7 +2171,9 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 
     HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
 
-    if (params->filmSimulation.enabled && !params->filmSimulation.clutFilename.empty() && !params->logenc.enabled) {
+    constexpr bool logenc = true;
+
+    if (params->filmSimulation.enabled && !params->filmSimulation.clutFilename.empty() && !logenc) {
         hald_clut.init(static_cast<float>(params->filmSimulation.strength) / 100.0f, TS);
     }
 
@@ -2193,7 +2195,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     bool hasToneCurvebw2 = bool (customToneCurvebw2);
 
     // adjust parameters if logEncoding is enabled
-    if (params->logenc.enabled) {
+    if (logenc) {
         //tonecurve.makeIdentity();
         hasToneCurve1 = false;
         hasToneCurve2 = false;
@@ -2336,7 +2338,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     if (toneCurveHistSize > 0) {
         histToneCurve.clear();
         histToneCurveCompression = log2 (65536 / toneCurveHistSize);
-        if (params->logenc.enabled) {
+        if (logenc) {
             toneCurveHistSize = 0;
         }
     }
@@ -2441,11 +2443,11 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                     }
                 }
                 
-                if (dcpProf && dcpApplyState && !params->logenc.enabled) {
+                if (dcpProf && dcpApplyState && !logenc) {
                     dcpProf->step2ApplyTile (rtemp, gtemp, btemp, tW - jstart, tH - istart, TS, *dcpApplyState);
                 }
 
-                if (params->toneCurve.clampOOG && !params->logenc.enabled) {
+                if (params->toneCurve.clampOOG && !logenc) {
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                             // clip out of gamut colors, without distorting colour too bad
@@ -2475,12 +2477,12 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                             int y = CLIP<int> (lumimulf[0] * Color::gamma2curve[rtemp[ti * TS + tj]] + lumimulf[1] * Color::gamma2curve[gtemp[ti * TS + tj]] + lumimulf[2] * Color::gamma2curve[btemp[ti * TS + tj]]);
                             histToneCurveThr[y >> histToneCurveCompression]++;
 
-                            if (!params->logenc.enabled) {
+                            if (!logenc) {
                                 setUnlessOOG(rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj], r, g, b);
                             }
                         }
                     }
-                } else if (!params->logenc.enabled) {
+                } else if (!logenc) {
                     float tmpr[4] ALIGNED16;
                     float tmpg[4] ALIGNED16;
                     float tmpb[4] ALIGNED16;
@@ -3499,7 +3501,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
         delete vCurve;
     }
 
-    if (!params->logenc.enabled) {
+    if (!logenc) {
         shadowsHighlights(lab);
     }
 }

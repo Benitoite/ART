@@ -158,7 +158,7 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
     curveEditorG->setCurveListener (this);
 
     shape = static_cast<DiagonalCurveEditor*>(curveEditorG->addCurve(CT_Diagonal, "", toneCurveMode));
-    shape->setEditID(EUID_ToneCurve1, BT_IMAGEFLOAT);
+//    shape->setEditID(EUID_ToneCurve1, BT_IMAGEFLOAT);
     shape->setBottomBarBgGradient(bottomMilestones);
     shape->setLeftBarBgGradient(bottomMilestones);
 
@@ -185,7 +185,7 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
     curveEditorG2->setCurveListener (this);
 
     shape2 = static_cast<DiagonalCurveEditor*>(curveEditorG2->addCurve(CT_Diagonal, "", toneCurveMode2));
-    shape2->setEditID(EUID_ToneCurve2, BT_IMAGEFLOAT);
+//    shape2->setEditID(EUID_ToneCurve2, BT_IMAGEFLOAT);
     shape2->setBottomBarBgGradient(bottomMilestones);
     shape2->setLeftBarBgGradient(bottomMilestones);
 
@@ -207,14 +207,15 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
     contrast->setAdjusterListener (this);
     saturation->setAdjusterListener (this);
 
-    EvLogBrightness = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvBrightness));
-    EvLogContrast = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvContrast));
-    EvLogSaturation = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvSaturation));
-    EvLogToneCurve1 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurve1));
-    EvLogToneCurve2 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurve2));
-    EvLogToneCurveMode1 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurveMode1));
-    EvLogToneCurveMode2 = m->newEvent(M_LUMINANCE, m->getHistoryMsg(EvToneCurveMode2));
-    logenc = false;
+    const auto EVENT = RGBCURVE;
+    EvLogBrightness = m->newEvent(EVENT, m->getHistoryMsg(EvBrightness));
+    EvLogContrast = m->newEvent(EVENT, m->getHistoryMsg(EvContrast));
+    EvLogSaturation = m->newEvent(EVENT, m->getHistoryMsg(EvSaturation));
+    EvLogToneCurve1 = m->newEvent(EVENT, m->getHistoryMsg(EvToneCurve1));
+    EvLogToneCurve2 = m->newEvent(EVENT, m->getHistoryMsg(EvToneCurve2));
+    EvLogToneCurveMode1 = m->newEvent(EVENT, m->getHistoryMsg(EvToneCurveMode1));
+    EvLogToneCurveMode2 = m->newEvent(EVENT, m->getHistoryMsg(EvToneCurveMode2));
+    logenc = true;
 }
 
 ToneCurve::~ToneCurve ()
@@ -870,7 +871,7 @@ void ToneCurve::setBatchMode (bool batchMode)
     curveEditorG->setBatchMode (batchMode);
     curveEditorG2->setBatchMode (batchMode);
 
-    logenc = false;
+    logenc = true;
 }
 
 void ToneCurve::setAdjusterBehavior (bool expadd, bool hlcompadd, bool hlcompthreshadd, bool bradd, bool blackadd, bool shcompadd, bool contradd, bool satadd)
@@ -1039,7 +1040,7 @@ void ToneCurve::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParam
 void ToneCurve::procParamsChanged(const rtengine::procparams::ProcParams* params, const rtengine::ProcEvent& ev, const Glib::ustring& descr, const ParamsEdited *paramsEdited)
 {
     if (!batchMode) {
-        logenc = params->logenc.enabled;
+        logenc = true;//params->logenc.enabled;
         shape->showEditButton(!logenc);
         shape2->showEditButton(!logenc);
     }

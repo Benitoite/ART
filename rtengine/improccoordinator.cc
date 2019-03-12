@@ -687,19 +687,20 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
     
         if (todo & M_LUMACURVE) {
+            ipf.labColorCorrectionRegions(oprevl);
+            ipf.guidedSmoothing(oprevl);
+            ipf.logEncoding(oprevl, &histToneCurve);
+            
             progress("Applying Color Boost...", 100 * readyphase / numofphases);
             histCCurve.clear();
             histLCurve.clear();
             ipf.chromiLuminanceCurve(pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
             ipf.vibrance(oprevl);
-            ipf.labColorCorrectionRegions(oprevl);
-            ipf.guidedSmoothing(oprevl);
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
             nprevl->CopyFrom(oprevl);
     
-            ipf.logEncoding(nprevl, &histToneCurve);
             ipf.toneMapping(nprevl);
     
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
