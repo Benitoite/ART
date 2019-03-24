@@ -83,7 +83,7 @@ void MyCurve::setRatio(float r)
 }
 
 
-int MyCurve::calcDimensions ()
+void MyCurve::calcDimensions ()
 {
     double newRequestedW, newRequestedH;
     double s = (double)RTScalable::getScale();

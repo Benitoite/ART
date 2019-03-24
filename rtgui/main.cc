@@ -131,10 +131,6 @@ int processLineParams ( int argc, char **argv )
 
         if ( currParam.at (0) == '-' && currParam.size() > 1 ) {
             switch ( currParam.at (1) ) {
-                case '-':
-                    // GTK --argument, we're skipping it
-                    break;
-
 #ifdef WIN32
 
                 case 'w': // This case is handled outside this function
