@@ -120,6 +120,8 @@ set(NONCLISOURCEFILES
     rgbcurves.cc
     rotate.cc
     rtimage.cc
+	rtsurface.cc
+	rtscalable.cc
     rtwindow.cc
     saveasdlg.cc
     saveformatpanel.cc
@@ -187,6 +189,7 @@ if(WIN32)
         ${GTKMM_INCLUDE_DIRS}
         ${GTK_INCLUDE_DIRS}
         ${LENSFUN_INCLUDE_DIRS}
+        ${RSVG_INCLUDE_DIRS}
         )
     link_directories(. "${PROJECT_SOURCE_DIR}/rtexif"
         ${EXTRA_LIBDIR}
@@ -197,6 +200,7 @@ if(WIN32)
         ${GTKMM_LIBRARY_DIRS}
         ${GTK_LIBRARY_DIRS}
         ${LENSFUN_LIBRARY_DIRS}
+        ${RSVG_LIBRARY_DIRS}
         )
 else()
     include_directories(${EXTRA_INCDIR}
@@ -214,6 +218,7 @@ else()
         ${IPTCDATA_INCLUDE_DIRS}
         ${LCMS_INCLUDE_DIRS}
         ${LENSFUN_INCLUDE_DIRS}
+        ${RSVG_INCLUDE_DIRS}
         )
     link_directories(${EXTRA_LIBDIR}
         ${CANBERRA-GTK_LIBRARY_DIRS}
@@ -230,6 +235,7 @@ else()
         ${IPTCDATA_LIBRARY_DIRS}
         ${LCMS_LIBRARY_DIRS}
         ${LENSFUN_LIBRARY_DIRS}
+        ${RSVG_LIBRARY_DIRS}
         )
 endif()
 
@@ -247,6 +253,10 @@ add_executable(rth-cli ${EXTRA_SRC_CLI} ${CLISOURCEFILES})
 # Add dependencies to executables targets
 add_dependencies(rth UpdateInfo)
 add_dependencies(rth-cli UpdateInfo)
+
+#Define a target specific definition to use in code
+target_compile_definitions(rth PUBLIC GUIVERSION)
+target_compile_definitions(rth-cli PUBLIC CLIVERSION)
 
 # Set executables targets properties, i.e. output filename and compile flags
 # for "Debug" builds, open a console in all cases for Windows version
@@ -277,6 +287,7 @@ target_link_libraries(rth rtengine
     ${TIFF_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${LENSFUN_LIBRARIES}
+    ${RSVG_LIBRARIES}
     ${TCMALLOC_LIBRARIES}
     )
 
@@ -298,6 +309,7 @@ target_link_libraries(rth-cli rtengine
     ${TIFF_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${LENSFUN_LIBRARIES}
+    ${RSVG_LIBRARIES}
     ${TCMALLOC_LIBRARIES}
     )
 
