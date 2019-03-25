@@ -86,15 +86,25 @@ void MyCurve::setRatio(float r)
 void MyCurve::calcDimensions ()
 {
     double newRequestedW, newRequestedH;
-    double s = (double)RTScalable::getScale();
+    double s = RTScalable::getScale();
+    double r = RADIUS * s;
+    double wm = (CBAR_WIDTH + 2. + CBAR_MARGIN) * s;
 
     newRequestedW = newRequestedH = get_allocation().get_width();
     newRequestedH = newRequestedH * sizeRatio + 0.5;
 
-    graphX = ((double)RADIUS + (leftBar ? (double)CBAR_WIDTH + 2. + (double)CBAR_MARGIN : 0.)) * s;
-    graphH = graphW = newRequestedW - graphX - (double)RADIUS * s;
-    graphY = (double)RADIUS * s + graphW;
-    return;
+    if (leftBar && !bottomBar) {
+        newRequestedH -= wm - r;
+    }
+
+    if (!leftBar && bottomBar) {
+        newRequestedH += wm - r;
+    }
+
+    graphW = newRequestedW - r - (leftBar ? wm : r);
+    graphH = newRequestedH - r - (bottomBar ? wm : r);
+    graphX = newRequestedW - r - graphW;
+    graphY = r + graphH;
 }
 
 Gtk::SizeRequestMode MyCurve::get_request_mode_vfunc () const
