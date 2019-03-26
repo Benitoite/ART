@@ -51,6 +51,13 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     whiteEv = Gtk::manage(new Adjuster(M("TP_LOGENC_WHITE_EV"), 0.0, 32.0, 0.1, 10.0));
     detail = Gtk::manage(new Adjuster(M("TP_LOGENC_DETAIL"), 0, 5, 1, 0));
 
+    Gtk::Frame *evFrame = Gtk::manage(new Gtk::Frame(M("TP_LOGENC_EV_LEVELS")));
+    evFrame->set_label_align(0.025, 0.5);
+
+    Gtk::VBox *evBox = Gtk::manage(new Gtk::VBox());
+    evBox->set_border_width(2);
+    evBox->set_spacing(2);
+
     sourceGray->delay = options.adjusterMaxDelay;
     blackEv->delay = options.adjusterMaxDelay;
     whiteEv->delay = options.adjusterMaxDelay;
@@ -71,11 +78,13 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     blackEv->show();
     targetGray->show();
 
+    evBox->pack_start(*autocompute);
+    evBox->pack_start(*blackEv);
+    evBox->pack_start(*whiteEv);
+    evFrame->add(*evBox);
+    pack_start(*evFrame);
     pack_start(*sourceGray);
     pack_start(*targetGray);
-    pack_start(*autocompute);
-    pack_start(*blackEv);
-    pack_start(*whiteEv);
     pack_start(*detail);
 }
 
@@ -104,6 +113,8 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
     whiteEv->setValue(pp->logenc.whiteEv);
     targetGray->setValue(pp->logenc.targetGray);
     detail->setValue(pp->logenc.detail);
+    // blackEv->setEnabled(!pp->logenc.autocompute);
+    // whiteEv->setEnabled(!pp->logenc.autocompute);
 
     enableListener();
 }
@@ -221,6 +232,8 @@ void LogEncoding::autocomputeToggled()
                 //targetGray->setEnabled(false);
             } else {
                 listener->panelChanged(EvAuto, M("GENERAL_DISABLED"));
+                // blackEv->setEnabled(true);
+                // whiteEv->setEnabled(true);
             }
         } else {
             listener->panelChanged(EvAutoBatch, autocompute->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
@@ -236,6 +249,8 @@ void LogEncoding::logEncodingChanged(const rtengine::LogEncodingParams &params)
     disableListener();
     ConnectionBlocker cbl(autoconn);
 
+    // blackEv->setEnabled(!params.autocompute);
+    // whiteEv->setEnabled(!params.autocompute);
     blackEv->setEnabled(true);
     whiteEv->setEnabled(true);
 //    targetGray->setEnabled(true);
