@@ -226,7 +226,7 @@ void StdImageSource::colorSpaceConversion (Imagefloat* im, const ColorManagement
         if (embedded) {
             in = embedded;
         } else {
-            if (sampleFormat & (IIOSF_LOGLUV24 | IIOSF_LOGLUV32 | IIOSF_FLOAT16 | IIOSF_FLOAT24 | IIOSF_FLOAT32)) {
+            if (sampleFormat & (IIOSF_LOGLUV24 | IIOSF_LOGLUV32)) {// | IIOSF_FLOAT16 | IIOSF_FLOAT24 | IIOSF_FLOAT32)) {
                 skipTransform = true;
             } else {
                 in = ICCStore::getInstance()->getsRGBProfile ();
