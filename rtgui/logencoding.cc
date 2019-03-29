@@ -35,7 +35,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     EvAutoGrayOff = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTOGRAY");
     EvAutoBatch = m->newEvent(M_VOID, "HISTORY_MSG_LOGENC_AUTO");
     EvSourceGray = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_SOURCE_GRAY");
-    EvSourceGrayAuto = m->newEvent(EVENT | M_AUTOEXP, "HISTORY_MSG_LOGENC_GRAY_POINT");
+    EvSourceGrayAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_SOURCE_GRAY");
     EvTargetGray = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_TARGET_GRAY");
     EvBlackEv = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_BLACK_EV");
     EvWhiteEv = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_WHITE_EV");
