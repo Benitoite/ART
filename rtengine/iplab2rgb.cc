@@ -68,9 +68,9 @@ inline void copyAndClamp(const LabImage *src, unsigned char *dst, const double r
             Color::Lab2XYZ(rL[j], ra[j], rb[j], x_, y_, z_ );
             Color::xyz2rgb(x_, y_, z_, R, G, B, rgb_xyz);
 
-            dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[R]);
-            dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[G]);
-            dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[B]);
+            dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[CLIP(R)]);
+            dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[CLIP(G)]);
+            dst[ix++] = uint16ToUint8Rounded(Color::gamma2curve[CLIP(B)]);
         }
     }
 }
