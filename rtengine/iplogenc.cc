@@ -173,7 +173,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     const bool saturation_enabled = params->toneCurve.saturation;
     const float saturation = 1.f + params->toneCurve.saturation / 100.f;
     const float b = params->logenc.targetGray > 1 && params->logenc.targetGray < 100 && dynamic_range > 0 ? find_gray(std::abs(params->logenc.blackEv) / dynamic_range, params->logenc.targetGray / 100.f) : 0.f;
-    const float norm = b > 0 ? b : 0;
+    const float linbase = max(b, 0.f);
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
     const auto apply =
@@ -192,14 +192,22 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             x = max(x / gray, noise);
             x = max((xlogf(x)/log2 - shadows_range) / dynamic_range, noise);
             assert(x == x);
-            if (norm > 0.f) {
-                x = xlog2lin(x, norm);
+            if (linbase > 0.f) {
+                x = xlog2lin(x, linbase);
             }
             if (scale) {
                 return x * 65535.f;
             } else {
                 return x;
             }
+        };
+
+    const auto norm =
+        [&](float r, float g, float b) -> float
+        {
+            //return Color::rgbLuminance(r, g, b, ws);
+            //return max(r, g, b);
+            return std::sqrt(SQR(r) + SQR(g) + SQR(b));
         };
 
     const int detail = float(max(params->logenc.detail, 0)) / scale + 0.5f;
@@ -212,7 +220,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float r = rgb->r(y, x);
                 float g = rgb->g(y, x);
                 float b = rgb->b(y, x);
-                float m = Color::rgbLuminance(r, g, b, ws);
+                float m = norm(r, g, b);
                 if (m > noise) {
                     float mm = apply(m);
                     float f = mm / m;
@@ -248,8 +256,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                //tmp[y][x] = max(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
-                tmp[y][x] = Color::rgbLuminance(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws) / 65535.f;
+                tmp[y][x] = norm(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
             }
         }
             
@@ -268,7 +275,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float &r = rgb->r(y, x);
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
-                float m = Color::rgbLuminance(r, g, b, ws); //max(r, g, b);
+                float m = norm(r, g, b);
                 float t = intp(blend[y][x], m, tmp[y][x] * 65535.f);
                 if (t > noise) {
                     float c = apply(t);
