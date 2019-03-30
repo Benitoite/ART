@@ -212,23 +212,23 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float r = rgb->r(y, x);
                 float g = rgb->g(y, x);
                 float b = rgb->b(y, x);
-                float m = max(r, g, b);
+                float m = Color::rgbLuminance(r, g, b, ws);
                 if (m > noise) {
                     float mm = apply(m);
                     float f = mm / m;
                     r *= f;
                     b *= f;
                     g *= f;
-                }
-                if (saturation_enabled) {
-                    float l = Color::rgbLuminance(r, g, b, ws);
-                    r = max(l + saturation * (r - l), noise);
-                    g = max(l + saturation * (g - l), noise);
-                    b = max(l + saturation * (b - l), noise);
-                }
+                    if (saturation_enabled) {
+                        float l = Color::rgbLuminance(r, g, b, ws);
+                        r = max(l + saturation * (r - l), noise);
+                        g = max(l + saturation * (g - l), noise);
+                        b = max(l + saturation * (b - l), noise);
+                    }
 
-                if (OOG(r) || OOG(g) || OOG(b)) {
-                    Color::filmlike_clip(&r, &g, &b);
+                    // if (OOG(r) || OOG(g) || OOG(b)) {
+                    //     Color::filmlike_clip(&r, &g, &b);
+                    // }
                 }
             
                 assert(r == r);
@@ -248,7 +248,8 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                tmp[y][x] = max(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
+                //tmp[y][x] = max(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
+                tmp[y][x] = Color::rgbLuminance(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws) / 65535.f;
             }
         }
             
@@ -267,22 +268,23 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float &r = rgb->r(y, x);
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
-                float t = intp(blend[y][x], max(r, g, b), tmp[y][x] * 65535.f);
+                float m = Color::rgbLuminance(r, g, b, ws); //max(r, g, b);
+                float t = intp(blend[y][x], m, tmp[y][x] * 65535.f);
                 if (t > noise) {
                     float c = apply(t);
                     float f = c / t;
                     r *= f;
                     g *= f;
                     b *= f;
-                }
-                if (saturation_enabled) {
-                    float l = Color::rgbLuminance(r, g, b, ws);
-                    r = max(l + saturation * (r - l), noise);
-                    g = max(l + saturation * (g - l), noise);
-                    b = max(l + saturation * (b - l), noise);
-                }
-                if (OOG(r) || OOG(g) || OOG(b)) {
-                    Color::filmlike_clip(&r, &g, &b);
+                    if (saturation_enabled) {
+                        float l = Color::rgbLuminance(r, g, b, ws);
+                        r = max(l + saturation * (r - l), noise);
+                        g = max(l + saturation * (g - l), noise);
+                        b = max(l + saturation * (b - l), noise);
+                    }
+                    // if (OOG(r) || OOG(g) || OOG(b)) {
+                    //     Color::filmlike_clip(&r, &g, &b);
+                    // }
                 }
             }
         }
@@ -332,7 +334,7 @@ void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, f
         CurveFactory::complexCurve(0, 0, 0, 0, 0, bright, contr,
                                    { DCT_Linear }, { DCT_Linear },
                                    hist16, curve1, curve2, curve, dummy,
-                                   customToneCurve1, customToneCurve2, scale);
+                                   customToneCurve1, customToneCurve2, max(scale, 1.f));
     }
 
     const int W = rgb->getWidth();
