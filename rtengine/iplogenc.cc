@@ -263,9 +263,9 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
         const float epsilon = 0.01f;
         guidedFilter(tmp, tmp, tmp, detail, epsilon, multithread);
 
-        array2D<float> blend(W, H);
-        float contrast = 0.2f;
-        buildBlendMask(tmp, blend, W, H, contrast);
+        // array2D<float> blend(W, H);
+        // float contrast = 0.2f;
+        // buildBlendMask(tmp, blend, W, H, contrast);
                
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
@@ -276,7 +276,8 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
                 float m = norm(r, g, b);
-                float t = intp(blend[y][x], m, tmp[y][x] * 65535.f);
+                float t = intp(0.33f// blend[y][x]
+                               , m, tmp[y][x] * 65535.f);
                 if (t > noise) {
                     float c = apply(t);
                     float f = c / t;

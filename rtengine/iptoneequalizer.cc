@@ -2,9 +2,7 @@
  *
  *  This file is part of RawTherapee.
  *
- *  Copyright 2018 Alberto Griggio <alberto.griggio@gmail.com>
- *
- *  
+ *  Copyright 2019 Alberto Griggio <alberto.griggio@gmail.com>
  *
  *  RawTherapee is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
