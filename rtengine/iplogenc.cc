@@ -205,11 +205,19 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     const auto norm =
         [&](float r, float g, float b) -> float
         {
-            //return Color::rgbLuminance(r, g, b, ws);
+            return Color::rgbLuminance(r, g, b, ws);
+
+            // other possible alternatives (so far, luminance seems to work
+            // fine though). See also
+            // https://discuss.pixls.us/t/finding-a-norm-to-preserve-ratios-across-non-linear-operations
+            //
+            // MAX
             //return max(r, g, b);
+            //
+            // Euclidean
             //return std::sqrt(SQR(r) + SQR(g) + SQR(b));
             
-            // // weighted yellow power norm from https://youtu.be/Z0DS7cnAYPk
+            // weighted yellow power norm from https://youtu.be/Z0DS7cnAYPk
             // float rr = 1.22f * r / 65535.f;
             // float gg = 1.20f * g / 65535.f;
             // float bb = 0.58f * b / 65535.f;
@@ -222,23 +230,6 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             // } else {
             //     return 0.f;
             // }
-
-            // // power luminance norm
-            // float rr = ws[1][0] * r / 65535.f;
-            // float gg = ws[1][1] * g / 65535.f;
-            // float bb = ws[1][2] * b / 65535.f;
-            // float rr2 = SQR(rr);
-            // float gg2 = SQR(gg);
-            // float bb2 = SQR(bb);
-            // float den = rr2 + gg2 + bb2;
-            // if (den > 0.f) {
-            //     return (rr2 * rr + gg2 * gg + bb2 * bb) / den * 65535.f;
-            // } else {
-            //     return 0.f;
-            // }
-
-            // let's try this...
-            return std::sqrt(Color::rgbLuminance(SQR(r/65535.f), SQR(g/65535.f), SQR(b/65535.f), ws)) * 65535.f;
         };
 
     const int detail = float(max(params->logenc.detail, 0)) / scale + 0.5f;
