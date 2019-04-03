@@ -18,23 +18,18 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <map>
-
-#include <glibmm.h>
-
 #include "filebrowser.h"
-
-#include "batchqueue.h"
-#include "clipboard.h"
-#include "multilangmgr.h"
+#include <map>
+#include <glibmm.h>
 #include "options.h"
+#include "multilangmgr.h"
+#include "clipboard.h"
 #include "procparamchangers.h"
-#include "rtimage.h"
-#include "threadutils.h"
-
+#include "batchqueue.h"
 #include "../rtengine/dfmanager.h"
 #include "../rtengine/ffmanager.h"
-#include "../rtengine/procparams.h"
+#include "rtimage.h"
+#include "threadutils.h"
 
 extern Options options;
 
@@ -1732,60 +1727,62 @@ void FileBrowser::buttonPressed (LWButton* button, int actionCode, void* actionD
     }
 }
 
-void FileBrowser::openNextImage()
+void FileBrowser::openNextImage ()
 {
     MYWRITERLOCK(l, entryRW);
 
     if (!fd.empty() && selected.size() > 0 && !options.tabbedUI) {
+
         for (size_t i = 0; i < fd.size() - 1; i++) {
             if (selected[0]->thumbnail->getFileName() == fd[i]->filename) { // located 1-st image in current selection
                 if (i < fd.size() && tbl) {
                     // find the first not-filtered-out (next) image
                     for (size_t k = i + 1; k < fd.size(); k++) {
                         if (!fd[k]->filtered/*checkFilter (fd[k])*/) {
-
                             // clear current selection
                             for (size_t j = 0; j < selected.size(); j++) {
                                 selected[j]->selected = false;
                             }
 
-                            selected.clear();
+                            selected.clear ();
 
                             // set new selection
                             fd[k]->selected = true;
-                            selected.push_back(fd[k]);
-                            //queue_draw();
+                            selected.push_back (fd[k]);
+                            //queue_draw ();
 
                             MYWRITERLOCK_RELEASE(l);
 
                             // this will require a read access
-                            notifySelectionListener();
+                            notifySelectionListener ();
 
                             MYWRITERLOCK_ACQUIRE(l);
 
-                            // scroll to the selected position, centered horizontally in the container
-                            double x1, y1;
-                            getScrollPosition(x1, y1);
+                            // scroll to the selected position
+                            double h1, v1;
+                            getScrollPosition(h1, v1);
 
-                            double x2 = selected[0]->getStartX();
-                            double y2 = selected[0]->getStartY();
+                            double h2 = selected[0]->getStartX();
+                            double v2 = selected[0]->getStartY();
 
                             Thumbnail* thumb = (static_cast<FileBrowserEntry*>(fd[k]))->thumbnail;
-                            int tw = fd[k]->getMinimalWidth(); // thumb width
-
-                            int ww = get_width(); // window width
+                            int minWidth = get_width() - fd[k]->getMinimalWidth();
 
                             MYWRITERLOCK_RELEASE(l);
 
                             // scroll only when selected[0] is outside of the displayed bounds
-                            // or less than a thumbnail's width from either edge.
-                            if ((x2 > x1 + ww - 1.5 * tw) || (x2 - tw / 2 < x1)) {
-                                setScrollPosition(x2 - (ww - tw) / 2, y2);
+                            if (h2 + minWidth - h1 > get_width()) {
+                                setScrollPosition(h2 - minWidth, v2);
+                            }
+
+                            if (h1 > h2) {
+                                setScrollPosition(h2, v2);
                             }
 
                             // open the selected image
-                            tbl->openRequested({thumb});
-
+                            std::vector<Thumbnail*> entries;
+                            entries.push_back (thumb);
+                            tbl->openRequested (entries);
                             return;
                         }
                     }
@@ -1795,60 +1792,62 @@ void FileBrowser::openNextImage()
     }
 }
 
-void FileBrowser::openPrevImage()
+void FileBrowser::openPrevImage ()
 {
     MYWRITERLOCK(l, entryRW);
 
     if (!fd.empty() && selected.size() > 0 && !options.tabbedUI) {
+
         for (size_t i = 1; i < fd.size(); i++) {
             if (selected[0]->thumbnail->getFileName() == fd[i]->filename) { // located 1-st image in current selection
                 if (i > 0 && tbl) {
                     // find the first not-filtered-out (previous) image
                     for (ssize_t k = (ssize_t)i - 1; k >= 0; k--) {
                         if (!fd[k]->filtered/*checkFilter (fd[k])*/) {
-
                             // clear current selection
                             for (size_t j = 0; j < selected.size(); j++) {
                                 selected[j]->selected = false;
                             }
 
-                            selected.clear();
+                            selected.clear ();
 
                             // set new selection
                             fd[k]->selected = true;
-                            selected.push_back(fd[k]);
-                            //queue_draw();
+                            selected.push_back (fd[k]);
+                            //queue_draw ();
 
                             MYWRITERLOCK_RELEASE(l);
 
                             // this will require a read access
-                            notifySelectionListener();
+                            notifySelectionListener ();
 
                             MYWRITERLOCK_ACQUIRE(l);
 
-                            // scroll to the selected position, centered horizontally in the container
-                            double x1, y1;
-                            getScrollPosition(x1, y1);
+                            // scroll to the selected position
+                            double h1, v1;
+                            getScrollPosition(h1, v1);
 
-                            double x2 = selected[0]->getStartX();
-                            double y2 = selected[0]->getStartY();
+                            double h2 = selected[0]->getStartX();
+                            double v2 = selected[0]->getStartY();
 
                             Thumbnail* thumb = (static_cast<FileBrowserEntry*>(fd[k]))->thumbnail;
-                            int tw = fd[k]->getMinimalWidth(); // thumb width
-
-                            int ww = get_width(); // window width
+                            int minWidth = get_width() - fd[k]->getMinimalWidth();
 
                             MYWRITERLOCK_RELEASE(l);
 
                             // scroll only when selected[0] is outside of the displayed bounds
-                            // or less than a thumbnail's width from either edge.
-                            if ((x2 > x1 + ww - 1.5 * tw) || (x2 - tw / 2 < x1)) {
-                                setScrollPosition(x2 - (ww - tw) / 2, y2);
+                            if (h2 + minWidth - h1 > get_width()) {
+                                setScrollPosition(h2 - minWidth, v2);
+                            }
+
+                            if (h1 > h2) {
+                                setScrollPosition(h2, v2);
                             }
 
                             // open the selected image
-                            tbl->openRequested({thumb});
-
+                            std::vector<Thumbnail*> entries;
+                            entries.push_back (thumb);
+                            tbl->openRequested (entries);
                             return;
                         }
                     }
@@ -1858,8 +1857,11 @@ void FileBrowser::openPrevImage()
     }
 }
 
-void FileBrowser::selectImage(const Glib::ustring& fname, bool doScroll)
+
+void FileBrowser::selectImage (Glib::ustring fname)
 {
+
+    // need to clear the filter in filecatalog
     MYWRITERLOCK(l, entryRW);
 
     if (!fd.empty() && !options.tabbedUI) {
@@ -1872,34 +1874,27 @@ void FileBrowser::selectImage(const Glib::ustring& fname, bool doScroll)
                     selected[j]->selected = false;
                 }
 
-                selected.clear();
+                selected.clear ();
 
                 // set new selection
                 fd[i]->selected = true;
-                selected.push_back(fd[i]);
-                queue_draw();
+                selected.push_back (fd[i]);
+                queue_draw ();
 
                 MYWRITERLOCK_RELEASE(l);
 
                 // this will require a read access
-                notifySelectionListener();
+                notifySelectionListener ();
 
                 MYWRITERLOCK_ACQUIRE(l);
 
-                // scroll to the selected position, centered horizontally in the container
-                double x = selected[0]->getStartX();
-                double y = selected[0]->getStartY();
-
-                int tw = fd[i]->getMinimalWidth(); // thumb width
-
-                int ww = get_width(); // window width
+                // scroll to the selected position
+                double h = selected[0]->getStartX();
+                double v = selected[0]->getStartY();
 
                 MYWRITERLOCK_RELEASE(l);
 
-                if (doScroll) {
-                    // Center thumb
-                    setScrollPosition(x - (ww - tw) / 2, y);
-                }
+                setScrollPosition(h, v);
 
                 return;
             }
@@ -1907,11 +1902,11 @@ void FileBrowser::selectImage(const Glib::ustring& fname, bool doScroll)
     }
 }
 
-void FileBrowser::openNextPreviousEditorImage (const Glib::ustring& fname, eRTNav nextPrevious)
+void FileBrowser::openNextPreviousEditorImage (Glib::ustring fname, eRTNav nextPrevious)
 {
 
     // let FileBrowser acquire Editor's perspective
-    selectImage (fname, false);
+    selectImage (fname);
 
     // now switch to the requested image
     if (nextPrevious == NAV_NEXT) {

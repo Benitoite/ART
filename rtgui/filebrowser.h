@@ -61,8 +61,6 @@ class FileBrowser  : public ThumbBrowserBase,
 private:
     typedef sigc::signal<void> type_trash_changed;
 
-    using ThumbBrowserBase::redrawNeeded;
-
     IdleRegister idle_register;
     unsigned int session_id_;
 
