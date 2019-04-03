@@ -1682,12 +1682,12 @@ bool EPDParams::operator !=(const EPDParams& other) const
 LogEncodingParams::LogEncodingParams():
     enabled(false),
     autocompute(true),
-    autogray(false),
+    autogray(true),
     sourceGray(18.0),
     targetGray(18.0),
     blackEv(-5.0),
     whiteEv(10.0),
-    detail(0)
+    detail(1)
 {
 }
 

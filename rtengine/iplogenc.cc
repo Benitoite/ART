@@ -207,7 +207,38 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
         {
             //return Color::rgbLuminance(r, g, b, ws);
             //return max(r, g, b);
-            return std::sqrt(SQR(r) + SQR(g) + SQR(b));
+            //return std::sqrt(SQR(r) + SQR(g) + SQR(b));
+            
+            // // weighted yellow power norm from https://youtu.be/Z0DS7cnAYPk
+            // float rr = 1.22f * r / 65535.f;
+            // float gg = 1.20f * g / 65535.f;
+            // float bb = 0.58f * b / 65535.f;
+            // float rr4 = SQR(rr) * SQR(rr);
+            // float gg4 = SQR(gg) * SQR(gg);
+            // float bb4 = SQR(bb) * SQR(bb);
+            // float den = (rr4 + gg4 + bb4);
+            // if (den > 0.f) {
+            //     return 0.8374319f * ((rr4 * rr + gg4 * gg + bb4 * bb) / den) * 65535.f;
+            // } else {
+            //     return 0.f;
+            // }
+
+            // // power luminance norm
+            // float rr = ws[1][0] * r / 65535.f;
+            // float gg = ws[1][1] * g / 65535.f;
+            // float bb = ws[1][2] * b / 65535.f;
+            // float rr2 = SQR(rr);
+            // float gg2 = SQR(gg);
+            // float bb2 = SQR(bb);
+            // float den = rr2 + gg2 + bb2;
+            // if (den > 0.f) {
+            //     return (rr2 * rr + gg2 * gg + bb2 * bb) / den * 65535.f;
+            // } else {
+            //     return 0.f;
+            // }
+
+            // let's try this...
+            return std::sqrt(Color::rgbLuminance(SQR(r/65535.f), SQR(g/65535.f), SQR(b/65535.f), ws)) * 65535.f;
         };
 
     const int detail = float(max(params->logenc.detail, 0)) / scale + 0.5f;
