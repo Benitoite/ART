@@ -221,9 +221,8 @@ bool AreaMask::drag1(const int modifierKey)
         rtengine::Coord centerPos = dragged_center_;
 
         // trick to get the correct angle (clockwise/counter-clockwise)
-        int p = centerPos.y;
-        centerPos.y = currPos.y;
-        currPos.y = p;
+        std::swap(centerPos.y, currPos.y);
+        
         PolarCoord draggedPoint(currPos - centerPos);
         double deltaAngle = draggedPoint.angle - dragged_point_old_angle_;
 
@@ -256,12 +255,8 @@ bool AreaMask::drag1(const int modifierKey)
         rtengine::Coord currPos = provider->posImage + provider->deltaImage;
         rtengine::Coord centerPos = dragged_center_;
 
-//        double diagonal = sqrt(double(imW) * double(imW) + double(imH) * double(imH));
-
         // trick to get the correct angle (clockwise/counter-clockwise)
-        int p = centerPos.y;
-        centerPos.y = currPos.y;
-        currPos.y = p;
+        std::swap(centerPos.y, currPos.y);
 
         PolarCoord draggedPoint(currPos - centerPos);
         double cur_offset_h = draggedPoint.radius * sin((draggedPoint.angle - angle_) / 180.*rtengine::RT_PI);
@@ -270,11 +265,11 @@ bool AreaMask::drag1(const int modifierKey)
         double ww = width_, hh = height_;
 
         if (last_object_ == top_id_ || last_object_ == bottom_id_) {
-            cur_offset_h = (cur_offset_h - height_ / 2) * (last_object_ == top_id_ ? -1 : 1);
-            hh = std::max(cur_offset_h * 200 / imH, 0.1);
+            double ch = (cur_offset_h - height_ / 2) * (last_object_ == top_id_ ? -1 : 1);
+            hh = std::max(ch * 200 / imH, 0.1);
         } else { // left_id_ || right_id_
-            cur_offset_w = (cur_offset_w - width_ / 2) * (last_object_ == left_id_ ? -1 : 1);
-            ww = std::max(cur_offset_w * 200 / imW, 0.1);
+            double cw = (cur_offset_w - width_ / 2) * (last_object_ == left_id_ ? -1 : 1);
+            ww = std::max(cw * 200 / imW, 0.1);
         }
 
         if (ww != width_ || hh != height_) {
