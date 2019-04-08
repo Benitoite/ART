@@ -83,7 +83,8 @@ public:
         baseImg(nullptr),
         labView(nullptr),
         autili(false),
-        butili(false)
+        butili(false),
+        pipeline_scale(1.0)
     {
     }
 
@@ -613,7 +614,7 @@ private:
         CurveFactory::curveWavContL (wavcontlutili, params.wavelet.wavclCurve, wavclCurve,/* hist16C, dummy,*/ 1);
 
         if (params.wavelet.enabled) {
-            ipf.ip_wavelet (labView, labView, 2, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW,  waOpacityCurveWL, wavclCurve, 1);
+            ipf.ip_wavelet (labView, labView, 2, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW,  waOpacityCurveWL, wavclCurve, pipeline_scale);//1);
         }
 
         wavCLVCurve.Reset();
@@ -934,9 +935,10 @@ private:
         // }
             
         ImProcFunctions &ipf = *(ipf_p.get());
-        ipf.setScale(1.0 / scale_factor);
+        pipeline_scale = 1.0 / scale_factor;
+        ipf.setScale(pipeline_scale);
 
-        params.wavelet.strength *= scale_factor;
+        //params.wavelet.strength *= scale_factor;
 
         if (params.raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::THREE_PASS)) {
             params.raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::ONE_PASS);
@@ -1009,6 +1011,8 @@ private:
     ToneCurve customToneCurvebw2;
 
     bool autili, butili;
+
+    double pipeline_scale;
 };
 
 } // namespace
