@@ -141,8 +141,8 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     maskEditorGroup->show();
     pack_start(*maskEditorGroup, Gtk::PACK_SHRINK, 2);
 
-    maskBlur = Gtk::manage(new Adjuster(M("TP_LABMASKS_BLUR"), -10, 100, 0.1, 0));
-    maskBlur->setLogScale(10, 0);
+    maskBlur = Gtk::manage(new Adjuster(M("TP_LABMASKS_BLUR"), -10, 500, 0.1, 0));
+    maskBlur->setLogScale(10, -10);
     maskBlur->setAdjusterListener(this);
     pack_start(*maskBlur);
 
