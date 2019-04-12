@@ -1088,9 +1088,6 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
         }
     }
 
-    float oldMedian;
-    const float percentile = float(LIM(params->fattal.anchor, 1, 100)) / 100.f;
-    findMinMaxPercentile (Yr.data(), Yr.getRows() * Yr.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
     // median filter on the deep shadows, to avoid boosting noise
     // because w2 >= w and h2 >= h, we can use the L buffer as temporary buffer for Median_Denoise()
     int w2 = find_fast_dim (w) + 1;
@@ -1131,8 +1128,26 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
     const float hr = float(h2) / float(h);
     const float wr = float(w2) / float(w);
 
-    float newMedian;
-    findMinMaxPercentile (L.data(), L.getRows() * L.getCols(), percentile, newMedian, percentile, newMedian, multiThread);
+    float oldMedian, newMedian;
+    {
+        const float percentile = float(LIM(params->fattal.anchor, 1, 100)) / 100.f;
+        float ratio = 0.f;
+        int ww, hh;
+        if (w >= h) {
+            ratio = 200.f / w;
+            ww = 200;
+            hh = ratio * h;
+        } else {
+            ratio = 200.f / h;
+            hh = 200;
+            ww = ratio * w;
+        }
+        Array2Df tmp(ww, hh);
+        rescale_nearest(Yr, tmp, multiThread);
+        findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
+        rescale_nearest(L, tmp, multiThread);
+        findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, newMedian, percentile, newMedian, multiThread);        
+    }
     const float scale = (oldMedian == 0.f || newMedian == 0.f) ? 65535.f : (oldMedian / newMedian); // avoid Nan
 
 #ifdef _OPENMP
