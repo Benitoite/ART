@@ -82,11 +82,9 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vibrance    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_VIBRANCE")));
     chmixer     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_CHANNELMIXER")));
     blackwhite  = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_CHANNELMIXERBW")));
-    hsveq       = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_HSVEQUALIZER")));
     filmSimulation = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_FILMSIMULATION")) );
     softlight = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_SOFTLIGHT")) );
     rgbcurves   = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RGBCURVES")));
-    colortoning = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_COLORTONING")));
 
     // Lens-Related Settings
     distortion  = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DISTORTION")));
@@ -193,12 +191,10 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[2]->pack_start (*vibrance, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*chmixer, Gtk::PACK_SHRINK, 2);
     //vboxes[2]->pack_start (*blackwhite, Gtk::PACK_SHRINK, 2);
-    vboxes[2]->pack_start (*hsveq, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*filmSimulation, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*softlight, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*rgbcurves, Gtk::PACK_SHRINK, 2);
     vboxes[2]->pack_start (*labcurve, Gtk::PACK_SHRINK, 2);    
-    vboxes[2]->pack_start (*colortoning, Gtk::PACK_SHRINK, 2);
 
     //LENS
     vboxes[3]->pack_start (*lens, Gtk::PACK_SHRINK, 2);
@@ -368,11 +364,9 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vibranceConn    = vibrance->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
     chmixerConn     = chmixer->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
     chmixerbwConn   = blackwhite->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
-    hsveqConn       = hsveq->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
     filmSimulationConn = filmSimulation->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
     softlightConn = softlight->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
     rgbcurvesConn   = rgbcurves->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
-    colortoningConn = colortoning->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
 
     // Lens-Related Settings:
     distortionConn  = distortion->signal_toggled().connect (sigc::bind (sigc::mem_fun(*lens, &Gtk::CheckButton::set_inconsistent), true));
@@ -616,11 +610,9 @@ void PartialPasteDlg::colorToggled ()
     ConnectionBlocker vibranceBlocker(vibranceConn);
     ConnectionBlocker chmixerBlocker(chmixerConn);
     //ConnectionBlocker chmixerbwBlocker(chmixerbwConn);
-    ConnectionBlocker hsveqBlocker(hsveqConn);
     ConnectionBlocker filmSimulationBlocker(filmSimulationConn);
     ConnectionBlocker softlightBlocker(softlightConn);
     ConnectionBlocker rgbcurvesBlocker(rgbcurvesConn);
-    ConnectionBlocker colortoningBlocker(colortoningConn);
     ConnectionBlocker labcurveBlocker(labcurveConn);
     
     color->set_inconsistent (false);
@@ -630,11 +622,9 @@ void PartialPasteDlg::colorToggled ()
     chmixer->set_active (color->get_active ());
     //blackwhite->set_active (color->get_active ());
     labcurve->set_active(color->get_active());
-    hsveq->set_active (color->get_active ());
     filmSimulation->set_active (color->get_active ());
     softlight->set_active (color->get_active ());
     rgbcurves->set_active (color->get_active ());
-    colortoning->set_active(color->get_active ());
 }
 
 void PartialPasteDlg::lensToggled ()
@@ -825,10 +815,6 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
         filterPE.blackwhite   = falsePE.blackwhite;
     }
 
-    if (!hsveq->get_active ()) {
-        filterPE.hsvequalizer = falsePE.hsvequalizer;
-    }
-
     if (!filmSimulation->get_active ()) {
         filterPE.filmSimulation  = falsePE.filmSimulation;
     }
@@ -847,10 +833,6 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!rgbcurves->get_active ()) {
         filterPE.rgbCurves    = falsePE.rgbCurves;
-    }
-
-    if (!colortoning->get_active ()) {
-        filterPE.colorToning  = falsePE.colorToning;
     }
 
     if (!distortion->get_active ()) {

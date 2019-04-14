@@ -137,10 +137,8 @@ protected:
     SharpenMicro* sharpenMicro;
     LCurve* lcurve;
     RGBCurves* rgbcurves;
-    ColorToning* colortoning;
     Wavelet * wavelet;
     //DirPyrEqualizer* dirpyrequalizer;
-    HSVEqualizer* hsvequalizer;
     SoftLight *softlight;
     Dehaze *dehaze;
     FilmGrain *grain;

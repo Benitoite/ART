@@ -77,11 +77,9 @@ public:
     Gtk::CheckButton* vibrance;
     Gtk::CheckButton* chmixer;
     Gtk::CheckButton* blackwhite;
-    Gtk::CheckButton* hsveq;
     Gtk::CheckButton* softlight;
     Gtk::CheckButton* filmSimulation;
     Gtk::CheckButton* rgbcurves;
-    Gtk::CheckButton* colortoning;
 
     // options in lens:
     Gtk::CheckButton* distortion;
@@ -144,7 +142,7 @@ public:
     sigc::connection sharpenConn, gradsharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, retinexConn, dehazeConn, logencConn;
     sigc::connection grainConn;
     sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
-    sigc::connection vibranceConn, chmixerConn, hsveqConn, rgbcurvesConn, chmixerbwConn, colortoningConn, filmSimulationConn, softlightConn;
+    sigc::connection vibranceConn, chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;
     sigc::connection distortionConn, cacorrConn, vignettingConn, lcpConn;
     sigc::connection coarserotConn, finerotConn, cropConn, resizeConn, prsharpeningConn, perspectiveConn, commonTransConn;
     sigc::connection metadataConn, exifchConn, iptcConn, icmConn;

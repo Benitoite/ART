@@ -159,7 +159,6 @@ void BatchToolPanelCoordinator::initSession ()
 
             chmixer->setAdjusterBehavior (false);
             blackwhite->setAdjusterBehavior (false, false);
-            colortoning->setAdjusterBehavior (false, false, false, false, false);
             filmSimulation->setAdjusterBehavior(false);
             retinex->setAdjusterBehavior (false, false, false, false, false, false, false);
 
@@ -203,8 +202,6 @@ void BatchToolPanelCoordinator::initSession ()
 
             sharpenEdge->setAdjusterBehavior (options.baBehav[ADDSET_SHARPENEDGE_AMOUNT], options.baBehav[ADDSET_SHARPENEDGE_PASS]);
             sharpenMicro->setAdjusterBehavior (options.baBehav[ADDSET_SHARPENMICRO_AMOUNT], options.baBehav[ADDSET_SHARPENMICRO_CONTRAST], options.baBehav[ADDSET_SHARPENMICRO_UNIFORMITY]);
-//          colortoning->setAdjusterBehavior (options.baBehav[ADDSET_COLORTONING_SPLIT], options.baBehav[ADDSET_COLORTONING_SATTHRESHOLD], options.baBehav[ADDSET_COLORTONING_SATOPACITY], options.baBehav[ADDSET_COLORTONING_STRPROTECT], options.baBehav[ADDSET_COLORTONING_BALANCE]);
-            colortoning->setAdjusterBehavior (options.baBehav[ADDSET_COLORTONING_SPLIT], options.baBehav[ADDSET_COLORTONING_SATTHRESHOLD], options.baBehav[ADDSET_COLORTONING_SATOPACITY], options.baBehav[ADDSET_COLORTONING_STRENGTH], options.baBehav[ADDSET_COLORTONING_BALANCE]);
             filmSimulation->setAdjusterBehavior(options.baBehav[ADDSET_FILMSIMULATION_STRENGTH]);
             softlight->setAdjusterBehavior(options.baBehav[ADDSET_SOFTLIGHT_STRENGTH]);
             dehaze->setAdjusterBehavior(options.baBehav[ADDSET_DEHAZE_STRENGTH]);

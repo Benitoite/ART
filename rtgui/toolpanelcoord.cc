@@ -54,7 +54,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     sharpenMicro        = Gtk::manage (new SharpenMicro ());
     lcurve              = Gtk::manage (new LCurve ());
     rgbcurves           = Gtk::manage (new RGBCurves ());
-    colortoning         = Gtk::manage (new ColorToning ());
     lensgeom            = Gtk::manage (new LensGeometry ());
     lensProf            = Gtk::manage (new LensProfilePanel ());
     distortion          = Gtk::manage (new Distortion ());
@@ -77,7 +76,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     metadata            = Gtk::manage(new MetaDataPanel());
     wavelet             = Gtk::manage (new Wavelet ());
     //dirpyrequalizer     = Gtk::manage (new DirPyrEqualizer ());
-    hsvequalizer        = Gtk::manage (new HSVEqualizer ());
     filmSimulation      = Gtk::manage (new FilmSimulation ());
     softlight           = Gtk::manage(new SoftLight());
     dehaze              = Gtk::manage(new Dehaze());
@@ -121,12 +119,10 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (detailsPanel, localContrast);
     addfavoritePanel (detailsPanel, sharpenEdge);
     addfavoritePanel (detailsPanel, sharpenMicro);
-    addfavoritePanel (colorPanel, hsvequalizer);
     addfavoritePanel (colorPanel, filmSimulation);
     addfavoritePanel (colorPanel, softlight);
     addfavoritePanel (colorPanel, rgbcurves);
     addfavoritePanel(colorPanel, lcurve);
-    addfavoritePanel (colorPanel, colortoning);
     //addfavoritePanel (exposurePanel, epd);
     addfavoritePanel (exposurePanel, fattal);
     addfavoritePanel (exposurePanel, toneEqualizer);    
@@ -593,7 +589,6 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         ipc->setBayerAutoContrastListener (bayerprocess);
         ipc->setXtransAutoContrastListener (xtransprocess);
         ipc->setAutoWBListener (whitebalance);
-        ipc->setAutoColorTonListener (colortoning);
         ipc->setAutoChromaListener (denoise);
         ipc->setWaveletListener (wavelet);
         ipc->setRetinexListener (retinex);
