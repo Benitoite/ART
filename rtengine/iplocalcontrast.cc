@@ -29,15 +29,16 @@
 #include "improcfun.h"
 #include "gauss.h"
 #include "array2D.h"
+#include "cplx_wavelet_dec.h"
+#include "curves.h"
+
 
 namespace rtengine {
 
-void ImProcFunctions::localContrast(LabImage *lab)
-{
-    if (!params->localContrast.enabled) {
-        return;
-    }
+namespace {
 
+void local_contrast_usm(LabImage *lab, const ProcParams *params, double scale, bool multiThread)
+{
     const int width = lab->W;
     const int height = lab->H;
     const float a = params->localContrast.amount;
@@ -65,6 +66,323 @@ void ImProcFunctions::localContrast(LabImage *lab)
             lab->L[y][x] = std::max(0.0001f, lab->L[y][x] + bufval);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+
+void eval_avg(float *RESTRICT DataList, int datalen, float &averagePlus, float &averageNeg, float &max, float &min, bool multiThread)
+{
+    //find absolute mean
+    int countP = 0, countN = 0;
+    double averaP = 0.0, averaN = 0.0; // use double precision for large summations
+
+    float thres = 5.f;//different fom zero to take into account only data large enough
+    max = 0.f;
+    min = 0.f;
+
+#ifdef _OPENMP
+#    pragma omp parallel if (multiThread)
+#endif
+    {
+        float lmax = 0.f, lmin = 0.f;
+#ifdef _OPENMP
+        #pragma omp for reduction(+:averaP,averaN,countP,countN) nowait
+#endif
+
+        for(int i = 0; i < datalen; i++) {
+            if(DataList[i] >= thres) {
+                averaP += DataList[i];
+
+                if(DataList[i] > lmax) {
+                    lmax = DataList[i];
+                }
+
+                countP++;
+            } else if(DataList[i] < -thres) {
+                averaN += DataList[i];
+
+                if(DataList[i] < lmin) {
+                    lmin = DataList[i];
+                }
+
+                countN++;
+            }
+        }
+
+#ifdef _OPENMP
+        #pragma omp critical
+#endif
+        {
+            max = max > lmax ? max : lmax;
+            min = min < lmin ? min : lmin;
+        }
+    }
+
+    if(countP > 0) {
+        averagePlus = averaP / countP;
+    } else {
+        averagePlus = 0;
+    }
+
+    if(countN > 0) {
+        averageNeg = averaN / countN;
+    } else {
+        averageNeg = 0;
+    }
+}
+
+
+void eval_sigma(float *RESTRICT DataList, int datalen, float averagePlus, float averageNeg, float &sigmaPlus, float &sigmaNeg, bool multiThread)
+{
+    int countP = 0, countN = 0;
+    double variP = 0.0, variN = 0.0; // use double precision for large summations
+    float thres = 5.f;//different fom zero to take into account only data large enough
+
+#ifdef _OPENMP
+#    pragma omp parallel for reduction(+:variP,variN,countP,countN) if (multiThread)
+#endif
+    for(int i = 0; i < datalen; i++) {
+        if(DataList[i] >= thres) {
+            variP += SQR(DataList[i] - averagePlus);
+            countP++;
+        } else if(DataList[i] <= -thres) {
+            variN += SQR(DataList[i] - averageNeg);
+            countN++;
+        }
+    }
+
+    if(countP > 0) {
+        sigmaPlus = sqrt(variP / countP);
+    } else {
+        sigmaPlus = 0;
+    }
+
+    if(countN > 0) {
+        sigmaNeg = sqrt(variN / countN);
+    } else {
+        sigmaNeg = 0;
+    }
+}
+
+
+void eval_level(float **wl, int level, int W_L, int H_L, float *mean, float *meanN, float *sigma, float *sigmaN, float *MaxP, float *MaxN, bool multiThread)
+{
+    float avLP[4], avLN[4];
+    float maxL[4], minL[4];
+    float sigP[4], sigN[4];
+    float AvL, AvN, SL, SN, maxLP, maxLN;
+
+    for (int dir = 1; dir < 4; dir++) {
+        eval_avg(wl[dir], W_L * H_L,  avLP[dir], avLN[dir], maxL[dir], minL[dir], multiThread);
+        eval_sigma(wl[dir], W_L * H_L, avLP[dir], avLN[dir], sigP[dir], sigN[dir], multiThread);
+    }
+
+    AvL = 0.f;
+    AvN = 0.f;
+    SL = 0.f;
+    SN = 0.f;
+    maxLP = 0.f;
+    maxLN = 0.f;
+
+    for (int dir = 1; dir < 4; dir++) {
+        AvL += avLP[dir];
+        AvN += avLN[dir];
+        SL += sigP[dir];
+        SN += sigN[dir];
+        maxLP += maxL[dir];
+        maxLN += minL[dir];
+    }
+
+    AvL /= 3;
+    AvN /= 3;
+    SL /= 3;
+    SN /= 3;
+    maxLP /= 3;
+    maxLN /= 3;
+
+    mean[level] = AvL;
+    meanN[level] = AvN;
+    sigma[level] = SL;
+    sigmaN[level] = SN;
+    MaxP[level] = maxLP;
+    MaxN[level] = maxLN;
+}
+
+
+void evaluate_params(wavelet_decomposition &wd, float *mean, float *meanN, float *sigma, float *sigmaN, float *MaxP, float *MaxN, bool multiThread)
+{
+    int maxlvl = wd.maxlevel();
+
+    for (int lvl = 0; lvl < maxlvl; lvl++) {
+        int Wlvl_L = wd.level_W(lvl);
+        int Hlvl_L = wd.level_H(lvl);
+
+        float **wl = wd.level_coeffs(lvl);
+
+        eval_level(wl, lvl, Wlvl_L, Hlvl_L, mean, meanN, sigma, sigmaN, MaxP, MaxN, multiThread);
+    }
+}
+
+
+void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double scale, bool multiThread)
+{
+    constexpr int wavelet_level = 7;
+    wavelet_decomposition wd(lab->data, lab->W, lab->H, wavelet_level, 1, scale);
+
+    if (wd.memoryAllocationFailed) {
+        return;
+    }
+
+    const float contrast = 0.f; // TODO -- residual contrast
+    int maxlvl = wd.maxlevel();
+
+    if (contrast != 0) {
+        int W_L = wd.level_W(0);
+        int H_L = wd.level_H(0);
+        float *wl0 = wd.coeff0;
+
+        float maxh = 2.5f; //amplification contrast above mean
+        float maxl = 2.5f; //reduction contrast under mean
+        float multL = contrast * (maxl - 1.f) / 100.f + 1.f;
+        float multH = contrast * (maxh - 1.f) / 100.f + 1.f;
+        double avedbl = 0.0; // use double precision for large summations
+        float max0 = 0.f;
+        float min0 = FLT_MAX;
+
+#ifdef _OPENMP
+#       pragma omp parallel for reduction(+:avedbl) if (multiThread)
+#endif
+        for (int i = 0; i < W_L * H_L; i++) {
+            avedbl += wl0[i];
+        }
+
+#ifdef _OPENMP
+#       pragma omp parallel if (multiThread)
+#endif
+        {
+            float lminL = FLT_MAX;
+            float lmaxL = 0.f;
+
+#ifdef _OPENMP
+#           pragma omp for
+#endif
+            for (int i = 0; i < W_L * H_L; i++) {
+                lminL = min(lminL, wl0[i]);
+                lmaxL = max(lmaxL, wl0[i]);
+            }
+
+#ifdef _OPENMP
+#           pragma omp critical
+#endif
+            {
+                min0 = min(min0, lminL);
+                max0 = max(max0, lmaxL);
+            }
+        }
+
+        max0 /= 327.68f;
+        min0 /= 327.68f;
+        float ave = avedbl / double(W_L * H_L);
+        float av = ave / 327.68f;
+        float ah = (multH - 1.f) / (av - max0);
+        float bh = 1.f - max0 * ah;
+        float al = (multL - 1.f) / (av - min0);
+        float bl = 1.f - min0 * al;
+
+        if (max0 > 0.0) { 
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int i = 0; i < W_L * H_L; i++) {
+                if (wl0[i] < 32768.f) {
+                    float prov;
+
+                    if (wl0[i] > ave) {
+                        float kh = ah * (wl0[i] / 327.68f) + bh;
+                        prov = wl0[i];
+                        wl0[i] = ave + kh * (wl0[i] - ave);
+                    } else {
+                        float kl = al * (wl0[i] / 327.68f) + bl;
+                        prov = wl0[i];
+                        wl0[i] = ave - kl * (ave - wl0[i]);
+                    }
+
+                    float diflc = wl0[i] - prov;
+                    wl0[i] =  prov + diflc;
+                }
+            }
+        }
+    }
+
+    float mean[10];
+    float meanN[10];
+    float sigma[10];
+    float sigmaN[10];
+    float MaxP[10];
+    float MaxN[10];
+    evaluate_params(wd, mean, meanN, sigma, sigmaN, MaxP, MaxN, multiThread);
+
+    WavOpacityCurveWL curve;
+    // TODO curve.Set(params->localContrast.localContrastCurve);
+
+    for (int dir = 1; dir < 4; dir++) {
+        for (int level = 0; level < maxlvl; ++level) {
+            int W_L = wd.level_W(level);
+            int H_L = wd.level_H(level);
+            float **wl = wd.level_coeffs(level);
+
+            if (MaxP[level] > 0.f && mean[level] != 0.f && sigma[level] != 0.f) {
+                float insigma = 0.666f; //SD
+                float logmax = log(MaxP[level]); //log Max
+                float rapX = (mean[level] + sigma[level]) / MaxP[level]; //rapport between sD / max
+                float inx = log(insigma);
+                float iny = log(rapX);
+                float rap = inx / iny; //koef
+                float asig = 0.166f / sigma[level];
+                float bsig = 0.5f - asig * mean[level];
+                float amean = 0.5f / mean[level];
+
+#ifdef _OPENMP
+#               pragma omp parallel for schedule(dynamic, W_L * 16) if (multiThread)
+#endif
+                for (int i = 0; i < W_L * H_L; i++) {
+                    float absciss;
+
+                    if(fabsf(wl[dir][i]) >= (mean[level] + sigma[level])) { //for max
+                        float valcour = xlogf(fabsf(wl[dir][i]));
+                        float valc = valcour - logmax;
+                        float vald = valc * rap;
+                        absciss = xexpf(vald);
+                    } else if(fabsf(wl[dir][i]) >= mean[level]) {
+                        absciss = asig * fabsf(wl[dir][i]) + bsig;
+                    } else {
+                        absciss = amean * fabsf(wl[dir][i]);
+                    }
+
+                    float kc = curve[absciss * 500.f] - 0.5f;
+                    float reduceeffect = kc <= 0.f ? 1.f : 1.5f;
+
+                    float kinterm = 1.f + reduceeffect * kc;
+                    kinterm = kinterm <= 0.f ? 0.01f : kinterm;
+
+                    wl[dir][i] *=  kinterm;
+                }
+            }
+        }
+    }
+
+    wd.reconstruct(lab->data, 1.f);
+}
+
+} // namespace
+
+void ImProcFunctions::localContrast(LabImage *lab)
+{
+    if (!params->localContrast.enabled) {
+        return;
+    }
+
+    local_contrast_usm(lab, params, scale, multiThread);
 }
 
 } // namespace rtengine
