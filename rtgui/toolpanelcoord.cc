@@ -255,7 +255,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     toolPanelNotebook->append_page (*transformPanelSW, *toiT);
     toolPanelNotebook->append_page (*rawPanelSW,       *toiR);
     toolPanelNotebook->append_page (*metadata,    *toiM);
-    toolPanelNotebook->append_page (*advancedPanelSW,   *toiW);
+//    toolPanelNotebook->append_page (*advancedPanelSW,   *toiW);
 
     toolPanelNotebook->set_current_page (0);
 
@@ -944,9 +944,9 @@ bool ToolPanelCoordinator::handleShortcutKey (GdkEventKey* event)
                 toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*rawPanelSW));
                 return true;
 
-            case GDK_KEY_w:
-                toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*advancedPanelSW));
-                return true;
+            // case GDK_KEY_w:
+            //     toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*advancedPanelSW));
+            //     return true;
 
             case GDK_KEY_x:
                 toolPanelNotebook->set_current_page(toolPanelNotebook->page_num(*localPanelSW));
