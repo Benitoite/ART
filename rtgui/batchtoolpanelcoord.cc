@@ -283,16 +283,6 @@ void BatchToolPanelCoordinator::initSession ()
             //if (options.baBehav[ADDSET_CBOOST_AMOUNT])  pparams.colorBoost.amount = 0;
             //if (options.baBehav[ADDSET_CS_BLUEYELLOW])  pparams.colorShift.a = 0;
             //if (options.baBehav[ADDSET_CS_GREENMAGENTA])  pparams.colorShift.b = 0;
-            if (options.baBehav[ADDSET_COLORTONING_SPLIT]) {
-                pparams.colorToning.redlow  = pparams.colorToning.greenlow  = pparams.colorToning.bluelow =
-                pparams.colorToning.redmed  = pparams.colorToning.greenmed  = pparams.colorToning.bluemed =
-                pparams.colorToning.redhigh = pparams.colorToning.greenhigh = pparams.colorToning.bluehigh =
-                pparams.colorToning.satlow = pparams.colorToning.sathigh = 0;
-            }
-            if (options.baBehav[ADDSET_COLORTONING_SATTHRESHOLD]) { pparams.colorToning.satProtectionThreshold = 0; }
-            if (options.baBehav[ADDSET_COLORTONING_SATOPACITY]) { pparams.colorToning.saturatedOpacity = 0; }
-            if (options.baBehav[ADDSET_COLORTONING_BALANCE]) { pparams.colorToning.balance = 0; }
-            if (options.baBehav[ADDSET_COLORTONING_STRENGTH]) { pparams.colorToning.strength = 0; }
             if (options.baBehav[ADDSET_FILMSIMULATION_STRENGTH]) { pparams.filmSimulation.strength = 0; }
             if (options.baBehav[ADDSET_SOFTLIGHT_STRENGTH]) { pparams.softlight.strength = 0; }
             if (options.baBehav[ADDSET_DEHAZE_STRENGTH]) { pparams.dehaze.strength = 0; }

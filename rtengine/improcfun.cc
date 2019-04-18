@@ -1993,15 +1993,15 @@ void ImProcFunctions::moyeqt (Imagefloat* working, float &moyS, float &eqty)
 
 
 void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                               int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili,  LUTf & clToningcurve, LUTf & cl2Toningcurve,
+                               int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve,
                                const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2, const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, LUTu &histToneCurve )
 {
-    rgbProc (working, lab, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2,  customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh, histToneCurve);
+    rgbProc (working, lab, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2,  customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh, histToneCurve);
 }
 
 // Process RGB image and convert to LAB space
 void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                               int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clToningcurve, LUTf & cl2Toningcurve,
+                               int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve,
                                const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, double expcomp, int hlcompr, int hlcomprthresh, LUTu &histToneCurve )
 {
     BENCHFUN
@@ -3305,7 +3305,7 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
             // fill pipette buffer with zeros to avoid crashes
             editWhatever->fill(0.f);
         }
-        if (params->blackwhite.enabled && !params->colorToning.enabled) {
+        if (params->blackwhite.enabled) {
             for (int i = 0; i < lnew->H; ++i) {
                 for (int j = 0; j < lnew->W; ++j) {
                     lnew->a[i][j] = lnew->b[i][j] = 0.f;
@@ -3406,7 +3406,7 @@ void ImProcFunctions::chromiLuminanceCurve (int pW, LabImage* lold, LabImage* ln
     const bool highlight = params->toneCurve.hrenabled; //Get the value if "highlight reconstruction" is activated
     const int chromaticity = params->labCurve.chromaticity;
     const float chromapro = (chromaticity + 100.0f) / 100.0f;
-    const bool bwonly = params->blackwhite.enabled && !params->colorToning.enabled;
+    const bool bwonly = params->blackwhite.enabled;
     bool bwq = false;
 //  if(params->ppVersion > 300  && params->labCurve.chromaticity == - 100) bwq = true;
     // const bool bwToning = params->labCurve.chromaticity == - 100  /*|| params->blackwhite.method=="Ch" || params->blackwhite.enabled */ || bwonly;
@@ -4857,43 +4857,5 @@ void ImProcFunctions::lab2rgb (const LabImage &src, Imagefloat &dst, const Glib:
 }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-// adapted from the "color correction" module of Darktable. Original copyright follows
-/*
-    copyright (c) 2009--2010 johannes hanika.
-
-    darktable is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    darktable is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with darktable.  If not, see <http://www.gnu.org/licenses/>.
-*/
-void ImProcFunctions::colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread)
-{
-    const float factor = ColorToningParams::LABGRID_CORR_MAX * 3.f;
-    const float scaling = ColorToningParams::LABGRID_CORR_SCALE;
-    float a_scale = (params->colorToning.labgridAHigh - params->colorToning.labgridALow) / factor / scaling;
-    float a_base = params->colorToning.labgridALow / scaling;
-    float b_scale = (params->colorToning.labgridBHigh - params->colorToning.labgridBLow) / factor / scaling;
-    float b_base = params->colorToning.labgridBLow / scaling;
-
-#ifdef _OPENMP
-    #pragma omp parallel for if (multiThread)
-#endif
-    for (int y = ystart; y < yend; ++y) {
-        for (int x = xstart; x < xend; ++x) {
-            lab->a[y][x] += lab->L[y][x] * a_scale + a_base;
-            lab->b[y][x] += lab->L[y][x] * b_scale + b_base;
-        }
-    }
-}
 
 }

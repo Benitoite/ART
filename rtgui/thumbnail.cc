@@ -429,7 +429,6 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         || pparams.labCurve != pp.labCurve
         || pparams.localContrast != pp.localContrast
         || pparams.rgbCurves != pp.rgbCurves
-        || pparams.colorToning != pp.colorToning
         || pparams.vibrance != pp.vibrance
         || pparams.wb != pp.wb
         || pparams.colorappearance != pp.colorappearance
@@ -452,7 +451,6 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         || pparams.chmixer != pp.chmixer
         || pparams.blackwhite != pp.blackwhite
         || pparams.icm != pp.icm
-        || pparams.hsvequalizer != pp.hsvequalizer
         || pparams.filmSimulation != pp.filmSimulation
         || pparams.softlight != pp.softlight
         || pparams.dehaze != pp.dehaze

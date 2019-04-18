@@ -81,10 +81,10 @@ public:
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
     void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clcurve, LUTf & cl2curve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
+                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
                  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, LUTu &histToneCurve);
     void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, float satLimit, float satLimitOpacity, const ColorGradientCurve & ctColorCurve, const OpacityCurve & ctOpacityCurve, bool opautili, LUTf & clcurve, LUTf & cl2curve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
+                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
                  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob,
                  double expcomp, int hlcompr, int hlcomprthresh, LUTu &histToneCurve);
     
@@ -299,8 +299,6 @@ private:
     void PF_correct_RTcam(CieImage * ncie, double radius, int thresh);
     void Badpixelscam(CieImage * ncie, double radius, int thresh, int mode, float chrom, bool hotbad);
     void BadpixelsLab(LabImage * lab, double radius, int thresh, float chrom);
-
-    void colorToningLabGrid(LabImage *lab, int xstart, int xend, int ystart, int yend, bool MultiThread);
 
     void sharpeningcam(CieImage* ncie, float** buffer, bool showMask = false);
     void MLmicrocontrastcam(CieImage* ncie);   //Manuel's microcontrast

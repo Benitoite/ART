@@ -451,75 +451,6 @@ struct RGBCurvesParams {
     bool operator !=(const RGBCurvesParams& other) const;
 };
 
-/**
-  * Parameters of the Color Toning
-  */
-
-struct ColorToningParams {
-    bool enabled;
-    bool autosat;
-    std::vector<double> opacityCurve;
-    std::vector<double> colorCurve;
-    int satProtectionThreshold;
-    int saturatedOpacity;
-    int strength;
-    int balance;
-    Threshold<int> hlColSat;
-    Threshold<int> shadowsColSat;
-    std::vector<double> clcurve;
-    std::vector<double> cl2curve;
-
-    /* Can be either:
-     *  Splitlr    :
-     *  Splitco    :
-     *  Splitbal   :
-     *  Lab        :
-     *  Lch        :
-     *  RGBSliders :
-     *  RGBCurves  :
-     *  LabGrid    :
-     */
-    Glib::ustring method;
-
-    /* Can be either:
-     * Std   :
-     * All   :
-     * Separ :
-     * Two   :
-     */
-    Glib::ustring twocolor;
-    double redlow;
-    double greenlow;
-    double bluelow;
-    double redmed;
-    double greenmed;
-    double bluemed;
-    double redhigh;
-    double greenhigh;
-    double bluehigh;
-    double satlow;
-    double sathigh;
-    bool lumamode;
-
-    double labgridALow;
-    double labgridBLow;
-    double labgridAHigh;
-    double labgridBHigh;
-    static const double LABGRID_CORR_MAX;
-    static const double LABGRID_CORR_SCALE;
-
-    ColorToningParams();
-
-    bool operator ==(const ColorToningParams& other) const;
-    bool operator !=(const ColorToningParams& other) const;
-
-    /// @brief Transform the mixer values to their curve equivalences
-    void mixerToCurve(std::vector<double>& colorCurve, std::vector<double>& opacityCurve) const;
-    /// @brief Specifically transform the sliders values to their curve equivalences
-    void slidersToCurve(std::vector<double>& colorCurve, std::vector<double>& opacityCurve) const;
-    /// @brief Fill the ColorGradientCurve and OpacityCurve LUTf from the control points curve or sliders value
-    void getCurves(ColorGradientCurve& colorCurveLUT, OpacityCurve& opacityCurveLUT, const double xyz_rgb[3][3], bool& opautili) const;
-};
 
 /**
   * Parameters of the sharpening
@@ -1330,21 +1261,6 @@ struct DirPyrEqualizerParams {
     bool operator !=(const DirPyrEqualizerParams& other) const;
 };
 
-/**
- * HSV equalizer params
- */
-struct HSVEqualizerParams {
-    bool enabled;
-    std::vector<double> hcurve;
-    std::vector<double> scurve;
-    std::vector<double> vcurve;
-
-    HSVEqualizerParams();
-
-    bool operator ==(const HSVEqualizerParams& other) const;
-    bool operator !=(const HSVEqualizerParams& other) const;
-};
-
 
 /**
  *  Film simualtion params
@@ -1630,7 +1546,6 @@ public:
     RetinexParams           retinex;         ///< Retinex parameters
     LocalContrastParams     localContrast;   ////< Local contrast parameters
     RGBCurvesParams         rgbCurves;       ///< RGB curves parameters
-    ColorToningParams       colorToning;     ///< Color Toning parameters
     SharpeningParams        sharpening;      ///< Sharpening parameters
     SharpeningParams        prsharpening;    ///< Sharpening parameters for post resize sharpening
     SharpenEdgeParams       sharpenEdge;     ///< Sharpen edge parameters
@@ -1664,7 +1579,6 @@ public:
     RAWParams               raw;             ///< RAW parameters before demosaicing
     WaveletParams           wavelet;         ///< Wavelet parameters
     DirPyrEqualizerParams   dirpyrequalizer; ///< directional pyramid wavelet parameters
-    HSVEqualizerParams      hsvequalizer;    ///< hsv wavelet parameters
     FilmSimulationParams    filmSimulation;  ///< film simulation parameters
     SoftLightParams         softlight;       ///< softlight parameters
     DehazeParams            dehaze;          ///< dehaze parameters

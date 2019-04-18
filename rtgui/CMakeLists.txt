@@ -33,7 +33,6 @@ set(NONCLISOURCEFILES
     coarsepanel.cc
     colorappearance.cc
     coloredbar.cc
-    colortoning.cc
     coordinateadjuster.cc
     crop.cc
     crophandler.cc
@@ -70,7 +69,6 @@ set(NONCLISOURCEFILES
     guiutils.cc
     histogrampanel.cc
     history.cc
-    hsvequalizer.cc
     iccprofilecreator.cc
     icmpanel.cc
     ilabel.cc

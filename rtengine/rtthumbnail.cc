@@ -1295,52 +1295,12 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     CurveFactory::RGBCurve (params.rgbCurves.gcurve, gCurve, 16);
     CurveFactory::RGBCurve (params.rgbCurves.bcurve, bCurve, 16);
 
-    bool opautili = false;
-
-    if (params.colorToning.enabled) {
-        TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix (params.icm.workingProfile);
-        double wp[3][3] = {
-            {wprof[0][0], wprof[0][1], wprof[0][2]},
-            {wprof[1][0], wprof[1][1], wprof[1][2]},
-            {wprof[2][0], wprof[2][1], wprof[2][2]}
-        };
-        params.colorToning.getCurves (ctColorCurve, ctOpacityCurve, wp, opautili);
-
-        clToningcurve (65536);
-        CurveFactory::curveToning (params.colorToning.clcurve, clToningcurve, scale == 1 ? 1 : 16);
-
-        cl2Toningcurve (65536);
-        CurveFactory::curveToning (params.colorToning.cl2curve, cl2Toningcurve, scale == 1 ? 1 : 16);
-    }
-
     if (params.blackwhite.enabled) {
         CurveFactory::curveBW (params.blackwhite.beforeCurve, params.blackwhite.afterCurve, hist16, dummy, customToneCurvebw1, customToneCurvebw2, 16);
     }
 
     double rrm, ggm, bbm;
     float autor, autog, autob;
-    float satLimit = float (params.colorToning.satProtectionThreshold) / 100.f * 0.7f + 0.3f;
-    float satLimitOpacity = 1.f - (float (params.colorToning.saturatedOpacity) / 100.f);
-
-    if (params.colorToning.enabled  && params.colorToning.autosat && params.colorToning.method != "LabGrid") { //for colortoning evaluation of saturation settings
-        float moyS = 0.f;
-        float eqty = 0.f;
-        ipf.moyeqt (baseImg, moyS, eqty);//return image : mean saturation and standard dev of saturation
-        //printf("moy=%f ET=%f\n", moyS,eqty);
-        float satp = ((moyS + 1.5f * eqty) - 0.3f) / 0.7f; //1.5 sigma ==> 93% pixels with high saturation -0.3 / 0.7 convert to Hombre scale
-
-        if (satp >= 0.92f) {
-            satp = 0.92f;    //avoid values too high (out of gamut)
-        }
-
-        if (satp <= 0.15f) {
-            satp = 0.15f;    //avoid too low values
-        }
-
-        satLimit = 100.f * satp;
-
-        satLimitOpacity = 100.f * (moyS - 0.85f * eqty); //-0.85 sigma==>20% pixels with low saturation
-    }
 
     autor = autog = autob = -9000.f; // This will ask to compute the "auto" values for the B&W tool
 
@@ -1359,7 +1319,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     ipf.setDCPProfile(dcpProf, as);
 
     LUTu histToneCurve;
-    ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
+    ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
 
     // freeing up some memory
     customToneCurve1.Reset();

@@ -148,42 +148,6 @@ public:
     bool bcurve;
 };
 
-class ColorToningEdited
-{
-
-public:
-    bool enabled;
-    bool opacityCurve;
-    bool colorCurve;
-    bool clcurve;
-    bool method;
-    bool autosat;
-    bool satprotectionthreshold;
-    bool saturatedopacity;
-    bool strength;
-    bool shadowsColSat;
-    bool hlColSat;
-    bool balance;
-    bool twocolor;
-    bool cl2curve;
-    bool redlow;
-    bool greenlow;
-    bool bluelow;
-    bool redmed;
-    bool greenmed;
-    bool bluemed;
-    bool redhigh;
-    bool greenhigh;
-    bool bluehigh;
-    bool satlow;
-    bool sathigh;
-    bool lumamode;
-    bool labgridALow;
-    bool labgridBLow;
-    bool labgridAHigh;
-    bool labgridBHigh;
-};
-
 class SharpenEdgeParamsEdited
 {
 
@@ -732,16 +696,6 @@ public:
     //     bool algo;
 };
 
-class HSVEqualizerParamsEdited
-{
-
-public:
-    bool enabled;
-    bool hcurve;
-    bool scurve;
-    bool vcurve;
-};
-
 class FilmSimulationParamsEdited
 {
 public:
@@ -898,7 +852,6 @@ public:
     LCurveParamsEdited            labCurve;
     LocalContrastParamsEdited     localContrast;
     RGBCurvesParamsEdited         rgbCurves;
-    ColorToningEdited             colorToning;
     RetinexParamsEdited             retinex;
     SharpeningParamsEdited        sharpening;
     SharpeningParamsEdited        prsharpening;
@@ -937,7 +890,6 @@ public:
     RAWParamsEdited               raw;
     DirPyrEqualizerParamsEdited   dirpyrequalizer;
     WaveletParamsEdited             wavelet;
-    HSVEqualizerParamsEdited      hsvequalizer;
     FilmSimulationParamsEdited    filmSimulation;
     SoftLightParamsEdited         softlight;
     DehazeParamsEdited            dehaze;

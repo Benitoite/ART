@@ -801,406 +801,6 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 }
 
 
-const double ColorToningParams::LABGRID_CORR_MAX = 12000.f;
-const double ColorToningParams::LABGRID_CORR_SCALE = 3.f;
-
-ColorToningParams::ColorToningParams() :
-    enabled(false),
-    autosat(true),
-    opacityCurve{
-        FCT_MinMaxCPoints,
-        0.00,
-        0.3,
-        0.35,
-        0.00,
-        0.25,
-        0.8,
-        0.35,
-        0.35,
-        0.70,
-        0.8,
-        0.35,
-        0.35,
-        1.00,
-        0.3,
-        0.00,
-        0.00
-    },
-    colorCurve{
-        FCT_MinMaxCPoints,
-        0.050,
-        0.62,
-        0.25,
-        0.25,
-        0.585,
-        0.11,
-        0.25,
-        0.25
-    },
-    satProtectionThreshold(30),
-    saturatedOpacity(80),
-    strength(50),
-    balance(0),
-    hlColSat(60, 80, false),
-    shadowsColSat (80, 208, false),
-    clcurve{
-        DCT_NURBS,
-        0.00,
-        0.00,
-        0.35,
-        0.65,
-        1.00,
-        1.00
-    },
-    cl2curve{
-        DCT_NURBS,
-        0.00,
-        0.00,
-        0.35,
-        0.65,
-        1.00,
-        1.00
-    },
-    method("LabGrid"),
-    twocolor("Std"),
-    redlow(0.0),
-    greenlow(0.0),
-    bluelow(0.0),
-    redmed(0.0),
-    greenmed(0.0),
-    bluemed(0.0),
-    redhigh(0.0),
-    greenhigh(0.0),
-    bluehigh(0.0),
-    satlow(0.0),
-    sathigh(0.0),
-    lumamode(true),
-    labgridALow(0.0),
-    labgridBLow(0.0),
-    labgridAHigh(0.0),
-    labgridBHigh(0.0)
-{
-}
-
-bool ColorToningParams::operator ==(const ColorToningParams& other) const
-{
-    return
-        enabled == other.enabled
-        && autosat == other.autosat
-        && opacityCurve == other.opacityCurve
-        && colorCurve == other.colorCurve
-        && satProtectionThreshold == other.satProtectionThreshold
-        && saturatedOpacity == other.saturatedOpacity
-        && strength == other.strength
-        && balance == other.balance
-        && hlColSat == other.hlColSat
-        && shadowsColSat == other.shadowsColSat
-        && clcurve == other.clcurve
-        && cl2curve == other.cl2curve
-        && method == other.method
-        && twocolor == other.twocolor
-        && redlow == other.redlow
-        && greenlow == other.greenlow
-        && bluelow == other.bluelow
-        && redmed == other.redmed
-        && greenmed == other.greenmed
-        && bluemed == other.bluemed
-        && redhigh == other.redhigh
-        && greenhigh == other.greenhigh
-        && bluehigh == other.bluehigh
-        && satlow == other.satlow
-        && sathigh == other.sathigh
-        && lumamode == other.lumamode
-        && labgridALow == other.labgridALow
-        && labgridBLow == other.labgridBLow
-        && labgridAHigh == other.labgridAHigh
-        && labgridBHigh == other.labgridBHigh;
-}
-
-bool ColorToningParams::operator !=(const ColorToningParams& other) const
-{
-    return !(*this == other);
-}
-
-void ColorToningParams::mixerToCurve(std::vector<double>& colorCurve, std::vector<double>& opacityCurve) const
-{
-    // check if non null first
-    if (!redlow && !greenlow && !bluelow && !redmed && !greenmed && !bluemed && !redhigh && !greenhigh && !bluehigh) {
-        colorCurve.resize(1);
-        colorCurve.at(0) = FCT_Linear;
-        opacityCurve.resize(1);
-        opacityCurve.at(0) = FCT_Linear;
-        return;
-    }
-
-    float low[3]; // RGB color for shadows
-    float med[3]; // RGB color for mid-tones
-    float high[3]; // RGB color for highlights
-    float lowSat = 0.f;
-    float medSat = 0.f;
-    float highSat = 0.f;
-    float minTmp, maxTmp;
-
-// Fill the shadow mixer values of the Color TOning tool
-    low[0] = float (redlow) / 100.f;  // [-1. ; +1.]
-    low[1] = float (greenlow) / 100.f; // [-1. ; +1.]
-    low[2] = float (bluelow) / 100.f;  // [-1. ; +1.]
-    minTmp = min<float> (low[0], low[1], low[2]);
-    maxTmp = max<float> (low[0], low[1], low[2]);
-
-    if (maxTmp - minTmp > 0.005f) {
-        float v[3];
-        lowSat = (maxTmp - minTmp) / 2.f;
-
-        if (low[0] == minTmp) {
-            v[0] = 0.f;
-        } else if (low[1] == minTmp) {
-            v[1] = 0.f;
-        } else if (low[2] == minTmp) {
-            v[2] = 0.f;
-        }
-
-        if (low[0] == maxTmp) {
-            v[0] = 1.f;
-        } else if (low[1] == maxTmp) {
-            v[1] = 1.f;
-        } else if (low[2] == maxTmp) {
-            v[2] = 1.f;
-        }
-
-        if (low[0] != minTmp && low[0] != maxTmp) {
-            v[0] = (low[0] - minTmp) / (maxTmp - minTmp);
-        } else if (low[1] != minTmp && low[1] != maxTmp) {
-            v[1] = (low[1] - minTmp) / (maxTmp - minTmp);
-        } else if (low[2] != minTmp && low[2] != maxTmp) {
-            v[2] = (low[2] - minTmp) / (maxTmp - minTmp);
-        }
-
-        low[0] = v[0];
-        low[1] = v[1];
-        low[2] = v[2];
-    } else {
-        low[0] = low[1] = low[2] = 1.f;
-    }
-
-// Fill the mid-tones mixer values of the Color TOning tool
-    med[0] = float (redmed) / 100.f;  // [-1. ; +1.]
-    med[1] = float (greenmed) / 100.f; // [-1. ; +1.]
-    med[2] = float (bluemed) / 100.f;  // [-1. ; +1.]
-    minTmp = min<float> (med[0], med[1], med[2]);
-    maxTmp = max<float> (med[0], med[1], med[2]);
-
-    if (maxTmp - minTmp > 0.005f) {
-        float v[3];
-        medSat = (maxTmp - minTmp) / 2.f;
-
-        if (med[0] == minTmp) {
-            v[0] = 0.f;
-        } else if (med[1] == minTmp) {
-            v[1] = 0.f;
-        } else if (med[2] == minTmp) {
-            v[2] = 0.f;
-        }
-
-        if (med[0] == maxTmp) {
-            v[0] = 1.f;
-        } else if (med[1] == maxTmp) {
-            v[1] = 1.f;
-        } else if (med[2] == maxTmp) {
-            v[2] = 1.f;
-        }
-
-        if (med[0] != minTmp && med[0] != maxTmp) {
-            v[0] = (med[0] - minTmp) / (maxTmp - minTmp);
-        } else if (med[1] != minTmp && med[1] != maxTmp) {
-            v[1] = (med[1] - minTmp) / (maxTmp - minTmp);
-        } else if (med[2] != minTmp && med[2] != maxTmp) {
-            v[2] = (med[2] - minTmp) / (maxTmp - minTmp);
-        }
-
-        med[0] = v[0];
-        med[1] = v[1];
-        med[2] = v[2];
-    } else {
-        med[0] = med[1] = med[2] = 1.f;
-    }
-
-    // Fill the highlight mixer values of the Color TOning tool
-    high[0] = float (redhigh) / 100.f;   // [-1. ; +1.]
-    high[1] = float (greenhigh) / 100.f; // [-1. ; +1.]
-    high[2] = float (bluehigh) / 100.f;  // [-1. ; +1.]
-    minTmp = min<float> (high[0], high[1], high[2]);
-    maxTmp = max<float> (high[0], high[1], high[2]);
-
-    if (maxTmp - minTmp > 0.005f) {
-        float v[3];
-        highSat = (maxTmp - minTmp) / 2.f;
-
-        if (high[0] == minTmp) {
-            v[0] = 0.f;
-        } else if (high[1] == minTmp) {
-            v[1] = 0.f;
-        } else if (high[2] == minTmp) {
-            v[2] = 0.f;
-        }
-
-        if (high[0] == maxTmp) {
-            v[0] = 1.f;
-        } else if (high[1] == maxTmp) {
-            v[1] = 1.f;
-        } else if (high[2] == maxTmp) {
-            v[2] = 1.f;
-        }
-
-        if (high[0] != minTmp && high[0] != maxTmp) {
-            v[0] = (high[0] - minTmp) / (maxTmp - minTmp);
-        } else if (high[1] != minTmp && high[1] != maxTmp) {
-            v[1] = (high[1] - minTmp) / (maxTmp - minTmp);
-        } else if (high[2] != minTmp && high[2] != maxTmp) {
-            v[2] = (high[2] - minTmp) / (maxTmp - minTmp);
-        }
-
-        high[0] = v[0];
-        high[1] = v[1];
-        high[2] = v[2];
-    } else {
-        high[0] = high[1] = high[2] = 1.f;
-    }
-
-    const double xPosLow  = 0.1;
-    const double xPosMed  = 0.4;
-    const double xPosHigh = 0.7;
-
-    colorCurve.resize(medSat != 0.f ? 13 : 9);
-    colorCurve.at(0) = FCT_MinMaxCPoints;
-    opacityCurve.resize(13);
-    opacityCurve.at(0) = FCT_MinMaxCPoints;
-
-    float h, s, l;
-    int idx = 1;
-
-    if (lowSat == 0.f) {
-        if (medSat != 0.f) {
-            Color::rgb2hsl(med[0], med[1], med[2], h, s, l);
-        } else { // highSat can't be null if the 2 other ones are!
-            Color::rgb2hsl(high[0], high[1], high[2], h, s, l);
-        }
-    } else {
-        Color::rgb2hsl(low[0], low[1], low[2], h, s, l);
-    }
-
-    colorCurve.at(idx++) = xPosLow;
-    colorCurve.at(idx++) = h;
-    colorCurve.at(idx++) = 0.35;
-    colorCurve.at(idx++) = 0.35;
-
-    if (medSat != 0.f) {
-        Color::rgb2hsl(med[0], med[1], med[2], h, s, l);
-        colorCurve.at(idx++) = xPosMed;
-        colorCurve.at(idx++) = h;
-        colorCurve.at(idx++) = 0.35;
-        colorCurve.at(idx++) = 0.35;
-    }
-
-    if (highSat == 0.f) {
-        if (medSat != 0.f) {
-            Color::rgb2hsl(med[0], med[1], med[2], h, s, l);
-        } else { // lowSat can't be null if the 2 other ones are!
-            Color::rgb2hsl(low[0], low[1], low[2], h, s, l);
-        }
-    } else {
-        Color::rgb2hsl(high[0], high[1], high[2], h, s, l);
-    }
-
-    colorCurve.at(idx++) = xPosHigh;
-    colorCurve.at(idx++) = h;
-    colorCurve.at(idx++) = 0.35;
-    colorCurve.at(idx)   = 0.35;
-
-    opacityCurve.at(1)  = xPosLow;
-    opacityCurve.at(2)  = double (lowSat);
-    opacityCurve.at(3)  = 0.35;
-    opacityCurve.at(4)  = 0.35;
-    opacityCurve.at(5)  = xPosMed;
-    opacityCurve.at(6)  = double (medSat);
-    opacityCurve.at(7)  = 0.35;
-    opacityCurve.at(8)  = 0.35;
-    opacityCurve.at(9)  = xPosHigh;
-    opacityCurve.at(10) = double (highSat);
-    opacityCurve.at(11) = 0.35;
-    opacityCurve.at(12) = 0.35;
-}
-
-void ColorToningParams::slidersToCurve(std::vector<double>& colorCurve, std::vector<double>& opacityCurve) const
-{
-    if (hlColSat.getBottom() == 0 && shadowsColSat.getBottom() == 0) { // if both opacity are null, set both curves to Linear
-        colorCurve.resize(1);
-        colorCurve.at(0) = FCT_Linear;
-        opacityCurve.resize(1);
-        opacityCurve.at(0) = FCT_Linear;
-        return;
-    }
-
-    colorCurve.resize(9);
-    colorCurve.at(0) = FCT_MinMaxCPoints;
-    colorCurve.at(1) = 0.26 + 0.12 * double (balance) / 100.;
-    colorCurve.at(2) = double (shadowsColSat.getTop()) / 360.;
-    colorCurve.at(3) = 0.35;
-    colorCurve.at(4) = 0.35;
-    colorCurve.at(5) = 0.64 + 0.12 * double (balance) / 100.;
-    colorCurve.at(6) = double (hlColSat.getTop()) / 360.;
-    colorCurve.at(7) = 0.35;
-    colorCurve.at(8) = 0.35;
-
-    opacityCurve.resize(9);
-    opacityCurve.at(0) = FCT_MinMaxCPoints;
-    opacityCurve.at(1) = colorCurve.at(1);
-    opacityCurve.at(2) = double (shadowsColSat.getBottom()) / 100.;
-    opacityCurve.at(3) = 0.35;
-    opacityCurve.at(4) = 0.35;
-    opacityCurve.at(5) = colorCurve.at(5);
-    opacityCurve.at(6) = double (hlColSat.getBottom()) / 100.;
-    opacityCurve.at(7) = 0.35;
-    opacityCurve.at(8) = 0.35;
-}
-
-void ColorToningParams::getCurves(ColorGradientCurve& colorCurveLUT, OpacityCurve& opacityCurveLUT, const double xyz_rgb[3][3], bool& opautili) const
-{
-    float satur = 0.8f;
-    float lumin = 0.5f; //middle of luminance for optimization of gamut - no real importance...as we work in XYZ and gamut control
-
-    // Transform slider values to control points
-    std::vector<double> cCurve, oCurve;
-
-    if (method == "RGBSliders" || method == "Splitlr") {
-        slidersToCurve(cCurve, oCurve);
-    } else if (method == "Splitco") {
-        mixerToCurve(cCurve, oCurve);
-    } else {
-        cCurve = this->colorCurve;
-        oCurve = this->opacityCurve;
-    }
-
-    if (method == "Lab") {
-        if (twocolor == "Separ") {
-            satur = 0.9f;
-        }
-
-        if (twocolor == "All" || twocolor == "Two") {
-            satur = 0.9f;
-        }
-
-        colorCurveLUT.SetXYZ(cCurve, xyz_rgb, satur, lumin);
-        opacityCurveLUT.Set(oCurve, opautili);
-    } else if (method == "Splitlr" || method == "Splitco") {
-        colorCurveLUT.SetXYZ(cCurve, xyz_rgb, satur, lumin);
-        opacityCurveLUT.Set(oCurve, opautili);
-    } else if (method.substr(0, 3) == "RGB") {
-        colorCurveLUT.SetRGB(cCurve);
-        opacityCurveLUT.Set(oCurve, opautili);
-    }
-}
-
 SharpeningParams::SharpeningParams() :
     enabled(false),
     contrast(20.0),
@@ -2614,33 +2214,6 @@ bool DirPyrEqualizerParams::operator !=(const DirPyrEqualizerParams& other) cons
     return !(*this == other);
 }
 
-HSVEqualizerParams::HSVEqualizerParams() :
-    enabled(false),
-    hcurve{
-        FCT_Linear
-    },
-    scurve{
-        FCT_Linear
-    },
-    vcurve{
-        FCT_Linear
-    }
-{
-}
-
-bool HSVEqualizerParams::operator ==(const HSVEqualizerParams& other) const
-{
-    return
-        enabled == other.enabled
-        && hcurve == other.hcurve
-        && scurve == other.scurve
-        && vcurve == other.vcurve;
-}
-
-bool HSVEqualizerParams::operator !=(const HSVEqualizerParams& other) const
-{
-    return !(*this == other);
-}
 
 FilmSimulationParams::FilmSimulationParams() :
     enabled(false),
@@ -3110,8 +2683,6 @@ void ProcParams::setDefaults()
 
     localContrast = LocalContrastParams();
 
-    colorToning = ColorToningParams();
-
     sharpenEdge = SharpenEdgeParams();
 
     sharpenMicro = SharpenMicroParams();
@@ -3179,8 +2750,6 @@ void ProcParams::setDefaults()
     wavelet = WaveletParams();
 
     dirpyrequalizer = DirPyrEqualizerParams();
-
-    hsvequalizer = HSVEqualizerParams();
 
     filmSimulation = FilmSimulationParams();
 
@@ -3819,12 +3388,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         }
         saveToKeyfile(!pedited || pedited->dirpyrequalizer.showMask, "Directional Pyramid Equalizer", "ShowMask", dirpyrequalizer.showMask, keyFile);
 
-// HSV Equalizer
-        saveToKeyfile(!pedited || pedited->hsvequalizer.enabled, "HSV Equalizer", "Enabled", hsvequalizer.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->hsvequalizer.hcurve, "HSV Equalizer", "HCurve", hsvequalizer.hcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->hsvequalizer.scurve, "HSV Equalizer", "SCurve", hsvequalizer.scurve, keyFile);
-        saveToKeyfile(!pedited || pedited->hsvequalizer.vcurve, "HSV Equalizer", "VCurve", hsvequalizer.vcurve, keyFile);
-
 // Soft Light
         saveToKeyfile(!pedited || pedited->softlight.enabled, "SoftLight", "Enabled", softlight.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->softlight.strength, "SoftLight", "Strength", softlight.strength, keyFile);
@@ -3839,38 +3402,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->rgbCurves.rcurve, "RGB Curves", "rCurve", rgbCurves.rcurve, keyFile);
         saveToKeyfile(!pedited || pedited->rgbCurves.gcurve, "RGB Curves", "gCurve", rgbCurves.gcurve, keyFile);
         saveToKeyfile(!pedited || pedited->rgbCurves.bcurve, "RGB Curves", "bCurve", rgbCurves.bcurve, keyFile);
-
-// Color toning
-        saveToKeyfile(!pedited || pedited->colorToning.enabled, "ColorToning", "Enabled", colorToning.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.method, "ColorToning", "Method", colorToning.method, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.lumamode, "ColorToning", "Lumamode", colorToning.lumamode, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.twocolor, "ColorToning", "Twocolor", colorToning.twocolor, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.redlow, "ColorToning", "Redlow", colorToning.redlow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.greenlow, "ColorToning", "Greenlow", colorToning.greenlow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.bluelow, "ColorToning", "Bluelow", colorToning.bluelow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.satlow, "ColorToning", "Satlow", colorToning.satlow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.balance, "ColorToning", "Balance", colorToning.balance, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.sathigh, "ColorToning", "Sathigh", colorToning.sathigh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.redmed, "ColorToning", "Redmed", colorToning.redmed, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.greenmed, "ColorToning", "Greenmed", colorToning.greenmed, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.bluemed, "ColorToning", "Bluemed", colorToning.bluemed, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.redhigh, "ColorToning", "Redhigh", colorToning.redhigh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.greenhigh, "ColorToning", "Greenhigh", colorToning.greenhigh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.bluehigh, "ColorToning", "Bluehigh", colorToning.bluehigh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.autosat, "ColorToning", "Autosat", colorToning.autosat, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.opacityCurve, "ColorToning", "OpacityCurve", colorToning.opacityCurve, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.colorCurve, "ColorToning", "ColorCurve", colorToning.colorCurve, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.satprotectionthreshold, "ColorToning", "SatProtectionThreshold", colorToning.satProtectionThreshold, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.saturatedopacity, "ColorToning", "SaturatedOpacity", colorToning.saturatedOpacity, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.strength, "ColorToning", "Strength", colorToning.strength, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.hlColSat, "ColorToning", "HighlightsColorSaturation", colorToning.hlColSat.toVector(), keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.shadowsColSat, "ColorToning", "ShadowsColorSaturation", colorToning.shadowsColSat.toVector(), keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.clcurve, "ColorToning", "ClCurve", colorToning.clcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.cl2curve, "ColorToning", "Cl2Curve", colorToning.cl2curve, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridALow, "ColorToning", "LabGridALow", colorToning.labgridALow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridBLow, "ColorToning", "LabGridBLow", colorToning.labgridBLow, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridAHigh, "ColorToning", "LabGridAHigh", colorToning.labgridAHigh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorToning.labgridBHigh, "ColorToning", "LabGridBHigh", colorToning.labgridBHigh, keyFile);
 
 // Grain
         saveToKeyfile(!pedited || pedited->grain.enabled, "Grain", "Enabled", grain.enabled, keyFile);
@@ -5367,24 +4898,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             }
         }
 
-        if (keyFile.has_group("HSV Equalizer")) {
-            if (ppVersion >= 329) {
-                assignFromKeyfile(keyFile, "HSV Equalizer", "Enabled", pedited, hsvequalizer.enabled, pedited->hsvequalizer.enabled);
-            } else {
-                hsvequalizer.enabled = true;
-
-                if (pedited) {
-                    pedited->hsvequalizer.enabled = true;
-                }
-            }
-
-            if (ppVersion >= 300) {
-                assignFromKeyfile(keyFile, "HSV Equalizer", "HCurve", pedited, hsvequalizer.hcurve, pedited->hsvequalizer.hcurve);
-                assignFromKeyfile(keyFile, "HSV Equalizer", "SCurve", pedited, hsvequalizer.scurve, pedited->hsvequalizer.scurve);
-                assignFromKeyfile(keyFile, "HSV Equalizer", "VCurve", pedited, hsvequalizer.vcurve, pedited->hsvequalizer.vcurve);
-            }
-        }
-
         if (keyFile.has_group("RGB Curves")) {
             if (ppVersion >= 329) {
                 assignFromKeyfile(keyFile, "RGB Curves", "Enabled", pedited, rgbCurves.enabled, pedited->rgbCurves.enabled);
@@ -5400,78 +4913,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "RGB Curves", "rCurve", pedited, rgbCurves.rcurve, pedited->rgbCurves.rcurve);
             assignFromKeyfile(keyFile, "RGB Curves", "gCurve", pedited, rgbCurves.gcurve, pedited->rgbCurves.gcurve);
             assignFromKeyfile(keyFile, "RGB Curves", "bCurve", pedited, rgbCurves.bcurve, pedited->rgbCurves.bcurve);
-        }
-
-        if (keyFile.has_group("ColorToning")) {
-            assignFromKeyfile(keyFile, "ColorToning", "Enabled", pedited, colorToning.enabled, pedited->colorToning.enabled);
-            assignFromKeyfile(keyFile, "ColorToning", "Method", pedited, colorToning.method, pedited->colorToning.method);
-            if (colorToning.method == "LabRegions") {
-                colorToning.method = "LabGrid";
-                colorToning.enabled = false;
-                if (pedited) {
-                    pedited->colorToning.method = true;
-                    pedited->colorToning.enabled = true;
-                }
-            }
-            assignFromKeyfile(keyFile, "ColorToning", "Lumamode", pedited, colorToning.lumamode, pedited->colorToning.lumamode);
-            assignFromKeyfile(keyFile, "ColorToning", "Twocolor", pedited, colorToning.twocolor, pedited->colorToning.twocolor);
-            assignFromKeyfile(keyFile, "ColorToning", "OpacityCurve", pedited, colorToning.opacityCurve, pedited->colorToning.opacityCurve);
-            assignFromKeyfile(keyFile, "ColorToning", "ColorCurve", pedited, colorToning.colorCurve, pedited->colorToning.colorCurve);
-            assignFromKeyfile(keyFile, "ColorToning", "Autosat", pedited, colorToning.autosat, pedited->colorToning.autosat);
-            assignFromKeyfile(keyFile, "ColorToning", "SatProtectionThreshold", pedited, colorToning.satProtectionThreshold, pedited->colorToning.satprotectionthreshold);
-            assignFromKeyfile(keyFile, "ColorToning", "SaturatedOpacity", pedited, colorToning.saturatedOpacity, pedited->colorToning.saturatedopacity);
-            assignFromKeyfile(keyFile, "ColorToning", "Strength", pedited, colorToning.strength, pedited->colorToning.strength);
-
-            if (keyFile.has_key("ColorToning", "HighlightsColorSaturation")) {
-                const std::vector<int> thresh = keyFile.get_integer_list("ColorToning", "HighlightsColorSaturation");
-
-                if (thresh.size() >= 2) {
-                    colorToning.hlColSat.setValues(thresh[0], thresh[1]);
-                }
-
-                if (pedited) {
-                    pedited->colorToning.hlColSat = true;
-                }
-            }
-
-            if (keyFile.has_key("ColorToning", "ShadowsColorSaturation")) {
-                const std::vector<int> thresh = keyFile.get_integer_list("ColorToning", "ShadowsColorSaturation");
-
-                if (thresh.size() >= 2) {
-                    colorToning.shadowsColSat.setValues(thresh[0], thresh[1]);
-                }
-
-                if (pedited) {
-                    pedited->colorToning.shadowsColSat = true;
-                }
-            }
-
-            assignFromKeyfile(keyFile, "ColorToning", "ClCurve", pedited, colorToning.clcurve, pedited->colorToning.clcurve);
-            assignFromKeyfile(keyFile, "ColorToning", "Cl2Curve", pedited, colorToning.cl2curve, pedited->colorToning.cl2curve);
-            assignFromKeyfile(keyFile, "ColorToning", "Redlow", pedited, colorToning.redlow, pedited->colorToning.redlow);
-            assignFromKeyfile(keyFile, "ColorToning", "Greenlow", pedited, colorToning.greenlow, pedited->colorToning.greenlow);
-            assignFromKeyfile(keyFile, "ColorToning", "Bluelow", pedited, colorToning.bluelow, pedited->colorToning.bluelow);
-            assignFromKeyfile(keyFile, "ColorToning", "Satlow", pedited, colorToning.satlow, pedited->colorToning.satlow);
-            assignFromKeyfile(keyFile, "ColorToning", "Balance", pedited, colorToning.balance, pedited->colorToning.balance);
-            assignFromKeyfile(keyFile, "ColorToning", "Sathigh", pedited, colorToning.sathigh, pedited->colorToning.sathigh);
-            assignFromKeyfile(keyFile, "ColorToning", "Redmed", pedited, colorToning.redmed, pedited->colorToning.redmed);
-            assignFromKeyfile(keyFile, "ColorToning", "Greenmed", pedited, colorToning.greenmed, pedited->colorToning.greenmed);
-            assignFromKeyfile(keyFile, "ColorToning", "Bluemed", pedited, colorToning.bluemed, pedited->colorToning.bluemed);
-            assignFromKeyfile(keyFile, "ColorToning", "Redhigh", pedited, colorToning.redhigh, pedited->colorToning.redhigh);
-            assignFromKeyfile(keyFile, "ColorToning", "Greenhigh", pedited, colorToning.greenhigh, pedited->colorToning.greenhigh);
-            assignFromKeyfile(keyFile, "ColorToning", "Bluehigh", pedited, colorToning.bluehigh, pedited->colorToning.bluehigh);
-
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridALow", pedited, colorToning.labgridALow, pedited->colorToning.labgridALow);
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridBLow", pedited, colorToning.labgridBLow, pedited->colorToning.labgridBLow);
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridAHigh", pedited, colorToning.labgridAHigh, pedited->colorToning.labgridAHigh);
-            assignFromKeyfile(keyFile, "ColorToning", "LabGridBHigh", pedited, colorToning.labgridBHigh, pedited->colorToning.labgridBHigh);
-            if (ppVersion < 337) {
-                const double scale = ColorToningParams::LABGRID_CORR_SCALE;
-                colorToning.labgridALow *= scale;
-                colorToning.labgridAHigh *= scale;
-                colorToning.labgridBLow *= scale;
-                colorToning.labgridBHigh *= scale;
-            }
         }
 
         if (keyFile.has_group("Grain")) {
@@ -5527,17 +4968,10 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "GuidedSmoothing", "ShowMask", pedited, smoothing.showMask, pedited->smoothing.showMask);
         }
 
-        const char *ccgroup = ppVersion < 348 ? "ColorToning" : "ColorCorrection";
+        const char *ccgroup = "ColorCorrection";
         if (keyFile.has_group(ccgroup)) {
-            const Glib::ustring prefix = ppVersion < 348 ? "LabRegion" : "";
-            if (ppVersion < 348) {
-                colorcorrection.enabled = colorToning.enabled;
-                if (pedited) {
-                    pedited->colorcorrection.enabled = pedited->colorToning.enabled;
-                }
-            } else {
-                assignFromKeyfile(keyFile, ccgroup, "Enabled", pedited, colorcorrection.enabled, pedited->colorcorrection.enabled);
-            }
+            const Glib::ustring prefix = "";
+            assignFromKeyfile(keyFile, ccgroup, "Enabled", pedited, colorcorrection.enabled, pedited->colorcorrection.enabled);
             std::vector<ColorCorrectionParams::LabCorrectionRegion> lg;
             std::vector<LabCorrectionMask> lm;
             bool found = false;
@@ -5887,11 +5321,9 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && icm == other.icm
         && wavelet == other.wavelet
         && dirpyrequalizer == other.dirpyrequalizer
-        && hsvequalizer == other.hsvequalizer
         && filmSimulation == other.filmSimulation
         && softlight == other.softlight
         && rgbCurves == other.rgbCurves
-        && colorToning == other.colorToning
         && metadata == other.metadata
         && exif == other.exif
         && iptc == other.iptc

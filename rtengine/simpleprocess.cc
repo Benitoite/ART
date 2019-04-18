@@ -436,22 +436,6 @@ private:
         CurveFactory::RGBCurve (params.rgbCurves.gcurve, gCurve, 1);
         CurveFactory::RGBCurve (params.rgbCurves.bcurve, bCurve, 1);
 
-        bool opautili = false;
-
-        if (params.colorToning.enabled) {
-            TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix (params.icm.workingProfile);
-            double wp[3][3] = {
-                {wprof[0][0], wprof[0][1], wprof[0][2]},
-                {wprof[1][0], wprof[1][1], wprof[1][2]},
-                {wprof[2][0], wprof[2][1], wprof[2][2]}
-            };
-            params.colorToning.getCurves (ctColorCurve, ctOpacityCurve, wp, opautili);
-            clToningcurve (65536, 0);
-            CurveFactory::curveToning (params.colorToning.clcurve, clToningcurve, 1);
-            cl2Toningcurve (65536, 0);
-            CurveFactory::curveToning (params.colorToning.cl2curve, cl2Toningcurve, 1);
-        }
-
         labView = new LabImage (fw, fh);
 
         if (params.blackwhite.enabled) {
@@ -460,27 +444,6 @@ private:
 
         double rrm, ggm, bbm;
         float autor, autog, autob;
-        float satLimit = float (params.colorToning.satProtectionThreshold) / 100.f * 0.7f + 0.3f;
-        float satLimitOpacity = 1.f - (float (params.colorToning.saturatedOpacity) / 100.f);
-
-        if (params.colorToning.enabled  && params.colorToning.autosat && params.colorToning.method != "LabGrid") { //for colortoning evaluation of saturation settings
-            float moyS = 0.f;
-            float eqty = 0.f;
-            ipf.moyeqt (baseImg, moyS, eqty);//return image : mean saturation and standard dev of saturation
-            float satp = ((moyS + 1.5f * eqty) - 0.3f) / 0.7f; //1.5 sigma ==> 93% pixels with high saturation -0.3 / 0.7 convert to Hombre scale
-
-            if (satp >= 0.92f) {
-                satp = 0.92f;    //avoid values too high (out of gamut)
-            }
-
-            if (satp <= 0.15f) {
-                satp = 0.15f;    //avoid too low values
-            }
-
-            satLimit = 100.f * satp;
-
-            satLimitOpacity = 100.f * (moyS - 0.85f * eqty); //-0.85 sigma==>20% pixels with low saturation
-        }
 
         autor = -9000.f; // This will ask to compute the "auto" values for the B&W tool (have to be inferior to -5000)
         DCPProfile::ApplyState as;
@@ -489,7 +452,7 @@ private:
         LUTu histToneCurve;
 
         ipf.setDCPProfile(dcpProf, as);
-        ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, satLimit, satLimitOpacity, ctColorCurve, ctOpacityCurve, opautili, clToningcurve, cl2Toningcurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
+        ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
 
         if (settings->verbose) {
             printf ("Output image / Auto B&W coefs:   R=%.2f   G=%.2f   B=%.2f\n", autor, autog, autob);
@@ -749,7 +712,7 @@ private:
         cmsHPROFILE jprof = nullptr;
         constexpr bool customGamma = false;
         constexpr bool useLCMS = false;
-        bool bwonly = params.blackwhite.enabled && !params.colorToning.enabled && !autili && !butili && !params.colorappearance.enabled;
+        bool bwonly = params.blackwhite.enabled && !autili && !butili && !params.colorappearance.enabled;
 
         ///////////// Custom output gamma has been removed, the user now has to create
         ///////////// a new output profile with the ICCProfileCreator
