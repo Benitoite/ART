@@ -37,7 +37,7 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     EvLocalContrastContrast = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_CONTRAST");
     EvLocalContrastCurve = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_CURVE");
 
-    usb = Gtk::manage(new Gtk::VBox());
+    usm = Gtk::manage(new Gtk::VBox());
     wavelets = Gtk::manage(new Gtk::VBox());
 
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
@@ -56,9 +56,9 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
 
     const LocalContrastParams default_params;
     
-    CurveEditorGroup *cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LOCALCONTRAST_CURVE"), 0.7));
+    cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LOCALCONTRAST_CURVE"), 0.7));
     cg->setCurveListener(this);
-    curve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, true));
+    curve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, false));
     curve->setIdentityValue(0.);
     curve->setResetCurve(FlatCurveType(default_params.curve.at(0)), default_params.curve);
     cg->curveListComplete();
@@ -156,7 +156,7 @@ void LocalContrast::setDefaults(const ProcParams *defParams, const ParamsEdited 
     darkness->setDefault(defParams->localContrast.darkness);
     lightness->setDefault(defParams->localContrast.lightness);
     contrast->setDefault(defParams->localContrast.contrast);
-    curve->setResetCurve(defParams->localContrast.curve);
+    curve->setResetCurve(FlatCurveType(defParams->localContrast.curve.at(0)), defParams->localContrast.curve);
 
     if (pedited) {
         radius->setDefaultEditedState(pedited->localContrast.radius ? Edited : UnEdited);
@@ -225,7 +225,7 @@ void LocalContrast::setBatchMode(bool batchMode)
     pack_start(*usm);
     pack_start(*wavelets);
 
-    // TODO - curve editor group
+    cg->setBatchMode(batchMode);
 }
 
 
@@ -252,7 +252,7 @@ void LocalContrast::modeChanged()
     }
 
     if (listener && (multiImage || getEnabled()) ) {
-        listener->panelChanged(EvLocalContrastMode, method->get_active_text());
+        listener->panelChanged(EvLocalContrastMode, mode->get_active_text());
     }
 }
 

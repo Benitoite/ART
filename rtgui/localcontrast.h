@@ -36,6 +36,7 @@ private:
     Adjuster *darkness;
     Adjuster *lightness;
     Adjuster *contrast;
+    CurveEditorGroup *cg;
     FlatCurveEditor *curve;
     
     rtengine::ProcEvent EvLocalContrastEnabled;
