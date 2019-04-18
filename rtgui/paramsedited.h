@@ -127,10 +127,13 @@ class LocalContrastParamsEdited
 {
 public:
     bool enabled;
+    bool mode;
     bool radius;
     bool amount;
     bool darkness;
     bool lightness;
+    bool contrast;
+    bool curve;
 };
 
 

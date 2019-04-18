@@ -102,10 +102,13 @@ void ParamsEdited::set(bool v)
     labCurve.rstprotection   = v;
     labCurve.lcredsk         = v;
     localContrast.enabled = v;
+    localContrast.mode = v;
     localContrast.radius = v;
     localContrast.amount = v;
     localContrast.darkness = v;
     localContrast.lightness = v;
+    localContrast.contrast = v;
+    localContrast.curve = v;
     rgbCurves.enabled = v;
     rgbCurves.lumamode       = v;
     rgbCurves.rcurve         = v;
@@ -685,6 +688,9 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         localContrast.amount = localContrast.amount && p.localContrast.amount == other.localContrast.amount;
         localContrast.darkness = localContrast.darkness && p.localContrast.darkness == other.localContrast.darkness;
         localContrast.lightness = localContrast.lightness && p.localContrast.lightness == other.localContrast.lightness;
+        SETVAL_(localContrast.mode);
+        SETVAL_(localContrast.contrast);
+        SETVAL_(localContrast.curve);
 
         rgbCurves.enabled = rgbCurves.enabled && p.rgbCurves.enabled == other.rgbCurves.enabled;
         rgbCurves.lumamode = rgbCurves.lumamode && p.rgbCurves.lumamode == other.rgbCurves.lumamode;
@@ -1475,6 +1481,9 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
     ADDSETVAL_(localContrast.amount, ADDSET_LOCALCONTRAST_AMOUNT);
     ADDSETVAL_(localContrast.darkness, ADDSET_LOCALCONTRAST_DARKNESS);
     ADDSETVAL_(localContrast.lightness, ADDSET_LOCALCONTRAST_LIGHTNESS);
+    SETVAL_(localContrast.mode);
+    SETVAL_(localContrast.contrast);
+    SETVAL_(localContrast.curve);
 
     if (rgbCurves.enabled) {
         toEdit.rgbCurves.enabled = mods.rgbCurves.enabled;

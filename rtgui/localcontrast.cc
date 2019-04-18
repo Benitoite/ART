@@ -29,30 +29,64 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
 {
     auto m = ProcEventMapper::getInstance();
     EvLocalContrastEnabled = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_ENABLED");
+    EvLocalContrastMode = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_MODE");
     EvLocalContrastRadius = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_RADIUS");
     EvLocalContrastAmount = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_AMOUNT");
     EvLocalContrastDarkness = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_DARKNESS");
     EvLocalContrastLightness = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_LIGHTNESS");
+    EvLocalContrastContrast = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_CONTRAST");
+    EvLocalContrastCurve = m->newEvent(SHARPENING, "HISTORY_MSG_LOCALCONTRAST_CURVE");
+
+    usb = Gtk::manage(new Gtk::VBox());
+    wavelets = Gtk::manage(new Gtk::VBox());
+
+    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+    mode = Gtk::manage(new MyComboBoxText ());
+    mode->append(M("TP_LOCALCONTRAST_USM"));
+    mode->append(M("TP_LOCALCONTRAST_WAVELETS"));
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_LOCALCONTRAST_MODE") + ":")), Gtk::PACK_SHRINK, 4);
+    hb->pack_start(*mode);
+    pack_start(*hb);
     
     radius = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_RADIUS"), 20., 200., 1., 80.));
     amount = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_AMOUNT"), 0., 1., 0.01, 0.2));
     darkness = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_DARKNESS"), 0., 3., 0.01, 1.));
     lightness = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_LIGHTNESS"), 0., 3., 0.01, 1.));
+    contrast = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_CONTRAST"), -100., 100., 0.1, 0.));
 
+    const LocalContrastParams default_params;
+    
+    CurveEditorGroup *cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LOCALCONTRAST_CURVE"), 0.7));
+    cg->setCurveListener(this);
+    curve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, true));
+    curve->setIdentityValue(0.);
+    curve->setResetCurve(FlatCurveType(default_params.curve.at(0)), default_params.curve);
+    cg->curveListComplete();
+    cg->show();
+    
+    mode->signal_changed().connect(sigc::mem_fun(*this, &LocalContrast::modeChanged));
+    
     radius->setAdjusterListener(this);
     amount->setAdjusterListener(this);
     darkness->setAdjusterListener(this);
     lightness->setAdjusterListener(this);
+    contrast->setAdjusterListener(this);
 
     radius->show();
     amount->show();
     darkness->show();
     lightness->show();
 
-    pack_start(*radius);
-    pack_start(*amount);
-    pack_start(*darkness);
-    pack_start(*lightness);
+    usm->pack_start(*radius);
+    usm->pack_start(*amount);
+    usm->pack_start(*darkness);
+    usm->pack_start(*lightness);
+
+    wavelets->pack_start(*cg);
+    wavelets->pack_start(*contrast);
+
+    pack_start(*usm);
+    pack_start(*wavelets);
 }
 
 
@@ -61,18 +95,32 @@ void LocalContrast::read(const ProcParams *pp, const ParamsEdited *pedited)
     disableListener();
 
     if (pedited) {
+        if (!pedited->localContrast.mode) {
+            mode->set_active_text(M("GENERAL_UNCHANGED"));
+        }
         radius->setEditedState(pedited->localContrast.radius ? Edited : UnEdited);
         amount->setEditedState(pedited->localContrast.amount ? Edited : UnEdited);
         darkness->setEditedState(pedited->localContrast.darkness ? Edited : UnEdited);
         lightness->setEditedState(pedited->localContrast.lightness ? Edited : UnEdited);
+        contrast->setEditedState(pedited->localContrast.contrast ? Edited : UnEdited);
+        curve->setUnChanged(!pedited->localContrast.curve);
         set_inconsistent(multiImage && !pedited->localContrast.enabled);
     }
 
     setEnabled(pp->localContrast.enabled);
+    if (pp->localContrast.mode == LocalContrastParams::USM) {
+        mode->set_active(0);
+    } else {
+        mode->set_active(1);
+    }
     radius->setValue(pp->localContrast.radius);
     amount->setValue(pp->localContrast.amount);
     darkness->setValue(pp->localContrast.darkness);
     lightness->setValue(pp->localContrast.lightness);
+    contrast->setValue(pp->localContrast.contrast);
+    curve->setCurve(pp->localContrast.curve);
+
+    modeChanged();
 
     enableListener();
 }
@@ -80,17 +128,23 @@ void LocalContrast::read(const ProcParams *pp, const ParamsEdited *pedited)
 
 void LocalContrast::write(ProcParams *pp, ParamsEdited *pedited)
 {
+    pp->localContrast.mode = LocalContrastParams::Mode(max(mode->get_active_row_number(), 1));
     pp->localContrast.radius = radius->getValue();
     pp->localContrast.amount = amount->getValue();
     pp->localContrast.darkness = darkness->getValue();
     pp->localContrast.lightness = lightness->getValue();
     pp->localContrast.enabled = getEnabled();
+    pp->localContrast.contrast = contrast->getValue();
+    pp->localContrast.curve = curve->getCurve();
 
     if (pedited) {
         pedited->localContrast.radius = radius->getEditedState();
         pedited->localContrast.amount = amount->getEditedState();
         pedited->localContrast.darkness = darkness->getEditedState();
         pedited->localContrast.lightness = lightness->getEditedState();
+        pedited->localContrast.curve = !curve->isUnChanged();
+        pedited->localContrast.contrast = contrast->getEditedState();
+        pedited->localContrast.mode = mode->get_active_row_number() != 2;
         pedited->localContrast.enabled = !get_inconsistent();
     }
 }
@@ -101,17 +155,21 @@ void LocalContrast::setDefaults(const ProcParams *defParams, const ParamsEdited 
     amount->setDefault(defParams->localContrast.amount);
     darkness->setDefault(defParams->localContrast.darkness);
     lightness->setDefault(defParams->localContrast.lightness);
+    contrast->setDefault(defParams->localContrast.contrast);
+    curve->setResetCurve(defParams->localContrast.curve);
 
     if (pedited) {
         radius->setDefaultEditedState(pedited->localContrast.radius ? Edited : UnEdited);
         amount->setDefaultEditedState(pedited->localContrast.amount ? Edited : UnEdited);
         darkness->setDefaultEditedState(pedited->localContrast.darkness ? Edited : UnEdited);
         lightness->setDefaultEditedState(pedited->localContrast.lightness ? Edited : UnEdited);
+        contrast->setDefaultEditedState(pedited->localContrast.contrast ? Edited : UnEdited);
     } else {
         radius->setDefaultEditedState(Irrelevant);
         amount->setDefaultEditedState(Irrelevant);
         darkness->setDefaultEditedState(Irrelevant);
         lightness->setDefaultEditedState(Irrelevant);
+        contrast->setDefaultEditedState(Irrelevant);
     }
 }
 
@@ -126,6 +184,8 @@ void LocalContrast::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvLocalContrastDarkness, a->getTextValue());
         } else if (a == lightness) {
             listener->panelChanged(EvLocalContrastLightness, a->getTextValue());
+        } else if (a == contrast) {
+            listener->panelChanged(EvLocalContrastContrast, a->getTextValue());
         }
     }
 }
@@ -152,10 +212,20 @@ void LocalContrast::setBatchMode(bool batchMode)
 {
     ToolPanel::setBatchMode(batchMode);
 
+    mode->append(M("GENERAL_UNCHANGED"));
+
     radius->showEditedCB();
     amount->showEditedCB();
     darkness->showEditedCB();
     lightness->showEditedCB();
+    contrast->showEditedCB();
+    
+    removeIfThere(this, usm, false);
+    removeIfThere(this, wavelets, false);
+    pack_start(*usm);
+    pack_start(*wavelets);
+
+    // TODO - curve editor group
 }
 
 
@@ -167,3 +237,35 @@ void LocalContrast::setAdjusterBehavior(bool radiusAdd, bool amountAdd, bool dar
     lightness->setAddMode(lightnessAdd);
 }
 
+
+void LocalContrast::modeChanged()
+{
+    if (!batchMode) {
+        removeIfThere(this, usm, false);
+        removeIfThere(this, wavelets, false);
+
+        if (mode->get_active_row_number() == 0) {
+            pack_start(*usm);
+        } else if (mode->get_active_row_number() == 1) {
+            pack_start(*wavelets);
+        }
+    }
+
+    if (listener && (multiImage || getEnabled()) ) {
+        listener->panelChanged(EvLocalContrastMode, method->get_active_text());
+    }
+}
+
+
+void LocalContrast::curveChanged()
+{
+    if (listener) {
+        listener->panelChanged(EvLocalContrastCurve, M("HISTORY_CUSTOMCURVE"));
+    }
+}
+
+
+void LocalContrast::autoOpenCurve()
+{
+    curve->openIfNonlinear();
+}

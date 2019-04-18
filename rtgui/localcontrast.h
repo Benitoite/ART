@@ -22,20 +22,30 @@
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
+#include "curveeditor.h"
+#include "curveeditorgroup.h"
 
-class LocalContrast: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class LocalContrast: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public CurveListener
 {
 private:
+    MyComboBoxText *mode;
+    Gtk::VBox *usm;
+    Gtk::VBox *wavelets;
     Adjuster *radius;
     Adjuster *amount;
     Adjuster *darkness;
     Adjuster *lightness;
-
+    Adjuster *contrast;
+    FlatCurveEditor *curve;
+    
     rtengine::ProcEvent EvLocalContrastEnabled;
+    rtengine::ProcEvent EvLocalContrastMode;
     rtengine::ProcEvent EvLocalContrastRadius;
     rtengine::ProcEvent EvLocalContrastAmount;
     rtengine::ProcEvent EvLocalContrastDarkness;
     rtengine::ProcEvent EvLocalContrastLightness;
+    rtengine::ProcEvent EvLocalContrastContrast;
+    rtengine::ProcEvent EvLocalContrastCurve;
     
 public:
 
@@ -50,5 +60,10 @@ public:
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void enabledChanged() override;
     void setAdjusterBehavior(bool radiusAdd, bool amountAdd, bool darknessAdd, bool lightnessAdd);
+    void curveChanged() override;
+    void autoOpenCurve() override;
+
+private:
+    void modeChanged();
 };
 

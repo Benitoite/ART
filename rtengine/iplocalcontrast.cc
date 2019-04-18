@@ -233,7 +233,7 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
         return;
     }
 
-    const float contrast = 0.f; // TODO -- residual contrast
+    const float contrast = params->localContrast.contrast;
     int maxlvl = wd.maxlevel();
 
     if (contrast != 0) {
@@ -323,7 +323,7 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
     evaluate_params(wd, mean, meanN, sigma, sigmaN, MaxP, MaxN, multiThread);
 
     WavOpacityCurveWL curve;
-    // TODO curve.Set(params->localContrast.localContrastCurve);
+    curve.Set(params->localContrast.curve);
 
     for (int dir = 1; dir < 4; dir++) {
         for (int level = 0; level < maxlvl; ++level) {
@@ -382,7 +382,11 @@ void ImProcFunctions::localContrast(LabImage *lab)
         return;
     }
 
-    local_contrast_usm(lab, params, scale, multiThread);
+    if (params->localContrast.mode == LocalContrastParams::USM) {
+        local_contrast_usm(lab, params, scale, multiThread);
+    } else {
+        local_contrast_wavelets(lab, params, scale, multiThread);
+    }
 }
 
 } // namespace rtengine

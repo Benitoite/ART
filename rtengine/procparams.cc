@@ -760,10 +760,23 @@ bool RGBCurvesParams::operator !=(const RGBCurvesParams& other) const
 
 LocalContrastParams::LocalContrastParams():
     enabled(false),
+    mode(USM),
     radius(80),
     amount(0.2),
     darkness(1.0),
-    lightness(1.0)
+    lightness(1.0),
+    contrast(0),
+    curve{
+        static_cast<double>(FCT_MinMaxCPoints),
+        0.0,
+        0.50,
+        0.35,
+        0.35,
+        1.00,
+        0.50,
+        0.35,
+        0.35
+    }
 {
 }
 
@@ -772,10 +785,13 @@ bool LocalContrastParams::operator==(const LocalContrastParams &other) const
 {
     return
         enabled == other.enabled
+        && mode == other.mode
         && radius == other.radius
         && amount == other.amount
         && darkness == other.darkness
-        && lightness == other.lightness;
+        && lightness == other.lightness
+        && contrast == other.contrast
+        && curve == other.curve;
 }
 
 
@@ -3280,10 +3296,13 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
 // Local contrast
         saveToKeyfile(!pedited || pedited->localContrast.enabled, "Local Contrast", "Enabled", localContrast.enabled, keyFile);
+        saveToKeyfile(!pedited || pedited->localContrast.mode, "Local Contrast", "Mode", int(localContrast.mode), keyFile);
         saveToKeyfile(!pedited || pedited->localContrast.radius, "Local Contrast", "Radius", localContrast.radius, keyFile);
         saveToKeyfile(!pedited || pedited->localContrast.amount, "Local Contrast", "Amount", localContrast.amount, keyFile);
         saveToKeyfile(!pedited || pedited->localContrast.darkness, "Local Contrast", "Darkness", localContrast.darkness, keyFile);
         saveToKeyfile(!pedited || pedited->localContrast.lightness, "Local Contrast", "Lightness", localContrast.lightness, keyFile);
+        saveToKeyfile(!pedited || pedited->localContrast.contrast, "Local Contrast", "Contrast", localContrast.contrast, keyFile);
+        saveToKeyfile(!pedited || pedited->localContrast.curve, "Local Contrast", "Curve", localContrast.curve, keyFile);
 
 
 // Channel mixer
@@ -4220,10 +4239,15 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
 
         if (keyFile.has_group("Local Contrast")) {
             assignFromKeyfile(keyFile, "Local Contrast", "Enabled", pedited, localContrast.enabled, pedited->localContrast.enabled);
+            int m = static_cast<int>(LocalContrastParams::USM);
+            assignFromKeyfile(keyFile, "Local Contrast", "Mode", pedited, m, pedited->localContrast.mode);
+            localContrast.mode = LocalContrastParams::Mode(min(max(m, 0), 1));
             assignFromKeyfile(keyFile, "Local Contrast", "Radius", pedited, localContrast.radius, pedited->localContrast.radius);
             assignFromKeyfile(keyFile, "Local Contrast", "Amount", pedited, localContrast.amount, pedited->localContrast.amount);
             assignFromKeyfile(keyFile, "Local Contrast", "Darkness", pedited, localContrast.darkness, pedited->localContrast.darkness);
             assignFromKeyfile(keyFile, "Local Contrast", "Lightness", pedited, localContrast.lightness, pedited->localContrast.lightness);
+            assignFromKeyfile(keyFile, "Local Contrast", "Contrast", pedited, localContrast.contrast, pedited->localContrast.contrast);
+            assignFromKeyfile(keyFile, "Local Contrast", "Curve", pedited, localContrast.curve, pedited->localContrast.curve);
         }
 
         if (keyFile.has_group("Luminance Curve")) {

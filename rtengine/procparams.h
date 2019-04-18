@@ -416,10 +416,17 @@ struct LCurveParams {
  */
 struct LocalContrastParams {
     bool enabled;
+    enum Mode {
+        USM,
+        WAVELETS
+    };
+    Mode mode;
     int radius;
     double amount;
     double darkness;
     double lightness;
+    double contrast;
+    std::vector<double> curve;
 
     LocalContrastParams();
 
