@@ -117,7 +117,7 @@ ToneCurve::ToneCurve () : FoldableToolPanel(this, "tonecurve", M("TP_EXPOSURE_LA
 
 //----------- Black Level & Compression -------------------
     black = Gtk::manage (new Adjuster (M("TP_EXPOSURE_BLACKLEVEL"), -16384, 32768, 50, 0));
-    black->setLogScale(10, 0, true);
+    black->setLogScale(500, 0, true);
     pack_start (*black);
     shcompr = Gtk::manage (new Adjuster (M("TP_EXPOSURE_COMPRSHADOWS"), 0, 100, 1, 50));
     pack_start (*shcompr);
