@@ -128,7 +128,7 @@ void LocalContrast::read(const ProcParams *pp, const ParamsEdited *pedited)
 
 void LocalContrast::write(ProcParams *pp, ParamsEdited *pedited)
 {
-    pp->localContrast.mode = LocalContrastParams::Mode(max(mode->get_active_row_number(), 1));
+    pp->localContrast.mode = LocalContrastParams::Mode(min(mode->get_active_row_number(), 1));
     pp->localContrast.radius = radius->getValue();
     pp->localContrast.amount = amount->getValue();
     pp->localContrast.darkness = darkness->getValue();
