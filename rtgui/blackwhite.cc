@@ -622,9 +622,7 @@ void BlackWhite::updateRGBLabel ()
         double mixR, mixG, mixB;
         float filcor;
         Glib::ustring sSetting = getSettingString();
-        Color::computeBWMixerConstants(sSetting, getFilterString(), "", filcor, r, g, b,
-                                       0.f, 0.f, 0.f, 0.f, 0.f,
-                                       false, false, kcorrec, mixR, mixG, mixB);
+        Color::computeBWMixerConstants(sSetting, getFilterString(), "", filcor, r, g, b, kcorrec, mixR, mixG, mixB);
 
         if( filcor != 1.f) {
             r = kcorrec * r / (r + g + b);

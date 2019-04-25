@@ -1068,8 +1068,8 @@ void Color::trcGammaBW (float &r, float &g, float &b, float gammabwr, float gamm
  * @param setting BlackWhite::filter
  */
 void Color::computeBWMixerConstants (const Glib::ustring &setting, const Glib::ustring &filter,  const Glib::ustring &algo, float &filcor, float &mixerRed, float &mixerGreen,
-                                     float &mixerBlue, float mixerOrange, float mixerYellow, float mixerCyan, float mixerPurple, float mixerMagenta,
-                                     bool autoc, bool complement, float &kcorec, double &rrm, double &ggm, double &bbm)
+                                     float &mixerBlue, 
+                                     float &kcorec, double &rrm, double &ggm, double &bbm)
 {
     float somm;
     float som = mixerRed + mixerGreen + mixerBlue;
@@ -1089,54 +1089,50 @@ void Color::computeBWMixerConstants (const Glib::ustring &setting, const Glib::u
         kcorec = som / 100.f;
     }
 
-    if (!autoc) {
-        //if     (setting=="RGB-Abs" || setting=="ROYGCBPM-Abs")  {} //Keep the RGB mixer values as is!
-        //else if(setting=="RGB-Rel" || setting=="ROYGCBPM-Rel")  {} //Keep the RGB mixer values as is!
-        if     (setting == "NormalContrast")    {
-            mixerRed = 43.f ;
-            mixerGreen = 33.f;
-            mixerBlue = 30.f;
-        } else if(setting == "Panchromatic")      {
-            mixerRed = 33.3f;
-            mixerGreen = 33.3f;
-            mixerBlue = 33.3f;
-        } else if(setting == "HyperPanchromatic") {
-            mixerRed = 41.f ;
-            mixerGreen = 25.f;
-            mixerBlue = 34.f;
-        } else if(setting == "LowSensitivity")    {
-            mixerRed = 27.f ;
-            mixerGreen = 27.f;
-            mixerBlue = 46.f;
-        } else if(setting == "HighSensitivity")   {
-            mixerRed = 30.f ;
-            mixerGreen = 28.f;
-            mixerBlue = 42.f;
-        } else if(setting == "Orthochromatic")    {
-            mixerRed = 0.f  ;
-            mixerGreen = 42.f;
-            mixerBlue = 58.f;
-        } else if(setting == "HighContrast")      {
-            mixerRed = 40.f ;
-            mixerGreen = 34.f;
-            mixerBlue = 60.f;
-        } else if(setting == "Luminance")         {
-            mixerRed = 30.f ;
-            mixerGreen = 59.f;
-            mixerBlue = 11.f;
-        } else if(setting == "Landscape")         {
-            mixerRed = 66.f ;
-            mixerGreen = 24.f;
-            mixerBlue = 10.f;
-        } else if(setting == "Portrait")          {
-            mixerRed = 54.f ;
-            mixerGreen = 44.f;
-            mixerBlue = 12.f;
-        } else if(setting == "InfraRed")          {
-            mixerRed = -40.f;
-            mixerGreen = 200.f;
-            mixerBlue = -17.f;
-        }
+    if     (setting == "NormalContrast")    {
+        mixerRed = 43.f ;
+        mixerGreen = 33.f;
+        mixerBlue = 30.f;
+    } else if(setting == "Panchromatic")      {
+        mixerRed = 33.3f;
+        mixerGreen = 33.3f;
+        mixerBlue = 33.3f;
+    } else if(setting == "HyperPanchromatic") {
+        mixerRed = 41.f ;
+        mixerGreen = 25.f;
+        mixerBlue = 34.f;
+    } else if(setting == "LowSensitivity")    {
+        mixerRed = 27.f ;
+        mixerGreen = 27.f;
+        mixerBlue = 46.f;
+    } else if(setting == "HighSensitivity")   {
+        mixerRed = 30.f ;
+        mixerGreen = 28.f;
+        mixerBlue = 42.f;
+    } else if(setting == "Orthochromatic")    {
+        mixerRed = 0.f  ;
+        mixerGreen = 42.f;
+        mixerBlue = 58.f;
+    } else if(setting == "HighContrast")      {
+        mixerRed = 40.f ;
+        mixerGreen = 34.f;
+        mixerBlue = 60.f;
+    } else if(setting == "Luminance")         {
+        mixerRed = 30.f ;
+        mixerGreen = 59.f;
+        mixerBlue = 11.f;
+    } else if(setting == "Landscape")         {
+        mixerRed = 66.f ;
+        mixerGreen = 24.f;
+        mixerBlue = 10.f;
+    } else if(setting == "Portrait")          {
+        mixerRed = 54.f ;
+        mixerGreen = 44.f;
+        mixerBlue = 12.f;
+    } else if(setting == "InfraRed")          {
+        mixerRed = -40.f;
+        mixerGreen = 200.f;
+        mixerBlue = -17.f;
     }
 
     rrm = mixerRed;

@@ -552,7 +552,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 // ipf.setDCPProfile(dcpProf, as);
     
                 ipf.rgbProc (oprevi, oprevl, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
-                            rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, beforeToneCurveBW, afterToneCurveBW, rrm, ggm, bbm, bwAutoR, bwAutoG, bwAutoB, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, histToneCurve);
+                            rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh);
     
             }
     

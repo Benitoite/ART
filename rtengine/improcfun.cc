@@ -216,18 +216,7 @@ void proPhotoBlue(float *rtemp, float *gtemp, float *btemp, int istart, int tH, 
 }
 
 
-void fillEditFloat(float *editIFloatTmpR, float *editIFloatTmpG, float *editIFloatTmpB, float *rtemp, float *gtemp, float *btemp, int istart, int tH, int jstart, int tW, int tileSize) {
-    for (int i = istart, ti = 0; i < tH; i++, ti++) {
-        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-            editIFloatTmpR[ti * tileSize + tj] = Color::gamma2curve[rtemp[ti * tileSize + tj]] / 65535.f;
-            editIFloatTmpG[ti * tileSize + tj] = Color::gamma2curve[gtemp[ti * tileSize + tj]] / 65535.f;
-            editIFloatTmpB[ti * tileSize + tj] = Color::gamma2curve[btemp[ti * tileSize + tj]] / 65535.f;
-        }
-    }
-}
-// end of helper function for rgbProc()
-
-}
+} // namespace
 
 namespace rtengine
 {
@@ -1994,15 +1983,15 @@ void ImProcFunctions::moyeqt (Imagefloat* working, float &moyS, float &eqty)
 
 void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve,
-                               const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2, const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, LUTu &histToneCurve )
+                               const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2)
 {
-    rgbProc (working, lab, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2,  customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh, histToneCurve);
+    rgbProc (working, lab, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh);
 }
 
 // Process RGB image and convert to LAB space
 void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
                                int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve,
-                               const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,  const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, double expcomp, int hlcompr, int hlcomprthresh, LUTu &histToneCurve )
+                               const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2, double expcomp, int hlcompr, int hlcomprthresh)
 {
     BENCHFUN
     constexpr int TS = 112;
@@ -2095,8 +2084,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     const bool isProPhoto = (params->icm.workingProfile == "ProPhoto");
     bool highlight = params->toneCurve.hrenabled;//Get the value if "highlight reconstruction" is activated
 
-    bool hasToneCurvebw2 = false;
-
     float chMixRR = float (params->chmixer.red[0])/10.f;
     float chMixRG = float (params->chmixer.red[1])/10.f;
     float chMixRB = float (params->chmixer.red[2])/10.f;
@@ -2108,18 +2095,12 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     float chMixBB = float (params->chmixer.blue[2])/10.f;
 
     bool blackwhite = params->blackwhite.enabled;
-    bool complem = false;
     float bwr = float (params->blackwhite.mixerRed);
     float bwg = float (params->blackwhite.mixerGreen);
     float bwb = float (params->blackwhite.mixerBlue);
     float bwrgam = float (params->blackwhite.gammaRed);
     float bwggam = float (params->blackwhite.gammaGreen);
     float bwbgam = float (params->blackwhite.gammaBlue);
-    float mixerOrange = 0.f;
-    float mixerYellow = 0.f;
-    float mixerCyan = 0.f;
-    float mixerMagenta = 0.f;
-    float mixerPurple = 0.f;
     int algm = 0;
 
     if     (params->blackwhite.method == "Desaturation") {
@@ -2135,7 +2116,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     float gamvalr = 125.f;
     float gamvalg = 125.f;
     float gamvalb = 125.f;
-    bool computeMixerAuto = false;
 
     if (bwrgam < 0) {
         gamvalr = 100.f;
@@ -2586,40 +2566,10 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
         int tH = working->getHeight();
 
         if (algm == 2) { //channel-mixer
-            //end auto chmix
-            if (computeMixerAuto) {
-                // auto channel-mixer
-                double nr = 0;
-                double ng = 0;
-                double nb = 0;
-
-#ifdef _OPENMP
-                #pragma omp parallel for schedule(dynamic, 16) reduction(+:nr,ng,nb)
-#endif
-
-                for (int i = 0; i < tH; i++) {
-                    for (int j = 0; j < tW; j++) {
-                        nr += tmpImage->r (i, j);
-                        ng += tmpImage->g (i, j);
-                        nb += tmpImage->b (i, j);
-                    }
-                }
-
-                double srgb = nr + ng + nb;
-                double knr = srgb / nr;
-                double kng = srgb / ng;
-                double knb = srgb / nb;
-                double sk = knr + kng + knb;
-                autor = (float) (100.0 * knr / sk);
-                autog = (float) (100.0 * kng / sk);
-                autob = (float) (100.0 * knb / sk);
-
-            }
-
             float filcor;
+            double rrm, ggm, bbm;
             Color::computeBWMixerConstants (params->blackwhite.setting, params->blackwhite.filter, "", filcor,
-                                            bwr, bwg, bwb, mixerOrange, mixerYellow, mixerCyan, mixerPurple, mixerMagenta,
-                                            false, complem, kcorec, rrm, ggm, bbm);
+                                            bwr, bwg, bwb, kcorec, rrm, ggm, bbm);
 
 #ifdef _OPENMP
             #pragma omp parallel for schedule(dynamic, 16)

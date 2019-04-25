@@ -1295,11 +1295,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     CurveFactory::RGBCurve (params.rgbCurves.gcurve, gCurve, 16);
     CurveFactory::RGBCurve (params.rgbCurves.bcurve, bCurve, 16);
 
-    double rrm, ggm, bbm;
-    float autor, autog, autob;
-
-    autor = autog = autob = -9000.f; // This will ask to compute the "auto" values for the B&W tool
-
     LabImage* labView = new LabImage (fw, fh);
     DCPProfile *dcpProf = nullptr;
     DCPProfile::ApplyState as;
@@ -1315,7 +1310,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     ipf.setDCPProfile(dcpProf, as);
 
     LUTu histToneCurve;
-    ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
+    ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, expcomp, hlcompr, hlcomprthresh);
 
     // freeing up some memory
     customToneCurve1.Reset();

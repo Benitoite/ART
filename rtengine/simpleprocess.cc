@@ -438,21 +438,13 @@ private:
 
         labView = new LabImage (fw, fh);
 
-        double rrm, ggm, bbm;
-        float autor, autog, autob;
-
-        autor = -9000.f; // This will ask to compute the "auto" values for the B&W tool (have to be inferior to -5000)
         DCPProfile::ApplyState as;
         DCPProfile *dcpProf = imgsrc->getDCP (params.icm, as);
 
         LUTu histToneCurve;
 
         ipf.setDCPProfile(dcpProf, as);
-        ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, customToneCurvebw1, customToneCurvebw2, rrm, ggm, bbm, autor, autog, autob, expcomp, hlcompr, hlcomprthresh, histToneCurve);
-
-        if (settings->verbose) {
-            printf ("Output image / Auto B&W coefs:   R=%.2f   G=%.2f   B=%.2f\n", autor, autog, autob);
-        }
+        ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, expcomp, hlcompr, hlcomprthresh);
 
         // if clut was used and size of clut cache == 1 we free the memory used by the clutstore (default clut cache size = 1 for 32 bit OS)
         if ( params.filmSimulation.enabled && !params.filmSimulation.clutFilename.empty() && options.clutCacheSize == 1) {

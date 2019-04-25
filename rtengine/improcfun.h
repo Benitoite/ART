@@ -81,12 +81,10 @@ public:
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
     void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
-                 const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob, LUTu &histToneCurve);
+                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2);
     void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
-                 const ToneCurve & customToneCurvebw1, const ToneCurve & customToneCurvebw2, double &rrm, double &ggm, double &bbm, float &autor, float &autog, float &autob,
-                 double expcomp, int hlcompr, int hlcomprthresh, LUTu &histToneCurve);
+                 int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
+                 double expcomp, int hlcompr, int hlcomprthresh);
     
     void ciecam_02float(CieImage* ncie, float adap, int pW, int pwb, LabImage* lab, const ProcParams* params,
                         const ColorAppearance & customColCurve1, const ColorAppearance & customColCurve, const ColorAppearance & customColCurve3,

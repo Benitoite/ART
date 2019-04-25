@@ -343,8 +343,7 @@ void Crop::update(int todo)
         LUTu histToneCurve;
         parent->ipf.rgbProc (workingCrop, laboCrop, parent->hltonecurve, parent->shtonecurve, parent->tonecurve, 
                             params.toneCurve.saturation, parent->rCurve, parent->gCurve, parent->bCurve, 
-                            parent->customToneCurve1, parent->customToneCurve2, parent->beforeToneCurveBW, parent->afterToneCurveBW, rrm, ggm, bbm,
-                            parent->bwAutoR, parent->bwAutoG, parent->bwAutoB, histToneCurve);
+                            parent->customToneCurve1, parent->customToneCurve2);
         
         if (workingCrop != baseCrop) {
             delete workingCrop;
