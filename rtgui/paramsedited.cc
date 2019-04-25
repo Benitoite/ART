@@ -337,15 +337,9 @@ void ParamsEdited::set(bool v)
     chmixer.blue[1] = v;
     chmixer.blue[2] = v;
     blackwhite.enabled   = v;
-    blackwhite.enabledcc   = v;
     blackwhite.mixerRed   = v;
-    blackwhite.mixerOrange   = v;
-    blackwhite.mixerYellow   = v;
     blackwhite.mixerGreen   = v;
-    blackwhite.mixerCyan   = v;
     blackwhite.mixerBlue   = v;
-    blackwhite.mixerMagenta   = v;
-    blackwhite.mixerPurple   = v;
     blackwhite.gammaRed   = v;
     blackwhite.gammaGreen   = v;
     blackwhite.gammaBlue   = v;
@@ -353,13 +347,6 @@ void ParamsEdited::set(bool v)
     blackwhite.setting   = v;
     blackwhite.method   = v;
     blackwhite.luminanceCurve = v;
-    blackwhite.beforeCurve      = v;
-    blackwhite.beforeCurveMode  = v;
-    blackwhite.afterCurve      = v;
-    blackwhite.afterCurveMode  = v;
-    blackwhite.autoc    = v;
-    blackwhite.algo    = v;
-
 
     resize.scale     = v;
     resize.appliesTo = v;
@@ -891,16 +878,10 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         chmixer.blue[0] = chmixer.blue[0] && p.chmixer.blue[0] == other.chmixer.blue[0];
         chmixer.blue[1] = chmixer.blue[1] && p.chmixer.blue[1] == other.chmixer.blue[1];
         chmixer.blue[2] = chmixer.blue[2] && p.chmixer.blue[2] == other.chmixer.blue[2];
-        blackwhite.enabledcc = blackwhite.enabledcc && p.blackwhite.enabledcc == other.blackwhite.enabledcc;
         blackwhite.enabled = blackwhite.enabled && p.blackwhite.enabled == other.blackwhite.enabled;
         blackwhite.mixerRed = blackwhite.mixerRed && p.blackwhite.mixerRed == other.blackwhite.mixerRed;
-        blackwhite.mixerOrange = blackwhite.mixerOrange && p.blackwhite.mixerOrange == other.blackwhite.mixerOrange;
-        blackwhite.mixerYellow = blackwhite.mixerYellow && p.blackwhite.mixerYellow == other.blackwhite.mixerYellow;
         blackwhite.mixerGreen = blackwhite.mixerGreen && p.blackwhite.mixerGreen == other.blackwhite.mixerGreen;
-        blackwhite.mixerCyan = blackwhite.mixerCyan && p.blackwhite.mixerCyan == other.blackwhite.mixerCyan;
         blackwhite.mixerBlue = blackwhite.mixerBlue && p.blackwhite.mixerBlue == other.blackwhite.mixerBlue;
-        blackwhite.mixerMagenta = blackwhite.mixerMagenta && p.blackwhite.mixerMagenta == other.blackwhite.mixerMagenta;
-        blackwhite.mixerPurple = blackwhite.mixerPurple && p.blackwhite.mixerPurple == other.blackwhite.mixerPurple;
         blackwhite.gammaRed = blackwhite.gammaRed && p.blackwhite.gammaRed == other.blackwhite.gammaRed;
         blackwhite.gammaGreen = blackwhite.gammaGreen && p.blackwhite.gammaGreen == other.blackwhite.gammaGreen;
         blackwhite.gammaBlue = blackwhite.gammaBlue && p.blackwhite.gammaBlue == other.blackwhite.gammaBlue;
@@ -908,12 +889,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         blackwhite.setting = blackwhite.setting && p.blackwhite.setting == other.blackwhite.setting;
         blackwhite.luminanceCurve = blackwhite.luminanceCurve && p.blackwhite.luminanceCurve == other.blackwhite.luminanceCurve;
         blackwhite.method = blackwhite.method && p.blackwhite.method == other.blackwhite.method;
-        blackwhite.beforeCurve = blackwhite.beforeCurve && p.blackwhite.beforeCurve == other.blackwhite.beforeCurve;
-        blackwhite.beforeCurveMode = blackwhite.beforeCurveMode && p.blackwhite.beforeCurveMode == other.blackwhite.beforeCurveMode;
-        blackwhite.afterCurve = blackwhite.afterCurve && p.blackwhite.afterCurve == other.blackwhite.afterCurve;
-        blackwhite.afterCurveMode = blackwhite.afterCurveMode && p.blackwhite.afterCurveMode == other.blackwhite.afterCurveMode;
-        blackwhite.autoc = blackwhite.autoc && p.blackwhite.autoc == other.blackwhite.autoc;
-        blackwhite.algo = blackwhite.algo && p.blackwhite.algo == other.blackwhite.algo;
         resize.scale = resize.scale && p.resize.scale == other.resize.scale;
         resize.appliesTo = resize.appliesTo && p.resize.appliesTo == other.resize.appliesTo;
         resize.method = resize.method && p.resize.method == other.resize.method;
@@ -2156,16 +2131,8 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.blackwhite.luminanceCurve  = mods.blackwhite.luminanceCurve;
     }
 
-    if (blackwhite.autoc) {
-        toEdit.blackwhite.autoc               = mods.blackwhite.autoc;
-    }
-
     if (blackwhite.setting) {
         toEdit.blackwhite.setting         = mods.blackwhite.setting;
-    }
-
-    if (blackwhite.enabledcc) {
-        toEdit.blackwhite.enabledcc           = mods.blackwhite.enabledcc;
     }
 
     if (blackwhite.filter) {
@@ -2176,32 +2143,12 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.blackwhite.mixerRed            = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerRed + mods.blackwhite.mixerRed : mods.blackwhite.mixerRed;
     }
 
-    if (blackwhite.mixerOrange) {
-        toEdit.blackwhite.mixerOrange         = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerOrange + mods.blackwhite.mixerOrange : mods.blackwhite.mixerOrange;
-    }
-
-    if (blackwhite.mixerYellow) {
-        toEdit.blackwhite.mixerYellow         = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerYellow + mods.blackwhite.mixerYellow : mods.blackwhite.mixerYellow;
-    }
-
     if (blackwhite.mixerGreen) {
         toEdit.blackwhite.mixerGreen      = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerGreen + mods.blackwhite.mixerGreen : mods.blackwhite.mixerGreen;
     }
 
-    if (blackwhite.mixerCyan) {
-        toEdit.blackwhite.mixerCyan       = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerCyan + mods.blackwhite.mixerCyan : mods.blackwhite.mixerCyan;
-    }
-
     if (blackwhite.mixerBlue) {
         toEdit.blackwhite.mixerBlue       = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerBlue + mods.blackwhite.mixerBlue : mods.blackwhite.mixerBlue;
-    }
-
-    if (blackwhite.mixerMagenta) {
-        toEdit.blackwhite.mixerMagenta        = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerMagenta + mods.blackwhite.mixerMagenta : mods.blackwhite.mixerMagenta;
-    }
-
-    if (blackwhite.mixerPurple) {
-        toEdit.blackwhite.mixerPurple         = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_HUES] ? toEdit.blackwhite.mixerPurple + mods.blackwhite.mixerPurple : mods.blackwhite.mixerPurple;
     }
 
     if (blackwhite.gammaRed) {
@@ -2214,26 +2161,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
 
     if (blackwhite.gammaBlue) {
         toEdit.blackwhite.gammaBlue       = dontforceSet && options.baBehav[ADDSET_BLACKWHITE_GAMMA] ? toEdit.blackwhite.gammaBlue + mods.blackwhite.gammaBlue : mods.blackwhite.gammaBlue;
-    }
-
-    if (blackwhite.beforeCurve) {
-        toEdit.blackwhite.beforeCurve     = mods.blackwhite.beforeCurve;
-    }
-
-    if (blackwhite.beforeCurveMode) {
-        toEdit.blackwhite.beforeCurveMode = mods.blackwhite.beforeCurveMode;
-    }
-
-    if (blackwhite.afterCurve) {
-        toEdit.blackwhite.afterCurve      = mods.blackwhite.afterCurve;
-    }
-
-    if (blackwhite.afterCurveMode) {
-        toEdit.blackwhite.afterCurveMode  = mods.blackwhite.afterCurveMode;
-    }
-
-    if (blackwhite.algo) {
-        toEdit.blackwhite.algo                = mods.blackwhite.algo;
     }
 
     if (resize.scale) {

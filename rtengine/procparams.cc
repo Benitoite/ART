@@ -1715,32 +1715,16 @@ bool ChannelMixerParams::operator !=(const ChannelMixerParams& other) const
 }
 
 BlackWhiteParams::BlackWhiteParams() :
-    beforeCurve{
-        DCT_Linear
-    },
-    beforeCurveMode(BlackWhiteParams::TcMode::STD_BW),
-    afterCurve{
-        DCT_Linear
-    },
-    afterCurveMode(BlackWhiteParams::TcMode::STD_BW),
-    algo("SP"),
+    enabled(false),
+    method("Desaturation"),
     luminanceCurve{
         FCT_Linear
     },
-    autoc(false),
-    enabledcc(true),
-    enabled(false),
     filter("None"),
     setting("RGB-Rel"),
-    method("Desaturation"),
     mixerRed(33),
-    mixerOrange(33),
-    mixerYellow(33),
     mixerGreen(33),
-    mixerCyan(33),
     mixerBlue(33),
-    mixerMagenta(33),
-    mixerPurple(33),
     gammaRed(0),
     gammaGreen(0),
     gammaBlue(0)
@@ -1750,26 +1734,14 @@ BlackWhiteParams::BlackWhiteParams() :
 bool BlackWhiteParams::operator ==(const BlackWhiteParams& other) const
 {
     return
-        beforeCurve == other.beforeCurve
-        && beforeCurveMode == other.beforeCurveMode
-        && afterCurve == other.afterCurve
-        && afterCurveMode == other.afterCurveMode
-        && algo == other.algo
+        enabled == other.enabled
+        && method == other.method
         && luminanceCurve == other.luminanceCurve
-        && autoc == other.autoc
-        && enabledcc == other.enabledcc
-        && enabled == other.enabled
         && filter == other.filter
         && setting == other.setting
-        && method == other.method
         && mixerRed == other.mixerRed
-        && mixerOrange == other.mixerOrange
-        && mixerYellow == other.mixerYellow
         && mixerGreen == other.mixerGreen
-        && mixerCyan == other.mixerCyan
         && mixerBlue == other.mixerBlue
-        && mixerMagenta == other.mixerMagenta
-        && mixerPurple == other.mixerPurple
         && gammaRed == other.gammaRed
         && gammaGreen == other.gammaGreen
         && gammaBlue == other.gammaBlue;
@@ -2897,51 +2869,15 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 // Black & White
         saveToKeyfile(!pedited || pedited->blackwhite.enabled, "Black & White", "Enabled", blackwhite.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.method, "Black & White", "Method", blackwhite.method, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.autoc, "Black & White", "Auto", blackwhite.autoc, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.enabledcc, "Black & White", "ComplementaryColors", blackwhite.enabledcc, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.setting, "Black & White", "Setting", blackwhite.setting, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.filter, "Black & White", "Filter", blackwhite.filter, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.mixerRed, "Black & White", "MixerRed", blackwhite.mixerRed, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.mixerOrange, "Black & White", "MixerOrange", blackwhite.mixerOrange, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.mixerYellow, "Black & White", "MixerYellow", blackwhite.mixerYellow, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.mixerGreen, "Black & White", "MixerGreen", blackwhite.mixerGreen, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.mixerCyan, "Black & White", "MixerCyan", blackwhite.mixerCyan, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.mixerBlue, "Black & White", "MixerBlue", blackwhite.mixerBlue, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.mixerMagenta, "Black & White", "MixerMagenta", blackwhite.mixerMagenta, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.mixerPurple, "Black & White", "MixerPurple", blackwhite.mixerPurple, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.gammaRed, "Black & White", "GammaRed", blackwhite.gammaRed, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.gammaGreen, "Black & White", "GammaGreen", blackwhite.gammaGreen, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.gammaBlue, "Black & White", "GammaBlue", blackwhite.gammaBlue, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.algo, "Black & White", "Algorithm", blackwhite.algo, keyFile);
         saveToKeyfile(!pedited || pedited->blackwhite.luminanceCurve, "Black & White", "LuminanceCurve", blackwhite.luminanceCurve, keyFile);
-        saveToKeyfile(
-            !pedited || pedited->blackwhite.beforeCurveMode,
-            "Black & White",
-            "BeforeCurveMode",
-            {
-                {BlackWhiteParams::TcMode::STD_BW, "Standard"},
-                {BlackWhiteParams::TcMode::FILMLIKE_BW, "FilmLike"},
-                {BlackWhiteParams::TcMode::SATANDVALBLENDING_BW, "SatAndValueBlending"},
-                {BlackWhiteParams::TcMode::WEIGHTEDSTD_BW, "WeightedStd"}
-
-            },
-            blackwhite.beforeCurveMode,
-            keyFile
-        );
-        saveToKeyfile(
-            !pedited || pedited->blackwhite.afterCurveMode,
-            "Black & White",
-            "AfterCurveMode",
-            {
-                {BlackWhiteParams::TcMode::STD_BW, "Standard"},
-                {BlackWhiteParams::TcMode::WEIGHTEDSTD_BW, "WeightedStd"}
-
-            },
-            blackwhite.afterCurveMode,
-            keyFile
-        );
-        saveToKeyfile(!pedited || pedited->blackwhite.beforeCurve, "Black & White", "BeforeCurve", blackwhite.beforeCurve, keyFile);
-        saveToKeyfile(!pedited || pedited->blackwhite.afterCurve, "Black & White", "AfterCurve", blackwhite.afterCurve, keyFile);
 
 // Luma curve
         saveToKeyfile(!pedited || pedited->labCurve.enabled, "Luminance Curve", "Enabled", labCurve.enabled, keyFile);
@@ -3682,54 +3618,15 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
         if (keyFile.has_group("Black & White")) {
             assignFromKeyfile(keyFile, "Black & White", "Enabled", pedited, blackwhite.enabled, pedited->blackwhite.enabled);
             assignFromKeyfile(keyFile, "Black & White", "Method", pedited, blackwhite.method, pedited->blackwhite.method);
-            assignFromKeyfile(keyFile, "Black & White", "Auto", pedited, blackwhite.autoc, pedited->blackwhite.autoc);
-            assignFromKeyfile(keyFile, "Black & White", "ComplementaryColors", pedited, blackwhite.enabledcc, pedited->blackwhite.enabledcc);
             assignFromKeyfile(keyFile, "Black & White", "MixerRed", pedited, blackwhite.mixerRed, pedited->blackwhite.mixerRed);
-            assignFromKeyfile(keyFile, "Black & White", "MixerOrange", pedited, blackwhite.mixerOrange, pedited->blackwhite.mixerOrange);
-            assignFromKeyfile(keyFile, "Black & White", "MixerYellow", pedited, blackwhite.mixerYellow, pedited->blackwhite.mixerYellow);
             assignFromKeyfile(keyFile, "Black & White", "MixerGreen", pedited, blackwhite.mixerGreen, pedited->blackwhite.mixerGreen);
-            assignFromKeyfile(keyFile, "Black & White", "MixerCyan", pedited, blackwhite.mixerCyan, pedited->blackwhite.mixerCyan);
             assignFromKeyfile(keyFile, "Black & White", "MixerBlue", pedited, blackwhite.mixerBlue, pedited->blackwhite.mixerBlue);
-            assignFromKeyfile(keyFile, "Black & White", "MixerMagenta", pedited, blackwhite.mixerMagenta, pedited->blackwhite.mixerMagenta);
-            assignFromKeyfile(keyFile, "Black & White", "MixerPurple", pedited, blackwhite.mixerPurple, pedited->blackwhite.mixerPurple);
             assignFromKeyfile(keyFile, "Black & White", "GammaRed", pedited, blackwhite.gammaRed, pedited->blackwhite.gammaRed);
             assignFromKeyfile(keyFile, "Black & White", "GammaGreen", pedited, blackwhite.gammaGreen, pedited->blackwhite.gammaGreen);
             assignFromKeyfile(keyFile, "Black & White", "GammaBlue", pedited, blackwhite.gammaBlue, pedited->blackwhite.gammaBlue);
             assignFromKeyfile(keyFile, "Black & White", "Filter", pedited, blackwhite.filter, pedited->blackwhite.filter);
             assignFromKeyfile(keyFile, "Black & White", "Setting", pedited, blackwhite.setting, pedited->blackwhite.setting);
             assignFromKeyfile(keyFile, "Black & White", "LuminanceCurve", pedited, blackwhite.luminanceCurve, pedited->blackwhite.luminanceCurve);
-
-            assignFromKeyfile(keyFile, "Black & White", "BeforeCurve", pedited, blackwhite.beforeCurve, pedited->blackwhite.beforeCurve);
-
-            assignFromKeyfile(keyFile, "Black & White", "Algorithm", pedited, blackwhite.algo, pedited->blackwhite.algo);
-            assignFromKeyfile(
-                keyFile,
-                "Black & White",
-                "BeforeCurveMode",
-                pedited,
-                {
-                    {"Standard", BlackWhiteParams::TcMode::STD_BW},
-                    {"FilmLike", BlackWhiteParams::TcMode::FILMLIKE_BW},
-                    {"SatAndValueBlending", BlackWhiteParams::TcMode::SATANDVALBLENDING_BW},
-                    {"WeightedStd", BlackWhiteParams::TcMode::WEIGHTEDSTD_BW}
-                },
-                blackwhite.beforeCurveMode,
-                pedited->blackwhite.beforeCurveMode
-            );
-
-            assignFromKeyfile(keyFile, "Black & White", "AfterCurve", pedited, blackwhite.afterCurve, pedited->blackwhite.afterCurve);
-            assignFromKeyfile(
-                keyFile,
-                "Black & White",
-                "AfterCurveMode",
-                pedited,
-                {
-                    {"Standard", BlackWhiteParams::TcMode::STD_BW},
-                    {"WeightedStd", BlackWhiteParams::TcMode::WEIGHTEDSTD_BW}
-                },
-                blackwhite.afterCurveMode,
-                pedited->blackwhite.afterCurveMode
-            );
         }
 
         if (false /* ALB */ && keyFile.has_group("Retinex")) {

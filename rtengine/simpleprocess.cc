@@ -438,10 +438,6 @@ private:
 
         labView = new LabImage (fw, fh);
 
-        if (params.blackwhite.enabled) {
-            CurveFactory::curveBW (params.blackwhite.beforeCurve, params.blackwhite.afterCurve, hist16, dummy, customToneCurvebw1, customToneCurvebw2, 1);
-        }
-
         double rrm, ggm, bbm;
         float autor, autog, autob;
 

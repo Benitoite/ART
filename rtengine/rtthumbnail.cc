@@ -1295,10 +1295,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     CurveFactory::RGBCurve (params.rgbCurves.gcurve, gCurve, 16);
     CurveFactory::RGBCurve (params.rgbCurves.bcurve, bCurve, 16);
 
-    if (params.blackwhite.enabled) {
-        CurveFactory::curveBW (params.blackwhite.beforeCurve, params.blackwhite.afterCurve, hist16, dummy, customToneCurvebw1, customToneCurvebw2, 16);
-    }
-
     double rrm, ggm, bbm;
     float autor, autog, autob;
 

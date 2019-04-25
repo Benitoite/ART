@@ -540,10 +540,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
             opautili = false;
     
-            if (params.blackwhite.enabled) {
-                CurveFactory::curveBW(params.blackwhite.beforeCurve, params.blackwhite.afterCurve, vhist16bw, histToneCurveBW, beforeToneCurveBW, afterToneCurveBW, 1);
-            }
-    
             // if it's just crop we just need the histogram, no image updates
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
@@ -558,13 +554,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.rgbProc (oprevi, oprevl, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
                             rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, beforeToneCurveBW, afterToneCurveBW, rrm, ggm, bbm, bwAutoR, bwAutoG, bwAutoB, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, histToneCurve);
     
-                if (params.blackwhite.enabled && params.blackwhite.autoc && abwListener) {
-                    if (settings->verbose) {
-                        printf("ImProcCoordinator / Auto B&W coefs:   R=%.2f   G=%.2f   B=%.2f\n", bwAutoR, bwAutoG, bwAutoB);
-                    }
-    
-                    abwListener->BWChanged((float) rrm, (float) ggm, (float) bbm);
-                }    
             }
     
             // compute L channel histogram

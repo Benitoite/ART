@@ -32,7 +32,6 @@ class BlackWhite final :
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
-    public rtengine::AutoBWListener,
     public CurveListener,
     public ColorProvider
 {
@@ -48,7 +47,6 @@ public:
     void autoOpenCurve   () override;
     void setEditProvider (EditDataProvider *provider) override;
 
-    void autoch_toggled  ();
     void neutral_pressed ();
 
     void updateRGBLabel      ();
@@ -56,32 +54,20 @@ public:
     void adjusterAutoToggled (Adjuster* a, bool newval) override;
     void setAdjusterBehavior (bool bwadd, bool bwgadd);
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    void enabledcc_toggled   ();
     void enabledChanged      () override;
     void methodChanged       ();
     void filterChanged       ();
     void settingChanged      ();
     void colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
-    void BWChanged           (double redbw, double greenbw, double bluebw) override;
-    bool BWComputed_         ();
-    void curveChanged        (CurveEditor* ce) override;
-    void curveMode1Changed   ();
-    bool curveMode1Changed_  ();
-    void curveMode1Changed2  ();
-    bool curveMode1Changed2_ ();
-    void algoChanged         ();
 
     Glib::ustring getSettingString ();
     Glib::ustring getFilterString  ();
-    Glib::ustring getalgoString  ();
 
 private:
     void showLuminance();
     void hideLuminance();
     void showFilter();
     void hideFilter();
-    void showEnabledCC();
-    void hideEnabledCC();
     void showMixer(int nChannels, bool RGBIsSensitive = true);
     void hideMixer();
     void showGamma();
@@ -90,20 +76,8 @@ private:
     FlatCurveEditor*     luminanceCurve;
     Gtk::HSeparator*     luminanceSep;
     CurveEditorGroup*    luminanceCEG;
-    CurveEditorGroup*    beforeCurveCEG;
-    DiagonalCurveEditor* beforeCurve;
-    MyComboBoxText*      beforeCurveMode;
-    CurveEditorGroup*    afterCurveCEG;
-    DiagonalCurveEditor* afterCurve;
-    MyComboBoxText*      afterCurveMode;
-    Gtk::ToggleButton*   autoch;
-    Gtk::HBox*           autoHBox;
     Gtk::Button*         neutral;
     Gtk::Label*          RGBLabels;
-    MyComboBoxText*      algo;
-    sigc::connection     algoconn;
-    Gtk::Label*          alLabel;
-    Gtk::HBox*           algoHBox;
 
     Adjuster *mixerRed;
     Adjuster *mixerGreen;
@@ -111,11 +85,6 @@ private:
     Adjuster *gammaRed;
     Adjuster *gammaGreen;
     Adjuster *gammaBlue;
-    Adjuster *mixerOrange;
-    Adjuster *mixerYellow;
-    Adjuster *mixerCyan;
-    Adjuster *mixerMagenta;
-    Adjuster *mixerPurple;
     MyComboBoxText*   method;
     sigc::connection  methodconn;
     Gtk::HBox*        filterHBox;

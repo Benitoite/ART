@@ -255,9 +255,9 @@ void BatchToolPanelCoordinator::initSession ()
             if (options.baBehav[ADDSET_SHARPENMICRO_UNIFORMITY]) { pparams.sharpenMicro.uniformity = 0; }
             if (options.baBehav[ADDSET_CHMIXER]) for (int i = 0; i < 3; i++) { pparams.chmixer.red[i] = pparams.chmixer.green[i] = pparams.chmixer.blue[i] = 0; }
             if (options.baBehav[ADDSET_BLACKWHITE_HUES]) {
-                pparams.blackwhite.mixerRed = pparams.blackwhite.mixerOrange = pparams.blackwhite.mixerYellow =
-                pparams.blackwhite.mixerGreen = pparams.blackwhite.mixerCyan = pparams.blackwhite.mixerBlue =
-                pparams.blackwhite.mixerMagenta = pparams.blackwhite.mixerPurple = 0;
+                pparams.blackwhite.mixerRed = 
+                pparams.blackwhite.mixerGreen =
+                pparams.blackwhite.mixerBlue = 0;
             }
             if (options.baBehav[ADDSET_BLACKWHITE_GAMMA]) { pparams.blackwhite.gammaRed = pparams.blackwhite.gammaGreen = pparams.blackwhite.gammaBlue = 0; }
             //if (options.baBehav[ADDSET_LD_EDGETOLERANCE])  pparams.lumaDenoise.edgetolerance = 0;

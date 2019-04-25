@@ -2094,12 +2094,8 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     const float hlrange = 65536.0 - shoulder;
     const bool isProPhoto = (params->icm.workingProfile == "ProPhoto");
     bool highlight = params->toneCurve.hrenabled;//Get the value if "highlight reconstruction" is activated
-    // extracting datas from 'params' to avoid cache flush (to be confirmed)
-    BlackWhiteParams::TcMode beforeCurveMode = params->blackwhite.beforeCurveMode;
-    BlackWhiteParams::TcMode afterCurveMode = params->blackwhite.afterCurveMode;
 
-    bool hasToneCurvebw1 = bool (customToneCurvebw1);
-    bool hasToneCurvebw2 = bool (customToneCurvebw2);
+    bool hasToneCurvebw2 = false;
 
     float chMixRR = float (params->chmixer.red[0])/10.f;
     float chMixRG = float (params->chmixer.red[1])/10.f;
@@ -2112,18 +2108,18 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     float chMixBB = float (params->chmixer.blue[2])/10.f;
 
     bool blackwhite = params->blackwhite.enabled;
-    bool complem = params->blackwhite.enabledcc;
+    bool complem = false;
     float bwr = float (params->blackwhite.mixerRed);
     float bwg = float (params->blackwhite.mixerGreen);
     float bwb = float (params->blackwhite.mixerBlue);
     float bwrgam = float (params->blackwhite.gammaRed);
     float bwggam = float (params->blackwhite.gammaGreen);
     float bwbgam = float (params->blackwhite.gammaBlue);
-    float mixerOrange = float (params->blackwhite.mixerOrange);
-    float mixerYellow = float (params->blackwhite.mixerYellow);
-    float mixerCyan = float (params->blackwhite.mixerCyan);
-    float mixerMagenta = float (params->blackwhite.mixerMagenta);
-    float mixerPurple = float (params->blackwhite.mixerPurple);
+    float mixerOrange = 0.f;
+    float mixerYellow = 0.f;
+    float mixerCyan = 0.f;
+    float mixerMagenta = 0.f;
+    float mixerPurple = 0.f;
     int algm = 0;
 
     if     (params->blackwhite.method == "Desaturation") {
@@ -2139,7 +2135,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
     float gamvalr = 125.f;
     float gamvalg = 125.f;
     float gamvalb = 125.f;
-    bool computeMixerAuto = params->blackwhite.autoc && (autor < -5000.f);
+    bool computeMixerAuto = false;
 
     if (bwrgam < 0) {
         gamvalr = 100.f;
@@ -2393,9 +2389,7 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                 }
 
                 // filling the pipette buffer
-                if (editID == EUID_BlackWhiteBeforeCurve) {
-                    fillEditFloat(editIFloatTmpR, editIFloatTmpG, editIFloatTmpB, rtemp, gtemp, btemp, istart, tH, jstart, tW, TS);
-                } else if (editID == EUID_BlackWhiteLuminance) {
+                if (editID == EUID_BlackWhiteLuminance) {
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
                         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
                             float X, Y, Z, L, aa, bb;
@@ -2413,45 +2407,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 
                 //black and white
                 if (blackwhite) {
-                    if (hasToneCurvebw1) {
-                        if (beforeCurveMode == BlackWhiteParams::TcMode::STD_BW) { // Standard
-                            for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                                for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                                    const StandardToneCurve& userToneCurvebw = static_cast<const StandardToneCurve&> (customToneCurvebw1);
-                                    userToneCurvebw.Apply (rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj]);
-                                }
-                            }
-                        } else if (beforeCurveMode == BlackWhiteParams::TcMode::FILMLIKE_BW) { // Adobe like
-                            for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                                for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                                    const AdobeToneCurve& userToneCurvebw = static_cast<const AdobeToneCurve&> (customToneCurvebw1);
-                                    userToneCurvebw.Apply (rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj]);
-                                }
-                            }
-                        } else if (beforeCurveMode == BlackWhiteParams::TcMode::SATANDVALBLENDING_BW) { // apply the curve on the saturation and value channels
-                            for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                                for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                                    const SatAndValueBlendingToneCurve& userToneCurvebw = static_cast<const SatAndValueBlendingToneCurve&> (customToneCurvebw1);
-                                    // rtemp[ti * TS + tj] = CLIP<float> (rtemp[ti * TS + tj]);
-                                    // gtemp[ti * TS + tj] = CLIP<float> (gtemp[ti * TS + tj]);
-                                    // btemp[ti * TS + tj] = CLIP<float> (btemp[ti * TS + tj]);
-                                    userToneCurvebw.Apply (rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj]);
-                                }
-                            }
-                        } else if (beforeCurveMode == BlackWhiteParams::TcMode::WEIGHTEDSTD_BW) { // apply the curve to the rgb channels, weighted
-                            for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                                for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-                                    const WeightedStdToneCurve& userToneCurvebw = static_cast<const WeightedStdToneCurve&> (customToneCurvebw1);
-                                    // rtemp[ti * TS + tj] = CLIP<float> (rtemp[ti * TS + tj]);
-                                    // gtemp[ti * TS + tj] = CLIP<float> (gtemp[ti * TS + tj]);
-                                    // btemp[ti * TS + tj] = CLIP<float> (btemp[ti * TS + tj]);
-
-                                    userToneCurvebw.Apply (rtemp[ti * TS + tj], gtemp[ti * TS + tj], btemp[ti * TS + tj]);
-                                }
-                            }
-                        }
-                    }
-
                     if (algm == 0) { //lightness
                         for (int i = istart, ti = 0; i < tH; i++, ti++) {
                             for (int j = jstart, tj = 0; j < tW; j++, tj++) {
@@ -2661,22 +2616,10 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
 
             }
 
-            if (params->blackwhite.autoc) {
-                // auto channel-mixer
-                bwr = autor;
-                bwg = autog;
-                bwb = autob;
-                mixerOrange  = 33.f;
-                mixerYellow  = 33.f;
-                mixerMagenta = 33.f;
-                mixerPurple  = 33.f;
-                mixerCyan    = 33.f;
-            }
-
             float filcor;
-            Color::computeBWMixerConstants (params->blackwhite.setting, params->blackwhite.filter, params->blackwhite.algo, filcor,
+            Color::computeBWMixerConstants (params->blackwhite.setting, params->blackwhite.filter, "", filcor,
                                             bwr, bwg, bwb, mixerOrange, mixerYellow, mixerCyan, mixerPurple, mixerMagenta,
-                                            params->blackwhite.autoc, complem, kcorec, rrm, ggm, bbm);
+                                            false, complem, kcorec, rrm, ggm, bbm);
 
 #ifdef _OPENMP
             #pragma omp parallel for schedule(dynamic, 16)
@@ -2706,50 +2649,6 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                 }
 
 #endif
-            }
-        }
-
-        if (editID == EUID_BlackWhiteAfterCurve) {
-#ifdef _OPENMP
-            #pragma omp parallel for schedule(dynamic, 5)
-#endif
-
-            for (int i = 0; i < tH; i++) {
-                for (int j = 0; j < tW; j++) {
-                    editWhatever->v (i, j) = Color::gamma2curve[tmpImage->r (i, j)] / 65535.f; // assuming that r=g=b
-                }
-            }
-        }
-
-        if (hasToneCurvebw2) {
-
-            if (afterCurveMode == BlackWhiteParams::TcMode::STD_BW) { // Standard
-#ifdef _OPENMP
-                #pragma omp parallel for schedule(dynamic, 5)
-#endif
-
-                for (int i = 0; i < tH; i++) {
-                    for (int j = 0; j < tW; j++) {
-                        const StandardToneCurve& userToneCurve = static_cast<const StandardToneCurve&> (customToneCurvebw2);
-                        userToneCurve.Apply (tmpImage->r (i, j), tmpImage->g (i, j), tmpImage->b (i, j));
-                    }
-                }
-            } else if (afterCurveMode == BlackWhiteParams::TcMode::WEIGHTEDSTD_BW) { // apply the curve to the rgb channels, weighted
-#ifdef _OPENMP
-                #pragma omp parallel for schedule(dynamic, 5)
-#endif
-
-                for (int i = 0; i < tH; i++) { //for ulterior usage if bw data modified
-                    for (int j = 0; j < tW; j++) {
-                        const WeightedStdToneCurve& userToneCurve = static_cast<const WeightedStdToneCurve&> (customToneCurvebw2);
-
-                        // tmpImage->r (i, j) = CLIP<float> (tmpImage->r (i, j));
-                        // tmpImage->g (i, j) = CLIP<float> (tmpImage->g (i, j));
-                        // tmpImage->b (i, j) = CLIP<float> (tmpImage->b (i, j));
-
-                        userToneCurve.Apply (tmpImage->r (i, j), tmpImage->g (i, j), tmpImage->b (i, j));
-                    }
-                }
             }
         }
 

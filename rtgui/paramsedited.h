@@ -515,30 +515,17 @@ class BlackWhiteParamsEdited
 {
 
 public:
-    bool enabledcc;
     bool enabled;
     bool method;
     bool filter;
     bool setting;
     bool mixerRed;
-    bool mixerOrange;
-    bool mixerYellow;
     bool mixerGreen;
-    bool mixerCyan;
     bool mixerBlue;
-    bool mixerMagenta;
-    bool mixerPurple;
     bool gammaRed;
     bool gammaGreen;
     bool gammaBlue;
     bool luminanceCurve;
-    bool beforeCurve;
-    bool beforeCurveMode;
-    bool afterCurve;
-    bool afterCurveMode;
-    bool autoc;
-    bool algo;
-
 };
 
 class CACorrParamsEdited

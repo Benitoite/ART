@@ -1006,34 +1006,15 @@ struct ChannelMixerParams {
 };
 
 struct BlackWhiteParams {
-    enum class TcMode {
-        STD_BW,               // Standard modes, the curve is applied on all component individually
-        WEIGHTEDSTD_BW,       // Weighted standard mode
-        FILMLIKE_BW,          // Film-like mode, as defined in Adobe's reference code
-        SATANDVALBLENDING_BW  // Modify the Saturation and Value channel
-    };
-
-    std::vector<double> beforeCurve;
-    TcMode beforeCurveMode;
-    std::vector<double> afterCurve;
-    TcMode afterCurveMode;
-    Glib::ustring algo;
+    bool enabled;
+    Glib::ustring method;
 
     std::vector<double> luminanceCurve;
-    bool autoc;
-    bool enabledcc;
-    bool enabled;
     Glib::ustring filter;
     Glib::ustring setting;
-    Glib::ustring method;
     int mixerRed;
-    int mixerOrange;
-    int mixerYellow;
     int mixerGreen;
-    int mixerCyan;
     int mixerBlue;
-    int mixerMagenta;
-    int mixerPurple;
     int gammaRed;
     int gammaGreen;
     int gammaBlue;
