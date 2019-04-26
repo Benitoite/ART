@@ -1092,10 +1092,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         }
     }
     std::string camName = metadata->getCamera(imgNum);
-    float shutter = metadata->getShutterSpeed(imgNum);
-    float fnumber = metadata->getFNumber(imgNum);
-    float iso = metadata->getISOSpeed(imgNum);
-    float fcomp = metadata->getExpComp(imgNum);
     
     // check if the WB's equalizer value has changed
     if (wbEqual < (params.wb.equal - 5e-4) || wbEqual > (params.wb.equal + 5e-4) || wbTempBias < (params.wb.tempBias - 5e-4) || wbTempBias > (params.wb.tempBias + 5e-4)) {

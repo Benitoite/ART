@@ -1883,7 +1883,3 @@ bool LensProfParamsEdited::isUnchanged() const
     return lcMode && lcpFile && useVign && lfLens;
 }
 
-bool RetinexParamsEdited::isUnchanged() const
-{
-    return enabled && retinexcolorspace && gammaretinex && gam && slope;
-}
