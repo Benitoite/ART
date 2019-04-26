@@ -463,37 +463,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
         progress("Exposure curve & CIELAB conversion...", 100 * readyphase / numofphases);
     
-        if (todo &  (M_AUTOEXP | M_RGBCURVE)) {
-            if (params.icm.workingTRC == "Custom") { //exec TRC IN free
-                if (oprevi == orig_prev) {
-                    oprevi = new Imagefloat(pW, pH);
-                    orig_prev->copyData(oprevi);
-                }
-
-                const Glib::ustring profile = params.icm.workingProfile;
-    
-                if (profile == "sRGB" || profile == "Adobe RGB" || profile == "ProPhoto" || profile == "WideGamut" || profile == "BruceRGB" || profile == "Beta RGB" || profile == "BestRGB" || profile == "Rec2020" || profile == "ACESp0" || profile == "ACESp1") {
-                    const int cw = oprevi->getWidth();
-                    const int ch = oprevi->getHeight();
-                    // put gamma TRC to 1
-                    if(customTransformIn) {
-                        cmsDeleteTransform(customTransformIn);
-                        customTransformIn = nullptr;
-                    }
-                    ipf.workingtrc(oprevi, oprevi, cw, ch, -5, params.icm.workingProfile, 2.4, 12.92310, customTransformIn, true, false, true);
-                    //adjust TRC
-                    if(customTransformOut) {
-                        cmsDeleteTransform(customTransformOut);
-                        customTransformOut = nullptr;
-                    }
-                    ipf.workingtrc(oprevi, oprevi, cw, ch, 5, params.icm.workingProfile, params.icm.workingTRCGamma, params.icm.workingTRCSlope, customTransformOut, false, true, true);
-                }
-            }
-        }
-    
         if ((todo & M_RGBCURVE) || (todo & M_CROP)) {
-    //        if (hListener) oprevi->calcCroppedHistogram(params, scale, histCropped);
-    
             //complexCurve also calculated pre-curves histogram depending on crop
             CurveFactory::complexCurve(params.toneCurve.expcomp, params.toneCurve.black / 65535.0,
                                        params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh,

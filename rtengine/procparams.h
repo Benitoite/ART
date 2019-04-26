@@ -932,9 +932,6 @@ struct ColorManagementParams {
     int dcpIlluminant;
 
     Glib::ustring workingProfile;
-    Glib::ustring workingTRC;
-    double workingTRCGamma;
-    double workingTRCSlope;
 
     Glib::ustring outputProfile;
     RenderingIntent outputIntent;

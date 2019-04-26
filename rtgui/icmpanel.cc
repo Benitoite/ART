@@ -183,43 +183,6 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
 
     // wFrame->add(*wVBox);
 
-    //-----------------gamma TRC working
-
-    wTRCHBox = Gtk::manage(new Gtk::HBox());
-
-    Gtk::Label* wtrclab = Gtk::manage(new Gtk::Label(M("TP_ICM_WORKING_TRC")));
-
-    wTRCHBox->pack_start(*wtrclab, Gtk::PACK_SHRINK);
-    wTRC = Gtk::manage(new MyComboBoxText());
-    wTRCHBox->pack_start(*wTRC, Gtk::PACK_EXPAND_WIDGET);
-    // wProfVBox->pack_start(*wTRCHBox, Gtk::PACK_EXPAND_WIDGET);
-    wTRC->append(M("TP_ICM_WORKING_TRC_NONE"));
-    wTRC->append(M("TP_ICM_WORKING_TRC_CUSTOM"));
-
-    wTRC->set_active(0);
-    wTRC->set_tooltip_text(M("TP_ICM_WORKING_TRC_TOOLTIP"));
-
-
-    wGamma = Gtk::manage(new Adjuster(M("TP_ICM_WORKING_TRC_GAMMA"), 0.40, 15.0, 0.001, 2.4));
-    wSlope = Gtk::manage(new Adjuster(M("TP_ICM_WORKING_TRC_SLOPE"), 0., 150., 0.01, 12.92310));
-    // wProfVBox->pack_start(*wGamma, Gtk::PACK_SHRINK);
-    // wGamma->show();
-
-    // wProfVBox->pack_start(*wSlope, Gtk::PACK_SHRINK);
-    // wSlope->show();
-
-
-    wGamma->setAdjusterListener(this);
-    wSlope->setAdjusterListener(this);
-
-    if (wGamma->delay < options.adjusterMaxDelay) {
-        wGamma->delay = options.adjusterMaxDelay;
-    }
-
-    if (wSlope->delay < options.adjusterMaxDelay) {
-        wSlope->delay = options.adjusterMaxDelay;
-    }
-
     wFrame->add(*wProfVBox);
 
     pack_start(*wFrame, Gtk::PACK_EXPAND_WIDGET);
@@ -307,7 +270,6 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
     oprofnamesconn = oProfNames->signal_changed().connect(sigc::mem_fun(*this, &ICMPanel::opChanged));
     orendintentconn = oRendIntent->signal_changed().connect(sigc::mem_fun(*this, &ICMPanel::oiChanged));
     dcpillconn = dcpIll->signal_changed().connect(sigc::mem_fun(*this, &ICMPanel::dcpIlluminantChanged));
-    wtrcconn = wTRC->signal_changed().connect(sigc::mem_fun(*this, &ICMPanel::wtrcinChanged));
 
     obpcconn = obpc->signal_toggled().connect(sigc::mem_fun(*this, &ICMPanel::oBPCChanged));
     tcurveconn = ckbToneCurve->signal_toggled().connect(sigc::mem_fun(*this, &ICMPanel::toneCurveChanged));
@@ -528,14 +490,6 @@ void ICMPanel::read(const ProcParams* pp, const ParamsEdited* pedited)
 
     wProfNames->set_active_text(pp->icm.workingProfile);
 
-    if (pp->icm.workingTRC == "none") {
-        wTRC->set_active(0);
-    } else if (pp->icm.workingTRC == "Custom") {
-        wTRC->set_active(1);
-    }
-
-    wtrcinChanged();
-
     if (pp->icm.outputProfile == ColorManagementParams::NoICMString) {
         oProfNames->set_active_text(M("TP_ICM_NOICM"));
     } else {
@@ -557,9 +511,6 @@ void ICMPanel::read(const ProcParams* pp, const ParamsEdited* pedited)
     lastApplyBaselineExposureOffset = pp->icm.applyBaselineExposureOffset;
     ckbApplyHueSatMap->set_active(pp->icm.applyHueSatMap);
     lastApplyHueSatMap = pp->icm.applyHueSatMap;
-
-    wGamma->setValue(pp->icm.workingTRCGamma);
-    wSlope->setValue(pp->icm.workingTRCSlope);
 
     if (pedited) {
         iunchanged->set_active(!pedited->icm.inputProfile);
@@ -584,14 +535,6 @@ void ICMPanel::read(const ProcParams* pp, const ParamsEdited* pedited)
         if (!pedited->icm.dcpIlluminant) {
             dcpIll->set_active_text(M("GENERAL_UNCHANGED"));
         }
-
-        if (!pedited->icm.workingTRC) {
-            wTRC->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-
-        wGamma->setEditedState(pedited->icm.workingTRCGamma ? Edited : UnEdited);
-        wSlope->setEditedState(pedited->icm.workingTRCSlope  ? Edited : UnEdited);
-
     }
 
     enableListener();
@@ -620,8 +563,6 @@ void ICMPanel::write(ProcParams* pp, ParamsEdited* pedited)
 
     pp->icm.workingProfile = wProfNames->get_active_text();
     pp->icm.dcpIlluminant = rtengine::max<int>(dcpIll->get_active_row_number(), 0);
-    pp->icm.workingTRC = wTRC->get_active_text();
-
     if (oProfNames->get_active_text() == M("TP_ICM_NOICM")) {
         pp->icm.outputProfile  = ColorManagementParams::NoICMString;
     } else {
@@ -636,19 +577,11 @@ void ICMPanel::write(ProcParams* pp, ParamsEdited* pedited)
         pp->icm.outputIntent  = rtengine::RI_RELATIVE;
     }
 
-    if (wTRC->get_active_row_number() == 0) {
-        pp->icm.workingTRC = "none";
-    } else if (wTRC->get_active_row_number() == 1) {
-        pp->icm.workingTRC = "Custom";
-    }
-
     pp->icm.toneCurve = ckbToneCurve->get_active();
     pp->icm.applyLookTable = ckbApplyLookTable->get_active();
     pp->icm.applyBaselineExposureOffset = ckbApplyBaselineExposureOffset->get_active();
     pp->icm.applyHueSatMap = ckbApplyHueSatMap->get_active();
     pp->icm.outputBPC = obpc->get_active();
-    pp->icm.workingTRCGamma = (double) wGamma->getValue();
-    pp->icm.workingTRCSlope = (double) wSlope->getValue();
     pp->toneCurve.fromHistMatching = false;
 
     if (pedited) {
@@ -662,40 +595,15 @@ void ICMPanel::write(ProcParams* pp, ParamsEdited* pedited)
         pedited->icm.applyLookTable = !ckbApplyLookTable->get_inconsistent();
         pedited->icm.applyBaselineExposureOffset = !ckbApplyBaselineExposureOffset->get_inconsistent();
         pedited->icm.applyHueSatMap = !ckbApplyHueSatMap->get_inconsistent();
-        pedited->icm.workingTRCGamma = wGamma->getEditedState();
-        pedited->icm.workingTRCSlope = wSlope->getEditedState();
-        pedited->icm.workingTRC = wTRC->get_active_text() != M("GENERAL_UNCHANGED");
     }
 }
 
 void ICMPanel::setDefaults(const ProcParams* defParams, const ParamsEdited* pedited)
 {
-    wGamma->setDefault(defParams->icm.workingTRCGamma);
-    wSlope->setDefault(defParams->icm.workingTRCSlope);
-
-    if (pedited) {
-        wGamma->setDefaultEditedState(pedited->icm.workingTRCGamma ? Edited : UnEdited);
-        wSlope->setDefaultEditedState(pedited->icm.workingTRCSlope ? Edited : UnEdited);
-
-    } else {
-        wGamma->setDefaultEditedState(Irrelevant);
-        wSlope->setDefaultEditedState(Irrelevant);
-
-    }
 }
 
 void ICMPanel::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
-        Glib::ustring costr2 = Glib::ustring::format(std::setw(3), std::fixed, std::setprecision(2), newval);
-
-        if (a == wGamma) {
-            listener->panelChanged(EvICMgamm, costr2);
-        } else if (a == wSlope) {
-            listener->panelChanged(EvICMslop, costr2);
-        }
-
-    }
 }
 
 void ICMPanel::adjusterAutoToggled(Adjuster* a, bool newval)
@@ -706,22 +614,6 @@ void ICMPanel::wpChanged()
 {
     if (listener) {
         listener->panelChanged(EvWProfile, wProfNames->get_active_text());
-    }
-}
-
-void ICMPanel::wtrcinChanged()
-{
-    if (wTRC->get_active_row_number() == 0) {
-        wGamma->set_sensitive(false);
-        wSlope->set_sensitive(false);
-
-    } else {
-        wGamma->set_sensitive(true);
-        wSlope->set_sensitive(true);
-    }
-
-    if (listener) {
-        listener->panelChanged(EvICMtrcinMethod, wTRC->get_active_text());
     }
 }
 
@@ -1032,9 +924,6 @@ void ICMPanel::setBatchMode(bool batchMode)
     oRendIntent->addEntry("template-24.png", M("GENERAL_UNCHANGED"));
     oRendIntent->show();
     wProfNames->append(M("GENERAL_UNCHANGED"));
-    wTRC->append(M("GENERAL_UNCHANGED"));
     dcpIll->append(M("GENERAL_UNCHANGED"));
-    wGamma->showEditedCB();
-    wSlope->showEditedCB();
 }
 

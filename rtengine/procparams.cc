@@ -1538,9 +1538,6 @@ ColorManagementParams::ColorManagementParams() :
     applyHueSatMap(true),
     dcpIlluminant(0),
     workingProfile("ProPhoto"),
-    workingTRC("none"),
-    workingTRCGamma(2.4),
-    workingTRCSlope(12.92310),
     outputProfile(options.rtSettings.srgb),
     outputIntent(RI_RELATIVE),
     outputBPC(true)
@@ -1557,9 +1554,6 @@ bool ColorManagementParams::operator ==(const ColorManagementParams& other) cons
         && applyHueSatMap == other.applyHueSatMap
         && dcpIlluminant == other.dcpIlluminant
         && workingProfile == other.workingProfile
-        && workingTRC == other.workingTRC
-        && workingTRCGamma == other.workingTRCGamma
-        && workingTRCSlope == other.workingTRCSlope
         && outputProfile == other.outputProfile
         && outputIntent == other.outputIntent
         && outputBPC == other.outputBPC;
@@ -2532,9 +2526,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->icm.applyHueSatMap, "Color Management", "ApplyHueSatMap", icm.applyHueSatMap, keyFile);
         saveToKeyfile(!pedited || pedited->icm.dcpIlluminant, "Color Management", "DCPIlluminant", icm.dcpIlluminant, keyFile);
         saveToKeyfile(!pedited || pedited->icm.workingProfile, "Color Management", "WorkingProfile", icm.workingProfile, keyFile);
-        saveToKeyfile(!pedited || pedited->icm.workingTRC, "Color Management", "WorkingTRC", icm.workingTRC, keyFile);
-        saveToKeyfile(!pedited || pedited->icm.workingTRCGamma, "Color Management", "WorkingTRCGamma", icm.workingTRCGamma, keyFile);
-        saveToKeyfile(!pedited || pedited->icm.workingTRCSlope, "Color Management", "WorkingTRCSlope", icm.workingTRCSlope, keyFile);
         saveToKeyfile(!pedited || pedited->icm.outputProfile, "Color Management", "OutputProfile", icm.outputProfile, keyFile);
         saveToKeyfile(
             !pedited || pedited->icm.outputIntent,
@@ -3469,9 +3460,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Color Management", "ApplyHueSatMap", pedited, icm.applyHueSatMap, pedited->icm.applyHueSatMap);
             assignFromKeyfile(keyFile, "Color Management", "DCPIlluminant", pedited, icm.dcpIlluminant, pedited->icm.dcpIlluminant);
             assignFromKeyfile(keyFile, "Color Management", "WorkingProfile", pedited, icm.workingProfile, pedited->icm.workingProfile);
-            assignFromKeyfile(keyFile, "Color Management", "WorkingTRC", pedited, icm.workingTRC, pedited->icm.workingTRC);
-            assignFromKeyfile(keyFile, "Color Management", "WorkingTRCGamma", pedited, icm.workingTRCGamma, pedited->icm.workingTRCGamma);
-            assignFromKeyfile(keyFile, "Color Management", "WorkingTRCSlope", pedited, icm.workingTRCSlope, pedited->icm.workingTRCSlope);
 
             assignFromKeyfile(keyFile, "Color Management", "OutputProfile", pedited, icm.outputProfile, pedited->icm.outputProfile);
             if (ppVersion < 341) {

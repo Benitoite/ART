@@ -278,9 +278,6 @@ void ParamsEdited::set(bool v)
     icm.outputProfile = v;
     icm.outputIntent = v;
     icm.outputBPC = v;
-    icm.workingTRCGamma = v;
-    icm.workingTRCSlope = v;
-    icm.workingTRC = v;
     raw.bayersensor.method = v;
     raw.bayersensor.border = v;
     raw.bayersensor.imageNum = v;
@@ -639,9 +636,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         icm.outputProfile = icm.outputProfile && p.icm.outputProfile == other.icm.outputProfile;
         icm.outputIntent = icm.outputIntent && p.icm.outputIntent == other.icm.outputIntent;
         icm.outputBPC = icm.outputBPC && p.icm.outputBPC == other.icm.outputBPC ;
-        icm.workingTRCGamma = icm.workingTRCGamma && p.icm.workingTRCGamma == other.icm.workingTRCGamma;
-        icm.workingTRCSlope = icm.workingTRCSlope && p.icm.workingTRCSlope == other.icm.workingTRCSlope;
-        icm.workingTRC = icm.workingTRC && p.icm.workingTRC == other.icm.workingTRC;
         raw.bayersensor.method = raw.bayersensor.method && p.raw.bayersensor.method == other.raw.bayersensor.method;
         raw.bayersensor.border = raw.bayersensor.border && p.raw.bayersensor.border == other.raw.bayersensor.border;
         raw.bayersensor.imageNum = raw.bayersensor.imageNum && p.raw.bayersensor.imageNum == other.raw.bayersensor.imageNum;
@@ -1535,18 +1529,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
 
     if (icm.outputBPC) {
         toEdit.icm.outputBPC = mods.icm.outputBPC;
-    }
-
-    if (icm.workingTRCGamma) {
-        toEdit.icm.workingTRCGamma = mods.icm.workingTRCGamma;
-    }
-
-    if (icm.workingTRCSlope) {
-        toEdit.icm.workingTRCSlope = mods.icm.workingTRCSlope;
-    }
-
-    if (icm.workingTRC) {
-        toEdit.icm.workingTRC = mods.icm.workingTRC;
     }
 
     if (raw.bayersensor.method) {

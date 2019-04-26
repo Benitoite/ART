@@ -45,9 +45,6 @@ protected:
     Gtk::Frame* dcpFrame;
     Gtk::Frame* coipFrame;
 
-    Adjuster* wGamma;
-    Adjuster* wSlope;
-
     Gtk::Label* labmga;
     Gtk::HBox* gabox;
 
@@ -80,7 +77,6 @@ private:
     rtengine::ProcEvent EvICMtrcinMethod;
 
     Gtk::VBox* iVBox;
-    Gtk::HBox* wTRCHBox;
 
     Gtk::CheckButton* obpc;
     Gtk::RadioButton* inone;
@@ -98,8 +94,6 @@ private:
     Gtk::CheckButton* ckbApplyHueSatMap;
     MyComboBoxText* wProfNames;
     sigc::connection wprofnamesconn;
-    MyComboBoxText* wTRC;
-    sigc::connection wtrcconn;
 
     MyComboBoxText* oProfNames;
     sigc::connection oprofnamesconn;

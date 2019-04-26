@@ -374,23 +374,7 @@ private:
         //ImProcFunctions ipf (&params, true);
         ImProcFunctions &ipf = * (ipf_p.get());
 
-        //gamma TRC working
-        if (params.icm.workingTRC == "Custom") { //exec TRC IN free
-            const Glib::ustring profile = params.icm.workingProfile;
-
-            if (profile == "sRGB" || profile == "Adobe RGB" || profile == "ProPhoto" || profile == "WideGamut" || profile == "BruceRGB" || profile == "Beta RGB" || profile == "BestRGB" || profile == "Rec2020" || profile == "ACESp0" || profile == "ACESp1") {
-                const int cw = baseImg->getWidth();
-                const int ch = baseImg->getHeight();
-                cmsHTRANSFORM dummy = nullptr;
-                // put gamma TRC to 1
-                ipf.workingtrc(baseImg, baseImg, cw, ch, -5, params.icm.workingProfile, 2.4, 12.92310, dummy, true, false, false);
-                //adjust TRC
-                ipf.workingtrc(baseImg, baseImg, cw, ch, 5, params.icm.workingProfile, params.icm.workingTRCGamma, params.icm.workingTRCSlope, dummy, false, true, false);
-            }
-        }
-
         // RGB processing
-
         curve1 (65536);
         curve2 (65536);
         curve (65536, 0);

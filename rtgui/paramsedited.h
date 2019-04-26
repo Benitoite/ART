@@ -429,9 +429,6 @@ public:
     bool dcpIlluminant;
 
     bool workingProfile;
-    bool workingTRC;
-    bool workingTRCGamma;
-    bool workingTRCSlope;
 
     bool outputProfile;
     bool outputIntent;
