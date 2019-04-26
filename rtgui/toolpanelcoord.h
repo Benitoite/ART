@@ -29,7 +29,6 @@
 #include "whitebalance.h"
 #include "coarsepanel.h"
 #include "tonecurve.h"
-#include "vibrance.h"
 #include "colorappearance.h"
 #include "shadowshighlights.h"
 #include "toneequalizer.h"
@@ -72,7 +71,6 @@
 #include "bayerrawexposure.h"
 #include "xtransrawexposure.h"
 #include "sharpenmicro.h"
-#include "sharpenedge.h"
 #include "rgbcurves.h"
 #include "filmsimulation.h"
 #include "prsharpening.h"
@@ -115,7 +113,6 @@ protected:
     PerspCorrection* perspective;
     CACorrection* cacorrection;
     ColorAppearance* colorappearance;
-    Vibrance* vibrance;
     ChMixer* chmixer;
     BlackWhite* blackwhite;
     Resize* resize;
@@ -131,7 +128,6 @@ protected:
     Denoise* denoise;
     EdgePreservingDecompositionUI *epd;
     Sharpening* sharpening;
-    SharpenEdge* sharpenEdge;
     SharpenMicro* sharpenMicro;
     LCurve* lcurve;
     RGBCurves* rgbcurves;

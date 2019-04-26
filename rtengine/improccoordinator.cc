@@ -543,14 +543,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             // if it's just crop we just need the histogram, no image updates
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
-                double rrm = 33.;
-                double ggm = 33.;
-                double bbm = 33.;
-    
-                // DCPProfile::ApplyState as;
-                // DCPProfile *dcpProf = imgsrc->getDCP(params.icm, as);
-                // ipf.setDCPProfile(dcpProf, as);
-    
                 ipf.rgbProc (oprevi, oprevl, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
                             rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh);
     
@@ -611,7 +603,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             histCCurve.clear();
             histLCurve.clear();
             ipf.chromiLuminanceCurve(pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
-            ipf.vibrance(oprevl);
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
@@ -622,60 +613,10 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
             readyphase++;
     
-            /* Issue 2785, disabled some 1:1 tools
-                    if (scale==1) {
-                        if((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)){
-                            progress ("Denoising luminance impulse...",100*readyphase/numofphases);
-                            ipf.impulsedenoise (nprevl);
-                            readyphase++;
-                        }
-                        if((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)){
-                            progress ("Defringing...",100*readyphase/numofphases);
-                            ipf.defringe (nprevl);
-                            readyphase++;
-                        }
-                        if (params.sharpenEdge.enabled) {
-                            progress ("Edge sharpening...",100*readyphase/numofphases);
-                            ipf.MLsharpen (nprevl);
-                            readyphase++;
-                        }
-                        if (params.sharpenMicro.enabled) {
-                            if(( params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)){
-                                progress ("Microcontrast...",100*readyphase/numofphases);
-                                ipf.MLmicrocontrast (nprevl);
-                                readyphase++;
-                            }
-                        }
-                        if(((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) && params.sharpening.enabled) {
-                            progress ("Sharpening...",100*readyphase/numofphases);
-    
-                            float **buffer = new float*[pH];
-                            for (int i=0; i<pH; i++)
-                                buffer[i] = new float[pW];
-    
-                            ipf.sharpening (nprevl, (float**)buffer);
-    
-                            for (int i=0; i<pH; i++)
-                                delete [] buffer[i];
-                            delete [] buffer;
-                            readyphase++;
-                        }
-                    }
-            */
 
             ipf.contrastByDetailLevels(nprevl);
             readyphase++;
                     
-            // if (params.dirpyrequalizer.cbdlMethod == "aft") {
-            //     if (((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled))) {
-            //         progress("Pyramid wavelet...", 100 * readyphase / numofphases);
-            //         ipf.dirpyrequalizer(nprevl, scale);
-            //         //ipf.Lanczoslab (ip_wavelet(LabImage * lab, LabImage * dst, const procparams::EqualizerParams & eqparams), nprevl, 1.f/scale);
-            //         readyphase++;
-            //     }
-            // }
-    
-    
             wavcontlutili = false;
             //CurveFactory::curveWavContL ( wavcontlutili,params.wavelet.lcurve, wavclCurve, LUTu & histogramwavcl, LUTu & outBeforeWavCLurveHistogram,int skip);
             CurveFactory::curveWavContL(wavcontlutili, params.wavelet.wavclCurve, wavclCurve, scale == 1 ? 1 : 16);
@@ -1324,7 +1265,6 @@ void ImProcCoordinator::process()
             || params.labCurve != nextParams.labCurve
             || params.localContrast != nextParams.localContrast
             || params.rgbCurves != nextParams.rgbCurves
-            || params.vibrance != nextParams.vibrance
             || params.wb != nextParams.wb
             || params.colorappearance != nextParams.colorappearance
             || params.epd != nextParams.epd

@@ -45,7 +45,6 @@ ExportPanel::ExportPanel () : listener (nullptr)
     bypass_ALL              = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_ALL")));
     use_fast_pipeline->set_tooltip_text (M ("EXPORT_USE_FAST_PIPELINE_TIP"));
     bypass_sharpening       = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_SHARPENING")));
-    bypass_sharpenEdge      = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_SHARPENEDGE")));
     bypass_sharpenMicro     = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_SHARPENMICRO")));
     //bypass_lumaDenoise      = Gtk::manage ( new Gtk::CheckButton (M("EXPORT_BYPASS_LUMADENOISE")));
     //bypass_colorDenoise     = Gtk::manage ( new Gtk::CheckButton (M("EXPORT_BYPASS_COLORDENOISE")));
@@ -113,7 +112,6 @@ ExportPanel::ExportPanel () : listener (nullptr)
     bypass_box->pack_start (*bypass_ALL, Gtk::PACK_SHRINK, 4);
     // bypass_box->pack_start(*Gtk::manage(new Gtk::HSeparator ()), Gtk::PACK_SHRINK, 4);
     bypass_box->pack_start (*bypass_sharpening, Gtk::PACK_SHRINK, 4);
-    bypass_box->pack_start (*bypass_sharpenEdge, Gtk::PACK_SHRINK, 4);
     bypass_box->pack_start (*bypass_sharpenMicro, Gtk::PACK_SHRINK, 4);
     //pack_start(*bypass_lumaDenoise  , Gtk::PACK_SHRINK, 4);
     //pack_start(*bypass_colorDenoise , Gtk::PACK_SHRINK, 4);
@@ -200,7 +198,6 @@ ExportPanel::ExportPanel () : listener (nullptr)
     bypass_ALLconn = bypass_ALL->signal_toggled().connect (sigc::mem_fun (*this, &ExportPanel::bypassALL_Toggled));
 
     bypass_sharpeningConn           = bypass_sharpening->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
-    bypass_sharpenEdgeConn          = bypass_sharpenEdge->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     bypass_sharpenMicroConn         = bypass_sharpenMicro->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     //bypass_lumaDenoiseConn        = bypass_lumaDenoise->signal_toggled().connect (sigc::bind (sigc::mem_fun(*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     //bypass_colorDenoiseConn       = bypass_colorDenoise->signal_toggled().connect (sigc::bind (sigc::mem_fun(*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
@@ -251,7 +248,6 @@ void ExportPanel::SaveSettingsAsDefault()
     } while (false)
     // Save fast export settings to options
     FE_OPT_STORE_ (options.fastexport_bypass_sharpening, bypass_sharpening->get_active        ());
-    FE_OPT_STORE_ (options.fastexport_bypass_sharpenEdge, bypass_sharpenEdge->get_active       ());
     FE_OPT_STORE_ (options.fastexport_bypass_sharpenMicro, bypass_sharpenMicro->get_active      ());
     //options.fastexport_bypass_lumaDenoise        = bypass_lumaDenoise->get_active       ();
     //options.fastexport_bypass_colorDenoise       = bypass_colorDenoise->get_active      ();
@@ -314,7 +310,6 @@ void ExportPanel::LoadDefaultSettings()
 {
     // Load fast export settings from options
     bypass_sharpening->set_active        (options.fastexport_bypass_sharpening         );
-    bypass_sharpenEdge->set_active       (options.fastexport_bypass_sharpenEdge        );
     bypass_sharpenMicro->set_active      (options.fastexport_bypass_sharpenMicro       );
     //bypass_lumaDenoise->set_active     (options.fastexport_bypass_lumaDenoise        );
     //bypass_colorDenoise->set_active    (options.fastexport_bypass_colorDenoise       );
@@ -385,7 +380,6 @@ void ExportPanel::SaveSettings()
 void ExportPanel::bypassALL_Toggled()
 {
     bypass_sharpeningConn.block         (true);
-    bypass_sharpenEdgeConn.block        (true);
     bypass_sharpenMicroConn.block       (true);
     //bypass_lumaDenoiseConn.block        (true);
     //bypass_colorDenoiseConn.block       (true);
@@ -407,7 +401,6 @@ void ExportPanel::bypassALL_Toggled()
     bypass_ALL->set_inconsistent (false);
 
     bypass_sharpening->set_active (bypass_ALL->get_active());
-    bypass_sharpenEdge->set_active (bypass_ALL->get_active());
     bypass_sharpenMicro->set_active (bypass_ALL->get_active());
     //bypass_lumaDenoise->set_active(bypass_ALL->get_active());
     //bypass_colorDenoise->set_active(bypass_ALL->get_active());
@@ -427,7 +420,6 @@ void ExportPanel::bypassALL_Toggled()
     bypass_raw_ff->set_active (bypass_ALL->get_active());
 
     bypass_sharpeningConn.block           (false);
-    bypass_sharpenEdgeConn.block          (false);
     bypass_sharpenMicroConn.block         (false);
     //bypass_lumaDenoiseConn.block        (false);
     //bypass_colorDenoiseConn.block       (false);
@@ -454,7 +446,6 @@ void ExportPanel::use_fast_pipeline_toggled()
 
 /*
 fastexport_bypass_sharpening
-fastexport_bypass_sharpenEdge
 fastexport_bypass_sharpenMicro
 fastexport_bypass_lumaDenoise
 fastexport_bypass_colorDenoise

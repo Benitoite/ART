@@ -515,7 +515,6 @@ private:
 
         ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
 
-        ipf.vibrance (labView);
         ipf.toneMapping(labView, oX, oY, oW, oH);
 
         if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
@@ -526,10 +525,6 @@ private:
 
         if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
             ipf.defringe (labView);
-        }
-
-        if (params.sharpenEdge.enabled) {
-            ipf.MLsharpen (labView);
         }
 
         if (params.sharpenMicro.enabled) {

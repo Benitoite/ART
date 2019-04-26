@@ -342,7 +342,6 @@ public:
 
     // fast export options
     bool fastexport_bypass_sharpening;
-    bool fastexport_bypass_sharpenEdge;
     bool fastexport_bypass_sharpenMicro;
     //bool fastexport_bypass_lumaDenoise;
     //bool fastexport_bypass_colorDenoise;

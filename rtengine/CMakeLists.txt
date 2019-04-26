@@ -83,7 +83,6 @@ set(RTENGINESOURCEFILES
     ipretinex.cc
     ipsharpen.cc
     iptransform.cc
-    ipvibrance.cc
     ipwavelet.cc
     jdatasrc.cc
     jpeg_ijg/jpeg_memsrc.cc

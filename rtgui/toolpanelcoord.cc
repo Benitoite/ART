@@ -50,7 +50,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     epd                 = Gtk::manage (new EdgePreservingDecompositionUI ());
     sharpening          = Gtk::manage (new Sharpening ());
     localContrast       = Gtk::manage(new LocalContrast());
-    sharpenEdge         = Gtk::manage (new SharpenEdge ());
     sharpenMicro        = Gtk::manage (new SharpenMicro ());
     lcurve              = Gtk::manage (new LCurve ());
     rgbcurves           = Gtk::manage (new RGBCurves ());
@@ -58,7 +57,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     lensProf            = Gtk::manage (new LensProfilePanel ());
     distortion          = Gtk::manage (new Distortion ());
     rotate              = Gtk::manage (new Rotate ());
-    vibrance            = Gtk::manage (new Vibrance ());
     colorappearance     = Gtk::manage (new ColorAppearance ());
     whitebalance        = Gtk::manage (new WhiteBalance ());
     vignetting          = Gtk::manage (new Vignetting ());
@@ -110,14 +108,12 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
 
     addfavoritePanel (colorPanel, whitebalance);
     addfavoritePanel (exposurePanel, toneCurve);
-    addfavoritePanel (colorPanel, vibrance);
     addfavoritePanel (colorPanel, chmixer);
     //addfavoritePanel (colorPanel, blackwhite);
     addfavoritePanel (exposurePanel, logenc);
     addfavoritePanel (exposurePanel, shadowshighlights);
     addfavoritePanel (detailsPanel, sharpening);
     addfavoritePanel (detailsPanel, localContrast);
-    addfavoritePanel (detailsPanel, sharpenEdge);
     addfavoritePanel (detailsPanel, sharpenMicro);
     addfavoritePanel (colorPanel, filmSimulation);
     addfavoritePanel (colorPanel, softlight);

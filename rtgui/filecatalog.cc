@@ -1115,10 +1115,6 @@ void FileCatalog::developRequested(const std::vector<FileBrowserEntry*>& tbe, bo
                         params.sharpening.enabled = false;
                     }
 
-                    if (options.fastexport_bypass_sharpenEdge) {
-                        params.sharpenEdge.enabled = false;
-                    }
-
                     if (options.fastexport_bypass_sharpenMicro) {
                         params.sharpenMicro.enabled = false;
                     }

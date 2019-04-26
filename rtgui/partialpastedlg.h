@@ -58,7 +58,6 @@ public:
 
     // options in detail:
     Gtk::CheckButton* sharpen;
-    Gtk::CheckButton* sharpenedge;
     Gtk::CheckButton* sharpenmicro;
     Gtk::CheckButton* impden;
     //Gtk::CheckButton* waveq;
@@ -74,7 +73,6 @@ public:
 
     // options in color:
     Gtk::CheckButton* icm;
-    Gtk::CheckButton* vibrance;
     Gtk::CheckButton* chmixer;
     Gtk::CheckButton* blackwhite;
     Gtk::CheckButton* softlight;
@@ -139,10 +137,10 @@ public:
 
     sigc::connection wbConn, exposureConn, localcontrastConn, shConn, pcvignetteConn, gradientConn, labcurveConn, colorappearanceConn;
     sigc::connection toneEqualizerConn;
-    sigc::connection sharpenConn, gradsharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, retinexConn, dehazeConn, logencConn;
+    sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, retinexConn, dehazeConn, logencConn;
     sigc::connection grainConn;
     sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
-    sigc::connection vibranceConn, chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;
+    sigc::connection chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;
     sigc::connection distortionConn, cacorrConn, vignettingConn, lcpConn;
     sigc::connection coarserotConn, finerotConn, cropConn, resizeConn, prsharpeningConn, perspectiveConn, commonTransConn;
     sigc::connection metadataConn, exifchConn, iptcConn, icmConn;

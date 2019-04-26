@@ -336,7 +336,6 @@ void Crop::update(int todo)
                 parent->ipf.workingtrc(workingCrop, workingCrop, cw, ch, 5, params.icm.workingProfile, params.icm.workingTRCGamma, params.icm.workingTRCSlope, parent->getCustomTransformOut(), false, true, true);
             }
         }
-        double rrm, ggm, bbm;
         // DCPProfile::ApplyState as;
         // DCPProfile *dcpProf = parent->imgsrc->getDCP(params.icm, as);
 
@@ -386,7 +385,6 @@ void Crop::update(int todo)
 
         LUTu dummy;
         parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
-        parent->ipf.vibrance(laboCrop);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
@@ -404,8 +402,6 @@ void Crop::update(int todo)
             if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
                 parent->ipf.defringe(labnCrop);
             }
-
-            parent->ipf.MLsharpen(labnCrop);
 
             if ((params.colorappearance.enabled && !settings->autocielab)  || (!params.colorappearance.enabled)) {
                 parent->ipf.MLmicrocontrast (labnCrop);

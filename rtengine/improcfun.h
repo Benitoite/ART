@@ -93,8 +93,6 @@ public:
     
     void chromiLuminanceCurve(int pW, LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLurve);
     
-    void vibrance(LabImage* lab);         //Jacques' vibrance
-    
     void sharpening(LabImage* lab, const SharpeningParams &sharpenParam, bool showMask = false);
     
     void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool fullImage);    
@@ -103,7 +101,6 @@ public:
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
     void Lanczos(const Imagefloat* src, Imagefloat* dst, float scale);
 
-    void MLsharpen(LabImage* lab); // Manuel's clarity / sharpening
     void MLmicrocontrast(LabImage* lab);   //Manuel's microcontrast
 
     void impulsedenoise(LabImage* lab);   //Emil's impulse denoise

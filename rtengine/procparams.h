@@ -479,18 +479,6 @@ struct SharpeningParams {
     bool operator !=(const SharpeningParams& other) const;
 };
 
-struct SharpenEdgeParams {
-    bool    enabled;
-    int     passes;
-    double  amount;
-    bool    threechannels;
-
-    SharpenEdgeParams();
-
-    bool operator ==(const SharpenEdgeParams& other) const;
-    bool operator !=(const SharpenEdgeParams& other) const;
-};
-
 struct SharpenMicroParams {
     bool    enabled;
     bool    matrix;
@@ -504,24 +492,6 @@ struct SharpenMicroParams {
     bool operator !=(const SharpenMicroParams& other) const;
 };
 
-/**
-  * Parameters of the vibrance
-  */
-struct VibranceParams {
-    bool           enabled;
-    int            pastels;
-    int            saturated;
-    Threshold<int> psthreshold;
-    bool           protectskins;
-    bool           avoidcolorshift;
-    bool           pastsattog;
-    std::vector<double> skintonescurve;
-
-    VibranceParams();
-
-    bool operator ==(const VibranceParams& other) const;
-    bool operator !=(const VibranceParams& other) const;
-};
 
 /**
   * Parameters of the white balance adjustments
@@ -1529,9 +1499,7 @@ public:
     RGBCurvesParams         rgbCurves;       ///< RGB curves parameters
     SharpeningParams        sharpening;      ///< Sharpening parameters
     SharpeningParams        prsharpening;    ///< Sharpening parameters for post resize sharpening
-    SharpenEdgeParams       sharpenEdge;     ///< Sharpen edge parameters
     SharpenMicroParams      sharpenMicro;    ///< Sharpen microcontrast parameters
-    VibranceParams          vibrance;        ///< Vibrance parameters
     WBParams                wb;              ///< White balance parameters
     ColorAppearanceParams   colorappearance;
     DefringeParams          defringe;        ///< Defringing parameters

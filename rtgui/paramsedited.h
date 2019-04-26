@@ -148,15 +148,6 @@ public:
     bool bcurve;
 };
 
-class SharpenEdgeParamsEdited
-{
-
-public :
-    bool enabled;
-    bool passes;
-    bool amount;
-    bool threechannels;
-};
 
 class SharpenMicroParamsEdited
 {
@@ -192,28 +183,6 @@ public:
     bool deconvdamping;
 };
 
-class VibranceParamsEdited
-{
-
-public:
-    bool enabled;
-    bool pastels;
-    bool saturated;
-    bool psthreshold;
-    bool protectskins;
-    bool avoidcolorshift;
-    bool pastsattog;
-    bool skintonescurve;
-};
-
-/*class ColorBoostParamsEdited {
-
-    public:
-        bool amount;
-        bool avoidclip;
-        bool enable_saturationlimiter;
-        bool rstprotection;
-};*/
 
 class WBParamsEdited
 {
@@ -227,27 +196,6 @@ public:
     bool tempBias;
 };
 
-/*class ColorShiftParamsEdited {
-
-    public:
-        bool a;
-        bool b;
-};*/
-
-/*class LumaDenoiseParamsEdited {
-
-    public:
-        bool enabled;
-        bool radius;
-        bool edgetolerance;
-};*/
-
-/*class ColorDenoiseParamsEdited {
-
-    public:
-        bool enabled;
-        bool amount;
-};*/
 
 class DefringeParamsEdited
 {
@@ -842,15 +790,9 @@ public:
     RetinexParamsEdited             retinex;
     SharpeningParamsEdited        sharpening;
     SharpeningParamsEdited        prsharpening;
-    SharpenEdgeParamsEdited       sharpenEdge;
     SharpenMicroParamsEdited      sharpenMicro;
-    VibranceParamsEdited          vibrance;
     ColorAppearanceParamsEdited   colorappearance;
-    //ColorBoostParamsEdited        colorBoost;
     WBParamsEdited                wb;
-    //ColorShiftParamsEdited        colorShift;
-    //LumaDenoiseParamsEdited       lumaDenoise;
-    //ColorDenoiseParamsEdited      colorDenoise;
     DefringeParamsEdited          defringe;
     DenoiseParamsEdited           denoise;
     EPDParamsEdited               epd;

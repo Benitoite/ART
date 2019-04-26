@@ -429,7 +429,6 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         || pparams.labCurve != pp.labCurve
         || pparams.localContrast != pp.localContrast
         || pparams.rgbCurves != pp.rgbCurves
-        || pparams.vibrance != pp.vibrance
         || pparams.wb != pp.wb
         || pparams.colorappearance != pp.colorappearance
         || pparams.epd != pp.epd

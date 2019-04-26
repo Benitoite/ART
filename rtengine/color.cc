@@ -1152,7 +1152,6 @@ void Color::computeBWMixerConstants (const Glib::ustring &setting, const Glib::u
     mixerRed = mixerRed / somm;
     mixerGreen = mixerGreen / somm;
     mixerBlue = mixerBlue / somm;
-    float koymcp = 0.f;
 
     //Color filters
     float filred, filgreen, filblue;

@@ -1351,7 +1351,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     
     ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
 
-    ipf.vibrance (labView);
     ipf.toneMapping(labView);
     ipf.softLight(labView);
     ipf.localContrast(labView);

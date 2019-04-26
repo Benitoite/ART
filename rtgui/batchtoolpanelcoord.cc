@@ -140,7 +140,6 @@ void BatchToolPanelCoordinator::initSession ()
             toneCurve->setAdjusterBehavior (false, false, false, false, false, false, false, false);
             lcurve->setAdjusterBehavior (false, false, false);
             whitebalance->setAdjusterBehavior (false, false, false, false);
-            vibrance->setAdjusterBehavior (false, false);
             vignetting->setAdjusterBehavior (false, false, false, false);
             colorappearance->setAdjusterBehavior (false, false, false, false, false, false, false, false, false, false, false, false, false);
             rotate->setAdjusterBehavior (false);
@@ -152,7 +151,6 @@ void BatchToolPanelCoordinator::initSession ()
             cacorrection->setAdjusterBehavior (false);
             sharpening->setAdjusterBehavior (false, false, false, false, false, false, false);
             prsharpening->setAdjusterBehavior (false, false, false, false, false, false, false);
-            sharpenEdge->setAdjusterBehavior (false, false);
             sharpenMicro->setAdjusterBehavior (false, false, false);
             epd->setAdjusterBehavior (false, false, false, false, false);
             fattal->setAdjusterBehavior (false, false, false);
@@ -184,7 +182,6 @@ void BatchToolPanelCoordinator::initSession ()
             toneCurve->setAdjusterBehavior (options.baBehav[ADDSET_TC_EXPCOMP], options.baBehav[ADDSET_TC_HLCOMPAMOUNT], options.baBehav[ADDSET_TC_HLCOMPTHRESH], options.baBehav[ADDSET_TC_BRIGHTNESS], options.baBehav[ADDSET_TC_BLACKLEVEL], options.baBehav[ADDSET_TC_SHCOMP], options.baBehav[ADDSET_TC_CONTRAST], options.baBehav[ADDSET_TC_SATURATION]);
             lcurve->setAdjusterBehavior (options.baBehav[ADDSET_LC_BRIGHTNESS], options.baBehav[ADDSET_LC_CONTRAST], options.baBehav[ADDSET_LC_CHROMATICITY]);
             whitebalance->setAdjusterBehavior (options.baBehav[ADDSET_WB_TEMPERATURE], options.baBehav[ADDSET_WB_GREEN], options.baBehav[ADDSET_WB_EQUAL], options.baBehav[ADDSET_WB_TEMPBIAS]);
-            vibrance->setAdjusterBehavior (options.baBehav[ADDSET_VIBRANCE_PASTELS], options.baBehav[ADDSET_VIBRANCE_SATURATED]);
             vignetting->setAdjusterBehavior (options.baBehav[ADDSET_VIGN_AMOUNT], options.baBehav[ADDSET_VIGN_RADIUS], options.baBehav[ADDSET_VIGN_STRENGTH], options.baBehav[ADDSET_VIGN_CENTER]);
             colorappearance->setAdjusterBehavior (options.baBehav[ADDSET_CAT_DEGREE], options.baBehav[ADDSET_CAT_ADAPTSCENE], options.baBehav[ADDSET_CAT_ADAPTVIEWING], options.baBehav[ADDSET_CAT_BADPIX], options.baBehav[ADDSET_CAT_LIGHT], options.baBehav[ADDSET_CAT_CHROMA], options.baBehav[ADDSET_CAT_CONTRAST], options.baBehav[ADDSET_CAT_RSTPRO], options.baBehav[ADDSET_CAT_BRIGHT], options.baBehav[ADDSET_CAT_CONTRAST_Q], options.baBehav[ADDSET_CAT_CHROMA_S], options.baBehav[ADDSET_CAT_CHROMA_M], options.baBehav[ADDSET_CAT_HUE]);
             rotate->setAdjusterBehavior (options.baBehav[ADDSET_ROTATE_DEGREE]);
@@ -200,7 +197,6 @@ void BatchToolPanelCoordinator::initSession ()
             fattal->setAdjusterBehavior (options.baBehav[ADDSET_FATTAL_AMOUNT], options.baBehav[ADDSET_FATTAL_THRESHOLD], options.baBehav[ADDSET_FATTAL_ANCHOR]);
             localContrast->setAdjusterBehavior(options.baBehav[ADDSET_LOCALCONTRAST_RADIUS], options.baBehav[ADDSET_LOCALCONTRAST_AMOUNT], options.baBehav[ADDSET_LOCALCONTRAST_DARKNESS], options.baBehav[ADDSET_LOCALCONTRAST_LIGHTNESS]);
 
-            sharpenEdge->setAdjusterBehavior (options.baBehav[ADDSET_SHARPENEDGE_AMOUNT], options.baBehav[ADDSET_SHARPENEDGE_PASS]);
             sharpenMicro->setAdjusterBehavior (options.baBehav[ADDSET_SHARPENMICRO_AMOUNT], options.baBehav[ADDSET_SHARPENMICRO_CONTRAST], options.baBehav[ADDSET_SHARPENMICRO_UNIFORMITY]);
             filmSimulation->setAdjusterBehavior(options.baBehav[ADDSET_FILMSIMULATION_STRENGTH]);
             softlight->setAdjusterBehavior(options.baBehav[ADDSET_SOFTLIGHT_STRENGTH]);
@@ -248,10 +244,8 @@ void BatchToolPanelCoordinator::initSession ()
             if (options.baBehav[ADDSET_SHARP_ITER]) { pparams.sharpening.deconviter = pparams.prsharpening.deconviter = 0; }
             if (options.baBehav[ADDSET_SHARP_EDGETOL]) { pparams.sharpening.edges_tolerance = pparams.prsharpening.edges_tolerance = 0; }
             if (options.baBehav[ADDSET_SHARP_HALOCTRL]) { pparams.sharpening.halocontrol_amount = pparams.prsharpening.halocontrol_amount = 0; }
-            if (options.baBehav[ADDSET_SHARPENEDGE_AMOUNT]) { pparams.sharpenEdge.amount = 0; }
             if (options.baBehav[ADDSET_SHARPENMICRO_AMOUNT]) { pparams.sharpenMicro.amount = 0; }
             if (options.baBehav[ADDSET_SHARPENMICRO_CONTRAST]) { pparams.sharpenMicro.contrast = 0; }
-            if (options.baBehav[ADDSET_SHARPENEDGE_PASS]) { pparams.sharpenEdge.passes = 0; }
             if (options.baBehav[ADDSET_SHARPENMICRO_UNIFORMITY]) { pparams.sharpenMicro.uniformity = 0; }
             if (options.baBehav[ADDSET_CHMIXER]) for (int i = 0; i < 3; i++) { pparams.chmixer.red[i] = pparams.chmixer.green[i] = pparams.chmixer.blue[i] = 0; }
             if (options.baBehav[ADDSET_BLACKWHITE_HUES]) {
@@ -265,8 +259,6 @@ void BatchToolPanelCoordinator::initSession ()
             if (options.baBehav[ADDSET_WB_GREEN]) { pparams.wb.green = 0; }
             if (options.baBehav[ADDSET_WB_EQUAL]) { pparams.wb.equal = 0; }
             if (options.baBehav[ADDSET_WB_TEMPBIAS]) { pparams.wb.tempBias = 0; }
-            if (options.baBehav[ADDSET_VIBRANCE_PASTELS]) { pparams.vibrance.pastels = 0; }
-            if (options.baBehav[ADDSET_VIBRANCE_SATURATED]) { pparams.vibrance.saturated = 0; }
             if (options.baBehav[ADDSET_CAT_DEGREE]) { pparams.colorappearance.degree = 0; }
             if (options.baBehav[ADDSET_CAT_ADAPTSCENE]) { pparams.colorappearance.adapscen = 0; }
             if (options.baBehav[ADDSET_CAT_ADAPTVIEWING]) { pparams.colorappearance.adaplum = 0; }

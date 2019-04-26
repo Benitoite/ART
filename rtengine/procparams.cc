@@ -847,27 +847,6 @@ bool SharpeningParams::operator !=(const SharpeningParams& other) const
     return !(*this == other);
 }
 
-SharpenEdgeParams::SharpenEdgeParams() :
-    enabled(false),
-    passes(2),
-    amount(50.0),
-    threechannels(false)
-{
-}
-
-bool SharpenEdgeParams::operator ==(const SharpenEdgeParams& other) const
-{
-    return
-        enabled == other.enabled
-        && passes == other.passes
-        && amount == other.amount
-        && threechannels == other.threechannels;
-}
-
-bool SharpenEdgeParams::operator !=(const SharpenEdgeParams& other) const
-{
-    return !(*this == other);
-}
 
 SharpenMicroParams::SharpenMicroParams() :
     enabled(false),
@@ -889,38 +868,6 @@ bool SharpenMicroParams::operator ==(const SharpenMicroParams& other) const
 }
 
 bool SharpenMicroParams::operator !=(const SharpenMicroParams& other) const
-{
-    return !(*this == other);
-}
-
-VibranceParams::VibranceParams() :
-    enabled(false),
-    pastels(0),
-    saturated(0),
-    psthreshold(0, 75, false),
-    protectskins(false),
-    avoidcolorshift(true),
-    pastsattog(true),
-    skintonescurve{
-        DCT_Linear
-    }
-{
-}
-
-bool VibranceParams::operator ==(const VibranceParams& other) const
-{
-    return
-        enabled == other.enabled
-        && pastels == other.pastels
-        && saturated == other.saturated
-        && psthreshold == other.psthreshold
-        && protectskins == other.protectskins
-        && avoidcolorshift == other.avoidcolorshift
-        && pastsattog == other.pastsattog
-        && skintonescurve == other.skintonescurve;
-}
-
-bool VibranceParams::operator !=(const VibranceParams& other) const
 {
     return !(*this == other);
 }
@@ -2655,8 +2602,6 @@ void ProcParams::setDefaults()
 
     localContrast = LocalContrastParams();
 
-    sharpenEdge = SharpenEdgeParams();
-
     sharpenMicro = SharpenMicroParams();
 
     sharpening = SharpeningParams();
@@ -2668,8 +2613,6 @@ void ProcParams::setDefaults()
     prsharpening.deconvradius = 0.45;
     prsharpening.deconviter = 100;
     prsharpening.deconvdamping = 0;
-
-    vibrance = VibranceParams();
 
     wb = WBParams();
 
@@ -2914,22 +2857,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->sharpening.deconvamount, "Sharpening", "DeconvAmount", sharpening.deconvamount, keyFile);
         saveToKeyfile(!pedited || pedited->sharpening.deconvdamping, "Sharpening", "DeconvDamping", sharpening.deconvdamping, keyFile);
         saveToKeyfile(!pedited || pedited->sharpening.deconviter, "Sharpening", "DeconvIterations", sharpening.deconviter, keyFile);
-
-// Vibrance
-        saveToKeyfile(!pedited || pedited->vibrance.enabled, "Vibrance", "Enabled", vibrance.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.pastels, "Vibrance", "Pastels", vibrance.pastels, keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.saturated, "Vibrance", "Saturated", vibrance.saturated, keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.psthreshold, "Vibrance", "PSThreshold", vibrance.psthreshold.toVector(), keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.protectskins, "Vibrance", "ProtectSkins", vibrance.protectskins, keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.avoidcolorshift, "Vibrance", "AvoidColorShift", vibrance.avoidcolorshift, keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.pastsattog, "Vibrance", "PastSatTog", vibrance.pastsattog, keyFile);
-        saveToKeyfile(!pedited || pedited->vibrance.skintonescurve, "Vibrance", "SkinTonesCurve", vibrance.skintonescurve, keyFile);
-
-// Edge sharpening
-        saveToKeyfile(!pedited || pedited->sharpenEdge.enabled, "SharpenEdge", "Enabled", sharpenEdge.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->sharpenEdge.passes, "SharpenEdge", "Passes", sharpenEdge.passes, keyFile);
-        saveToKeyfile(!pedited || pedited->sharpenEdge.amount, "SharpenEdge", "Strength", sharpenEdge.amount, keyFile);
-        saveToKeyfile(!pedited || pedited->sharpenEdge.threechannels, "SharpenEdge", "ThreeChannels", sharpenEdge.threechannels, keyFile);
 
 // Micro-contrast sharpening
         saveToKeyfile(!pedited || pedited->sharpenMicro.enabled, "SharpenMicro", "Enabled", sharpenMicro.enabled, keyFile);
@@ -3791,13 +3718,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Sharpening", "DeconvIterations", pedited, sharpening.deconviter, pedited->sharpening.deconviter);
         }
 
-        if (keyFile.has_group("SharpenEdge")) {
-            assignFromKeyfile(keyFile, "SharpenEdge", "Enabled", pedited, sharpenEdge.enabled, pedited->sharpenEdge.enabled);
-            assignFromKeyfile(keyFile, "SharpenEdge", "Passes", pedited, sharpenEdge.passes, pedited->sharpenEdge.passes);
-            assignFromKeyfile(keyFile, "SharpenEdge", "Strength", pedited, sharpenEdge.amount, pedited->sharpenEdge.amount);
-            assignFromKeyfile(keyFile, "SharpenEdge", "ThreeChannels", pedited, sharpenEdge.threechannels, pedited->sharpenEdge.threechannels);
-        }
-
         if (keyFile.has_group("SharpenMicro")) {
             assignFromKeyfile(keyFile, "SharpenMicro", "Enabled", pedited, sharpenMicro.enabled, pedited->sharpenMicro.enabled);
             assignFromKeyfile(keyFile, "SharpenMicro", "Matrix", pedited, sharpenMicro.matrix, pedited->sharpenMicro.matrix);
@@ -3817,34 +3737,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
                 assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", pedited, temp, pedited->sharpenMicro.uniformity);
                 sharpenMicro.uniformity = temp / 10;
             }
-        }
-
-        if (keyFile.has_group("Vibrance")) {
-            assignFromKeyfile(keyFile, "Vibrance", "Enabled", pedited, vibrance.enabled, pedited->vibrance.enabled);
-            assignFromKeyfile(keyFile, "Vibrance", "Pastels", pedited, vibrance.pastels, pedited->vibrance.pastels);
-            assignFromKeyfile(keyFile, "Vibrance", "Saturated", pedited, vibrance.saturated, pedited->vibrance.saturated);
-
-            if (keyFile.has_key("Vibrance", "PSThreshold")) {
-                if (ppVersion < 302) {
-                    int thresh = keyFile.get_integer("Vibrance", "PSThreshold");
-                    vibrance.psthreshold.setValues(thresh, thresh);
-                } else {
-                    const std::vector<int> thresh = keyFile.get_integer_list("Vibrance", "PSThreshold");
-
-                    if (thresh.size() >= 2) {
-                        vibrance.psthreshold.setValues(thresh[0], thresh[1]);
-                    }
-                }
-
-                if (pedited) {
-                    pedited->vibrance.psthreshold = true;
-                }
-            }
-
-            assignFromKeyfile(keyFile, "Vibrance", "ProtectSkins", pedited, vibrance.protectskins, pedited->vibrance.protectskins);
-            assignFromKeyfile(keyFile, "Vibrance", "AvoidColorShift", pedited, vibrance.avoidcolorshift, pedited->vibrance.avoidcolorshift);
-            assignFromKeyfile(keyFile, "Vibrance", "PastSatTog", pedited, vibrance.pastsattog, pedited->vibrance.pastsattog);
-            assignFromKeyfile(keyFile, "Vibrance", "SkinTonesCurve", pedited, vibrance.skintonescurve, pedited->vibrance.skintonescurve);
         }
 
         if (keyFile.has_group("White Balance")) {
@@ -5191,11 +5083,9 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && retinex == other.retinex
         && localContrast == other.localContrast
         && labCurve == other.labCurve
-        && sharpenEdge == other.sharpenEdge
         && sharpenMicro == other.sharpenMicro
         && sharpening == other.sharpening
         && prsharpening == other.prsharpening
-        && vibrance == other.vibrance
         && wb == other.wb
         && colorappearance == other.colorappearance
         && impulseDenoise == other.impulseDenoise

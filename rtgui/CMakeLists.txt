@@ -127,7 +127,6 @@ set(NONCLISOURCEFILES
     sensorxtrans.cc
     shadowshighlights.cc
     toneequalizer.cc
-    sharpenedge.cc
     sharpening.cc
     sharpenmicro.cc
     shcselector.cc
@@ -144,7 +143,6 @@ set(NONCLISOURCEFILES
     toolbar.cc
     toolpanel.cc
     toolpanelcoord.cc
-    vibrance.cc
     vignetting.cc
     wavelet.cc
     whitebalance.cc

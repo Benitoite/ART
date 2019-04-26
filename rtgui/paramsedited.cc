@@ -146,23 +146,11 @@ void ParamsEdited::set(bool v)
     prsharpening.deconvradius   = v;
     prsharpening.deconviter     = v;
     prsharpening.deconvdamping  = v;
-    sharpenEdge.enabled       = v;
-    sharpenEdge.passes        = v;
-    sharpenEdge.amount        = v;
-    sharpenEdge.threechannels = v;
     sharpenMicro.enabled      = v;
     sharpenMicro.matrix       = v;
     sharpenMicro.contrast     = v;
     sharpenMicro.amount       = v;
     sharpenMicro.uniformity   = v;
-    vibrance.enabled          = v;
-    vibrance.pastels          = v;
-    vibrance.saturated        = v;
-    vibrance.psthreshold      = v;
-    vibrance.protectskins     = v;
-    vibrance.avoidcolorshift  = v;
-    vibrance.pastsattog       = v;
-    vibrance.skintonescurve   = v;
     colorappearance.enabled    = v;
     colorappearance.degree     = v;
     colorappearance.autodegree = v;
@@ -650,10 +638,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         rgbCurves.rcurve = rgbCurves.rcurve && p.rgbCurves.rcurve == other.rgbCurves.rcurve;
         rgbCurves.gcurve = rgbCurves.gcurve && p.rgbCurves.gcurve == other.rgbCurves.gcurve;
         rgbCurves.bcurve = rgbCurves.bcurve && p.rgbCurves.bcurve == other.rgbCurves.bcurve;
-        sharpenEdge.enabled = sharpenEdge.enabled && p.sharpenEdge.enabled == other.sharpenEdge.enabled;
-        sharpenEdge.passes = sharpenEdge.passes && p.sharpenEdge.passes == other.sharpenEdge.passes;
-        sharpenEdge.amount = sharpenEdge.amount && p.sharpenEdge.amount == other.sharpenEdge.amount;
-        sharpenEdge.threechannels = sharpenEdge.threechannels && p.sharpenEdge.threechannels == other.sharpenEdge.threechannels;
         sharpenMicro.enabled = sharpenMicro.enabled && p.sharpenMicro.enabled == other.sharpenMicro.enabled;
         sharpenMicro.matrix = sharpenMicro.matrix && p.sharpenMicro.matrix == other.sharpenMicro.matrix;
         sharpenMicro.amount = sharpenMicro.amount && p.sharpenMicro.amount == other.sharpenMicro.amount;
@@ -690,14 +674,6 @@ void ParamsEdited::initFrom(const std::vector<rtengine::procparams::ProcParams>&
         prsharpening.deconvradius = prsharpening.deconvradius && p.prsharpening.deconvradius == other.prsharpening.deconvradius;
         prsharpening.deconviter = prsharpening.deconviter && p.prsharpening.deconviter == other.prsharpening.deconviter;
         prsharpening.deconvdamping = prsharpening.deconvdamping && p.prsharpening.deconvdamping == other.prsharpening.deconvdamping;
-        vibrance.enabled = vibrance.enabled && p.vibrance.enabled == other.vibrance.enabled;
-        vibrance.pastels = vibrance.pastels && p.vibrance.pastels == other.vibrance.pastels;
-        vibrance.saturated = vibrance.saturated && p.vibrance.saturated == other.vibrance.saturated;
-        vibrance.psthreshold = vibrance.psthreshold && p.vibrance.psthreshold == other.vibrance.psthreshold;
-        vibrance.protectskins = vibrance.protectskins && p.vibrance.protectskins == other.vibrance.protectskins;
-        vibrance.avoidcolorshift = vibrance.avoidcolorshift && p.vibrance.avoidcolorshift == other.vibrance.avoidcolorshift;
-        vibrance.pastsattog = vibrance.pastsattog && p.vibrance.pastsattog == other.vibrance.pastsattog;
-        vibrance.skintonescurve = vibrance.skintonescurve && p.vibrance.skintonescurve == other.vibrance.skintonescurve;
 
         colorappearance.enabled = colorappearance.enabled && p.colorappearance.enabled == other.colorappearance.enabled;
         colorappearance.degree = colorappearance.degree && p.colorappearance.degree == other.colorappearance.degree;
@@ -1412,22 +1388,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.rgbCurves.bcurve     = mods.rgbCurves.bcurve;
     }
 
-    if (sharpenEdge.enabled) {
-        toEdit.sharpenEdge.enabled    = mods.sharpenEdge.enabled;
-    }
-
-    if (sharpenEdge.passes) {
-        toEdit.sharpenEdge.passes = dontforceSet && options.baBehav[ADDSET_SHARPENEDGE_PASS] ? toEdit.sharpenEdge.passes + mods.sharpenEdge.passes : mods.sharpenEdge.passes;
-    }
-
-    if (sharpenEdge.amount) {
-        toEdit.sharpenEdge.amount = dontforceSet && options.baBehav[ADDSET_SHARPENEDGE_AMOUNT] ? toEdit.sharpenEdge.amount + mods.sharpenEdge.amount : mods.sharpenEdge.amount;
-    }
-
-    if (sharpenEdge.threechannels) {
-        toEdit.sharpenEdge.threechannels  = mods.sharpenEdge.threechannels;
-    }
-
     if (sharpenMicro.enabled) {
         toEdit.sharpenMicro.enabled   = mods.sharpenMicro.enabled;
     }
@@ -1572,42 +1532,6 @@ void ParamsEdited::combine(rtengine::procparams::ProcParams& toEdit, const rteng
         toEdit.prsharpening.deconvdamping = dontforceSet && options.baBehav[ADDSET_SHARP_DAMPING] ? toEdit.prsharpening.deconvdamping + mods.prsharpening.deconvdamping : mods.prsharpening.deconvdamping;
     }
 
-    if (vibrance.enabled) {
-        toEdit.vibrance.enabled           = mods.vibrance.enabled;
-    }
-
-    if (vibrance.pastels) {
-        toEdit.vibrance.pastels           = dontforceSet && options.baBehav[ADDSET_VIBRANCE_PASTELS] ? toEdit.vibrance.pastels + mods.vibrance.pastels : mods.vibrance.pastels;
-    }
-
-    if (vibrance.saturated) {
-        toEdit.vibrance.saturated     = dontforceSet && options.baBehav[ADDSET_VIBRANCE_SATURATED] ? toEdit.vibrance.saturated + mods.vibrance.saturated : mods.vibrance.saturated;
-    }
-
-    if (vibrance.psthreshold) {
-        toEdit.vibrance.psthreshold       = mods.vibrance.psthreshold;
-    }
-
-    if (vibrance.protectskins) {
-        toEdit.vibrance.protectskins  = mods.vibrance.protectskins;
-    }
-
-    if (vibrance.avoidcolorshift) {
-        toEdit.vibrance.avoidcolorshift   = mods.vibrance.avoidcolorshift;
-    }
-
-    if (vibrance.pastsattog) {
-        toEdit.vibrance.pastsattog        = mods.vibrance.pastsattog;
-    }
-
-    if (vibrance.skintonescurve) {
-        toEdit.vibrance.skintonescurve    = mods.vibrance.skintonescurve;
-    }
-
-    //if (colorBoost.amount)                    toEdit.colorBoost.amount        = dontforceSet && options.baBehav[ADDSET_CBOOST_AMOUNT] ? toEdit.colorBoost.amount + mods.colorBoost.amount : mods.colorBoost.amount;
-    //if (colorBoost.avoidclip)             toEdit.colorBoost.avoidclip     = mods.colorBoost.avoidclip;
-    //if (colorBoost.enable_saturationlimiter)toEdit.colorBoost.enable_saturationlimiter    = mods.colorBoost.enable_saturationlimiter;
-    //if (colorBoost.saturationlimit)           toEdit.colorBoost.saturationlimit   = mods.colorBoost.saturationlimit;
     if (wb.enabled) {
         toEdit.wb.enabled = mods.wb.enabled;
     }

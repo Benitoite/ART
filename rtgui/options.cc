@@ -478,7 +478,6 @@ void Options::setDefaults()
     ICCPC_appendParamsToDesc = false;
 
     fastexport_bypass_sharpening         = true;
-    fastexport_bypass_sharpenEdge        = true;
     fastexport_bypass_sharpenMicro       = true;
     //fastexport_bypass_lumaDenoise        = true;
     //fastexport_bypass_colorDenoise       = true;
@@ -1644,10 +1643,6 @@ void Options::readFromFile(Glib::ustring fname)
                     fastexport_bypass_sharpening = keyFile.get_boolean("Fast Export", "fastexport_bypass_sharpening");
                 }
 
-                if (keyFile.has_key("Fast Export", "fastexport_bypass_sharpenEdge")) {
-                    fastexport_bypass_sharpenEdge = keyFile.get_boolean("Fast Export", "fastexport_bypass_sharpenEdge");
-                }
-
                 if (keyFile.has_key("Fast Export", "fastexport_bypass_sharpenMicro")) {
                     fastexport_bypass_sharpenMicro = keyFile.get_boolean("Fast Export", "fastexport_bypass_sharpenMicro");
                 }
@@ -2148,7 +2143,6 @@ void Options::saveToFile(Glib::ustring fname)
 
 
         keyFile.set_boolean("Fast Export", "fastexport_bypass_sharpening", fastexport_bypass_sharpening);
-        keyFile.set_boolean("Fast Export", "fastexport_bypass_sharpenEdge", fastexport_bypass_sharpenEdge);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_sharpenMicro", fastexport_bypass_sharpenMicro);
         //keyFile.set_boolean ("Fast Export", "fastexport_bypass_lumaDenoise" , fastexport_bypass_lumaDenoise);
         //keyFile.set_boolean ("Fast Export", "fastexport_bypass_colorDenoise" , fastexport_bypass_colorDenoise);

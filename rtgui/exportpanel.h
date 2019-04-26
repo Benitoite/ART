@@ -42,7 +42,6 @@ protected:
     Gtk::RadioButton* use_fast_pipeline;
     Gtk::RadioButton* use_normal_pipeline;
     Gtk::CheckButton* bypass_ALL;
-    Gtk::CheckButton* bypass_sharpenEdge;
     Gtk::CheckButton* bypass_sharpenMicro;
     Gtk::CheckButton* bypass_sharpening;
     //Gtk::CheckButton* bypass_lumaDenoise;
@@ -82,7 +81,6 @@ protected:
 
     sigc::connection enabledconn, bypass_ALLconn, FastExportconn, ExportLoadSettingsconn, ExportSaveSettingsconn;
     sigc::connection bypass_sharpeningConn        ;
-    sigc::connection bypass_sharpenEdgeConn       ;
     sigc::connection bypass_sharpenMicroConn      ;
     //sigc::connection bypass_lumaDenoiseConn     ;
     //sigc::connection bypass_colorDenoiseConn    ;
