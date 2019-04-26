@@ -337,51 +337,6 @@ struct ToneCurveParams {
 
 };
 
-/**
-  * Parameters of Retinex
-  */
-struct RetinexParams {
-    bool enabled;
-    std::vector<double>   cdcurve;
-    std::vector<double>   cdHcurve;
-    std::vector<double>   lhcurve;
-    std::vector<double> transmissionCurve;
-    std::vector<double> gaintransmissionCurve;
-    std::vector<double>   mapcurve;
-    int     str;
-    int     scal;
-    int     iter;
-    int     grad;
-    int     grads;
-    double  gam;
-    double  slope;
-    int     neigh;
-    int     offs;
-    int     highlights;
-    int     htonalwidth;
-    int     shadows;
-    int     stonalwidth;
-    int     radius;
-
-    Glib::ustring retinexMethod;
-    Glib::ustring retinexcolorspace;
-    Glib::ustring gammaretinex;
-    Glib::ustring mapMethod;
-    Glib::ustring viewMethod;
-    int     vart;
-    int     limd;
-    int     highl;
-    int     skal;
-    bool    medianmap;
-
-    RetinexParams();
-
-    bool operator ==(const RetinexParams& other) const;
-    bool operator !=(const RetinexParams& other) const;
-
-    void getCurves(RetinextransmissionCurve& transmissionCurveLUT, RetinexgaintransmissionCurve& gaintransmissionCurveLUT) const;
-};
-
 
 /**
   * Parameters of the luminance curve
@@ -1494,7 +1449,6 @@ class ProcParams
 public:
     ToneCurveParams         toneCurve;       ///< Tone curve parameters
     LCurveParams            labCurve;        ///< CIELAB luminance curve parameters
-    RetinexParams           retinex;         ///< Retinex parameters
     LocalContrastParams     localContrast;   ////< Local contrast parameters
     RGBCurvesParams         rgbCurves;       ///< RGB curves parameters
     SharpeningParams        sharpening;      ///< Sharpening parameters

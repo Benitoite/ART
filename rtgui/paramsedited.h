@@ -59,47 +59,6 @@ public:
     bool clampOOG;
 };
 
-class RetinexParamsEdited
-{
-public:
-    bool enabled;
-    bool str;
-    bool scal;
-    bool iter;
-    bool grad;
-    bool grads;
-    bool gam;
-    bool slope;
-    bool neigh;
-    bool offs;
-    bool retinexMethod;
-    bool mapMethod;
-    bool viewMethod;
-    bool retinexcolorspace;
-    bool gammaretinex;
-    bool vart;
-    bool limd;
-    bool highl;
-    bool baselog;
-    bool skal;
-    bool method;
-    bool transmissionCurve;
-    bool gaintransmissionCurve;
-    bool cdcurve;
-    bool mapcurve;
-    bool cdHcurve;
-    bool lhcurve;
-    bool retinex;
-    bool medianmap;
-    bool isUnchanged() const;
-    bool highlights;
-    bool htonalwidth;
-    bool shadows;
-    bool stonalwidth;
-    bool radius;
-
-};
-
 
 class LCurveParamsEdited
 {
@@ -787,7 +746,6 @@ public:
     LCurveParamsEdited            labCurve;
     LocalContrastParamsEdited     localContrast;
     RGBCurvesParamsEdited         rgbCurves;
-    RetinexParamsEdited             retinex;
     SharpeningParamsEdited        sharpening;
     SharpeningParamsEdited        prsharpening;
     SharpenMicroParamsEdited      sharpenMicro;

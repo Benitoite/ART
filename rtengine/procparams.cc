@@ -540,128 +540,6 @@ bool ToneCurveParams::operator !=(const ToneCurveParams& other) const
     return !(*this == other);
 }
 
-RetinexParams::RetinexParams() :
-    enabled(false),
-    cdcurve{
-        DCT_Linear
-    },
-    cdHcurve{
-        DCT_Linear
-    },
-    lhcurve{
-        DCT_Linear
-    },
-    transmissionCurve{
-        FCT_MinMaxCPoints,
-        0.00,
-        0.50,
-        0.35,
-        0.35,
-        0.60,
-        0.75,
-        0.35,
-        0.35,
-        1.00,
-        0.50,
-        0.35,
-        0.35
-    },
-    gaintransmissionCurve{
-        FCT_MinMaxCPoints,
-        0.00,
-        0.1,
-        0.35,
-        0.00,
-        0.25,
-        0.25,
-        0.35,
-        0.35,
-        0.70,
-        0.25,
-        0.35,
-        0.35,
-        1.00,
-        0.1,
-        0.00,
-        0.00
-    },
-    mapcurve{
-        DCT_Linear
-    },
-    str(20),
-    scal(3),
-    iter(1),
-    grad(1),
-    grads(1),
-    gam(1.30),
-    slope(3.),
-    neigh(80),
-    offs(0),
-    highlights(0),
-    htonalwidth(80),
-    shadows(0),
-    stonalwidth(80),
-    radius(40),
-    retinexMethod("high"),
-    retinexcolorspace("Lab"),
-    gammaretinex("none"),
-    mapMethod("none"),
-    viewMethod("none"),
-    vart(200),
-    limd(8),
-    highl(4),
-    skal(3),
-    medianmap(false)
-{
-}
-
-bool RetinexParams::operator ==(const RetinexParams& other) const
-{
-    return
-        enabled == other.enabled
-        && cdcurve == other.cdcurve
-        && cdHcurve == other.cdHcurve
-        && lhcurve == other.lhcurve
-        && transmissionCurve == other.transmissionCurve
-        && gaintransmissionCurve == other.gaintransmissionCurve
-        && mapcurve == other.mapcurve
-        && str == other.str
-        && scal == other.scal
-        && iter == other.iter
-        && grad == other.grad
-        && grads == other.grads
-        && gam == other.gam
-        && slope == other.slope
-        && neigh == other.neigh
-        && offs == other.offs
-        && highlights == other.highlights
-        && htonalwidth == other.htonalwidth
-        && shadows == other.shadows
-        && stonalwidth == other.stonalwidth
-        && radius == other.radius
-        && retinexMethod == other.retinexMethod
-        && retinexcolorspace == other.retinexcolorspace
-        && gammaretinex == other.gammaretinex
-        && mapMethod == other.mapMethod
-        && viewMethod == other.viewMethod
-        && vart == other.vart
-        && limd == other.limd
-        && highl == other.highl
-        && skal == other.skal
-        && medianmap == other.medianmap;
-}
-
-bool RetinexParams::operator !=(const RetinexParams& other) const
-{
-    return !(*this == other);
-}
-
-void RetinexParams::getCurves(RetinextransmissionCurve &transmissionCurveLUT, RetinexgaintransmissionCurve &gaintransmissionCurveLUT) const
-{
-    transmissionCurveLUT.Set(this->transmissionCurve);
-    gaintransmissionCurveLUT.Set(this->gaintransmissionCurve);
-
-}
 
 LCurveParams::LCurveParams() :
     enabled(false),
@@ -2744,42 +2622,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->toneCurve.curve, "Exposure", "Curve", toneCurve.curve, keyFile);
         saveToKeyfile(!pedited || pedited->toneCurve.curve2, "Exposure", "Curve2", toneCurve.curve2, keyFile);
 
-#if 0 // ALB
-// Retinex
-        saveToKeyfile(!pedited || pedited->retinex.enabled, "Retinex", "Enabled", retinex.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.str, "Retinex", "Str", retinex.str, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.scal, "Retinex", "Scal", retinex.scal, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.iter, "Retinex", "Iter", retinex.iter, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.grad, "Retinex", "Grad", retinex.grad, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.grads, "Retinex", "Grads", retinex.grads, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.gam, "Retinex", "Gam", retinex.gam, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.slope, "Retinex", "Slope", retinex.slope, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.medianmap, "Retinex", "Median", retinex.medianmap, keyFile);
-
-        saveToKeyfile(!pedited || pedited->retinex.neigh, "Retinex", "Neigh", retinex.neigh, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.offs, "Retinex", "Offs", retinex.offs, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.vart, "Retinex", "Vart", retinex.vart, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.limd, "Retinex", "Limd", retinex.limd, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.highl, "Retinex", "highl", retinex.highl, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.skal, "Retinex", "skal", retinex.skal, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.retinexMethod, "Retinex", "RetinexMethod", retinex.retinexMethod, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.mapMethod, "Retinex", "mapMethod", retinex.mapMethod, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.viewMethod, "Retinex", "viewMethod", retinex.viewMethod, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.retinexcolorspace, "Retinex", "Retinexcolorspace", retinex.retinexcolorspace, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.gammaretinex, "Retinex", "Gammaretinex", retinex.gammaretinex, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.cdcurve, "Retinex", "CDCurve", retinex.cdcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.mapcurve, "Retinex", "MAPCurve", retinex.mapcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.cdHcurve, "Retinex", "CDHCurve", retinex.cdHcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.lhcurve, "Retinex", "LHCurve", retinex.lhcurve, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.highlights, "Retinex", "Highlights", retinex.highlights, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.htonalwidth, "Retinex", "HighlightTonalWidth", retinex.htonalwidth, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.shadows, "Retinex", "Shadows", retinex.shadows, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.stonalwidth, "Retinex", "ShadowTonalWidth", retinex.stonalwidth, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.radius, "Retinex", "Radius", retinex.radius, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.transmissionCurve, "Retinex", "TransmissionCurve", retinex.transmissionCurve, keyFile);
-        saveToKeyfile(!pedited || pedited->retinex.gaintransmissionCurve, "Retinex", "GainTransmissionCurve", retinex.gaintransmissionCurve, keyFile);
-#endif // ALB
-
 // Local contrast
         saveToKeyfile(!pedited || pedited->localContrast.enabled, "Local Contrast", "Enabled", localContrast.enabled, keyFile);
         saveToKeyfile(!pedited || pedited->localContrast.mode, "Local Contrast", "Mode", int(localContrast.mode), keyFile);
@@ -3554,48 +3396,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             assignFromKeyfile(keyFile, "Black & White", "Filter", pedited, blackwhite.filter, pedited->blackwhite.filter);
             assignFromKeyfile(keyFile, "Black & White", "Setting", pedited, blackwhite.setting, pedited->blackwhite.setting);
             assignFromKeyfile(keyFile, "Black & White", "LuminanceCurve", pedited, blackwhite.luminanceCurve, pedited->blackwhite.luminanceCurve);
-        }
-
-        if (false /* ALB */ && keyFile.has_group("Retinex")) {
-            assignFromKeyfile(keyFile, "Retinex", "Median", pedited, retinex.medianmap, pedited->retinex.medianmap);
-            assignFromKeyfile(keyFile, "Retinex", "RetinexMethod", pedited, retinex.retinexMethod, pedited->retinex.retinexMethod);
-            assignFromKeyfile(keyFile, "Retinex", "mapMethod", pedited, retinex.mapMethod, pedited->retinex.mapMethod);
-            assignFromKeyfile(keyFile, "Retinex", "viewMethod", pedited, retinex.viewMethod, pedited->retinex.viewMethod);
-
-            assignFromKeyfile(keyFile, "Retinex", "Retinexcolorspace", pedited, retinex.retinexcolorspace, pedited->retinex.retinexcolorspace);
-            assignFromKeyfile(keyFile, "Retinex", "Gammaretinex", pedited, retinex.gammaretinex, pedited->retinex.gammaretinex);
-            assignFromKeyfile(keyFile, "Retinex", "Enabled", pedited, retinex.enabled, pedited->retinex.enabled);
-            assignFromKeyfile(keyFile, "Retinex", "Neigh", pedited, retinex.neigh, pedited->retinex.neigh);
-            assignFromKeyfile(keyFile, "Retinex", "Str", pedited, retinex.str, pedited->retinex.str);
-            assignFromKeyfile(keyFile, "Retinex", "Scal", pedited, retinex.scal, pedited->retinex.scal);
-            assignFromKeyfile(keyFile, "Retinex", "Iter", pedited, retinex.iter, pedited->retinex.iter);
-            assignFromKeyfile(keyFile, "Retinex", "Grad", pedited, retinex.grad, pedited->retinex.grad);
-            assignFromKeyfile(keyFile, "Retinex", "Grads", pedited, retinex.grads, pedited->retinex.grads);
-            assignFromKeyfile(keyFile, "Retinex", "Gam", pedited, retinex.gam, pedited->retinex.gam);
-            assignFromKeyfile(keyFile, "Retinex", "Slope", pedited, retinex.slope, pedited->retinex.slope);
-            assignFromKeyfile(keyFile, "Retinex", "Offs", pedited, retinex.offs, pedited->retinex.offs);
-            assignFromKeyfile(keyFile, "Retinex", "Vart", pedited, retinex.vart, pedited->retinex.vart);
-            assignFromKeyfile(keyFile, "Retinex", "Limd", pedited, retinex.limd, pedited->retinex.limd);
-            assignFromKeyfile(keyFile, "Retinex", "highl", pedited, retinex.highl, pedited->retinex.highl);
-            assignFromKeyfile(keyFile, "Retinex", "skal", pedited, retinex.skal, pedited->retinex.skal);
-            assignFromKeyfile(keyFile, "Retinex", "CDCurve", pedited, retinex.cdcurve, pedited->retinex.cdcurve);
-
-            assignFromKeyfile(keyFile, "Retinex", "MAPCurve", pedited, retinex.mapcurve, pedited->retinex.mapcurve);
-
-            assignFromKeyfile(keyFile, "Retinex", "CDHCurve", pedited, retinex.cdHcurve, pedited->retinex.cdHcurve);
-
-            assignFromKeyfile(keyFile, "Retinex", "LHCurve", pedited, retinex.lhcurve, pedited->retinex.lhcurve);
-
-            assignFromKeyfile(keyFile, "Retinex", "Highlights", pedited, retinex.highlights, pedited->retinex.highlights);
-            assignFromKeyfile(keyFile, "Retinex", "HighlightTonalWidth", pedited, retinex.htonalwidth, pedited->retinex.htonalwidth);
-            assignFromKeyfile(keyFile, "Retinex", "Shadows", pedited, retinex.shadows, pedited->retinex.shadows);
-            assignFromKeyfile(keyFile, "Retinex", "ShadowTonalWidth", pedited, retinex.stonalwidth, pedited->retinex.stonalwidth);
-
-            assignFromKeyfile(keyFile, "Retinex", "Radius", pedited, retinex.radius, pedited->retinex.radius);
-
-            assignFromKeyfile(keyFile, "Retinex", "TransmissionCurve", pedited, retinex.transmissionCurve, pedited->retinex.transmissionCurve);
-
-            assignFromKeyfile(keyFile, "Retinex", "GainTransmissionCurve", pedited, retinex.gaintransmissionCurve, pedited->retinex.gaintransmissionCurve);
         }
 
         if (keyFile.has_group("Local Contrast")) {
@@ -5080,7 +4880,6 @@ bool ProcParams::operator ==(const ProcParams& other) const
 {
     return
         toneCurve == other.toneCurve
-        && retinex == other.retinex
         && localContrast == other.localContrast
         && labCurve == other.labCurve
         && sharpenMicro == other.sharpenMicro

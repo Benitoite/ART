@@ -60,7 +60,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     colorappearance     = Gtk::manage (new ColorAppearance ());
     whitebalance        = Gtk::manage (new WhiteBalance ());
     vignetting          = Gtk::manage (new Vignetting ());
-    retinex             = Gtk::manage (new Retinex ());
     gradient            = Gtk::manage (new Gradient ());
     pcvignette          = Gtk::manage (new PCVignette ());
     perspective         = Gtk::manage (new PerspCorrection ());
@@ -122,7 +121,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     //addfavoritePanel (exposurePanel, epd);
     addfavoritePanel (exposurePanel, fattal);
     addfavoritePanel (exposurePanel, toneEqualizer);    
-    addfavoritePanel (advancedPanel, retinex);
     addfavoritePanel (exposurePanel, pcvignette);
     addfavoritePanel (exposurePanel, gradient);
     //addfavoritePanel (exposurePanel, lcurve);
@@ -326,7 +324,6 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorbayer->FoldableToolPanel::show();
                     preprocess->FoldableToolPanel::show();
                     flatfield->FoldableToolPanel::show();
-                    retinex->FoldableToolPanel::setGrayedOut(false);
 
                     return false;
                 }
@@ -341,7 +338,6 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorbayer->FoldableToolPanel::hide();
                     preprocess->FoldableToolPanel::show();
                     flatfield->FoldableToolPanel::show();
-                    retinex->FoldableToolPanel::setGrayedOut(false);
 
                     return false;
                 }
@@ -356,7 +352,6 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorxtrans->FoldableToolPanel::hide();
                     preprocess->FoldableToolPanel::hide();
                     flatfield->FoldableToolPanel::show();
-                    retinex->FoldableToolPanel::setGrayedOut(false);
 
                     return false;
                 }
@@ -370,7 +365,6 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorxtrans->FoldableToolPanel::hide();
                     preprocess->FoldableToolPanel::hide();
                     flatfield->FoldableToolPanel::hide();
-                    retinex->FoldableToolPanel::setGrayedOut(false);
 
                     return false;
                 }
@@ -381,7 +375,6 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
             [this]() -> bool
             {
                 rawPanelSW->set_sensitive(false);
-                retinex->FoldableToolPanel::setGrayedOut(true);
 
                 return false;
             }
@@ -498,7 +491,7 @@ void ToolPanelCoordinator::profileChange(
         lParams[1] = *mergedParams;
         pe.initFrom (lParams);
 
-        filterRawRefresh = pe.raw.isUnchanged() && pe.lensProf.isUnchanged() && pe.retinex.isUnchanged();
+        filterRawRefresh = pe.raw.isUnchanged() && pe.lensProf.isUnchanged();
     }
 
     *params = *mergedParams;
@@ -586,7 +579,6 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         ipc->setAutoWBListener (whitebalance);
         ipc->setAutoChromaListener (denoise);
         ipc->setWaveletListener (wavelet);
-        ipc->setRetinexListener (retinex);
         ipc->setSizeListener (crop);
         ipc->setSizeListener (resize);
         ipc->setImageTypeListener (this);
@@ -647,7 +639,6 @@ void ToolPanelCoordinator::updateToolState()
         }
 
         wavelet->updateToolState (temp);
-        retinex->updateToolState (temp);
     }
 }
 
@@ -677,7 +668,6 @@ void ToolPanelCoordinator::writeToolExpandedStatus (std::vector<int> &tpOpen)
     }
 
     wavelet->writeOptions (tpOpen);
-    retinex->writeOptions (tpOpen);
 }
 
 
@@ -880,7 +870,6 @@ void ToolPanelCoordinator::updateCurveBackgroundHistogram(
     toneCurve->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve,histLCAM,  histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
     lcurve->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve, histLCAM, histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
     rgbcurves->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve, histLCAM, histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
-    retinex->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve, histLCAM, histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
 }
 
 void ToolPanelCoordinator::foldAllButOne (Gtk::Box* parent, FoldableToolPanel* openedSection)

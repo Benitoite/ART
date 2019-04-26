@@ -50,7 +50,6 @@ public:
     Gtk::CheckButton* sh;
     Gtk::CheckButton* toneEqualizer;
     Gtk::CheckButton* fattal;
-    Gtk::CheckButton* retinex;
     Gtk::CheckButton* pcvignette;
     Gtk::CheckButton* gradient;
     Gtk::CheckButton* labcurve;
@@ -137,7 +136,7 @@ public:
 
     sigc::connection wbConn, exposureConn, localcontrastConn, shConn, pcvignetteConn, gradientConn, labcurveConn, colorappearanceConn;
     sigc::connection toneEqualizerConn;
-    sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, retinexConn, dehazeConn, logencConn;
+    sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, dehazeConn, logencConn;
     sigc::connection grainConn;
     sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
     sigc::connection chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;

@@ -50,7 +50,6 @@
 #include "perspective.h"
 #include "rotate.h"
 #include "vignetting.h"
-#include "retinex.h"
 #include "gradient.h"
 #include "pcvignette.h"
 #include "toolbar.h"
@@ -104,7 +103,6 @@ protected:
     WhiteBalance* whitebalance;
     Vignetting* vignetting;
     Gradient* gradient;
-    Retinex*  retinex;
     PCVignette* pcvignette;
     LensGeometry* lensgeom;
     LensProfilePanel* lensProf;

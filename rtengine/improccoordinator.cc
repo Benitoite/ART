@@ -288,30 +288,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             } else {
                 highDetailRawComputed = false;
             }
-    
-            if (params.retinex.enabled) {
-                lhist16RETI(32768);
-                lhist16RETI.clear();
-    
-                imgsrc->retinexPrepareBuffers(params.icm, params.retinex, conversionBuffer, lhist16RETI);
-            }
-        }
-    
-        if ((todo & (M_RETINEX | M_INIT)) && params.retinex.enabled) {
-            bool dehacontlutili = false;
-            bool mapcontlutili = false;
-            bool useHsl = false;
-            LUTf cdcurve(65536, 0);
-            LUTf mapcurve(65536, 0);
-    
-            imgsrc->retinexPrepareCurves(params.retinex, cdcurve, mapcurve, dehatransmissionCurve, dehagaintransmissionCurve, dehacontlutili, mapcontlutili, useHsl, lhist16RETI, histLRETI);
-            float minCD, maxCD, mini, maxi, Tmean, Tsigma, Tmin, Tmax;
-            imgsrc->retinex(params.icm, params.retinex,  params.toneCurve, cdcurve, mapcurve, dehatransmissionCurve, dehagaintransmissionCurve, conversionBuffer, dehacontlutili, mapcontlutili, useHsl, minCD, maxCD, mini, maxi, Tmean, Tsigma, Tmin, Tmax, histLRETI);   //enabled Retinex
-    
-            if (dehaListener) {
-                dehaListener->minmaxChanged(maxCD, minCD, mini, maxi, Tmean, Tsigma, Tmin, Tmax);
-            }
-        }
+        }   
     
         if (todo & (M_INIT | M_LINDENOISE | M_HDR)) {
             MyMutex::MyLock initLock(minit);  // Also used in crop window
@@ -1289,7 +1266,6 @@ void ImProcCoordinator::process()
             || params.filmSimulation != nextParams.filmSimulation
             || params.softlight != nextParams.softlight
             || params.raw != nextParams.raw
-            || params.retinex != nextParams.retinex
             || params.wavelet != nextParams.wavelet
             || params.dirpyrequalizer != nextParams.dirpyrequalizer
             || params.dehaze != nextParams.dehaze

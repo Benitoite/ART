@@ -72,7 +72,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     grain = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_GRAIN")));
 
     // Advanced Settings:
-    retinex     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RETINEX")));
     colorappearance = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_COLORAPP")));
     wavelet     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EQUALIZER")));
 
@@ -222,7 +221,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     //ADVANCED
     vboxes[6]->pack_start (*advanced, Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start (*hseps[6], Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*retinex, Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start (*wavelet, Gtk::PACK_SHRINK, 2);
 
@@ -350,7 +348,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     grainConn    = grain->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
 
     // Advanced Settings:
-    retinexConn     = retinex->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
     colorappearanceConn = colorappearance->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
     waveletConn = wavelet->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
 
@@ -584,13 +581,11 @@ void PartialPasteDlg::detailToggled ()
 void PartialPasteDlg::advancedToggled ()
 {
 
-    ConnectionBlocker retinexBlocker(retinexConn);
     ConnectionBlocker colorappearanceBlocker(colorappearanceConn);
     ConnectionBlocker waveletBlocker(waveletConn);
 
     advanced->set_inconsistent (false);
 
-    retinex->set_active (advanced->get_active ());
     colorappearance->set_active (advanced->get_active ());
     wavelet->set_active (advanced->get_active ());
 }
@@ -735,10 +730,6 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!fattal->get_active ()) {
         filterPE.fattal     = falsePE.fattal;
-    }
-
-    if (!retinex->get_active ()) {
-        filterPE.retinex        = falsePE.retinex;
     }
 
     if (!pcvignette->get_active ()) {

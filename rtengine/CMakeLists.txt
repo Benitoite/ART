@@ -80,7 +80,6 @@ set(RTENGINESOURCEFILES
     init.cc
     iplab2rgb.cc
     ipresize.cc
-    ipretinex.cc
     ipsharpen.cc
     iptransform.cc
     ipwavelet.cc
