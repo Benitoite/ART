@@ -162,7 +162,6 @@ void BatchToolPanelCoordinator::initSession ()
             shadowshighlights->setAdjusterBehavior (false, false);
             //dirpyrequalizer->setAdjusterBehavior (false, false, false);
             cbdl->setAdjusterBehavior(false, false, false);
-            wavelet->setAdjusterBehavior (false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false);
             denoise->setAdjusterBehavior (false, false, false, false, false, false, false);
             bayerprocess->setAdjusterBehavior(false, false, false, false, false, false);
             xtransprocess->setAdjusterBehavior(false, false);
@@ -204,7 +203,6 @@ void BatchToolPanelCoordinator::initSession ()
             blackwhite->setAdjusterBehavior (options.baBehav[ADDSET_BLACKWHITE_HUES], options.baBehav[ADDSET_BLACKWHITE_GAMMA]);
             shadowshighlights->setAdjusterBehavior (options.baBehav[ADDSET_SH_HIGHLIGHTS], options.baBehav[ADDSET_SH_SHADOWS]);
             // dirpyrequalizer->setAdjusterBehavior (options.baBehav[ADDSET_DIRPYREQ], options.baBehav[ADDSET_DIRPYREQ_THRESHOLD], options.baBehav[ADDSET_DIRPYREQ_SKINPROTECT]);
-            wavelet->setAdjusterBehavior (options.baBehav[ADDSET_WA], options.baBehav[ADDSET_WA_THRESHOLD], options.baBehav[ADDSET_WA_THRESHOLD2], options.baBehav[ADDSET_WA_THRES], options.baBehav[ADDSET_WA_CHRO], options.baBehav[ADDSET_WA_CHROMA], options.baBehav[ADDSET_WA_CONTRAST], options.baBehav[ADDSET_WA_SKINPROTECT], options.baBehav[ADDSET_WA_RESCHRO], options.baBehav[ADDSET_WA_TMRS], options.baBehav[ADDSET_WA_RESCON], options.baBehav[ADDSET_WA_RESCONH], options.baBehav[ADDSET_WA_THRR], options.baBehav[ADDSET_WA_THRRH], options.baBehav[ADDSET_WA_SKYPROTECT], options.baBehav[ADDSET_WA_EDGRAD], options.baBehav[ADDSET_WA_EDGVAL], options.baBehav[ADDSET_WA_STRENGTH], options.baBehav[ADDSET_WA_GAMMA], options.baBehav[ADDSET_WA_EDGEDETECT], options.baBehav[ADDSET_WA_EDGEDETECTTHR], options.baBehav[ADDSET_WA_EDGEDETECTTHR2]);
             denoise->setAdjusterBehavior (options.baBehav[ADDSET_DIRPYRDN_LUMA], options.baBehav[ADDSET_DIRPYRDN_LUMDET], options.baBehav[ADDSET_DIRPYRDN_CHROMA], options.baBehav[ADDSET_DIRPYRDN_CHROMARED], options.baBehav[ADDSET_DIRPYRDN_CHROMABLUE], options.baBehav[ADDSET_DIRPYRDN_GAMMA], options.baBehav[ADDSET_DIRPYRDN_PASSES]);
             bayerprocess->setAdjusterBehavior(options.baBehav[ADDSET_BAYER_FALSE_COLOR_SUPPRESSION], options.baBehav[ADDSET_BAYER_ITER], options.baBehav[ADDSET_BAYER_DUALDEMOZCONTRAST], options.baBehav[ADDSET_BAYER_PS_SIGMA], options.baBehav[ADDSET_BAYER_PS_SMOOTH], options.baBehav[ADDSET_BAYER_PS_EPERISO]);
             xtransprocess->setAdjusterBehavior(options.baBehav[ADDSET_BAYER_FALSE_COLOR_SUPPRESSION], options.baBehav[ADDSET_BAYER_DUALDEMOZCONTRAST]);
@@ -291,29 +289,6 @@ void BatchToolPanelCoordinator::initSession ()
             if (options.baBehav[ADDSET_VIGN_RADIUS]) { pparams.vignetting.radius = 0; }
             if (options.baBehav[ADDSET_VIGN_STRENGTH]) { pparams.vignetting.strength = 0; }
             if (options.baBehav[ADDSET_VIGN_CENTER]) { pparams.vignetting.centerX = pparams.vignetting.centerY = 0; }
-            // if (options.baBehav[ADDSET_DIRPYREQ]) for (int i = 0; i < 6; i++) { pparams.dirpyrequalizer.mult[i] = 0; }
-            // if (options.baBehav[ADDSET_DIRPYREQ_THRESHOLD]) { pparams.dirpyrequalizer.threshold = 0; }
-            // if (options.baBehav[ADDSET_DIRPYREQ_SKINPROTECT]) { pparams.dirpyrequalizer.skinprotect = 0; }
-            if (options.baBehav[ADDSET_WA]) for (int i = 0; i < 8; i++) { pparams.wavelet.c[i] = 0; }
-            if (options.baBehav[ADDSET_WA_THRESHOLD]) { pparams.wavelet.threshold = 0; }
-            if (options.baBehav[ADDSET_WA_THRESHOLD2]) { pparams.wavelet.threshold2 = 0; }
-            if (options.baBehav[ADDSET_WA_SKINPROTECT]) { pparams.wavelet.skinprotect = 0; }
-            if (options.baBehav[ADDSET_WA_CHRO]) { pparams.wavelet.chro = 0; }
-            if (options.baBehav[ADDSET_WA_CHROMA]) { pparams.wavelet.chroma = 0; }
-            if (options.baBehav[ADDSET_WA_CONTRAST]) { pparams.wavelet.contrast = 0; }
-            if (options.baBehav[ADDSET_WA_THRES]) { pparams.wavelet.thres = 0; }
-            if (options.baBehav[ADDSET_WA_RESCON]) { pparams.wavelet.rescon = 0; }
-            if (options.baBehav[ADDSET_WA_RESCONH]) { pparams.wavelet.resconH = 0; }
-            if (options.baBehav[ADDSET_WA_RESCHRO]) { pparams.wavelet.reschro = 0; }
-            if (options.baBehav[ADDSET_WA_TMRS]) { pparams.wavelet.tmrs = 0; }
-            if (options.baBehav[ADDSET_WA_THRR]) { pparams.wavelet.thr = 0; }
-            if (options.baBehav[ADDSET_WA_THRRH]) { pparams.wavelet.thrH = 0; }
-            if (options.baBehav[ADDSET_WA_SKYPROTECT]) { pparams.wavelet.sky = 0; }
-            if (options.baBehav[ADDSET_WA_EDGRAD]) { pparams.wavelet.edgrad = 0; }
-            if (options.baBehav[ADDSET_WA_EDGVAL]) { pparams.wavelet.edgval = 0; }
-            if (options.baBehav[ADDSET_WA_STRENGTH]) { pparams.wavelet.strength = 0; }
-            if (options.baBehav[ADDSET_WA_EDGEDETECT]) { pparams.wavelet.edgedetect = 0; }
-            if (options.baBehav[ADDSET_WA_GAMMA]) { pparams.wavelet.gamma = 0; }
             if (options.baBehav[ADDSET_DIRPYRDN_LUMA]) { pparams.denoise.luminance = 0; }
             if (options.baBehav[ADDSET_DIRPYRDN_CHROMA]) { pparams.denoise.chrominance = 0; }
             if (options.baBehav[ADDSET_DIRPYRDN_CHROMARED]) { pparams.denoise.chrominanceRedGreen = 0; }

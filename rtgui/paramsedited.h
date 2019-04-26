@@ -484,95 +484,7 @@ public:
     bool outputIntent;
     bool outputBPC;
 };
-class WaveletParamsEdited
-{
 
-public:
-    bool enabled;
-    bool strength;
-    bool balance;
-    bool iter;
-    bool median;
-    bool medianlev;
-    bool linkedg;
-    bool cbenab;
-    bool lipst;
-    bool Medgreinf;
-    bool avoid;
-    bool tmr;
-    bool c[9];
-    bool ch[9];
-    bool Lmethod;
-    bool CHmethod;
-    bool CHSLmethod;
-    bool EDmethod;
-    bool BAmethod;
-    bool NPmethod;
-    bool TMmethod;
-    bool HSmethod;
-    bool CLmethod;
-    bool Backmethod;
-    bool Tilesmethod;
-    bool daubcoeffmethod;
-    bool Dirmethod;
-    bool rescon;
-    bool resconH;
-    bool reschro;
-    bool tmrs;
-    bool gamma;
-    bool sup;
-    bool sky;
-    bool thres;
-    bool threshold;
-    bool threshold2;
-    bool edgedetect;
-    bool edgedetectthr;
-    bool edgedetectthr2;
-    bool edgesensi;
-    bool edgeampli;
-    bool chro;
-    bool chroma;
-    bool contrast;
-    bool edgrad;
-    bool edgval;
-    bool edgthresh;
-    bool thr;
-    bool thrH;
-    bool skinprotect;
-    bool hueskin;
-    bool hueskin2;
-    bool hllev;
-    bool bllev;
-    bool edgcont;
-    bool level0noise;
-    bool level1noise;
-    bool level2noise;
-    bool level3noise;
-    bool ccwcurve;
-    bool opacityCurveBY;
-    bool opacityCurveRG;
-    bool opacityCurveW;
-    bool opacityCurveWL;
-    bool hhcurve;
-    bool Chcurve;
-    bool pastlev;
-    bool satlev;
-    bool wavclCurve;
-    bool greenlow;
-    bool bluelow;
-    bool greenmed;
-    bool bluemed;
-    bool greenhigh;
-    bool bluehigh;
-    bool expcontrast;
-    bool expchroma;
-    bool expedge;
-    bool expresid;
-    bool expfinal;
-    bool exptoning;
-    bool expnoise;
-
-};
 
 class DirPyrEqualizerParamsEdited
 {
@@ -776,7 +688,6 @@ public:
     ColorManagementParamsEdited   icm;
     RAWParamsEdited               raw;
     DirPyrEqualizerParamsEdited   dirpyrequalizer;
-    WaveletParamsEdited             wavelet;
     FilmSimulationParamsEdited    filmSimulation;
     SoftLightParamsEdited         softlight;
     DehazeParamsEdited            dehaze;

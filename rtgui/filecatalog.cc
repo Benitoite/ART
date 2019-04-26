@@ -1133,10 +1133,6 @@ void FileCatalog::developRequested(const std::vector<FileBrowserEntry*>& tbe, bo
                         params.dirpyrequalizer.enabled = false;
                     }
 
-                    if (options.fastexport_bypass_wavelet) {
-                        params.wavelet.enabled = false;
-                    }
-
                     //if (options.fastexport_bypass_raw_bayer_all_enhance) params.raw.bayersensor.all_enhance = false;
                     if (options.fastexport_bypass_raw_bayer_dcb_iterations) {
                         params.raw.bayersensor.dcb_iterations = 0;

@@ -55,7 +55,6 @@
 #include "toolbar.h"
 #include "lensgeom.h"
 #include "lensgeomlistener.h"
-#include "wavelet.h"
 #include "dirpyrequalizer.h"
 #include "preprocess.h"
 #include "bayerpreprocess.h"
@@ -129,8 +128,6 @@ protected:
     SharpenMicro* sharpenMicro;
     LCurve* lcurve;
     RGBCurves* rgbcurves;
-    Wavelet * wavelet;
-    //DirPyrEqualizer* dirpyrequalizer;
     SoftLight *softlight;
     Dehaze *dehaze;
     FilmGrain *grain;

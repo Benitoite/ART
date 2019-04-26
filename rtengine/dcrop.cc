@@ -411,103 +411,10 @@ void Crop::update(int todo)
 
         parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
 
-        //   if (skip==1) {
-        WaveletParams WaveParams = params.wavelet;
-
-        // if (params.dirpyrequalizer.cbdlMethod == "aft") {
-        //     if (((params.colorappearance.enabled && !settings->autocielab)  || (!params.colorappearance.enabled))) {
-        //         parent->ipf.dirpyrequalizer(labnCrop, skip);
-        //         //  parent->ipf.Lanczoslab (labnCrop,labnCrop , 1.f/skip);
-        //     }
-        // }
-
-        int kall = 0;
-        int minwin = min(labnCrop->W, labnCrop->H);
-        int maxlevelcrop = 10;
-
-        //  if(cp.mul[9]!=0)maxlevelcrop=10;
-        // adap maximum level wavelet to size of crop
-        if (minwin * skip < 1024) {
-            maxlevelcrop = 9;    //sampling wavelet 512
-        }
-
-        if (minwin * skip < 512) {
-            maxlevelcrop = 8;    //sampling wavelet 256
-        }
-
-        if (minwin * skip < 256) {
-            maxlevelcrop = 7;    //sampling 128
-        }
-
-        if (minwin * skip < 128) {
-            maxlevelcrop = 6;
-        }
-
-        if (minwin < 64) {
-            maxlevelcrop = 5;
-        }
-
-        int realtile;
-
-        if (params.wavelet.Tilesmethod == "big") {
-            realtile = 22;
-        } else /*if (params.wavelet.Tilesmethod == "lit")*/ {
-            realtile = 12;
-        }
-
-        int tilesize = 128 * realtile;
-        int overlap = (int) tilesize * 0.125f;
-
-        int numtiles_W, numtiles_H, tilewidth, tileheight, tileWskip, tileHskip;
-
-        parent->ipf.Tile_calc(tilesize, overlap, kall, labnCrop->W, labnCrop->H, numtiles_W, numtiles_H, tilewidth, tileheight, tileWskip, tileHskip);
-        //now we have tile dimensions, overlaps
-        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        int minsizetile = min(tilewidth, tileheight);
-        int maxlev2 = 10;
-
-        if (minsizetile < 1024 && maxlevelcrop == 10) {
-            maxlev2 = 9;
-        }
-
-        if (minsizetile < 512) {
-            maxlev2 = 8;
-        }
-
-        if (minsizetile < 256) {
-            maxlev2 = 7;
-        }
-
-        if (minsizetile < 128) {
-            maxlev2 = 6;
-        }
-
-        int maxL = min(maxlev2, maxlevelcrop);
-
-        if (parent->awavListener) {
-            parent->awavListener->wavChanged(float (maxL));
-        }
-
-        if ((params.wavelet.enabled)) {
-            WavCurve wavCLVCurve;
-            WavOpacityCurveRG waOpacityCurveRG;
-            WavOpacityCurveBY waOpacityCurveBY;
-            WavOpacityCurveW waOpacityCurveW;
-            WavOpacityCurveWL waOpacityCurveWL;
-            LUTf wavclCurve;
-
-            params.wavelet.getCurves(wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL);
-
-            parent->ipf.ip_wavelet(labnCrop, labnCrop, kall, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL, parent->wavclCurve, skip);
-        }
-
         parent->ipf.softLight(labnCrop);
         parent->ipf.localContrast(labnCrop);
         parent->ipf.filmGrain(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
         
-        //     }
-
-        //   }
         if (params.colorappearance.enabled) {
             float fnum = parent->imgsrc->getMetaData()->getFNumber();          // F number
             float fiso = parent->imgsrc->getMetaData()->getISOSpeed() ;        // ISO

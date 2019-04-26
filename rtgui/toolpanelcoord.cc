@@ -71,8 +71,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     crop                = Gtk::manage (new Crop ());
     icm                 = Gtk::manage (new ICMPanel ());
     metadata            = Gtk::manage(new MetaDataPanel());
-    wavelet             = Gtk::manage (new Wavelet ());
-    //dirpyrequalizer     = Gtk::manage (new DirPyrEqualizer ());
     filmSimulation      = Gtk::manage (new FilmSimulation ());
     softlight           = Gtk::manage(new SoftLight());
     dehaze              = Gtk::manage(new Dehaze());
@@ -129,11 +127,8 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (detailsPanel, impulsedenoise);
     addfavoritePanel (detailsPanel, denoise);
     addfavoritePanel (detailsPanel, defringe);
-    //addfavoritePanel (detailsPanel, dirpyrequalizer);
     addfavoritePanel (detailsPanel, dehaze);
     addfavoritePanel (detailsPanel, grain);
-    //addfavoritePanel(detailsPanel, smoothing);
-    addfavoritePanel (advancedPanel, wavelet);
     addfavoritePanel (transformPanel, crop);
     addfavoritePanel (transformPanel, resize);
     addfavoritePanel (resize->getPackBox(), prsharpening, 2);
@@ -578,7 +573,6 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         ipc->setXtransAutoContrastListener (xtransprocess);
         ipc->setAutoWBListener (whitebalance);
         ipc->setAutoChromaListener (denoise);
-        ipc->setWaveletListener (wavelet);
         ipc->setSizeListener (crop);
         ipc->setSizeListener (resize);
         ipc->setImageTypeListener (this);
@@ -637,8 +631,6 @@ void ToolPanelCoordinator::updateToolState()
         for (size_t i = 0; i < sizeWavelet; i++) {
             temp.push_back (options.tpOpen.at (i + expList.size()));
         }
-
-        wavelet->updateToolState (temp);
     }
 }
 
@@ -666,8 +658,6 @@ void ToolPanelCoordinator::writeToolExpandedStatus (std::vector<int> &tpOpen)
     for (size_t i = 0; i < expList.size(); i++) {
         tpOpen.push_back (expList.at (i)->get_expanded ());
     }
-
-    wavelet->writeOptions (tpOpen);
 }
 
 

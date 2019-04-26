@@ -73,7 +73,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
 
     // Advanced Settings:
     colorappearance = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_COLORAPP")));
-    wavelet     = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_EQUALIZER")));
 
     // Color-Related Settings
     icm         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_ICMSETTINGS")));
@@ -222,7 +221,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[6]->pack_start (*advanced, Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start (*hseps[6], Gtk::PACK_SHRINK, 2);
     vboxes[6]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*wavelet, Gtk::PACK_SHRINK, 2);
 
     //META
     vboxes[7]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
@@ -349,7 +347,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
 
     // Advanced Settings:
     colorappearanceConn = colorappearance->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
-    waveletConn = wavelet->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
 
     // Color-related Settings:
     icmConn         = icm->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
@@ -582,12 +579,10 @@ void PartialPasteDlg::advancedToggled ()
 {
 
     ConnectionBlocker colorappearanceBlocker(colorappearanceConn);
-    ConnectionBlocker waveletBlocker(waveletConn);
 
     advanced->set_inconsistent (false);
 
     colorappearance->set_active (advanced->get_active ());
-    wavelet->set_active (advanced->get_active ());
 }
 
 void PartialPasteDlg::colorToggled ()
@@ -770,10 +765,6 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!dirpyrden->get_active ()) {
         filterPE.denoise = falsePE.denoise;
-    }
-
-    if (!wavelet->get_active ()) {
-        filterPE.wavelet = falsePE.wavelet;
     }
 
     if (!icm->get_active ()) {

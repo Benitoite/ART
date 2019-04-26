@@ -143,7 +143,6 @@ set(NONCLISOURCEFILES
     toolpanel.cc
     toolpanelcoord.cc
     vignetting.cc
-    wavelet.cc
     whitebalance.cc
     xtransprocess.cc
     xtransrawexposure.cc

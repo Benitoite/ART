@@ -1039,108 +1039,6 @@ typedef std::map<Glib::ustring, Glib::ustring> ExifPairs;
   */
 typedef std::map<Glib::ustring, std::vector<Glib::ustring>> IPTCPairs;
 
-struct WaveletParams {
-    std::vector<double> ccwcurve;
-    std::vector<double> opacityCurveRG;
-    std::vector<double> opacityCurveBY;
-    std::vector<double> opacityCurveW;
-    std::vector<double> opacityCurveWL;
-    std::vector<double> hhcurve;
-    std::vector<double> Chcurve;
-    std::vector<double> wavclCurve;
-    bool enabled;
-    bool median;
-    bool medianlev;
-    bool linkedg;
-    bool cbenab;
-    int greenlow;
-    int bluelow;
-    int greenmed;
-    int bluemed;
-    int greenhigh;
-    int bluehigh;
-
-    bool lipst;
-    bool avoid;
-    bool tmr;
-    int strength;
-    int balance;
-    int iter;
-    bool expcontrast;
-    bool expchroma;
-    int c[9];
-    int ch[9];
-    bool expedge;
-    bool expresid;
-    bool expfinal;
-    bool exptoning;
-    bool expnoise;
-
-    int Lmethod;
-    Glib::ustring CLmethod;
-    Glib::ustring Backmethod;
-    Glib::ustring Tilesmethod;
-    Glib::ustring daubcoeffmethod;
-    Glib::ustring CHmethod;
-    Glib::ustring Medgreinf;
-    Glib::ustring CHSLmethod;
-    Glib::ustring EDmethod;
-    Glib::ustring NPmethod;
-    Glib::ustring BAmethod;
-    Glib::ustring TMmethod;
-    Glib::ustring Dirmethod;
-    Glib::ustring HSmethod;
-    int rescon;
-    int resconH;
-    int reschro;
-    double tmrs;
-    double gamma;
-    int sup;
-    double sky;
-    int thres;
-    int chroma;
-    int chro;
-    int threshold;
-    int threshold2;
-    int edgedetect;
-    int edgedetectthr;
-    int edgedetectthr2;
-    int edgesensi;
-    int edgeampli;
-    int contrast;
-    int edgrad;
-    int edgval;
-    int edgthresh;
-    int thr;
-    int thrH;
-    double skinprotect;
-    Threshold<int> hueskin;
-    Threshold<int> hueskin2;
-    Threshold<int> hllev;
-    Threshold<int> bllev;
-    Threshold<int> pastlev;
-    Threshold<int> satlev;
-    Threshold<int> edgcont;
-    Threshold<double> level0noise;
-    Threshold<double> level1noise;
-    Threshold<double> level2noise;
-    Threshold<double> level3noise;
-
-    WaveletParams();
-
-    bool operator ==(const WaveletParams& other) const;
-    bool operator !=(const WaveletParams& other) const;
-
-    void getCurves(
-        WavCurve& cCurve,
-        WavOpacityCurveRG&
-        opacityCurveLUTRG,
-        WavOpacityCurveBY& opacityCurveLUTBY,
-        WavOpacityCurveW& opacityCurveLUTW,
-        WavOpacityCurveWL& opacityCurveLUTWL
-    ) const;
-};
-
 /**
 * Directional pyramid equalizer params
 */
@@ -1480,7 +1378,6 @@ public:
     ResizeParams            resize;          ///< Resize parameters
     ColorManagementParams   icm;             ///< profiles/color spaces used during the image processing
     RAWParams               raw;             ///< RAW parameters before demosaicing
-    WaveletParams           wavelet;         ///< Wavelet parameters
     DirPyrEqualizerParams   dirpyrequalizer; ///< directional pyramid wavelet parameters
     FilmSimulationParams    filmSimulation;  ///< film simulation parameters
     SoftLightParams         softlight;       ///< softlight parameters

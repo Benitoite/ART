@@ -484,7 +484,6 @@ void Options::setDefaults()
     fastexport_bypass_defringe           = true;
     fastexport_bypass_dirpyrDenoise      = true;
     fastexport_bypass_dirpyrequalizer    = true;
-    fastexport_bypass_wavelet    = true;
     fastexport_raw_bayer_method                  = "fast";
     //fastexport_bypass_raw_bayer_all_enhance    = true;
     fastexport_bypass_raw_bayer_dcb_iterations   = true;
@@ -1661,10 +1660,6 @@ void Options::readFromFile(Glib::ustring fname)
                     fastexport_bypass_dirpyrequalizer = keyFile.get_boolean("Fast Export", "fastexport_bypass_dirpyrequalizer");
                 }
 
-                if (keyFile.has_key("Fast Export", "fastexport_bypass_wavelet")) {
-                    fastexport_bypass_wavelet = keyFile.get_boolean("Fast Export", "fastexport_bypass_wavelet");
-                }
-
                 if (keyFile.has_key("Fast Export", "fastexport_raw_dmethod")) {
                     fastexport_raw_bayer_method = keyFile.get_string("Fast Export", "fastexport_raw_dmethod");
                 }
@@ -2149,7 +2144,6 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean("Fast Export", "fastexport_bypass_defringe", fastexport_bypass_defringe);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_dirpyrDenoise", fastexport_bypass_dirpyrDenoise);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_dirpyrequalizer", fastexport_bypass_dirpyrequalizer);
-        keyFile.set_boolean("Fast Export", "fastexport_bypass_wavelet", fastexport_bypass_wavelet);
         keyFile.set_string("Fast Export", "fastexport_raw_bayer_method", fastexport_raw_bayer_method);
         //keyFile.set_boolean ("Fast Export", "fastexport_bypass_bayer_raw_all_enhance" , fastexport_bypass_raw_bayer_all_enhance);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_raw_bayer_dcb_iterations", fastexport_bypass_raw_bayer_dcb_iterations);

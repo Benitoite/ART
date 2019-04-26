@@ -348,7 +348,6 @@ public:
     bool fastexport_bypass_defringe;
     bool fastexport_bypass_dirpyrDenoise;
     bool fastexport_bypass_dirpyrequalizer;
-    bool fastexport_bypass_wavelet;
     Glib::ustring fastexport_raw_bayer_method;
     //bool fastexport_bypass_raw_bayer_all_enhance;
     bool fastexport_bypass_raw_bayer_dcb_iterations;

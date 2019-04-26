@@ -594,23 +594,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             ipf.contrastByDetailLevels(nprevl);
             readyphase++;
                     
-            wavcontlutili = false;
-            //CurveFactory::curveWavContL ( wavcontlutili,params.wavelet.lcurve, wavclCurve, LUTu & histogramwavcl, LUTu & outBeforeWavCLurveHistogram,int skip);
-            CurveFactory::curveWavContL(wavcontlutili, params.wavelet.wavclCurve, wavclCurve, scale == 1 ? 1 : 16);
-    
-    
-            if ((params.wavelet.enabled)) {
-                WaveletParams WaveParams = params.wavelet;
-                //      WaveParams.getCurves(wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY);
-                WaveParams.getCurves(wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL);
-    
-                int kall = 0;
-                progress("Wavelet...", 100 * readyphase / numofphases);
-                //  ipf.ip_wavelet(nprevl, nprevl, kall, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, scale);
-                ipf.ip_wavelet(nprevl, nprevl, kall, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL, wavclCurve, scale);
-    
-            }
-    
             ipf.softLight(nprevl);
             ipf.localContrast(nprevl);
             
@@ -1266,7 +1249,6 @@ void ImProcCoordinator::process()
             || params.filmSimulation != nextParams.filmSimulation
             || params.softlight != nextParams.softlight
             || params.raw != nextParams.raw
-            || params.wavelet != nextParams.wavelet
             || params.dirpyrequalizer != nextParams.dirpyrequalizer
             || params.dehaze != nextParams.dehaze
             || params.grain != nextParams.grain

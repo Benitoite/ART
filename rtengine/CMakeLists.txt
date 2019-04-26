@@ -82,7 +82,6 @@ set(RTENGINESOURCEFILES
     ipresize.cc
     ipsharpen.cc
     iptransform.cc
-    ipwavelet.cc
     jdatasrc.cc
     jpeg_ijg/jpeg_memsrc.cc
     klt/convolve.cc

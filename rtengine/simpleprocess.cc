@@ -521,33 +521,7 @@ private:
 
         }
 
-        WaveletParams WaveParams = params.wavelet;
-        WavCurve wavCLVCurve;
-        WavOpacityCurveRG waOpacityCurveRG;
-        WavOpacityCurveBY waOpacityCurveBY;
-        WavOpacityCurveW waOpacityCurveW;
-        WavOpacityCurveWL waOpacityCurveWL;
-
-        params.wavelet.getCurves (wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW, waOpacityCurveWL );
-
         ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
-        // // directional pyramid wavelet
-        // if (params.dirpyrequalizer.cbdlMethod == "aft") {
-        //     if ((params.colorappearance.enabled && !settings->autocielab)  || !params.colorappearance.enabled) {
-        //         ipf.dirpyrequalizer (labView, 1);    //TODO: this is the luminance tonecurve, not the RGB one
-        //     }
-        // }
-
-        bool wavcontlutili = false;
-
-        CurveFactory::curveWavContL (wavcontlutili, params.wavelet.wavclCurve, wavclCurve,/* hist16C, dummy,*/ 1);
-
-        if (params.wavelet.enabled) {
-            ipf.ip_wavelet (labView, labView, 2, WaveParams, wavCLVCurve, waOpacityCurveRG, waOpacityCurveBY, waOpacityCurveW,  waOpacityCurveWL, wavclCurve, pipeline_scale);//1);
-        }
-
-        wavCLVCurve.Reset();
-
         ipf.softLight(labView);
         ipf.localContrast(labView);
         ipf.filmGrain(labView);
@@ -859,15 +833,9 @@ private:
         procparams::ProcParams &params = job->pparams;
         procparams::ProcParams defaultparams;
 
-        // if (params.prsharpening.enabled) { //!params.sharpening.enabled) {
-        //     params.sharpening = params.prsharpening;
-        // }
-            
         ImProcFunctions &ipf = *(ipf_p.get());
         pipeline_scale = 1.0 / scale_factor;
         ipf.setScale(pipeline_scale);
-
-        //params.wavelet.strength *= scale_factor;
 
         if (params.raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::THREE_PASS)) {
             params.raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::ONE_PASS);

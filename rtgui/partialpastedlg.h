@@ -67,9 +67,6 @@ public:
     Gtk::CheckButton* grain;
     //Gtk::CheckButton* smoothing;
 
-    // options in wavelet
-    Gtk::CheckButton* wavelet;
-
     // options in color:
     Gtk::CheckButton* icm;
     Gtk::CheckButton* chmixer;
@@ -136,7 +133,7 @@ public:
 
     sigc::connection wbConn, exposureConn, localcontrastConn, shConn, pcvignetteConn, gradientConn, labcurveConn, colorappearanceConn;
     sigc::connection toneEqualizerConn;
-    sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, waveletConn, dehazeConn, logencConn;
+    sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, dehazeConn, logencConn;
     sigc::connection grainConn;
     sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
     sigc::connection chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;
