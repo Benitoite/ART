@@ -141,7 +141,6 @@ void BatchToolPanelCoordinator::initSession ()
             lcurve->setAdjusterBehavior (false, false, false);
             whitebalance->setAdjusterBehavior (false, false, false, false);
             vignetting->setAdjusterBehavior (false, false, false, false);
-            colorappearance->setAdjusterBehavior (false, false, false, false, false, false, false, false, false, false, false, false, false);
             rotate->setAdjusterBehavior (false);
             resize->setAdjusterBehavior (false);
             distortion->setAdjusterBehavior (false);
@@ -181,7 +180,6 @@ void BatchToolPanelCoordinator::initSession ()
             lcurve->setAdjusterBehavior (options.baBehav[ADDSET_LC_BRIGHTNESS], options.baBehav[ADDSET_LC_CONTRAST], options.baBehav[ADDSET_LC_CHROMATICITY]);
             whitebalance->setAdjusterBehavior (options.baBehav[ADDSET_WB_TEMPERATURE], options.baBehav[ADDSET_WB_GREEN], options.baBehav[ADDSET_WB_EQUAL], options.baBehav[ADDSET_WB_TEMPBIAS]);
             vignetting->setAdjusterBehavior (options.baBehav[ADDSET_VIGN_AMOUNT], options.baBehav[ADDSET_VIGN_RADIUS], options.baBehav[ADDSET_VIGN_STRENGTH], options.baBehav[ADDSET_VIGN_CENTER]);
-            colorappearance->setAdjusterBehavior (options.baBehav[ADDSET_CAT_DEGREE], options.baBehav[ADDSET_CAT_ADAPTSCENE], options.baBehav[ADDSET_CAT_ADAPTVIEWING], options.baBehav[ADDSET_CAT_BADPIX], options.baBehav[ADDSET_CAT_LIGHT], options.baBehav[ADDSET_CAT_CHROMA], options.baBehav[ADDSET_CAT_CONTRAST], options.baBehav[ADDSET_CAT_RSTPRO], options.baBehav[ADDSET_CAT_BRIGHT], options.baBehav[ADDSET_CAT_CONTRAST_Q], options.baBehav[ADDSET_CAT_CHROMA_S], options.baBehav[ADDSET_CAT_CHROMA_M], options.baBehav[ADDSET_CAT_HUE]);
             rotate->setAdjusterBehavior (options.baBehav[ADDSET_ROTATE_DEGREE]);
             resize->setAdjusterBehavior (options.baBehav[ADDSET_RESIZE_SCALE]);
             distortion->setAdjusterBehavior (options.baBehav[ADDSET_DIST_AMOUNT]);
@@ -254,19 +252,6 @@ void BatchToolPanelCoordinator::initSession ()
             if (options.baBehav[ADDSET_WB_GREEN]) { pparams.wb.green = 0; }
             if (options.baBehav[ADDSET_WB_EQUAL]) { pparams.wb.equal = 0; }
             if (options.baBehav[ADDSET_WB_TEMPBIAS]) { pparams.wb.tempBias = 0; }
-            if (options.baBehav[ADDSET_CAT_DEGREE]) { pparams.colorappearance.degree = 0; }
-            if (options.baBehav[ADDSET_CAT_ADAPTSCENE]) { pparams.colorappearance.adapscen = 0; }
-            if (options.baBehav[ADDSET_CAT_ADAPTVIEWING]) { pparams.colorappearance.adaplum = 0; }
-            if (options.baBehav[ADDSET_CAT_BADPIX]) { pparams.colorappearance.badpixsl = 0; }
-            if (options.baBehav[ADDSET_CAT_LIGHT]) { pparams.colorappearance.jlight = 0; }
-            if (options.baBehav[ADDSET_CAT_BRIGHT]) { pparams.colorappearance.qbright = 0; }
-            if (options.baBehav[ADDSET_CAT_CHROMA]) { pparams.colorappearance.chroma = 0; }
-            if (options.baBehav[ADDSET_CAT_CHROMA_S]) { pparams.colorappearance.schroma = 0; }
-            if (options.baBehav[ADDSET_CAT_CHROMA_M]) { pparams.colorappearance.mchroma = 0; }
-            if (options.baBehav[ADDSET_CAT_RSTPRO]) { pparams.colorappearance.rstprotection = 0; }
-            if (options.baBehav[ADDSET_CAT_CONTRAST]) { pparams.colorappearance.contrast = 0; }
-            if (options.baBehav[ADDSET_CAT_CONTRAST_Q]) { pparams.colorappearance.qcontrast = 0; }
-            if (options.baBehav[ADDSET_CAT_HUE]) { pparams.colorappearance.colorh = 0; }
             //if (options.baBehav[ADDSET_CBOOST_AMOUNT])  pparams.colorBoost.amount = 0;
             //if (options.baBehav[ADDSET_CS_BLUEYELLOW])  pparams.colorShift.a = 0;
             //if (options.baBehav[ADDSET_CS_GREENMAGENTA])  pparams.colorShift.b = 0;

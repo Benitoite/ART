@@ -47,7 +47,6 @@ protected:
 
     // --- automatically allocated and deleted when necessary, and only renewed on size changes
     Imagefloat*  transCrop;    // "one chunk" allocation, allocated if necessary
-    CieImage*    cieCrop;      // allocating 6 images, each in "one chunk" allocation
     // -----------------------------------------------------------------
 
     bool updating;         /// Flag telling if an updater thread is currently processing

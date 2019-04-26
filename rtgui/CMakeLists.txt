@@ -31,7 +31,6 @@ set(NONCLISOURCEFILES
     chmixer.cc
     clipboard.cc
     coarsepanel.cc
-    colorappearance.cc
     coloredbar.cc
     coordinateadjuster.cc
     crop.cc

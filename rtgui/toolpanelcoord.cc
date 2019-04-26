@@ -57,7 +57,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     lensProf            = Gtk::manage (new LensProfilePanel ());
     distortion          = Gtk::manage (new Distortion ());
     rotate              = Gtk::manage (new Rotate ());
-    colorappearance     = Gtk::manage (new ColorAppearance ());
     whitebalance        = Gtk::manage (new WhiteBalance ());
     vignetting          = Gtk::manage (new Vignetting ());
     gradient            = Gtk::manage (new Gradient ());
@@ -123,7 +122,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (exposurePanel, gradient);
     //addfavoritePanel (exposurePanel, lcurve);
     addfavoritePanel(exposurePanel, blackwhite);
-    addfavoritePanel (advancedPanel, colorappearance);
     addfavoritePanel (detailsPanel, impulsedenoise);
     addfavoritePanel (detailsPanel, denoise);
     addfavoritePanel (detailsPanel, defringe);
@@ -566,7 +564,6 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         metadata->setImageData(pMetaData);
 
         ipc->setAutoExpListener (toneCurve);
-        ipc->setAutoCamListener (colorappearance);
         ipc->setFrameCountListener (bayerprocess);
         ipc->setFlatFieldAutoClipListener (flatfield);
         ipc->setBayerAutoContrastListener (bayerprocess);
@@ -856,7 +853,6 @@ void ToolPanelCoordinator::updateCurveBackgroundHistogram(
     const LUTu& histLRETI
 )
 {
-    colorappearance->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve, histLCAM,  histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
     toneCurve->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve,histLCAM,  histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
     lcurve->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve, histLCAM, histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);
     rgbcurves->updateCurveBackgroundHistogram(histToneCurve, histLCurve, histCCurve, histLCAM, histCCAM, histRed, histGreen, histBlue, histLuma, histLRETI);

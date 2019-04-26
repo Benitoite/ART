@@ -493,68 +493,6 @@ struct WBParams {
     static const std::vector<WBEntry>& getWbEntries();
 };
 
-/**
- * Parameters of colorappearance
- */
-struct ColorAppearanceParams {
-    enum class TcMode {
-        LIGHT,    // Lightness mode
-        BRIGHT,   // Brightness mode
-    };
-
-    enum class CtcMode {
-        CHROMA,   // chroma mode
-        SATUR,    // saturation mode
-        COLORF,   // colorfullness mode
-    };
-
-    bool          enabled;
-    int           degree;
-    bool          autodegree;
-    int           degreeout;
-    bool          autodegreeout;
-    std::vector<double> curve;
-    std::vector<double> curve2;
-    std::vector<double> curve3;
-    TcMode     curveMode;
-    TcMode     curveMode2;
-    CtcMode    curveMode3;
-
-    Glib::ustring surround;
-    Glib::ustring surrsrc;
-    double        adapscen;
-    bool          autoadapscen;
-    int        ybscen;
-    bool          autoybscen;
-
-    double        adaplum;
-    int           badpixsl;
-    Glib::ustring wbmodel;
-    Glib::ustring algo;
-    double        contrast;
-    double        qcontrast;
-    double        jlight;
-    double        qbright;
-    double        chroma;
-    double        schroma;
-    double        mchroma;
-    double        colorh;
-    double        rstprotection;
-    bool          surrsource;
-    bool          gamut;
-    bool          datacie;
-    bool          tonecie;
-    int tempout;
-    int ybout;
-    double greenout;
-    int tempsc;
-    double greensc;
-
-    ColorAppearanceParams();
-
-    bool operator ==(const ColorAppearanceParams& other) const;
-    bool operator !=(const ColorAppearanceParams& other) const;
-};
 
 /**
  * Parameters of defringing
@@ -1353,7 +1291,6 @@ public:
     SharpeningParams        prsharpening;    ///< Sharpening parameters for post resize sharpening
     SharpenMicroParams      sharpenMicro;    ///< Sharpen microcontrast parameters
     WBParams                wb;              ///< White balance parameters
-    ColorAppearanceParams   colorappearance;
     DefringeParams          defringe;        ///< Defringing parameters
     ImpulseDenoiseParams    impulseDenoise;  ///< Impulse denoising parameters
     DenoiseParams           denoise;   ///< Directional Pyramid denoising parameters

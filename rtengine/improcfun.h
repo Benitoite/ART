@@ -86,11 +86,6 @@ public:
                  int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
                  double expcomp, int hlcompr, int hlcomprthresh);
     
-    void ciecam_02float(CieImage* ncie, float adap, int pW, int pwb, LabImage* lab, const ProcParams* params,
-                        const ColorAppearance & customColCurve1, const ColorAppearance & customColCurve, const ColorAppearance & customColCurve3,
-                        LUTu &histLCAM, LUTu &histCCAM, LUTf & CAMBrightCurveJ, LUTf & CAMBrightCurveQ, float &mean, int Iterates, int scale, bool execsharp, float &d, float &dj, float &yb, int rtt,
-                        bool showSharpMask = false);
-    
     void chromiLuminanceCurve(int pW, LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLurve);
     
     void sharpening(LabImage* lab, const SharpeningParams &sharpenParam, bool showMask = false);
@@ -217,7 +212,6 @@ private:
     void deconvsharpening(float** luminance, float** buffer, int W, int H, const SharpeningParams &sharpenParam);
     void MLmicrocontrast(float** luminance, int W, int H);   //Manuel's microcontrast
     void impulse_nr(LabImage* lab, double thresh);
-    void impulse_nrcam(CieImage* ncie, double thresh, float **buffers[3]);
 
     void dirpyrdenoise(LabImage* src);    //Emil's pyramid denoise
 
@@ -257,24 +251,13 @@ private:
 
     // pyramid wavelet
     void dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scale);    //Emil's directional pyramid wavelet
-    void dirpyr_equalizercam(CieImage* ncie, float ** src, float ** dst, int srcwidth, int srcheight, float ** h_p, float ** C_p,  const double * mult, const double dirpyrThreshold, const double skinprot, bool execdir, float b_l, float t_l, float t_r, int scale);    //Emil's directional pyramid wavelet
     void dirpyr_channel(float ** data_fine, float ** data_coarse, int width, int height, int level, int scale);
     void idirpyr_eq_channel(float ** data_coarse, float ** data_fine, float ** buffer, int width, int height, int level, float multi[6], const double dirpyrThreshold, float ** l_a_h, float ** l_b_c, const double skinprot, float b_l, float t_l, float t_r);
-    void idirpyr_eq_channelcam(float ** data_coarse, float ** data_fine, float ** buffer, int width, int height, int level, float multi[6], const double dirpyrThreshold, float ** l_a_h, float ** l_b_c, const double skinprot, float b_l, float t_l, float t_r);
-    void defringecam(CieImage* ncie);
-    void badpixcam(CieImage* ncie, double rad, int thr, int mode, float chrom, bool hotbad);
     void badpixlab(LabImage* lab, double rad, int thr, float chrom);
 
     void PF_correct_RT(LabImage * lab, double radius, int thresh);
-    void PF_correct_RTcam(CieImage * ncie, double radius, int thresh);
-    void Badpixelscam(CieImage * ncie, double radius, int thresh, int mode, float chrom, bool hotbad);
     void BadpixelsLab(LabImage * lab, double radius, int thresh, float chrom);
 
-    void sharpeningcam(CieImage* ncie, float** buffer, bool showMask = false);
-    void MLmicrocontrastcam(CieImage* ncie);   //Manuel's microcontrast
-    void impulsedenoisecam(CieImage* ncie, float **buffers[3]);
-//    void EPDToneMapCIE(CieImage *ncie, float a_w, float c_, int Wid, int Hei, float minQ, float maxQ, unsigned int Iterates = 0, int skip = 1);
-        
     void calcVignettingParams(int oW, int oH, const VignettingParams& vignetting, double &w2, double &h2, double& maxRadius, double &v, double &b, double &mul);
 
     void transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH);

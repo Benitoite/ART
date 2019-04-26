@@ -29,7 +29,6 @@
 #include "whitebalance.h"
 #include "coarsepanel.h"
 #include "tonecurve.h"
-#include "colorappearance.h"
 #include "shadowshighlights.h"
 #include "toneequalizer.h"
 #include "impulsedenoise.h"
@@ -109,7 +108,6 @@ protected:
     Distortion* distortion;
     PerspCorrection* perspective;
     CACorrection* cacorrection;
-    ColorAppearance* colorappearance;
     ChMixer* chmixer;
     BlackWhite* blackwhite;
     Resize* resize;

@@ -374,15 +374,6 @@ private:
         //ImProcFunctions ipf (&params, true);
         ImProcFunctions &ipf = * (ipf_p.get());
 
-        // if (params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
-        //     const int W = baseImg->getWidth();
-        //     const int H = baseImg->getHeight();
-        //     LabImage labcbdl (W, H);
-        //     ipf.rgb2lab (*baseImg, labcbdl, params.icm.workingProfile);
-        //     ipf.dirpyrequalizer (&labcbdl, 1);
-        //     ipf.lab2rgb (labcbdl, *baseImg, params.icm.workingProfile);
-        // }
-
         //gamma TRC working
         if (params.icm.workingTRC == "Custom") { //exec TRC IN free
             const Glib::ustring profile = params.icm.workingProfile;
@@ -499,91 +490,14 @@ private:
         ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
 
         ipf.toneMapping(labView, oX, oY, oW, oH);
-
-        if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
-            ipf.impulsedenoise (labView);
-        }
-
-        // for all treatments Defringe, Sharpening, Contrast detail ,Microcontrast they are activated if "CIECAM" function are disabled
-
-        if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
-            ipf.defringe (labView);
-        }
-
-        if (params.sharpenMicro.enabled) {
-            if ((params.colorappearance.enabled && !settings->autocielab) ||  (!params.colorappearance.enabled)) {
-                ipf.MLmicrocontrast (labView);    //!params.colorappearance.sharpcie
-            }
-        }
-
-        if (((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) && params.sharpening.enabled) {
-            ipf.sharpening (labView, params.sharpening);
-
-        }
-
+        ipf.impulsedenoise (labView);
+        ipf.defringe (labView);
+        ipf.MLmicrocontrast (labView);
+        ipf.sharpening (labView, params.sharpening);
         ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         ipf.softLight(labView);
         ipf.localContrast(labView);
         ipf.filmGrain(labView);
-
-        //Colorappearance and tone-mapping associated
-
-        int f_w = 1, f_h = 1;
-
-        if (params.colorappearance.tonecie || params.colorappearance.enabled) {
-            f_w = fw;
-            f_h = fh;
-        }
-
-        CieImage *cieView = new CieImage (f_w, (f_h));
-
-        CurveFactory::curveLightBrightColor (
-            params.colorappearance.curve,
-            params.colorappearance.curve2,
-            params.colorappearance.curve3,
-            hist16, dummy,
-            dummy, dummy,
-            customColCurve1,
-            customColCurve2,
-            customColCurve3,
-            1);
-
-        if (params.colorappearance.enabled) {
-            double adap;
-            int imgNum = 0;
-            if (imgsrc->getSensorType() == ST_BAYER) {
-                imgNum = params.raw.bayersensor.imageNum;
-            } else if (imgsrc->getSensorType() == ST_FUJI_XTRANS) {
-                //imgNum = params.raw.xtranssensor.imageNum;
-            }
-            float fnum = imgsrc->getMetaData()->getFNumber (imgNum);         // F number
-            float fiso = imgsrc->getMetaData()->getISOSpeed (imgNum) ;       // ISO
-            float fspeed = imgsrc->getMetaData()->getShutterSpeed (imgNum) ; //speed
-            float fcomp = imgsrc->getMetaData()->getExpComp (imgNum);        //compensation + -
-
-            if (fnum < 0.3f || fiso < 5.f || fspeed < 0.00001f) {
-                adap = 2000.;
-            }//if no exif data or wrong
-            else {
-                float E_V = fcomp + log2 ((fnum * fnum) / fspeed / (fiso / 100.f));
-                E_V += params.toneCurve.expcomp;// exposure compensation in tonecurve ==> direct EV
-                E_V += log2 (params.raw.expos); // exposure raw white point ; log2 ==> linear to EV
-                adap = powf (2.f, E_V - 3.f); //cd / m2
-            }
-
-            LUTf CAMBrightCurveJ;
-            LUTf CAMBrightCurveQ;
-            float CAMMean = NAN;
-
-            float d, dj, yb;
-            ipf.ciecam_02float (cieView, float (adap), 1, 2, labView, &params, customColCurve1, customColCurve2, customColCurve3, dummy, dummy, CAMBrightCurveJ, CAMBrightCurveQ, CAMMean, 5, 1, true, d, dj, yb, 1);
-        }
-
-        delete cieView;
-        cieView = nullptr;
-
-
-
 
         // end tile processing...???
         //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -652,7 +566,7 @@ private:
         cmsHPROFILE jprof = nullptr;
         constexpr bool customGamma = false;
         constexpr bool useLCMS = false;
-        bool bwonly = params.blackwhite.enabled && !autili && !butili && !params.colorappearance.enabled;
+        bool bwonly = params.blackwhite.enabled && !autili && !butili;
 
         ///////////// Custom output gamma has been removed, the user now has to create
         ///////////// a new output profile with the ICCProfileCreator

@@ -38,7 +38,7 @@ extern const Settings* settings;
 
 ImProcCoordinator::ImProcCoordinator()
     : orig_prev(nullptr), oprevi(nullptr), oprevl(nullptr), nprevl(nullptr), drcomp_11_dcrop_cache(nullptr), previmg(nullptr), workimg(nullptr),
-      ncie (nullptr), imgsrc (nullptr), lastAwbEqual (0.), lastAwbTempBias (0.0), ipf (&params, true), monitorIntent (RI_RELATIVE),
+      imgsrc (nullptr), lastAwbEqual (0.), lastAwbTempBias (0.0), ipf (&params, true), monitorIntent (RI_RELATIVE),
       softProof(false), gamutCheck(false), sharpMask(false), scale(10), highDetailPreprocessComputed(false), highDetailRawComputed(false),
       allocated(false), bwAutoR(-9000.f), bwAutoG(-9000.f), bwAutoB(-9000.f), CAMMean(NAN),
 
@@ -400,7 +400,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         // Remove transformation if unneeded
         bool needstransform = ipf.needsTransform();
     
-        if ((needstransform)) {// || ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled))) {
+        if (needstransform) {
             assert(oprevi);
             Imagefloat *op = oprevi;
             oprevi = new Imagefloat(pW, pH);
@@ -412,15 +412,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 op->copyData(oprevi);
             }
         }
-    
-        // if ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
-        //     const int W = oprevi->getWidth();
-        //     const int H = oprevi->getHeight();
-        //     LabImage labcbdl(W, H);
-        //     ipf.rgb2lab(*oprevi, labcbdl, params.icm.workingProfile);
-        //     ipf.dirpyrequalizer(&labcbdl, scale);
-        //     ipf.lab2rgb(labcbdl, *oprevi, params.icm.workingProfile);
-        // }
     
         readyphase++;
         progress("Preparing shadow/highlight map...", 100 * readyphase / numofphases);
@@ -595,108 +586,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             readyphase++;
                     
             ipf.softLight(nprevl);
-            ipf.localContrast(nprevl);
-            
-            if (params.colorappearance.enabled) {
-                //L histo  and Chroma histo for ciecam
-                // histogram well be for Lab (Lch) values, because very difficult to do with J,Q, M, s, C
-                int x1, y1, x2, y2;
-                params.crop.mapToResized(pW, pH, scale, x1, x2,  y1, y2);
-                lhist16CAM.clear();
-                lhist16CCAM.clear();
-    
-                if (!params.colorappearance.datacie) {
-                    for (int x = 0; x < pH; x++)
-                        for (int y = 0; y < pW; y++) {
-                            int pos = CLIP((int)(nprevl->L[x][y]));
-                            int posc = CLIP((int)sqrt(nprevl->a[x][y] * nprevl->a[x][y] + nprevl->b[x][y] * nprevl->b[x][y]));
-                            lhist16CAM[pos]++;
-                            lhist16CCAM[posc]++;
-                        }
-                }
-    
-                CurveFactory::curveLightBrightColor(params.colorappearance.curve, params.colorappearance.curve2, params.colorappearance.curve3,
-                                                    lhist16CAM, histLCAM, lhist16CCAM, histCCAM,
-                                                    customColCurve1, customColCurve2, customColCurve3, 1);
-    
-                const FramesMetaData* metaData = imgsrc->getMetaData();
-                int imgNum = 0;
-    
-                if (imgsrc->isRAW()) {
-                    if (imgsrc->getSensorType() == ST_BAYER) {
-                        imgNum = rtengine::LIM<unsigned int>(params.raw.bayersensor.imageNum, 0, metaData->getFrameCount() - 1);
-                    } else if (imgsrc->getSensorType() == ST_FUJI_XTRANS) {
-                        //imgNum = rtengine::LIM<unsigned int>(params.raw.xtranssensor.imageNum, 0, metaData->getFrameCount() - 1);
-                    }
-                }
-    
-                float fnum = metaData->getFNumber(imgNum);          // F number
-                float fiso = metaData->getISOSpeed(imgNum) ;        // ISO
-                float fspeed = metaData->getShutterSpeed(imgNum) ;  // Speed
-                double fcomp = metaData->getExpComp(imgNum);        // Compensation +/-
-                double adap;
-    
-                if (fnum < 0.3f || fiso < 5.f || fspeed < 0.00001f) { //if no exif data or wrong
-                    adap = 2000.;
-                } else {
-                    double E_V = fcomp + log2(double ((fnum * fnum) / fspeed / (fiso / 100.f)));
-                    E_V += params.toneCurve.expcomp;// exposure compensation in tonecurve ==> direct EV
-                    E_V += log2(params.raw.expos);  // exposure raw white point ; log2 ==> linear to EV
-                    adap = powf(2.f, E_V - 3.f);  // cd / m2
-                    // end calculation adaptation scene luminosity
-                }
-    
-                float d, dj, yb;
-                bool execsharp = false;
-    
-                if (!ncie) {
-                    ncie = new CieImage(pW, pH);
-                }
-    
-                if (!CAMBrightCurveJ && (params.colorappearance.algo == "JC" || params.colorappearance.algo == "JS" || params.colorappearance.algo == "ALL")) {
-                    CAMBrightCurveJ(32768, 0);
-                }
-    
-                if (!CAMBrightCurveQ && (params.colorappearance.algo == "QM" || params.colorappearance.algo == "ALL")) {
-                    CAMBrightCurveQ(32768, 0);
-                }
-    
-                // Issue 2785, only float version of ciecam02 for navigator and pan background
-                CAMMean = NAN;
-                CAMBrightCurveJ.dirty = true;
-                CAMBrightCurveQ.dirty = true;
-    
-                ipf.ciecam_02float(ncie, float (adap), pW, 2, nprevl, &params, customColCurve1, customColCurve2, customColCurve3, histLCAM, histCCAM, CAMBrightCurveJ, CAMBrightCurveQ, CAMMean, 5, scale, execsharp, d, dj, yb, 1);
-    
-                if ((params.colorappearance.autodegree || params.colorappearance.autodegreeout) && acListener && params.colorappearance.enabled) {
-                    acListener->autoCamChanged(100.* (double)d, 100.* (double)dj);
-                }
-    
-                if (params.colorappearance.autoadapscen && acListener && params.colorappearance.enabled) {
-                    acListener->adapCamChanged(adap);    //real value of adapt scene
-                }
-    
-                if (params.colorappearance.autoybscen && acListener && params.colorappearance.enabled) {
-                    acListener->ybCamChanged((int) yb);    //real value Yb scene
-                }
-    
-                readyphase++;
-            } else {
-                // CIECAM is disabled, we free up its image buffer to save some space
-                if (ncie) {
-                    delete ncie;
-                }
-    
-                ncie = nullptr;
-    
-                if (CAMBrightCurveJ) {
-                    CAMBrightCurveJ.reset();
-                }
-    
-                if (CAMBrightCurveQ) {
-                    CAMBrightCurveQ.reset();
-                }
-            }
+            ipf.localContrast(nprevl);            
         }
     
         // Update the monitor color transform if necessary
@@ -779,12 +669,6 @@ void ImProcCoordinator::freeAll()
         delete nprevl;
         nprevl    = nullptr;
 
-        if (ncie) {
-            delete ncie;
-        }
-
-        ncie      = nullptr;
-
         if (imageListener) {
             imageListener->delImage(previmg);
         } else {
@@ -831,7 +715,6 @@ void ImProcCoordinator::setScale(int prevscale)
         oprevi = orig_prev;
         oprevl = new LabImage(pW, pH);
         nprevl = new LabImage(pW, pH);
-        //ncie is only used in ImProcCoordinator::updatePreviewImage, it will be allocated on first use and deleted if not used anymore
         previmg = new Image8(pW, pH);
         workimg = new Image8(pW, pH);
 
@@ -1226,7 +1109,6 @@ void ImProcCoordinator::process()
             || params.localContrast != nextParams.localContrast
             || params.rgbCurves != nextParams.rgbCurves
             || params.wb != nextParams.wb
-            || params.colorappearance != nextParams.colorappearance
             || params.epd != nextParams.epd
             || params.fattal != nextParams.fattal
             || params.logenc != nextParams.logenc

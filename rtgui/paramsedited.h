@@ -174,53 +174,6 @@ public:
     bool thresh;
 };
 
-class ColorAppearanceParamsEdited
-{
-
-public:
-    bool curve;
-    bool curve2;
-    bool curve3;
-    bool curveMode;
-    bool curveMode2;
-    bool curveMode3;
-    bool enabled;
-    bool degree;
-    bool autodegree;
-    bool degreeout;
-    bool autodegreeout;
-    bool autoadapscen;
-    bool autoybscen;
-    bool surround;
-    bool surrsrc;
-    bool adapscen;
-    bool adaplum;
-    bool ybscen;
-    bool badpixsl;
-    bool wbmodel;
-    bool algo;
-    bool jlight;
-    bool qbright;
-    bool chroma;
-    bool schroma;
-    bool mchroma;
-    bool contrast;
-    bool qcontrast;
-    bool colorh;
-    bool rstprotection;
-    bool surrsource;
-    bool gamut;
-//  bool badpix;
-    bool datacie;
-    bool tonecie;
-//  bool sharpcie;
-    bool tempout;
-    bool greenout;
-    bool ybout;
-    bool tempsc;
-    bool greensc;
-
-};
 
 class DenoiseParamsEdited
 {
@@ -661,7 +614,6 @@ public:
     SharpeningParamsEdited        sharpening;
     SharpeningParamsEdited        prsharpening;
     SharpenMicroParamsEdited      sharpenMicro;
-    ColorAppearanceParamsEdited   colorappearance;
     WBParamsEdited                wb;
     DefringeParamsEdited          defringe;
     DenoiseParamsEdited           denoise;

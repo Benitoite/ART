@@ -42,7 +42,7 @@ extern const Settings* settings;
 
 Crop::Crop(ImProcCoordinator* parent, EditDataProvider *editDataProvider, bool isDetailWindow)
     : PipetteBuffer(editDataProvider), origCrop(nullptr), laboCrop(nullptr), labnCrop(nullptr),
-      cropImg (nullptr), transCrop (nullptr), cieCrop (nullptr),
+      cropImg (nullptr), transCrop (nullptr), 
       updating(false), newUpdatePending(false), skip(10),
       cropx(0), cropy(0), cropw(-1), croph(-1),
       trafx(0), trafy(0), trafw(-1), trafh(-1),
@@ -285,7 +285,7 @@ void Crop::update(int todo)
     }
 
     // transform
-    if (needstransform) {// || ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled)) {
+    if (needstransform) {
         if (!transCrop) {
             transCrop = new Imagefloat(cropw, croph);
         }
@@ -308,17 +308,6 @@ void Crop::update(int todo)
 
         transCrop = nullptr;
     }
-
-    // if ((todo & (M_TRANSFORM | M_RGBCURVE))  && params.dirpyrequalizer.cbdlMethod == "bef" && params.dirpyrequalizer.enabled && !params.colorappearance.enabled) {
-
-    //     const int W = baseCrop->getWidth();
-    //     const int H = baseCrop->getHeight();
-    //     LabImage labcbdl(W, H);
-    //     parent->ipf.rgb2lab(*baseCrop, labcbdl, params.icm.workingProfile);
-    //     parent->ipf.dirpyrequalizer(&labcbdl, skip);
-    //     parent->ipf.lab2rgb(labcbdl, *baseCrop, params.icm.workingProfile);
-
-    // }
 
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
@@ -395,18 +384,10 @@ void Crop::update(int todo)
         //parent->ipf.EPDToneMap(labnCrop, 5, 1);    //Go with much fewer than normal iterates for fast redisplay.
         // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
         if (skip == 1) {
-            if ((params.colorappearance.enabled && !settings->autocielab)  || (!params.colorappearance.enabled)) {
-                parent->ipf.impulsedenoise(labnCrop);
-            }
-
-            if ((params.colorappearance.enabled && !settings->autocielab) || (!params.colorappearance.enabled)) {
-                parent->ipf.defringe(labnCrop);
-            }
-
-            if ((params.colorappearance.enabled && !settings->autocielab)  || (!params.colorappearance.enabled)) {
-                parent->ipf.MLmicrocontrast (labnCrop);
-                parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
-            }
+            parent->ipf.impulsedenoise(labnCrop);
+            parent->ipf.defringe(labnCrop);
+            parent->ipf.MLmicrocontrast (labnCrop);
+            parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
         }
 
         parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
@@ -415,45 +396,6 @@ void Crop::update(int todo)
         parent->ipf.localContrast(labnCrop);
         parent->ipf.filmGrain(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
         
-        if (params.colorappearance.enabled) {
-            float fnum = parent->imgsrc->getMetaData()->getFNumber();          // F number
-            float fiso = parent->imgsrc->getMetaData()->getISOSpeed() ;        // ISO
-            float fspeed = parent->imgsrc->getMetaData()->getShutterSpeed() ;  // Speed
-            double fcomp = parent->imgsrc->getMetaData()->getExpComp();        // Compensation +/-
-            double adap; // Scene's luminosity adaptation factor
-
-            if (fnum < 0.3f || fiso < 5.f || fspeed < 0.00001f) { //if no exif data or wrong
-                adap = 2000.;
-            } else {
-                double E_V = fcomp + log2(double ((fnum * fnum) / fspeed / (fiso / 100.f)));
-                E_V += params.toneCurve.expcomp;// exposure compensation in tonecurve ==> direct EV
-                E_V += log2(params.raw.expos);  // exposure raw white point ; log2 ==> linear to EV
-                adap = pow(2., E_V - 3.);  // cd / m2
-                // end calculation adaptation scene luminosity
-            }
-
-            bool execsharp = false;
-
-            if (skip == 1) {
-                execsharp = true;
-            }
-
-            if (!cieCrop) {
-                cieCrop = new CieImage(cropw, croph);
-            }
-
-            float d, dj, yb; // not used after this block
-            LUTu dummy;
-            parent->ipf.ciecam_02float(cieCrop, float (adap), 1, 2, labnCrop, &params, parent->customColCurve1, parent->customColCurve2, parent->customColCurve3,
-                                       dummy, dummy, parent->CAMBrightCurveJ, parent->CAMBrightCurveQ, parent->CAMMean, 5, skip, execsharp, d, dj, yb, 1, parent->sharpMask);
-        } else {
-            // CIECAM is disabled, we free up its image buffer to save some space
-            if (cieCrop) {
-                delete cieCrop;
-            }
-
-            cieCrop = nullptr;
-        }
     }
 
     // all pipette buffer processing should be finished now
@@ -522,11 +464,6 @@ void Crop::freeAll()
         if (cropImg) {
             delete    cropImg;
             cropImg = nullptr;
-        }
-
-        if (cieCrop) {
-            delete    cieCrop;
-            cieCrop = nullptr;
         }
 
         PipetteBuffer::flush();
@@ -691,12 +628,6 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
         }
 
         cropImg->allocate(cropw, croph);  // Resizing the buffer (optimization)
-
-        //cieCrop is only used in Crop::update, it is destroyed now but will be allocated on first use
-        if (cieCrop) {
-            delete cieCrop;
-            cieCrop = nullptr;
-        }
 
         if (editType == ET_PIPETTE) {
             PipetteBuffer::resize(cropw, croph);

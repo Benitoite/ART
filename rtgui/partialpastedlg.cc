@@ -43,8 +43,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     meta        ->set_name("PartialPasteHeader");
     raw         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_RAWGROUP")));
     raw         ->set_name("PartialPasteHeader");
-    advanced    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_ADVANCEDGROUP")));
-    advanced    ->set_name("PartialPasteHeader");
     local = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_LOCALGROUP")));
     local->set_name("PartialPasteHeader");
     
@@ -70,9 +68,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     //dirpyreq    = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DIRPYREQUALIZER")));
     dehaze = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_DEHAZE")) );
     grain = Gtk::manage(new Gtk::CheckButton(M("PARTIALPASTE_GRAIN")));
-
-    // Advanced Settings:
-    colorappearance = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_COLORAPP")));
 
     // Color-Related Settings
     icm         = Gtk::manage (new Gtk::CheckButton (M("PARTIALPASTE_ICMSETTINGS")));
@@ -217,11 +212,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     vboxes[5]->pack_start(*cbdl, Gtk::PACK_SHRINK, 2);
     vboxes[5]->pack_start(*epd, Gtk::PACK_SHRINK, 2);
 
-    //ADVANCED
-    vboxes[6]->pack_start (*advanced, Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*hseps[6], Gtk::PACK_SHRINK, 2);
-    vboxes[6]->pack_start (*colorappearance, Gtk::PACK_SHRINK, 2);
-
     //META
     vboxes[7]->pack_start (*meta, Gtk::PACK_SHRINK, 2);
     vboxes[7]->pack_start (*hseps[7], Gtk::PACK_SHRINK, 2);
@@ -319,7 +309,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     compositionConn = composition->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::compositionToggled));
     metaConn        = meta->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::metaToggled));
     rawConn         = raw->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::rawToggled));
-    advancedConn    = advanced->signal_toggled().connect (sigc::mem_fun(*this, &PartialPasteDlg::advancedToggled));
     localConn = local->signal_toggled().connect(sigc::mem_fun(*this, &PartialPasteDlg::localToggled));
 
 
@@ -344,9 +333,6 @@ PartialPasteDlg::PartialPasteDlg (const Glib::ustring &title, Gtk::Window* paren
     //dirpyreqConn    = dirpyreq->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     dehazeConn    = dehaze->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
     grainConn    = grain->signal_toggled().connect (sigc::bind (sigc::mem_fun(*detail, &Gtk::CheckButton::set_inconsistent), true));
-
-    // Advanced Settings:
-    colorappearanceConn = colorappearance->signal_toggled().connect (sigc::bind (sigc::mem_fun(*advanced, &Gtk::CheckButton::set_inconsistent), true));
 
     // Color-related Settings:
     icmConn         = icm->signal_toggled().connect (sigc::bind (sigc::mem_fun(*color, &Gtk::CheckButton::set_inconsistent), true));
@@ -431,7 +417,6 @@ void PartialPasteDlg::everythingToggled ()
     ConnectionBlocker compositionBlocker(compositionConn);
     ConnectionBlocker metaBlocker(metaConn);
     ConnectionBlocker rawBlocker(rawConn);
-    ConnectionBlocker advancedBlocker(advancedConn);
     ConnectionBlocker localBlocker(localConn);
 
     everything->set_inconsistent (false);
@@ -444,7 +429,6 @@ void PartialPasteDlg::everythingToggled ()
     composition->set_active(everything->get_active());
     meta->set_active(everything->get_active());
     raw->set_active(everything->get_active());
-    advanced->set_active(everything->get_active());
     local->set_active(everything->get_active());
 
     //toggle group children
@@ -455,7 +439,6 @@ void PartialPasteDlg::everythingToggled ()
     PartialPasteDlg::compositionToggled ();
     PartialPasteDlg::metaToggled ();
     PartialPasteDlg::rawToggled ();
-    PartialPasteDlg::advancedToggled ();
     PartialPasteDlg::localToggled();
 }
 
@@ -575,15 +558,6 @@ void PartialPasteDlg::detailToggled ()
     //smoothing->set_active(detail->get_active());
 }
 
-void PartialPasteDlg::advancedToggled ()
-{
-
-    ConnectionBlocker colorappearanceBlocker(colorappearanceConn);
-
-    advanced->set_inconsistent (false);
-
-    colorappearance->set_active (advanced->get_active ());
-}
 
 void PartialPasteDlg::colorToggled ()
 {
@@ -737,10 +711,6 @@ void PartialPasteDlg::applyPaste (rtengine::procparams::ProcParams* dstPP, Param
 
     if (!labcurve->get_active ()) {
         filterPE.labCurve   = falsePE.labCurve;
-    }
-
-    if (!colorappearance->get_active ()) {
-        filterPE.colorappearance = falsePE.colorappearance;
     }
 
     if (!sharpen->get_active ()) {

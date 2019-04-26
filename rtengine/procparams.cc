@@ -818,103 +818,6 @@ const std::vector<WBEntry>& WBParams::getWbEntries()
     return wb_entries;
 }
 
-ColorAppearanceParams::ColorAppearanceParams() :
-    enabled(false),
-    degree(90),
-    autodegree(true),
-    degreeout(90),
-    autodegreeout(true),
-    curve{
-       DCT_Linear
-    },
-    curve2{
-       DCT_Linear
-    },
-    curve3{
-       DCT_Linear
-    },
-    curveMode(TcMode::LIGHT),
-    curveMode2(TcMode::LIGHT),
-    curveMode3(CtcMode::CHROMA),
-    surround("Average"),
-    surrsrc("Average"),
-    adapscen(2000.0),
-    autoadapscen(true),
-    ybscen(18),
-    autoybscen(true),
-    adaplum(16),
-    badpixsl(0),
-    wbmodel("RawT"),
-    algo("No"),
-    contrast(0.0),
-    qcontrast(0.0),
-    jlight(0.0),
-    qbright(0.0),
-    chroma(0.0),
-    schroma(0.0),
-    mchroma(0.0),
-    colorh(0.0),
-    rstprotection(0.0),
-    surrsource(false),
-    gamut(true),
-    datacie(false),
-    tonecie(false),
-    tempout(5000),
-    ybout(18),
-    greenout(1.0),
-    tempsc(5000),
-    greensc(1.0)
-{
-}
-
-bool ColorAppearanceParams::operator ==(const ColorAppearanceParams& other) const
-{
-    return
-        enabled == other.enabled
-        && degree == other.degree
-        && autodegree == other.autodegree
-        && degreeout == other.degreeout
-        && autodegreeout == other.autodegreeout
-        && curve == other.curve
-        && curve2 == other.curve2
-        && curve3 == other.curve3
-        && curveMode == other.curveMode
-        && curveMode2 == other.curveMode2
-        && curveMode3 == other.curveMode3
-        && surround == other.surround
-        && surrsrc == other.surrsrc
-        && adapscen == other.adapscen
-        && autoadapscen == other.autoadapscen
-        && ybscen == other.ybscen
-        && autoybscen == other.autoybscen
-        && adaplum == other.adaplum
-        && badpixsl == other.badpixsl
-        && wbmodel == other.wbmodel
-        && algo == other.algo
-        && contrast == other.contrast
-        && qcontrast == other.qcontrast
-        && jlight == other.jlight
-        && qbright == other.qbright
-        && chroma == other.chroma
-        && schroma == other.schroma
-        && mchroma == other.mchroma
-        && colorh == other.colorh
-        && rstprotection == other.rstprotection
-        && surrsource == other.surrsource
-        && gamut == other.gamut
-        && datacie == other.datacie
-        && tonecie == other.tonecie
-        && tempout == other.tempout
-        && ybout == other.ybout
-        && greenout == other.greenout
-        && tempsc == other.tempsc
-        && greensc == other.greensc;
-}
-
-bool ColorAppearanceParams::operator !=(const ColorAppearanceParams& other) const
-{
-    return !(*this == other);
-}
 
 DefringeParams::DefringeParams() :
     enabled(false),
@@ -2223,8 +2126,6 @@ void ProcParams::setDefaults()
 
     wb = WBParams();
 
-    colorappearance = ColorAppearanceParams();
-
     defringe = DefringeParams();
 
     impulseDenoise = ImpulseDenoiseParams();
@@ -2442,66 +2343,6 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
         saveToKeyfile(!pedited || pedited->wb.equal, "White Balance", "Equal", wb.equal, keyFile);
         saveToKeyfile(!pedited || pedited->wb.tempBias, "White Balance", "TemperatureBias", wb.tempBias, keyFile);
 
-#if 0 // ALB 
-// Colorappearance
-        saveToKeyfile(!pedited || pedited->colorappearance.enabled, "Color appearance", "Enabled", colorappearance.enabled, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.degree, "Color appearance", "Degree", colorappearance.degree, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.autodegree, "Color appearance", "AutoDegree", colorappearance.autodegree, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.degreeout, "Color appearance", "Degreeout",        colorappearance.degreeout, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.autodegreeout, "Color appearance", "AutoDegreeout",    colorappearance.autodegreeout, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.surround, "Color appearance", "Surround", colorappearance.surround, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.surrsrc, "Color appearance", "Surrsrc", colorappearance.surrsrc, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.adaplum, "Color appearance", "AdaptLum", colorappearance.adaplum, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.badpixsl, "Color appearance", "Badpixsl", colorappearance.badpixsl, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.wbmodel, "Color appearance", "Model", colorappearance.wbmodel, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.algo, "Color appearance", "Algorithm", colorappearance.algo, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.jlight, "Color appearance", "J-Light", colorappearance.jlight, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.qbright, "Color appearance", "Q-Bright", colorappearance.qbright, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.chroma, "Color appearance", "C-Chroma", colorappearance.chroma, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.schroma, "Color appearance", "S-Chroma", colorappearance.schroma, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.mchroma, "Color appearance", "M-Chroma", colorappearance.mchroma, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.contrast, "Color appearance", "J-Contrast", colorappearance.contrast, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.qcontrast, "Color appearance", "Q-Contrast", colorappearance.qcontrast, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.colorh, "Color appearance", "H-Hue", colorappearance.colorh, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.rstprotection, "Color appearance", "RSTProtection", colorappearance.rstprotection, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.adapscen, "Color appearance", "AdaptScene", colorappearance.adapscen, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.autoadapscen, "Color appearance", "AutoAdapscen", colorappearance.autoadapscen, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.ybscen, "Color appearance", "YbScene", colorappearance.ybscen, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.autoybscen, "Color appearance", "Autoybscen", colorappearance.autoybscen, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.surrsource, "Color appearance", "SurrSource", colorappearance.surrsource, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.gamut, "Color appearance", "Gamut", colorappearance.gamut, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.tempout, "Color appearance", "Tempout", colorappearance.tempout, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.greenout, "Color appearance", "Greenout", colorappearance.greenout, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.tempsc, "Color appearance", "Tempsc", colorappearance.tempsc, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.greensc, "Color appearance", "Greensc", colorappearance.greensc, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.ybout, "Color appearance", "Ybout", colorappearance.ybout, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.datacie, "Color appearance", "Datacie", colorappearance.datacie, keyFile);
-//        saveToKeyfile(!pedited || pedited->colorappearance.tonecie, "Color appearance", "Tonecie", colorappearance.tonecie, keyFile);
-
-        const std::map<ColorAppearanceParams::TcMode, const char*> ca_mapping = {
-            {ColorAppearanceParams::TcMode::LIGHT, "Lightness"},
-            {ColorAppearanceParams::TcMode::BRIGHT, "Brightness"}
-        };
-
-        saveToKeyfile(!pedited || pedited->colorappearance.curveMode, "Color appearance", "CurveMode", ca_mapping, colorappearance.curveMode, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.curveMode2, "Color appearance", "CurveMode2", ca_mapping, colorappearance.curveMode2, keyFile);
-        saveToKeyfile(
-            !pedited || pedited->colorappearance.curveMode3,
-            "Color appearance",
-            "CurveMode3",
-            {
-                {ColorAppearanceParams::CtcMode::CHROMA, "Chroma"},
-                {ColorAppearanceParams::CtcMode::SATUR, "Saturation"},
-                {ColorAppearanceParams::CtcMode::COLORF, "Colorfullness"}
-
-            },
-            colorappearance.curveMode3,
-            keyFile
-        );
-        saveToKeyfile(!pedited || pedited->colorappearance.curve, "Color appearance", "Curve", colorappearance.curve, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.curve2, "Color appearance", "Curve2", colorappearance.curve2, keyFile);
-        saveToKeyfile(!pedited || pedited->colorappearance.curve3, "Color appearance", "Curve3", colorappearance.curve3, keyFile);
-#endif // ALB
 
 // Impulse denoise
         saveToKeyfile(!pedited || pedited->impulseDenoise.enabled, "Impulse Denoising", "Enabled", impulseDenoise.enabled, keyFile);
@@ -3193,72 +3034,6 @@ int ProcParams::load(const Glib::ustring& fname, ParamsEdited* pedited)
             }
 
             assignFromKeyfile(keyFile, "Defringing", "HueCurve", pedited, defringe.huecurve, pedited->defringe.huecurve);
-        }
-
-        if (false /* ALB */ && keyFile.has_group("Color appearance")) {
-            assignFromKeyfile(keyFile, "Color appearance", "Enabled", pedited, colorappearance.enabled, pedited->colorappearance.enabled);
-            assignFromKeyfile(keyFile, "Color appearance", "Degree", pedited, colorappearance.degree, pedited->colorappearance.degree);
-            assignFromKeyfile(keyFile, "Color appearance", "AutoDegree", pedited, colorappearance.autodegree, pedited->colorappearance.autodegree);
-            assignFromKeyfile(keyFile, "Color appearance", "Degreeout", pedited, colorappearance.degreeout, pedited->colorappearance.degreeout);
-
-            assignFromKeyfile(keyFile, "Color appearance", "AutoDegreeout", pedited, colorappearance.autodegreeout, pedited->colorappearance.autodegreeout);
-
-            assignFromKeyfile(keyFile, "Color appearance", "Surround", pedited, colorappearance.surround, pedited->colorappearance.surround);
-            assignFromKeyfile(keyFile, "Color appearance", "Surrsrc", pedited, colorappearance.surrsrc, pedited->colorappearance.surrsrc);
-            assignFromKeyfile(keyFile, "Color appearance", "AdaptLum", pedited, colorappearance.adaplum, pedited->colorappearance.adaplum);
-            assignFromKeyfile(keyFile, "Color appearance", "Badpixsl", pedited, colorappearance.badpixsl, pedited->colorappearance.badpixsl);
-            assignFromKeyfile(keyFile, "Color appearance", "Model", pedited, colorappearance.wbmodel, pedited->colorappearance.wbmodel);
-            assignFromKeyfile(keyFile, "Color appearance", "Algorithm", pedited, colorappearance.algo, pedited->colorappearance.algo);
-            assignFromKeyfile(keyFile, "Color appearance", "J-Light", pedited, colorappearance.jlight, pedited->colorappearance.jlight);
-            assignFromKeyfile(keyFile, "Color appearance", "Q-Bright", pedited, colorappearance.qbright, pedited->colorappearance.qbright);
-            assignFromKeyfile(keyFile, "Color appearance", "C-Chroma", pedited, colorappearance.chroma, pedited->colorappearance.chroma);
-            assignFromKeyfile(keyFile, "Color appearance", "S-Chroma", pedited, colorappearance.schroma, pedited->colorappearance.schroma);
-            assignFromKeyfile(keyFile, "Color appearance", "M-Chroma", pedited, colorappearance.mchroma, pedited->colorappearance.mchroma);
-            assignFromKeyfile(keyFile, "Color appearance", "RSTProtection", pedited, colorappearance.rstprotection, pedited->colorappearance.rstprotection);
-            assignFromKeyfile(keyFile, "Color appearance", "J-Contrast", pedited, colorappearance.contrast, pedited->colorappearance.contrast);
-            assignFromKeyfile(keyFile, "Color appearance", "Q-Contrast", pedited, colorappearance.qcontrast, pedited->colorappearance.qcontrast);
-            assignFromKeyfile(keyFile, "Color appearance", "H-Hue", pedited, colorappearance.colorh, pedited->colorappearance.colorh);
-            assignFromKeyfile(keyFile, "Color appearance", "AdaptScene", pedited, colorappearance.adapscen, pedited->colorappearance.adapscen);
-            assignFromKeyfile(keyFile, "Color appearance", "AutoAdapscen", pedited, colorappearance.autoadapscen, pedited->colorappearance.autoadapscen);
-            assignFromKeyfile(keyFile, "Color appearance", "YbScene", pedited, colorappearance.ybscen, pedited->colorappearance.ybscen);
-            assignFromKeyfile(keyFile, "Color appearance", "Autoybscen", pedited, colorappearance.autoybscen, pedited->colorappearance.autoybscen);
-            assignFromKeyfile(keyFile, "Color appearance", "SurrSource", pedited, colorappearance.surrsource, pedited->colorappearance.surrsource);
-            assignFromKeyfile(keyFile, "Color appearance", "Gamut", pedited, colorappearance.gamut, pedited->colorappearance.gamut);
-            assignFromKeyfile(keyFile, "Color appearance", "Tempout", pedited, colorappearance.tempout, pedited->colorappearance.tempout);
-            assignFromKeyfile(keyFile, "Color appearance", "Greenout", pedited, colorappearance.greenout, pedited->colorappearance.greenout);
-            assignFromKeyfile(keyFile, "Color appearance", "Tempsc", pedited, colorappearance.tempsc, pedited->colorappearance.tempsc);
-            assignFromKeyfile(keyFile, "Color appearance", "Greensc", pedited, colorappearance.greensc, pedited->colorappearance.greensc);
-            assignFromKeyfile(keyFile, "Color appearance", "Ybout", pedited, colorappearance.ybout, pedited->colorappearance.ybout);
-            assignFromKeyfile(keyFile, "Color appearance", "Datacie", pedited, colorappearance.datacie, pedited->colorappearance.datacie);
-//            assignFromKeyfile(keyFile, "Color appearance", "Tonecie", pedited, colorappearance.tonecie, pedited->colorappearance.tonecie);
-
-            const std::map<std::string, ColorAppearanceParams::TcMode> tc_mapping = {
-                {"Lightness", ColorAppearanceParams::TcMode::LIGHT},
-                {"Brightness", ColorAppearanceParams::TcMode::BRIGHT}
-            };
-            assignFromKeyfile(keyFile, "Color appearance", "CurveMode", pedited, tc_mapping, colorappearance.curveMode, pedited->colorappearance.curveMode);
-            assignFromKeyfile(keyFile, "Color appearance", "CurveMode2", pedited, tc_mapping, colorappearance.curveMode2, pedited->colorappearance.curveMode2);
-
-            assignFromKeyfile(
-                keyFile,
-                "Color appearance",
-                "CurveMode3",
-                pedited,
-                {
-                    {"Chroma", ColorAppearanceParams::CtcMode::CHROMA},
-                    {"Saturation", ColorAppearanceParams::CtcMode::SATUR},
-                    {"Colorfullness", ColorAppearanceParams::CtcMode::COLORF}
-                },
-                colorappearance.curveMode3,
-                pedited->colorappearance.curveMode3
-            );
-
-            if (ppVersion > 200) {
-                assignFromKeyfile(keyFile, "Color appearance", "Curve", pedited, colorappearance.curve, pedited->colorappearance.curve);
-                assignFromKeyfile(keyFile, "Color appearance", "Curve2", pedited, colorappearance.curve2, pedited->colorappearance.curve2);
-                assignFromKeyfile(keyFile, "Color appearance", "Curve3", pedited, colorappearance.curve3, pedited->colorappearance.curve3);
-            }
-
         }
 
         if (keyFile.has_group("Impulse Denoising")) {
@@ -4256,7 +4031,6 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && sharpening == other.sharpening
         && prsharpening == other.prsharpening
         && wb == other.wb
-        && colorappearance == other.colorappearance
         && impulseDenoise == other.impulseDenoise
         && denoise == other.denoise
         && epd == other.epd
