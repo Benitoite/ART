@@ -109,7 +109,7 @@ void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 
     int r = max(int(params->denoise.guidedChromaRadius / scale), 1);
     guided_smoothing(R, G, B, ws, Channel::C, params->denoise.guidedChromaRadius, 0.1f / float(min(r, 10)), params->denoise.guidedChromaStrength, scale, multiThread);
-    guided_smoothing(R, G, B, ws, Channel::L, params->denoise.guidedLumaRadius, 1e-5f, params->denoise.guidedLumaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, Channel::L, params->denoise.guidedLumaRadius, 5e-4f, params->denoise.guidedLumaStrength, scale, multiThread);
     
     rgb->normalizeFloatTo65535();
 }
