@@ -80,11 +80,7 @@ public:
     //----------------------------------------------------------------------
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
-    void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                           int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2);
-    void rgbProc(Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                 int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve, const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2,
-                 double expcomp, int hlcompr, int hlcomprthresh);
+    void rgbProc(Imagefloat *working, LabImage *lab);
     
     void chromiLuminanceCurve(int pW, LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu &histCCurve, LUTu &histLurve);
     

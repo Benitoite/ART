@@ -311,11 +311,7 @@ void Crop::update(int todo)
 
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
-
-        LUTu histToneCurve;
-        parent->ipf.rgbProc (workingCrop, laboCrop, parent->hltonecurve, parent->shtonecurve, parent->tonecurve, 
-                            params.toneCurve.saturation, parent->rCurve, parent->gCurve, parent->bCurve, 
-                            parent->customToneCurve1, parent->customToneCurve2);
+        parent->ipf.rgbProc(workingCrop, laboCrop);
         
         if (workingCrop != baseCrop) {
             delete workingCrop;

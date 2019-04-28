@@ -464,26 +464,12 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         progress("Exposure curve & CIELAB conversion...", 100 * readyphase / numofphases);
     
         if ((todo & M_RGBCURVE) || (todo & M_CROP)) {
-            //complexCurve also calculated pre-curves histogram depending on crop
-            CurveFactory::complexCurve(params.toneCurve.expcomp, params.toneCurve.black / 65535.0,
-                                       params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh,
-                                       params.toneCurve.shcompr, params.toneCurve.brightness, params.toneCurve.contrast,
-                                       params.toneCurve.curve, params.toneCurve.curve2,
-                                       vhist16, hltonecurve, shtonecurve, tonecurve, histToneCurve, customToneCurve1, customToneCurve2, 1);
-    
-            CurveFactory::RGBCurve(params.rgbCurves.rcurve, rCurve, 1);
-            CurveFactory::RGBCurve(params.rgbCurves.gcurve, gCurve, 1);
-            CurveFactory::RGBCurve(params.rgbCurves.bcurve, bCurve, 1);
-    
-    
             opautili = false;
     
             // if it's just crop we just need the histogram, no image updates
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
-                ipf.rgbProc (oprevi, oprevl, hltonecurve, shtonecurve, tonecurve, params.toneCurve.saturation,
-                            rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, params.toneCurve.expcomp, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh);
-    
+                ipf.rgbProc (oprevi, oprevl);
             }
     
             // compute L channel histogram

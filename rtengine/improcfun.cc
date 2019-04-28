@@ -470,20 +470,34 @@ void ImProcFunctions::moyeqt (Imagefloat* working, float &moyS, float &eqty)
 }
 
 
-void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                               int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve,
-                               const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2)
-{
-    rgbProc (working, lab, hltonecurve, shtonecurve, tonecurve, sat, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, params->toneCurve.expcomp, params->toneCurve.hlcompr, params->toneCurve.hlcomprthresh);
-}
-
 // Process RGB image and convert to LAB space
-void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltonecurve, LUTf & shtonecurve, LUTf & tonecurve,
-                               int sat, LUTf & rCurve, LUTf & gCurve, LUTf & bCurve,
-                               const ToneCurve & customToneCurve1, const ToneCurve & customToneCurve2, double expcomp, int hlcompr, int hlcomprthresh)
+void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
 {
     BENCHFUN
+        
     constexpr int TS = 112;
+    
+    LUTf hltonecurve(65536);
+    LUTf shtonecurve(65536);
+    LUTf rCurve, gCurve, bCurve;
+
+    double expcomp = params->toneCurve.expcomp;
+    int hlcompr = params->toneCurve.hlcompr;
+    int hlcomprthresh = params->toneCurve.hlcomprthresh;
+
+    {
+        LUTf tonecurve(65536);
+        LUTu vhist16(65536), histToneCurve(256);
+        ToneCurve customToneCurve1, customToneCurve2;
+        
+        CurveFactory::complexCurve(expcomp, params->toneCurve.black / 65535.0,
+                                   hlcompr, hlcomprthresh,
+                                   params->toneCurve.shcompr, 0, 0, 
+                                   { DCT_Linear }, { DCT_Linear },
+                                   vhist16, hltonecurve, shtonecurve, tonecurve,
+                                   histToneCurve, customToneCurve1,
+                                   customToneCurve2, scale);
+    }
 
     std::unique_ptr<Imagefloat> workimage(new Imagefloat(working->getWidth(), working->getHeight()));
     working->copyData(workimage.get());
@@ -508,6 +522,12 @@ void ImProcFunctions::rgbProc (Imagefloat* working, LabImage* lab, LUTf & hltone
                 editWhatever = pipetteBuffer->getSinglePlaneBuffer();
                 break;
         }
+    }
+
+    if (params->rgbCurves.enabled) {
+        CurveFactory::RGBCurve(params->rgbCurves.rcurve, rCurve, scale);
+        CurveFactory::RGBCurve(params->rgbCurves.gcurve, gCurve, scale);
+        CurveFactory::RGBCurve(params->rgbCurves.bcurve, bCurve, scale);
     }
 
     TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix (params->icm.workingProfile);

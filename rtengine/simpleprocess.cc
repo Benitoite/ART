@@ -384,16 +384,6 @@ private:
         clcurve (65536, 0);
         wavclCurve (65536, 0);
 
-        //if(params.blackwhite.enabled) params.toneCurve.hrenabled=false;
-
-        CurveFactory::complexCurve (expcomp, black / 65535.0, hlcompr, hlcomprthresh, params.toneCurve.shcompr, bright, contr,
-                                    params.toneCurve.curve, params.toneCurve.curve2,
-                                    hist16, curve1, curve2, curve, dummy, customToneCurve1, customToneCurve2 );
-
-        CurveFactory::RGBCurve (params.rgbCurves.rcurve, rCurve, 1);
-        CurveFactory::RGBCurve (params.rgbCurves.gcurve, gCurve, 1);
-        CurveFactory::RGBCurve (params.rgbCurves.bcurve, bCurve, 1);
-
         labView = new LabImage (fw, fh);
 
         DCPProfile::ApplyState as;
@@ -402,7 +392,7 @@ private:
         LUTu histToneCurve;
 
         ipf.setDCPProfile(dcpProf, as);
-        ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, expcomp, hlcompr, hlcomprthresh);
+        ipf.rgbProc(baseImg, labView);
 
         // if clut was used and size of clut cache == 1 we free the memory used by the clutstore (default clut cache size = 1 for 32 bit OS)
         if ( params.filmSimulation.enabled && !params.filmSimulation.clutFilename.empty() && options.clutCacheSize == 1) {

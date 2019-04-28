@@ -1259,8 +1259,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     LUTf curve1 (65536);
     LUTf curve2 (65536);
-    LUTf curve (65536);
-
     LUTf satcurve (65536);
     LUTf lhskcurve (65536);
     LUTf lumacurve (32770, 0); // lumacurve[32768] and lumacurve[32769] will be set to 32768 and 32769 later to allow linear interpolation
@@ -1268,28 +1266,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     LUTf clToningcurve;
     LUTf cl2Toningcurve;
     LUTu dummy;
-
-    ToneCurve customToneCurve1, customToneCurve2;
-    ColorGradientCurve ctColorCurve;
-    OpacityCurve ctOpacityCurve;
-
-    ColorAppearance customColCurve1;
-    ColorAppearance customColCurve2;
-    ColorAppearance customColCurve3;
-    ToneCurve customToneCurvebw1;
-    ToneCurve customToneCurvebw2;
-    CurveFactory::complexCurve (expcomp, black / 65535.0, hlcompr, hlcomprthresh,
-                                params.toneCurve.shcompr, bright, contr,
-                                params.toneCurve.curve,
-                                params.toneCurve.curve2,
-                                hist16, curve1, curve2, curve, dummy, customToneCurve1, customToneCurve2, 16);
-
-    LUTf rCurve;
-    LUTf gCurve;
-    LUTf bCurve;
-    CurveFactory::RGBCurve (params.rgbCurves.rcurve, rCurve, 16);
-    CurveFactory::RGBCurve (params.rgbCurves.gcurve, gCurve, 16);
-    CurveFactory::RGBCurve (params.rgbCurves.bcurve, bCurve, 16);
 
     LabImage* labView = new LabImage (fw, fh);
     DCPProfile *dcpProf = nullptr;
@@ -1306,15 +1282,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     ipf.setDCPProfile(dcpProf, as);
 
     LUTu histToneCurve;
-    ipf.rgbProc (baseImg, labView, curve1, curve2, curve, params.toneCurve.saturation, rCurve, gCurve, bCurve, customToneCurve1, customToneCurve2, expcomp, hlcompr, hlcomprthresh);
-
-    // freeing up some memory
-    customToneCurve1.Reset();
-    customToneCurve2.Reset();
-    ctColorCurve.Reset();
-    ctOpacityCurve.Reset();
-    customToneCurvebw1.Reset();
-    customToneCurvebw2.Reset();
+    ipf.rgbProc(baseImg, labView);
 
     // luminance histogram update
     if (params.labCurve.contrast != 0) {
