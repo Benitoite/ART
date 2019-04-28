@@ -343,7 +343,8 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
                 float amean = 0.5f / mean[level];
 
 #ifdef _OPENMP
-#               pragma omp parallel for schedule(dynamic, W_L * 16) if (multiThread)
+#               pragma omp parallel for if (multiThread)
+    //schedule(dynamic, W_L * 16) if (multiThread)
 #endif
                 for (int i = 0; i < W_L * H_L; i++) {
                     float absciss;
