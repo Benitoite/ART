@@ -348,16 +348,23 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
 #endif
                 for (int i = 0; i < W_L * H_L; i++) {
                     float absciss;
+                    float &val = wl[dir][i];
 
-                    if(fabsf(wl[dir][i]) >= (mean[level] + sigma[level])) { //for max
-                        float valcour = xlogf(fabsf(wl[dir][i]));
+                    if (std::isnan(val)) { // ALB -- TODO: this can happen in
+                                           // wavelet_decomposition, find out
+                                           // why
+                        continue;
+                    }
+
+                    if(fabsf(val) >= (mean[level] + sigma[level])) { //for max
+                        float valcour = xlogf(fabsf(val));
                         float valc = valcour - logmax;
                         float vald = valc * rap;
                         absciss = xexpf(vald);
-                    } else if(fabsf(wl[dir][i]) >= mean[level]) {
-                        absciss = asig * fabsf(wl[dir][i]) + bsig;
+                    } else if(fabsf(val) >= mean[level]) {
+                        absciss = asig * fabsf(val) + bsig;
                     } else {
-                        absciss = amean * fabsf(wl[dir][i]);
+                        absciss = amean * fabsf(val);
                     }
 
                     float kc = curve[absciss * 500.f] - 0.5f;
@@ -366,7 +373,7 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
                     float kinterm = 1.f + reduceeffect * kc;
                     kinterm = kinterm <= 0.f ? 0.01f : kinterm;
 
-                    wl[dir][i] *=  kinterm;
+                    val *=  kinterm;
                 }
             }
         }
