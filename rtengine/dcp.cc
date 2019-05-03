@@ -41,8 +41,7 @@ extern const Settings* settings;
 using namespace rtengine;
 using namespace rtexif;
 
-namespace
-{
+namespace {
 
 // This sRGB gamma is taken from DNG reference code, with the added linear extension past 1.0, as we run clipless here
 
@@ -444,7 +443,339 @@ std::map<std::string, std::string> getAliases(const Glib::ustring& profile_dir)
     return res;
 }
 
-}
+
+class DCPMetadata {
+    enum TagType {INVALID = 0, BYTE = 1, ASCII = 2, SHORT = 3, LONG = 4, RATIONAL = 5, SBYTE = 6, UNDEFINED = 7, SSHORT = 8, SLONG = 9, SRATIONAL = 10, FLOAT = 11, DOUBLE = 12, OLYUNDEF = 13, AUTO = 98, SUBDIR = 99};
+    enum ByteOrder {UNKNOWN = 0, INTEL = 0x4949, MOTOROLA = 0x4D4D};
+    
+public:
+    explicit DCPMetadata(FILE *file): order_(UNKNOWN), file_(file) {}
+    
+    bool parse()
+    {
+        int ifdOffset = 0;
+        FILE *f = file_;
+
+        if (!f) {
+#ifndef NDEBUG
+            std::cerr << "ERROR : no file opened !" << std::endl;
+#endif
+            return false;
+        }
+        setlocale(LC_NUMERIC, "C"); // to set decimal point in sscanf
+
+        // read tiff header
+        fseek(f, 0, SEEK_SET);
+        unsigned short bo;
+        fread(&bo, 1, 2, f);
+        order = (ByteOrder)((int)bo);
+        order_ = order;
+        
+        get2(f, order);
+        if (!ifdOffset) {
+            ifdOffset = get4(f, order);
+        }
+
+        // seek to IFD
+        fseek(f, ifdOffset, SEEK_SET);
+
+        // first read the IFD directory
+        int numOfTags = get2(f, order);
+
+        if (numOfTags <= 0 || numOfTags > 1000) { // KodakIfd has lots of tags, thus 1000 as the limit
+            return false;
+        }
+
+        int base = 0;
+        for (int i = 0; i < numOfTags; i++) {
+            Tag t;
+            if (parse_tag(t, f, order, base)) {
+                tags_[t.id] = std::move(t);
+            }
+        }
+
+        return true;
+    }
+    
+    bool find(tag id) const
+    {
+        return tags_.find(id) != tags_.end();
+    }
+    
+    std::string toString(tag id)
+    {
+        auto it = tags_.find(id);
+        if (it != tags_.end()) {
+            auto &t = it->second;
+            if (t.type == ASCII) {
+                std::ostringstream buf;
+                unsigned char *value = &(t.value[0]);
+                buf << value;
+                return buf.str();
+            }
+        }
+        return "";
+    }
+
+    int toInt(tag id, int ofs, TagType astype=INVALID)
+    {
+        auto it = tags_.find(id);
+        if (it == tags_.end()) {
+            return 0;
+        }
+
+        auto &t = it->second;
+        int a;
+        unsigned char *value = &(t.value[0]);
+
+        if (astype == INVALID) {
+            astype = t.type;
+        }
+
+        switch (astype) {
+        case SBYTE:
+            return int ((reinterpret_cast<signed char*> (value))[ofs]);
+
+        case BYTE:
+            return value[ofs];
+
+        case ASCII:
+            return 0;
+
+        case SSHORT:
+            return (int)int2_to_signed (sget2 (value + ofs, getOrder()));
+
+        case SHORT:
+            return (int)sget2 (value + ofs, getOrder());
+
+        case SLONG:
+        case LONG:
+            return (int)sget4 (value + ofs, getOrder());
+
+        case SRATIONAL:
+        case RATIONAL:
+            a = (int)sget4 (value + ofs + 4, getOrder());
+            return a == 0 ? 0 : (int)sget4 (value + ofs, getOrder()) / a;
+
+        case FLOAT:
+            return (int)toDouble(id, ofs);
+
+        case UNDEFINED:
+            return 0;
+
+        default:
+            return 0; // Quick fix for missing cases (INVALID, DOUBLE, OLYUNDEF, SUBDIR)
+        }
+    }
+    
+    int toShort(tag id, int ofs)
+    {
+        return toInt(id, ofs, SHORT);
+    }
+    
+    int toDouble(tag id, int ofs)
+    {
+        auto it = tags_.find(id);
+        if (it == tags_.end()) {
+            return 0.0;
+        }
+
+        auto &t = it->second;
+        
+        union IntFloat {
+            uint32_t i;
+            float f;
+        } conv;
+
+        double ud, dd;
+        unsigned char *value = &(t.value[0]);
+
+        switch (t.type) {
+        case SBYTE:
+            return (double) (int ((reinterpret_cast<signed char*> (value))[ofs]));
+
+        case BYTE:
+            return (double) ((int)value[ofs]);
+
+        case ASCII:
+            return 0.0;
+
+        case SSHORT:
+            return (double)int2_to_signed (sget2 (value + ofs, getOrder()));
+
+        case SHORT:
+            return (double) ((int)sget2 (value + ofs, getOrder()));
+
+        case SLONG:
+        case LONG:
+            return (double) ((int)sget4 (value + ofs, getOrder()));
+
+        case SRATIONAL:
+        case RATIONAL:
+            ud = (int)sget4 (value + ofs, getOrder());
+            dd = (int)sget4 (value + ofs + 4, getOrder());
+            return dd == 0. ? 0. : (double)ud / (double)dd;
+
+        case FLOAT:
+            conv.i = sget4 (value + ofs, getOrder());
+            return conv.f;  // IEEE FLOATs are already C format, they just need a recast
+
+        case UNDEFINED:
+            return 0.;
+
+        default:
+            return 0.; // Quick fix for missing cases (INVALID, DOUBLE, OLYUNDEF, SUBDIR)
+        }
+    }
+
+private:
+    ByteOrder getOrder() const { return ordrer_; }
+    
+    static unsigned short sget2(unsigned char *s, ByteOrder order)
+    {
+        if (order == INTEL) {
+            return s[0] | s[1] << 8;
+        } else {
+            return s[0] << 8 | s[1];
+        }
+    }
+    
+    static int sget4(unsigned char *s, ByteOrder order)
+    {
+        if (order == INTEL) {
+            return s[0] | s[1] << 8 | s[2] << 16 | s[3] << 24;
+        } else {
+            return s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3];
+        }
+    }
+    
+    static unsigned short get2(FILE* f, ByteOrder order)
+    { 
+        unsigned char str[2] = { 0xff, 0xff };
+        fread (str, 1, 2, f);
+        return sget2(str, order);
+    }
+    
+    static int get4(FILE *f, ByteOrder order)
+    { 
+        unsigned char str[4] = { 0xff, 0xff, 0xff, 0xff };
+        fread (str, 1, 4, f);
+        return sget4 (str, order);
+    }
+    
+    static void sset2(unsigned short v, unsigned char *s, ByteOrder order)
+    {
+        if (order == INTEL) {
+            s[0] = v & 0xff;
+            v >>= 8;
+            s[1] = v;
+        } else {
+            s[1] = v & 0xff;
+            v >>= 8;
+            s[0] = v;
+        }
+    }
+    
+    static void sset4(int v, unsigned char *s, ByteOrder order)
+    {
+        if (order == INTEL) {
+            s[0] = v & 0xff;
+            v >>= 8;
+            s[1] = v & 0xff;
+            v >>= 8;
+            s[2] = v & 0xff;
+            v >>= 8;
+            s[3] = v;
+        } else {
+            s[3] = v & 0xff;
+            v >>= 8;
+            s[2] = v & 0xff;
+            v >>= 8;
+            s[1] = v & 0xff;
+            v >>= 8;
+            s[0] = v;
+        }
+    }
+    
+    static float int_to_float(int i)
+    {
+        union {
+            int i;
+            float f;
+        } u;
+        u.i = i;
+        return u.f;
+    }
+    
+    static short int int2_to_signed(short unsigned int i)
+    {
+        union {
+            short unsigned int i;
+            short int s;
+        } u;
+        u.i = i;
+        return u.s;
+    }
+
+    static int getTypeSize(TagType type)
+    {
+        return ("11124811248484"[type < 14 ? type : 0] - '0');
+    }
+
+    struct Tag {
+        int id;
+        std::vector<unsigned char> value;
+        TagType type;
+        unsigned int count;
+
+        Tag(): id(0), value(), type(INVALID), count(0) {}
+    };
+
+    bool parse_tag(Tag &t, FILE *f, int base, ByteOrder order)
+    {
+        unsigned short tag = get2(f, order);
+        t.type  = (TagType)get2(f, order);
+        t.count = get4(f, order);
+
+        if (!t.count) {
+            t.count = 1;
+        }
+
+        // filter out invalid tags
+        // note the large count is to be able to pass LeafData ASCII tag which can be up to almost 10 megabytes,
+        // (only a small part of it will actually be parsed though)
+        if ((int)t.type < 1 || (int)t.type > 14 || t.count > 10 * 1024 * 1024) {
+            t.type = INVALID;
+            return false;
+        }
+
+        // store next Tag's position in file
+        int save = ftell(f) + 4;
+
+        // load value field (possibly seek before)
+        int valuesize = count * getTypeSize(t.type);
+
+        if (valuesize > 4) {
+            fseek(f, get4(f, order) + base, SEEK_SET);
+        }
+
+        // read value
+        value.resize(valuesize + 1);
+        auto readSize = fread(&value[0], 1, valuesize, f);
+        value[readSize] = '\0';
+
+        // seek back to the saved position
+        fseek(f, save, SEEK_SET);
+        return true;
+    }
+
+    std::unordered_map<int, Tag> tags_;
+    ByteOrder order_;
+    FILE *file_;
+};
+
+} // namespace
+
 
 struct DCPProfile::ApplyState::Data {
     float pro_photo[3][3];
