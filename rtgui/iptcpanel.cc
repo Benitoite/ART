@@ -440,13 +440,13 @@ void IPTCPanel::setDefaults (const ProcParams* defParams, const ParamsEdited* pe
 void IPTCPanel::setImageData (const FramesMetaData* id)
 {
 
-    if (id) {
-        embeddedData = id->getIPTCData ();
-    } else {
-        embeddedData.clear ();
-    }
+    // if (id) {
+    //     embeddedData = id->getIPTCData ();
+    // } else {
+    //     embeddedData.clear ();
+    // }
 
-    file->set_sensitive (!embeddedData.empty());
+    // file->set_sensitive (!embeddedData.empty());
 }
 
 void IPTCPanel::notifyListener ()

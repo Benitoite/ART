@@ -310,6 +310,13 @@ pkg_check_modules (SIGC    REQUIRED sigc++-2.0>=2.3.1)
 pkg_check_modules (LENSFUN REQUIRED lensfun>=0.2)
 pkg_check_modules (RSVG    REQUIRED librsvg-2.0>=2.40)
 
+# Require exiv2 >= 0.24 to make sure everything we need is available
+#find_package(Exiv2 0.24 REQUIRED)
+pkg_check_modules(EXIV2 REQUIRED exiv2>=0.24)
+#include_directories(SYSTEM ${Exiv2_INCLUDE_DIRS})
+#list(APPEND LIBS ${EXIV2_LIBRARIES})
+add_definitions(${EXIV2_DEFINITIONS})
+
 if(WIN32)
     add_definitions(-DWIN32)
     add_definitions(-D_WIN32)

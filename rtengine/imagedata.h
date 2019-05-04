@@ -24,21 +24,26 @@
 #include "rawimage.h"
 #include <string>
 #include <glibmm.h>
-#include "../rtexif/rtexif.h"
+#include <exiv2/exiv2.hpp>
+
+// #include "../rtexif/rtexif.h"
 #include "procparams.h"
-#include <libiptcdata/iptc-data.h>
+// #include <libiptcdata/iptc-data.h>
 #include "rtengine.h"
 
 namespace rtengine
 {
 
+Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname);
+
 class FrameData
 {
 
 protected:
-    rtexif::TagDirectory* frameRootDir;
-    IptcData* iptc;
+    // rtexif::TagDirectory* frameRootDir;
+    // IptcData* iptc;
 
+    bool ok_;
     struct tm time;
     time_t timeStamp;
     int iso_speed;
@@ -59,18 +64,19 @@ protected:
 
 public:
 
-    FrameData (rtexif::TagDirectory* frameRootDir, rtexif::TagDirectory* rootDir, rtexif::TagDirectory* firstRootDir);
+    // FrameData (rtexif::TagDirectory* frameRootDir, rtexif::TagDirectory* rootDir, rtexif::TagDirectory* firstRootDir);
+    FrameData(const Glib::ustring &fname);
     virtual ~FrameData ();
 
     bool getPixelShift () const;
     bool getHDR () const;
     std::string getImageType () const;
     IIOSampleFormat getSampleFormat () const;
-    rtexif::TagDirectory* getExifData () const;
-    procparams::IPTCPairs getIPTCData () const;
-    static procparams::IPTCPairs getIPTCData (IptcData* iptc_);
+    // rtexif::TagDirectory* getExifData () const;
+    // procparams::IPTCPairs getIPTCData () const;
+    // static procparams::IPTCPairs getIPTCData (IptcData* iptc_);
     bool hasExif () const;
-    bool hasIPTC () const;
+    // bool hasIPTC () const;
     tm getDateTime () const;
     time_t getDateTimeAsTS () const;
     int getISOSpeed () const;
@@ -92,8 +98,8 @@ private:
     // frame's root IFD, can be a file root IFD or a SUB-IFD
     std::vector<std::unique_ptr<FrameData>> frames;
     // root IFD in the file
-    std::vector<rtexif::TagDirectory*> roots;
-    IptcData* iptc;
+    // std::vector<rtexif::TagDirectory*> roots;
+    // IptcData* iptc;
     unsigned int dcrawFrameCount;
 
 public:
@@ -101,18 +107,18 @@ public:
     ~FramesData () override;
 
     void setDCRawFrameCount (unsigned int frameCount);
-    unsigned int getRootCount () const override;
+    // unsigned int getRootCount () const override;
     unsigned int getFrameCount () const override;
     bool getPixelShift () const override;
     bool getHDR (unsigned int frame = 0) const override;
     std::string getImageType (unsigned int frame) const override;
     IIOSampleFormat getSampleFormat (unsigned int frame = 0) const override;
-    rtexif::TagDirectory* getFrameExifData (unsigned int frame = 0) const override;
-    rtexif::TagDirectory* getRootExifData (unsigned int root = 0) const override;
-    rtexif::TagDirectory* getBestExifData (ImageSource *imgSource, procparams::RAWParams *rawParams) const override;
-    procparams::IPTCPairs getIPTCData (unsigned int frame = 0) const override;
+    // rtexif::TagDirectory* getFrameExifData (unsigned int frame = 0) const override;
+    // rtexif::TagDirectory* getRootExifData (unsigned int root = 0) const override;
+    // rtexif::TagDirectory* getBestExifData (ImageSource *imgSource, procparams::RAWParams *rawParams) const override;
+    // procparams::IPTCPairs getIPTCData (unsigned int frame = 0) const override;
     bool hasExif (unsigned int frame = 0) const override;
-    bool hasIPTC (unsigned int frame = 0) const override;
+    // bool hasIPTC (unsigned int frame = 0) const override;
     tm getDateTime (unsigned int frame = 0) const override;
     time_t getDateTimeAsTS (unsigned int frame = 0) const override;
     int getISOSpeed (unsigned int frame = 0) const override;

@@ -191,15 +191,15 @@ void ExifPanel::setImageData (const FramesMetaData* id)
 {
 
     idata = id;
-    exifTreeModel->clear ();
+    // exifTreeModel->clear ();
 
-    if (idata) {
-        for (unsigned int rootNum = 0; rootNum < id->getRootCount (); ++rootNum) {
-            if ( id->getRootExifData (rootNum)) {
-                addDirectory (id->getRootExifData (rootNum), exifTreeModel->children(), rootNum > 0);
-            }
-        }
-    }
+    // if (idata) {
+    //     for (unsigned int rootNum = 0; rootNum < id->getRootCount (); ++rootNum) {
+    //         if ( id->getRootExifData (rootNum)) {
+    //             addDirectory (id->getRootExifData (rootNum), exifTreeModel->children(), rootNum > 0);
+    //         }
+    //     }
+    // }
 }
 
 Gtk::TreeModel::Children ExifPanel::addTag (const Gtk::TreeModel::Children& root, Glib::ustring field, Glib::ustring value, rtexif::ActionCode action, bool editable)

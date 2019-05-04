@@ -59,33 +59,33 @@ class FramesMetaData
 
 public:
     /** @return Returns the number of root Metadata */
-    virtual unsigned int getRootCount () const = 0;
+    // virtual unsigned int getRootCount () const = 0;
     /** @return Returns the number of frame contained in the file based on Metadata */
     virtual unsigned int getFrameCount () const = 0;
 
     /** Checks the availability of exif metadata tags.
       * @return Returns true if image contains exif metadata tags */
     virtual bool hasExif (unsigned int frame = 0) const = 0;
-    /** Returns the directory of exif metadata tags.
-      * @param root root number in the metadata tree
-      * @return The directory of exif metadata tags */
-    virtual rtexif::TagDirectory* getRootExifData (unsigned int root = 0) const = 0;
-    /** Returns the directory of exif metadata tags.
-      * @param frame frame number in the metadata tree
-      * @return The directory of exif metadata tags */
-    virtual rtexif::TagDirectory* getFrameExifData (unsigned int frame = 0) const = 0;
-    /** Returns the directory of exif metadata tags containing at least the 'Make' tag for the requested frame.
-      * If no usable metadata exist in the frame, send back the best TagDirectory describing the frame content.
-      * @param imgSource rawimage that we want the metadata from
-      * @param rawParams RawParams to select the frame number
-      * @return The directory of exif metadata tags containing at least the 'Make' tag */
-    virtual rtexif::TagDirectory* getBestExifData (ImageSource *imgSource, procparams::RAWParams *rawParams) const = 0;
-    /** Checks the availability of IPTC tags.
-      * @return Returns true if image contains IPTC tags */
-    virtual bool hasIPTC (unsigned int frame = 0) const = 0;
-    /** Returns the directory of IPTC tags.
-      * @return The directory of IPTC tags */
-    virtual procparams::IPTCPairs getIPTCData (unsigned int frame = 0) const = 0;
+    /* /\** Returns the directory of exif metadata tags. */
+    /*   * @param root root number in the metadata tree */
+    /*   * @return The directory of exif metadata tags *\/ */
+    /* virtual rtexif::TagDirectory* getRootExifData (unsigned int root = 0) const = 0; */
+    /* /\** Returns the directory of exif metadata tags. */
+    /*   * @param frame frame number in the metadata tree */
+    /*   * @return The directory of exif metadata tags *\/ */
+    /* virtual rtexif::TagDirectory* getFrameExifData (unsigned int frame = 0) const = 0; */
+    /* /\** Returns the directory of exif metadata tags containing at least the 'Make' tag for the requested frame. */
+    /*   * If no usable metadata exist in the frame, send back the best TagDirectory describing the frame content. */
+    /*   * @param imgSource rawimage that we want the metadata from */
+    /*   * @param rawParams RawParams to select the frame number */
+    /*   * @return The directory of exif metadata tags containing at least the 'Make' tag *\/ */
+    /* virtual rtexif::TagDirectory* getBestExifData (ImageSource *imgSource, procparams::RAWParams *rawParams) const = 0; */
+    /* /\** Checks the availability of IPTC tags. */
+    /*   * @return Returns true if image contains IPTC tags *\/ */
+    /* virtual bool hasIPTC (unsigned int frame = 0) const = 0; */
+    /* /\** Returns the directory of IPTC tags. */
+    /*   * @return The directory of IPTC tags *\/ */
+    /* virtual procparams::IPTCPairs getIPTCData (unsigned int frame = 0) const = 0; */
     /** @return a struct containing the date and time of the image */
     virtual tm getDateTime (unsigned int frame = 0) const = 0;
     /** @return a timestamp containing the date and time of the image */

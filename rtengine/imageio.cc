@@ -39,6 +39,7 @@
 #include "iptcpairs.h"
 #include "iccjpeg.h"
 #include "color.h"
+#include "imagedata.h"
 
 #include "jpeg.h"
 
@@ -79,104 +80,104 @@ FILE* g_fopen_withBinaryAndLock(const Glib::ustring& fname)
 
 Glib::ustring ImageIO::errorMsg[6] = {"Success", "Cannot read file.", "Invalid header.", "Error while reading header.", "File reading error", "Image format not supported."};
 
-// For only copying the raw input data
-void ImageIO::setMetadata (const rtexif::TagDirectory* eroot)
-{
-    if (exifRoot != nullptr) {
-        delete exifRoot;
-        exifRoot = nullptr;
-    }
+// // For only copying the raw input data
+// void ImageIO::setMetadata (const rtexif::TagDirectory* eroot)
+// {
+//     if (exifRoot != nullptr) {
+//         delete exifRoot;
+//         exifRoot = nullptr;
+//     }
 
-    if (eroot) {
-        rtexif::TagDirectory* td = ((rtexif::TagDirectory*)eroot)->clone (nullptr);
+//     if (eroot) {
+//         rtexif::TagDirectory* td = ((rtexif::TagDirectory*)eroot)->clone (nullptr);
 
-        // make IPTC and XMP pass through
-        td->keepTag(0x83bb);  // IPTC
-        td->keepTag(0x02bc);  // XMP
+//         // make IPTC and XMP pass through
+//         td->keepTag(0x83bb);  // IPTC
+//         td->keepTag(0x02bc);  // XMP
 
-        exifRoot = td;
+//         exifRoot = td;
 
-        if (!iptc) {
-            rtexif::Tag* t = exifRoot->getTag(0x83BB);
-            if (t) {
-                iptc = iptc_data_new_from_data ((unsigned char*)t->getValue (), (unsigned)t->getValueSize ());
-            }
-        }
+//         if (!iptc) {
+//             rtexif::Tag* t = exifRoot->getTag(0x83BB);
+//             if (t) {
+//                 iptc = iptc_data_new_from_data ((unsigned char*)t->getValue (), (unsigned)t->getValueSize ());
+//             }
+//         }
             
-    }
-}
+//     }
+// }
 
-// For merging with RT specific data
-void ImageIO::setMetadata (const rtexif::TagDirectory* eroot, const rtengine::procparams::ExifPairs& exif, const rtengine::procparams::IPTCPairs& iptcc)
-{
+// // For merging with RT specific data
+// void ImageIO::setMetadata (const rtexif::TagDirectory* eroot, const rtengine::procparams::ExifPairs& exif, const rtengine::procparams::IPTCPairs& iptcc)
+// {
 
-    // store exif info
-    exifChange.clear();
-    exifChange = exif;
+//     // store exif info
+//     exifChange.clear();
+//     exifChange = exif;
 
-    if (exifRoot != nullptr) {
-        delete exifRoot;
-        exifRoot = nullptr;
-    }
+//     if (exifRoot != nullptr) {
+//         delete exifRoot;
+//         exifRoot = nullptr;
+//     }
 
-    if (eroot) {
-        exifRoot = ((rtexif::TagDirectory*)eroot)->clone (nullptr);
-    }
+//     if (eroot) {
+//         exifRoot = ((rtexif::TagDirectory*)eroot)->clone (nullptr);
+//     }
 
-    if (iptc != nullptr) {
-        iptc_data_free (iptc);
-        iptc = nullptr;
-    }
+//     if (iptc != nullptr) {
+//         iptc_data_free (iptc);
+//         iptc = nullptr;
+//     }
 
-    // build iptc structures for libiptcdata
-    if (iptcc.empty()) {
-        return;
-    }
+//     // build iptc structures for libiptcdata
+//     if (iptcc.empty()) {
+//         return;
+//     }
 
-    iptc = iptc_data_new ();
+//     iptc = iptc_data_new ();
 
-    const unsigned char utf8Esc[] = {0x1B, '%', 'G'};
-    IptcDataSet * ds = iptc_dataset_new ();
-    iptc_dataset_set_tag (ds, IPTC_RECORD_OBJECT_ENV, IPTC_TAG_CHARACTER_SET);
-    iptc_dataset_set_data (ds, utf8Esc, 3, IPTC_DONT_VALIDATE);
-    iptc_data_add_dataset (iptc, ds);
-    iptc_dataset_unref (ds);
+//     const unsigned char utf8Esc[] = {0x1B, '%', 'G'};
+//     IptcDataSet * ds = iptc_dataset_new ();
+//     iptc_dataset_set_tag (ds, IPTC_RECORD_OBJECT_ENV, IPTC_TAG_CHARACTER_SET);
+//     iptc_dataset_set_data (ds, utf8Esc, 3, IPTC_DONT_VALIDATE);
+//     iptc_data_add_dataset (iptc, ds);
+//     iptc_dataset_unref (ds);
 
-    for (rtengine::procparams::IPTCPairs::const_iterator i = iptcc.begin(); i != iptcc.end(); ++i) {
-        if (i->first == "Keywords" && !(i->second.empty())) {
-            for (unsigned int j = 0; j < i->second.size(); j++) {
-                IptcDataSet * ds = iptc_dataset_new ();
-                iptc_dataset_set_tag (ds, IPTC_RECORD_APP_2, IPTC_TAG_KEYWORDS);
-                iptc_dataset_set_data (ds, (unsigned char*)i->second.at(j).c_str(), min(static_cast<size_t>(64), i->second.at(j).bytes()), IPTC_DONT_VALIDATE);
-                iptc_data_add_dataset (iptc, ds);
-                iptc_dataset_unref (ds);
-            }
+//     for (rtengine::procparams::IPTCPairs::const_iterator i = iptcc.begin(); i != iptcc.end(); ++i) {
+//         if (i->first == "Keywords" && !(i->second.empty())) {
+//             for (unsigned int j = 0; j < i->second.size(); j++) {
+//                 IptcDataSet * ds = iptc_dataset_new ();
+//                 iptc_dataset_set_tag (ds, IPTC_RECORD_APP_2, IPTC_TAG_KEYWORDS);
+//                 iptc_dataset_set_data (ds, (unsigned char*)i->second.at(j).c_str(), min(static_cast<size_t>(64), i->second.at(j).bytes()), IPTC_DONT_VALIDATE);
+//                 iptc_data_add_dataset (iptc, ds);
+//                 iptc_dataset_unref (ds);
+//             }
 
-            continue;
-        } else if (i->first == "SupplementalCategories" && !(i->second.empty())) {
-            for (unsigned int j = 0; j < i->second.size(); j++) {
-                IptcDataSet * ds = iptc_dataset_new ();
-                iptc_dataset_set_tag (ds, IPTC_RECORD_APP_2, IPTC_TAG_SUPPL_CATEGORY);
-                iptc_dataset_set_data (ds, (unsigned char*)i->second.at(j).c_str(), min(static_cast<size_t>(32), i->second.at(j).bytes()), IPTC_DONT_VALIDATE);
-                iptc_data_add_dataset (iptc, ds);
-                iptc_dataset_unref (ds);
-            }
+//             continue;
+//         } else if (i->first == "SupplementalCategories" && !(i->second.empty())) {
+//             for (unsigned int j = 0; j < i->second.size(); j++) {
+//                 IptcDataSet * ds = iptc_dataset_new ();
+//                 iptc_dataset_set_tag (ds, IPTC_RECORD_APP_2, IPTC_TAG_SUPPL_CATEGORY);
+//                 iptc_dataset_set_data (ds, (unsigned char*)i->second.at(j).c_str(), min(static_cast<size_t>(32), i->second.at(j).bytes()), IPTC_DONT_VALIDATE);
+//                 iptc_data_add_dataset (iptc, ds);
+//                 iptc_dataset_unref (ds);
+//             }
 
-            continue;
-        }
+//             continue;
+//         }
 
-        for (int j = 0; j < 16; j++)
-            if (i->first == strTags[j].field && !(i->second.empty())) {
-                IptcDataSet * ds = iptc_dataset_new ();
-                iptc_dataset_set_tag (ds, IPTC_RECORD_APP_2, strTags[j].tag);
-                iptc_dataset_set_data (ds, (unsigned char*)i->second.at(0).c_str(), min(strTags[j].size, i->second.at(0).bytes()), IPTC_DONT_VALIDATE);
-                iptc_data_add_dataset (iptc, ds);
-                iptc_dataset_unref (ds);
-            }
-    }
+//         for (int j = 0; j < 16; j++)
+//             if (i->first == strTags[j].field && !(i->second.empty())) {
+//                 IptcDataSet * ds = iptc_dataset_new ();
+//                 iptc_dataset_set_tag (ds, IPTC_RECORD_APP_2, strTags[j].tag);
+//                 iptc_dataset_set_data (ds, (unsigned char*)i->second.at(0).c_str(), min(strTags[j].size, i->second.at(0).bytes()), IPTC_DONT_VALIDATE);
+//                 iptc_data_add_dataset (iptc, ds);
+//                 iptc_dataset_unref (ds);
+//             }
+//     }
 
-    iptc_data_sort (iptc);
-}
+//     iptc_data_sort (iptc);
+// }
 
 void ImageIO::setOutputProfile  (const char* pdata, int plen)
 {
@@ -201,7 +202,7 @@ ImageIO::~ImageIO ()
     }
 
     deleteLoadedProfileData();
-    delete exifRoot;
+    // delete exifRoot;
     delete [] profileData;
 }
 
@@ -1051,28 +1052,28 @@ int ImageIO::savePNG  (const Glib::ustring &fname, int bps) const
         png_set_iCCP(png, info, const_cast<png_charp>("icc"), 0, profdata, profileLength);
     }
 
-    {
-        // buffer for the exif and iptc
-        unsigned int bufferSize;
-        unsigned char* buffer = nullptr; // buffer will be allocated in createTIFFHeader
-        unsigned char* iptcdata = nullptr;
-        unsigned int iptclen = 0;
+    // {
+    //     // buffer for the exif and iptc
+    //     unsigned int bufferSize;
+    //     unsigned char* buffer = nullptr; // buffer will be allocated in createTIFFHeader
+    //     unsigned char* iptcdata = nullptr;
+    //     unsigned int iptclen = 0;
 
-        if (iptc && iptc_data_save (iptc, &iptcdata, &iptclen) && iptcdata) {
-            iptc_data_free_buf (iptc, iptcdata);
-            iptcdata = nullptr;
-        }
+    //     if (iptc && iptc_data_save (iptc, &iptcdata, &iptclen) && iptcdata) {
+    //         iptc_data_free_buf (iptc, iptcdata);
+    //         iptcdata = nullptr;
+    //     }
 
-        int size = rtexif::ExifManager::createPNGMarker(exifRoot, exifChange, width, height, bps, (char*)iptcdata, iptclen, buffer, bufferSize);
+    //     int size = rtexif::ExifManager::createPNGMarker(exifRoot, exifChange, width, height, bps, (char*)iptcdata, iptclen, buffer, bufferSize);
 
-        if (iptcdata) {
-            iptc_data_free_buf (iptc, iptcdata);
-        }
-        if (buffer && size) {
-            PNGwriteRawProfile(png, info, "exif", buffer, size);
-            delete[] buffer;
-        }
-    }
+    //     if (iptcdata) {
+    //         iptc_data_free_buf (iptc, iptcdata);
+    //     }
+    //     if (buffer && size) {
+    //         PNGwriteRawProfile(png, info, "exif", buffer, size);
+    //         delete[] buffer;
+    //     }
+    // }
 
 
     int rowlen = width * 3 * bps / 8;
@@ -1107,6 +1108,11 @@ int ImageIO::savePNG  (const Glib::ustring &fname, int bps) const
 
     delete [] row;
     fclose (file);
+
+    if (!saveMetadata(fname)) {
+        g_remove(fname.c_str());
+        return IMIO_CANNOTWRITEFILE;
+    }
 
     if (pl) {
         pl->setProgressStr ("PROGRESSBAR_READY");
@@ -1209,44 +1215,44 @@ int ImageIO::saveJPEG (const Glib::ustring &fname, int quality, int subSamp) con
 
     // buffer for exif and iptc markers
     unsigned char* buffer = new unsigned char[165535]; //FIXME: no buffer size check so it can be overflowed in createJPEGMarker() for large tags, and then software will crash
-    unsigned int size;
+//    unsigned int size;
 
     // assemble and write exif marker
-    if (exifRoot) {
-        int size = rtexif::ExifManager::createJPEGMarker (exifRoot, exifChange, cinfo.image_width, cinfo.image_height, buffer);
+    // if (exifRoot) {
+    //     int size = rtexif::ExifManager::createJPEGMarker (exifRoot, exifChange, cinfo.image_width, cinfo.image_height, buffer);
 
-        if (size > 0 && size < 65530) {
-            jpeg_write_marker(&cinfo, JPEG_APP0 + 1, buffer, size);
-        }
-    }
+    //     if (size > 0 && size < 65530) {
+    //         jpeg_write_marker(&cinfo, JPEG_APP0 + 1, buffer, size);
+    //     }
+    // }
 
-    // assemble and write iptc marker
-    if (iptc) {
-        unsigned char* iptcdata;
-        bool error = false;
+    // // assemble and write iptc marker
+    // if (iptc) {
+    //     unsigned char* iptcdata;
+    //     bool error = false;
 
-        if (iptc_data_save (iptc, &iptcdata, &size)) {
-            if (iptcdata) {
-                iptc_data_free_buf (iptc, iptcdata);
-            }
+    //     if (iptc_data_save (iptc, &iptcdata, &size)) {
+    //         if (iptcdata) {
+    //             iptc_data_free_buf (iptc, iptcdata);
+    //         }
 
-            error = true;
-        }
+    //         error = true;
+    //     }
 
-        int bytes = 0;
+    //     int bytes = 0;
 
-        if (!error && (bytes = iptc_jpeg_ps3_save_iptc (nullptr, 0, iptcdata, size, buffer, 65532)) < 0) {
-            error = true;
-        }
+    //     if (!error && (bytes = iptc_jpeg_ps3_save_iptc (nullptr, 0, iptcdata, size, buffer, 65532)) < 0) {
+    //         error = true;
+    //     }
 
-        if (iptcdata) {
-            iptc_data_free_buf (iptc, iptcdata);
-        }
+    //     if (iptcdata) {
+    //         iptc_data_free_buf (iptc, iptcdata);
+    //     }
 
-        if (!error) {
-            jpeg_write_marker(&cinfo, JPEG_APP0 + 13, buffer, bytes);
-        }
-    }
+    //     if (!error) {
+    //         jpeg_write_marker(&cinfo, JPEG_APP0 + 13, buffer, bytes);
+    //     }
+    // }
 
     delete [] buffer;
 
@@ -1301,6 +1307,11 @@ int ImageIO::saveJPEG (const Glib::ustring &fname, int quality, int subSamp) con
 
     fclose (file);
 
+    if (!saveMetadata(fname)) {
+        g_remove(fname.c_str());
+        return IMIO_CANNOTWRITEFILE;
+    }
+
     if (pl) {
         pl->setProgressStr ("PROGRESSBAR_READY");
         pl->setProgress (1.0);
@@ -1327,7 +1338,7 @@ int ImageIO::saveTIFF (const Glib::ustring &fname, int bps, bool isFloat, bool u
     unsigned char* linebuffer = new unsigned char[lineWidth];
 
     // little hack to get libTiff to use proper byte order (see TIFFClienOpen()):
-    const char *mode = !exifRoot ? "w" : (exifRoot->getOrder() == rtexif::INTEL ? "wl" : "wb");
+    const char *mode = "w";//!exifRoot ? "w" : (exifRoot->getOrder() == rtexif::INTEL ? "wl" : "wb");
 #ifdef WIN32
     FILE *file = g_fopen_withBinaryAndLock (fname);
     int fileno = _fileno(file);
@@ -1335,7 +1346,7 @@ int ImageIO::saveTIFF (const Glib::ustring &fname, int bps, bool isFloat, bool u
     TIFF* out = TIFFFdOpen (osfileno, fname.c_str(), mode);
 #else
     TIFF* out = TIFFOpen(fname.c_str(), mode);
-    int fileno = TIFFFileno (out);
+    // int fileno = TIFFFileno (out);
 #endif
 
     if (!out) {
@@ -1348,113 +1359,114 @@ int ImageIO::saveTIFF (const Glib::ustring &fname, int bps, bool isFloat, bool u
         pl->setProgress (0.0);
     }
 
-    bool applyExifPatch = false;
+    // bool applyExifPatch = false;
 
-    if (exifRoot) {
-        rtexif::TagDirectory* cl = (const_cast<rtexif::TagDirectory*> (exifRoot))->clone (nullptr);
+//     if (exifRoot) {
+//         rtexif::TagDirectory* cl = (const_cast<rtexif::TagDirectory*> (exifRoot))->clone (nullptr);
 
-        // ------------------ remove some unknown top level tags which produce warnings when opening a tiff (might be useless) -----------------
+//         // ------------------ remove some unknown top level tags which produce warnings when opening a tiff (might be useless) -----------------
 
-        rtexif::Tag *removeTag = cl->getTag (0x9003);
+//         rtexif::Tag *removeTag = cl->getTag (0x9003);
 
-        if (removeTag) {
-            removeTag->setKeep (false);
-        }
+//         if (removeTag) {
+//             removeTag->setKeep (false);
+//         }
 
-        removeTag = cl->getTag (0x9211);
+//         removeTag = cl->getTag (0x9211);
 
-        if (removeTag) {
-            removeTag->setKeep (false);
-        }
+//         if (removeTag) {
+//             removeTag->setKeep (false);
+//         }
 
-        // ------------------ Apply list of change -----------------
+//         // ------------------ Apply list of change -----------------
 
-        for (auto currExifChange : exifChange) {
-            cl->applyChange (currExifChange.first, currExifChange.second);
-        }
+//         for (auto currExifChange : exifChange) {
+//             cl->applyChange (currExifChange.first, currExifChange.second);
+//         }
 
-        rtexif::Tag *tag = cl->getTag (TIFFTAG_EXIFIFD);
+//         rtexif::Tag *tag = cl->getTag (TIFFTAG_EXIFIFD);
 
-        if (tag && tag->isDirectory()) {
-            rtexif::TagDirectory *exif = tag->getDirectory();
+//         if (tag && tag->isDirectory()) {
+//             rtexif::TagDirectory *exif = tag->getDirectory();
 
-            if (exif)   {
-                int exif_size = exif->calculateSize();
-                unsigned char *buffer = new unsigned char[exif_size + 8];
-                // TIFFOpen writes out the header and sets file pointer at position 8
+//             if (exif)   {
+//                 int exif_size = exif->calculateSize();
+//                 unsigned char *buffer = new unsigned char[exif_size + 8];
+//                 // TIFFOpen writes out the header and sets file pointer at position 8
 
-                exif->write (8, buffer);
+//                 exif->write (8, buffer);
 
-                write (fileno, buffer + 8, exif_size);
+//                 write (fileno, buffer + 8, exif_size);
 
-                delete [] buffer;
-                // let libtiff know that scanlines or any other following stuff should go
-                // at a different offset:
-                TIFFSetWriteOffset (out, exif_size + 8);
-                TIFFSetField (out, TIFFTAG_EXIFIFD, 8);
-                applyExifPatch = true;
-            }
-        }
+//                 delete [] buffer;
+//                 // let libtiff know that scanlines or any other following stuff should go
+//                 // at a different offset:
+//                 TIFFSetWriteOffset (out, exif_size + 8);
+//                 TIFFSetField (out, TIFFTAG_EXIFIFD, 8);
+//                 applyExifPatch = true;
+//             }
+//         }
 
-        //TODO Even though we are saving EXIF IFD - MakerNote still comes out screwed.
+//         //TODO Even though we are saving EXIF IFD - MakerNote still comes out screwed.
 
-        if ((tag = cl->getTag (TIFFTAG_MODEL)) != nullptr) {
-            TIFFSetField (out, TIFFTAG_MODEL, tag->getValue());
-        }
+//         if ((tag = cl->getTag (TIFFTAG_MODEL)) != nullptr) {
+//             TIFFSetField (out, TIFFTAG_MODEL, tag->getValue());
+//         }
 
-        if ((tag = cl->getTag (TIFFTAG_MAKE)) != nullptr) {
-            TIFFSetField (out, TIFFTAG_MAKE, tag->getValue());
-        }
+//         if ((tag = cl->getTag (TIFFTAG_MAKE)) != nullptr) {
+//             TIFFSetField (out, TIFFTAG_MAKE, tag->getValue());
+//         }
 
-        if ((tag = cl->getTag (TIFFTAG_DATETIME)) != nullptr) {
-            TIFFSetField (out, TIFFTAG_DATETIME, tag->getValue());
-        }
+//         if ((tag = cl->getTag (TIFFTAG_DATETIME)) != nullptr) {
+//             TIFFSetField (out, TIFFTAG_DATETIME, tag->getValue());
+//         }
 
-        if ((tag = cl->getTag (TIFFTAG_ARTIST)) != nullptr) {
-            TIFFSetField (out, TIFFTAG_ARTIST, tag->getValue());
-        }
+//         if ((tag = cl->getTag (TIFFTAG_ARTIST)) != nullptr) {
+//             TIFFSetField (out, TIFFTAG_ARTIST, tag->getValue());
+//         }
 
-        if ((tag = cl->getTag (TIFFTAG_COPYRIGHT)) != nullptr) {
-            TIFFSetField (out, TIFFTAG_COPYRIGHT, tag->getValue());
-        }
+//         if ((tag = cl->getTag (TIFFTAG_COPYRIGHT)) != nullptr) {
+//             TIFFSetField (out, TIFFTAG_COPYRIGHT, tag->getValue());
+//         }
 
-        delete cl;
-    }
+//         delete cl;
+//     }
 
-    unsigned char* iptcdata = nullptr;
-    unsigned int iptclen = 0;
+//     unsigned char* iptcdata = nullptr;
+//     unsigned int iptclen = 0;
 
-    if (iptc && iptc_data_save (iptc, &iptcdata, &iptclen)) {
-        if (iptcdata) {
-            iptc_data_free_buf (iptc, iptcdata);
-            iptcdata = nullptr;
-        }
-    }
+//     if (iptc && iptc_data_save (iptc, &iptcdata, &iptclen)) {
+//         if (iptcdata) {
+//             iptc_data_free_buf (iptc, iptcdata);
+//             iptcdata = nullptr;
+//         }
+//     }
 
-#if __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
-        bool needsReverse = exifRoot && exifRoot->getOrder() == rtexif::MOTOROLA;
-#else
-        bool needsReverse = exifRoot && exifRoot->getOrder() == rtexif::INTEL;
-#endif
-    if (iptcdata) {
-        rtexif::Tag iptcTag(nullptr, rtexif::lookupAttrib (rtexif::ifdAttribs, "IPTCData"));
-        iptcTag.initLongArray((char*)iptcdata, iptclen);
-        if (needsReverse) {
-            unsigned char *ptr = iptcTag.getValue();
-            for (int a = 0; a < iptcTag.getCount(); ++a) {
-                unsigned char cc;
-                cc = ptr[3];
-                ptr[3] = ptr[0];
-                ptr[0] = cc;
-                cc = ptr[2];
-                ptr[2] = ptr[1];
-                ptr[1] = cc;
-                ptr += 4;
-            }
-        }
-        TIFFSetField (out, TIFFTAG_RICHTIFFIPTC, iptcTag.getCount(), (long*)iptcTag.getValue());
-        iptc_data_free_buf (iptc, iptcdata);
-    }
+    bool needsReverse = false;
+// #if __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
+//         bool needsReverse = exifRoot && exifRoot->getOrder() == rtexif::MOTOROLA;
+// #else
+//         bool needsReverse = exifRoot && exifRoot->getOrder() == rtexif::INTEL;
+// #endif
+//     if (iptcdata) {
+//         rtexif::Tag iptcTag(nullptr, rtexif::lookupAttrib (rtexif::ifdAttribs, "IPTCData"));
+//         iptcTag.initLongArray((char*)iptcdata, iptclen);
+//         if (needsReverse) {
+//             unsigned char *ptr = iptcTag.getValue();
+//             for (int a = 0; a < iptcTag.getCount(); ++a) {
+//                 unsigned char cc;
+//                 cc = ptr[3];
+//                 ptr[3] = ptr[0];
+//                 ptr[0] = cc;
+//                 cc = ptr[2];
+//                 ptr[2] = ptr[1];
+//                 ptr[1] = cc;
+//                 ptr += 4;
+//             }
+//         }
+//         TIFFSetField (out, TIFFTAG_RICHTIFFIPTC, iptcTag.getCount(), (long*)iptcTag.getValue());
+//         iptc_data_free_buf (iptc, iptcdata);
+//     }
 
     TIFFSetField (out, TIFFTAG_SOFTWARE, "RawTherapee " RTVERSION);
     TIFFSetField (out, TIFFTAG_IMAGEWIDTH, width);
@@ -1521,28 +1533,28 @@ int ImageIO::saveTIFF (const Glib::ustring &fname, int bps, bool isFloat, bool u
      *         dumping to the file.
      *
      */
-    if (applyExifPatch) {
-        unsigned char b[10];
-        uint16 tagCount = 0;
-        lseek(fileno, 4, SEEK_SET);
-        read(fileno, b, 4);
-        uint32 ifd0Offset = rtexif::sget4(b, exifRoot->getOrder());
-        lseek(fileno, ifd0Offset, SEEK_SET);
-        read(fileno, b, 2);
-        tagCount = rtexif::sget2(b, exifRoot->getOrder());
-        for (size_t i = 0; i < tagCount ; ++i) {
-            uint16 tagID = 0;
-            read(fileno, b, 2);
-            tagID = rtexif::sget2(b, exifRoot->getOrder());
-            if (tagID == 0x8769) {
-                rtexif::sset2(4, b, exifRoot->getOrder());
-                write(fileno, b, 2);
-                break;
-            } else {
-                read(fileno, b, 10);
-            }
-        }
-    }
+    // if (applyExifPatch) {
+    //     unsigned char b[10];
+    //     uint16 tagCount = 0;
+    //     lseek(fileno, 4, SEEK_SET);
+    //     read(fileno, b, 4);
+    //     uint32 ifd0Offset = rtexif::sget4(b, exifRoot->getOrder());
+    //     lseek(fileno, ifd0Offset, SEEK_SET);
+    //     read(fileno, b, 2);
+    //     tagCount = rtexif::sget2(b, exifRoot->getOrder());
+    //     for (size_t i = 0; i < tagCount ; ++i) {
+    //         uint16 tagID = 0;
+    //         read(fileno, b, 2);
+    //         tagID = rtexif::sget2(b, exifRoot->getOrder());
+    //         if (tagID == 0x8769) {
+    //             rtexif::sset2(4, b, exifRoot->getOrder());
+    //             write(fileno, b, 2);
+    //             break;
+    //         } else {
+    //             read(fileno, b, 10);
+    //         }
+    //     }
+    // }
     /************************************************************************************************************/
 
 
@@ -1552,6 +1564,10 @@ int ImageIO::saveTIFF (const Glib::ustring &fname, int bps, bool isFloat, bool u
 #endif
 
     delete [] linebuffer;
+
+    if (!saveMetadata(fname)) {
+        writeOk = false;
+    }
 
     if (pl) {
         pl->setProgressStr ("PROGRESSBAR_READY");
@@ -1682,4 +1698,24 @@ void ImageIO::deleteLoadedProfileData( )
     }
 
     loadedProfileData = nullptr;
+}
+
+
+bool ImageIO::saveMetadata(const Glib::ustring &fname) const
+{
+    if (metadataInfo.mode() == MetadataInfo::STRIP) {
+        return true;
+    }
+
+    try {
+        auto src = open_exiv2(metadataInfo.filename());
+        auto dst = open_exiv2(fname);
+        src->readMetadata();
+        dst->setMetadata(*src);
+        dst->exifData()["Exif.Image.Software"] = "RawTherapee " RTVERSION;
+        dst->writeMetadata();
+        return true;
+    } catch (Exiv2::AnyError &exc) {
+        return false;
+    }
 }

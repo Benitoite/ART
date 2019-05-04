@@ -34,7 +34,7 @@ MetaDataPanel::MetaDataPanel()
     box->pack_start(*Gtk::manage(new Gtk::Label(M("TP_METADATA_MODE") + ": ")), Gtk::PACK_SHRINK, 4);
     metadataMode = Gtk::manage(new MyComboBoxText());
     metadataMode->append(M("TP_METADATA_TUNNEL"));
-    metadataMode->append(M("TP_METADATA_EDIT"));
+//    metadataMode->append(M("TP_METADATA_EDIT"));
     metadataMode->append(M("TP_METADATA_STRIP"));
     metadataMode->set_active(0);
     box->pack_end(*metadataMode, Gtk::PACK_EXPAND_WIDGET, 4);
@@ -49,7 +49,7 @@ MetaDataPanel::MetaDataPanel()
     tagsNotebook->append_page(*exifpanel, M("MAIN_TAB_EXIF"));
     tagsNotebook->append_page(*iptcpanel, M("MAIN_TAB_IPTC"));
 
-    pack_end(*tagsNotebook);
+//    pack_end(*tagsNotebook);
 }
 
 
@@ -79,8 +79,8 @@ void MetaDataPanel::read(const rtengine::procparams::ProcParams* pp, const Param
         }
     }
 
-    exifpanel->read(pp, pedited);
-    iptcpanel->read(pp, pedited);
+    // exifpanel->read(pp, pedited);
+    // iptcpanel->read(pp, pedited);
     
     enableListener();
 }
@@ -94,8 +94,8 @@ void MetaDataPanel::write(rtengine::procparams::ProcParams* pp, ParamsEdited* pe
         pedited->metadata.mode = metadataMode->get_active_row_number() != 3;
     }
 
-    exifpanel->write(pp, pedited);
-    iptcpanel->write(pp, pedited);
+    // exifpanel->write(pp, pedited);
+    // iptcpanel->write(pp, pedited);
 }
 
 

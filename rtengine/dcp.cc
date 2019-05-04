@@ -1063,9 +1063,6 @@ DCPProfile::DCPProfile(const Glib::ustring& filename) :
         return;
     }
 
-    // ExifManager exifManager(file, nullptr, true);
-    // exifManager.parseTIFF(false);
-    // std::unique_ptr<TagDirectory> tagDir(exifManager.roots.at(0));
     DCPMetadata md(file);
     if (!md.parse()) {
         printf ("Unable to load DCP profile '%s' !", filename.c_str());

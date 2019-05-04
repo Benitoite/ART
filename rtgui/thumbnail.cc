@@ -221,7 +221,7 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
     const CacheImageData* cfs = getCacheImageData();
     Glib::ustring defaultPparamsPath = options.findProfilePath(defProf);
     const bool create = (!hasProcParams() || force);
-    const bool run_cpb = !options.CPBPath.empty() && !defaultPparamsPath.empty() && cfs && cfs->exifValid && create;
+    const bool run_cpb = false; //!options.CPBPath.empty() && !defaultPparamsPath.empty() && cfs && cfs->exifValid && create;
 
     const Glib::ustring outFName =
         (options.paramsLoadLocation == PLL_Input && options.saveParamsFile) ?
@@ -255,43 +255,43 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
         }
     } else {
         // First generate the communication file, with general values and EXIF metadata
-        rtengine::FramesMetaData* imageMetaData;
+        // rtengine::FramesMetaData* imageMetaData;
 
-        if (getType() == FT_Raw) {
-            // Should we ask all frame's MetaData ?
-            imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
-        } else {
-            // Should we ask all frame's MetaData ?
-            imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
-        }
+        // if (getType() == FT_Raw) {
+        //     // Should we ask all frame's MetaData ?
+        //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
+        // } else {
+        //     // Should we ask all frame's MetaData ?
+        //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
+        // }
 
-        Glib::ustring tmpFileName( Glib::build_filename(options.cacheBaseDir, Glib::ustring::compose("CPB_temp_%1.txt", index++)) );
+        // Glib::ustring tmpFileName( Glib::build_filename(options.cacheBaseDir, Glib::ustring::compose("CPB_temp_%1.txt", index++)) );
 
-        const rtexif::TagDirectory* exifDir = nullptr;
+        // const rtexif::TagDirectory* exifDir = nullptr;
 
-        if (imageMetaData && (exifDir = imageMetaData->getRootExifData())) {
-            exifDir->CPBDump(tmpFileName, fname, outFName,
-                             defaultPparamsPath == DEFPROFILE_INTERNAL ? DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension),
-                             cfs,
-                             flaggingMode);
-        }
-        delete imageMetaData;
+        // if (imageMetaData && (exifDir = imageMetaData->getRootExifData())) {
+        //     exifDir->CPBDump(tmpFileName, fname, outFName,
+        //                      defaultPparamsPath == DEFPROFILE_INTERNAL ? DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension),
+        //                      cfs,
+        //                      flaggingMode);
+        // }
+        // delete imageMetaData;
 
-        // For the filename etc. do NOT use streams, since they are not UTF8 safe
-        Glib::ustring cmdLine = options.CPBPath + Glib::ustring(" \"") + tmpFileName + Glib::ustring("\"");
+        // // For the filename etc. do NOT use streams, since they are not UTF8 safe
+        // Glib::ustring cmdLine = options.CPBPath + Glib::ustring(" \"") + tmpFileName + Glib::ustring("\"");
 
-        if (options.rtSettings.verbose) {
-            printf("Custom profile builder's command line: %s\n", Glib::ustring(cmdLine).c_str());
-        }
+        // if (options.rtSettings.verbose) {
+        //     printf("Custom profile builder's command line: %s\n", Glib::ustring(cmdLine).c_str());
+        // }
 
-        bool success = ExtProgStore::spawnCommandSync (cmdLine);
+        // bool success = ExtProgStore::spawnCommandSync (cmdLine);
 
-        // Now they SHOULD be there (and potentially "partial"), so try to load them and store it as a full procparam
-        if (success) {
-            loadProcParams();
-        }
+        // // Now they SHOULD be there (and potentially "partial"), so try to load them and store it as a full procparam
+        // if (success) {
+        //     loadProcParams();
+        // }
 
-        g_remove (tmpFileName.c_str ());
+        // g_remove (tmpFileName.c_str ());
     }
 
     if (returnParams && hasProcParams()) {

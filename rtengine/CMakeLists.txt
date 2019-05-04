@@ -11,6 +11,7 @@ include_directories(${EXTRA_INCDIR}
     ${LCMS_INCLUDE_DIRS}
     ${LENSFUN_INCLUDE_DIRS}
     ${RSVG_INCLUDE_DIRS}
+    ${EXIV2_INCLUDE_DIRS}
     )
 
 link_directories("${PROJECT_SOURCE_DIR}/rtexif"
@@ -192,6 +193,7 @@ target_link_libraries(rtengine rtexif
     ${ZLIB_LIBRARIES}
     ${LENSFUN_LIBRARIES}
     ${RSVG_LIBRARIES}
+    ${EXIV2_LIBRARIES}
     )
 
 install(FILES ${CAMCONSTSFILE} DESTINATION "${DATADIR}" PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)

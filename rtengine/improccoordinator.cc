@@ -996,7 +996,8 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
         im = tempImage;
     }
 
-    im->setMetadata(imgsrc->getMetaData()->getRootExifData());
+    // im->setMetadata(imgsrc->getMetaData()->getRootExifData());
+    im->setMetadata(MetadataInfo(MetadataInfo::COPY, imgsrc->getFileName()));
 
     im->saveTIFF(fname, 16, false, true);
     delete im;

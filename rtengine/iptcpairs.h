@@ -19,6 +19,7 @@
 #ifndef _IPTCPAIRS_
 #define _IPTCPAIRS_
 
+#include <libiptcdata/iptc-data.h>
 
 struct IptcPair {
     IptcTag tag;

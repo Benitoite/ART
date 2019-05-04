@@ -87,14 +87,14 @@ public:
     // FramesMetaData interface
     //-------------------------------------------------------------------------
 
-    unsigned int getRootCount () const override { return -1; }
+    /* unsigned int getRootCount () const override { return -1; } */
     unsigned int getFrameCount () const override { return frameCount; }
     bool hasExif (unsigned int frame = 0) const override  { return false; }
-    rtexif::TagDirectory* getRootExifData (unsigned int root = 0) const override { return nullptr; }
-    rtexif::TagDirectory* getFrameExifData (unsigned int frame = 0) const override { return nullptr; }
-    rtexif::TagDirectory* getBestExifData (rtengine::ImageSource *imgSource, rtengine::procparams::RAWParams *rawParams) const override { return nullptr; }
-    bool hasIPTC (unsigned int frame = 0) const override { return false; }
-    rtengine::procparams::IPTCPairs getIPTCData (unsigned int frame = 0) const override { return rtengine::procparams::IPTCPairs(); }
+    /* rtexif::TagDirectory* getRootExifData (unsigned int root = 0) const override { return nullptr; } */
+    /* rtexif::TagDirectory* getFrameExifData (unsigned int frame = 0) const override { return nullptr; } */
+    /* rtexif::TagDirectory* getBestExifData (rtengine::ImageSource *imgSource, rtengine::procparams::RAWParams *rawParams) const override { return nullptr; } */
+    /* bool hasIPTC (unsigned int frame = 0) const override { return false; } */
+    /* rtengine::procparams::IPTCPairs getIPTCData (unsigned int frame = 0) const override { return rtengine::procparams::IPTCPairs(); } */
     tm getDateTime (unsigned int frame = 0) const override { return tm{}; }
     time_t getDateTimeAsTS(unsigned int frame = 0) const override { return time_t(-1); }
     int getISOSpeed (unsigned int frame = 0) const override { return iso; }
