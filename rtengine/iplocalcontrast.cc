@@ -226,8 +226,14 @@ void evaluate_params(wavelet_decomposition &wd, float *mean, float *meanN, float
 
 void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double scale, bool multiThread)
 {
-    constexpr int wavelet_level = 7;
-    wavelet_decomposition wd(lab->data, lab->W, lab->H, wavelet_level, 1, scale);
+    int wavelet_level = 7;
+    int dim = min(lab->W, lab->H);
+    while ((1 << wavelet_level) >= dim && wavelet_level > 1) {
+        --wavelet_level;
+    }
+    int skip = scale;
+//    int skip = min(lab->W-1 , lab->H-1, int(scale));
+    wavelet_decomposition wd(lab->data, lab->W, lab->H, wavelet_level, 1, skip);
 
     if (wd.memoryAllocationFailed) {
         return;
@@ -356,12 +362,12 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
                         continue;
                     }
 
-                    if(fabsf(val) >= (mean[level] + sigma[level])) { //for max
+                    if (fabsf(val) >= (mean[level] + sigma[level])) { //for max
                         float valcour = xlogf(fabsf(val));
                         float valc = valcour - logmax;
                         float vald = valc * rap;
                         absciss = xexpf(vald);
-                    } else if(fabsf(val) >= mean[level]) {
+                    } else if (fabsf(val) >= mean[level]) {
                         absciss = asig * fabsf(val) + bsig;
                     } else {
                         absciss = amean * fabsf(val);
