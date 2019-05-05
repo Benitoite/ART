@@ -28,7 +28,6 @@
 #include <glibmm.h>
 #include <ctime>
 //#include "../rtexif/rtexif.h"
-#include "rawmetadatalocation.h"
 #include "iimage.h"
 #include "utils.h"
 #include "../rtgui/threadutils.h"
@@ -148,7 +147,7 @@ public:
       * Use it only for raw files. In caseof jpgs and tiffs pass a NULL pointer.
       * @param firstFrameOnly must be true to get the MetaData of the first frame only, e.g. for a PixelShift file.
       * @return The metadata */
-    static FramesMetaData* fromFile (const Glib::ustring& fname, std::unique_ptr<RawMetaDataLocation> rml, bool firstFrameOnly = false);
+    static FramesMetaData* fromFile (const Glib::ustring& fname);
 
     virtual Glib::ustring getFileName() const = 0;
 };

@@ -311,7 +311,7 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
 
 namespace {
 
-Image8 *load_inspector_mode(const Glib::ustring &fname, RawMetaDataLocation &rml, eSensorType &sensorType, int &w, int &h)
+Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType, int &w, int &h)
 {
     BENCHFUN
     
@@ -367,7 +367,7 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, RawMetaDataLocation &rml
 
 } // namespace
 
-Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataLocation& rml, eSensorType &sensorType, int &w, int &h, int fixwh, bool rotate, bool inspectorMode, bool forHistogramMatching)
+Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType &sensorType, int &w, int &h, int fixwh, bool rotate, bool inspectorMode, bool forHistogramMatching)
 {
     Thumbnail* tpp = new Thumbnail ();
     tpp->isRaw = 1;
@@ -377,7 +377,7 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
     tpp->colorMatrix[2][2] = 1.0;
 
     if (inspectorMode && !forHistogramMatching && settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
-        Image8 *img = load_inspector_mode(fname, rml, sensorType, w, h);
+        Image8 *img = load_inspector_mode(fname, sensorType, w, h);
         if (!img) {
             delete tpp;
             return nullptr;
@@ -401,10 +401,6 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
     }
 
     sensorType = ri->getSensorType();
-
-    rml.exifBase = ri->get_exifBase();
-    rml.ciffBase = ri->get_ciffBase();
-    rml.ciffLength = ri->get_ciffLen();
 
     Image8* img = new Image8 ();
     // No sample format detection occurred earlier, so we set them here,
@@ -446,7 +442,7 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
             delete img;
             delete ri;
             
-            img = load_inspector_mode(fname, rml, sensorType, w, h);
+            img = load_inspector_mode(fname, sensorType, w, h);
             if (!img) {
                 delete tpp;
                 return nullptr;
@@ -512,28 +508,7 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, RawMetaDataL
 #define FISBLUE(filter,row,col) \
     ((filter >> ((((row) << 1 & 14) + ((col) & 1)) << 1) & 3)==2 || !filter)
 
-RawMetaDataLocation Thumbnail::loadMetaDataFromRaw (const Glib::ustring& fname)
-{
-    RawMetaDataLocation rml;
-    rml.exifBase = -1;
-    rml.ciffBase = -1;
-    rml.ciffLength = -1;
-
-    RawImage ri (fname);
-    unsigned int imageNum = 0;
-
-    int r = ri.loadRaw (false, imageNum);
-
-    if ( !r ) {
-        rml.exifBase = ri.get_exifBase();
-        rml.ciffBase = ri.get_ciffBase();
-        rml.ciffLength = ri.get_ciffLen();
-    }
-
-    return rml;
-}
-
-Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, RawMetaDataLocation& rml, eSensorType &sensorType, int &w, int &h, int fixwh, double wbEq, bool rotate, bool forHistogramMatching)
+Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sensorType, int &w, int &h, int fixwh, double wbEq, bool rotate, bool forHistogramMatching)
 {
     RawImage *ri = new RawImage (fname);
     unsigned int tempImageNum = 0;
@@ -570,10 +545,6 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, RawMetaDataLocati
     scale_colors (ri, scale_mul, cblack, forHistogramMatching); // enable multithreading when forHistogramMatching is true
 
     ri->pre_interpolate();
-
-    rml.exifBase = ri->get_exifBase();
-    rml.ciffBase = ri->get_ciffBase();
-    rml.ciffLength = ri->get_ciffLen();
 
     tpp->camwbRed = tpp->redMultiplier / pre_mul[0]; //ri->get_pre_mul(0);
     tpp->camwbGreen = tpp->greenMultiplier / pre_mul[1]; //ri->get_pre_mul(1);

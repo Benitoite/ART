@@ -84,9 +84,9 @@ Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
 
 
 
-FramesMetaData* FramesMetaData::fromFile (const Glib::ustring& fname, std::unique_ptr<RawMetaDataLocation> rml, bool firstFrameOnly)
+FramesMetaData* FramesMetaData::fromFile (const Glib::ustring& fname)
 {
-    return new FramesData (fname, std::move(rml), firstFrameOnly);
+    return new FramesData(fname);
 }
 
 // FrameData::FrameData(rtexif::TagDirectory* frameRootDir_, rtexif::TagDirectory* rootDir, rtexif::TagDirectory* firstRootDir)
@@ -1076,7 +1076,7 @@ double FramesMetaData::apertureFromString (std::string s)
 
 // }
 
-FramesData::FramesData (const Glib::ustring& fname, std::unique_ptr<RawMetaDataLocation> rml, bool firstFrameOnly) :
+FramesData::FramesData (const Glib::ustring& fname):
     //iptc(nullptr),
     fname_(fname),
     dcrawFrameCount (0)

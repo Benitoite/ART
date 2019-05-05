@@ -133,24 +133,23 @@ void Thumbnail::_generateThumbnailImage ()
         //     image out of the RAW. Mark as "quick".
         //  2. if we don't find that then just grab the real image.
         bool quick = false;
-        rtengine::RawMetaDataLocation ri;
 
         rtengine::eSensorType sensorType = rtengine::ST_NONE;
         if ( initial_ && options.internalThumbIfUntouched) {
             quick = true;
-            tpp = rtengine::Thumbnail::loadQuickFromRaw (fname, ri, sensorType, tw, th, 1, TRUE);
+            tpp = rtengine::Thumbnail::loadQuickFromRaw (fname, sensorType, tw, th, 1, TRUE);
         }
 
         if ( tpp == nullptr ) {
             quick = false;
-            tpp = rtengine::Thumbnail::loadFromRaw (fname, ri, sensorType, tw, th, 1, pparams.wb.equal, TRUE);
+            tpp = rtengine::Thumbnail::loadFromRaw (fname, sensorType, tw, th, 1, pparams.wb.equal, TRUE);
         }
 
         cfs.sensortype = sensorType;
         if (tpp) {
             cfs.format = FT_Raw;
             cfs.thumbImgType = quick ? CacheImageData::QUICK_THUMBNAIL : CacheImageData::FULL_THUMBNAIL;
-            infoFromImage (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(ri)));
+            infoFromImage (fname);
         }
     }
 
@@ -293,17 +292,8 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
 
     if (!run_cpb) {
         if (defProf == DEFPROFILE_DYNAMIC && create && cfs && cfs->exifValid) {
-            // rtengine::FramesMetaData* imageMetaData;
-            // if (getType() == FT_Raw) {
-            //     // Should we ask all frame's MetaData ?
-            //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
-            // } else {
-            //     // Should we ask all frame's MetaData ?
-            //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
-            // }
             auto imageMetaData = getMetaData();
             PartialProfile *pp = ProfileStore::getInstance()->loadDynamicProfile(imageMetaData.get());
-//            delete imageMetaData;
             int err = pp->pparams->save(outFName);
             pp->deleteInstance();
             delete pp;
@@ -318,27 +308,7 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
         }
     } else {
         // First generate the communication file, with general values and EXIF metadata
-        // rtengine::FramesMetaData* imageMetaData;
-
-        // if (getType() == FT_Raw) {
-        //     // Should we ask all frame's MetaData ?
-        //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
-        // } else {
-        //     // Should we ask all frame's MetaData ?
-        //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
-        // }
-
         Glib::ustring tmpFileName( Glib::build_filename(options.cacheBaseDir, Glib::ustring::compose("CPB_temp_%1.txt", index++)) );
-
-        // const rtexif::TagDirectory* exifDir = nullptr;
-
-        // if (imageMetaData && (exifDir = imageMetaData->getRootExifData())) {
-        //     exifDir->CPBDump(tmpFileName, fname, outFName,
-        //                      defaultPparamsPath == DEFPROFILE_INTERNAL ? DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension),
-        //                      cfs,
-        //                      flaggingMode);
-        // }
-        // delete imageMetaData;
 
         CPBDump(tmpFileName, fname, outFName,
                 defaultPparamsPath == DEFPROFILE_INTERNAL ? DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension), cfs, flaggingMode);
@@ -826,9 +796,9 @@ ThFileType Thumbnail::getType ()
     return (ThFileType) cfs.format;
 }
 
-int Thumbnail::infoFromImage (const Glib::ustring& fname, std::unique_ptr<rtengine::RawMetaDataLocation> rml)
+int Thumbnail::infoFromImage (const Glib::ustring& fname)
 {
-    rtengine::FramesMetaData* idata = rtengine::FramesMetaData::fromFile (fname, std::move(rml));
+    rtengine::FramesMetaData* idata = rtengine::FramesMetaData::fromFile (fname);
 
     if (!idata) {
         return 0;
@@ -1157,13 +1127,6 @@ bool Thumbnail::imageLoad(bool loading)
 
 std::shared_ptr<rtengine::FramesMetaData> Thumbnail::getMetaData()
 {
-    rtengine::FramesMetaData* imageMetaData;
-    if (getType() == FT_Raw) {
-        // Should we ask all frame's MetaData ?
-        imageMetaData = rtengine::FramesMetaData::fromFile (fname, std::unique_ptr<rtengine::RawMetaDataLocation>(new rtengine::RawMetaDataLocation(rtengine::Thumbnail::loadMetaDataFromRaw(fname))), true);
-    } else {
-        // Should we ask all frame's MetaData ?
-        imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
-    }
+    rtengine::FramesMetaData* imageMetaData = rtengine::FramesMetaData::fromFile (fname);
     return std::shared_ptr<rtengine::FramesMetaData>(imageMetaData);
 }
