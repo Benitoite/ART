@@ -24,7 +24,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
-#include <libiptcdata/iptc-jpeg.h>
+//#include <libiptcdata/iptc-jpeg.h>
 #include "rt_math.h"
 #include "../rtgui/options.h"
 #include "../rtgui/version.h"
@@ -36,7 +36,7 @@
 #endif
 
 #include "imageio.h"
-#include "iptcpairs.h"
+//#include "iptcpairs.h"
 #include "iccjpeg.h"
 #include "color.h"
 #include "imagedata.h"
@@ -1703,7 +1703,7 @@ void ImageIO::deleteLoadedProfileData( )
 
 bool ImageIO::saveMetadata(const Glib::ustring &fname) const
 {
-    if (metadataInfo.mode() == MetadataInfo::STRIP) {
+    if (metadataInfo.filename().empty()) {
         return true;
     }
 
@@ -1713,9 +1713,28 @@ bool ImageIO::saveMetadata(const Glib::ustring &fname) const
         src->readMetadata();
         dst->setMetadata(*src);
         dst->exifData()["Exif.Image.Software"] = "RawTherapee " RTVERSION;
+        for (auto &p : metadataInfo.exif()) {
+            try {
+                dst->exifData()[p.first] = p.second;
+            } catch (Exiv2::AnyError &exc) {}
+        }
+        for (auto &p : metadataInfo.iptc()) {
+            try {
+                auto &v = p.second;
+                if (v.size() >= 1) {
+                    dst->iptcData()[p.first] = v[0];
+                    for (size_t j = 1; j < v.size(); ++j) {
+                        Exiv2::Iptcdatum d(Exiv2::IptcKey(p.first));
+                        d.setValue(v[j]);
+                        dst->iptcData().add(d);
+                    }
+                }
+            } catch (Exiv2::AnyError &exc) {}
+        }
         dst->writeMetadata();
         return true;
     } catch (Exiv2::AnyError &exc) {
+        std::cout << "EXIF ERROR: " << exc.what() << std::endl;
         return false;
     }
 }

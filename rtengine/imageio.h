@@ -46,21 +46,20 @@ class Imagefloat;
 
 class MetadataInfo {
 public:
-    enum Mode {
-        STRIP,
-        COPY
-    };
+    explicit MetadataInfo(const Glib::ustring &src=Glib::ustring()):
+        src_(src) {}
 
-    explicit MetadataInfo(Mode mode=STRIP,
-                          const Glib::ustring &src=Glib::ustring()):
-        mode_(mode), src_(src) {}
-
-    Mode mode() const { return mode_; }
     const Glib::ustring &filename() const { return src_; }
 
+    const rtengine::procparams::ExifPairs &exif() const { return exif_; }
+    const rtengine::procparams::IPTCPairs &iptc() const { return iptc_; }
+    void setExif(const rtengine::procparams::ExifPairs &exif) { exif_ = exif; }
+    void setIptc(const rtengine::procparams::IPTCPairs &iptc) { iptc_ = iptc; }
+
 private:
-    Mode mode_;
     Glib::ustring src_;
+    rtengine::procparams::ExifPairs exif_;
+    rtengine::procparams::IPTCPairs iptc_;
 };
 
 class ImageIO : virtual public ImageDatas

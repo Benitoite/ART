@@ -33,6 +33,8 @@
 #include "extprog.h"
 #include "profilestorecombobox.h"
 #include "procparamchangers.h"
+#include "ppversion.h"
+#include "version.h"
 
 using namespace rtengine::procparams;
 
@@ -197,6 +199,67 @@ const ProcParams& Thumbnail::getProcParamsU ()
     return pparams; // there is no valid pp to return, but we have to return something
 }
 
+
+namespace {
+
+bool CPBDump(const Glib::ustring &commFName, const Glib::ustring &imageFName,
+             const Glib::ustring &profileFName, const Glib::ustring &defaultPParams,
+             const CacheImageData* cfs, const bool flagMode)
+{
+    const auto kf = new Glib::KeyFile;
+
+    if (!kf) {
+        return false;
+    }
+
+    FILE *f = nullptr;
+
+    // open the file in write mode
+    f = g_fopen (commFName.c_str (), "wt");
+
+    if (f == nullptr) {
+        printf ("CPBDump(\"%s\") >>> Error: unable to open file with write access!\n", commFName.c_str());
+        delete kf;
+        return false;
+    }
+
+    try {
+
+        kf->set_string ("RT General", "CachePath", options.cacheBaseDir);
+        kf->set_string ("RT General", "AppVersion", RTVERSION);
+        kf->set_integer ("RT General", "ProcParamsVersion", PPVERSION);
+        kf->set_string ("RT General", "ImageFileName", imageFName);
+        kf->set_string ("RT General", "OutputProfileFileName", profileFName);
+        kf->set_string ("RT General", "DefaultProcParams", defaultPParams);
+        kf->set_boolean ("RT General", "FlaggingMode", flagMode);
+
+        kf->set_integer ("Common Data", "FrameCount", cfs->frameCount);
+        kf->set_integer ("Common Data", "SampleFormat", cfs->sampleFormat);
+        kf->set_boolean ("Common Data", "IsHDR", cfs->isHDR);
+        kf->set_boolean ("Common Data", "IsPixelShift", cfs->isPixelShift);
+        kf->set_double ("Common Data", "FNumber", cfs->fnumber);
+        kf->set_double ("Common Data", "Shutter", cfs->shutter);
+        kf->set_double ("Common Data", "FocalLength", cfs->focalLen);
+        kf->set_integer ("Common Data", "ISO", cfs->iso);
+        kf->set_string ("Common Data", "Lens", cfs->lens);
+        kf->set_string ("Common Data", "Make", cfs->camMake);
+        kf->set_string ("Common Data", "Model", cfs->camModel);
+
+    } catch (Glib::KeyFileError&) {}
+
+    try {
+        fprintf (f, "%s", kf->to_data().c_str());
+    } catch (Glib::KeyFileError&) {}
+
+    fclose (f);
+    delete kf;
+
+    return true;
+}
+
+
+} // namespace
+
 /** @brief  Create default params on demand and returns a new updatable object
  *
  *  The loaded profile may be partial, but it return a complete ProcParams (i.e. without ParamsEdited)
@@ -265,7 +328,7 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
         //     imageMetaData = rtengine::FramesMetaData::fromFile (fname, nullptr, true);
         // }
 
-        // Glib::ustring tmpFileName( Glib::build_filename(options.cacheBaseDir, Glib::ustring::compose("CPB_temp_%1.txt", index++)) );
+        Glib::ustring tmpFileName( Glib::build_filename(options.cacheBaseDir, Glib::ustring::compose("CPB_temp_%1.txt", index++)) );
 
         // const rtexif::TagDirectory* exifDir = nullptr;
 
@@ -277,21 +340,24 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
         // }
         // delete imageMetaData;
 
-        // // For the filename etc. do NOT use streams, since they are not UTF8 safe
-        // Glib::ustring cmdLine = options.CPBPath + Glib::ustring(" \"") + tmpFileName + Glib::ustring("\"");
+        CPBDump(tmpFileName, fname, outFName,
+                defaultPparamsPath == DEFPROFILE_INTERNAL ? DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension), cfs, flaggingMode);
+        
+        // For the filename etc. do NOT use streams, since they are not UTF8 safe
+        Glib::ustring cmdLine = options.CPBPath + Glib::ustring(" \"") + tmpFileName + Glib::ustring("\"");
 
-        // if (options.rtSettings.verbose) {
-        //     printf("Custom profile builder's command line: %s\n", Glib::ustring(cmdLine).c_str());
-        // }
+        if (options.rtSettings.verbose) {
+            printf("Custom profile builder's command line: %s\n", Glib::ustring(cmdLine).c_str());
+        }
 
-        // bool success = ExtProgStore::spawnCommandSync (cmdLine);
+        bool success = ExtProgStore::spawnCommandSync (cmdLine);
 
-        // // Now they SHOULD be there (and potentially "partial"), so try to load them and store it as a full procparam
-        // if (success) {
-        //     loadProcParams();
-        // }
+        // Now they SHOULD be there (and potentially "partial"), so try to load them and store it as a full procparam
+        if (success) {
+            loadProcParams();
+        }
 
-        // g_remove (tmpFileName.c_str ());
+        g_remove (tmpFileName.c_str ());
     }
 
     if (returnParams && hasProcParams()) {

@@ -14,7 +14,7 @@ include_directories(${EXTRA_INCDIR}
     ${EXIV2_INCLUDE_DIRS}
     )
 
-link_directories("${PROJECT_SOURCE_DIR}/rtexif"
+link_directories(#"${PROJECT_SOURCE_DIR}/rtexif"
     ${EXPAT_LIBRARY_DIRS}
     ${EXTRA_LIBDIR}
     ${FFTW3F_LIBRARY_DIRS}
@@ -177,7 +177,7 @@ endif()
 
 set_target_properties(rtengine PROPERTIES COMPILE_FLAGS "${RTENGINE_CXX_FLAGS}")
 
-target_link_libraries(rtengine rtexif
+target_link_libraries(rtengine #rtexif
     ${EXPAT_LIBRARIES}
     ${EXTRA_LIB}
     ${FFTW3F_LIBRARIES}

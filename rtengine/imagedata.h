@@ -36,6 +36,7 @@ namespace rtengine
 
 Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname);
 
+
 class FrameData
 {
 
@@ -95,6 +96,8 @@ public:
 
 class FramesData : public FramesMetaData {
 private:
+    Glib::ustring fname_;
+    
     // frame's root IFD, can be a file root IFD or a SUB-IFD
     std::vector<std::unique_ptr<FrameData>> frames;
     // root IFD in the file
@@ -133,6 +136,7 @@ public:
     std::string getLens (unsigned int frame = 0) const override;
     std::string getSerialNumber (unsigned int frame = 0) const;
     std::string getOrientation (unsigned int frame = 0) const override;
+    Glib::ustring getFileName() const override;
 };
 
 

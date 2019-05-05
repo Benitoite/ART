@@ -108,6 +108,7 @@ public:
     std::string getModel    (unsigned int frame = 0) const override { return camModel; }
     std::string getLens     (unsigned int frame = 0) const override { return lens; }
     std::string getOrientation (unsigned int frame = 0) const override { return ""; } // TODO
+    Glib::ustring getFileName() const override { return ""; }
     bool getPixelShift () const override { return isPixelShift; }
     bool getHDR (unsigned int frame = 0) const override { return isHDR; }
     std::string getImageType (unsigned int frame) const override { return isPixelShift ? "PS" : isHDR ? "HDR" : "STD"; }

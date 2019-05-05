@@ -23,7 +23,7 @@
 #include <exiv2/exiv2.hpp>
 
 #include "imagedata.h"
-#include "iptcpairs.h"
+//#include "iptcpairs.h"
 #include "imagesource.h"
 #include "rt_math.h"
 #pragma GCC diagnostic warning "-Wextra"
@@ -33,25 +33,7 @@ using namespace rtengine;
 
 // extern "C" IptcData *iptc_data_new_from_jpeg_file (FILE* infile);
 
-namespace rtengine {
-
-Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
-{
-#ifdef EXV_UNICODE_PATH
-    auto *ws = g_utf8_to_utf16(fname.c_str(), -1, NULL, NULL, NULL);
-    std::wstring wfname(ws);
-    g_free(ws);
-    auto image = Exiv2::ImageFactory::open(wfname);
-#else
-    auto image = Exiv2::ImageFactory::open(fname);
-#endif
-    return image;
-}
-
-} // namespace rtengine
-
-namespace
-{
+namespace {
 
 Glib::ustring to_utf8 (const std::string& str)
 {
@@ -78,7 +60,29 @@ T getFromFrame(
     return {};
 }
 
+} // namespace
+
+
+namespace rtengine {
+
+extern const Settings *settings;
+
+Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
+{
+#ifdef EXV_UNICODE_PATH
+    auto *ws = g_utf8_to_utf16(fname.c_str(), -1, NULL, NULL, NULL);
+    std::wstring wfname(ws);
+    g_free(ws);
+    auto image = Exiv2::ImageFactory::open(wfname);
+#else
+    auto image = Exiv2::ImageFactory::open(fname);
+#endif
+    return image;
 }
+
+} // namespace rtengine
+
+
 
 FramesMetaData* FramesMetaData::fromFile (const Glib::ustring& fname, std::unique_ptr<RawMetaDataLocation> rml, bool firstFrameOnly)
 {
@@ -158,75 +162,75 @@ FrameData::FrameData(const Glib::ustring &fname):
         
         Exiv2::ExifData::const_iterator pos;
     
-        const auto FIND_EXIF_TAG =
+        const auto find_exif_tag =
             [&](const std::string &name) -> bool
             {
                 pos = exif.findKey(Exiv2::ExifKey(name));
                 return (pos != exif.end() && pos->size());
             };
 
+        const auto find_tag =
+            [&](decltype(Exiv2::make) func) -> bool
+            {
+                pos = func(exif);
+                return pos != exif.end() && pos->size();
+            };
+
         /* List of tag names taken from exiv2's printSummary() in actions.cpp */
 
-        // look for maker & model first so we can use that info later
-        if (FIND_EXIF_TAG("Exif.Image.Make")) {
+        if (find_tag(Exiv2::make)) {
             make = pos->print(&exif);
-        } else if (FIND_EXIF_TAG("Exif.PanasonicRaw.Make")) {
-            make = pos->print(&exif);
+        }
+        
+        if (find_tag(Exiv2::model)) {
+            model = pos->print(&exif);
         }
 
         if (make.size() > 0) {
             for (const auto& corp : {
                     "Canon",
-                        "NIKON",
-                        "EPSON",
-                        "KODAK",
-                        "Kodak",
-                        "OLYMPUS",
-                        "PENTAX",
-                        "RICOH",
-                        "MINOLTA",
-                        "Minolta",
-                        "Konica",
-                        "CASIO",
-                        "Sinar",
-                        "Phase One",
-                        "SAMSUNG",
-                        "Mamiya",
-                        "MOTOROLA",
-                        "Leaf",
-                        "Panasonic"
-                        }) {
+                    "NIKON",
+                    "EPSON",
+                    "KODAK",
+                    "Kodak",
+                    "OLYMPUS",
+                    "PENTAX",
+                    "RICOH",
+                    "MINOLTA",
+                    "Minolta",
+                    "Konica",
+                    "CASIO",
+                    "Sinar",
+                    "Phase One",
+                    "SAMSUNG",
+                    "Mamiya",
+                    "MOTOROLA",
+                    "Leaf",
+                    "Panasonic"
+                  }) {
                 if (make.find(corp) != std::string::npos) { // Simplify company names
                     make = corp;
                     break;
                 }
             }
-            make.erase(make.find_last_not_of(' ') + 1);
         }            
-
-        if (FIND_EXIF_TAG("Exif.Image.Model")) {
-            model = pos->print(&exif);
-        } else if (FIND_EXIF_TAG("Exif.PanasonicRaw.Model")) {
-            model = pos->print(&exif);
-        }
+        make.erase(make.find_last_not_of(' ') + 1);
         model.erase(model.find_last_not_of(' ') + 1);
 
-        /* Read shutter time */
-        if (FIND_EXIF_TAG("Exif.Photo.ExposureTime")) {
-            shutter = pos->toFloat();
-        } else if (FIND_EXIF_TAG("Exif.Photo.ShutterSpeedValue")) {
-            //img->exif_exposure = 1.0 / pos->toFloat();
-            shutter = pos->toFloat(); // TODO ?
+        if (make.length() > 0 && model.find(make + " ") == 0) {
+            model = model.substr(make.length() + 1);
         }
-        /* Read aperture */
-        if (FIND_EXIF_TAG("Exif.Photo.FNumber")) {
-            aperture = pos->toFloat();
-        } else if (FIND_EXIF_TAG("Exif.Photo.ApertureValue")) {
+
+        if (find_tag(Exiv2::exposureTime)) {
+            shutter = pos->toFloat();
+        }
+
+        if (find_tag(Exiv2::fNumber)) {
             aperture = pos->toFloat();
         }
 
         /* Read ISO speed - Nikon happens to return a pair for Lo and Hi modes */
-        if ((pos = Exiv2::isoSpeed(exif)) != exif.end() && pos->size()) {
+        if (find_tag(Exiv2::isoSpeed)) {
             // if standard exif iso tag, use the old way of interpreting the return value to be more regression-save
             if (strcmp(pos->key().c_str(), "Exif.Photo.ISOSpeedRatings") == 0) {
                 int isofield = pos->count() > 1 ? 1 : 0;
@@ -238,17 +242,16 @@ FrameData::FrameData(const Glib::ustring &fname):
         }
         // some newer cameras support iso settings that exceed the 16 bit of exif's ISOSpeedRatings
         if (iso_speed == 65535 || iso_speed == 0) {
-            if (FIND_EXIF_TAG("Exif.PentaxDng.ISO") || FIND_EXIF_TAG("Exif.Pentax.ISO")) {
+            if (find_exif_tag("Exif.PentaxDng.ISO") || find_exif_tag("Exif.Pentax.ISO")) {
                 std::string str = pos->print();
                 iso_speed = std::atof(str.c_str());
             } else if((!g_strcmp0(make.c_str(), "SONY") || !g_strcmp0(make.c_str(), "Canon"))
-                    && FIND_EXIF_TAG("Exif.Photo.RecommendedExposureIndex")) {
+                    && find_exif_tag("Exif.Photo.RecommendedExposureIndex")) {
                 iso_speed = pos->toFloat();
             }
         }
 
-        /* Read focal length  */
-        if ((pos = Exiv2::focalLength(exif)) != exif.end() && pos->size()) {
+        if (find_tag(Exiv2::focalLength)) {
             // This works around a bug in exiv2 the developers refuse to fix
             // For details see http://dev.exiv2.org/issues/1083
             if (pos->key() == "Exif.Canon.FocalLength" && pos->count() == 4) {
@@ -258,101 +261,59 @@ FrameData::FrameData(const Glib::ustring &fname):
             }
         }
 
-        /* Read focal length in 35mm if available and try to calculate crop factor */
-        if (FIND_EXIF_TAG("Exif.Photo.FocalLengthIn35mmFilm")) {
+        if (find_exif_tag("Exif.Photo.FocalLengthIn35mmFilm")) {
             focal_len35mm = pos->toFloat();
         }
 
-        if (FIND_EXIF_TAG("Exif.NikonLd2.FocusDistance")) {
-            float value = pos->toFloat();
-            focus_dist = (0.01 * pow(10, value / 40));
-        } else if (FIND_EXIF_TAG("Exif.NikonLd3.FocusDistance")) {
-            float value = pos->toFloat();
-            focus_dist = (0.01 * pow(10, value / 40));
-        } else if (FIND_EXIF_TAG("Exif.OlympusFi.FocusDistance")) {
-            /* the distance is stored as a rational (fraction). according to
-             * http://www.dpreview.com/forums/thread/1173960?page=4
-             * some Olympus cameras have a wrong denominator of 10 in there while the nominator is always in mm.
-             * thus we ignore the denominator
-             * and divide with 1000.
-             * "I've checked a number of E-1 and E-300 images, and I agree that the FocusDistance looks like it is
-             * in mm for the E-1. However,
-             * it looks more like cm for the E-300.
-             * For both cameras, this value is stored as a rational. With the E-1, the denominator is always 1,
-             * while for the E-300 it is 10.
-             * Therefore, it looks like the numerator in both cases is in mm (which makes a bit of sense, in an odd
-             * sort of way). So I think
-             * what I will do in ExifTool is to take the numerator and divide by 1000 to display the focus distance
-             * in meters."
-             *   -- Boardhead, dpreview forums in 2005
-             */
-            int nominator = pos->toRational(0).first;
-            focus_dist = fmax(0.0, (0.001 * nominator));
-        } else if(EXIV2_MAKE_VERSION(0,25,0) <= Exiv2::versionNumber() && FIND_EXIF_TAG("Exif.CanonFi.FocusDistanceUpper"))
-        {
-            const float FocusDistanceUpper = pos->toFloat();
-            if (FocusDistanceUpper <= 0.0f || (int)FocusDistanceUpper >= 0xffff) {
-                focus_dist = 0.0f;
-            } else {
-                focus_dist = FocusDistanceUpper / 100.0;
-                if (FIND_EXIF_TAG("Exif.CanonFi.FocusDistanceLower")) {
-                    const float FocusDistanceLower = pos->toFloat();
-                    if (FocusDistanceLower > 0.0f && (int)FocusDistanceLower < 0xffff) {
-                        focus_dist += FocusDistanceLower / 100.0;
-                        focus_dist /= 2.0;
-                    }
-                }
-            }
-        } else if (FIND_EXIF_TAG("Exif.CanonSi.SubjectDistance")) {
-            focus_dist = pos->toFloat() / 100.0;
-        } else if((pos = Exiv2::subjectDistance(exif)) != exif.end() && pos->size()) {
-            focus_dist = pos->toFloat();
+        if (find_tag(Exiv2::subjectDistance)) {
+            focus_dist = (0.01 * pow(10, pos->toFloat() / 40));
         }
-        /** read image orientation */
-        if (FIND_EXIF_TAG("Exif.Image.Orientation")) {
-            orientation = pos->print(&exif);
-        }
-        else if (FIND_EXIF_TAG("Exif.PanasonicRaw.Orientation")) {
+        
+        if (find_tag(Exiv2::orientation)) {
             orientation = pos->print(&exif);
         }
 
-        /* Read lens name */
-        if ((FIND_EXIF_TAG("Exif.CanonCs.LensType") && pos->print(&exif) != "(0)"
-            && pos->print(&exif) != "(65535)")
-            || FIND_EXIF_TAG("Exif.Canon.0x0095")) {
-            lens = pos->print(&exif);
-        } else if (EXIV2_MAKE_VERSION(0,25,0) <= Exiv2::versionNumber() && FIND_EXIF_TAG("Exif.PentaxDng.LensType")) {
-            lens = pos->print(&exif);
-        } else if (FIND_EXIF_TAG("Exif.Panasonic.LensType")) {
-            lens = pos->print(&exif);
-        } else if(FIND_EXIF_TAG("Exif.OlympusEq.LensType")) {
-            /* For every Olympus camera Exif.OlympusEq.LensType is present. */
-            lens = pos->print(&exif);
-
-            /* We have to check if Exif.OlympusEq.LensType has been translated by
-             * exiv2. If it hasn't, fall back to Exif.OlympusEq.LensModel. */
-            if(std::string::npos == lens.find_first_not_of(" 1234567890")) {
-                /* Exif.OlympusEq.LensType contains only digits and spaces.
-                 * This means that exiv2 couldn't convert it to human readable
-                 * form. */
-                if (FIND_EXIF_TAG("Exif.OlympusEq.LensModel")) {
-                    lens = pos->print(&exif);
-                } else if(FIND_EXIF_TAG("Exif.Photo.LensModel")) {
-                /* Just in case Exif.OlympusEq.LensModel hasn't been found */
-                    lens = pos->print(&exif);
-                }
-                //fprintf(stderr, "[exif] Warning: lens \"%s\" unknown as \"%s\"\n", img->exif_lens, lens.c_str());
-            }
-        } else if ((pos = Exiv2::lensName(exif)) != exif.end() && pos->size()) {
-            lens = pos->print(&exif);
-        } else if (FIND_EXIF_TAG("Exif.Photo.LensModel")) {
+        if (find_tag(Exiv2::lensName)) {
             lens = pos->print(&exif);
         }
+
+        // /* Read lens name */
+        // if ((find_exif_tag("Exif.CanonCs.LensType") && pos->print(&exif) != "(0)"
+        //     && pos->print(&exif) != "(65535)")
+        //     || find_exif_tag("Exif.Canon.0x0095")) {
+        //     lens = pos->print(&exif);
+        // } else if (EXIV2_MAKE_VERSION(0,25,0) <= Exiv2::versionNumber() && find_exif_tag("Exif.PentaxDng.LensType")) {
+        //     lens = pos->print(&exif);
+        // } else if (find_exif_tag("Exif.Panasonic.LensType")) {
+        //     lens = pos->print(&exif);
+        // } else if(find_exif_tag("Exif.OlympusEq.LensType")) {
+        //     /* For every Olympus camera Exif.OlympusEq.LensType is present. */
+        //     lens = pos->print(&exif);
+
+        //     /* We have to check if Exif.OlympusEq.LensType has been translated by
+        //      * exiv2. If it hasn't, fall back to Exif.OlympusEq.LensModel. */
+        //     if(std::string::npos == lens.find_first_not_of(" 1234567890")) {
+        //         /* Exif.OlympusEq.LensType contains only digits and spaces.
+        //          * This means that exiv2 couldn't convert it to human readable
+        //          * form. */
+        //         if (find_exif_tag("Exif.OlympusEq.LensModel")) {
+        //             lens = pos->print(&exif);
+        //         } else if(find_exif_tag("Exif.Photo.LensModel")) {
+        //         /* Just in case Exif.OlympusEq.LensModel hasn't been found */
+        //             lens = pos->print(&exif);
+        //         }
+        //         //fprintf(stderr, "[exif] Warning: lens \"%s\" unknown as \"%s\"\n", img->exif_lens, lens.c_str());
+        //     }
+        // } else if ((pos = Exiv2::lensName(exif)) != exif.end() && pos->size()) {
+        //     lens = pos->print(&exif);
+        // } else if (find_exif_tag("Exif.Photo.LensModel")) {
+        //     lens = pos->print(&exif);
+        // }
 
         std::string datetime_taken;
-        if (FIND_EXIF_TAG("Exif.Image.DateTimeOriginal")) {
+        if (find_exif_tag("Exif.Image.DateTimeOriginal")) {
             datetime_taken = pos->print(&exif);
-        } else if(FIND_EXIF_TAG("Exif.Photo.DateTimeOriginal")) {
+        } else if(find_exif_tag("Exif.Photo.DateTimeOriginal")) {
             datetime_taken = pos->print(&exif);
         }
         if (sscanf(datetime_taken.c_str(), "%d:%d:%d %d:%d:%d", &time.tm_year, &time.tm_mon, &time.tm_mday, &time.tm_hour, &time.tm_min, &time.tm_sec) == 6) {
@@ -362,22 +323,22 @@ FrameData::FrameData(const Glib::ustring &fname):
             timeStamp = mktime(&time);
         }
 
-        // Improve lens detection for Sony SAL lenses.
-        if (FIND_EXIF_TAG("Exif.Sony2.LensID") && pos->toLong() != 65535 && pos->print().find('|') == std::string::npos) {
+        // Improve lens detection for Sony lenses.
+        if (find_exif_tag("Exif.Sony2.LensID") && pos->toLong() != 65535 && pos->print().find('|') == std::string::npos) {
             lens = pos->print(&exif);
         } else if((!strncmp(model.c_str(), "NEX", 3)) || (!strncmp(model.c_str(), "ILCE", 4))) {
             // Workaround for an issue on newer Sony NEX cams.
             // The default EXIF field is not used by Sony to store lens data
-            // http://dev.exiv2.org/issues/883
+            // http://dev.exiv2.org/issues/833
             // http://darktable.org/redmine/issues/8813
             // FIXME: This is still a workaround
             lens = "Unknown";
-            if (FIND_EXIF_TAG("Exif.Photo.LensModel")) {
+            if (find_exif_tag("Exif.Photo.LensModel")) {
                 lens = pos->print(&exif);
             }
         }
 
-        if (FIND_EXIF_TAG("Exif.Image.ExposureBiasValue")) {
+        if (find_exif_tag("Exif.Image.ExposureBiasValue")) {
             expcomp = pos->toFloat();
         }
 
@@ -392,12 +353,13 @@ FrameData::FrameData(const Glib::ustring &fname):
         auto c = exif.findKey(Exiv2::ExifKey("Exif.Image.Compression"));
 
         if ((!make.compare (0, 6, "PENTAX") || (!make.compare (0, 5, "RICOH") && !model.compare (0, 6, "PENTAX")))) {
-            if (FIND_EXIF_TAG("Exif.Pentax.HDR") && pos->toLong() > 0) {
-                isHDR = true;
-#if PRINT_HDR_PS_DETECTION
-                printf("HDR detected ! -> \"HDR\" tag found\n");
-#endif
-            } else if (FIND_EXIF_TAG("Exif.Pentax.DriveMode")) {
+//             if (find_exif_tag("Exif.Pentax.HDR") && pos->toLong() > 0) {
+//                 isHDR = true;
+// #if PRINT_HDR_PS_DETECTION
+//                 printf("HDR detected ! -> \"HDR\" tag found\n");
+// #endif
+//             } else
+            if (find_exif_tag("Exif.Pentax.DriveMode")) {
                 std::string buf = pos->toString(3);
                 buf[3] = 0;
                 if (!strcmp(buf.c_str(), "HDR")) {
@@ -408,7 +370,7 @@ FrameData::FrameData(const Glib::ustring &fname):
                 }
             }
 
-            if (!isHDR && FIND_EXIF_TAG("Exif.Pentax.Quality") &&
+            if (!isHDR && find_exif_tag("Exif.Pentax.Quality") &&
                 (pos->toLong() == 7 || pos->toLong() == 8)) {
                 isPixelShift = true;
 #if PRINT_HDR_PS_DETECTION
@@ -520,7 +482,7 @@ FrameData::FrameData(const Glib::ustring &fname):
                     sampleFormat = IIOSF_UNSIGNED_CHAR;
                 } else if (bitspersample <= 16) {
                     sampleFormat = IIOSF_UNSIGNED_SHORT;
-                    if (FIND_EXIF_TAG("Exif.Photo.MakerNote") && (!make.compare (0, 4, "SONY")) && bitspersample >= 12 && samplesperpixel == 4) {
+                    if (find_exif_tag("Exif.Photo.MakerNote") && (!make.compare (0, 4, "SONY")) && bitspersample >= 12 && samplesperpixel == 4) {
                         isPixelShift = true;
 #if PRINT_HDR_PS_DETECTION
                         printf("PixelShift detected ! -> \"Make\" = SONY, bitsPerPixel > 8, samplesPerPixel == 4\n");
@@ -544,6 +506,9 @@ FrameData::FrameData(const Glib::ustring &fname):
             }
         }
     } catch(Exiv2::AnyError &e) {
+        if (settings->verbose) {
+            std::cerr << "EXIV2 ERROR: " << e.what() << std::endl;
+        }
         ok_ = false;
     }
 }
@@ -1048,71 +1013,72 @@ double FramesMetaData::apertureFromString (std::string s)
     return atof (s.c_str());
 }
 
-extern "C" {
+// extern "C" {
 
-#include <libiptcdata/iptc-data.h>
-#include <libiptcdata/iptc-jpeg.h>
+// #include <libiptcdata/iptc-data.h>
+// #include <libiptcdata/iptc-jpeg.h>
 
-    struct _IptcDataPrivate {
-        unsigned int ref_count;
+//     struct _IptcDataPrivate {
+//         unsigned int ref_count;
 
-        IptcLog *log;
-        IptcMem *mem;
-    };
+//         IptcLog *log;
+//         IptcMem *mem;
+//     };
 
-    IptcData *
-    iptc_data_new_from_jpeg_file (FILE *infile)
-    {
-        IptcData *d;
-        unsigned char * buf;
-        int buf_len = 256 * 256;
-        int len, offset;
-        unsigned int iptc_len;
+//     IptcData *
+//     iptc_data_new_from_jpeg_file (FILE *infile)
+//     {
+//         IptcData *d;
+//         unsigned char * buf;
+//         int buf_len = 256 * 256;
+//         int len, offset;
+//         unsigned int iptc_len;
 
-        if (!infile) {
-            return nullptr;
-        }
+//         if (!infile) {
+//             return nullptr;
+//         }
 
-        d = iptc_data_new ();
+//         d = iptc_data_new ();
 
-        if (!d) {
-            return nullptr;
-        }
+//         if (!d) {
+//             return nullptr;
+//         }
 
-        buf = (unsigned char*)iptc_mem_alloc (d->priv->mem, buf_len);
+//         buf = (unsigned char*)iptc_mem_alloc (d->priv->mem, buf_len);
 
-        if (!buf) {
-            iptc_data_unref (d);
-            return nullptr;
-        }
+//         if (!buf) {
+//             iptc_data_unref (d);
+//             return nullptr;
+//         }
 
-        len = iptc_jpeg_read_ps3 (infile, buf, buf_len);
+//         len = iptc_jpeg_read_ps3 (infile, buf, buf_len);
 
-        if (len <= 0) {
-            goto failure;
-        }
+//         if (len <= 0) {
+//             goto failure;
+//         }
 
-        offset = iptc_jpeg_ps3_find_iptc (buf, len, &iptc_len);
+//         offset = iptc_jpeg_ps3_find_iptc (buf, len, &iptc_len);
 
-        if (offset <= 0) {
-            goto failure;
-        }
+//         if (offset <= 0) {
+//             goto failure;
+//         }
 
-        iptc_data_load (d, buf + offset, iptc_len);
+//         iptc_data_load (d, buf + offset, iptc_len);
 
-        iptc_mem_free (d->priv->mem, buf);
-        return d;
+//         iptc_mem_free (d->priv->mem, buf);
+//         return d;
 
-failure:
-        iptc_mem_free (d->priv->mem, buf);
-        iptc_data_unref (d);
-        return nullptr;
-    }
+// failure:
+//         iptc_mem_free (d->priv->mem, buf);
+//         iptc_data_unref (d);
+//         return nullptr;
+//     }
 
-}
+// }
 
 FramesData::FramesData (const Glib::ustring& fname, std::unique_ptr<RawMetaDataLocation> rml, bool firstFrameOnly) :
     //iptc(nullptr),
+    fname_(fname),
     dcrawFrameCount (0)
 {
     frames.push_back(std::unique_ptr<FrameData>(new FrameData(fname)));
@@ -1202,4 +1168,10 @@ FramesData::~FramesData ()
     // if (iptc) {
     //     iptc_data_free (iptc);
     // }
+}
+
+
+Glib::ustring FramesData::getFileName() const
+{
+    return fname_;
 }
