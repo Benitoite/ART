@@ -250,6 +250,9 @@ FramesData::FramesData(const Glib::ustring &fname):
         if (find_tag(Exiv2::lensName)) {
             lens = pos->print(&exif);
         }
+        if (lens.empty()) {
+            lens = "Unknown";
+        }
 
         std::string datetime_taken;
         if (find_exif_tag("Exif.Image.DateTimeOriginal")) {
@@ -262,21 +265,6 @@ FramesData::FramesData(const Glib::ustring &fname):
             time.tm_mon -= 1;
             time.tm_isdst = -1;
             timeStamp = mktime(&time);
-        }
-
-        // Improve lens detection for Sony lenses.
-        if (find_exif_tag("Exif.Sony2.LensID") && pos->toLong() != 65535 && pos->print().find('|') == std::string::npos) {
-            lens = pos->print(&exif);
-        } else if((!strncmp(model.c_str(), "NEX", 3)) || (!strncmp(model.c_str(), "ILCE", 4))) {
-            // Workaround for an issue on newer Sony NEX cams.
-            // The default EXIF field is not used by Sony to store lens data
-            // http://dev.exiv2.org/issues/833
-            // http://darktable.org/redmine/issues/8813
-            // FIXME: This is still a workaround
-            lens = "Unknown";
-            if (find_exif_tag("Exif.Photo.LensModel")) {
-                lens = pos->print(&exif);
-            }
         }
 
         if (find_exif_tag("Exif.Image.ExposureBiasValue")) {
