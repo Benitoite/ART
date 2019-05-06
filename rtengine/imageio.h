@@ -29,11 +29,9 @@
 #define IMIO_CANNOTWRITEFILE       7
 
 #include <glibmm.h>
-//#include <libiptcdata/iptc-data.h>
 #include "rtengine.h"
 #include "imageformat.h"
 #include "procparams.h"
-//#include "../rtexif/rtexif.h"
 #include "imagedimensions.h"
 #include "iimage.h"
 #include "colortemp.h"
@@ -73,9 +71,6 @@ protected:
     char* loadedProfileData;
     bool loadedProfileDataJpg;
     int loadedProfileLength;
-    // procparams::ExifPairs exifChange;
-    // IptcData* iptc;
-    // const rtexif::TagDirectory* exifRoot;
     MyMutex imutex;
     IIOSampleFormat sampleFormat;
     IIOSampleArrangement sampleArrangement;
@@ -125,8 +120,6 @@ public:
     cmsHPROFILE getEmbeddedProfile () const;
     void getEmbeddedProfileData (int& length, unsigned char*& pdata) const;
 
-    /* void setMetadata (const rtexif::TagDirectory* eroot); */
-    /* void setMetadata (const rtexif::TagDirectory* eroot, const rtengine::procparams::ExifPairs& exif, const rtengine::procparams::IPTCPairs& iptcc); */
     void setMetadata(const MetadataInfo &info) { metadataInfo = info; }
     void setOutputProfile (const char* pdata, int plen);
 

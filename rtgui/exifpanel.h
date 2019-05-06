@@ -30,7 +30,6 @@ private:
     const rtengine::FramesMetaData* idata;
     rtengine::procparams::ExifPairs changeList;
     rtengine::procparams::ExifPairs defChangeList;
-    bool recursiveOp;
 
     class ExifColumns : public Gtk::TreeModelColumnRecord
     {
@@ -54,7 +53,6 @@ private:
             add(editable);
         }
     };
-    // Glib::RefPtr<Gdk::Pixbuf> delicon;
     Glib::RefPtr<Gdk::Pixbuf> keepicon;
     Glib::RefPtr<Gdk::Pixbuf> editicon;
 
@@ -63,35 +61,18 @@ private:
     Gtk::ScrolledWindow* scrolledWindow;
     Glib::RefPtr<Gtk::TreeStore> exifTreeModel;
 
-    // Gtk::Button* remove;
-    // Gtk::Button* keep;
     Gtk::Button* add;
     Gtk::Button* reset;
     Gtk::Button* resetAll;
-    // Gtk::ToggleButton* showAll;
 
     std::vector<std::pair<std::string, Glib::ustring>> editable_;
 
     Gtk::TreeModel::Children addTag(const std::string &key, const Glib::ustring &label, const Glib::ustring &value, bool editable, bool edited);
-    // void editTag (Gtk::TreeModel::Children root, Glib::ustring name, Glib::ustring value);
-    // void updateChangeList (Gtk::TreeModel::Children root, std::string prefix);
-//    void addDirectory (const rtexif::TagDirectory* dir, Gtk::TreeModel::Children root, bool checkForSeparator = false);
     void refreshTags();
-    // Gtk::TreeModel::Children addSeparator();
-    // Glib::ustring getSelection (bool onlyifeditable = false);
-    // Glib::ustring getSelectedValue();
-    // void updateChangeList();
-    // void applyChangeList();
-    // void keepIt (Gtk::TreeModel::iterator iter);
-    // void delIt (Gtk::TreeModel::iterator iter);
     void resetIt (Gtk::TreeModel::iterator iter);
-    // void removePressed();
-    // void keepPressed();
     void resetPressed();
     void resetAllPressed();
     void addPressed();
-    // void showAlltoggled();
-    // bool rowSeperatorFunc(const Glib::RefPtr<Gtk::TreeModel>& model, const Gtk::TreeModel::iterator& iter);
 
 public:
     ExifPanel ();

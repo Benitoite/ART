@@ -23,7 +23,6 @@
 #include <exiv2/exiv2.hpp>
 
 #include "imagedata.h"
-//#include "iptcpairs.h"
 #include "imagesource.h"
 #include "rt_math.h"
 #pragma GCC diagnostic warning "-Wextra"
@@ -31,36 +30,19 @@
 
 using namespace rtengine;
 
-// extern "C" IptcData *iptc_data_new_from_jpeg_file (FILE* infile);
 
-namespace {
+// namespace {
 
-Glib::ustring to_utf8 (const std::string& str)
-{
-    try {
-        return Glib::locale_to_utf8 (str);
-    } catch (Glib::Error&) {
-        return Glib::convert_with_fallback (str, "UTF-8", "ISO-8859-1", "?");
-    }
-}
+// Glib::ustring to_utf8 (const std::string& str)
+// {
+//     try {
+//         return Glib::locale_to_utf8 (str);
+//     } catch (Glib::Error&) {
+//         return Glib::convert_with_fallback (str, "UTF-8", "ISO-8859-1", "?");
+//     }
+// }
 
-template<typename T>
-T getFromFrame(
-    const std::vector<std::unique_ptr<FrameData>>& frames,
-    std::size_t frame,
-    const std::function<T (const FrameData&)>& function
-)
-{
-    if (frame < frames.size()) {
-        return function(*frames[frame]);
-    }
-    if (!frames.empty()) {
-        return function(*frames[0]);
-    }
-    return {};
-}
-
-} // namespace
+// } // namespace
 
 
 namespace rtengine {
@@ -89,9 +71,10 @@ FramesMetaData* FramesMetaData::fromFile (const Glib::ustring& fname)
     return new FramesData(fname);
 }
 
-// FrameData::FrameData(rtexif::TagDirectory* frameRootDir_, rtexif::TagDirectory* rootDir, rtexif::TagDirectory* firstRootDir)
-FrameData::FrameData(const Glib::ustring &fname):
+FramesData::FramesData(const Glib::ustring &fname):
     ok_(false),
+    fname_(fname),
+    dcrawFrameCount(0),
     time(),
     timeStamp(),
     iso_speed(0),
@@ -109,15 +92,6 @@ FrameData::FrameData(const Glib::ustring &fname):
     isPixelShift(false),
     isHDR(false)
 {
-    memset(&time, 0, sizeof(time));
-
-    // if (!frameRootDir) {
-    //     return;
-    // }
-
-    // rtexif::Tag* tag;
-    // rtexif::TagDirectory* newFrameRootDir = frameRootDir;
-
     memset(&time, 0, sizeof(time));
     timeStamp = 0;
     iso_speed = 0;
@@ -276,39 +250,6 @@ FrameData::FrameData(const Glib::ustring &fname):
         if (find_tag(Exiv2::lensName)) {
             lens = pos->print(&exif);
         }
-
-        // /* Read lens name */
-        // if ((find_exif_tag("Exif.CanonCs.LensType") && pos->print(&exif) != "(0)"
-        //     && pos->print(&exif) != "(65535)")
-        //     || find_exif_tag("Exif.Canon.0x0095")) {
-        //     lens = pos->print(&exif);
-        // } else if (EXIV2_MAKE_VERSION(0,25,0) <= Exiv2::versionNumber() && find_exif_tag("Exif.PentaxDng.LensType")) {
-        //     lens = pos->print(&exif);
-        // } else if (find_exif_tag("Exif.Panasonic.LensType")) {
-        //     lens = pos->print(&exif);
-        // } else if(find_exif_tag("Exif.OlympusEq.LensType")) {
-        //     /* For every Olympus camera Exif.OlympusEq.LensType is present. */
-        //     lens = pos->print(&exif);
-
-        //     /* We have to check if Exif.OlympusEq.LensType has been translated by
-        //      * exiv2. If it hasn't, fall back to Exif.OlympusEq.LensModel. */
-        //     if(std::string::npos == lens.find_first_not_of(" 1234567890")) {
-        //         /* Exif.OlympusEq.LensType contains only digits and spaces.
-        //          * This means that exiv2 couldn't convert it to human readable
-        //          * form. */
-        //         if (find_exif_tag("Exif.OlympusEq.LensModel")) {
-        //             lens = pos->print(&exif);
-        //         } else if(find_exif_tag("Exif.Photo.LensModel")) {
-        //         /* Just in case Exif.OlympusEq.LensModel hasn't been found */
-        //             lens = pos->print(&exif);
-        //         }
-        //         //fprintf(stderr, "[exif] Warning: lens \"%s\" unknown as \"%s\"\n", img->exif_lens, lens.c_str());
-        //     }
-        // } else if ((pos = Exiv2::lensName(exif)) != exif.end() && pos->size()) {
-        //     lens = pos->print(&exif);
-        // } else if (find_exif_tag("Exif.Photo.LensModel")) {
-        //     lens = pos->print(&exif);
-        // }
 
         std::string datetime_taken;
         if (find_exif_tag("Exif.Image.DateTimeOriginal")) {
@@ -513,449 +454,141 @@ FrameData::FrameData(const Glib::ustring &fname):
     }
 }
 
-FrameData::~FrameData ()
-{
 
-    // if (iptc) {
-    //     iptc_data_free (iptc);
-    // }
-}
-
-// procparams::IPTCPairs FrameData::getIPTCData () const
-// {
-//     return getIPTCData(iptc);
-// }
-
-// procparams::IPTCPairs FrameData::getIPTCData (IptcData* iptc_)
-// {
-
-//     procparams::IPTCPairs iptcc;
-
-//     if (!iptc_) {
-//         return iptcc;
-//     }
-
-//     unsigned char buffer[2100];
-
-//     for (int i = 0; i < 16; i++) {
-//         IptcDataSet* ds = iptc_data_get_next_dataset (iptc_, nullptr, IPTC_RECORD_APP_2, strTags[i].tag);
-
-//         if (ds) {
-//             iptc_dataset_get_data (ds, buffer, 2100);
-//             std::vector<Glib::ustring> icValues;
-//             icValues.push_back (to_utf8((char*)buffer));
-
-//             iptcc[strTags[i].field] = icValues;
-//             iptc_dataset_unref (ds);
-//         }
-//     }
-
-//     IptcDataSet* ds = nullptr;
-//     std::vector<Glib::ustring> keywords;
-
-//     while ((ds = iptc_data_get_next_dataset (iptc_, ds, IPTC_RECORD_APP_2, IPTC_TAG_KEYWORDS))) {
-//         iptc_dataset_get_data (ds, buffer, 2100);
-//         keywords.push_back (to_utf8((char*)buffer));
-//     }
-
-//     iptcc["Keywords"] = keywords;
-//     ds = nullptr;
-//     std::vector<Glib::ustring> suppCategories;
-
-//     while ((ds = iptc_data_get_next_dataset (iptc_, ds, IPTC_RECORD_APP_2, IPTC_TAG_SUPPL_CATEGORY))) {
-//         iptc_dataset_get_data (ds, buffer, 2100);
-//         suppCategories.push_back (to_utf8((char*)buffer));
-//         iptc_dataset_unref (ds);
-//     }
-
-//     iptcc["SupplementalCategories"] = suppCategories;
-//     return iptcc;
-// }
-
-
-bool FrameData::getPixelShift () const
+bool FramesData::getPixelShift() const
 {
     return isPixelShift;
 }
-bool FrameData::getHDR () const
+
+
+bool FramesData::getHDR() const
 {
     return isHDR;
 }
-std::string FrameData::getImageType () const
+
+
+std::string FramesData::getImageType() const
 {
     return isPixelShift ? "PS" : isHDR ? "HDR" : "STD";
 }
-IIOSampleFormat FrameData::getSampleFormat () const
+
+
+IIOSampleFormat FramesData::getSampleFormat() const
 {
     return sampleFormat;
 }
-// rtexif::TagDirectory* FrameData::getExifData () const
-// {
-//     return frameRootDir;
-// }
-bool FrameData::hasExif () const
+
+
+bool FramesData::hasExif() const
 {
-    return ok_; //frameRootDir && frameRootDir->getCount();
+    return ok_;
 }
-// bool FrameData::hasIPTC () const
-// {
-//     return iptc;
-// }
-tm FrameData::getDateTime () const
+
+
+tm FramesData::getDateTime() const
 {
     return time;
 }
-time_t FrameData::getDateTimeAsTS () const
+
+
+time_t FramesData::getDateTimeAsTS() const
 {
     return timeStamp;
 }
-int FrameData::getISOSpeed () const
+
+
+int FramesData::getISOSpeed() const
 {
     return iso_speed;
 }
-double FrameData::getFNumber () const
+
+
+double FramesData::getFNumber() const
 {
     return aperture;
 }
-double FrameData::getFocalLen () const
+
+
+double FramesData::getFocalLen() const
 {
     return focal_len;
 }
-double FrameData::getFocalLen35mm () const
+
+
+double FramesData::getFocalLen35mm() const
 {
     return focal_len35mm;
 }
-float FrameData::getFocusDist () const
+
+
+float FramesData::getFocusDist() const
 {
     return focus_dist;
 }
-double FrameData::getShutterSpeed () const
+
+
+double FramesData::getShutterSpeed() const
 {
     return shutter;
 }
-double FrameData::getExpComp () const
+
+
+double FramesData::getExpComp() const
 {
     return expcomp;
 }
-std::string FrameData::getMake () const
+
+
+std::string FramesData::getMake() const
 {
     return make;
 }
-std::string FrameData::getModel () const
+
+
+std::string FramesData::getModel() const
 {
     return model;
 }
-std::string FrameData::getLens () const
+
+
+std::string FramesData::getLens() const
 {
     return lens;
 }
-std::string FrameData::getSerialNumber () const
+
+
+std::string FramesData::getSerialNumber() const
 {
     return serial;
 }
-std::string FrameData::getOrientation () const
+
+
+std::string FramesData::getOrientation() const
 {
     return orientation;
 }
 
 
-
-void FramesData::setDCRawFrameCount (unsigned int frameCount)
+void FramesData::setDCRawFrameCount(unsigned int frameCount)
 {
     dcrawFrameCount = frameCount;
 }
 
-// unsigned int FramesData::getRootCount () const
-// {
-//     return roots.size();
-// }
-
-unsigned int FramesData::getFrameCount () const
+unsigned int FramesData::getFrameCount() const
 {
-    return dcrawFrameCount ? dcrawFrameCount : frames.size();
+    return dcrawFrameCount ? dcrawFrameCount : 1;
 }
 
-bool FramesData::getPixelShift () const
+
+Glib::ustring FramesData::getFileName() const
 {
-    // So far only Pentax and Sony provide multi-frame Pixel Shift files.
-    // Only the first frame contains the Pixel Shift tag
-    // If more brand have to be supported, this rule may need
-    // to evolve
-
-    return frames.empty() ? false : frames.at(0)->getPixelShift ();
+    return fname_;
 }
-bool FramesData::getHDR (unsigned int frame) const
-{
-    // So far only Pentax provides multi-frame HDR file.
-    // Only the first frame contains the HDR tag
-    // If more brand have to be supported, this rule may need
-    // to evolve
-
-    return frames.empty() || frame >= frames.size()  ? false : frames.at(0)->getHDR ();
-}
-
-std::string FramesData::getImageType (unsigned int frame) const
-{
-    return frames.empty() || frame >= frames.size() ? "STD" : frames.at(0)->getImageType();
-}
-
-IIOSampleFormat FramesData::getSampleFormat (unsigned int frame) const
-{
-    return frames.empty() || frame >= frames.size()  ? IIOSF_UNKNOWN : frames.at(frame)->getSampleFormat ();
-}
-
-// rtexif::TagDirectory* FramesData::getFrameExifData (unsigned int frame) const
-// {
-//     return frames.empty() || frame >= frames.size()  ? nullptr : frames.at(frame)->getExifData ();
-// }
-
-// rtexif::TagDirectory* FramesData::getBestExifData (ImageSource *imgSource, procparams::RAWParams *rawParams) const
-// {
-//     rtexif::TagDirectory *td = nullptr;
-//     if (frames.empty()) {
-//         return nullptr;
-//     }
-//     if (imgSource && rawParams) {
-//         eSensorType sensorType = imgSource->getSensorType();
-//         unsigned int imgNum = 0;
-//         if (sensorType == ST_BAYER) {
-//             imgNum = rtengine::LIM<unsigned int>(rawParams->bayersensor.imageNum, 0, frames.size() - 1);
-//         /*
-//         // might exist someday ?
-//         } else if (sensorType == ST_FUJI_XTRANS) {
-//             imgNum = rtengine::LIM<unsigned int>(rawParams->xtranssensor.imageNum, 0, frames.size() - 1);
-//         } else if (sensorType == ST_NONE && !imgSource->isRAW()) {
-//             // standard image multiframe support should come here (when implemented in GUI)
-//         */
-//         }
-
-//         td = getFrameExifData (imgNum);
-//         rtexif::Tag* makeTag;
-//         if (td && (makeTag = td->findTag("Make", true))) {
-//             td = makeTag->getParent();
-//         } else {
-//             td = getRootExifData(0);
-//         }
-//     }
-//     return td;
-// }
-
-// rtexif::TagDirectory* FramesData::getRootExifData (unsigned int root) const
-// {
-//     return roots.empty() || root >= roots.size()  ? nullptr : roots.at(root);
-// }
-
-// procparams::IPTCPairs FramesData::getIPTCData (unsigned int frame) const
-// {
-//     if (frame < frames.size() && frames.at(frame)->hasIPTC()) {
-//         return frames.at(frame)->getIPTCData();
-//     } else {
-//         if (iptc) {
-//             return FrameData::getIPTCData(iptc);
-//         } else {
-//             procparams::IPTCPairs emptyPairs;
-//             return emptyPairs;
-//         }
-//     }
-// }
-
-bool FramesData::hasExif(unsigned int frame) const
-{
-    return getFromFrame<bool>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.hasExif();
-        }
-    );
-}
-
-// bool FramesData::hasIPTC(unsigned int frame) const
-// {
-//     return getFromFrame<bool>(
-//         frames,
-//         frame,
-//         [](const FrameData& frame_data)
-//         {
-//             return frame_data.hasIPTC();
-//         }
-//     );
-// }
-
-tm FramesData::getDateTime(unsigned int frame) const
-{
-    return getFromFrame<tm>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getDateTime();
-        }
-    );
-}
-
-time_t FramesData::getDateTimeAsTS(unsigned int frame) const
-{
-    return getFromFrame<time_t>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getDateTimeAsTS();
-        }
-    );
-}
-
-int FramesData::getISOSpeed(unsigned int frame) const
-{
-    return getFromFrame<int>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getISOSpeed();
-        }
-    );
-}
-
-double FramesData::getFNumber(unsigned int frame) const
-{
-    return getFromFrame<double>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getFNumber();
-        }
-    );
-}
-
-double FramesData::getFocalLen(unsigned int frame) const
-{
-    return getFromFrame<double>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getFocalLen();
-        }
-    );
-}
-
-double FramesData::getFocalLen35mm(unsigned int frame) const
-{
-    return getFromFrame<double>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getFocalLen35mm();
-        }
-    );
-}
-
-float FramesData::getFocusDist(unsigned int frame) const
-{
-    return getFromFrame<float>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getFocusDist();
-        }
-    );
-}
-
-double FramesData::getShutterSpeed(unsigned int frame) const
-{
-    return getFromFrame<double>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getShutterSpeed();
-        }
-    );
-}
-
-double FramesData::getExpComp(unsigned int frame) const
-{
-    return getFromFrame<double>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getExpComp();
-        }
-    );
-}
-
-std::string FramesData::getMake(unsigned int frame) const
-{
-    return getFromFrame<std::string>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getMake();
-        }
-    );
-}
-
-std::string FramesData::getModel(unsigned int frame) const
-{
-    return getFromFrame<std::string>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getModel();
-        }
-    );
-}
-
-std::string FramesData::getLens(unsigned int frame) const
-{
-    return getFromFrame<std::string>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getLens();
-        }
-    );
-}
-
-std::string FramesData::getSerialNumber(unsigned int frame) const
-{
-    return getFromFrame<std::string>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getSerialNumber();
-        }
-    );
-}
-
-std::string FramesData::getOrientation(unsigned int frame) const
-{
-    return getFromFrame<std::string>(
-        frames,
-        frame,
-        [](const FrameData& frame_data)
-        {
-            return frame_data.getOrientation();
-        }
-    );
-}
-
 
 //------inherited functions--------------//
 
 
-std::string FramesMetaData::apertureToString (double aperture)
+std::string FramesMetaData::apertureToString(double aperture)
 {
 
     char buffer[256];
@@ -963,7 +596,7 @@ std::string FramesMetaData::apertureToString (double aperture)
     return buffer;
 }
 
-std::string FramesMetaData::shutterToString (double shutter)
+std::string FramesMetaData::shutterToString(double shutter)
 {
 
     char buffer[256];
@@ -977,7 +610,7 @@ std::string FramesMetaData::shutterToString (double shutter)
     return buffer;
 }
 
-std::string FramesMetaData::expcompToString (double expcomp, bool maskZeroexpcomp)
+std::string FramesMetaData::expcompToString(double expcomp, bool maskZeroexpcomp)
 {
 
     char buffer[256];
@@ -995,9 +628,8 @@ std::string FramesMetaData::expcompToString (double expcomp, bool maskZeroexpcom
     }
 }
 
-double FramesMetaData::shutterFromString (std::string s)
+double FramesMetaData::shutterFromString(std::string s)
 {
-
     size_t i = s.find_first_of ('/');
 
     if (i == std::string::npos) {
@@ -1007,171 +639,9 @@ double FramesMetaData::shutterFromString (std::string s)
     }
 }
 
-double FramesMetaData::apertureFromString (std::string s)
+double FramesMetaData::apertureFromString(std::string s)
 {
 
-    return atof (s.c_str());
+    return atof(s.c_str());
 }
 
-// extern "C" {
-
-// #include <libiptcdata/iptc-data.h>
-// #include <libiptcdata/iptc-jpeg.h>
-
-//     struct _IptcDataPrivate {
-//         unsigned int ref_count;
-
-//         IptcLog *log;
-//         IptcMem *mem;
-//     };
-
-//     IptcData *
-//     iptc_data_new_from_jpeg_file (FILE *infile)
-//     {
-//         IptcData *d;
-//         unsigned char * buf;
-//         int buf_len = 256 * 256;
-//         int len, offset;
-//         unsigned int iptc_len;
-
-//         if (!infile) {
-//             return nullptr;
-//         }
-
-//         d = iptc_data_new ();
-
-//         if (!d) {
-//             return nullptr;
-//         }
-
-//         buf = (unsigned char*)iptc_mem_alloc (d->priv->mem, buf_len);
-
-//         if (!buf) {
-//             iptc_data_unref (d);
-//             return nullptr;
-//         }
-
-//         len = iptc_jpeg_read_ps3 (infile, buf, buf_len);
-
-//         if (len <= 0) {
-//             goto failure;
-//         }
-
-//         offset = iptc_jpeg_ps3_find_iptc (buf, len, &iptc_len);
-
-//         if (offset <= 0) {
-//             goto failure;
-//         }
-
-//         iptc_data_load (d, buf + offset, iptc_len);
-
-//         iptc_mem_free (d->priv->mem, buf);
-//         return d;
-
-// failure:
-//         iptc_mem_free (d->priv->mem, buf);
-//         iptc_data_unref (d);
-//         return nullptr;
-//     }
-
-// }
-
-FramesData::FramesData (const Glib::ustring& fname):
-    //iptc(nullptr),
-    fname_(fname),
-    dcrawFrameCount (0)
-{
-    frames.push_back(std::unique_ptr<FrameData>(new FrameData(fname)));
-    // if (rml && (rml->exifBase >= 0 || rml->ciffBase >= 0)) {
-    //     FILE* f = g_fopen (fname.c_str (), "rb");
-
-    //     if (f) {
-    //         const bool has_rml_exif_base = rml->exifBase >= 0;
-    //         rtexif::ExifManager exifManager (f, std::move(rml), firstFrameOnly);
-
-    //         if (has_rml_exif_base) {
-    //             if (exifManager.f && exifManager.rml) {
-    //                 if (exifManager.rml->exifBase >= 0) {
-    //                     exifManager.parseRaw ();
-
-    //                 } else if (exifManager.rml->ciffBase >= 0) {
-    //                     exifManager.parseCIFF ();
-    //                 }
-    //             }
-
-    //             // copying roots
-    //             roots = exifManager.roots;
-
-    //             // creating FrameData
-    //             for (auto currFrame : exifManager.frames) {
-    //                 frames.push_back(std::unique_ptr<FrameData>(new FrameData(currFrame, currFrame->getRoot(), roots.at(0))));
-    //             }
-    //             for (auto currRoot : roots) {
-    //                 rtexif::Tag* t = currRoot->getTag(0x83BB);
-
-    //                 if (t && !iptc) {
-    //                     iptc = iptc_data_new_from_data ((unsigned char*)t->getValue (), (unsigned)t->getValueSize ());
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //         fclose (f);
-    //     }
-    // } else if (hasJpegExtension(fname)) {
-    //     FILE* f = g_fopen (fname.c_str (), "rb");
-
-    //     if (f) {
-    //         rtexif::ExifManager exifManager (f, std::move(rml), true);
-    //         if (exifManager.f) {
-    //             exifManager.parseJPEG ();
-    //             roots = exifManager.roots;
-    //             for (auto currFrame : exifManager.frames) {
-    //                 frames.push_back(std::unique_ptr<FrameData>(new FrameData(currFrame, currFrame->getRoot(), roots.at(0))));
-    //             }
-    //             rewind (exifManager.f); // Not sure this is necessary
-    //             iptc = iptc_data_new_from_jpeg_file (exifManager.f);
-    //         }
-    //         fclose (f);
-    //     }
-    // } else if (hasTiffExtension(fname)) {
-    //     FILE* f = g_fopen (fname.c_str (), "rb");
-
-    //     if (f) {
-    //         rtexif::ExifManager exifManager (f, std::move(rml), firstFrameOnly);
-
-    //         exifManager.parseTIFF();
-    //         roots = exifManager.roots;
-
-    //         // creating FrameData
-    //         for (auto currFrame : exifManager.frames) {
-    //             frames.push_back(std::unique_ptr<FrameData>(new FrameData(currFrame, currFrame->getRoot(), roots.at(0))));
-    //         }
-    //         for (auto currRoot : roots) {
-    //             rtexif::Tag* t = currRoot->getTag(0x83BB);
-
-    //             if (t && !iptc) {
-    //                 iptc = iptc_data_new_from_data ((unsigned char*)t->getValue (), (unsigned)t->getValueSize ());
-    //                 break;
-    //             }
-    //         }
-    //         fclose (f);
-    //     }
-    // }
-}
-
-FramesData::~FramesData ()
-{
-    // for (auto currRoot : roots) {
-    //     delete currRoot;
-    // }
-
-    // if (iptc) {
-    //     iptc_data_free (iptc);
-    // }
-}
-
-
-Glib::ustring FramesData::getFileName() const
-{
-    return fname_;
-}

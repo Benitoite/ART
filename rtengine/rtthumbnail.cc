@@ -1054,15 +1054,7 @@ IImage8* Thumbnail::quickProcessImage (const procparams::ProcParams& params, int
 // Full thumbnail processing, second stage if complete profile exists
 IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorType sensorType, int rheight, TypeInterpolation interp, const FramesMetaData *metadata, double& myscale, bool forMonitor, bool forHistogramMatching)
 {
-    unsigned int imgNum = 0;
-    if (isRaw) {
-        if (sensorType == ST_BAYER) {
-            imgNum = rtengine::LIM<unsigned int>(params.raw.bayersensor.imageNum, 0, metadata->getFrameCount() - 1);
-        } else if (sensorType == ST_FUJI_XTRANS) {
-            //imgNum = rtengine::LIM<unsigned int>(params.raw.xtranssensor.imageNum, 0, metadata->getFrameCount() - 1)
-        }
-    }
-    std::string camName = metadata->getCamera(imgNum);
+    std::string camName = metadata->getCamera();
     
     // check if the WB's equalizer value has changed
     if (wbEqual < (params.wb.equal - 5e-4) || wbEqual > (params.wb.equal + 5e-4) || wbTempBias < (params.wb.tempBias - 5e-4) || wbTempBias > (params.wb.tempBias + 5e-4)) {
