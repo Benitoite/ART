@@ -183,6 +183,7 @@ if(WIN32)
         ${GTK_INCLUDE_DIRS}
         ${LENSFUN_INCLUDE_DIRS}
         ${RSVG_INCLUDE_DIRS}
+        ${EXIV2_INCLUDE_DIRS}
         )
     link_directories(.
         ${EXTRA_LIBDIR}
@@ -208,10 +209,10 @@ else()
         ${GTHREAD_INCLUDE_DIRS}
         ${GTKMM_INCLUDE_DIRS}
         ${GTK_INCLUDE_DIRS}
-        ${IPTCDATA_INCLUDE_DIRS}
         ${LCMS_INCLUDE_DIRS}
         ${LENSFUN_INCLUDE_DIRS}
         ${RSVG_INCLUDE_DIRS}
+        ${EXIV2_INCLUDE_DIRS}
         )
     link_directories(${EXTRA_LIBDIR}
         ${CANBERRA-GTK_LIBRARY_DIRS}
@@ -225,7 +226,6 @@ else()
         ${GTHREAD_LIBRARY_DIRS}
         ${GTKMM_LIBRARY_DIRS}
         ${GTK_LIBRARY_DIRS}
-        ${IPTCDATA_LIBRARY_DIRS}
         ${LCMS_LIBRARY_DIRS}
         ${LENSFUN_LIBRARY_DIRS}
         ${RSVG_LIBRARY_DIRS}
@@ -274,7 +274,6 @@ target_link_libraries(rth rtengine
     ${GTHREAD_LIBRARIES}
     ${GTKMM_LIBRARIES}
     ${GTK_LIBRARIES}
-    ${IPTCDATA_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${LCMS_LIBRARIES}
     ${PNG_LIBRARIES}
@@ -283,6 +282,7 @@ target_link_libraries(rth rtengine
     ${LENSFUN_LIBRARIES}
     ${RSVG_LIBRARIES}
     ${TCMALLOC_LIBRARIES}
+    ${EXIV2_LIBRARIES}
     )
 
 target_link_libraries(rth-cli rtengine
@@ -296,7 +296,6 @@ target_link_libraries(rth-cli rtengine
     ${GLIBMM_LIBRARIES}
     ${GOBJECT_LIBRARIES}
     ${GTHREAD_LIBRARIES}
-    ${IPTCDATA_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${LCMS_LIBRARIES}
     ${PNG_LIBRARIES}
@@ -305,6 +304,7 @@ target_link_libraries(rth-cli rtengine
     ${LENSFUN_LIBRARIES}
     ${RSVG_LIBRARIES}
     ${TCMALLOC_LIBRARIES}
+    ${EXIV2_LIBRARIES}
     )
 
 # Install executables

@@ -53,7 +53,7 @@ Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
 {
 #ifdef EXV_UNICODE_PATH
     auto *ws = g_utf8_to_utf16(fname.c_str(), -1, NULL, NULL, NULL);
-    std::wstring wfname(ws);
+    std::wstring wfname(reinterpret_cast<wchar_t *>(ws));
     g_free(ws);
     auto image = Exiv2::ImageFactory::open(wfname);
 #else
