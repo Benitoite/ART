@@ -50,17 +50,17 @@ Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, CacheImageDa
     _loadThumbnail ();
     generateExifDateTimeStrings ();
 
-    if (cfs.rankOld >= 0) {
-        // rank and inTrash were found in cache (old style), move them over to pparams
+    // if (cfs.rankOld >= 0) {
+    //     // rank and inTrash were found in cache (old style), move them over to pparams
 
-        // try to load the last saved parameters from the cache or from the paramfile file
-        createProcParamsForUpdate(false, false); // this can execute customprofilebuilder to generate param file
+    //     // try to load the last saved parameters from the cache or from the paramfile file
+    //     createProcParamsForUpdate(false, false); // this can execute customprofilebuilder to generate param file
 
-        // TODO? should we call notifylisterners_procParamsChanged here?
+    //     // TODO? should we call notifylisterners_procParamsChanged here?
 
-        setRank(cfs.rankOld);
-        setStage(cfs.inTrashOld);
-    }
+    //     setRank(cfs.rankOld);
+    //     setInTrash(cfs.inTrashOld);
+    // }
 
     delete tpp;
     tpp = nullptr;
@@ -381,6 +381,8 @@ void Thumbnail::loadProcParams ()
             pparamsValid = !ppres && pparams.ppVersion >= 220;
         }
     }
+
+    loadRating();
 }
 
 void Thumbnail::clearProcParams (int whoClearedIt)
@@ -398,12 +400,8 @@ void Thumbnail::clearProcParams (int whoClearedIt)
     {
         MyMutex::MyLock lock(mutex);
 
-        // preserve rank, colorlabel and inTrash across clear
-        int rank = getRank();
-        int colorlabel = getColorLabel();
-        int inTrash = getStage();
-
-
+        // this preserves rank, colorlabel and inTrash across clear
+        // (nothing do to)
         cfs.recentlySaved = false;
         pparamsValid = false;
         needsReProcessing = true;
@@ -415,9 +413,9 @@ void Thumbnail::clearProcParams (int whoClearedIt)
         pparams.setDefaults();
 
         // and restore rank and inTrash
-        setRank(rank);
-        setColorLabel(colorlabel);
-        setStage(inTrash);
+        if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+            saveRating();
+        }
 
         // params could get validated by rank/inTrash values restored above
         if (pparamsValid) {
@@ -505,10 +503,6 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         }
 
         // do not update rank, colorlabel and inTrash
-        const int rank = getRank();
-        const int colorlabel = getColorLabel();
-        const int inTrash = getStage();
-
         if (pe) {
             pe->combine(pparams, pp, true);
         } else {
@@ -516,10 +510,9 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         }
 
         pparamsValid = true;
-
-        setRank(rank);
-        setColorLabel(colorlabel);
-        setStage(inTrash);
+        if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+            saveRating();
+        }
 
         if (updateCacheNow) {
             updateCache();
@@ -987,6 +980,7 @@ void Thumbnail::saveThumbnail ()
  */
 void Thumbnail::updateCache (bool updatePParams, bool updateCacheImageData)
 {
+    saveRating();
 
     if (updatePParams && pparamsValid) {
         pparams.save (
@@ -1125,8 +1119,151 @@ bool Thumbnail::imageLoad(bool loading)
 }
 
 
+namespace {
+
+int xmp_label2color(const std::string &label)
+{
+    static const std::map<std::string, int> m = {
+        {"Red", 1},
+        {"Yellow", 2},
+        {"Green", 3},
+        {"Blue", 4},
+        {"Purple", 5}
+    };
+    auto it = m.find(label);
+    if (it != m.end()) {
+        return it->second;
+    }
+    return 0;
+}
+        
+
+std::string xmp_color2label(int color)
+{
+    switch (color) {
+    case 1: return "Red";
+    case 2: return "Yellow";
+    case 3: return "Green";
+    case 4: return "Blue";
+    case 5: return "Purple";
+    default:
+        return "";
+    }
+}
+
+} // namespace
+
+
+void Thumbnail::saveRating()
+{
+    if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+        if (rating_.rank != pparams.rank) {
+            pparams.rank = rating_.rank;
+            pparamsValid = true;
+        }
+        if (rating_.color != pparams.colorlabel) {
+            pparams.colorlabel = rating_.color;
+            pparamsValid = true;
+        }
+        if (rating_.trash != pparams.inTrash) {
+            pparams.inTrash = rating_.trash;
+            pparamsValid = true;
+        }
+    } else if (rating_.edited()) {
+        Glib::ustring fn = getXmpSidecarPath(fname);
+        try {
+            auto xmp = rtengine::read_exiv2_xmp(fn);
+            if (rating_.color.edited) {
+                xmp["Xmp.xmp.Label"] = xmp_color2label(rating_.color);
+            }
+            if (rating_.trash ? rating_.trash.edited : rating_.rank.edited) {
+                xmp["Xmp.xmp.Rating"] = (rating_.trash ? "-1" : std::to_string(rating_.rank));
+            }
+            std::string data;
+            bool err = false;
+            if (Exiv2::XmpParser::encode(data, xmp, Exiv2::XmpParser::omitPacketWrapper|Exiv2::XmpParser::useCompactFormat) != 0) {
+                err = true;
+            } else {
+                FILE *out = g_fopen(fn.c_str(), "wb");
+                if (!out || fputs(data.c_str(), out) == EOF) {
+                    err = true;
+                }
+                if (out) {
+                    fclose(out);
+                }
+            }
+            if (err) {
+                std::cerr << "ERROR saving thumbnail rating data to " << fn
+                          << std::endl;
+            } else if (options.rtSettings.verbose) {
+                std::cout << "saving rating for " << fname << ": "
+                          << "Xmp.xmp.Rating="
+                          << xmp["Xmp.xmp.Rating"].print()
+                          << ", Xmp.xmp.Label="
+                          << xmp["Xmp.xmp.Label"].print() << std::endl;
+            }
+        } catch (Exiv2::AnyError &exc) {
+            std::cerr << "ERROR saving thumbnail rating data to " << fn
+                      << ": " << exc.what() << std::endl;
+        }
+    }
+}
+
+
+void Thumbnail::loadRating()
+{
+    if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+        if (pparamsValid) {
+            rating_.rank = pparams.rank;
+            rating_.color = pparams.colorlabel;
+            rating_.trash = pparams.inTrash;
+        } else {
+            rating_ = Rating();
+        }
+    } else {
+        rating_ = Rating();
+
+        Glib::ustring fn = getXmpSidecarPath(fname);
+        try {
+            auto xmp = rtengine::read_exiv2_xmp(fn);
+            auto pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Rating"));
+            if (pos != xmp.end()) {
+                int r = pos->toLong();
+                if (r < 0) {
+                    rating_.trash = true;
+                } else {
+                    rating_.rank = rtengine::LIM(r, 0, 5);
+                }
+            }
+            pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Label"));
+            if (pos != xmp.end()) {
+                rating_.color = xmp_label2color(pos->toString());
+            }
+        } catch (Exiv2::AnyError &exc) {
+            std::cerr << "ERROR loading thumbnail rating data from " << fn
+                      << ": " << exc.what() << std::endl;
+        }
+        
+    }
+}
+
+
 std::shared_ptr<rtengine::FramesMetaData> Thumbnail::getMetaData()
 {
     rtengine::FramesMetaData* imageMetaData = rtengine::FramesMetaData::fromFile (fname);
     return std::shared_ptr<rtengine::FramesMetaData>(imageMetaData);
+}
+
+
+Glib::ustring Thumbnail::getXmpSidecarPath(const Glib::ustring &path)
+{
+    if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+        return "";
+    } else {
+        Glib::ustring fn = path;
+        if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::XMP) {
+            fn = removeExtension(fn);
+        }
+        return fn + ".xmp";
+    }
 }

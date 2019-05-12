@@ -51,15 +51,27 @@ extern const Settings *settings;
 
 Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
 {
-#ifdef EXV_UNICODE_PATH
+#if defined WIN32 && defined EXV_UNICODE_PATH
     auto *ws = g_utf8_to_utf16(fname.c_str(), -1, NULL, NULL, NULL);
     std::wstring wfname(reinterpret_cast<wchar_t *>(ws));
     g_free(ws);
     auto image = Exiv2::ImageFactory::open(wfname);
 #else
-    auto image = Exiv2::ImageFactory::open(fname);
+    auto image = Exiv2::ImageFactory::open(Glib::filename_from_utf8(fname));
 #endif
     return image;
+}
+
+
+Exiv2::XmpData read_exiv2_xmp(const Glib::ustring &fname)
+{
+    Exiv2::XmpData ret;
+    if (Glib::file_test(fname, Glib::FILE_TEST_EXISTS)) {
+        auto image = open_exiv2(fname);
+        image->readMetadata();
+        ret = image->xmpData();
+    }
+    return ret;
 }
 
 } // namespace rtengine

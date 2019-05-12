@@ -491,13 +491,13 @@ void FileBrowser::rightClicked (ThumbBrowserEntryBase* entry)
         untrash->set_sensitive (false);
 
         for (size_t i = 0; i < selected.size(); i++)
-            if ((static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->getStage()) {
+            if ((static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->getInTrash()) {
                 untrash->set_sensitive (true);
                 break;
             }
 
         for (size_t i = 0; i < selected.size(); i++)
-            if (!(static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->getStage()) {
+            if (!(static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->getInTrash()) {
                 trash->set_sensitive (true);
                 break;
             }
@@ -593,7 +593,7 @@ void FileBrowser::addEntry_ (FileBrowserEntry* entry)
     entry->addButtonSet (new FileThumbnailButtonSet (entry));
     entry->getThumbButtonSet()->setRank (entry->thumbnail->getRank());
     entry->getThumbButtonSet()->setColorLabel (entry->thumbnail->getColorLabel());
-    entry->getThumbButtonSet()->setInTrash (entry->thumbnail->getStage());
+    entry->getThumbButtonSet()->setInTrash (entry->thumbnail->getInTrash());
     entry->getThumbButtonSet()->setButtonListener (this);
     entry->resize (getThumbnailHeight());
 
@@ -1474,8 +1474,8 @@ bool FileBrowser::checkFilter (ThumbBrowserEntryBase* entryb)   // true -> entry
             ((entry->thumbnail->isRecentlySaved() && filter.showRecentlySaved[0]) && !filter.showRecentlySaved[1]) ||
             ((!entry->thumbnail->isRecentlySaved() && filter.showRecentlySaved[1]) && !filter.showRecentlySaved[0]) ||
 
-            (entry->thumbnail->getStage() && !filter.showTrash) ||
-            (!entry->thumbnail->getStage() && !filter.showNotTrash)) {
+            (entry->thumbnail->getInTrash() && !filter.showTrash) ||
+            (!entry->thumbnail->getInTrash() && !filter.showNotTrash)) {
         return false;
     }
 
@@ -1568,17 +1568,17 @@ void FileBrowser::toTrashRequested (std::vector<FileBrowserEntry*> tbe)
 
         // no need to notify listeners as item goes to trash, likely to be deleted
 
-        if (tbe[i]->thumbnail->getStage()) {
+        if (tbe[i]->thumbnail->getInTrash()) {
             continue;
         }
 
-        tbe[i]->thumbnail->setStage (true);
+        tbe[i]->thumbnail->setInTrash (true);
+        tbe[i]->thumbnail->updateCache (); // needed to save the colorlabel to disk in the procparam file(s) and the cache image data file
 
         if (tbe[i]->getThumbButtonSet()) {
             tbe[i]->getThumbButtonSet()->setRank (tbe[i]->thumbnail->getRank());
             tbe[i]->getThumbButtonSet()->setColorLabel (tbe[i]->thumbnail->getColorLabel());
             tbe[i]->getThumbButtonSet()->setInTrash (true);
-            tbe[i]->thumbnail->updateCache (); // needed to save the colorlabel to disk in the procparam file(s) and the cache image data file
         }
     }
 
@@ -1592,11 +1592,11 @@ void FileBrowser::fromTrashRequested (std::vector<FileBrowserEntry*> tbe)
     for (size_t i = 0; i < tbe.size(); i++) {
         // if thumbnail was marked inTrash=true then param file must be there, no need to run customprofilebuilder
 
-        if (!tbe[i]->thumbnail->getStage()) {
+        if (!tbe[i]->thumbnail->getInTrash()) {
             continue;
         }
 
-        tbe[i]->thumbnail->setStage (false);
+        tbe[i]->thumbnail->setInTrash (false);
 
         if (tbe[i]->getThumbButtonSet()) {
             tbe[i]->getThumbButtonSet()->setRank (tbe[i]->thumbnail->getRank());
@@ -1631,6 +1631,7 @@ void FileBrowser::rankingRequested (std::vector<FileBrowserEntry*> tbe, int rank
 
         if (tbe[i]->getThumbButtonSet()) {
             tbe[i]->getThumbButtonSet()->setRank (tbe[i]->thumbnail->getRank());
+            tbe[i]->getThumbButtonSet()->setInTrash (tbe[i]->thumbnail->getInTrash());
         }
     }
 
@@ -1715,7 +1716,7 @@ void FileBrowser::buttonPressed (LWButton* button, int actionCode, void* actionD
         FileBrowserEntry* entry = static_cast<FileBrowserEntry*>(actionData);
         tbe.push_back (entry);
 
-        if (!entry->thumbnail->getStage()) {
+        if (!entry->thumbnail->getInTrash()) {
             toTrashRequested (tbe);
         } else {
             fromTrashRequested (tbe);

@@ -966,6 +966,10 @@ void FileCatalog::deleteRequested(const std::vector<FileBrowserEntry*>& tbe, boo
             // delete .thm file
             ::g_remove ((removeExtension(fname) + ".thm").c_str ());
             ::g_remove ((removeExtension(fname) + ".THM").c_str ());
+            auto xmp_sidecar = Thumbnail::getXmpSidecarPath(fname);
+            if (Glib::file_test(xmp_sidecar, Glib::FILE_TEST_EXISTS)) {
+                ::g_remove(xmp_sidecar.c_str());
+            }
 
             if (inclBatchProcessed) {
                 Glib::ustring procfName = Glib::ustring::compose ("%1.%2", BatchQueue::calcAutoFileNameBase(fname), options.saveFormatBatch.format);
@@ -1037,7 +1041,7 @@ void FileCatalog::copyMoveRequested(const std::vector<FileBrowserEntry*>& tbe, b
 
             while(!filecopymovecomplete) {
                 // check for filename conflicts at destination - prevent overwriting (actually RT will crash on overwriting attempt)
-                if (!Glib::file_test(dest_fPath, Glib::FILE_TEST_EXISTS) && !Glib::file_test(dest_fPath_param, Glib::FILE_TEST_EXISTS)) {
+                if (!Glib::file_test(dest_fPath, Glib::FILE_TEST_EXISTS) && !Glib::file_test(dest_fPath_param, Glib::FILE_TEST_EXISTS) && !Glib::file_test(Thumbnail::getXmpSidecarPath(dest_fPath), Glib::FILE_TEST_EXISTS)) {
                     // copy/move file to destination
                     Glib::RefPtr<Gio::File> dest_file = Gio::File::create_for_path ( dest_fPath );
 
@@ -1072,6 +1076,17 @@ void FileCatalog::copyMoveRequested(const std::vector<FileBrowserEntry*>& tbe, b
                             }
                         } else {
                             scr_param->copy(dest_param);
+                        }
+                    }
+
+                    auto xmp_sidecar = Thumbnail::getXmpSidecarPath(src_fPath);
+                    if (Glib::file_test(xmp_sidecar, Glib::FILE_TEST_EXISTS)) {
+                        auto s = Gio::File::create_for_path(xmp_sidecar);
+                        auto dst = Gio::File::create_for_path(Thumbnail::getXmpSidecarPath(dest_fPath));
+                        if (moveRequested) {
+                            s->move(dst);
+                        } else {
+                            s->copy(dst);
                         }
                     }
 
@@ -1259,6 +1274,11 @@ void FileCatalog::renameRequested(const std::vector<FileBrowserEntry*>& tbe)
                     if (::g_rename (ofname.c_str (), nfname.c_str ()) == 0) {
                         cacheMgr->renameEntry (ofname, tbe[i]->thumbnail->getMD5(), nfname);
                         ::g_remove((ofname + paramFileExtension).c_str ());
+                        auto xmp = Thumbnail::getXmpSidecarPath(ofname);
+                        if (!xmp.empty()) {
+                            ::g_remove(xmp.c_str());
+                        }
+
                         reparseDirectory ();
                     }
                 }
@@ -1820,7 +1840,7 @@ void FileCatalog::emptyTrash ()
     std::vector<FileBrowserEntry*> toDel;
 
     for (size_t i = 0; i < t.size(); i++)
-        if ((static_cast<FileBrowserEntry*>(t[i]))->thumbnail->getStage() == 1) {
+        if (static_cast<FileBrowserEntry*>(t[i])->thumbnail->getInTrash()) {
             toDel.push_back (static_cast<FileBrowserEntry*>(t[i]));
         }
 
@@ -1833,7 +1853,7 @@ bool FileCatalog::trashIsEmpty ()
     const std::vector<ThumbBrowserEntryBase*> t = fileBrowser->getEntries ();
 
     for (size_t i = 0; i < t.size(); i++)
-        if ((static_cast<FileBrowserEntry*>(t[i]))->thumbnail->getStage() == 1) {
+        if (static_cast<FileBrowserEntry*>(t[i])->thumbnail->getInTrash()) {
             return false;
         }
 

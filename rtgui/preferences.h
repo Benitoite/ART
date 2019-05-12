@@ -201,6 +201,7 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::CheckButton *cropAutoFitCB;
 
     Gtk::CheckButton *denoiseZoomedOut;
+    Gtk::ComboBoxText *thumbRatingModeCombo;
 
     Glib::ustring storedValueRaw;
     Glib::ustring storedValueImg;

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -32,6 +33,7 @@ namespace rtengine
 {
 
 Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname);
+Exiv2::XmpData read_exiv2_xmp(const Glib::ustring &fname);
 
 
 class FramesData : public FramesMetaData {

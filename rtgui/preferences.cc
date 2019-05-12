@@ -1268,6 +1268,16 @@ Gtk::Widget* Preferences::getFileBrowserPanel ()
     vbro->pack_start (*sameThumbSize, Gtk::PACK_SHRINK, 0);
     vbro->pack_start (*ckbInternalThumbIfUntouched, Gtk::PACK_SHRINK, 0);
 
+    thumbRatingModeCombo = Gtk::manage(new Gtk::ComboBoxText());
+    thumbRatingModeCombo->set_active(0);
+    thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_PP3"));
+    thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_XMP"));
+    thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_XMPEXT"));
+    hbro0 = Gtk::manage(new Gtk::HBox());
+    hbro0->pack_start(*Gtk::manage(new Gtk::Label(M("PREFERENCES_THUMBNAIL_RATING") + ": ")), Gtk::PACK_SHRINK, 4);
+    hbro0->pack_start(*thumbRatingModeCombo, Gtk::PACK_SHRINK, 0);
+    vbro->pack_start(*hbro0, Gtk::PACK_SHRINK, 0);
+
     Gtk::HBox* hbrecent = Gtk::manage ( new Gtk::HBox () );
     Gtk::Label* labrecent = Gtk::manage ( new Gtk::Label (M ("PREFERENCES_MAXRECENTFOLDERS") + ":") );
     maxRecentFolders = Gtk::manage ( new Gtk::SpinButton () );
@@ -1800,6 +1810,8 @@ void Preferences::storePreferences ()
 
     moptions.cropGuides = Options::CropGuidesMode(cropGuidesCombo->get_active_row_number());
     moptions.cropAutoFit = cropAutoFitCB->get_active();
+
+    moptions.thumbnailRatingMode = Options::ThumbnailRatingMode(thumbRatingModeCombo->get_active_row_number());
 }
 
 void Preferences::fillPreferences ()
@@ -2042,6 +2054,8 @@ void Preferences::fillPreferences ()
     txtSndLngEditProcDone->set_text (moptions.sndLngEditProcDone);
     spbSndLngEditProcDoneSecs->set_value (moptions.sndLngEditProcDoneSecs);
 #endif
+
+    thumbRatingModeCombo->set_active(int(moptions.thumbnailRatingMode));
 }
 
 /*

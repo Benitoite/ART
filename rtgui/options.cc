@@ -629,6 +629,8 @@ void Options::setDefaults()
     cropAutoFit = false;
 
     rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
+
+    thumbnailRatingMode = Options::ThumbnailRatingMode::PP3;
 }
 
 Options* Options::copyFrom(Options* other)
@@ -1037,6 +1039,19 @@ void Options::readFromFile(Glib::ustring fname)
 
                 if (keyFile.has_key("File Browser", "RecentFolders")) {
                     recentFolders = keyFile.get_string_list("File Browser", "RecentFolders");
+                }
+
+                if (keyFile.has_key("File Browser", "ThumbnailRatingMode")) {
+                    auto s = keyFile.get_string("File Browser", "ThumbnailRatingMode");
+                    if (s == "pp3") {
+                        thumbnailRatingMode = ThumbnailRatingMode::PP3;
+                    } else if (s == "xmp") {
+                        thumbnailRatingMode = ThumbnailRatingMode::XMP;
+                    } else if (s == "xmp-ext") {
+                        thumbnailRatingMode = ThumbnailRatingMode::XMP_EXT;
+                    } else {
+                        thumbnailRatingMode = ThumbnailRatingMode::PP3;
+                    }
                 }
             }
 
@@ -1938,6 +1953,17 @@ void Options::saveToFile(Glib::ustring fname)
             }
 
             keyFile.set_string_list("File Browser", "RecentFolders", temp);
+        }
+        switch (thumbnailRatingMode) {
+        case ThumbnailRatingMode::XMP:
+            keyFile.set_string("File Browser", "ThumbnailRatingMode", "xmp");
+            break;
+        case ThumbnailRatingMode::XMP_EXT:
+            keyFile.set_string("File Browser", "ThumbnailRatingMode", "xmp-ext");
+            break;
+        default: // ThumbnailRatingMode::PP3
+            keyFile.set_string("File Browser", "ThumbnailRatingMode", "pp3");
+            break;
         }
         keyFile.set_integer("Clipping Indication", "HighlightThreshold", highlightThreshold);
         keyFile.set_integer("Clipping Indication", "ShadowThreshold", shadowThreshold);
