@@ -28,6 +28,7 @@
 #include <fstream>
 #include <string>
 #include "color.h"
+#include "metadata.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -997,7 +998,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     }
 
     // im->setMetadata(imgsrc->getMetaData()->getRootExifData());
-    im->setMetadata(MetadataInfo(imgsrc->getFileName()));
+    im->setMetadata(Exiv2Metadata(imgsrc->getFileName(), false));
 
     im->saveTIFF(fname, 16, false, true);
     delete im;

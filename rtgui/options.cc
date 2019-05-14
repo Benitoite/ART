@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <glib/gstdio.h>
 #include <sstream>
+#include <iostream>
 #include "multilangmgr.h"
 #include "addsetids.h"
 #include "guiutils.h"
@@ -630,7 +631,9 @@ void Options::setDefaults()
 
     rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
 
-    thumbnailRatingMode = Options::ThumbnailRatingMode::PP3;
+    thumbnail_rating_mode = Options::ThumbnailRatingMode::PP3;
+    rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::STD;
+    rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::NONE;
 }
 
 Options* Options::copyFrom(Options* other)
@@ -1044,13 +1047,11 @@ void Options::readFromFile(Glib::ustring fname)
                 if (keyFile.has_key("File Browser", "ThumbnailRatingMode")) {
                     auto s = keyFile.get_string("File Browser", "ThumbnailRatingMode");
                     if (s == "pp3") {
-                        thumbnailRatingMode = ThumbnailRatingMode::PP3;
+                        thumbnail_rating_mode = ThumbnailRatingMode::PP3;
                     } else if (s == "xmp") {
-                        thumbnailRatingMode = ThumbnailRatingMode::XMP;
-                    } else if (s == "xmp-ext") {
-                        thumbnailRatingMode = ThumbnailRatingMode::XMP_EXT;
+                        thumbnail_rating_mode = ThumbnailRatingMode::XMP;
                     } else {
-                        thumbnailRatingMode = ThumbnailRatingMode::PP3;
+                        thumbnail_rating_mode = ThumbnailRatingMode::PP3;
                     }
                 }
             }
@@ -1827,6 +1828,27 @@ void Options::readFromFile(Glib::ustring fname)
                 }
             }
 
+            if (keyFile.has_group("Metadata")) {
+                if (keyFile.has_key("Metadata", "XMPSidecarStyle")) {
+                    std::string val = keyFile.get_string("Metadata", "XMPSidecarStyle");
+                    if (val == "ext") {
+                        rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
+                    } else {
+                        rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::STD;
+                    }
+                }
+                if (keyFile.has_key("Metadata", "XMPSynchronization")) {
+                    std::string val = keyFile.get_string("Metadata", "XMPSynchronization");
+                    if (val == "read") {
+                        rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::READ;
+                    } else if (val == "readwrite") {
+                        rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::READ_WRITE;
+                    } else {
+                        rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::NONE;
+                    }
+                }
+            }
+
 // --------------------------------------------------------------------------------------------------------
 
             filterOutParsedExtensions();
@@ -1954,12 +1976,9 @@ void Options::saveToFile(Glib::ustring fname)
 
             keyFile.set_string_list("File Browser", "RecentFolders", temp);
         }
-        switch (thumbnailRatingMode) {
+        switch (thumbnail_rating_mode) {
         case ThumbnailRatingMode::XMP:
             keyFile.set_string("File Browser", "ThumbnailRatingMode", "xmp");
-            break;
-        case ThumbnailRatingMode::XMP_EXT:
-            keyFile.set_string("File Browser", "ThumbnailRatingMode", "xmp-ext");
             break;
         default: // ThumbnailRatingMode::PP3
             keyFile.set_string("File Browser", "ThumbnailRatingMode", "pp3");
@@ -2215,6 +2234,25 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean("Dialogs", "GimpPluginShowInfoDialog", gimpPluginShowInfoDialog);
 
         keyFile.set_string("Lensfun", "DBDirectory", rtSettings.lensfunDbDirectory);
+
+        switch (rtSettings.xmp_sidecar_style) {
+        case rtengine::Settings::XmpSidecarStyle::EXT:
+            keyFile.set_string("Metadata", "XMPSidecarStyle", "ext");
+            break;
+        default:
+            keyFile.set_string("Metadata", "XMPSidecarStyle", "std");
+        }
+
+        switch (rtSettings.metadata_xmp_sync) {
+        case rtengine::Settings::MetadataXmpSync::READ:
+            keyFile.set_string("Metadata", "XMPSynchronization", "read");
+            break;
+        case rtengine::Settings::MetadataXmpSync::READ_WRITE:
+            keyFile.set_string("Metadata", "XMPSynchronization", "readwrite");
+            break;
+        default:
+            keyFile.set_string("Metadata", "XMPSynchronization", "none");
+        }
 
         keyData = keyFile.to_data();
 

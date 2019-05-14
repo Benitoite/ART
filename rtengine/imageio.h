@@ -35,30 +35,13 @@
 #include "imagedimensions.h"
 #include "iimage.h"
 #include "colortemp.h"
+#include "metadata.h"
 
 namespace rtengine
 {
 
 class ProgressListener;
 class Imagefloat;
-
-class MetadataInfo {
-public:
-    explicit MetadataInfo(const Glib::ustring &src=Glib::ustring()):
-        src_(src) {}
-
-    const Glib::ustring &filename() const { return src_; }
-
-    const rtengine::procparams::ExifPairs &exif() const { return exif_; }
-    const rtengine::procparams::IPTCPairs &iptc() const { return iptc_; }
-    void setExif(const rtengine::procparams::ExifPairs &exif) { exif_ = exif; }
-    void setIptc(const rtengine::procparams::IPTCPairs &iptc) { iptc_ = iptc; }
-
-private:
-    Glib::ustring src_;
-    rtengine::procparams::ExifPairs exif_;
-    rtengine::procparams::IPTCPairs iptc_;
-};
 
 class ImageIO : virtual public ImageDatas
 {
@@ -74,7 +57,7 @@ protected:
     MyMutex imutex;
     IIOSampleFormat sampleFormat;
     IIOSampleArrangement sampleArrangement;
-    MetadataInfo metadataInfo;
+    Exiv2Metadata metadataInfo;
 
 private:
     void deleteLoadedProfileData( );
@@ -120,7 +103,7 @@ public:
     cmsHPROFILE getEmbeddedProfile () const;
     void getEmbeddedProfileData (int& length, unsigned char*& pdata) const;
 
-    void setMetadata(const MetadataInfo &info) { metadataInfo = info; }
+    void setMetadata(const Exiv2Metadata &info) { metadataInfo = info; }
     void setOutputProfile (const char* pdata, int plen);
 
     bool saveMetadata(const Glib::ustring &fname) const;

@@ -35,6 +35,7 @@
 #include "procparamchangers.h"
 #include "ppversion.h"
 #include "version.h"
+#include "../rtengine/metadata.h"
 
 using namespace rtengine::procparams;
 
@@ -413,7 +414,7 @@ void Thumbnail::clearProcParams (int whoClearedIt)
         pparams.setDefaults();
 
         // and restore rank and inTrash
-        if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+        if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
             saveRating();
         }
 
@@ -510,7 +511,7 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         }
 
         pparamsValid = true;
-        if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+        if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
             saveRating();
         }
 
@@ -993,6 +994,10 @@ void Thumbnail::updateCache (bool updatePParams, bool updateCacheImageData)
     if (updateCacheImageData) {
         cfs.save (getCacheFileName ("data", ".txt"));
     }
+
+    if (updatePParams && pparamsValid) {
+        saveMetadata();
+    }
 }
 
 Thumbnail::~Thumbnail ()
@@ -1156,7 +1161,7 @@ std::string xmp_color2label(int color)
 
 void Thumbnail::saveRating()
 {
-    if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+    if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
         if (rating_.rank != pparams.rank) {
             pparams.rank = rating_.rank;
             pparamsValid = true;
@@ -1170,32 +1175,19 @@ void Thumbnail::saveRating()
             pparamsValid = true;
         }
     } else if (rating_.edited()) {
-        Glib::ustring fn = getXmpSidecarPath(fname);
+        auto fn = rtengine::Exiv2Metadata::xmpSidecarPath(fname);
         try {
-            auto xmp = rtengine::read_exiv2_xmp(fn);
+            auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
             if (rating_.color.edited) {
                 xmp["Xmp.xmp.Label"] = xmp_color2label(rating_.color);
             }
             if (rating_.trash ? rating_.trash.edited : rating_.rank.edited) {
                 xmp["Xmp.xmp.Rating"] = (rating_.trash ? "-1" : std::to_string(rating_.rank));
             }
-            std::string data;
-            bool err = false;
-            if (Exiv2::XmpParser::encode(data, xmp, Exiv2::XmpParser::omitPacketWrapper|Exiv2::XmpParser::useCompactFormat) != 0) {
-                err = true;
-            } else {
-                FILE *out = g_fopen(fn.c_str(), "wb");
-                if (!out || fputs(data.c_str(), out) == EOF) {
-                    err = true;
-                }
-                if (out) {
-                    fclose(out);
-                }
-            }
-            if (err) {
-                std::cerr << "ERROR saving thumbnail rating data to " << fn
-                          << std::endl;
-            } else if (options.rtSettings.verbose) {
+            rtengine::Exiv2Metadata meta;
+            meta.xmpData() = std::move(xmp);
+            meta.saveToXmp(fn);
+            if (options.rtSettings.verbose) {
                 std::cout << "saving rating for " << fname << ": "
                           << "Xmp.xmp.Rating="
                           << xmp["Xmp.xmp.Rating"].print()
@@ -1212,7 +1204,7 @@ void Thumbnail::saveRating()
 
 void Thumbnail::loadRating()
 {
-    if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
+    if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
         if (pparamsValid) {
             rating_.rank = pparams.rank;
             rating_.color = pparams.colorlabel;
@@ -1223,9 +1215,8 @@ void Thumbnail::loadRating()
     } else {
         rating_ = Rating();
 
-        Glib::ustring fn = getXmpSidecarPath(fname);
         try {
-            auto xmp = rtengine::read_exiv2_xmp(fn);
+            auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
             auto pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Rating"));
             if (pos != xmp.end()) {
                 int r = pos->toLong();
@@ -1240,10 +1231,39 @@ void Thumbnail::loadRating()
                 rating_.color = xmp_label2color(pos->toString());
             }
         } catch (Exiv2::AnyError &exc) {
-            std::cerr << "ERROR loading thumbnail rating data from " << fn
+            std::cerr << "ERROR loading thumbnail rating data from "
+                      << getXmpSidecarPath(fname)
                       << ": " << exc.what() << std::endl;
+        }        
+    }
+}
+
+
+void Thumbnail::saveMetadata()
+{
+    if (options.rtSettings.metadata_xmp_sync != rtengine::Settings::MetadataXmpSync::READ_WRITE) {
+        return;
+    }
+
+    if (pparams.exif.empty() && pparams.iptc.empty()) {
+        return;
+    }
+
+    auto fn = rtengine::Exiv2Metadata::xmpSidecarPath(fname);
+    try {
+        auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
+        rtengine::Exiv2Metadata meta;
+        meta.xmpData() = std::move(xmp);
+        meta.setExif(pparams.exif);
+        meta.setIptc(pparams.iptc);
+        meta.saveToXmp(fn);
+        if (options.rtSettings.verbose) {
+            std::cout << "saved edited metadata for " << fname << " to "
+                      << fn << std::endl;
         }
-        
+    } catch (Exiv2::AnyError &exc) {
+        std::cerr << "ERROR saving metadata for " << fname << " to " << fn
+                  << ": " << exc.what() << std::endl;
     }
 }
 
@@ -1257,13 +1277,5 @@ std::shared_ptr<rtengine::FramesMetaData> Thumbnail::getMetaData()
 
 Glib::ustring Thumbnail::getXmpSidecarPath(const Glib::ustring &path)
 {
-    if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::PP3) {
-        return "";
-    } else {
-        Glib::ustring fn = path;
-        if (options.thumbnailRatingMode == Options::ThumbnailRatingMode::XMP) {
-            fn = removeExtension(fn);
-        }
-        return fn + ".xmp";
-    }
+    return rtengine::Exiv2Metadata::xmpSidecarPath(path);
 }

@@ -21,6 +21,7 @@
 #include "clipboard.h"
 #include "rtimage.h"
 #include "../rtengine/imagedata.h"
+#include "../rtengine/metadata.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
@@ -489,9 +490,9 @@ void IPTCPanel::setImageData (const FramesMetaData* id)
     embeddedData.clear();
     if (id) {
         try {
-            auto img = open_exiv2(id->getFileName());
-            img->readMetadata();
-            auto &iptc = img->iptcData();
+            rtengine::Exiv2Metadata meta(id->getFileName());
+            meta.load();
+            auto &iptc = meta.iptcData();
             for (auto &tag : iptc) {
                 if (iptc_keys.find(tag.key()) != iptc_keys.end()) {
                     embeddedData[tag.key()].push_back(tag.toString());

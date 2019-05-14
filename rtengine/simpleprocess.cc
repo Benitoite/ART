@@ -30,6 +30,7 @@
 #include "../rtgui/multilangmgr.h"
 #include "mytime.h"
 #include "rescale.h"
+#include "metadata.h"
 #undef THREAD_PRIORITY_NORMAL
 
 namespace rtengine
@@ -584,7 +585,7 @@ private:
             readyImg = tempImage;
         }
 
-        MetadataInfo info(imgsrc->getFileName());
+        Exiv2Metadata info(imgsrc->getFileName());
         switch (params.metadata.mode) {
         case MetaDataParams::TUNNEL:
             // Sending back the whole first root, which won't necessarily be the selected frame number

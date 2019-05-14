@@ -19,13 +19,7 @@
 #ifndef __PATH_UTILS_
 #define __PATH_UTILS_
 
-#include <gtkmm.h>
-#include <cairomm/cairomm.h>
-#include "../rtengine/rtengine.h"
-#include "../rtengine/coord.h"
-#include "rtimage.h"
-#include <sstream>
-#include <iostream>
+#include <glibmm.h>
 
 // Removed from guiutils because used by rawtherapee-cli
 Glib::ustring removeExtension (const Glib::ustring& filename);

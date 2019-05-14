@@ -25,16 +25,11 @@
 #include "rawimage.h"
 #include <string>
 #include <glibmm.h>
-#include <exiv2/exiv2.hpp>
 #include "procparams.h"
 #include "rtengine.h"
 
 namespace rtengine
 {
-
-Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname);
-Exiv2::XmpData read_exiv2_xmp(const Glib::ustring &fname);
-
 
 class FramesData : public FramesMetaData {
 private:

@@ -20,59 +20,20 @@
 #include <strings.h>
 #include <glib/gstdio.h>
 #include <tiff.h>
-#include <exiv2/exiv2.hpp>
 
 #include "imagedata.h"
 #include "imagesource.h"
 #include "rt_math.h"
+#include "metadata.h"
 #pragma GCC diagnostic warning "-Wextra"
 #define PRINT_HDR_PS_DETECTION 0
 
 using namespace rtengine;
 
 
-// namespace {
-
-// Glib::ustring to_utf8 (const std::string& str)
-// {
-//     try {
-//         return Glib::locale_to_utf8 (str);
-//     } catch (Glib::Error&) {
-//         return Glib::convert_with_fallback (str, "UTF-8", "ISO-8859-1", "?");
-//     }
-// }
-
-// } // namespace
-
-
 namespace rtengine {
 
 extern const Settings *settings;
-
-Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
-{
-#if defined WIN32 && defined EXV_UNICODE_PATH
-    auto *ws = g_utf8_to_utf16(fname.c_str(), -1, NULL, NULL, NULL);
-    std::wstring wfname(reinterpret_cast<wchar_t *>(ws));
-    g_free(ws);
-    auto image = Exiv2::ImageFactory::open(wfname);
-#else
-    auto image = Exiv2::ImageFactory::open(Glib::filename_from_utf8(fname));
-#endif
-    return image;
-}
-
-
-Exiv2::XmpData read_exiv2_xmp(const Glib::ustring &fname)
-{
-    Exiv2::XmpData ret;
-    if (Glib::file_test(fname, Glib::FILE_TEST_EXISTS)) {
-        auto image = open_exiv2(fname);
-        image->readMetadata();
-        ret = image->xmpData();
-    }
-    return ret;
-}
 
 } // namespace rtengine
 
@@ -120,9 +81,9 @@ FramesData::FramesData(const Glib::ustring &fname):
     lens.clear();
 
     try {
-        auto image = open_exiv2(fname);
-        image->readMetadata();
-        auto &exif = image->exifData();
+        Exiv2Metadata meta(fname);
+        meta.load();
+        auto &exif = meta.exifData();
         ok_ = true;
 
         // taken and adapted from darktable (src/common/exif.cc)

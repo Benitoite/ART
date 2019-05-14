@@ -100,6 +100,7 @@ class Thumbnail {
 
     void saveRating();
     void loadRating();
+    void saveMetadata();
 
 public:
     Thumbnail(CacheManager *cm, const Glib::ustring &fname, CacheImageData *cf);

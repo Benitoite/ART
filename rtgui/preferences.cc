@@ -541,6 +541,36 @@ Gtk::Widget* Preferences::getImageProcessingPanel ()
     fdp->add (*vbdp);
     vbImageProcessing->pack_start (*fdp, Gtk::PACK_SHRINK, 4);
 
+    // Metadata
+    Gtk::Frame *mf = Gtk::manage(new Gtk::Frame(M("PREFERENCES_METADATA")));
+    Gtk::Grid *mtbl = Gtk::manage(new Gtk::Grid());
+    setExpandAlignProperties(mtbl, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
+
+    metadataSyncCombo = Gtk::manage(new Gtk::ComboBoxText());
+    metadataSyncCombo->set_active(0);
+    metadataSyncCombo->append(M("PREFERENCES_METADATA_SYNC_NONE"));
+    metadataSyncCombo->append(M("PREFERENCES_METADATA_SYNC_READ"));
+    metadataSyncCombo->append(M("PREFERENCES_METADATA_SYNC_READWRITE"));
+    Gtk::Label *mlbl = Gtk::manage(new Gtk::Label(M("PREFERENCES_METADATA_SYNC") + ": ")); 
+    mtbl->attach(*mlbl, 0, 0, 1, 1);
+    mtbl->attach_next_to(*metadataSyncCombo, *mlbl, Gtk::POS_RIGHT, 1, 1);
+    setExpandAlignProperties(mlbl, false, false, Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
+    setExpandAlignProperties(metadataSyncCombo, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
+    
+    xmpSidecarCombo = Gtk::manage(new Gtk::ComboBoxText());
+    xmpSidecarCombo->set_active(0);
+    xmpSidecarCombo->append(M("PREFERENCES_XMP_SIDECAR_MODE_STD"));
+    xmpSidecarCombo->append(M("PREFERENCES_XMP_SIDECAR_MODE_EXT"));
+
+    mlbl = Gtk::manage(new Gtk::Label(M("PREFERENCES_XMP_SIDECAR_MODE") + ": "));
+    mtbl->attach(*mlbl, 0, 2, 1, 1);
+    mtbl->attach_next_to(*xmpSidecarCombo, *mlbl, Gtk::POS_RIGHT, 1, 1);
+    setExpandAlignProperties(mlbl, false, false, Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
+    setExpandAlignProperties(xmpSidecarCombo, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
+
+    mf->add(*mtbl);
+    vbImageProcessing->pack_start(*mf, Gtk::PACK_SHRINK, 4);
+
     // Directories
     Gtk::Frame* cdf = Gtk::manage (new Gtk::Frame (M ("PREFERENCES_DIRECTORIES")) );
     Gtk::Grid* dirgrid = Gtk::manage (new Gtk::Grid ());
@@ -1272,7 +1302,6 @@ Gtk::Widget* Preferences::getFileBrowserPanel ()
     thumbRatingModeCombo->set_active(0);
     thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_PP3"));
     thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_XMP"));
-    thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_XMPEXT"));
     hbro0 = Gtk::manage(new Gtk::HBox());
     hbro0->pack_start(*Gtk::manage(new Gtk::Label(M("PREFERENCES_THUMBNAIL_RATING") + ": ")), Gtk::PACK_SHRINK, 4);
     hbro0->pack_start(*thumbRatingModeCombo, Gtk::PACK_SHRINK, 0);
@@ -1811,7 +1840,9 @@ void Preferences::storePreferences ()
     moptions.cropGuides = Options::CropGuidesMode(cropGuidesCombo->get_active_row_number());
     moptions.cropAutoFit = cropAutoFitCB->get_active();
 
-    moptions.thumbnailRatingMode = Options::ThumbnailRatingMode(thumbRatingModeCombo->get_active_row_number());
+    moptions.thumbnail_rating_mode = Options::ThumbnailRatingMode(thumbRatingModeCombo->get_active_row_number());
+    moptions.rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync(metadataSyncCombo->get_active_row_number());
+    moptions.rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle(xmpSidecarCombo->get_active_row_number());
 }
 
 void Preferences::fillPreferences ()
@@ -2055,7 +2086,9 @@ void Preferences::fillPreferences ()
     spbSndLngEditProcDoneSecs->set_value (moptions.sndLngEditProcDoneSecs);
 #endif
 
-    thumbRatingModeCombo->set_active(int(moptions.thumbnailRatingMode));
+    thumbRatingModeCombo->set_active(int(moptions.thumbnail_rating_mode));
+    metadataSyncCombo->set_active(int(moptions.rtSettings.metadata_xmp_sync));
+    xmpSidecarCombo->set_active(int(moptions.rtSettings.xmp_sidecar_style));
 }
 
 /*
