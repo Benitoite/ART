@@ -1298,14 +1298,8 @@ Gtk::Widget* Preferences::getFileBrowserPanel ()
     vbro->pack_start (*sameThumbSize, Gtk::PACK_SHRINK, 0);
     vbro->pack_start (*ckbInternalThumbIfUntouched, Gtk::PACK_SHRINK, 0);
 
-    thumbRatingModeCombo = Gtk::manage(new Gtk::ComboBoxText());
-    thumbRatingModeCombo->set_active(0);
-    thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_PP3"));
-    thumbRatingModeCombo->append(M("PREFERENCES_THUMBNAIL_RATING_XMP"));
-    hbro0 = Gtk::manage(new Gtk::HBox());
-    hbro0->pack_start(*Gtk::manage(new Gtk::Label(M("PREFERENCES_THUMBNAIL_RATING") + ": ")), Gtk::PACK_SHRINK, 4);
-    hbro0->pack_start(*thumbRatingModeCombo, Gtk::PACK_SHRINK, 0);
-    vbro->pack_start(*hbro0, Gtk::PACK_SHRINK, 0);
+    thumbRatingMode = Gtk::manage(new Gtk::CheckButton(M("PREFERENCES_THUMBNAIL_RATING")));
+    vbro->pack_start(*thumbRatingMode, Gtk::PACK_SHRINK, 0);
 
     Gtk::HBox* hbrecent = Gtk::manage ( new Gtk::HBox () );
     Gtk::Label* labrecent = Gtk::manage ( new Gtk::Label (M ("PREFERENCES_MAXRECENTFOLDERS") + ":") );
@@ -1840,7 +1834,7 @@ void Preferences::storePreferences ()
     moptions.cropGuides = Options::CropGuidesMode(cropGuidesCombo->get_active_row_number());
     moptions.cropAutoFit = cropAutoFitCB->get_active();
 
-    moptions.thumbnail_rating_mode = Options::ThumbnailRatingMode(thumbRatingModeCombo->get_active_row_number());
+    moptions.thumbnail_rating_mode = thumbRatingMode->get_active() ? Options::ThumbnailRatingMode::XMP : Options::ThumbnailRatingMode::PP3;
     moptions.rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync(metadataSyncCombo->get_active_row_number());
     moptions.rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle(xmpSidecarCombo->get_active_row_number());
 }
@@ -2086,7 +2080,7 @@ void Preferences::fillPreferences ()
     spbSndLngEditProcDoneSecs->set_value (moptions.sndLngEditProcDoneSecs);
 #endif
 
-    thumbRatingModeCombo->set_active(int(moptions.thumbnail_rating_mode));
+    thumbRatingMode->set_active(moptions.thumbnail_rating_mode == Options::ThumbnailRatingMode::XMP);
     metadataSyncCombo->set_active(int(moptions.rtSettings.metadata_xmp_sync));
     xmpSidecarCombo->set_active(int(moptions.rtSettings.xmp_sidecar_style));
 }

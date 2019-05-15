@@ -1187,13 +1187,20 @@ void Thumbnail::saveRating()
             rtengine::Exiv2Metadata meta;
             meta.xmpData() = std::move(xmp);
             meta.saveToXmp(fn);
-            if (options.rtSettings.verbose) {
-                std::cout << "saving rating for " << fname << ": "
-                          << "Xmp.xmp.Rating="
-                          << xmp["Xmp.xmp.Rating"].print()
-                          << ", Xmp.xmp.Label="
-                          << xmp["Xmp.xmp.Label"].print() << std::endl;
-            }
+            // if (options.rtSettings.verbose) {
+            //     std::cout << "saving rating for " << fname << ": "
+            //               << "Xmp.xmp.Rating=";
+            //     if (rating_.trash ? rating_.trash.edited : rating_.rank.edited) {
+            //         std::cout << xmp["Xmp.xmp.Rating"].toString();
+            //     } else {
+            //         std::cout << "";
+            //     }
+            //     std::cout << ", Xmp.xmp.Label=";
+            //     if (rating_.color.edited) {
+            //         std::cout << xmp["Xmp.xmp.Label"].toString();
+            //     }
+            //     std::cout << std::endl;
+            // }
         } catch (Exiv2::AnyError &exc) {
             std::cerr << "ERROR saving thumbnail rating data to " << fn
                       << ": " << exc.what() << std::endl;
@@ -1204,31 +1211,28 @@ void Thumbnail::saveRating()
 
 void Thumbnail::loadRating()
 {
+    rating_ = Rating();
     if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
         if (pparamsValid) {
-            rating_.rank = pparams.rank;
-            rating_.color = pparams.colorlabel;
-            rating_.trash = pparams.inTrash;
-        } else {
-            rating_ = Rating();
+            rating_.rank.value = pparams.rank;
+            rating_.color.value = pparams.colorlabel;
+            rating_.trash.value = pparams.inTrash;
         }
     } else {
-        rating_ = Rating();
-
         try {
             auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
             auto pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Rating"));
             if (pos != xmp.end()) {
                 int r = pos->toLong();
                 if (r < 0) {
-                    rating_.trash = true;
+                    rating_.trash.value = true;
                 } else {
-                    rating_.rank = rtengine::LIM(r, 0, 5);
+                    rating_.rank.value = rtengine::LIM(r, 0, 5);
                 }
             }
             pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Label"));
             if (pos != xmp.end()) {
-                rating_.color = xmp_label2color(pos->toString());
+                rating_.color.value = xmp_label2color(pos->toString());
             }
         } catch (Exiv2::AnyError &exc) {
             std::cerr << "ERROR loading thumbnail rating data from "

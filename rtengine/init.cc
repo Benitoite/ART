@@ -32,6 +32,7 @@
 #include "profilestore.h"
 #include "../rtgui/threadutils.h"
 #include "rtlensfun.h"
+#include "metadata.h"
 
 namespace rtengine
 {
@@ -101,6 +102,8 @@ int init (const Settings* s, Glib::ustring baseDir, Glib::ustring userSettingsDi
 }
 
     Color::init ();
+    Exiv2Metadata::init();
+    
     delete lcmsMutex;
     lcmsMutex = new MyMutex;
     fftwMutex = new MyMutex;
@@ -109,6 +112,7 @@ int init (const Settings* s, Glib::ustring baseDir, Glib::ustring userSettingsDi
 
 void cleanup ()
 {
+    Exiv2Metadata::cleanup();
     ProcParams::cleanup ();
     Color::cleanup ();
     RawImageSource::cleanup ();
