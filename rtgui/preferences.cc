@@ -84,7 +84,8 @@ Preferences::Preferences (RTWindow *rtwindow)
     nb->append_page(*getDynamicProfilePanel(), M("PREFERENCES_TAB_DYNAMICPROFILE"));
     nb->append_page(*getFileBrowserPanel(), M("PREFERENCES_TAB_BROWSER"));
     nb->append_page(*getColorManPanel(), M("PREFERENCES_TAB_COLORMGR"));
-    nb->append_page(*getBatchProcPanel(), M("PREFERENCES_BATCH_PROCESSING"));
+    //nb->append_page(*getBatchProcPanel(), M("PREFERENCES_BATCH_PROCESSING"));
+    getBatchProcPanel(); // TODO -- remove preferences as well
     nb->append_page(*getPerformancePanel(), M("PREFERENCES_TAB_PERFORMANCE"));
     // Sounds only on Windows and Linux
 #if defined(WIN32) || defined(__linux__)

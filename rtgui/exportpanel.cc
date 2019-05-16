@@ -213,6 +213,10 @@ ExportPanel::ExportPanel () : listener (nullptr)
     bypass_raw_dfConn               = bypass_raw_df->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     bypass_raw_ffConn               = bypass_raw_ff->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
 
+#if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION <= 18
+    set_border_width(4);
+#endif
+
     LoadDefaultSettings();
 }
 
