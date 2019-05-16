@@ -329,15 +329,16 @@ void Crop::update(int todo)
         parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
         parent->ipf.logEncoding(laboCrop);
         
-        bool utili = parent->utili;
-        bool autili = parent->autili;
-        bool butili = parent->butili;
-        bool ccutili = parent->ccutili;
-        bool clcutili = parent->clcutili;
-        bool cclutili = parent->cclutili;
+        // bool utili = parent->utili;
+        // bool autili = parent->autili;
+        // bool butili = parent->butili;
+        // bool ccutili = parent->ccutili;
+        // bool clcutili = parent->clcutili;
+        // bool cclutili = parent->cclutili;
 
-        LUTu dummy;
-        parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+        // LUTu dummy;
+        // parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+        parent->ipf.labAdjustments(laboCrop);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {

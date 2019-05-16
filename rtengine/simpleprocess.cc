@@ -421,48 +421,49 @@ private:
         // start tile processing...???
 
 
-        if (params.labCurve.contrast != 0) { //only use hist16 for contrast
-            hist16.clear();
+//         if (params.labCurve.contrast != 0) { //only use hist16 for contrast
+//             hist16.clear();
 
-#ifdef _OPENMP
-            #pragma omp parallel
-#endif
-            {
-                LUTu hist16thr (hist16.getSize());  // one temporary lookup table per thread
-                hist16thr.clear();
-#ifdef _OPENMP
-                #pragma omp for schedule(static) nowait
-#endif
+// #ifdef _OPENMP
+//             #pragma omp parallel
+// #endif
+//             {
+//                 LUTu hist16thr (hist16.getSize());  // one temporary lookup table per thread
+//                 hist16thr.clear();
+// #ifdef _OPENMP
+//                 #pragma omp for schedule(static) nowait
+// #endif
 
-                for (int i = 0; i < fh; i++)
-                    for (int j = 0; j < fw; j++) {
-                        hist16thr[ (int) ((labView->L[i][j]))]++;
-                    }
+//                 for (int i = 0; i < fh; i++)
+//                     for (int j = 0; j < fw; j++) {
+//                         hist16thr[ (int) ((labView->L[i][j]))]++;
+//                     }
 
-#ifdef _OPENMP
-                #pragma omp critical
-#endif
-                {
-                    hist16 += hist16thr;
-                }
-            }
-        }
+// #ifdef _OPENMP
+//                 #pragma omp critical
+// #endif
+//                 {
+//                     hist16 += hist16thr;
+//                 }
+//             }
+//         }
 
         ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
         ipf.guidedSmoothing(labView, oX, oY, oW, oH);
         ipf.logEncoding(labView);
 
-        bool utili;
-        CurveFactory::complexLCurve (params.labCurve.brightness, params.labCurve.contrast, params.labCurve.lcurve, hist16, lumacurve, dummy, 1, utili);
+        // bool utili;
+        // CurveFactory::complexLCurve (params.labCurve.brightness, params.labCurve.contrast, params.labCurve.lcurve, hist16, lumacurve, dummy, 1, utili);
 
-        bool clcutili;
-        CurveFactory::curveCL (clcutili, params.labCurve.clcurve, clcurve, 1);
+        // bool clcutili;
+        // CurveFactory::curveCL (clcutili, params.labCurve.clcurve, clcurve, 1);
 
-        bool ccutili, cclutili;
-        CurveFactory::complexsgnCurve (autili, butili, ccutili, cclutili, params.labCurve.acurve, params.labCurve.bcurve, params.labCurve.cccurve,
-                                       params.labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, 1);
+        // bool ccutili, cclutili;
+        // CurveFactory::complexsgnCurve (autili, butili, ccutili, cclutili, params.labCurve.acurve, params.labCurve.bcurve, params.labCurve.cccurve,
+        //                                params.labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, 1);
 
-        ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+        // ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
+        ipf.labAdjustments(labView);
 
         ipf.toneMapping(labView, oX, oY, oW, oH);
         ipf.impulsedenoise (labView);
