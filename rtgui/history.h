@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -44,14 +45,14 @@ public:
         Gtk::TreeModelColumn<Glib::ustring>  value;
         Gtk::TreeModelColumn<rtengine::procparams::ProcParams>     params;
         Gtk::TreeModelColumn<rtengine::ProcEvent>    chev;
-        Gtk::TreeModelColumn<ParamsEdited>     paramsEdited;
+        //Gtk::TreeModelColumn<ParamsEdited>     paramsEdited;
         HistoryColumns()
         {
             add(text);
             add(value);
             add(chev);
             add(params);
-            add(paramsEdited);
+            //add(paramsEdited);
         }
     };
     HistoryColumns historyColumns;
@@ -60,12 +61,12 @@ public:
     public:
         Gtk::TreeModelColumn<Glib::ustring>  text;
         Gtk::TreeModelColumn<rtengine::procparams::ProcParams>     params;
-        Gtk::TreeModelColumn<ParamsEdited>     paramsEdited;
+        //Gtk::TreeModelColumn<ParamsEdited>     paramsEdited;
         BookmarkColumns()
         {
             add(text);
             add(params);
-            add(paramsEdited);
+            //add(paramsEdited);
         }
     };
     BookmarkColumns bookmarkColumns;

@@ -1,0 +1,7 @@
+profileChange
+ParamsEdited
+PartialProfile
+Thumbnail::setProcParams
+partialPasteDlg.getParamsEdited();
+ProfilePanel::paste_clicked
+main-cli

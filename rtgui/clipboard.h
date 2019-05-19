@@ -30,7 +30,10 @@ class Clipboard {
 private:
     bool _hasIPTC;
     rtengine::procparams::IPTCPairs iptc;
-    rtengine::procparams::PartialProfile partProfile;
+    rtengine::procparams::ProcParams pparams;
+    ParamsEdited pedited;
+    bool has_pparams_;
+    bool has_pedited_;
     DiagonalCurveType hasDiagonalCurveDataType;
     FlatCurveType hasFlatCurveDataType;
     std::vector<double> diagonalCurve;
@@ -54,31 +57,37 @@ public:
         return _hasIPTC;
     }
 
-    void setPartialProfile(const rtengine::procparams::PartialProfile& pprofile);
-    const rtengine::procparams::PartialProfile &getPartialProfile()
+    void setProcParams(const rtengine::procparams::ProcParams &pp)
+
     {
-        return partProfile;
+        pparams = pp;
+        has_pparams_ = true;
     }
     
-    void setProcParams(const rtengine::procparams::ProcParams& pparams);
     const rtengine::procparams::ProcParams &getProcParams()
     {
-        return *partProfile.pparams;
+        return pparams;
+    }
+
+    void setParamsEdited(const ParamsEdited &pe)
+    {
+        pedited = pe;
+        has_pedited_ = true;
     }
 
     const ParamsEdited &getParamsEdited()
     {
-        return *partProfile.pedited;
+        return pedited;
     }
     
     bool hasProcParams()
     {
-        return partProfile.pparams;
+        return has_pparams_;
     }
     
     bool hasPEdited()
     {
-        return partProfile.pedited;
+        return has_pedited_;
     }
 
     void setDiagonalCurveData(std::vector<double> &p, DiagonalCurveType type)

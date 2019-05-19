@@ -803,7 +803,7 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
             rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
             pp.raw.df_autoselect = true;
             pp.raw.dark_frame.clear();
-            mselected[i]->thumbnail->setProcParams(pp, nullptr, FILEBROWSER, false);
+            mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
         }
 
         if (!mselected.empty() && bppcl) {
@@ -831,7 +831,7 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
                     rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
                     pp.raw.dark_frame = fc.get_filename();
                     pp.raw.df_autoselect = false;
-                    mselected[i]->thumbnail->setProcParams(pp, nullptr, FILEBROWSER, false);
+                    mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
                 }
 
                 if (bppcl) {
@@ -880,7 +880,7 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
             rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
             pp.raw.ff_AutoSelect = true;
             pp.raw.ff_file.clear();
-            mselected[i]->thumbnail->setProcParams(pp, nullptr, FILEBROWSER, false);
+            mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
         }
 
         if (!mselected.empty() && bppcl) {
@@ -907,7 +907,7 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
                     rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
                     pp.raw.ff_file = fc.get_filename();
                     pp.raw.ff_AutoSelect = false;
-                    mselected[i]->thumbnail->setProcParams(pp, nullptr, FILEBROWSER, false);
+                    mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
                 }
 
                 if (bppcl) {
@@ -969,7 +969,7 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
 
             // Empty run to update the thumb
             rtengine::procparams::ProcParams params = mselected[i]->thumbnail->getProcParams ();
-            mselected[i]->thumbnail->setProcParams (params, nullptr, FILEBROWSER, true, true);
+            mselected[i]->thumbnail->setProcParams(params, FILEBROWSER, true, true);
         }
 
         if (!mselected.empty() && bppcl) {
@@ -1021,13 +1021,8 @@ void FileBrowser::pasteProfile ()
         }
 
         for (unsigned int i = 0; i < mselected.size(); i++) {
-            // copying read only clipboard PartialProfile to a temporary one
-            const rtengine::procparams::PartialProfile& cbPartProf = clipboard.getPartialProfile();
-            rtengine::procparams::PartialProfile pastedPartProf(cbPartProf.pparams, cbPartProf.pedited, true);
-
             // applying the PartialProfile to the thumb's ProcParams
-            mselected[i]->thumbnail->setProcParams (*pastedPartProf.pparams, pastedPartProf.pedited, FILEBROWSER);
-            pastedPartProf.deleteInstance();
+            mselected[i]->thumbnail->setProcParams(rtengine::procparams::PEditedPartialProfile(clipboard.getProcParams(), clipboard.getParamsEdited()), FILEBROWSER);
         }
 
         if (!mselected.empty() && bppcl) {
@@ -1070,15 +1065,18 @@ void FileBrowser::partPasteProfile ()
             for (unsigned int i = 0; i < mselected.size(); i++) {
                 // copying read only clipboard PartialProfile to a temporary one, initialized to the thumb's ProcParams
                 mselected[i]->thumbnail->createProcParamsForUpdate(false, false); // this can execute customprofilebuilder to generate param file
-                const rtengine::procparams::PartialProfile& cbPartProf = clipboard.getPartialProfile();
-                rtengine::procparams::PartialProfile pastedPartProf(&mselected[i]->thumbnail->getProcParams (), nullptr);
+                const auto &pp = clipboard.getProcParams();
+                auto ped = partialPasteDlg.getParamsEdited();
+                // const rtengine::procparams::PartialProfile& cbPartProf = clipboard.getPartialProfile();
+                // rtengine::procparams::PartialProfile pastedPartProf(&mselected[i]->thumbnail->getProcParams (), nullptr);
 
                 // pushing the selected values of the clipboard PartialProfile to the temporary PartialProfile
-                partialPasteDlg.applyPaste (pastedPartProf.pparams, pastedPartProf.pedited, cbPartProf.pparams, cbPartProf.pedited);
+                //partialPasteDlg.applyPaste (pastedPartProf.pparams, pastedPartProf.pedited, cbPartProf.pparams, cbPartProf.pedited);
 
                 // applying the temporary PartialProfile to the thumb's ProcParams
-                mselected[i]->thumbnail->setProcParams (*pastedPartProf.pparams, pastedPartProf.pedited, FILEBROWSER);
-                pastedPartProf.deleteInstance();
+                // mselected[i]->thumbnail->setProcParams(*pastedPartProf.pparams, pastedPartProf.pedited, FILEBROWSER);
+                mselected[i]->thumbnail->setProcParams(rtengine::procparams::PEditedPartialProfile(pp, ped), FILEBROWSER);
+                // pastedPartProf.deleteInstance();
             }
 
             if (!mselected.empty() && bppcl) {
@@ -1350,13 +1348,13 @@ void FileBrowser::applyMenuItemActivated (ProfileStoreLabel *label)
 
     const rtengine::procparams::PartialProfile* partProfile = ProfileStore::getInstance()->getProfile (label->entry);
 
-    if (partProfile->pparams && !selected.empty()) {
+    if (partProfile/*->pparams*/ && !selected.empty()) {
         if (bppcl) {
             bppcl->beginBatchPParamsChange(selected.size());
         }
 
         for (size_t i = 0; i < selected.size(); i++) {
-            (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->setProcParams (*partProfile->pparams, partProfile->pedited, FILEBROWSER);
+            (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->setProcParams(*partProfile, FILEBROWSER);
         }
 
         if (bppcl) {
@@ -1380,7 +1378,7 @@ void FileBrowser::applyPartialMenuItemActivated (ProfileStoreLabel *label)
 
     const rtengine::procparams::PartialProfile* srcProfiles = ProfileStore::getInstance()->getProfile (label->entry);
 
-    if (srcProfiles->pparams) {
+    if (srcProfiles) {
 
         auto toplevel = static_cast<Gtk::Window*> (get_toplevel ());
         PartialPasteDlg partialPasteDlg (M("PARTIALPASTE_DIALOGLABEL"), toplevel);
@@ -1396,12 +1394,15 @@ void FileBrowser::applyPartialMenuItemActivated (ProfileStoreLabel *label)
             for (size_t i = 0; i < selected.size(); i++) {
                 selected[i]->thumbnail->createProcParamsForUpdate(false, false);  // this can execute customprofilebuilder to generate param file
 
-                rtengine::procparams::PartialProfile dstProfile(true);
-                *dstProfile.pparams = (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->getProcParams ();
-                dstProfile.set(true);
-                partialPasteDlg.applyPaste (dstProfile.pparams, dstProfile.pedited, srcProfiles->pparams, srcProfiles->pedited);
-                (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->setProcParams (*dstProfile.pparams, dstProfile.pedited, FILEBROWSER);
-                dstProfile.deleteInstance();
+                rtengine::procparams::ProcParams pp;
+                srcProfiles->applyTo(pp);
+                // rtengine::procparams::PartialProfile dstProfile(true);
+                // *dstProfile.pparams = (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->getProcParams ();
+                // dstProfile.set(true);
+                // partialPasteDlg.applyPaste (dstProfile.pparams, dstProfile.pedited, srcProfiles->pparams, srcProfiles->pedited);
+                auto pe = partialPasteDlg.getParamsEdited();
+                (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->setProcParams(rtengine::procparams::PEditedPartialProfile(pp, pe), FILEBROWSER);
+                // dstProfile.deleteInstance();
             }
 
             if (bppcl) {

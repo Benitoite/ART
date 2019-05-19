@@ -120,7 +120,7 @@ private:
 
     MyMutex parseMutex;
     StoreState storeState;
-    rtengine::procparams::AutoPartialProfile *internalDefaultProfile;
+    rtengine::procparams::FilePartialProfile internalDefaultProfile;
     ProfileStoreEntry *internalDefaultEntry;
     ProfileStoreEntry *internalDynamicEntry;
 
@@ -134,7 +134,7 @@ private:
     std::vector<const ProfileStoreEntry*> entries;
 
     /** List of PartialProfiles from the indexed files */
-    std::map<const ProfileStoreEntry*, rtengine::procparams::AutoPartialProfile*> partProfiles;
+    std::map<const ProfileStoreEntry*, rtengine::procparams::FilePartialProfile> partProfiles;
 
     /** List of the client of this store */
     std::list<ProfileStoreListener*> listeners;
@@ -162,7 +162,7 @@ private:
     void _parseProfiles ();
     void clearFileList ();
     void clearProfileList ();
-    const ProfileStoreEntry* findEntryFromFullPathU (Glib::ustring path);
+    const ProfileStoreEntry *findEntryFromFullPathU(Glib::ustring path);
 
 public:
 
@@ -174,28 +174,29 @@ public:
     bool init (bool loadAll = true);
     void parseProfiles ();
     int findFolderId (const Glib::ustring &path);
-    const ProfileStoreEntry*                     findEntryFromFullPath (Glib::ustring path);
+    const ProfileStoreEntry *findEntryFromFullPath (Glib::ustring path);
     const rtengine::procparams::PartialProfile*  getProfile (Glib::ustring path);
     const rtengine::procparams::PartialProfile*  getProfile (const ProfileStoreEntry* entry);
-    const std::vector<const ProfileStoreEntry*>* getFileList ();
-    void                                         releaseFileList ();
-    const rtengine::procparams::ProcParams*      getDefaultProcParams (bool isRaw);
-    const rtengine::procparams::PartialProfile*  getDefaultPartialProfile (bool isRaw);
-    const Glib::ustring                          getPathFromId (int folderId);
-    const ProfileStoreEntry*                     getInternalDefaultPSE()
+    const std::vector<const ProfileStoreEntry*> *getFileList();
+    void releaseFileList();
+    // const rtengine::procparams::ProcParams*      getDefaultProcParams (bool isRaw);
+    const rtengine::procparams::PartialProfile *getDefaultPartialProfile(bool isRaw);
+    //bool applyDefaultProcParams(bool isRaw, rtengine::procparams::ProcParams &pp);
+    Glib::ustring getPathFromId (int folderId);
+    const ProfileStoreEntry *getInternalDefaultPSE()
     {
         return internalDefaultEntry;
     }
 
-    const ProfileStoreEntry*                     getInternalDynamicPSE()
+    const ProfileStoreEntry *getInternalDynamicPSE()
     {
         return internalDynamicEntry;
     }
 
-    void addListener (ProfileStoreListener *listener);
-    void removeListener (ProfileStoreListener *listener);
+    void addListener(ProfileStoreListener *listener);
+    void removeListener(ProfileStoreListener *listener);
 
-    rtengine::procparams::PartialProfile*        loadDynamicProfile (const rtengine::FramesMetaData *im);
+    std::unique_ptr<rtengine::procparams::PartialProfile> loadDynamicProfile(const rtengine::FramesMetaData *im);
 
     void dumpFolderList();
 };

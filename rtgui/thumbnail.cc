@@ -294,16 +294,15 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
     if (!run_cpb) {
         if (defProf == DEFPROFILE_DYNAMIC && create && cfs && cfs->exifValid) {
             auto imageMetaData = getMetaData();
-            PartialProfile *pp = ProfileStore::getInstance()->loadDynamicProfile(imageMetaData.get());
-            int err = pp->pparams->save(outFName);
-            pp->deleteInstance();
-            delete pp;
-            if (!err) {
+            auto pp = ProfileStore::getInstance()->loadDynamicProfile(imageMetaData.get());
+            ProcParams params;
+            if (pp->applyTo(params) && params.save(outFName) == 0) {
                 loadProcParams();
             }
         } else if (create && defProf != DEFPROFILE_DYNAMIC) {
             const PartialProfile *p = ProfileStore::getInstance()->getProfile(defProf);
-            if (p && !p->pparams->save(outFName)) {
+            ProcParams params;
+            if (p && p->applyTo(params) && params.save(outFName) == 0) {
                 loadProcParams();
             }
         }
@@ -361,7 +360,7 @@ void Thumbnail::loadProcParams ()
     pparamsValid = false;
     pparams.setDefaults();
     const PartialProfile *defaultPP = ProfileStore::getInstance()->getDefaultPartialProfile(getType() == FT_Raw);
-    defaultPP->applyTo(&pparams);
+    defaultPP->applyTo(pparams);
 
     if (options.paramsLoadLocation == PLL_Input) {
         // try to load it from params file next to the image file
@@ -456,47 +455,49 @@ bool Thumbnail::hasProcParams ()
     return pparamsValid;
 }
 
-void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoChangedIt, bool updateCacheNow, bool resetToDefault)
+void Thumbnail::setProcParams(const PartialProfile &pp, int whoChangedIt, bool updateCacheNow, bool resetToDefault)
 {
-    const bool needsReprocessing =
-           resetToDefault
-        || pparams.toneCurve != pp.toneCurve
-        || pparams.labCurve != pp.labCurve
-        || pparams.localContrast != pp.localContrast
-        || pparams.rgbCurves != pp.rgbCurves
-        || pparams.wb != pp.wb
-        || pparams.epd != pp.epd
-        || pparams.fattal != pp.fattal
-        || pparams.logenc != pp.logenc
-        || pparams.sh != pp.sh
-        || pparams.toneEqualizer != pp.toneEqualizer
-        || pparams.crop != pp.crop
-        || pparams.coarse != pp.coarse
-        || pparams.commonTrans != pp.commonTrans
-        || pparams.rotate != pp.rotate
-        || pparams.distortion != pp.distortion
-        || pparams.lensProf != pp.lensProf
-        || pparams.perspective != pp.perspective
-        || pparams.gradient != pp.gradient
-        || pparams.pcvignette != pp.pcvignette
-        || pparams.cacorrection != pp.cacorrection
-        || pparams.vignetting != pp.vignetting
-        || pparams.chmixer != pp.chmixer
-        || pparams.blackwhite != pp.blackwhite
-        || pparams.icm != pp.icm
-        || pparams.filmSimulation != pp.filmSimulation
-        || pparams.softlight != pp.softlight
-        || pparams.dehaze != pp.dehaze
-        || pparams.grain != pp.grain
-        || pparams.smoothing != pp.smoothing
-        || pparams.colorcorrection != pp.colorcorrection
-        || whoChangedIt == FILEBROWSER
-        || whoChangedIt == BATCHEDITOR;
+    const bool needsReprocessing = true;
+        //    resetToDefault
+        // || pparams.toneCurve != pp.toneCurve
+        // || pparams.labCurve != pp.labCurve
+        // || pparams.localContrast != pp.localContrast
+        // || pparams.rgbCurves != pp.rgbCurves
+        // || pparams.wb != pp.wb
+        // || pparams.epd != pp.epd
+        // || pparams.fattal != pp.fattal
+        // || pparams.logenc != pp.logenc
+        // || pparams.sh != pp.sh
+        // || pparams.toneEqualizer != pp.toneEqualizer
+        // || pparams.crop != pp.crop
+        // || pparams.coarse != pp.coarse
+        // || pparams.commonTrans != pp.commonTrans
+        // || pparams.rotate != pp.rotate
+        // || pparams.distortion != pp.distortion
+        // || pparams.lensProf != pp.lensProf
+        // || pparams.perspective != pp.perspective
+        // || pparams.gradient != pp.gradient
+        // || pparams.pcvignette != pp.pcvignette
+        // || pparams.cacorrection != pp.cacorrection
+        // || pparams.vignetting != pp.vignetting
+        // || pparams.chmixer != pp.chmixer
+        // || pparams.blackwhite != pp.blackwhite
+        // || pparams.icm != pp.icm
+        // || pparams.filmSimulation != pp.filmSimulation
+        // || pparams.softlight != pp.softlight
+        // || pparams.dehaze != pp.dehaze
+        // || pparams.grain != pp.grain
+        // || pparams.smoothing != pp.smoothing
+        // || pparams.colorcorrection != pp.colorcorrection
+        // || whoChangedIt == FILEBROWSER
+        // || whoChangedIt == BATCHEDITOR;
 
     {
         MyMutex::MyLock lock(mutex);
+        ProcParams tmp;
+        pp.applyTo(tmp);
 
-        if (pparams != pp) {
+        if (pparams != tmp) {
             cfs.recentlySaved = false;
         } else if (pparamsValid && !updateCacheNow) {
             // nothing to do
@@ -504,12 +505,7 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         }
 
         // do not update rank, colorlabel and inTrash
-        if (pe) {
-            pe->combine(pparams, pp, true);
-        } else {
-            pparams = pp;
-        }
-
+        pparams = std::move(tmp);
         pparamsValid = true;
         if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
             saveRating();
@@ -526,6 +522,13 @@ void Thumbnail::setProcParams (const ProcParams& pp, ParamsEdited* pe, int whoCh
         }
     }
 }
+
+
+void Thumbnail::setProcParams(const ProcParams &pp, int whoChangedIt, bool updateCacheNow, bool resetToDefault)
+{
+    setProcParams(FullPartialProfile(pp), whoChangedIt, updateCacheNow, resetToDefault);
+}
+
 
 bool Thumbnail::isRecentlySaved ()
 {

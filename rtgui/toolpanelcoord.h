@@ -238,7 +238,7 @@ public:
 //    void autoContrastChanged (double autoContrast);
     // profilechangelistener interface
     void profileChange(
-        const rtengine::procparams::PartialProfile* nparams,
+        const rtengine::procparams::PartialProfile *nparams,
         const rtengine::ProcEvent& event,
         const Glib::ustring& descr,
         const ParamsEdited* paramsEdited = nullptr,

@@ -1119,7 +1119,7 @@ void EditorPanel::saveProfile ()
         ipc->getParams (&params);
 
         // Will call updateCache, which will update both the cached and sidecar files if necessary
-        openThm->setProcParams (params, nullptr, EDITOR);
+        openThm->setProcParams(FullPartialProfile(params), nullptr, EDITOR);
     }
 }
 
@@ -1284,7 +1284,7 @@ void EditorPanel::refreshProcessingState (bool inProcessingP)
         if (ipc && openThm && tpc->getChangedState()) {
             rtengine::procparams::ProcParams pparams;
             ipc->getParams (&pparams);
-            openThm->setProcParams (pparams, nullptr, EDITOR, false);
+            openThm->setProcParams(pparams, EDITOR, false);
         }
 
         // Ring a sound if it was a long event
@@ -1746,11 +1746,8 @@ void EditorPanel::procParamsChanged (Thumbnail* thm, int whoChangedIt)
 {
 
     if (whoChangedIt != EDITOR) {
-        PartialProfile pp (true);
-        pp.set (true);
-        * (pp.pparams) = openThm->getProcParams();
+        const auto &pp = openThm->getProcParams();
         tpc->profileChange (&pp, rtengine::EvProfileChangeNotification, M ("PROGRESSDLG_PROFILECHANGEDINBROWSER"));
-        pp.deleteInstance();
     }
 }
 

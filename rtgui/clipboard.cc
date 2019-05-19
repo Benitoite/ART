@@ -20,60 +20,17 @@
 
 Clipboard clipboard;
 
-Clipboard::Clipboard () : _hasIPTC(false), partProfile (false), hasDiagonalCurveDataType(DCT_Empty), hasFlatCurveDataType(FCT_Empty) {}
+Clipboard::Clipboard ():
+    _hasIPTC(false),
+    pedited(false),
+    has_pparams_(false),
+    has_pedited_(false),
+    hasDiagonalCurveDataType(DCT_Empty),
+    hasFlatCurveDataType(FCT_Empty)
+{
+}
 
 Clipboard::~Clipboard ()
 {
-    partProfile.deleteInstance();
 }
 
-/*
- * set both the "pparams" and "pedited" field of the PartialProfile; each one can be NULL
- */
-void Clipboard::setPartialProfile   (const rtengine::procparams::PartialProfile& pprofile)
-{
-    if (pprofile.pparams) {
-        if (!partProfile.pparams) {
-            partProfile.pparams = new rtengine::procparams::ProcParams();
-        }
-
-        *partProfile.pparams = *pprofile.pparams;
-    } else {
-        if (partProfile.pparams) {
-            delete partProfile.pparams;
-            partProfile.pparams = nullptr;
-        }
-    }
-
-    if (pprofile.pedited) {
-        if (!partProfile.pedited) {
-            partProfile.pedited = new ParamsEdited();
-        }
-
-        *partProfile.pedited = *pprofile.pedited;
-    } else {
-        if (partProfile.pedited) {
-            delete partProfile.pedited;
-            partProfile.pedited = nullptr;
-        }
-    }
-}
-
-/*
- * this method copy the procparams to "pparams" and delete "pedited"
- */
-void Clipboard::setProcParams (const rtengine::procparams::ProcParams& pparams)
-{
-    // copy procparams
-    if (!partProfile.pparams) {
-        partProfile.pparams = new rtengine::procparams::ProcParams();
-    }
-
-    *partProfile.pparams = pparams;
-
-    // delete pedited
-    if (partProfile.pedited) {
-        delete partProfile.pedited;
-        partProfile.pedited = nullptr;
-    }
-}

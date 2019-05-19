@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -34,7 +35,7 @@ class ProfilePanel : public Gtk::Grid, public PParamsChangeListener, public Prof
 
 private:
 
-    rtengine::procparams::PartialProfile* storedPProfile;
+    rtengine::procparams::ProcParams stored_pp_;
     Glib::ustring storedValue;
     Glib::ustring lastFilename;
     Glib::ustring imagePath;
@@ -56,7 +57,7 @@ private:
     Gtk::TreeIter addLastSavedRow ();
     Gtk::TreeIter addDefaultRow();
 
-protected:
+//protected:
 
     static PartialPasteDlg* partialProfileDlg;
     Gtk::Button* save;
@@ -64,8 +65,8 @@ protected:
     Gtk::Button* copy;
     Gtk::Button* paste;
     ProfileStoreComboBox* profiles;
-    rtengine::procparams::PartialProfile* custom;
-    rtengine::procparams::PartialProfile* lastsaved;
+    rtengine::procparams::PartialProfile *custom;
+    rtengine::procparams::PartialProfile *lastsaved;
     rtengine::procparams::PartialProfile *defprofile;
     ProfileChangeListener* tpc;
     bool dontupdate;

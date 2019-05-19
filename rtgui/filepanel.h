@@ -20,7 +20,7 @@
 #define _FILEPANEL_
 
 #include <gtkmm.h>
-#include "batchtoolpanelcoord.h"
+//#include "batchtoolpanelcoord.h"
 #include "filecatalog.h"
 #include "dirbrowser.h"
 #include "fileselectionlistener.h"

@@ -168,11 +168,12 @@ void History::historySelectionChanged ()
         }
 
         if (row && tpc) {
-            ProcParams pparams = row[historyColumns.params];
-            ParamsEdited pe(true);
-            PartialProfile pp(&pparams, &pe);
-            ParamsEdited paramsEdited = row[historyColumns.paramsEdited];
-            tpc->profileChange (&pp, EvHistoryBrowsed, row[historyColumns.text], &paramsEdited);
+            const auto &pparams = row[historyColumns.params];
+            // ParamsEdited pe(true);
+            // PartialProfile pp(&pparams, &pe);
+            // ParamsEdited paramsEdited = row[historyColumns.paramsEdited];
+            FullPartialProfile pp(pparams);
+            tpc->profileChange (&pp, EvHistoryBrowsed, row[historyColumns.text], nullptr);//&paramsEdited);
         }
 
         if (blistener && !blistenerLock) {
@@ -201,11 +202,12 @@ void History::bookmarkSelectionChanged ()
         }
 
         if (row && tpc) {
-            ProcParams pparams = row[bookmarkColumns.params];
-            ParamsEdited pe(true);
-            PartialProfile pp(&pparams, &pe);
-            ParamsEdited paramsEdited = row[bookmarkColumns.paramsEdited];
-            tpc->profileChange (&pp, EvBookmarkSelected, row[bookmarkColumns.text], &paramsEdited);
+            const auto &pparams = row[bookmarkColumns.params];
+            // ParamsEdited pe(true);
+            // PartialProfile pp(&pparams, &pe);
+            // ParamsEdited paramsEdited = row[bookmarkColumns.paramsEdited];
+            FullPartialProfile pp(pparams);
+            tpc->profileChange (&pp, EvBookmarkSelected, row[bookmarkColumns.text], nullptr);//&paramsEdited);
         }
     }
 }

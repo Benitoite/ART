@@ -1347,14 +1347,19 @@ public:
       * @param pedited pointer to a ParamsEdited object (optional) to store which values has to be saved
       * @return Error code (=0 if all supplied filenames where created correctly)
       */
-    int save(const Glib::ustring& fname, const Glib::ustring& fname2 = Glib::ustring(), bool fnameAbsolute = true, ParamsEdited* pedited = nullptr);
+    int save(const Glib::ustring& fname, const Glib::ustring& fname2 = Glib::ustring(), bool fnameAbsolute = true, const ParamsEdited *pedited = nullptr);
     /**
       * Loads the parameters from a file.
       * @param fname the name of the file
       * @params pedited pointer to a ParamsEdited object (optional) to store which values has been loaded
       * @return Error code (=0 if no error)
       */
-    int load(const Glib::ustring& fname, ParamsEdited* pedited = nullptr);
+    int load(const Glib::ustring& fname, const ParamsEdited *pedited=nullptr);
+
+    int load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
+             bool resetOnError=true);
+    int save(Glib::KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
+             const Glib::ustring &fname="", bool fnameAbsolute=true) const;
 
     /** Creates a new instance of ProcParams.
       * @return a pointer to the new ProcParams instance. */
@@ -1379,44 +1384,47 @@ private:
     int write(const Glib::ustring& fname, const Glib::ustring& content) const;
 };
 
-/**
-  * This class associate a ProcParams object and a ParamEdited object through a pointer
-  * to instance of each type in order to handle partial pp3 file loading (and later maybe
-  * saving too)
-  *
-  * PartialProfile is not responsible of ProcParams and ParamsEdited object creation
-  * and hence is not responsible of their destructions. The function that instantiate
-  * PartialProfile object has to handle all this itself.
-  */
-class PartialProfile :
-    public NonCopyable
-{
-public:
-    PartialProfile(bool createInstance = false, bool paramsEditedValue = false);
-    PartialProfile(ProcParams* pp, ParamsEdited* pe = nullptr, bool fullCopy = false);
-    PartialProfile(const ProcParams* pp, const ParamsEdited* pe = nullptr);
-    void deleteInstance();
-    void clearGeneral();
-    int  load(const Glib::ustring& fName);
-    void set(bool v);
-    void applyTo(ProcParams* destParams, bool fromLastSaved = false) const ;
 
-    rtengine::procparams::ProcParams* pparams;
-    ParamsEdited* pedited;
+class PartialProfile {
+public:
+    virtual ~PartialProfile() = default;
+    virtual bool applyTo(ProcParams &pp) const = 0;
 };
 
-/**
-  * This class automatically create the pparams and pedited instance in the constructor,
-  * and automatically delete them in the destructor. This class has been mostly created
-  * to be used with vectors, which use the default constructor/destructor
-  */
-class AutoPartialProfile :
-    public PartialProfile
-{
+
+class FullPartialProfile: public PartialProfile {
 public:
-    AutoPartialProfile();
-    ~AutoPartialProfile();
+    explicit FullPartialProfile(const ProcParams &pp);
+    bool applyTo(ProcParams &pp) const override;
+
+private:
+    ProcParams pp_;
 };
 
-}
-}
+
+class FilePartialProfile: public PartialProfile {
+public:
+    explicit FilePartialProfile(const Glib::ustring &fname, bool full=false);
+    bool applyTo(ProcParams &pp) const override;
+
+private:
+    Glib::ustring fname_;
+    bool full_;
+};
+
+
+class PEditedPartialProfile: public PartialProfile {
+public:
+    PEditedPartialProfile(const Glib::ustring &fname, const ParamsEdited &pe);
+    PEditedPartialProfile(const ProcParams &pp, const ParamsEdited &pe);
+    bool applyTo(ProcParams &pp) const override;
+
+private:
+    Glib::ustring fname_;
+    ProcParams pp_;
+    ParamsEdited pe_;
+};
+
+
+}} // namespace rtengine::procparams
+

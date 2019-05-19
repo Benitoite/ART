@@ -446,7 +446,7 @@ void ToolPanelCoordinator::panelChanged(const rtengine::ProcEvent& event, const 
 }
 
 void ToolPanelCoordinator::profileChange(
-    const PartialProfile* nparams,
+    const PartialProfile *nparams,
     const rtengine::ProcEvent& event,
     const Glib::ustring& descr,
     const ParamsEdited* paramsEdited,
@@ -460,35 +460,33 @@ void ToolPanelCoordinator::profileChange(
     }
 
     ProcParams *params = ipc->beginUpdateParams ();
-    ProcParams *mergedParams = new ProcParams();
-
     // Copy the current params as default values for the fusion
-    *mergedParams = *params;
+    ProcParams mergedParams(*params);
 
     // Reset IPTC values when switching procparams from the History
     if (event == rtengine::EvHistoryBrowsed) {
-        mergedParams->iptc.clear();
-        mergedParams->exif.clear();
+        mergedParams.iptc.clear();
+        mergedParams.exif.clear();
     }
 
     // And apply the partial profile nparams to mergedParams
-    nparams->applyTo (mergedParams, fromLastSave);
+    nparams->applyTo(mergedParams);
 
     // Derive the effective changes, if it's a profile change, to prevent slow RAW rerendering if not necessary
     bool filterRawRefresh = false;
 
     if (event != rtengine::EvPhotoLoaded) {
-        ParamsEdited pe (true);
-        std::vector<rtengine::procparams::ProcParams> lParams (2);
-        lParams[0] = *params;
-        lParams[1] = *mergedParams;
-        pe.initFrom (lParams);
+        // ParamsEdited pe (true);
+        // std::vector<rtengine::procparams::ProcParams> lParams (2);
+        // lParams[0] = *params;
+        // lParams[1] = *mergedParams;
+        // pe.initFrom (lParams);
 
-        filterRawRefresh = pe.raw.isUnchanged() && pe.lensProf.isUnchanged();
+        // filterRawRefresh = pe.raw.isUnchanged() && pe.lensProf.isUnchanged();
+        filterRawRefresh = (params->raw == mergedParams.raw) && (params->lensProf == mergedParams.lensProf);
     }
 
-    *params = *mergedParams;
-    delete mergedParams;
+    *params = mergedParams;
 
     tr = TR_NONE;
 

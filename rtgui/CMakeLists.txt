@@ -1,14 +1,14 @@
 # Common source files for both CLI and non-CLI execautables
-set(CLISOURCEFILES
-    alignedmalloc.cc
-    edit.cc
-    main-cli.cc
-    multilangmgr.cc
-    options.cc
-    paramsedited.cc
-    pathutils.cc
-    threadutils.cc
-    )
+# set(CLISOURCEFILES
+#     alignedmalloc.cc
+#     edit.cc
+#     main-cli.cc
+#     multilangmgr.cc
+#     options.cc
+#     paramsedited.cc
+#     pathutils.cc
+#     threadutils.cc
+#     )
 
 set(NONCLISOURCEFILES
     adjuster.cc
@@ -17,7 +17,7 @@ set(NONCLISOURCEFILES
     batchqueuebuttonset.cc
     batchqueueentry.cc
     batchqueuepanel.cc
-    batchtoolpanelcoord.cc
+    #batchtoolpanelcoord.cc
     bayerpreprocess.cc
     bayerprocess.cc
     bayerrawexposure.cc
@@ -242,15 +242,15 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in" "${CMAKE_CURRENT_BINARY
 
 # Create new executables targets
 add_executable(rth ${EXTRA_SRC_NONCLI} ${NONCLISOURCEFILES})
-add_executable(rth-cli ${EXTRA_SRC_CLI} ${CLISOURCEFILES})
+#add_executable(rth-cli ${EXTRA_SRC_CLI} ${CLISOURCEFILES})
 
 # Add dependencies to executables targets
 add_dependencies(rth UpdateInfo)
-add_dependencies(rth-cli UpdateInfo)
+#add_dependencies(rth-cli UpdateInfo)
 
 #Define a target specific definition to use in code
 target_compile_definitions(rth PUBLIC GUIVERSION)
-target_compile_definitions(rth-cli PUBLIC CLIVERSION)
+#target_compile_definitions(rth-cli PUBLIC CLIVERSION)
 
 # Set executables targets properties, i.e. output filename and compile flags
 # for "Debug" builds, open a console in all cases for Windows version
@@ -258,7 +258,7 @@ if((WIN32) AND NOT(UPPER_CMAKE_BUILD_TYPE STREQUAL "DEBUG"))
     set_target_properties(rth PROPERTIES LINK_FLAGS "-mwindows")
 endif()
 set_target_properties(rth PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME rawtherapee)
-set_target_properties(rth-cli PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME rawtherapee-cli)
+#set_target_properties(rth-cli PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME rawtherapee-cli)
 
 # Add linked libraries dependencies to executables targets
 target_link_libraries(rth rtengine
@@ -285,28 +285,28 @@ target_link_libraries(rth rtengine
     ${EXIV2_LIBRARIES}
     )
 
-target_link_libraries(rth-cli rtengine
-    ${CAIROMM_LIBRARIES}
-    ${EXPAT_LIBRARIES}
-    ${EXTRA_LIB_RTGUI}
-    ${FFTW3F_LIBRARIES}
-    ${GIOMM_LIBRARIES}
-    ${GIO_LIBRARIES}
-    ${GLIB2_LIBRARIES}
-    ${GLIBMM_LIBRARIES}
-    ${GOBJECT_LIBRARIES}
-    ${GTHREAD_LIBRARIES}
-    ${JPEG_LIBRARIES}
-    ${LCMS_LIBRARIES}
-    ${PNG_LIBRARIES}
-    ${TIFF_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    ${LENSFUN_LIBRARIES}
-    ${RSVG_LIBRARIES}
-    ${TCMALLOC_LIBRARIES}
-    ${EXIV2_LIBRARIES}
-    )
+# target_link_libraries(rth-cli rtengine
+#     ${CAIROMM_LIBRARIES}
+#     ${EXPAT_LIBRARIES}
+#     ${EXTRA_LIB_RTGUI}
+#     ${FFTW3F_LIBRARIES}
+#     ${GIOMM_LIBRARIES}
+#     ${GIO_LIBRARIES}
+#     ${GLIB2_LIBRARIES}
+#     ${GLIBMM_LIBRARIES}
+#     ${GOBJECT_LIBRARIES}
+#     ${GTHREAD_LIBRARIES}
+#     ${JPEG_LIBRARIES}
+#     ${LCMS_LIBRARIES}
+#     ${PNG_LIBRARIES}
+#     ${TIFF_LIBRARIES}
+#     ${ZLIB_LIBRARIES}
+#     ${LENSFUN_LIBRARIES}
+#     ${RSVG_LIBRARIES}
+#     ${TCMALLOC_LIBRARIES}
+#     ${EXIV2_LIBRARIES}
+#     )
 
 # Install executables
 install(TARGETS rth DESTINATION ${BINDIR})
-install(TARGETS rth-cli DESTINATION ${BINDIR})
+#install(TARGETS rth-cli DESTINATION ${BINDIR})

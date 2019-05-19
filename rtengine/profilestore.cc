@@ -25,10 +25,15 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-ProfileStore::ProfileStore () : storeState (STORESTATE_NOTINITIALIZED), internalDefaultProfile (nullptr), internalDefaultEntry (nullptr), internalDynamicEntry (nullptr), loadAll (true)
+ProfileStore::ProfileStore():
+    storeState(STORESTATE_NOTINITIALIZED),
+    internalDefaultProfile("", true),
+    internalDefaultEntry(nullptr),
+    internalDynamicEntry(nullptr),
+    loadAll(true)
 {
-    internalDefaultProfile = new AutoPartialProfile();
-    internalDefaultProfile->set (true);
+    // internalDefaultProfile = new AutoPartialProfile();
+    // internalDefaultProfile->set (true);
 }
 
 ProfileStore* ProfileStore::getInstance()
@@ -71,7 +76,7 @@ ProfileStore::~ProfileStore ()
         clearProfileList ();
         partProfiles.clear ();
         clearFileList();
-        delete internalDefaultProfile;
+        // delete internalDefaultProfile;
         delete internalDefaultEntry;
         delete internalDynamicEntry;
     }
@@ -143,7 +148,7 @@ void ProfileStore::_parseProfiles ()
     }
 
     entries.push_back (internalDefaultEntry);
-    partProfiles[internalDefaultEntry] = internalDefaultProfile;
+    partProfiles[internalDefaultEntry] = internalDefaultProfile; 
 
     if (!internalDynamicEntry) {
         internalDynamicEntry = new ProfileStoreEntry (Glib::ustring ("(") + M ("PROFILEPANEL_PDYNAMIC") + Glib::ustring (")"), PSET_FILE, 0, 0);
@@ -151,7 +156,7 @@ void ProfileStore::_parseProfiles ()
     }
 
     // Check if the default profiles has been found.
-    if (findEntryFromFullPathU (options.defProfRaw) == nullptr) {
+    if (!findEntryFromFullPathU(options.defProfRaw)) {
         options.setDefProfRawMissing (true);
 
         if (options.rtSettings.verbose) {
@@ -159,7 +164,7 @@ void ProfileStore::_parseProfiles ()
         }
     }
 
-    if (findEntryFromFullPathU (options.defProfImg) == nullptr) {
+    if (!findEntryFromFullPathU(options.defProfImg)) {
         options.setDefProfImgMissing (true);
 
         if (options.rtSettings.verbose) {
@@ -221,10 +226,10 @@ bool ProfileStore::parseDir (Glib::ustring& realPath, Glib::ustring& virtualPath
                     Glib::ustring name = currDir.substr (0, lastdot);
 
                     // create the partial profile
-                    AutoPartialProfile *pProf = new AutoPartialProfile();
-                    int res = pProf->load (fname);
+                    rtengine::procparams::ProcParams pp;
+                    int res = pp.load(fname);
 
-                    if (!res && pProf->pparams->ppVersion >= 220) {
+                    if (!res && pp.ppVersion >= 220) {
                         fileFound = true;
 
                         if ( options.rtSettings.verbose ) {
@@ -236,8 +241,7 @@ bool ProfileStore::parseDir (Glib::ustring& realPath, Glib::ustring& virtualPath
                         entries.push_back (filePSE);
 
                         // map the partial profile
-                        partProfiles[filePSE] = pProf;
-                        //partProfiles.insert( std::pair<ProfileStoreEntry*, rtengine::procparams::AutoPartialProfile*> (filePSE, pProf) );
+                        partProfiles[filePSE] = FilePartialProfile(fname);
                     } else if ( options.rtSettings.verbose ) {
                         printf ("failed!\n");
                     }
@@ -348,39 +352,34 @@ const ProfileStoreEntry* ProfileStore::findEntryFromFullPath (Glib::ustring path
     return findEntryFromFullPathU (path);
 }
 
-const PartialProfile* ProfileStore::getProfile (Glib::ustring path)
+const PartialProfile *ProfileStore::getProfile(Glib::ustring path)
 {
 
     if (storeState == STORESTATE_NOTINITIALIZED) {
         parseProfilesOnce();
     }
 
-    const ProfileStoreEntry *pse = findEntryFromFullPath (path);
+    const ProfileStoreEntry *pse = findEntryFromFullPath(path);
 
     if (!pse) {
         return nullptr;
     }
 
-    return getProfile (pse);
+    return getProfile(pse);
 }
 
-const PartialProfile* ProfileStore::getProfile (const ProfileStoreEntry* entry)
+const PartialProfile *ProfileStore::getProfile(const ProfileStoreEntry* entry)
 {
-
     if (storeState == STORESTATE_NOTINITIALIZED) {
         parseProfilesOnce();
     }
 
     MyMutex::MyLock lock (parseMutex);
 
-    if (entry == internalDefaultEntry) {
-        return internalDefaultProfile;
-    }
-
-    std::map<const ProfileStoreEntry*, rtengine::procparams::AutoPartialProfile*>::iterator iter = partProfiles.find (entry);
+    auto iter = partProfiles.find(entry);
 
     if (iter != partProfiles.end()) {
-        return iter->second;
+        return &(iter->second);
     } else {
         // This shouldn't happen!
 #ifndef NDEBUG
@@ -417,19 +416,9 @@ void ProfileStore::releaseFileList()
  * If the profile doesn't already exist in the profile list,
  * it will add it with default internal values, so this method never fails
  */
-const ProcParams* ProfileStore::getDefaultProcParams (bool isRaw)
+bool ProfileStore::applyDefaultProcParams(bool isRaw, rtengine::procparams::ProcParams &pp)
 {
-
-    //Note: the mutex is locked in getProfile, called below
-    //      eventual initialization is done there too
-
-    const PartialProfile* pProf = getProfile (isRaw ? options.defProfRaw : options.defProfImg);
-
-    if (!pProf) {
-        pProf = internalDefaultProfile;
-    }
-
-    return pProf->pparams;
+    return applyProfile(isRaw ? options.defProfRaw : options.defProfImg, pp);
 }
 
 /*
@@ -437,7 +426,7 @@ const ProcParams* ProfileStore::getDefaultProcParams (bool isRaw)
  * If it doesn't already exist in the profile list, it will add it with default internal values,
  * so this method will never fails
  */
-const PartialProfile* ProfileStore::getDefaultPartialProfile (bool isRaw)
+bool ProfileStore::getDefaultPartialProfile (bool isRaw)
 {
 
     //Note: the mutex is locked in getProfile, called below
@@ -446,7 +435,7 @@ const PartialProfile* ProfileStore::getDefaultPartialProfile (bool isRaw)
     const PartialProfile* pProf = getProfile (isRaw ? options.defProfRaw : options.defProfImg);
 
     if (!pProf) {
-        pProf = internalDefaultProfile;
+        pProf = &internalDefaultProfile;
     }
 
     return pProf;
@@ -472,11 +461,11 @@ void ProfileStore::clearFileList()
 
 void ProfileStore::clearProfileList()
 {
-    for (auto partProfile : partProfiles) {
-        if (partProfile.second != internalDefaultProfile) {
-            delete partProfile.second;
-        }
-    }
+    // for (auto partProfile : partProfiles) {
+    //     if (partProfile.second != internalDefaultProfile) {
+    //         delete partProfile.second;
+    //     }
+    // }
 
     partProfiles.clear();
 }
@@ -502,34 +491,33 @@ void ProfileStore::dumpFolderList()
     printf ("\n");
 }
 
-PartialProfile *ProfileStore::loadDynamicProfile (const FramesMetaData *im)
+
+std::unique_ptr<PartialProfile> ProfileStore::loadDynamicProfile(const FramesMetaData *im)
 {
+    ProcParams pp;
+    
     if (storeState == STORESTATE_NOTINITIALIZED) {
         parseProfilesOnce();
     }
-
-    PartialProfile *ret = new PartialProfile (true, true);
 
     if (!rulesLoaded) {
         loadRules();
     }
 
     for (auto rule : dynamicRules) {
-        if (rule.matches (im)) {
+        if (rule.matches(im)) {
             if (options.rtSettings.verbose) {
-                printf ("found matching profile %s\n", rule.profilepath.c_str());
+                printf("found matching profile %s\n", rule.profilepath.c_str());
             }
 
-            const PartialProfile *p = getProfile (rule.profilepath);
-
-            if (p != nullptr) {
-                p->applyTo (ret->pparams);
-            } else {
+            FilePartialProfile fp(rule.profilepath);
+            if (!fp.applyTo(pp)) {
                 printf ("ERROR loading matching profile from: %s\n", rule.profilepath.c_str());
             }
         }
     }
 
+    std::unique_ptr<PartialProfile> ret(new PEditedPartialProfile(pp, ParamsEdited(true)));
     return ret;
 }
 
