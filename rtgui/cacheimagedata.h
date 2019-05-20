@@ -63,6 +63,7 @@ public:
     Glib::ustring camModel;
     Glib::ustring filetype;
     Glib::ustring expcomp;
+    int rating;
 
     // store a copy of the autoWB's multipliers computed in Thumbnail::_generateThumbnailImage
     // they are not stored in the cache file by this class, but by rtengine::Thumbnail
@@ -108,5 +109,6 @@ public:
     bool getHDR() const override { return isHDR; }
     std::string getImageType() const override { return isPixelShift ? "PS" : isHDR ? "HDR" : "STD"; }
     rtengine::IIOSampleFormat getSampleFormat() const override { return sampleFormat; }
+    int getRating() const override { return rating; }
 };
 #endif
