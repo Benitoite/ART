@@ -999,15 +999,15 @@ MAIN_TOOLTIP_THRESHOLD;Threshold
 MAIN_TOOLTIP_TOGGLE;Toggle the <b>Before</b>/<b>After</b> view.\nShortcut: <b>Shift-b</b>
 MONITOR_PROFILE_SYSTEM;System default
 NAVIGATOR_B;B:
+NAVIGATOR_C;C:
 NAVIGATOR_G;G:
 NAVIGATOR_H;H:
+NAVIGATOR_L;L:
 NAVIGATOR_LAB_A;a*:
 NAVIGATOR_LAB_B;b*:
 NAVIGATOR_LAB_L;L*:
 NAVIGATOR_NA; --
 NAVIGATOR_R;R:
-NAVIGATOR_S;S:
-NAVIGATOR_V;V:
 NAVIGATOR_XY_FULL;Width: %1, Height: %2
 NAVIGATOR_XY_NA;x: --, y: --
 OPTIONS_BUNDLED_MISSING;The bundled profile "<b>%1</b>" could not be found!\n\nYour installation could be damaged.\n\nDefault internal values will be used instead.

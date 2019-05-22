@@ -108,8 +108,8 @@ class CropWindow : public LWButtonListener, public CropDisplayHandler, public Ed
     void drawObservedFrame         (Cairo::RefPtr<Cairo::Context> cr, int rw = 0, int rh = 0);
     void changeZoom                (int zoom, bool notify = true, int centerx = -1, int centery = -1, bool needsRedraw = true);
     void updateHoveredPicker       (rtengine::Coord *imgPos = nullptr);
-    void cycleRGB                  ();
-    void cycleHSV                  ();
+    void cycleRGB();
+    void cycleLCH();
 
     LockableColorPicker::Validity checkValidity (LockableColorPicker*  picker, const rtengine::Coord &pos);
 

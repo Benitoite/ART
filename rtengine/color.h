@@ -226,6 +226,8 @@ public:
     // do not use this function in a loop. It really eats processing time caused by Glib::ustring comparisons
     static void rgb2lab01 (const Glib::ustring &profile, const Glib::ustring &profileW, float r, float g, float b, float &LAB_l, float &LAB_a, float &LAB_b, bool workingSpace);
 
+    static void lab2lch01(float L, float a, float b, float &l, float &c, float &h);
+    
     /**
     * @brief Convert red/green/blue to hue/saturation/luminance
     * @param r red channel [0 ; 65535]

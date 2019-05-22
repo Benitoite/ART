@@ -2654,7 +2654,7 @@ void CropWindow::setPointerMotionListener (PointerMotionListener* pml)
     pmlistener = pml;
     if (pml) {
         pml->signal_cycle_rgb().connect( sigc::mem_fun(*this, &CropWindow::cycleRGB) );
-        pml->signal_cycle_hsv().connect( sigc::mem_fun(*this, &CropWindow::cycleHSV) );
+        pml->signal_cycle_lch().connect( sigc::mem_fun(*this, &CropWindow::cycleLCH) );
     }
 }
 
@@ -2686,11 +2686,11 @@ void CropWindow::cycleRGB ()
     }
 }
 
-void CropWindow::cycleHSV ()
+void CropWindow::cycleLCH()
 {
     bool redraw = false;
     for (auto colorPicker : colorPickers) {
-        redraw |= colorPicker->cycleHSV ();
+        redraw |= colorPicker->cycleLCH();
     }
 
     if (redraw) {

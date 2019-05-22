@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -32,19 +33,19 @@ class Navigator : public Gtk::Frame, public PointerMotionListener
 
 private:
     Options::NavigatorUnit currentRGBUnit;
-    Options::NavigatorUnit currentHSVUnit;
+    Options::NavigatorUnit currentLCHUnit;
     void cycleUnitsRGB (GdkEventButton *event);
-    void cycleUnitsHSV (GdkEventButton *event);
+    void cycleUnitsLCH(GdkEventButton *event);
 
 protected:
     Gtk::Label* dimension;
     Gtk::Label* position;
     Gtk::Label *R, *G, *B;
-    Gtk::Label *H, *S, *V;
+    Gtk::Label *L, *C, *H;
     Gtk::Label *LAB_A, *LAB_B, *LAB_L;
 
     Gtk::Label *lR, *lG, *lB;
-    Gtk::Label *lH, *lS, *lV;
+    Gtk::Label *lL, *lC, *lH;
     Gtk::Label *lLAB_A, *lLAB_B, *lLAB_L;
 
 
@@ -59,7 +60,7 @@ public:
     void setInvalid (int fullWidth = -1, int fullHeight = -1);
 
     void getRGBText (int r, int g, int b, Glib::ustring &sR, Glib::ustring &sG, Glib::ustring &sB, bool isRaw = false) override;
-    void getHSVText (float h, float s, float v, Glib::ustring &sH, Glib::ustring &sS, Glib::ustring &sV) override;
+    void getLCHText (float l, float c, float h, Glib::ustring &sL, Glib::ustring &sC, Glib::ustring &sH) override;
     void getLABText (float l, float a, float b, Glib::ustring &sL, Glib::ustring &sA, Glib::ustring &sB) override;
 
 };

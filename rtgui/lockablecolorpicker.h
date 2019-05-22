@@ -55,7 +55,7 @@ public:
 private:
     enum class ColorPickerType {
         RGB,
-        HSV,
+        LCH,
         LAB
     };
     CropWindow* cropWindow;  // the color picker is displayed in a single cropWindow, the one that the user has clicked in
@@ -68,7 +68,7 @@ private:
     Validity validity;
     float r, g, b;  // red green blue in [0;1] range
     float rpreview, gpreview, bpreview;
-    float hue, sat, val;  // hue saturation value in [0;1] range
+    float l, c, h;  // lch in [0;1] range
     float L, a, bb;  // L*a*b value in [0;1] range
 
     void updateBackBuffer ();
@@ -91,8 +91,8 @@ public:
     void rollDisplayedValues ();
     bool incSize ();
     bool decSize ();
-    bool cycleRGB ();
-    bool cycleHSV ();
+    bool cycleRGB();
+    bool cycleLCH();
 };
 
 #endif

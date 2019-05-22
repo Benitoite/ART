@@ -364,7 +364,7 @@ void Options::setDefaults()
 #endif
     fbArrangement = 2;                  // was 0
     navRGBUnit = NavigatorUnit::PERCENT;
-    navHSVUnit = NavigatorUnit::PERCENT;
+    navLCHUnit = NavigatorUnit::PERCENT;
     multiUser = true;
     profilePath = "profiles";
     loadSaveProfilePath = "";           // will be corrected in load as otherwise construction fails
@@ -1362,8 +1362,8 @@ void Options::readFromFile(Glib::ustring fname)
                     navRGBUnit = (NavigatorUnit)keyFile.get_integer("GUI", "NavigatorRGBUnit");
                 }
 
-                if (keyFile.has_key("GUI", "NavigatorHSVUnit")) {
-                    navHSVUnit = (NavigatorUnit)keyFile.get_integer("GUI", "NavigatorHSVUnit");
+                if (keyFile.has_key("GUI", "NavigatorLCHUnit")) {
+                    navLCHUnit = (NavigatorUnit)keyFile.get_integer("GUI", "NavigatorLCHUnit");
                 }
 
                 if (keyFile.has_key("GUI", "ShowFilmStripToolBar")) {
@@ -2102,7 +2102,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_integer ("GUI", "HistogramHeight", histogramHeight);
         keyFile.set_integer ("GUI", "HistogramDrawMode", histogramDrawMode);
         keyFile.set_integer ("GUI", "NavigatorRGBUnit", (int)navRGBUnit);
-        keyFile.set_integer ("GUI", "NavigatorHSVUnit", (int)navHSVUnit);
+        keyFile.set_integer ("GUI", "NavigatorLCHUnit", (int)navLCHUnit);
         keyFile.set_boolean ("GUI", "ShowFilmStripToolBar", showFilmStripToolBar);
         keyFile.set_boolean ("GUI", "FileBrowserToolbarSingleRow", FileBrowserToolbarSingleRow);
         keyFile.set_boolean ("GUI", "HideTPVScrollbar", hideTPVScrollbar);

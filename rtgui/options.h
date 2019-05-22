@@ -220,7 +220,7 @@ public:
     bool fbShowHidden;
     int  fbArrangement;
     NavigatorUnit navRGBUnit;
-    NavigatorUnit navHSVUnit;
+    NavigatorUnit navLCHUnit;
     bool multiUser;
     static Glib::ustring rtdir;
     Glib::ustring version;
