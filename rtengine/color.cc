@@ -366,137 +366,186 @@ void Color::cleanup ()
 void Color::rgb2lab01 (const Glib::ustring &profile, const Glib::ustring &profileW, float r, float g, float b, float &LAB_l, float &LAB_a, float &LAB_b, bool workingSpace)
 { // do not use this function in a loop. It really eats processing time caused by Glib::ustring comparisons
 
-    Glib::ustring profileCalc = "sRGB"; //default
-
-    if (workingSpace) {//display working profile
-        profileCalc = profileW;
-        if (profileW == "sRGB") { //apply sRGB inverse gamma
-
-            if (r > 0.04045f) {
-                r = pow_F(((r + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
-            } else {
-                r /= 12.92f;
-            }
-
-            if (g > 0.04045f) {
-                g = pow_F(((g + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
-            } else {
-                g /= 12.92f;
-            }
-
-            if (b > 0.04045f) {
-                b = pow_F(((b + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
-            } else {
-                b /= 12.92f;
-            }
-        } else if (profileW == "ProPhoto") { // apply inverse gamma 1.8
-            r = pow_F(r, 1.8f);
-            g = pow_F(g, 1.8f);
-            b = pow_F(b, 1.8f);
-        } else if (profileW == "Rec2020") {
-            if (r > 0.0795f) {
-                r = pow_F(((r + 0.0954f) / 1.0954f), 2.2f);
-            } else {
-                r /= 4.5f;
-            }
-
-            if (g > 0.0795f) {
-                g = pow_F(((g + 0.0954f) / 1.0954f), 2.2f);
-            } else {
-                g /= 4.5f;
-            }
-
-            if (b > 0.0795f) {
-                b = pow_F(((b + 0.0954f) / 1.0954f), 2.2f);
-            } else {
-                b /= 4.5f;
-            }
-        } else { // apply inverse gamma 2.2
-            r = pow_F(r, 2.2f);
-            g = pow_F(g, 2.2f);
-            b = pow_F(b, 2.2f);
-        }
-    } else { //display output profile
-        if (profile == settings->srgb) {
-            // use default "sRGB"
-        } else if (profile == "ProPhoto" || profile == settings->prophoto) {
-            profileCalc = "ProPhoto";
-        } else if (profile == "AdobeRGB1998" || profile == settings->adobe) {
-            profileCalc = "Adobe RGB";
-        } else if (profile == settings->widegamut) {
-            profileCalc = "WideGamut";
-        }
-
-        if (profile == settings->srgb || profile == settings->adobe) { //apply sRGB inverse gamma
-            if (r > 0.04045f) {
-                r = pow_F(((r + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
-            } else {
-                r /= 12.92f;
-            }
-
-            if (g > 0.04045f) {
-                g = pow_F(((g + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
-            } else {
-                g /= 12.92f;
-            }
-
-            if (b > 0.04045f) {
-                b = pow_F(((b + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
-            } else {
-                b /= 12.92f;
-            }
-        } else if (profile == settings->prophoto || profile == settings->rec2020) {
-            if (r > 0.0795f) {
-                r = pow_F(((r + 0.0954f) / 1.0954f), 2.2f);
-            } else {
-                r /= 4.5f;
-            }
-
-            if (g > 0.0795f) {
-                g = pow_F(((g + 0.0954f) / 1.0954f), 2.2f);
-            } else {
-                g /= 4.5f;
-            }
-
-            if (b > 0.0795f) {
-                b = pow_F(((b + 0.0954f) / 1.0954f), 2.2f);
-            } else {
-                b /= 4.5f;
-            }
-
-        } else if (profile == "ProPhoto") { // apply inverse gamma 1.8
-
-            r = pow_F(r, 1.8f);
-            g = pow_F(g, 1.8f);
-            b = pow_F(b, 1.8f);
-        } else {// apply inverse gamma 2.2
-
-            r = pow_F(r, 2.2f);
-            g = pow_F(g, 2.2f);
-            b = pow_F(b, 2.2f);
-        }
+    cmsHPROFILE oprof = nullptr;
+    if (workingSpace) {
+        oprof = ICCStore::getInstance()->workingSpace(profileW);
+    } else {
+        oprof = ICCStore::getInstance()->getProfile(profile);
     }
 
-    const TMatrix wprof = rtengine::ICCStore::getInstance()->workingSpaceMatrix(profileCalc);
+    if (!oprof) {
+        LAB_l = LAB_a = LAB_b = 0.f;
+        return;
+    }
 
-    const float xyz_rgb[3][3] = { {static_cast<float>(wprof[0][0]), static_cast<float>(wprof[0][1]), static_cast<float>(wprof[0][2])},
-                                  {static_cast<float>(wprof[1][0]), static_cast<float>(wprof[1][1]), static_cast<float>(wprof[1][2])},
-                                  {static_cast<float>(wprof[2][0]), static_cast<float>(wprof[2][1]), static_cast<float>(wprof[2][2])}
-                                };
+    lcmsMutex->lock();
+    cmsHPROFILE labprof  = cmsCreateLab4Profile(nullptr);
+    cmsHTRANSFORM hTransform = cmsCreateTransform(oprof, TYPE_RGB_FLT, labprof, TYPE_Lab_DBL, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+    cmsCloseProfile(labprof);
+    lcmsMutex->unlock();
 
-    const float var_X = (xyz_rgb[0][0] * r + xyz_rgb[0][1] * g + xyz_rgb[0][2] * b) / Color::D50x;
-    const float var_Y = (xyz_rgb[1][0] * r + xyz_rgb[1][1] * g + xyz_rgb[1][2] * b);
-    const float var_Z = (xyz_rgb[2][0] * r + xyz_rgb[2][1] * g + xyz_rgb[2][2] * b) / Color::D50z;
+    float inbuf[3] = { r, g, b };
+    double outbuf[3];
 
-    const float varxx = var_X > epsf ? xcbrtf(var_X) : (kappaf * var_X  + 16.f) / 116.f ;
-    const float varyy = var_Y > epsf ? xcbrtf(var_Y) : (kappaf * var_Y  + 16.f) / 116.f ;
-    const float varzz = var_Z > epsf ? xcbrtf(var_Z) : (kappaf * var_Z  + 16.f) / 116.f ;
+    cmsDoTransform(hTransform, inbuf, outbuf, 1);
+    cmsDeleteTransform(hTransform);
 
-    LAB_l = var_Y > epsf ? (xcbrtf(var_Y) * 116.f) - 16.f : kappaf * var_Y;
-    LAB_a = 500.f * (varxx - varyy);
-    LAB_b = 200.f * (varyy - varzz);
+    LAB_l = outbuf[0];
+    LAB_a = outbuf[1];
+    LAB_b = outbuf[2];
+    
+    // const TMatrix wprof = rtengine::ICCStore::getInstance()->workingSpaceMatrix(workingSpace ? profileW : profile);
+    // float ll, aa, bb;
+    // rgb2lab(r * 65535.f, g * 65535.f, b * 65535.f, ll, aa, bb, wprof);
+    // LAB_l = ll / 327.68f;
+    // LAB_a = aa / 480.f;
+    // LAB_b = bb / 480.f;
+    // return;
+    
+    // Glib::ustring profileCalc = "sRGB"; //default
+
+    // if (workingSpace) {//display working profile
+    //     profileCalc = profileW;
+    //     if (profileW == "sRGB") { //apply sRGB inverse gamma
+
+    //         if (r > 0.04045f) {
+    //             r = pow_F(((r + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
+    //         } else {
+    //             r /= 12.92f;
+    //         }
+
+    //         if (g > 0.04045f) {
+    //             g = pow_F(((g + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
+    //         } else {
+    //             g /= 12.92f;
+    //         }
+
+    //         if (b > 0.04045f) {
+    //             b = pow_F(((b + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
+    //         } else {
+    //             b /= 12.92f;
+    //         }
+    //     } else if (profileW == "ProPhoto") { // apply inverse gamma 1.8
+    //         r = pow_F(r, 1.8f);
+    //         g = pow_F(g, 1.8f);
+    //         b = pow_F(b, 1.8f);
+    //     } else if (profileW == "Rec2020") {
+    //         if (r > 0.0795f) {
+    //             r = pow_F(((r + 0.0954f) / 1.0954f), 2.2f);
+    //         } else {
+    //             r /= 4.5f;
+    //         }
+
+    //         if (g > 0.0795f) {
+    //             g = pow_F(((g + 0.0954f) / 1.0954f), 2.2f);
+    //         } else {
+    //             g /= 4.5f;
+    //         }
+
+    //         if (b > 0.0795f) {
+    //             b = pow_F(((b + 0.0954f) / 1.0954f), 2.2f);
+    //         } else {
+    //             b /= 4.5f;
+    //         }
+    //     } else { // apply inverse gamma 2.2
+    //         r = pow_F(r, 2.2f);
+    //         g = pow_F(g, 2.2f);
+    //         b = pow_F(b, 2.2f);
+    //     }
+    // } else { //display output profile
+    //     if (profile == settings->srgb) {
+    //         // use default "sRGB"
+    //     } else if (profile == "ProPhoto" || profile == settings->prophoto) {
+    //         profileCalc = "ProPhoto";
+    //     } else if (profile == "AdobeRGB1998" || profile == settings->adobe) {
+    //         profileCalc = "Adobe RGB";
+    //     } else if (profile == settings->widegamut) {
+    //         profileCalc = "WideGamut";
+    //     }
+
+    //     if (profile == settings->srgb || profile == settings->adobe) { //apply sRGB inverse gamma
+    //         if (r > 0.04045f) {
+    //             r = pow_F(((r + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
+    //         } else {
+    //             r /= 12.92f;
+    //         }
+
+    //         if (g > 0.04045f) {
+    //             g = pow_F(((g + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
+    //         } else {
+    //             g /= 12.92f;
+    //         }
+
+    //         if (b > 0.04045f) {
+    //             b = pow_F(((b + 0.055f) / 1.055f), rtengine::Color::sRGBGammaCurve);
+    //         } else {
+    //             b /= 12.92f;
+    //         }
+    //     } else if (profile == settings->prophoto || profile == settings->rec2020) {
+    //         if (r > 0.0795f) {
+    //             r = pow_F(((r + 0.0954f) / 1.0954f), 2.2f);
+    //         } else {
+    //             r /= 4.5f;
+    //         }
+
+    //         if (g > 0.0795f) {
+    //             g = pow_F(((g + 0.0954f) / 1.0954f), 2.2f);
+    //         } else {
+    //             g /= 4.5f;
+    //         }
+
+    //         if (b > 0.0795f) {
+    //             b = pow_F(((b + 0.0954f) / 1.0954f), 2.2f);
+    //         } else {
+    //             b /= 4.5f;
+    //         }
+
+    //     } else if (profile == "ProPhoto") { // apply inverse gamma 1.8
+
+    //         r = pow_F(r, 1.8f);
+    //         g = pow_F(g, 1.8f);
+    //         b = pow_F(b, 1.8f);
+    //     } else {// apply inverse gamma 2.2
+
+    //         r = pow_F(r, 2.2f);
+    //         g = pow_F(g, 2.2f);
+    //         b = pow_F(b, 2.2f);
+    //     }
+    // }
+
+    // const TMatrix wprof = rtengine::ICCStore::getInstance()->workingSpaceMatrix(profileCalc);
+
+    // const float xyz_rgb[3][3] = { {static_cast<float>(wprof[0][0]), static_cast<float>(wprof[0][1]), static_cast<float>(wprof[0][2])},
+    //                               {static_cast<float>(wprof[1][0]), static_cast<float>(wprof[1][1]), static_cast<float>(wprof[1][2])},
+    //                               {static_cast<float>(wprof[2][0]), static_cast<float>(wprof[2][1]), static_cast<float>(wprof[2][2])}
+    //                             };
+
+    // const float var_X = (xyz_rgb[0][0] * r + xyz_rgb[0][1] * g + xyz_rgb[0][2] * b) / Color::D50x;
+    // const float var_Y = (xyz_rgb[1][0] * r + xyz_rgb[1][1] * g + xyz_rgb[1][2] * b);
+    // const float var_Z = (xyz_rgb[2][0] * r + xyz_rgb[2][1] * g + xyz_rgb[2][2] * b) / Color::D50z;
+
+    // const float varxx = var_X > epsf ? xcbrtf(var_X) : (kappaf * var_X  + 16.f) / 116.f ;
+    // const float varyy = var_Y > epsf ? xcbrtf(var_Y) : (kappaf * var_Y  + 16.f) / 116.f ;
+    // const float varzz = var_Z > epsf ? xcbrtf(var_Z) : (kappaf * var_Z  + 16.f) / 116.f ;
+
+    // LAB_l = var_Y > epsf ? (xcbrtf(var_Y) * 116.f) - 16.f : kappaf * var_Y;
+    // LAB_a = 500.f * (varxx - varyy);
+    // LAB_b = 200.f * (varyy - varzz);
 
 }
+
+
+void Color::lab2lch01(float L, float a, float b, float &l, float &c, float &h)
+{
+    l = L / 100.f;
+    c = sqrtf(a * a + b * b) / 100.f;
+    h = xatan2f(b, a);
+    if (h < 0.f) {
+        h += 2.f * rtengine::RT_PI_F;
+    }
+    h /= (2.f * rtengine::RT_PI_F);
+}
+
 
 void Color::rgb2hsl(float r, float g, float b, float &h, float &s, float &l)
 {
@@ -849,6 +898,7 @@ void Color::hsv2rgb01 (float h, float s, float v, float &r, float &g, float &b)
         b = p;
     }
 }
+
 
 void Color::hsv2rgb (float h, float s, float v, int &r, int &g, int &b)
 {

@@ -63,7 +63,8 @@ FramesData::FramesData(const Glib::ustring &fname):
     lens("Unknown"),
     sampleFormat(IIOSF_UNKNOWN),
     isPixelShift(false),
-    isHDR(false)
+    isHDR(false),
+    rating_(0)
 {
     memset(&time, 0, sizeof(time));
     timeStamp = 0;
@@ -242,6 +243,10 @@ FramesData::FramesData(const Glib::ustring &fname):
 
         if (find_exif_tag("Exif.Image.ExposureBiasValue")) {
             expcomp = pos->toFloat();
+        }
+
+        if (find_exif_tag("Exif.Image.Rating")) {
+            rating_ = pos->toLong();
         }
 
         // -----------------------
@@ -544,6 +549,12 @@ unsigned int FramesData::getFrameCount() const
 Glib::ustring FramesData::getFileName() const
 {
     return fname_;
+}
+
+
+int FramesData::getRating() const
+{
+    return rating_;
 }
 
 //------inherited functions--------------//

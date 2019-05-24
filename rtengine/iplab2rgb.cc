@@ -175,11 +175,11 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
     Image8* image = new Image8(cw, ch);
     Glib::ustring profile;
 
-    bool standard_gamma;
+    // bool standard_gamma;
 
     if (settings->HistogramWorking && consider_histogram_settings) {
         profile = icm.workingProfile;
-        standard_gamma = true;
+        // standard_gamma = true;
     } else {
         profile = icm.outputProfile;
 
@@ -187,7 +187,7 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
             profile = "sRGB";
         }
 
-        standard_gamma = false;
+        // standard_gamma = false;
     }
 
     cmsHPROFILE oprof = ICCStore::getInstance()->getProfile(profile);
@@ -195,9 +195,9 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
     if (oprof) {
         cmsHPROFILE oprofG = oprof;
 
-        if (standard_gamma) {
-            oprofG = ICCStore::makeStdGammaProfile(oprof);
-        }
+        // if (standard_gamma) {
+        //     oprofG = ICCStore::makeStdGammaProfile(oprof);
+        // }
 
         cmsUInt32Number flags = cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE;
 

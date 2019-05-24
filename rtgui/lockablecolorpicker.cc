@@ -30,7 +30,7 @@ extern Options options;
 LockableColorPicker::LockableColorPicker (CropWindow* cropWindow, Glib::ustring *oProfile, Glib::ustring *wProfile)
 : cropWindow(cropWindow), displayedValues(ColorPickerType::RGB), position(0, 0), size(Size::S15),
   outputProfile(oProfile), workingProfile(wProfile), validity(Validity::OUTSIDE),
-  r(0.f), g(0.f), b(0.f), rpreview(0.f), gpreview(0.f), bpreview(0.f), hue(0.f), sat(0.f), val(0.f), L(0.f), a(0.f), bb(0.f)
+  r(0.f), g(0.f), b(0.f), rpreview(0.f), gpreview(0.f), bpreview(0.f), l(0.f), c(0.f), h(0.f), L(0.f), a(0.f), bb(0.f)
 {}
 
 void LockableColorPicker::updateBackBuffer ()
@@ -67,13 +67,13 @@ void LockableColorPicker::updateBackBuffer ()
             layout[2][0] = iArea->create_pango_layout(M("NAVIGATOR_B"));
             layout[2][1] = iArea->create_pango_layout(s3);
             break;
-        case ColorPickerType::HSV:
-            navigator->getHSVText (hue, sat, val, s1, s2, s3);
-            layout[0][0] = iArea->create_pango_layout(M("NAVIGATOR_H"));
+        case ColorPickerType::LCH:
+            navigator->getLCHText(l, c, h, s1, s2, s3);
+            layout[0][0] = iArea->create_pango_layout(M("NAVIGATOR_L"));
             layout[0][1] = iArea->create_pango_layout(s1);
-            layout[1][0] = iArea->create_pango_layout(M("NAVIGATOR_S"));
+            layout[1][0] = iArea->create_pango_layout(M("NAVIGATOR_C"));
             layout[1][1] = iArea->create_pango_layout(s2);
-            layout[2][0] = iArea->create_pango_layout(M("NAVIGATOR_V"));
+            layout[2][0] = iArea->create_pango_layout(M("NAVIGATOR_H"));
             layout[2][1] = iArea->create_pango_layout(s3);
             break;
         case ColorPickerType::LAB:
@@ -277,8 +277,8 @@ void LockableColorPicker::setRGB (const float R, const float G, const float B, c
     gpreview = previewG;
     bpreview = previewB;
 
-    rtengine::Color::rgb2hsv01(r, g, b, hue, sat, val);
-    rtengine::Color::rgb2lab01(*outputProfile, *workingProfile, r, g, b, L, a, bb, options.rtSettings.HistogramWorking);  // TODO: Really sure this function works?
+    rtengine::Color::rgb2lab01(*outputProfile, *workingProfile, r, g, b, L, a, bb, options.rtSettings.HistogramWorking);
+    rtengine::Color::lab2lch01(L, a, bb, l, c, h);
 
     if (validity != Validity::OUTSIDE) {
         setDirty(true);
@@ -376,9 +376,9 @@ bool LockableColorPicker::cycleRGB ()
 }
 
 // return true if the picker has to be redrawn
-bool LockableColorPicker::cycleHSV ()
+bool LockableColorPicker::cycleLCH()
 {
-    if (displayedValues == ColorPickerType::HSV) {
+    if (displayedValues == ColorPickerType::LCH) {
         setDirty (true);
         return true;
     }

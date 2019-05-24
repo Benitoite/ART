@@ -50,6 +50,7 @@ private:
     IIOSampleFormat sampleFormat;
     bool isPixelShift;
     bool isHDR;
+    int rating_;
     
 public:
     FramesData (const Glib::ustring& fname);
@@ -76,6 +77,7 @@ public:
     std::string getSerialNumber() const;
     std::string getOrientation() const override;
     Glib::ustring getFileName() const override;
+    int getRating() const override;
 };
 
 

@@ -30,7 +30,7 @@ extern Options options;
 
 using namespace rtengine;
 
-Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentHSVUnit(options.navHSVUnit)
+Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentLCHUnit(options.navLCHUnit)
 {
 
     set_label (M("MAIN_MSG_NAVIGATOR"));
@@ -47,9 +47,9 @@ Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentHSVUnit(opt
     lR = Gtk::manage (new Gtk::Label (M("NAVIGATOR_R")));
     lG = Gtk::manage (new Gtk::Label (M("NAVIGATOR_G")));
     lB = Gtk::manage (new Gtk::Label (M("NAVIGATOR_B")));
+    lL = Gtk::manage (new Gtk::Label (M("NAVIGATOR_L")));
+    lC = Gtk::manage (new Gtk::Label (M("NAVIGATOR_C")));
     lH = Gtk::manage (new Gtk::Label (M("NAVIGATOR_H")));
-    lS = Gtk::manage (new Gtk::Label (M("NAVIGATOR_S")));
-    lV = Gtk::manage (new Gtk::Label (M("NAVIGATOR_V")));
     lLAB_A = Gtk::manage (new Gtk::Label (M("NAVIGATOR_LAB_A")));
     lLAB_B = Gtk::manage (new Gtk::Label (M("NAVIGATOR_LAB_B")));
     lLAB_L = Gtk::manage (new Gtk::Label (M("NAVIGATOR_LAB_L")));
@@ -58,9 +58,9 @@ Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentHSVUnit(opt
     lR->set_alignment(Gtk::ALIGN_START);
     lG->set_alignment(Gtk::ALIGN_START);
     lB->set_alignment(Gtk::ALIGN_START);
+    lL->set_alignment(Gtk::ALIGN_START);
+    lC->set_alignment(Gtk::ALIGN_START);
     lH->set_alignment(Gtk::ALIGN_START);
-    lS->set_alignment(Gtk::ALIGN_START);
-    lV->set_alignment(Gtk::ALIGN_START);
     lLAB_A->set_alignment(Gtk::ALIGN_START);
     lLAB_B->set_alignment(Gtk::ALIGN_START);
     lLAB_L->set_alignment(Gtk::ALIGN_START);
@@ -69,9 +69,9 @@ Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentHSVUnit(opt
     R = Gtk::manage (new Gtk::Label ());
     G = Gtk::manage (new Gtk::Label ());
     B = Gtk::manage (new Gtk::Label ());
+    L = Gtk::manage (new Gtk::Label ());
+    C = Gtk::manage (new Gtk::Label ());
     H = Gtk::manage (new Gtk::Label ());
-    S = Gtk::manage (new Gtk::Label ());
-    V = Gtk::manage (new Gtk::Label ());
     LAB_A = Gtk::manage (new Gtk::Label ());
     LAB_B = Gtk::manage (new Gtk::Label ());
     LAB_L = Gtk::manage (new Gtk::Label ());
@@ -80,9 +80,9 @@ Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentHSVUnit(opt
     R->set_alignment(Gtk::ALIGN_END);
     G->set_alignment(Gtk::ALIGN_END);
     B->set_alignment(Gtk::ALIGN_END);
+    L->set_alignment(Gtk::ALIGN_END);
+    C->set_alignment(Gtk::ALIGN_END);
     H->set_alignment(Gtk::ALIGN_END);
-    S->set_alignment(Gtk::ALIGN_END);
-    V->set_alignment(Gtk::ALIGN_END);
     LAB_A->set_alignment(Gtk::ALIGN_END);
     LAB_B->set_alignment(Gtk::ALIGN_END);
     LAB_L->set_alignment(Gtk::ALIGN_END);
@@ -164,17 +164,17 @@ Navigator::Navigator () : currentRGBUnit(options.navRGBUnit), currentHSVUnit(opt
     Gtk::HBox* hbox2 = Gtk::manage (new Gtk::HBox ()); // container
     Gtk::Table* table2 = Gtk::manage (new Gtk::Table (3, 2));
 
-    table2->attach (*lH, 0, 1, 0, 1, Gtk::SHRINK, Gtk::SHRINK, 4, 0);
-    table2->attach (*H,  1, 2, 0, 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 0, 0);
+    table2->attach (*lL, 0, 1, 0, 1, Gtk::SHRINK, Gtk::SHRINK, 4, 0);
+    table2->attach (*L,  1, 2, 0, 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 0, 0);
 
-    table2->attach (*lS, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK, 4, 0);
-    table2->attach (*S,  1, 2, 1, 2, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 0, 0);
+    table2->attach (*lC, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK, 4, 0);
+    table2->attach (*C,  1, 2, 1, 2, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 0, 0);
 
-    table2->attach (*lV, 0, 1, 2, 3, Gtk::SHRINK, Gtk::SHRINK, 4, 0);
-    table2->attach (*V,  1, 2, 2, 3, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 0, 0);
+    table2->attach (*lH, 0, 1, 2, 3, Gtk::SHRINK, Gtk::SHRINK, 4, 0);
+    table2->attach (*H,  1, 2, 2, 3, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 0, 0);
 
     evBox2->add (*table2);
-    evBox2->signal_button_release_event().connect_notify( sigc::mem_fun(*this, &Navigator::cycleUnitsHSV));
+    evBox2->signal_button_release_event().connect_notify( sigc::mem_fun(*this, &Navigator::cycleUnitsLCH));
 
     hbox2->pack_start (*evBox2, Gtk::PACK_EXPAND_WIDGET, 4);
     hbox2->pack_start (*Gtk::manage (new  Gtk::VSeparator()), Gtk::PACK_SHRINK, 4);
@@ -216,9 +216,9 @@ void Navigator::setInvalid (int fullWidth, int fullHeight)
     R->set_text (M("NAVIGATOR_NA"));
     G->set_text (M("NAVIGATOR_NA"));
     B->set_text (M("NAVIGATOR_NA"));
+    L->set_text (M("NAVIGATOR_NA"));
+    C->set_text (M("NAVIGATOR_NA"));
     H->set_text (M("NAVIGATOR_NA"));
-    S->set_text (M("NAVIGATOR_NA"));
-    V->set_text (M("NAVIGATOR_NA"));
     LAB_A->set_text (M("NAVIGATOR_NA"));
     LAB_B->set_text (M("NAVIGATOR_NA"));
     LAB_L->set_text (M("NAVIGATOR_NA"));
@@ -251,24 +251,24 @@ void Navigator::getRGBText (int r, int g, int b, Glib::ustring &sR, Glib::ustrin
     }
 }
 
-void Navigator::getHSVText (float h, float s, float v, Glib::ustring &sH, Glib::ustring &sS, Glib::ustring &sV)
+void Navigator::getLCHText(float l, float c, float h, Glib::ustring &sL, Glib::ustring &sC, Glib::ustring &sH)
 {
-    switch (currentHSVUnit) {
+    switch (currentLCHUnit) {
     case (Options::NavigatorUnit::R0_1):
+        sL = Glib::ustring::format(std::fixed, std::setprecision(4), l);
+        sC = Glib::ustring::format(std::fixed, std::setprecision(4), c);
         sH = Glib::ustring::format(std::fixed, std::setprecision(4), h);
-        sS = Glib::ustring::format(std::fixed, std::setprecision(4), s);
-        sV = Glib::ustring::format(std::fixed, std::setprecision(4), v);
         break;
     case (Options::NavigatorUnit::R0_255):
+        sL = Glib::ustring::format(std::fixed, std::setprecision(0), l * 255);
+        sC = Glib::ustring::format(std::fixed, std::setprecision(0), c * 255);
         sH = Glib::ustring::format(std::fixed, std::setprecision(0), h * 255);
-        sS = Glib::ustring::format(std::fixed, std::setprecision(0), s * 255);
-        sV = Glib::ustring::format(std::fixed, std::setprecision(0), v * 255);
         break;
     case (Options::NavigatorUnit::PERCENT):
     default:
+        sL = Glib::ustring::format(std::fixed, std::setprecision(1), l * 100.f) + Glib::ustring("%");
+        sC = Glib::ustring::format(std::fixed, std::setprecision(1), c * 100.f) + Glib::ustring("%");
         sH = Glib::ustring::format(std::fixed, std::setprecision(1), h * 360.f) + Glib::ustring("\xc2\xb0");
-        sS = Glib::ustring::format(std::fixed, std::setprecision(1), s * 100.f) + Glib::ustring("%");
-        sV = Glib::ustring::format(std::fixed, std::setprecision(1), v * 100.f) + Glib::ustring("%");
     }
 }
 
@@ -295,26 +295,27 @@ void Navigator::pointerMoved (bool validPos, const Glib::ustring &profile, const
         G->set_text (s2);
         B->set_text (s3);
         if (isRaw) {
+            L->set_text ("--");
+            C->set_text ("--");
             H->set_text ("--");
-            S->set_text ("--");
-            V->set_text ("--");
             LAB_L->set_text ("--");
             LAB_A->set_text ("--");
             LAB_B->set_text ("--");
         } else {
-            float h, s, v;
+            float l, c, h;
             float LAB_a, LAB_b, LAB_l;
-            Color::rgb2hsv01(r / 255.f, g / 255.f, b / 255.f, h, s, v);
-            getHSVText (h, s, v, s1, s2, s3);
-            H->set_text (s1);
-            S->set_text (s2);
-            V->set_text (s3);
 
-            Color::rgb2lab01(profile, profileW, r / 255.f, g / 255.f, b / 255.f, LAB_l, LAB_a, LAB_b, options.rtSettings.HistogramWorking);  // TODO: Really sure this function works?
+            Color::rgb2lab01(profile, profileW, r / 255.f, g / 255.f, b / 255.f, LAB_l, LAB_a, LAB_b, options.rtSettings.HistogramWorking);
             getLABText (LAB_l, LAB_a, LAB_b, s1, s2, s3);
             LAB_L->set_text (s1);
             LAB_A->set_text (s2);
             LAB_B->set_text (s3);
+
+            Color::lab2lch01(LAB_l, LAB_a, LAB_b, l, c, h);
+            getLCHText(l, c, h, s1, s2, s3);
+            L->set_text(s1);
+            C->set_text(s2);
+            H->set_text(s3);            
         }
     }
 }
@@ -348,31 +349,31 @@ void Navigator::cycleUnitsRGB (GdkEventButton *event) {
     sig_cycle_rgb.emit();
 }
 
-void Navigator::cycleUnitsHSV (GdkEventButton *event) {
-    uint16_t v = (uint16_t)currentHSVUnit;
+void Navigator::cycleUnitsLCH(GdkEventButton *event) {
+    uint16_t v = (uint16_t)currentLCHUnit;
     ++v;
     if (v == (uint16_t)Options::NavigatorUnit::_COUNT) {
         v = 0;
     }
-    options.navHSVUnit = currentHSVUnit = (Options::NavigatorUnit)v;
+    options.navLCHUnit = currentLCHUnit = (Options::NavigatorUnit)v;
 
-    switch (currentHSVUnit) {
+    switch (currentLCHUnit) {
     case Options::NavigatorUnit::R0_1:
+        L->set_text ("[0-1]");
+        C->set_text ("[0-1]");
         H->set_text ("[0-1]");
-        S->set_text ("[0-1]");
-        V->set_text ("[0-1]");
         break;
     case Options::NavigatorUnit::R0_255:
+        L->set_text ("[0-255]");
+        C->set_text ("[0-255]");
         H->set_text ("[0-255]");
-        S->set_text ("[0-255]");
-        V->set_text ("[0-255]");
         break;
     case Options::NavigatorUnit::PERCENT:
     default:
+        L->set_text ("[%]");
+        C->set_text ("[%]");
         H->set_text ("[\xc2\xb0]");
-        S->set_text ("[%]");
-        V->set_text ("[%]");
         break;
     }
-    sig_cycle_hsv.emit();
+    sig_cycle_lch.emit();
 }

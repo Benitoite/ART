@@ -45,7 +45,7 @@ Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, CacheImageDa
       lastW(0), lastH(0), lastScale(0), initial_(false)
 {
 
-    loadProcParams ();
+    loadProcParams (false);
 
     // should be safe to use the unprotected version of loadThumbnail, since we are in the constructor
     _loadThumbnail ();
@@ -62,6 +62,8 @@ Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, CacheImageDa
     //     setRank(cfs.rankOld);
     //     setInTrash(cfs.inTrashOld);
     // }
+
+    loadRating();
 
     delete tpp;
     tpp = nullptr;
@@ -353,7 +355,7 @@ void Thumbnail::notifylisterners_procParamsChanged(int whoChangedIt)
  * from the default Raw or Image ProcParams, then with the values from the loaded
  * ProcParams (sidecar or cache file).
  */
-void Thumbnail::loadProcParams ()
+void Thumbnail::loadProcParams(bool load_rating)
 {
     MyMutex::MyLock lock(mutex);
 
@@ -382,7 +384,9 @@ void Thumbnail::loadProcParams ()
         }
     }
 
-    loadRating();
+    if (load_rating) {
+        loadRating();
+    }
 }
 
 void Thumbnail::clearProcParams (int whoClearedIt)
@@ -828,6 +832,7 @@ int Thumbnail::infoFromImage (const Glib::ustring& fname)
         cfs.lens         = idata->getLens();
         cfs.camMake      = idata->getMake();
         cfs.camModel     = idata->getModel();
+        cfs.rating = idata->getRating();
 
         if (idata->getOrientation() == "Rotate 90 CW") {
             deg = 90;
@@ -1222,6 +1227,13 @@ void Thumbnail::loadRating()
             rating_.trash.value = pparams.inTrash;
         }
     } else {
+        if (cfs.exifValid) {
+            if (cfs.rating < 0) {
+                rating_.trash.value = true;
+            } else {
+                rating_.rank.value = rtengine::LIM(cfs.rating, 0, 5);
+            }
+        }
         try {
             auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
             auto pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Rating"));

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -127,6 +128,7 @@ public:
     static FramesMetaData* fromFile (const Glib::ustring& fname);
 
     virtual Glib::ustring getFileName() const = 0;
+    virtual int getRating() const = 0;
 };
 
 /** This listener interface is used to indicate the progress of time consuming operations */

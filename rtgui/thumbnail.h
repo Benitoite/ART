@@ -117,7 +117,7 @@ public:
     void setProcParams(const rtengine::procparams::PartialProfile &pp, int whoChangedIt=-1, bool updateCacheNow=true, bool resetToDefault=false);
     void setProcParams(const rtengine::procparams::ProcParams &pp, int whoChangedIt=-1, bool updateCacheNow=true, bool resetToDefault=false);
     void clearProcParams(int whoClearedIt=-1);
-    void loadProcParams();
+    void loadProcParams(bool load_rating=true);
 
     void notifylisterners_procParamsChanged(int whoChangedIt);
 
