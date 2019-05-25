@@ -261,7 +261,7 @@ void History::procParamsChanged(
         newrow[historyColumns.value] = g_markup_escape_text(descr.c_str(), -1);
         newrow[historyColumns.chev] = ev;
         newrow[historyColumns.params] = *params;
-        newrow[historyColumns.paramsEdited] = paramsEdited ? *paramsEdited : defParamsEdited;
+        //newrow[historyColumns.paramsEdited] = paramsEdited ? *paramsEdited : defParamsEdited;
 
         if (ev != EvBookmarkSelected) {
             selection->select (newrow);
@@ -279,7 +279,7 @@ void History::procParamsChanged(
         row[historyColumns.value] = g_markup_escape_text(descr.c_str(), -1);
         row[historyColumns.chev] = ev;
         row[historyColumns.params] = *params;
-        row[historyColumns.paramsEdited] = paramsEdited ? *paramsEdited : defParamsEdited;
+        //row[historyColumns.paramsEdited] = paramsEdited ? *paramsEdited : defParamsEdited;
 
         if (ev != EvBookmarkSelected) {
             selection->select (row);
@@ -322,8 +322,8 @@ void History::addBookmarkWithText (Glib::ustring text)
     newrow[bookmarkColumns.text] = text;
     ProcParams params = row[historyColumns.params];
     newrow[bookmarkColumns.params] = params;
-    ParamsEdited paramsEdited = row[historyColumns.paramsEdited];
-    newrow[bookmarkColumns.paramsEdited] = paramsEdited;
+    // ParamsEdited paramsEdited = row[historyColumns.paramsEdited];
+    // newrow[bookmarkColumns.paramsEdited] = paramsEdited;
 }
 
 void History::addBookmarkPressed ()

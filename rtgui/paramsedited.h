@@ -22,8 +22,8 @@
 
 #include <glibmm.h>
 #include <vector>
-#include "../rtengine/procparams.h"
-#include "../rtengine/rtengine.h"
+//#include "../rtengine/procparams.h"
+//#include "../rtengine/rtengine.h"
 
 class ParamsEdited {
 
@@ -85,8 +85,8 @@ public:
     explicit ParamsEdited(bool value = false);
 
     void set(bool v);
-    void initFrom(const std::vector<rtengine::procparams::ProcParams>& src);
-    void combine(rtengine::procparams::ProcParams& toEdit, const rtengine::procparams::ProcParams& mods, bool forceSet);
+    // void initFrom(const std::vector<rtengine::procparams::ProcParams>& src);
+    // void combine(rtengine::procparams::ProcParams& toEdit, const rtengine::procparams::ProcParams& mods, bool forceSet);
 };
 
 #endif
