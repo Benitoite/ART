@@ -243,35 +243,10 @@ LCurve::~LCurve ()
 
 }
 
-void LCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
+void LCurve::read(const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        brightness->setEditedState (pedited->labCurve.brightness ? Edited : UnEdited);
-        contrast->setEditedState (pedited->labCurve.contrast ? Edited : UnEdited);
-        chromaticity->setEditedState (pedited->labCurve.chromaticity ? Edited : UnEdited);
-
-        //%%%%%%%%%%%%%%%%%%%%%%
-        rstprotection->setEditedState (pedited->labCurve.rstprotection ? Edited : UnEdited);
-        avoidcolorshift->set_inconsistent (!pedited->labCurve.avoidcolorshift);
-        lcredsk->set_inconsistent (!pedited->labCurve.lcredsk);
-
-        //%%%%%%%%%%%%%%%%%%%%%%
-
-        lshape->setUnChanged   (!pedited->labCurve.lcurve);
-        ashape->setUnChanged   (!pedited->labCurve.acurve);
-        bshape->setUnChanged   (!pedited->labCurve.bcurve);
-        ccshape->setUnChanged  (!pedited->labCurve.cccurve);
-        chshape->setUnChanged  (!pedited->labCurve.chcurve);
-        lhshape->setUnChanged  (!pedited->labCurve.lhcurve);
-        hhshape->setUnChanged  (!pedited->labCurve.hhcurve);
-        lcshape->setUnChanged  (!pedited->labCurve.lccurve);
-        clshape->setUnChanged  (!pedited->labCurve.clcurve);
-
-        set_inconsistent(multiImage && !pedited->labCurve.enabled);
-    }
 
     brightness->setValue    (pp->labCurve.brightness);
     contrast->setValue      (pp->labCurve.contrast);
@@ -365,7 +340,7 @@ void LCurve::setEditProvider  (EditDataProvider *provider)
 }
 
 
-void LCurve::write (ProcParams* pp, ParamsEdited* pedited)
+void LCurve::write(ProcParams* pp)
 {
     pp->labCurve.enabled = getEnabled();
     
@@ -388,72 +363,21 @@ void LCurve::write (ProcParams* pp, ParamsEdited* pedited)
     pp->labCurve.hhcurve = hhshape->getCurve ();
     pp->labCurve.lccurve = lcshape->getCurve ();
     pp->labCurve.clcurve = clshape->getCurve ();
-
-    if (pedited) {
-        pedited->labCurve.brightness   = brightness->getEditedState ();
-        pedited->labCurve.contrast     = contrast->getEditedState ();
-        pedited->labCurve.chromaticity = chromaticity->getEditedState ();
-
-        //%%%%%%%%%%%%%%%%%%%%%%
-        pedited->labCurve.avoidcolorshift = !avoidcolorshift->get_inconsistent();
-        pedited->labCurve.lcredsk         = !lcredsk->get_inconsistent();
-
-        pedited->labCurve.rstprotection   = rstprotection->getEditedState ();
-
-        pedited->labCurve.lcurve    = !lshape->isUnChanged ();
-        pedited->labCurve.acurve    = !ashape->isUnChanged ();
-        pedited->labCurve.bcurve    = !bshape->isUnChanged ();
-        pedited->labCurve.cccurve   = !ccshape->isUnChanged ();
-        pedited->labCurve.chcurve   = !chshape->isUnChanged ();
-        pedited->labCurve.lhcurve   = !lhshape->isUnChanged ();
-        pedited->labCurve.hhcurve   = !hhshape->isUnChanged ();
-        pedited->labCurve.lccurve   = !lcshape->isUnChanged ();
-        pedited->labCurve.clcurve   = !clshape->isUnChanged ();
-
-        pedited->labCurve.enabled = !get_inconsistent();
-    }
-
 }
 
-void LCurve::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void LCurve::setDefaults(const ProcParams* defParams)
 {
 
     brightness->setDefault (defParams->labCurve.brightness);
     contrast->setDefault (defParams->labCurve.contrast);
     chromaticity->setDefault (defParams->labCurve.chromaticity);
     rstprotection->setDefault (defParams->labCurve.rstprotection);
-
-    if (pedited) {
-        brightness->setDefaultEditedState (pedited->labCurve.brightness ? Edited : UnEdited);
-        contrast->setDefaultEditedState (pedited->labCurve.contrast ? Edited : UnEdited);
-        chromaticity->setDefaultEditedState (pedited->labCurve.chromaticity ? Edited : UnEdited);
-        rstprotection->setDefaultEditedState (pedited->labCurve.rstprotection ? Edited : UnEdited);
-    } else {
-        brightness->setDefaultEditedState (Irrelevant);
-        contrast->setDefaultEditedState (Irrelevant);
-        chromaticity->setDefaultEditedState (Irrelevant);
-        rstprotection->setDefaultEditedState (Irrelevant);
-    }
 }
 
 //%%%%%%%%%%%%%%%%%%%%%%
 //Color shift control changed
 void LCurve::avoidcolorshift_toggled ()
 {
-
-    if (batchMode) {
-        if (avoidcolorshift->get_inconsistent()) {
-            avoidcolorshift->set_inconsistent (false);
-            acconn.block (true);
-            avoidcolorshift->set_active (false);
-            acconn.block (false);
-        } else if (lastACVal) {
-            avoidcolorshift->set_inconsistent (true);
-        }
-
-        lastACVal = avoidcolorshift->get_active ();
-    }
-
     if (listener && getEnabled()) {
         if (avoidcolorshift->get_active ()) {
             listener->panelChanged (EvLAvoidColorShift, M("GENERAL_ENABLED"));
@@ -465,21 +389,7 @@ void LCurve::avoidcolorshift_toggled ()
 
 void LCurve::lcredsk_toggled ()
 {
-
-    if (batchMode) {
-        if (lcredsk->get_inconsistent()) {
-            lcredsk->set_inconsistent (false);
-            lcconn.block (true);
-            lcredsk->set_active (false);
-            lcconn.block (false);
-        } else if (lastLCVal) {
-            lcredsk->set_inconsistent (true);
-        }
-
-        lastLCVal = lcredsk->get_active ();
-    } else {
-        lcshape->refresh();
-    }
+    lcshape->refresh();
 
     if (listener && getEnabled()) {
         if (lcredsk->get_active ()) {
@@ -567,17 +477,10 @@ void LCurve::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged (EvLRSTProtection, costr);
         }
     } else if (a == chromaticity) {
-        if (multiImage) {
-            //if chromaticity==-100 (lowest value), we enter the B&W mode and avoid color shift and rstprotection has no effect
-            rstprotection->set_sensitive( true );
-            avoidcolorshift->set_sensitive( true );
-            lcredsk->set_sensitive( true );
-        } else {
-            //if chromaticity==-100 (lowest value), we enter the B&W mode and avoid color shift and rstprotection has no effect
-            rstprotection->set_sensitive( int(newval) > -100 ); //no reason for grey rstprotection
-            avoidcolorshift->set_sensitive( int(newval) > -100 );
-            lcredsk->set_sensitive( int(newval) > -100 );
-        }
+        //if chromaticity==-100 (lowest value), we enter the B&W mode and avoid color shift and rstprotection has no effect
+        rstprotection->set_sensitive( int(newval) > -100 ); //no reason for grey rstprotection
+        avoidcolorshift->set_sensitive( int(newval) > -100 );
+        lcredsk->set_sensitive( int(newval) > -100 );
 
         if (listener && getEnabled()) {
             listener->panelChanged (EvLSaturation, costr);
@@ -652,19 +555,6 @@ void LCurve::colorForValue (double valX, double valY, enum ColorCaller::ElemType
     caller->ccBlue = double(B);
 }
 
-void LCurve::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    brightness->showEditedCB ();
-    contrast->showEditedCB ();
-    chromaticity->showEditedCB ();
-    rstprotection->showEditedCB ();
-    curveEditorG->setBatchMode (batchMode);
-    lcshape->setBottomBarColorProvider(nullptr, -1);
-    lcshape->setLeftBarColorProvider(nullptr, -1);
-}
-
 
 void LCurve::updateCurveBackgroundHistogram(
     const LUTu& histToneCurve,
@@ -695,13 +585,6 @@ void LCurve::updateCurveBackgroundHistogram(
 //    ccshape->updateBackgroundHistogram (histCCurve);
 }
 
-void LCurve::setAdjusterBehavior (bool bradd, bool contradd, bool satadd)
-{
-
-    brightness->setAddMode(bradd);
-    contrast->setAddMode(contradd);
-    chromaticity->setAddMode(satadd);
-}
 
 void LCurve::trimValues (rtengine::procparams::ProcParams* pp)
 {

@@ -53,16 +53,11 @@ PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCE
     dpixelconn = deadPixel->signal_toggled().connect ( sigc::mem_fun(*this, &PreProcess::deadPixelChanged), true);
 }
 
-void PreProcess::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void PreProcess::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
     hpixelconn.block (true);
     dpixelconn.block (true);
-
-    if(pedited ) {
-        hotPixel->set_inconsistent (!pedited->raw.hotPixelFilter);
-        deadPixel->set_inconsistent (!pedited->raw.deadPixelFilter);
-    }
 
     lastHot = pp->raw.hotPixelFilter;
     lastDead = pp->raw.deadPixelFilter;
@@ -74,17 +69,11 @@ void PreProcess::read(const rtengine::procparams::ProcParams* pp, const ParamsEd
     enableListener ();
 }
 
-void PreProcess::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void PreProcess::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.hotPixelFilter = hotPixel->get_active();
     pp->raw.deadPixelFilter = deadPixel->get_active();
     pp->raw.hotdeadpix_thresh = hdThreshold->getIntValue();
-
-    if (pedited) {
-        pedited->raw.hotdeadpix_thresh = hdThreshold->getEditedState ();
-        pedited->raw.hotPixelFilter = !hotPixel->get_inconsistent();
-        pedited->raw.deadPixelFilter = !deadPixel->get_inconsistent();
-    }
 }
 
 void PreProcess::adjusterChanged(Adjuster* a, double newval)
@@ -102,19 +91,6 @@ void PreProcess::adjusterAutoToggled(Adjuster* a, bool newval)
 
 void PreProcess::hotPixelChanged ()
 {
-    if (batchMode) {
-        if (hotPixel->get_inconsistent()) {
-            hotPixel->set_inconsistent (false);
-            hpixelconn.block (true);
-            hotPixel->set_active (false);
-            hpixelconn.block (false);
-        } else if (lastHot) {
-            hotPixel->set_inconsistent (true);
-        }
-
-        lastHot = hotPixel->get_active ();
-    }
-
     if (listener) {
         listener->panelChanged (EvPreProcessHotPixel, hotPixel->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
@@ -122,19 +98,6 @@ void PreProcess::hotPixelChanged ()
 
 void PreProcess::deadPixelChanged ()
 {
-    if (batchMode) {
-        if (deadPixel->get_inconsistent()) {
-            deadPixel->set_inconsistent (false);
-            dpixelconn.block (true);
-            deadPixel->set_active (false);
-            dpixelconn.block (false);
-        } else if (lastDead) {
-            deadPixel->set_inconsistent (true);
-        }
-
-        lastDead = deadPixel->get_active ();
-    }
-
     if (listener) {
         listener->panelChanged (EvPreProcessDeadPixel, deadPixel->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }

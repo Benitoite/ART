@@ -48,40 +48,21 @@ Distortion::Distortion (): FoldableToolPanel(this, "distortion", M("TP_DISTORTIO
     pack_start (*distor);
 }
 
-void Distortion::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Distortion::read(const ProcParams* pp)
 {
-
     disableListener ();
-
-    if (pedited) {
-        distor->setEditedState (pedited->distortion.amount ? Edited : UnEdited);
-    }
-
     distor->setValue (pp->distortion.amount);
-
     enableListener ();
 }
 
-void Distortion::write (ProcParams* pp, ParamsEdited* pedited)
+void Distortion::write(ProcParams* pp)
 {
-
     pp->distortion.amount = distor->getValue ();
-
-    if (pedited) {
-        pedited->distortion.amount = distor->getEditedState ();
-    }
 }
 
-void Distortion::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Distortion::setDefaults(const ProcParams* defParams)
 {
-
     distor->setDefault (defParams->distortion.amount);
-
-    if (pedited) {
-        distor->setDefaultEditedState (pedited->distortion.amount ? Edited : UnEdited);
-    } else  {
-        distor->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void Distortion::adjusterChanged(Adjuster* a, double newval)
@@ -95,33 +76,13 @@ void Distortion::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void Distortion::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-
-    if (batchMode) {
-        autoDistor->set_sensitive(false);
-    }
-
-    distor->showEditedCB ();
-}
-
 void Distortion::idPressed ()
 {
-    if (!batchMode) {
-        if (rlistener) {
-            double new_amount = rlistener->autoDistorRequested();
-            distor->setValue(new_amount);
-            adjusterChanged (distor, new_amount);
-        }
+    if (rlistener) {
+        double new_amount = rlistener->autoDistorRequested();
+        distor->setValue(new_amount);
+        adjusterChanged (distor, new_amount);
     }
-}
-
-void Distortion::setAdjusterBehavior (bool vadd)
-{
-
-    distor->setAddMode(vadd);
 }
 
 void Distortion::trimValues (rtengine::procparams::ProcParams* pp)

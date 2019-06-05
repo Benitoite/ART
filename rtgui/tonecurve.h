@@ -97,14 +97,12 @@ protected:
     void setHistmatching(bool enabled);
 
 public:
-    ToneCurve ();
-    ~ToneCurve () override;
+    ToneCurve();
+    ~ToneCurve() override;
 
-    void read                (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write               (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    void setDefaults         (const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) override;
-    void setBatchMode        (bool batchMode) override;
-    void setAdjusterBehavior (bool expadd, bool hlcompadd, bool hlcompthreshadd, bool bradd, bool blackadd, bool shcompadd, bool contradd, bool satadd);
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
     void autoOpenCurve       () override;
     void setEditProvider     (EditDataProvider *provider) override;

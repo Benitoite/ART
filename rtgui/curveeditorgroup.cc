@@ -369,14 +369,6 @@ void CurveEditorGroup::setTooltip( Glib::ustring ttip)
     curveGroupLabel->set_tooltip_text( ttip );
 }
 
-void CurveEditorGroup::setBatchMode (bool batchMode)
-{
-    for (std::vector<CurveEditor*>::iterator i = curveEditors.begin(); i != curveEditors.end(); ++i) {
-        (*i)->curveType->addEntry("template-24.png", M("GENERAL_UNCHANGED"));
-        (*i)->curveType->show();
-    }
-}
-
 void CurveEditorGroup::setUnChanged (bool uc, CurveEditor* ce)
 {
     if (uc) {

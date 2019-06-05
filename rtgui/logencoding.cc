@@ -89,20 +89,10 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
 }
 
 
-void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
+void LogEncoding::read(const ProcParams *pp)
 {
     disableListener();
     ConnectionBlocker cbl(autoconn);
-
-    if (pedited) {
-        sourceGray->setEditedState(pedited->logenc.sourceGray ? Edited : UnEdited);
-        blackEv->setEditedState(pedited->logenc.blackEv ? Edited : UnEdited);
-        whiteEv->setEditedState(pedited->logenc.whiteEv ? Edited : UnEdited);
-        targetGray->setEditedState(pedited->logenc.targetGray ? Edited : UnEdited);
-        detail->setEditedState(pedited->logenc.detail ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->logenc.enabled);
-        autocompute->set_inconsistent(!pedited->logenc.autocompute);
-    }
 
     setEnabled(pp->logenc.enabled);
 
@@ -119,7 +109,7 @@ void LogEncoding::read(const ProcParams *pp, const ParamsEdited *pedited)
     enableListener();
 }
 
-void LogEncoding::write(ProcParams *pp, ParamsEdited *pedited)
+void LogEncoding::write(ProcParams *pp)
 {
     pp->logenc.enabled = getEnabled();
     pp->logenc.autocompute = autocompute->get_active();
@@ -129,39 +119,15 @@ void LogEncoding::write(ProcParams *pp, ParamsEdited *pedited)
     pp->logenc.whiteEv = whiteEv->getValue();
     pp->logenc.targetGray = targetGray->getValue();
     pp->logenc.detail = detail->getValue();
-
-    if (pedited) {
-        pedited->logenc.enabled = !get_inconsistent();
-        pedited->logenc.autocompute = !autocompute->get_inconsistent();
-        pedited->logenc.sourceGray = sourceGray->getEditedState();
-        pedited->logenc.blackEv = blackEv->getEditedState();
-        pedited->logenc.whiteEv = whiteEv->getEditedState();
-        pedited->logenc.targetGray = targetGray->getEditedState();
-        pedited->logenc.detail = detail->getEditedState();
-    }
 }
 
-void LogEncoding::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void LogEncoding::setDefaults(const ProcParams *defParams)
 {
     sourceGray->setDefault(defParams->logenc.sourceGray);
     blackEv->setDefault(defParams->logenc.blackEv);
     whiteEv->setDefault(defParams->logenc.whiteEv);
     targetGray->setDefault(defParams->logenc.targetGray);
     detail->setDefault(defParams->logenc.detail);
-    
-    if (pedited) {
-        sourceGray->setDefaultEditedState(pedited->logenc.sourceGray ? Edited : UnEdited);
-        blackEv->setDefaultEditedState(pedited->logenc.blackEv ? Edited : UnEdited);
-        whiteEv->setDefaultEditedState(pedited->logenc.whiteEv ? Edited : UnEdited);
-        targetGray->setDefaultEditedState(pedited->logenc.targetGray ? Edited : UnEdited);
-        detail->setDefaultEditedState(pedited->logenc.detail ? Edited : UnEdited);
-    } else {
-        sourceGray->setDefaultEditedState(Irrelevant);
-        blackEv->setDefaultEditedState(Irrelevant);
-        whiteEv->setDefaultEditedState(Irrelevant);
-        targetGray->setDefaultEditedState(Irrelevant);
-        detail->setDefaultEditedState(Irrelevant);
-    }
 }
 
 void LogEncoding::adjusterChanged(Adjuster* a, double newval)
@@ -190,7 +156,7 @@ void LogEncoding::adjusterAutoToggled(Adjuster* a, bool newval)
 {
     if (listener) {
         if (a == sourceGray) {
-            auto e = (batchMode || !newval) ? EvAutoGrayOff : EvAutoGrayOn;
+            auto e = (!newval) ? EvAutoGrayOff : EvAutoGrayOn;
             listener->panelChanged(e, newval ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
         }
     }
@@ -209,34 +175,19 @@ void LogEncoding::enabledChanged ()
     }
 }
 
-void LogEncoding::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-
-    sourceGray->showEditedCB();
-    blackEv->showEditedCB();
-    whiteEv->showEditedCB();
-    targetGray->showEditedCB();
-    detail->showEditedCB();
-}
-
 
 void LogEncoding::autocomputeToggled()
 {
     if (listener) {
-        if (!batchMode) {
-            if (autocompute->get_active()) {
-                listener->panelChanged(EvAuto, M("GENERAL_ENABLED"));
-                blackEv->setEnabled(false);
-                whiteEv->setEnabled(false);
-                //targetGray->setEnabled(false);
-            } else {
-                listener->panelChanged(EvAuto, M("GENERAL_DISABLED"));
-                // blackEv->setEnabled(true);
-                // whiteEv->setEnabled(true);
-            }
+        if (autocompute->get_active()) {
+            listener->panelChanged(EvAuto, M("GENERAL_ENABLED"));
+            blackEv->setEnabled(false);
+            whiteEv->setEnabled(false);
+            //targetGray->setEnabled(false);
         } else {
-            listener->panelChanged(EvAutoBatch, autocompute->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+            listener->panelChanged(EvAuto, M("GENERAL_DISABLED"));
+            // blackEv->setEnabled(true);
+            // whiteEv->setEnabled(true);
         }
     }
 }

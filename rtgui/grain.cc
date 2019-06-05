@@ -51,16 +51,9 @@ FilmGrain::FilmGrain(): FoldableToolPanel(this, "grain", M("TP_GRAIN_LABEL"), tr
 }
 
 
-void FilmGrain::read(const ProcParams *pp, const ParamsEdited *pedited)
+void FilmGrain::read(const ProcParams *pp)
 {
     disableListener();
-
-    if (pedited) {
-        iso->setEditedState(pedited->grain.iso ? Edited : UnEdited);
-        strength->setEditedState(pedited->grain.strength ? Edited : UnEdited);
-        scale->setEditedState(pedited->grain.scale ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->grain.enabled);
-    }
 
     setEnabled(pp->grain.enabled);
     iso->setValue(pp->grain.iso);
@@ -71,36 +64,19 @@ void FilmGrain::read(const ProcParams *pp, const ParamsEdited *pedited)
 }
 
 
-void FilmGrain::write(ProcParams *pp, ParamsEdited *pedited)
+void FilmGrain::write(ProcParams *pp)
 {
     pp->grain.enabled = getEnabled();
     pp->grain.iso = iso->getValue();
     pp->grain.strength = strength->getValue();
     pp->grain.scale = scale->getValue();
-
-    if (pedited) {
-        pedited->grain.enabled = !get_inconsistent();
-        pedited->grain.iso = iso->getEditedState();
-        pedited->grain.strength = strength->getEditedState();
-        pedited->grain.scale = scale->getEditedState();
-    }
 }
 
-void FilmGrain::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void FilmGrain::setDefaults(const ProcParams *defParams)
 {
     iso->setDefault(defParams->grain.iso);
     strength->setDefault(defParams->grain.strength);
     scale->setDefault(defParams->grain.scale);
-
-    if (pedited) {
-        iso->setDefaultEditedState(pedited->grain.iso ? Edited : UnEdited);
-        strength->setDefaultEditedState(pedited->grain.strength ? Edited : UnEdited);
-        scale->setDefaultEditedState(pedited->grain.scale ? Edited : UnEdited);
-    } else {
-        iso->setDefaultEditedState(Irrelevant);
-        strength->setDefaultEditedState(Irrelevant);
-        scale->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -129,14 +105,4 @@ void FilmGrain::enabledChanged ()
             listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void FilmGrain::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-
-    iso->showEditedCB();
-    strength->showEditedCB();
-    scale->showEditedCB();
 }

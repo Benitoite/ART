@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -38,12 +39,10 @@ protected:
     Adjuster* hdThreshold;
 public:
 
-    PreProcess ();
+    PreProcess();
 
-    void read           (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write          (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    //void setBatchMode   (bool batchMode);
-    //void setDefaults    (const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited=NULL);
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
 
     void hotPixelChanged();
     void deadPixelChanged();
@@ -52,7 +51,6 @@ public:
 
 
     //void adjusterChanged     (Adjuster* a, double newval);
-    //void setAdjusterBehavior (bool linedenoiseadd, bool greenequiladd);
     //void trimValues          (rtengine::procparams::ProcParams* pp);
 };
 

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+*  
 *  This file is part of RawTherapee.
 *
 *  Copyright (c) 2012 Oliver Duis <oduis@oliverduis.de>
@@ -31,16 +32,14 @@ class LensProfilePanel final :
 public:
     LensProfilePanel();
 
-    void read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
     void setRawMeta(bool raw, const rtengine::FramesMetaData* pMeta);
 
     void onLCPFileChanged();
     void onUseDistChanged();
     void onUseVignChanged();
     void onUseCAChanged();
-
-    void setBatchMode(bool yes) override;
 
     void onLensfunCameraChanged();
     void onLensfunLensChanged();

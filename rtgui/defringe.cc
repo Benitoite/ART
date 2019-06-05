@@ -83,17 +83,10 @@ void Defringe::colorForValue (double valX, double valY, enum ColorCaller::ElemTy
     caller->ccBlue = double(B);
 }
 
-void Defringe::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Defringe::read(const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        radius->setEditedState    ( pedited->defringe.radius ? Edited : UnEdited);
-        threshold->setEditedState ( pedited->defringe.threshold ? Edited : UnEdited);
-        set_inconsistent          (multiImage && !pedited->defringe.enabled);
-        chshape->setUnChanged     (!pedited->defringe.huecurve);
-    }
 
     setEnabled(pp->defringe.enabled);
 
@@ -111,36 +104,22 @@ void Defringe::autoOpenCurve ()
     // chshape->openIfNonlinear();
 }
 
-void Defringe::write (ProcParams* pp, ParamsEdited* pedited)
+void Defringe::write(ProcParams* pp)
 {
 
     pp->defringe.radius    = radius->getValue ();
     pp->defringe.threshold = (int)threshold->getValue ();
     pp->defringe.enabled   = getEnabled();
     pp->defringe.huecurve  = chshape->getCurve ();
-
-    if (pedited) {
-        pedited->defringe.radius    = radius->getEditedState ();
-        pedited->defringe.threshold = threshold->getEditedState ();
-        pedited->defringe.enabled   = !get_inconsistent();
-        pedited->defringe.huecurve  = !chshape->isUnChanged ();
-    }
 }
 
-void Defringe::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Defringe::setDefaults(const ProcParams* defParams)
 {
 
     radius->setDefault (defParams->defringe.radius);
     threshold->setDefault (defParams->defringe.threshold);
-
-    if (pedited) {
-        radius->setDefaultEditedState (pedited->defringe.radius ? Edited : UnEdited);
-        threshold->setDefaultEditedState (pedited->defringe.threshold ? Edited : UnEdited);
-    } else {
-        radius->setDefaultEditedState (Irrelevant);
-        threshold->setDefaultEditedState (Irrelevant);
-    }
 }
+
 void Defringe::curveChanged ()
 {
 
@@ -179,10 +158,3 @@ void Defringe::enabledChanged ()
     }
 }
 
-void Defringe::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    radius->showEditedCB ();
-    threshold->showEditedCB ();
-}

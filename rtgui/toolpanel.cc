@@ -85,19 +85,6 @@ void FoldableToolPanel::foldThemAll (GdkEventButton* event)
 
 void FoldableToolPanel::enabled_toggled()
 {
-    if (multiImage) {
-        if (exp->get_inconsistent()) {
-            exp->set_inconsistent (false);
-            enaConn.block (true);
-            exp->setEnabled (false);
-            enaConn.block (false);
-        } else if (lastEnabled) {
-            exp->set_inconsistent (true);
-        }
-
-        lastEnabled = exp->getEnabled();
-    }
-
     enabledChanged();
 }
 

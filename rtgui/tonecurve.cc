@@ -226,7 +226,7 @@ ToneCurve::~ToneCurve ()
     delete curveEditorG2;
 }
 
-void ToneCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
+void ToneCurve::read(const ProcParams* pp)
 {
 
     disableListener ();
@@ -245,11 +245,11 @@ void ToneCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
     hlcomprthresh->setValue (pp->toneCurve.hlcomprthresh);
     shcompr->setValue (pp->toneCurve.shcompr);
 
-    if (!black->getAddMode() && !batchMode) {
+    if (!black->getAddMode()) {
         shcompr->set_sensitive(!((int)black->getValue () == 0));    //at black=0 shcompr value has no effect
     }
     
-    if (!hlcompr->getAddMode() && !batchMode) {
+    if (!hlcompr->getAddMode()) {
         hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
     }
 
@@ -266,40 +266,11 @@ void ToneCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
     fromHistMatching = pp->toneCurve.fromHistMatching;
     clampOOG->set_active(pp->toneCurve.clampOOG);
 
-    if (pedited) {
-        expcomp->setEditedState (pedited->toneCurve.expcomp ? Edited : UnEdited);
-        black->setEditedState (pedited->toneCurve.black ? Edited : UnEdited);
-        hlcompr->setEditedState (pedited->toneCurve.hlcompr ? Edited : UnEdited);
-        hlcomprthresh->setEditedState (pedited->toneCurve.hlcomprthresh ? Edited : UnEdited);
-        shcompr->setEditedState (pedited->toneCurve.shcompr ? Edited : UnEdited);
-        brightness->setEditedState (pedited->toneCurve.brightness ? Edited : UnEdited);
-        contrast->setEditedState (pedited->toneCurve.contrast ? Edited : UnEdited);
-        saturation->setEditedState (pedited->toneCurve.saturation ? Edited : UnEdited);
-        autolevels->set_inconsistent (!pedited->toneCurve.autoexp);
-        clipDirty = pedited->toneCurve.clip;
-        shape->setUnChanged (!pedited->toneCurve.curve);
-        shape2->setUnChanged (!pedited->toneCurve.curve2);
-        hrenabled->set_inconsistent (!pedited->toneCurve.hrenabled);
-
-        if (!pedited->toneCurve.curveMode) {
-            toneCurveMode->set_active(6);
-        }
-
-        if (!pedited->toneCurve.curveMode2) {
-            toneCurveMode2->set_active(6);
-        }
-
-        histmatching->set_inconsistent(!pedited->toneCurve.histmatching);
-        clampOOG->set_inconsistent(!pedited->toneCurve.clampOOG);
-    }
-
     enaconn.block (true);
     hrenabled->set_active  (pp->toneCurve.hrenabled);
     enaconn.block (false);
 
-    if (pedited && !pedited->toneCurve.method) {
-        method->set_active (4);
-    } else if (pp->toneCurve.method == "Luminance") {
+    if (pp->toneCurve.method == "Luminance") {
         method->set_active (0);
     } else if (pp->toneCurve.method == "CIELab blending") {
         method->set_active (1);
@@ -309,12 +280,10 @@ void ToneCurve::read (const ProcParams* pp, const ParamsEdited* pedited)
         method->set_active (3);
     }
 
-    if (!batchMode) {
-        if (hrenabled->get_active()) {
-            hlrbox->show();
-        } else {
-            hlrbox->hide();
-        }
+    if (hrenabled->get_active()) {
+        hlrbox->show();
+    } else {
+        hlrbox->hide();
     }
 
     lasthrEnabled = pp->toneCurve.hrenabled;
@@ -339,7 +308,7 @@ void ToneCurve::setEditProvider  (EditDataProvider *provider)
     shape2->setEditProvider(provider);
 }
 
-void ToneCurve::write (ProcParams* pp, ParamsEdited* pedited)
+void ToneCurve::write(ProcParams* pp)
 {
 
     pp->toneCurve.autoexp = autolevels->get_active();
@@ -391,28 +360,6 @@ void ToneCurve::write (ProcParams* pp, ParamsEdited* pedited)
     pp->toneCurve.fromHistMatching = fromHistMatching;
     pp->toneCurve.clampOOG = clampOOG->get_active();
 
-    if (pedited) {
-        pedited->toneCurve.expcomp    = expcomp->getEditedState ();
-        pedited->toneCurve.black      = black->getEditedState ();
-        pedited->toneCurve.hlcompr    = hlcompr->getEditedState ();
-        pedited->toneCurve.hlcomprthresh = hlcomprthresh->getEditedState ();
-        pedited->toneCurve.shcompr    = shcompr->getEditedState ();
-        pedited->toneCurve.brightness = brightness->getEditedState ();
-        pedited->toneCurve.contrast   = contrast->getEditedState ();
-        pedited->toneCurve.saturation = saturation->getEditedState ();
-        pedited->toneCurve.autoexp    = !autolevels->get_inconsistent();
-        pedited->toneCurve.clip       = clipDirty;
-        pedited->toneCurve.curve      = !shape->isUnChanged ();
-        pedited->toneCurve.curve2     = !shape2->isUnChanged ();
-        pedited->toneCurve.curveMode  = toneCurveMode->get_active_row_number() != 6;
-        pedited->toneCurve.curveMode2 = toneCurveMode2->get_active_row_number() != 6;
-        pedited->toneCurve.method     = method->get_active_row_number() != 4;
-        pedited->toneCurve.hrenabled  = !hrenabled->get_inconsistent();
-        pedited->toneCurve.histmatching = !histmatching->get_inconsistent();
-        pedited->toneCurve.fromHistMatching = true;
-        pedited->toneCurve.clampOOG = !clampOOG->get_inconsistent();
-    }
-
     pp->toneCurve.hrenabled = hrenabled->get_active();
 
     if (method->get_active_row_number() == 0) {
@@ -428,26 +375,10 @@ void ToneCurve::write (ProcParams* pp, ParamsEdited* pedited)
 
 void ToneCurve::hrenabledChanged ()
 {
-
-    if (multiImage) {
-        if (hrenabled->get_inconsistent()) {
-            hrenabled->set_inconsistent (false);
-            enaconn.block (true);
-            hrenabled->set_active (false);
-            enaconn.block (false);
-        } else if (lasthrEnabled) {
-            hrenabled->set_inconsistent (true);
-        }
-
-        lasthrEnabled = hrenabled->get_active ();
-    }
-
-    if (!batchMode) {
-        if (hrenabled->get_active()) {
-            hlrbox->show();
-        } else {
-            hlrbox->hide();
-        }
+    if (hrenabled->get_active()) {
+        hlrbox->show();
+    } else {
+        hlrbox->hide();
     }
 
     if (listener) {
@@ -500,7 +431,7 @@ void ToneCurve::setRaw (bool raw)
 }
 
 
-void ToneCurve::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void ToneCurve::setDefaults (const ProcParams* defParams)
 {
 
     expcomp->setDefault (defParams->toneCurve.expcomp);
@@ -511,26 +442,6 @@ void ToneCurve::setDefaults (const ProcParams* defParams, const ParamsEdited* pe
     shcompr->setDefault (defParams->toneCurve.shcompr);
     contrast->setDefault (defParams->toneCurve.contrast);
     saturation->setDefault (defParams->toneCurve.saturation);
-
-    if (pedited) {
-        expcomp->setDefaultEditedState (pedited->toneCurve.expcomp ? Edited : UnEdited);
-        black->setDefaultEditedState (pedited->toneCurve.black ? Edited : UnEdited);
-        hlcompr->setDefaultEditedState (pedited->toneCurve.hlcompr ? Edited : UnEdited);
-        hlcomprthresh->setDefaultEditedState (pedited->toneCurve.hlcomprthresh ? Edited : UnEdited);
-        shcompr->setDefaultEditedState (pedited->toneCurve.shcompr ? Edited : UnEdited);
-        brightness->setDefaultEditedState (pedited->toneCurve.brightness ? Edited : UnEdited);
-        contrast->setDefaultEditedState (pedited->toneCurve.contrast ? Edited : UnEdited);
-        saturation->setDefaultEditedState (pedited->toneCurve.saturation ? Edited : UnEdited);
-    } else {
-        expcomp->setDefaultEditedState (Irrelevant);
-        black->setDefaultEditedState (Irrelevant);
-        hlcompr->setDefaultEditedState (Irrelevant);
-        hlcomprthresh->setDefaultEditedState (Irrelevant);
-        shcompr->setDefaultEditedState (Irrelevant);
-        brightness->setDefaultEditedState (Irrelevant);
-        contrast->setDefaultEditedState (Irrelevant);
-        saturation->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void ToneCurve::curveChanged (CurveEditor* ce)
@@ -631,7 +542,7 @@ void ToneCurve::adjusterChanged(Adjuster* a, double newval)
     } else if (a == black) {
         listener->panelChanged (EvBlack, costr);
 
-        if (!black->getAddMode() && !batchMode) {
+        if (!black->getAddMode()) {
             shcompr->set_sensitive(!((int)black->getValue () == 0));    //at black=0 shcompr value has no effect
         }
     } else if (a == contrast) {
@@ -641,7 +552,7 @@ void ToneCurve::adjusterChanged(Adjuster* a, double newval)
     } else if (a == hlcompr) {
         listener->panelChanged (EvHLCompr, costr);
         
-        if (!hlcompr->getAddMode() && !batchMode) {
+        if (!hlcompr->getAddMode()) {
             hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
         }
     } else if (a == hlcomprthresh) {
@@ -662,17 +573,8 @@ void ToneCurve::neutral_pressed ()
 
     setHistmatching(false);
     
-    if (batchMode) {
-        autolevels->set_inconsistent (false);
-        autoconn.block (true);
-        autolevels->set_active (false);
-        autoconn.block (false);
-
-        lastAuto = autolevels->get_active ();
-    } else { //!batchMode
-        autolevels->set_active (false);
-        autolevels->set_inconsistent (false);
-    }
+    autolevels->set_active (false);
+    autolevels->set_inconsistent (false);
 
     expcomp->setValue(0);
     hlcompr->setValue(0);
@@ -684,15 +586,13 @@ void ToneCurve::neutral_pressed ()
     hrenabled->set_active (false);
     enaconn.block (false);
 
-    if (!batchMode) {
-        hlrbox->hide();
-    }
+    hlrbox->hide();
 
-    if (!black->getAddMode() && !batchMode) {
+    if (!black->getAddMode()) {
         shcompr->set_sensitive(!((int)black->getValue () == 0));    //at black=0 shcompr value has no effect
     }
     
-    if (!hlcompr->getAddMode() && !batchMode) {
+    if (!hlcompr->getAddMode()) {
         hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
     }
 
@@ -705,59 +605,7 @@ void ToneCurve::autolevels_toggled ()
 {
     setHistmatching(false);
 
-    if (batchMode) {
-        if (autolevels->get_inconsistent()) {
-            autolevels->set_inconsistent (false);
-            autoconn.block (true);
-            autolevels->set_active (false);
-            autoconn.block (false);
-        } else if (lastAuto) {
-            autolevels->set_inconsistent (true);
-        }
-
-        lastAuto = autolevels->get_active ();
-
-        expcomp->setEditedState (UnEdited);
-        brightness->setEditedState (UnEdited);
-        contrast->setEditedState (UnEdited);
-        black->setEditedState (UnEdited);
-        hlcompr->setEditedState (UnEdited);
-        hlcomprthresh->setEditedState (UnEdited);
-
-        if (expcomp->getAddMode()) {
-            expcomp->setValue (0);
-        }
-
-        if (brightness->getAddMode()) {
-            brightness->setValue (0);
-        }
-
-        if (contrast->getAddMode()) {
-            contrast->setValue (0);
-        }
-
-        if (black->getAddMode()) {
-            black->setValue (0);
-        }
-
-        if (hlcompr->getAddMode()) {
-            hlcompr->setValue (0);
-        }
-
-        if (hlcomprthresh->getAddMode()) {
-            hlcomprthresh->setValue (0);
-        }
-
-        if (listener) {
-            if (!autolevels->get_inconsistent()) {
-                if (autolevels->get_active ()) {
-                    listener->panelChanged (EvAutoExp, M("GENERAL_ENABLED"));
-                } else {
-                    listener->panelChanged (EvFixedExp, M("GENERAL_DISABLED"));
-                }
-            }
-        }
-    } else if (/* !batchMode && */ listener) {
+    if (listener) {
         if (autolevels->get_active()) {
             listener->panelChanged (EvAutoExp, M("GENERAL_ENABLED"));
             waitForAutoExp ();
@@ -766,7 +614,7 @@ void ToneCurve::autolevels_toggled ()
                 shcompr->set_sensitive(!((int)black->getValue () == 0));    //at black=0 shcompr value has no effect
             }
             
-            if (!hlcompr->getAddMode() && !batchMode) {
+            if (!hlcompr->getAddMode()) {
                 hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
             }
 
@@ -792,9 +640,7 @@ bool ToneCurve::clip_changed_ ()
     if (listener) {
         listener->panelChanged (EvClip, Glib::ustring::format (std::setprecision(5), sclip->get_value()));
 
-        if (!batchMode) {
-            waitForAutoExp ();
-        }
+        waitForAutoExp ();
     }
 
     return false;
@@ -844,49 +690,6 @@ void ToneCurve::enableAll ()
 }
 
 
-void ToneCurve::setBatchMode (bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    method->append (M("GENERAL_UNCHANGED"));
-
-    removeIfThere (abox, autolevels, false);
-    autolevels = Gtk::manage (new Gtk::CheckButton (M("TP_EXPOSURE_AUTOLEVELS")));
-    autolevels->set_tooltip_markup (M("TP_EXPOSURE_AUTOLEVELS_TIP"));
-    autoconn = autolevels->signal_toggled().connect( sigc::mem_fun(*this, &ToneCurve::autolevels_toggled) );
-    abox->pack_start (*autolevels);
-
-    ToolPanel::setBatchMode (batchMode);
-    expcomp->showEditedCB ();
-    black->showEditedCB ();
-    hlcompr->showEditedCB ();
-    hlcomprthresh->showEditedCB ();
-    shcompr->showEditedCB ();
-    brightness->showEditedCB ();
-    contrast->showEditedCB ();
-    saturation->showEditedCB ();
-
-    toneCurveMode->append (M("GENERAL_UNCHANGED"));
-    toneCurveMode2->append (M("GENERAL_UNCHANGED"));
-
-    curveEditorG->setBatchMode (batchMode);
-    curveEditorG2->setBatchMode (batchMode);
-
-    logenc = true;
-}
-
-void ToneCurve::setAdjusterBehavior (bool expadd, bool hlcompadd, bool hlcompthreshadd, bool bradd, bool blackadd, bool shcompadd, bool contradd, bool satadd)
-{
-
-    expcomp->setAddMode(expadd);
-    hlcompr->setAddMode(hlcompadd);
-    hlcomprthresh->setAddMode(hlcompthreshadd);
-    brightness->setAddMode(bradd);
-    black->setAddMode(blackadd);
-    shcompr->setAddMode(shcompadd);
-    contrast->setAddMode(contradd);
-    saturation->setAddMode(satadd);
-}
-
 void ToneCurve::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
@@ -932,16 +735,12 @@ void ToneCurve::setHistmatching(bool enabled)
 void ToneCurve::histmatchingToggled()
 {
     if (listener) {
-        if (!batchMode) {
-            if (histmatching->get_active()) {
-                fromHistMatching = false;
-                listener->panelChanged(EvHistMatching, M("GENERAL_ENABLED"));
-                waitForAutoExp();
-            } else {
-                listener->panelChanged(EvHistMatching, M("GENERAL_DISABLED"));
-            }
+        if (histmatching->get_active()) {
+            fromHistMatching = false;
+            listener->panelChanged(EvHistMatching, M("GENERAL_ENABLED"));
+            waitForAutoExp();
         } else {
-            listener->panelChanged(EvHistMatchingBatch, histmatching->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+            listener->panelChanged(EvHistMatching, M("GENERAL_DISABLED"));
         }
     }
 }
@@ -975,15 +774,15 @@ void ToneCurve::autoExpChanged(double expcomp, int bright, int contr, int black,
             
             if (nextHLRecons) {
                 hlrbox->show();
-            } else if (!batchMode) {
+            } else {
                 hlrbox->hide();
             }
 
-            if (!this->black->getAddMode() && !batchMode) {
+            if (!this->black->getAddMode()) {
                 this->shcompr->set_sensitive(!((int)this->black->getValue () == 0));    //at black=0 shcompr value has no effect
             }
             
-            if (!this->hlcompr->getAddMode() && !batchMode) {
+            if (!this->hlcompr->getAddMode()) {
                 this->hlcomprthresh->set_sensitive(!((int)this->hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
             }
             
@@ -1004,17 +803,6 @@ void ToneCurve::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParam
             GThreadLock lock;
             disableListener();
             enableAll();
-            // brightness->setValue(0);
-            // contrast->setValue(0);
-            // black->setValue(0);
-
-            // if (!black->getAddMode() && !batchMode) {
-            //     shcompr->set_sensitive(!((int)black->getValue() == 0));
-            // }
-    
-            // if (!hlcompr->getAddMode() && !batchMode) {
-            //     hlcomprthresh->set_sensitive(!((int)hlcompr->getValue () == 0));    //at hlcompr=0 hlcomprthresh value has no effect
-            // }
 
             if (autolevels->get_active() ) {
                 expcomp->setValue(0);
@@ -1039,9 +827,7 @@ void ToneCurve::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParam
 
 void ToneCurve::procParamsChanged(const rtengine::procparams::ProcParams* params, const rtengine::ProcEvent& ev, const Glib::ustring& descr, const ParamsEdited *paramsEdited)
 {
-    if (!batchMode) {
-        logenc = true;//params->logenc.enabled;
-        shape->showEditButton(!logenc);
-        shape2->showEditButton(!logenc);
-    }
+    logenc = true;//params->logenc.enabled;
+    shape->showEditButton(!logenc);
+    shape2->showEditButton(!logenc);
 }

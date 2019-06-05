@@ -49,14 +49,10 @@ LensGeometry::~LensGeometry ()
     idle_register.destroy();
 }
 
-void LensGeometry::read (const ProcParams* pp, const ParamsEdited* pedited)
+void LensGeometry::read(const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        fill->set_inconsistent (!pedited->commonTrans.autofill);
-    }
 
     fillConn.block (true);
     fill->set_active (pp->commonTrans.autofill);
@@ -68,14 +64,9 @@ void LensGeometry::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void LensGeometry::write (ProcParams* pp, ParamsEdited* pedited)
+void LensGeometry::write(ProcParams* pp)
 {
-
     pp->commonTrans.autofill   = fill->get_active ();
-
-    if (pedited) {
-        pedited->commonTrans.autofill   = !fill->get_inconsistent();
-    }
 }
 
 void LensGeometry::autoCropPressed ()
@@ -88,21 +79,7 @@ void LensGeometry::autoCropPressed ()
 
 void LensGeometry::fillPressed ()
 {
-
-    if (batchMode) {
-        if (fill->get_inconsistent()) {
-            fill->set_inconsistent (false);
-            fillConn.block (true);
-            fill->set_active (false);
-            fillConn.block (false);
-        } else if (lastFill) {
-            fill->set_inconsistent (true);
-        }
-
-        lastFill = fill->get_active ();
-    } else {
-        autoCrop->set_sensitive (!fill->get_active());
-    }
+    autoCrop->set_sensitive (!fill->get_active());
 
     if (listener) {
         if (fill->get_active ()) {
@@ -111,12 +88,5 @@ void LensGeometry::fillPressed ()
             listener->panelChanged (EvTransAutoFill, M("GENERAL_DISABLED"));
         }
     }
-}
-
-void LensGeometry::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    removeIfThere (this, autoCrop);
 }
 

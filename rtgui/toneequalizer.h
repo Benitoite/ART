@@ -27,11 +27,9 @@ class ToneEqualizer: public ToolParamBlock, public AdjusterListener, public Fold
 public:
     ToneEqualizer();
 
-    void read(const rtengine::procparams::ProcParams *pp, const ParamsEdited *pedited=nullptr) override;
-    void write(rtengine::procparams::ProcParams *pp, ParamsEdited *pedited=nullptr) override;
-    void setDefaults(const rtengine::procparams::ProcParams *defParams, const ParamsEdited *pedited=nullptr) override;
-    void setBatchMode(bool batchMode) override;
-
+    void read(const rtengine::procparams::ProcParams *pp) override;
+    void write(rtengine::procparams::ProcParams *pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams *defParams) override;
     void adjusterChanged(Adjuster *a, double newval) override;
     void adjusterAutoToggled(Adjuster *a, bool newval) override;
     void enabledChanged() override;

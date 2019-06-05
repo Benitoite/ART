@@ -56,7 +56,7 @@ BayerRAWExposure::BayerRAWExposure () : FoldableToolPanel(this, "bayerrawexposur
     }
 
     PexBlack0->show();
-    PextwoGreen = Gtk::manage(new CheckBox(M("TP_RAWEXPOS_TWOGREEN"), multiImage));// two green
+    PextwoGreen = Gtk::manage(new CheckBox(M("TP_RAWEXPOS_TWOGREEN")));// two green
     PextwoGreen->set_active (true);
     PextwoGreen->setCheckBoxListener (this);
 
@@ -72,16 +72,9 @@ BayerRAWExposure::BayerRAWExposure () : FoldableToolPanel(this, "bayerrawexposur
     PexBlack3->setLogScale(100, 0);
 }
 
-void BayerRAWExposure::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void BayerRAWExposure::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
-
-    if(pedited ) {
-        PexBlack0->setEditedState( pedited->raw.bayersensor.exBlack0 ? Edited : UnEdited );
-        PexBlack1->setEditedState( pedited->raw.bayersensor.exBlack1 ? Edited : UnEdited );
-        PexBlack2->setEditedState( pedited->raw.bayersensor.exBlack2 ? Edited : UnEdited );
-        PexBlack3->setEditedState( pedited->raw.bayersensor.exBlack3 ? Edited : UnEdited );
-    }
 
     PextwoGreen->setValue (pp->raw.bayersensor.twogreen);
 
@@ -98,7 +91,7 @@ void BayerRAWExposure::read(const rtengine::procparams::ProcParams* pp, const Pa
     enableListener ();
 }
 
-void BayerRAWExposure::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void BayerRAWExposure::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.bayersensor.black0 = PexBlack0->getValue();// black
     pp->raw.bayersensor.black1 = PexBlack1->getValue();// black
@@ -110,15 +103,6 @@ void BayerRAWExposure::write( rtengine::procparams::ProcParams* pp, ParamsEdited
     } else {
         pp->raw.bayersensor.black3 = PexBlack3->getValue();
     }
-
-    if (pedited) {
-        pedited->raw.bayersensor.exBlack0 = PexBlack0->getEditedState ();//black
-        pedited->raw.bayersensor.exBlack1 = PexBlack1->getEditedState ();//black
-        pedited->raw.bayersensor.exBlack2 = PexBlack2->getEditedState ();//black
-        pedited->raw.bayersensor.exBlack3 = PexBlack3->getEditedState ();//black
-        pedited->raw.bayersensor.exTwoGreen = !PextwoGreen->get_inconsistent();
-    }
-
 }
 
 void BayerRAWExposure::adjusterChanged(Adjuster* a, double newval)
@@ -164,46 +148,14 @@ void BayerRAWExposure::checkBoxToggled (CheckBox* c, CheckValue newval)
     }
 }
 
-void BayerRAWExposure::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    PexBlack0->showEditedCB ();//black
-    PexBlack1->showEditedCB ();//black
-    PexBlack2->showEditedCB ();//black
-    PexBlack3->showEditedCB ();//black
-
-}
-
-void BayerRAWExposure::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void BayerRAWExposure::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     PexBlack0->setDefault( defParams->raw.bayersensor.black0);
     PexBlack1->setDefault( defParams->raw.bayersensor.black1);
     PexBlack2->setDefault( defParams->raw.bayersensor.black2);
     PexBlack3->setDefault( defParams->raw.bayersensor.black3);
-
-    if (pedited) {
-        PexBlack0->setDefaultEditedState( pedited->raw.bayersensor.exBlack0 ? Edited : UnEdited);
-        PexBlack1->setDefaultEditedState( pedited->raw.bayersensor.exBlack1 ? Edited : UnEdited);
-        PexBlack2->setDefaultEditedState( pedited->raw.bayersensor.exBlack2 ? Edited : UnEdited);
-        PexBlack3->setDefaultEditedState( pedited->raw.bayersensor.exBlack3 ? Edited : UnEdited);
-
-    } else {
-        PexBlack0->setDefaultEditedState( Irrelevant );
-        PexBlack1->setDefaultEditedState( Irrelevant );
-        PexBlack2->setDefaultEditedState( Irrelevant );
-        PexBlack3->setDefaultEditedState( Irrelevant );
-
-    }
 }
 
-void BayerRAWExposure::setAdjusterBehavior (bool pexblackadd)
-{
-
-    PexBlack0->setAddMode(pexblackadd);
-    PexBlack1->setAddMode(pexblackadd);
-    PexBlack2->setAddMode(pexblackadd);
-    PexBlack3->setAddMode(pexblackadd);
-}
 
 void BayerRAWExposure::trimValues (rtengine::procparams::ProcParams* pp)
 {

@@ -59,15 +59,9 @@ XTransRAWExposure::XTransRAWExposure () : FoldableToolPanel(this, "xtransrawexpo
     PexBlackBlue->setLogScale(100, 0);
 }
 
-void XTransRAWExposure::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void XTransRAWExposure::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
-
-    if(pedited ) {
-        PexBlackRed->setEditedState( pedited->raw.xtranssensor.exBlackRed ? Edited : UnEdited );
-        PexBlackGreen->setEditedState( pedited->raw.xtranssensor.exBlackGreen ? Edited : UnEdited );
-        PexBlackBlue->setEditedState( pedited->raw.xtranssensor.exBlackBlue ? Edited : UnEdited );
-    }
 
     PexBlackRed->setValue (pp->raw.xtranssensor.blackred);//black
     PexBlackGreen->setValue (pp->raw.xtranssensor.blackgreen);//black
@@ -76,18 +70,11 @@ void XTransRAWExposure::read(const rtengine::procparams::ProcParams* pp, const P
     enableListener ();
 }
 
-void XTransRAWExposure::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void XTransRAWExposure::write(rtengine::procparams::ProcParams* pp)
 {
     pp->raw.xtranssensor.blackred   = PexBlackRed->getValue();// black
     pp->raw.xtranssensor.blackgreen = PexBlackGreen->getValue();// black
     pp->raw.xtranssensor.blackblue  = PexBlackBlue->getValue();// black
-
-    if (pedited) {
-        pedited->raw.xtranssensor.exBlackRed = PexBlackRed->getEditedState ();//black
-        pedited->raw.xtranssensor.exBlackGreen = PexBlackGreen->getEditedState ();//black
-        pedited->raw.xtranssensor.exBlackBlue = PexBlackBlue->getEditedState ();//black
-    }
-
 }
 
 void XTransRAWExposure::adjusterChanged(Adjuster* a, double newval)
@@ -109,41 +96,14 @@ void XTransRAWExposure::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void XTransRAWExposure::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    PexBlackRed->showEditedCB ();//black
-    PexBlackGreen->showEditedCB ();//black
-    PexBlackBlue->showEditedCB ();//black
 
-}
-
-void XTransRAWExposure::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void XTransRAWExposure::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     PexBlackRed->setDefault( defParams->raw.xtranssensor.blackred);
     PexBlackGreen->setDefault( defParams->raw.xtranssensor.blackgreen);
     PexBlackBlue->setDefault( defParams->raw.xtranssensor.blackblue);
-
-    if (pedited) {
-        PexBlackRed->setDefaultEditedState( pedited->raw.xtranssensor.exBlackRed ? Edited : UnEdited);
-        PexBlackGreen->setDefaultEditedState( pedited->raw.xtranssensor.exBlackGreen ? Edited : UnEdited);
-        PexBlackBlue->setDefaultEditedState( pedited->raw.xtranssensor.exBlackBlue ? Edited : UnEdited);
-
-    } else {
-        PexBlackRed->setDefaultEditedState( Irrelevant );
-        PexBlackGreen->setDefaultEditedState( Irrelevant );
-        PexBlackBlue->setDefaultEditedState( Irrelevant );
-
-    }
 }
 
-void XTransRAWExposure::setAdjusterBehavior (bool pexblackadd)
-{
-
-    PexBlackRed->setAddMode(pexblackadd);
-    PexBlackGreen->setAddMode(pexblackadd);
-    PexBlackBlue->setAddMode(pexblackadd);
-}
 
 void XTransRAWExposure::trimValues (rtengine::procparams::ProcParams* pp)
 {

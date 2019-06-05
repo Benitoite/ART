@@ -37,27 +37,16 @@ RAWExposure::RAWExposure () : FoldableToolPanel(this, "rawexposure", M("TP_EXPOS
     PexPos->setLogScale(100, 0);
 }
 
-void RAWExposure::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void RAWExposure::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
-
-    if(pedited ) {
-        PexPos->setEditedState( pedited->raw.exPos ? Edited : UnEdited );
-    }
-
     PexPos->setValue (pp->raw.expos);
-
     enableListener ();
 }
 
-void RAWExposure::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void RAWExposure::write(rtengine::procparams::ProcParams* pp)
 {
     pp->raw.expos = PexPos->getValue();
-
-    if (pedited) {
-        pedited->raw.exPos = PexPos->getEditedState ();
-    }
-
 }
 
 void RAWExposure::adjusterChanged(Adjuster* a, double newval)
@@ -75,27 +64,10 @@ void RAWExposure::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void RAWExposure::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    PexPos->showEditedCB ();
-}
 
-void RAWExposure::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void RAWExposure::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     PexPos->setDefault( defParams->raw.expos);
-
-    if (pedited) {
-        PexPos->setDefaultEditedState( pedited->raw.exPos ? Edited : UnEdited);
-    } else {
-        PexPos->setDefaultEditedState( Irrelevant );
-    }
-}
-
-void RAWExposure::setAdjusterBehavior (bool pexposadd)
-{
-
-    PexPos->setAddMode(pexposadd);
 }
 
 void RAWExposure::trimValues (rtengine::procparams::ProcParams* pp)

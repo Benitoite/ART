@@ -422,14 +422,14 @@ bool LabCorrectionMask::operator!=(const LabCorrectionMask &other) const
 bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
 {
     bool ret = false;
-    assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, true, hueMask, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, true, chromaticityMask, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, true, lightnessMask, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, true, maskBlur, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, true, areaEnabled, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskInverted" + suffix, true, areaMask.inverted, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, true, areaMask.feather, ret);
-    assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, true, areaMask.contrast, ret);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, hueMask);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, lightnessMask);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, maskBlur);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, areaEnabled);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskInverted" + suffix, areaMask.inverted);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast);
     if (areaMask.contrast.empty() || areaMask.contrast[0] < DCT_Linear || areaMask.contrast[0] >= DCT_Unchanged) {
         areaMask.contrast = {DCT_Linear};
     }
@@ -438,12 +438,12 @@ bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &
         AreaMask::Shape a;
         bool found = false;
         std::string n = i ? std::string("_") + std::to_string(i) + "_" : "";
-        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "X" + suffix, true, a.x, found);
-        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Y" + suffix, true, a.y, found);
-        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Width" + suffix, true, a.width, found);
-        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Height" + suffix, true, a.height, found);
-        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, true, a.angle, found);
-        assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Roundness" + suffix, true, a.roundness, found);
+        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "X" + suffix, a.x);
+        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Y" + suffix, a.y);
+        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Width" + suffix, a.width);
+        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Height" + suffix, a.height);
+        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, a.angle);
+        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness);
         if (found) {
             s.emplace_back(a);
             ret = true;
@@ -458,7 +458,7 @@ bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &
 }
 
 
-void LabCorrectionMask::save(Glib::KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
+void LabCorrectionMask::save(Glib::KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
 {
     putToKeyfile(group_name, prefix + "HueMask" + suffix, hueMask, keyfile);
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask, keyfile);
@@ -2189,7 +2189,7 @@ void ProcParams::setDefaults()
 }
 
 
-int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bool fnameAbsolute, ParamsEdited *pedited)
+int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bool fnameAbsolute, const ParamsEdited *pedited)
 {
     if (fname.empty() && fname2.empty()) {
         return 0;
@@ -2225,7 +2225,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 }
 
 
-int ProcParams::save(Glib::KeyFile &keyFile, ParamsEdited *pedited,
+int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                      const Glib::ustring &fname, bool fnameAbsolute) const
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
@@ -2845,7 +2845,7 @@ int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
             return 1;
         }
 
-        return load(keyFile, pedited);
+        return load(keyFile, pedited, true, fname);
     } catch (const Glib::Error& e) {
         printf("-->%s\n", e.what().c_str());
         setDefaults();
@@ -2859,7 +2859,7 @@ int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
 
 
 int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
-                     bool resetOnError)
+                     bool resetOnError, const Glib::ustring &fname)
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
     
@@ -3125,7 +3125,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         }
 
         if (ppVersion < 346) {
-            if (keyFile.has_group("Directional Pyramid Denoising" && RELEVANT_(denoise))) { //TODO: No longer an accurate description for FT denoise
+            if (keyFile.has_group("Directional Pyramid Denoising") && RELEVANT_(denoise)) { //TODO: No longer an accurate description for FT denoise
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Enabled", denoise.enabled);
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Median", denoise.smoothingEnabled)) {
                     denoise.smoothingMethod = DenoiseParams::SmoothingMethod::MEDIAN;
@@ -4096,7 +4096,7 @@ FullPartialProfile::FullPartialProfile(const ProcParams &pp):
 }
 
 
-bool FullPartialProfile::applyTo(ProcParams &pp)
+bool FullPartialProfile::applyTo(ProcParams &pp) const
 {
     pp = pp_;
     return true;
@@ -4135,10 +4135,20 @@ PEditedPartialProfile::PEditedPartialProfile(const ProcParams &pp, const ParamsE
 }
 
 
-bool PEditedPartialProfile::applyTo(ProcParams &pp)
+bool PEditedPartialProfile::applyTo(ProcParams &pp) const
 {
     if (!fname_.empty()) {
-        return pp.load(fname_, &pe_, false) == 0;
+        Glib::KeyFile keyfile;
+        try {
+            if (!Glib::file_test(fname_, Glib::FILE_TEST_EXISTS) ||
+                !keyfile.load_from_file(fname_)) {
+                return false;
+            }
+        } catch (const Glib::Error& e) {
+            printf("-->%s\n", e.what().c_str());
+            return false;
+        }
+        return pp.load(keyfile, &pe_, false) == 0;
     } else {
         Glib::KeyFile keyfile;
         if (pp_.save(keyfile, &pe_) == 0) {

@@ -49,40 +49,21 @@ Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"))
     show_all ();
 }
 
-void Rotate::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Rotate::read(const ProcParams* pp)
 {
-
     disableListener ();
-
-    if (pedited) {
-        degree->setEditedState (pedited->rotate.degree ? Edited : UnEdited);
-    }
-
     degree->setValue (pp->rotate.degree);
-
     enableListener ();
 }
 
-void Rotate::write (ProcParams* pp, ParamsEdited* pedited)
+void Rotate::write(ProcParams* pp)
 {
-
     pp->rotate.degree = degree->getValue ();
-
-    if (pedited) {
-        pedited->rotate.degree = degree->getEditedState ();
-    }
 }
 
-void Rotate::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Rotate::setDefaults(const ProcParams* defParams)
 {
-
     degree->setDefault (defParams->rotate.degree);
-
-    if (pedited) {
-        degree->setDefaultEditedState (pedited->rotate.degree ? Edited : UnEdited);
-    } else {
-        degree->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void Rotate::adjusterChanged(Adjuster* a, double newval)
@@ -115,18 +96,6 @@ void Rotate::selectStraightPressed ()
     }
 }
 
-void Rotate::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    degree->showEditedCB ();
-}
-
-void Rotate::setAdjusterBehavior (bool rotadd)
-{
-
-    degree->setAddMode(rotadd);
-}
 
 void Rotate::trimValues (rtengine::procparams::ProcParams* pp)
 {

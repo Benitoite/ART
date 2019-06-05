@@ -65,36 +65,21 @@ CoarsePanel::CoarsePanel () : ToolPanel (), oldhflip(false), oldvflip(false)
     show_all_children ();
 }
 
-void CoarsePanel::read (const ProcParams* pp, const ParamsEdited* pedited)
+void CoarsePanel::read(const ProcParams* pp)
 {
 
     disableListener ();
 
     degree = pp->coarse.rotate;
 
-    if (pedited) {
-        hflip->set_active (pedited->coarse.hflip ? pp->coarse.hflip : false);
-        vflip->set_active (pedited->coarse.vflip ? pp->coarse.vflip : false);
-        degreechanged = false;
-        oldhflip = pp->coarse.hflip;
-        oldvflip = pp->coarse.vflip;
-    } else {
-        hflip->set_active (pp->coarse.hflip);
-        vflip->set_active (pp->coarse.vflip);
-    }
+    hflip->set_active (pp->coarse.hflip);
+    vflip->set_active (pp->coarse.vflip);
 
     enableListener ();
 }
 
-void CoarsePanel::write (ProcParams* pp, ParamsEdited* pedited)
+void CoarsePanel::write(ProcParams* pp)
 {
-
-    if (pedited) {
-        pedited->coarse.rotate = degreechanged;
-        pedited->coarse.hflip = oldhflip != hflip->get_active ();
-        pedited->coarse.vflip = oldvflip != vflip->get_active ();
-    }
-
     pp->coarse.rotate = degree;
     pp->coarse.hflip = hflip->get_active ();
     pp->coarse.vflip = vflip->get_active ();

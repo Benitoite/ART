@@ -27,16 +27,9 @@ PCVignette::PCVignette () : FoldableToolPanel(this, "pcvignette", M("TP_PCVIGNET
     show_all();
 }
 
-void PCVignette::read (const ProcParams* pp, const ParamsEdited* pedited)
+void PCVignette::read (const ProcParams* pp)
 {
     disableListener ();
-
-    if (pedited) {
-        strength->setEditedState (pedited->pcvignette.strength ? Edited : UnEdited);
-        feather->setEditedState (pedited->pcvignette.feather ? Edited : UnEdited);
-        roundness->setEditedState (pedited->pcvignette.roundness ? Edited : UnEdited);
-        set_inconsistent (multiImage && !pedited->pcvignette.enabled);
-    }
 
     setEnabled(pp->pcvignette.enabled);
     strength->setValue (pp->pcvignette.strength);
@@ -46,36 +39,19 @@ void PCVignette::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void PCVignette::write (ProcParams* pp, ParamsEdited* pedited)
+void PCVignette::write(ProcParams* pp)
 {
     pp->pcvignette.strength = strength->getValue ();
     pp->pcvignette.feather = feather->getIntValue ();
     pp->pcvignette.roundness = roundness->getIntValue ();
     pp->pcvignette.enabled = getEnabled();
-
-    if (pedited) {
-        pedited->pcvignette.strength = strength->getEditedState ();
-        pedited->pcvignette.feather = feather->getEditedState ();
-        pedited->pcvignette.roundness = roundness->getEditedState ();
-        pedited->pcvignette.enabled = !get_inconsistent();
-    }
 }
 
-void PCVignette::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void PCVignette::setDefaults(const ProcParams* defParams)
 {
     strength->setDefault (defParams->pcvignette.strength);
     feather->setDefault (defParams->pcvignette.feather);
     roundness->setDefault (defParams->pcvignette.roundness);
-
-    if (pedited) {
-        strength->setDefaultEditedState (pedited->pcvignette.strength ? Edited : UnEdited);
-        feather->setDefaultEditedState (pedited->pcvignette.feather ? Edited : UnEdited);
-        roundness->setDefaultEditedState (pedited->pcvignette.roundness ? Edited : UnEdited);
-    } else {
-        strength->setDefaultEditedState (Irrelevant);
-        feather->setDefaultEditedState (Irrelevant);
-        roundness->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void PCVignette::adjusterChanged(Adjuster* a, double newval)
@@ -109,13 +85,6 @@ void PCVignette::enabledChanged ()
     }
 }
 
-void PCVignette::setAdjusterBehavior (bool strengthadd, bool featheradd, bool roundnessadd)
-{
-    strength->setAddMode(strengthadd);
-    feather->setAddMode(featheradd);
-    roundness->setAddMode(roundnessadd);
-}
-
 void PCVignette::trimValues (rtengine::procparams::ProcParams* pp)
 {
     strength->trimValue(pp->pcvignette.strength);
@@ -123,10 +92,3 @@ void PCVignette::trimValues (rtengine::procparams::ProcParams* pp)
     roundness->trimValue(pp->pcvignette.roundness);
 }
 
-void PCVignette::setBatchMode (bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    strength->showEditedCB ();
-    feather->showEditedCB ();
-    roundness->showEditedCB ();
-}

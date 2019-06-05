@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -40,72 +41,47 @@ public:
 };
 
 /// @brief This class control the space around the group of tools inside a tab, as well as the space separating each tool. */
-class ToolVBox : public Gtk::VBox
-{
+class ToolVBox: public Gtk::VBox {
 public:
     ToolVBox();
 };
 
 /// @brief This class control the space around a tool's block of parameter. */
-class ToolParamBlock : public Gtk::VBox
-{
+class ToolParamBlock: public Gtk::VBox {
 public:
     ToolParamBlock();
 };
 
-class ToolPanel
-{
 
+class ToolPanel {
 protected:
     Glib::ustring toolName;
     ToolPanelListener* listener;
     ToolPanelListener* tmp;
-    bool batchMode;  // True if the ToolPanel is used in Batch mode
-    bool multiImage; // True if more than one image are being edited at the same time (also imply that batchMode=true), false otherwise
     bool need100Percent;
 
 public:
-
-    ToolPanel (Glib::ustring toolName = "", bool need11 = false) : toolName(toolName), listener(nullptr), tmp(nullptr), batchMode(false), multiImage(false), need100Percent(need11) {}
+    ToolPanel(Glib::ustring toolName = "", bool need11 = false) : toolName(toolName), listener(nullptr), tmp(nullptr), need100Percent(need11) {}
     virtual ~ToolPanel() {}
 
-    virtual void           setParent       (Gtk::Box* parent) {}
-    virtual Gtk::Box*      getParent       ()
-    {
-        return nullptr;
-    }
-    virtual MyExpander*    getExpander     ()
-    {
-        return nullptr;
-    }
-    virtual void           setExpanded     (bool expanded) {}
-    virtual bool           getExpanded     ()
-    {
-        return false;
-    }
-    void           setMultiImage   (bool m)
-    {
-        multiImage = m;
-    }
-    virtual void           setListener     (ToolPanelListener* tpl)
-    {
-        listener = tpl;
-    }
-    virtual void           setEditProvider (EditDataProvider *provider) {}
-    virtual void           read            (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) {}
-    virtual void           write           (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) {}
-    virtual void           trimValues      (rtengine::procparams::ProcParams* pp)
-    {
-        return;
-    }
-    virtual void           setDefaults     (const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) {}
-    virtual void           autoOpenCurve   () {}
+    virtual void setParent(Gtk::Box* parent) {}
+    virtual Gtk::Box *getParent() { return nullptr; }
+    virtual MyExpander *getExpander() { return nullptr; }
+    virtual void setExpanded(bool expanded) {}
+    virtual bool getExpanded() { return false; }
+    virtual void setListener(ToolPanelListener *tpl) { listener = tpl; }
+    virtual void setEditProvider(EditDataProvider *provider) {}
+    virtual void read(const rtengine::procparams::ProcParams *pp) {}
+    virtual void write(rtengine::procparams::ProcParams *pp) {}
+    virtual void trimValues(rtengine::procparams::ProcParams *pp) {}
+    virtual void setDefaults(const rtengine::procparams::ProcParams *defParams) {}
+    virtual void autoOpenCurve() {}
 
     /** @brief Disable the event broadcasting mechanism
      *
      * @return Return the previous state of the broadcast (true: enabled ; false: disabled)
      */
-    bool disableListener ()
+    bool disableListener()
     {
         if (tmp == nullptr) {
             tmp = listener;
@@ -118,7 +94,7 @@ public:
 
     /** @brief Enable the event broadcasting mechanism
      */
-    void enableListener  ()
+    void enableListener()
     {
         if (tmp != nullptr) {
             listener = tmp;
@@ -127,18 +103,13 @@ public:
         tmp = nullptr;
     }
 
-    virtual void setBatchMode    (bool batchMode)
-    {
-        this->batchMode = batchMode;
-    }
-
-    virtual Glib::ustring getToolName () { return toolName; }
+    virtual Glib::ustring getToolName() { return toolName; }
 
     virtual PParamsChangeListener *getPParamsChangeListener() { return nullptr; }
 };
 
-class FoldableToolPanel : public ToolPanel
-{
+
+class FoldableToolPanel: public ToolPanel {
 
 protected:
     Gtk::Box* parentContainer;
@@ -164,7 +135,7 @@ public:
     }
 
     void hide() {
-        if (exp && !batchMode) {  // conditional hide
+        if (exp) {  // conditional hide
             exp->hide();
         }
     }

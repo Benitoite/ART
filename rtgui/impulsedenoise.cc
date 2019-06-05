@@ -36,45 +36,25 @@ ImpulseDenoise::ImpulseDenoise () : FoldableToolPanel(this, "impulsedenoise", M(
     show_all_children ();
 }
 
-void ImpulseDenoise::read (const ProcParams* pp, const ParamsEdited* pedited)
+void ImpulseDenoise::read(const ProcParams* pp)
 {
-
     disableListener ();
 
-    if (pedited) {
-        thresh->setEditedState    (pedited->impulseDenoise.thresh ? Edited : UnEdited);
-        set_inconsistent          (multiImage && !pedited->impulseDenoise.enabled);
-    }
-
     setEnabled(pp->impulseDenoise.enabled);
-
     thresh->setValue (pp->impulseDenoise.thresh);
 
     enableListener ();
 }
 
-void ImpulseDenoise::write (ProcParams* pp, ParamsEdited* pedited)
+void ImpulseDenoise::write(ProcParams* pp)
 {
-
     pp->impulseDenoise.thresh    = thresh->getValue ();
     pp->impulseDenoise.enabled   = getEnabled();
-
-    if (pedited) {
-        pedited->impulseDenoise.thresh        = thresh->getEditedState ();
-        pedited->impulseDenoise.enabled       = !get_inconsistent();
-    }
 }
 
-void ImpulseDenoise::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void ImpulseDenoise::setDefaults(const ProcParams* defParams)
 {
-
     thresh->setDefault (defParams->impulseDenoise.thresh);
-
-    if (pedited) {
-        thresh->setDefaultEditedState (pedited->impulseDenoise.thresh ? Edited : UnEdited);
-    } else {
-        thresh->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void ImpulseDenoise::adjusterChanged(Adjuster* a, double newval)
@@ -101,18 +81,6 @@ void ImpulseDenoise::enabledChanged ()
     }
 }
 
-void ImpulseDenoise::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    thresh->showEditedCB ();
-}
-
-void ImpulseDenoise::setAdjusterBehavior (bool threshadd)
-{
-
-    thresh->setAddMode(threshadd);
-}
 
 void ImpulseDenoise::trimValues (rtengine::procparams::ProcParams* pp)
 {

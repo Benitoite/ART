@@ -46,15 +46,10 @@ CACorrection::CACorrection () : FoldableToolPanel(this, "cacorrection", M("TP_CA
     show_all();
 }
 
-void CACorrection::read (const ProcParams* pp, const ParamsEdited* pedited)
+void CACorrection::read (const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        red->setEditedState (pedited->cacorrection.red ? Edited : UnEdited);
-        blue->setEditedState (pedited->cacorrection.blue ? Edited : UnEdited);
-    }
 
     red->setValue (pp->cacorrection.red);
     blue->setValue (pp->cacorrection.blue);
@@ -62,31 +57,17 @@ void CACorrection::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void CACorrection::write (ProcParams* pp, ParamsEdited* pedited)
+void CACorrection::write (ProcParams* pp)
 {
 
     pp->cacorrection.red  = red->getValue ();
     pp->cacorrection.blue = blue->getValue ();
-
-    if (pedited) {
-        pedited->cacorrection.red = red->getEditedState ();
-        pedited->cacorrection.blue = blue->getEditedState ();
-    }
 }
 
-void CACorrection::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void CACorrection::setDefaults (const ProcParams* defParams)
 {
-
     red->setDefault (defParams->cacorrection.red);
     blue->setDefault (defParams->cacorrection.blue);
-
-    if (pedited) {
-        red->setDefaultEditedState (pedited->cacorrection.red ? Edited : UnEdited);
-        blue->setDefaultEditedState (pedited->cacorrection.blue ? Edited : UnEdited);
-    } else {
-        red->setDefaultEditedState (Irrelevant);
-        blue->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void CACorrection::adjusterChanged (Adjuster* a, double newval)
@@ -101,12 +82,6 @@ void CACorrection::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void CACorrection::setAdjusterBehavior (bool badd)
-{
-
-    red->setAddMode(badd);
-    blue->setAddMode(badd);
-}
 
 void CACorrection::trimValues (rtengine::procparams::ProcParams* pp)
 {
@@ -115,10 +90,3 @@ void CACorrection::trimValues (rtengine::procparams::ProcParams* pp)
     blue->trimValue(pp->cacorrection.blue);
 }
 
-void CACorrection::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    red->showEditedCB ();
-    blue->showEditedCB ();
-}

@@ -112,18 +112,9 @@ Gradient::~Gradient()
     }
 }
 
-void Gradient::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Gradient::read(const ProcParams* pp)
 {
     disableListener ();
-
-    if (pedited) {
-        degree->setEditedState (pedited->gradient.degree ? Edited : UnEdited);
-        feather->setEditedState (pedited->gradient.feather ? Edited : UnEdited);
-        strength->setEditedState (pedited->gradient.strength ? Edited : UnEdited);
-        centerX->setEditedState (pedited->gradient.centerX ? Edited : UnEdited);
-        centerY->setEditedState (pedited->gradient.centerY ? Edited : UnEdited);
-        set_inconsistent (multiImage && !pedited->gradient.enabled);
-    }
 
     setEnabled(pp->gradient.enabled);
     degree->setValue (pp->gradient.degree);
@@ -205,7 +196,7 @@ void Gradient::updateGeometry(const int centerX, const int centerY, const double
     updateCircle (mouseOverGeometry.at(4));
 }
 
-void Gradient::write (ProcParams* pp, ParamsEdited* pedited)
+void Gradient::write(ProcParams* pp)
 {
     pp->gradient.degree = degree->getValue ();
     pp->gradient.feather = feather->getIntValue ();
@@ -213,38 +204,15 @@ void Gradient::write (ProcParams* pp, ParamsEdited* pedited)
     pp->gradient.centerX = centerX->getIntValue ();
     pp->gradient.centerY = centerY->getIntValue ();
     pp->gradient.enabled = getEnabled();
-
-    if (pedited) {
-        pedited->gradient.degree = degree->getEditedState ();
-        pedited->gradient.feather = feather->getEditedState ();
-        pedited->gradient.strength = strength->getEditedState ();
-        pedited->gradient.centerX = centerX->getEditedState ();
-        pedited->gradient.centerY = centerY->getEditedState ();
-        pedited->gradient.enabled = !get_inconsistent();
-    }
 }
 
-void Gradient::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Gradient::setDefaults(const ProcParams* defParams)
 {
     degree->setDefault (defParams->gradient.degree);
     feather->setDefault (defParams->gradient.feather);
     strength->setDefault (defParams->gradient.strength);
     centerX->setDefault (defParams->gradient.centerX);
     centerY->setDefault (defParams->gradient.centerY);
-
-    if (pedited) {
-        degree->setDefaultEditedState (pedited->gradient.degree ? Edited : UnEdited);
-        feather->setDefaultEditedState (pedited->gradient.feather ? Edited : UnEdited);
-        strength->setDefaultEditedState (pedited->gradient.strength ? Edited : UnEdited);
-        centerX->setDefaultEditedState (pedited->gradient.centerX ? Edited : UnEdited);
-        centerY->setDefaultEditedState (pedited->gradient.centerY ? Edited : UnEdited);
-    } else {
-        degree->setDefaultEditedState (Irrelevant);
-        feather->setDefaultEditedState (Irrelevant);
-        strength->setDefaultEditedState (Irrelevant);
-        centerX->setDefaultEditedState (Irrelevant);
-        centerY->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void Gradient::adjusterChanged(Adjuster* a, double newval)
@@ -283,15 +251,6 @@ void Gradient::enabledChanged ()
     }
 }
 
-void Gradient::setAdjusterBehavior (bool degreeadd, bool featheradd, bool strengthadd, bool centeradd)
-{
-    degree->setAddMode(degreeadd);
-    feather->setAddMode(featheradd);
-    strength->setAddMode(strengthadd);
-    centerX->setAddMode(centeradd);
-    centerY->setAddMode(centeradd);
-}
-
 void Gradient::trimValues (rtengine::procparams::ProcParams* pp)
 {
     degree->trimValue(pp->gradient.degree);
@@ -299,18 +258,6 @@ void Gradient::trimValues (rtengine::procparams::ProcParams* pp)
     strength->trimValue(pp->gradient.strength);
     centerX->trimValue(pp->gradient.centerX);
     centerY->trimValue(pp->gradient.centerY);
-}
-
-void Gradient::setBatchMode (bool batchMode)
-{
-    editConn.disconnect();
-    removeIfThere(this, editHBox, false);
-    ToolPanel::setBatchMode (batchMode);
-    degree->showEditedCB ();
-    feather->showEditedCB ();
-    strength->showEditedCB ();
-    centerX->showEditedCB ();
-    centerY->showEditedCB ();
 }
 
 void Gradient::setEditProvider (EditDataProvider* provider)

@@ -228,7 +228,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
 }
 
 
-void ColorCorrection::read(const ProcParams *pp, const ParamsEdited *pedited)
+void ColorCorrection::read(const ProcParams *pp)
 {
     disableListener();
 
@@ -242,20 +242,11 @@ void ColorCorrection::read(const ProcParams *pp, const ParamsEdited *pedited)
     labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->colorcorrection.showMask);
 
-    if (pedited) {
-        set_inconsistent(multiImage && !pedited->colorcorrection.enabled);
-        if (pedited->colorcorrection.regions) {
-            labMasks->setEdited(true);
-        } else {
-            labMasks->setEdited(false);
-        }
-    }
-
     enableListener();
 }
 
 
-void ColorCorrection::write(ProcParams *pp, ParamsEdited *pedited)
+void ColorCorrection::write(ProcParams *pp)
 {
     pp->colorcorrection.enabled = getEnabled();
 
@@ -266,31 +257,15 @@ void ColorCorrection::write(ProcParams *pp, ParamsEdited *pedited)
     assert(pp->colorcorrection.regions.size() == pp->colorcorrection.labmasks.size());
 
     labMasks->updateSelected();
-        
-    if (pedited) {
-        pedited->colorcorrection.enabled = !get_inconsistent();
-        pedited->colorcorrection.regions = labMasks->getEdited();
-    }
 }
 
 
-void ColorCorrection::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void ColorCorrection::setDefaults(const ProcParams *defParams)
 {
     saturation->setDefault(defParams->colorcorrection.regions[0].saturation);
     slope->setDefault(defParams->colorcorrection.regions[0].slope);
     offset->setDefault(defParams->colorcorrection.regions[0].offset);
     power->setDefault(defParams->colorcorrection.regions[0].power);
-    if (pedited) {
-        saturation->setDefaultEditedState(pedited->colorcorrection.regions ? Edited : UnEdited);
-        slope->setDefaultEditedState(pedited->colorcorrection.regions ? Edited : UnEdited);
-        offset->setDefaultEditedState(pedited->colorcorrection.regions ? Edited : UnEdited);
-        power->setDefaultEditedState(pedited->colorcorrection.regions ? Edited : UnEdited);
-    } else {
-        saturation->setDefaultEditedState(Irrelevant);
-        slope->setDefaultEditedState(Irrelevant);
-        offset->setDefaultEditedState(Irrelevant);
-        power->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -327,13 +302,6 @@ void ColorCorrection::enabledChanged ()
             listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void ColorCorrection::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    labMasks->setBatchMode();
 }
 
 
@@ -397,7 +365,7 @@ void ColorCorrection::regionShow(int idx)
 
 void ColorCorrection::channelChanged()
 {
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         labMasks->setEdited(true);        
         listener->panelChanged(EvChannel, channel->get_active_text());
     }

@@ -1119,7 +1119,7 @@ void EditorPanel::saveProfile ()
         ipc->getParams (&params);
 
         // Will call updateCache, which will update both the cached and sidecar files if necessary
-        openThm->setProcParams(FullPartialProfile(params), nullptr, EDITOR);
+        openThm->setProcParams(FullPartialProfile(params), EDITOR);
     }
 }
 
@@ -1747,7 +1747,8 @@ void EditorPanel::procParamsChanged (Thumbnail* thm, int whoChangedIt)
 
     if (whoChangedIt != EDITOR) {
         const auto &pp = openThm->getProcParams();
-        tpc->profileChange (&pp, rtengine::EvProfileChangeNotification, M ("PROGRESSDLG_PROFILECHANGEDINBROWSER"));
+        rtengine::procparams::FullPartialProfile fp(pp);
+        tpc->profileChange (&fp, rtengine::EvProfileChangeNotification, M ("PROGRESSDLG_PROFILECHANGEDINBROWSER"));
     }
 }
 

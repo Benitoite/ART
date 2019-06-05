@@ -44,17 +44,9 @@ ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_T
 }
 
 
-void ToneEqualizer::read(const ProcParams *pp, const ParamsEdited *pedited)
+void ToneEqualizer::read(const ProcParams *pp)
 {
     disableListener();
-
-    if (pedited) {
-        set_inconsistent(multiImage && !pedited->toneEqualizer.enabled);
-        for (size_t i = 0; i < bands.size(); ++i) {
-            bands[i]->setEditedState(pedited->toneEqualizer.bands ? Edited : UnEdited);
-        }
-        detail->setEditedState(pedited->toneEqualizer.detail ? Edited : UnEdited);
-    }
 
     setEnabled(pp->toneEqualizer.enabled);
 
@@ -67,43 +59,22 @@ void ToneEqualizer::read(const ProcParams *pp, const ParamsEdited *pedited)
 }
 
 
-void ToneEqualizer::write(ProcParams *pp, ParamsEdited *pedited)
+void ToneEqualizer::write(ProcParams *pp)
 {
     for (size_t i = 0; i < bands.size(); ++i) {
         pp->toneEqualizer.bands[i] = bands[i]->getValue();
     }
     pp->toneEqualizer.enabled = getEnabled();
     pp->toneEqualizer.detail = detail->getValue();
-
-    if (pedited) {
-        pedited->toneEqualizer.enabled = !get_inconsistent();
-        pedited->toneEqualizer.bands = false;
-        for (size_t i = 0; i < bands.size(); ++i) {
-            pedited->toneEqualizer.bands = pedited->toneEqualizer.bands || bands[i]->getEditedState();
-        }
-        pedited->toneEqualizer.detail = detail->getEditedState();
-    }
 }
 
 
-void ToneEqualizer::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void ToneEqualizer::setDefaults(const ProcParams *defParams)
 {
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->setDefault(defParams->toneEqualizer.bands[i]);
     }
     detail->setDefault(defParams->toneEqualizer.detail);
-
-    if (pedited) {
-        for (size_t i = 0; i < bands.size(); ++i) {
-            bands[i]->setDefaultEditedState(pedited->toneEqualizer.bands ? Edited : UnEdited);
-        }
-        detail->setDefaultEditedState(pedited->toneEqualizer.detail ? Edited : UnEdited);
-    } else {
-        for (size_t i = 0; i < bands.size(); ++i) {
-            bands[i]->setDefaultEditedState(Irrelevant);
-        }
-        detail->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -139,16 +110,6 @@ void ToneEqualizer::enabledChanged()
             listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void ToneEqualizer::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    for (size_t i = 0; i < bands.size(); ++i) {
-        bands[i]->showEditedCB();
-    }
-    detail->showEditedCB();
 }
 
 

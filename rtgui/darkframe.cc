@@ -69,16 +69,12 @@ DarkFrame::DarkFrame () : FoldableToolPanel(this, "darkframe", M("TP_DARKFRAME_L
     }
 }
 
-void DarkFrame::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void DarkFrame::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
     dfautoconn.block(true);
 
     dfAuto->set_active( pp->raw.df_autoselect );
-
-    if(pedited ) {
-        dfAuto->set_inconsistent(!pedited->raw.df_autoselect );
-    }
 
     if (Glib::file_test (pp->raw.dark_frame, Glib::FILE_TEST_EXISTS)) {
         darkFrameFile->set_filename (pp->raw.dark_frame);
@@ -90,7 +86,7 @@ void DarkFrame::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
 
     lastDFauto = pp->raw.df_autoselect;
 
-    if( pp->raw.df_autoselect  && dfp && !multiImage) {
+    if( pp->raw.df_autoselect  && dfp) {
         // retrieve the auto-selected df filename
         rtengine::RawImage *img = dfp->getDF();
 
@@ -109,7 +105,7 @@ void DarkFrame::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
     enableListener ();
 
     // Add filter with the current file extension if the current file is raw
-    if (dfp && !batchMode) {
+    if (dfp) {
 
         if (b_filter_asCurrent) {
             //First, remove last filter_asCurrent if it was set for a raw file
@@ -145,34 +141,15 @@ void DarkFrame::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
 
 }
 
-void DarkFrame::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void DarkFrame::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.dark_frame = darkFrameFile->get_filename();
     pp->raw.df_autoselect = dfAuto->get_active();
-
-    if (pedited) {
-        pedited->raw.darkFrame = dfChanged;
-        pedited->raw.df_autoselect = !dfAuto->get_inconsistent();
-    }
-
 }
 
 void DarkFrame::dfAutoChanged()
 {
-    if (batchMode) {
-        if (dfAuto->get_inconsistent()) {
-            dfAuto->set_inconsistent (false);
-            dfautoconn.block (true);
-            dfAuto->set_active (false);
-            dfautoconn.block (false);
-        } else if (lastDFauto) {
-            dfAuto->set_inconsistent (true);
-        }
-
-        lastDFauto = dfAuto->get_active ();
-    }
-
-    if(dfAuto->get_active() && dfp && !batchMode) {
+    if(dfAuto->get_active() && dfp) {
         // retrieve the auto-selected df filename
         rtengine::RawImage *img = dfp->getDF();
 

@@ -17,7 +17,6 @@ set(NONCLISOURCEFILES
     batchqueuebuttonset.cc
     batchqueueentry.cc
     batchqueuepanel.cc
-    #batchtoolpanelcoord.cc
     bayerpreprocess.cc
     bayerprocess.cc
     bayerrawexposure.cc

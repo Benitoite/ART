@@ -151,29 +151,9 @@ Sharpening::~Sharpening ()
 }
 
 
-void Sharpening::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Sharpening::read(const ProcParams* pp)
 {
-
     disableListener ();
-
-    if (pedited) {
-        contrast->setEditedState    (pedited->sharpening.contrast ? Edited : UnEdited);
-        blur->setEditedState        (pedited->sharpening.blurradius ? Edited : UnEdited);
-        amount->setEditedState      (pedited->sharpening.amount ? Edited : UnEdited);
-        radius->setEditedState      (pedited->sharpening.radius ? Edited : UnEdited);
-        threshold->setEditedState   (pedited->sharpening.threshold ? Edited : UnEdited);
-        eradius->setEditedState     (pedited->sharpening.edges_radius ? Edited : UnEdited);
-        etolerance->setEditedState  (pedited->sharpening.edges_tolerance ? Edited : UnEdited);
-        hcamount->setEditedState    (pedited->sharpening.halocontrol_amount ? Edited : UnEdited);
-        damount->setEditedState     (pedited->sharpening.deconvamount ? Edited : UnEdited);
-        dradius->setEditedState     (pedited->sharpening.deconvradius ? Edited : UnEdited);
-        diter->setEditedState       (pedited->sharpening.deconviter ? Edited : UnEdited);
-        ddamping->setEditedState    (pedited->sharpening.deconvdamping ? Edited : UnEdited);
-
-        halocontrol->set_inconsistent   (multiImage && !pedited->sharpening.halocontrol);
-        edgesonly->set_inconsistent     (multiImage && !pedited->sharpening.edgesonly);
-        set_inconsistent                (multiImage && !pedited->sharpening.enabled);
-    }
 
     setEnabled (pp->sharpening.enabled);
 
@@ -201,24 +181,19 @@ void Sharpening::read (const ProcParams* pp, const ParamsEdited* pedited)
     diter->setValue         (pp->sharpening.deconviter);
     ddamping->setValue      (pp->sharpening.deconvdamping);
 
-    if (!batchMode) {
-        removeIfThere (edgebin, edgebox, false);
+    removeIfThere (edgebin, edgebox, false);
 
-        if (edgesonly->get_active ()) {
-            edgebin->pack_start (*edgebox);
-        }
-
-        removeIfThere (hcbin, hcbox, false);
-
-        if (halocontrol->get_active ()) {
-            hcbin->pack_start (*hcbox);
-        }
-
+    if (edgesonly->get_active ()) {
+        edgebin->pack_start (*edgebox);
     }
 
-    if (pedited && !pedited->sharpening.method) {
-        method->set_active (2);
-    } else if (pp->sharpening.method == "usm") {
+    removeIfThere (hcbin, hcbox, false);
+
+    if (halocontrol->get_active ()) {
+        hcbin->pack_start (*hcbox);
+    }
+
+    if (pp->sharpening.method == "usm") {
         method->set_active (0);
     } else if (pp->sharpening.method == "rld") {
         method->set_active (1);
@@ -227,7 +202,7 @@ void Sharpening::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void Sharpening::write (ProcParams* pp, ParamsEdited* pedited)
+void Sharpening::write(ProcParams* pp)
 {
 
     pp->sharpening.contrast         = contrast->getValue ();
@@ -251,28 +226,9 @@ void Sharpening::write (ProcParams* pp, ParamsEdited* pedited)
     } else if (method->get_active_row_number() == 1) {
         pp->sharpening.method = "rld";
     }
-
-    if (pedited) {
-        pedited->sharpening.contrast        = contrast->getEditedState ();
-        pedited->sharpening.blurradius      = blur->getEditedState ();
-        pedited->sharpening.amount          = amount->getEditedState ();
-        pedited->sharpening.radius          = radius->getEditedState ();
-        pedited->sharpening.threshold       = threshold->getEditedState ();
-        pedited->sharpening.edges_radius    = eradius->getEditedState ();
-        pedited->sharpening.edges_tolerance = etolerance->getEditedState ();
-        pedited->sharpening.halocontrol_amount = hcamount->getEditedState ();
-        pedited->sharpening.deconvamount    = damount->getEditedState ();
-        pedited->sharpening.deconvradius    = dradius->getEditedState ();
-        pedited->sharpening.deconviter      = diter->getEditedState ();
-        pedited->sharpening.deconvdamping   = ddamping->getEditedState ();
-        pedited->sharpening.method          =  method->get_active_row_number() != 2;
-        pedited->sharpening.halocontrol     =  !halocontrol->get_inconsistent();
-        pedited->sharpening.edgesonly       =  !edgesonly->get_inconsistent();
-        pedited->sharpening.enabled         =  !get_inconsistent();
-    }
 }
 
-void Sharpening::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Sharpening::setDefaults(const ProcParams* defParams)
 {
     contrast->setDefault (defParams->sharpening.contrast);
     blur->setDefault (defParams->sharpening.blurradius);
@@ -286,39 +242,11 @@ void Sharpening::setDefaults (const ProcParams* defParams, const ParamsEdited* p
     dradius->setDefault (defParams->sharpening.deconvradius);
     diter->setDefault (defParams->sharpening.deconviter);
     ddamping->setDefault (defParams->sharpening.deconvdamping);
-
-    if (pedited) {
-        contrast->setDefaultEditedState     (pedited->sharpening.contrast ? Edited : UnEdited);
-        blur->setDefaultEditedState         (pedited->sharpening.blurradius ? Edited : UnEdited);
-        amount->setDefaultEditedState       (pedited->sharpening.amount ? Edited : UnEdited);
-        radius->setDefaultEditedState       (pedited->sharpening.radius ? Edited : UnEdited);
-        threshold->setDefaultEditedState    (pedited->sharpening.threshold ? Edited : UnEdited);
-        eradius->setDefaultEditedState      (pedited->sharpening.edges_radius ? Edited : UnEdited);
-        etolerance->setDefaultEditedState   (pedited->sharpening.edges_tolerance ? Edited : UnEdited);
-        hcamount->setDefaultEditedState     (pedited->sharpening.halocontrol_amount ? Edited : UnEdited);
-        damount->setDefaultEditedState      (pedited->sharpening.deconvamount ? Edited : UnEdited);
-        dradius->setDefaultEditedState      (pedited->sharpening.deconvradius ? Edited : UnEdited);
-        diter->setDefaultEditedState        (pedited->sharpening.deconviter ? Edited : UnEdited);
-        ddamping->setDefaultEditedState     (pedited->sharpening.deconvdamping ? Edited : UnEdited);
-    } else {
-        contrast->setDefaultEditedState     (Irrelevant);
-        blur->setDefaultEditedState         (Irrelevant);
-        amount->setDefaultEditedState       (Irrelevant);
-        radius->setDefaultEditedState       (Irrelevant);
-        threshold->setDefaultEditedState    (Irrelevant);
-        eradius->setDefaultEditedState      (Irrelevant);
-        etolerance->setDefaultEditedState   (Irrelevant);
-        hcamount->setDefaultEditedState     (Irrelevant);
-        damount->setDefaultEditedState      (Irrelevant);
-        dradius->setDefaultEditedState      (Irrelevant);
-        diter->setDefaultEditedState        (Irrelevant);
-        ddamping->setDefaultEditedState     (Irrelevant);
-    }
 }
 
 void Sharpening::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
 
         Glib::ustring costr;
 
@@ -374,7 +302,7 @@ void Sharpening::adjusterChanged(ThresholdAdjuster* a, int newBottom, int newTop
 
 void Sharpening::adjusterChanged(ThresholdAdjuster* a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight)
 {
-    if (listener && (multiImage || getEnabled())) {
+    if (listener && getEnabled()) {
         if (a == threshold) {
             listener->panelChanged(EvShrThresh, threshold->getHistoryString());
         }
@@ -401,29 +329,13 @@ void Sharpening::enabledChanged ()
 
 void Sharpening::edgesonly_toggled ()
 {
+    removeIfThere (edgebin, edgebox, false);
 
-    if (multiImage) {
-        if (edgesonly->get_inconsistent()) {
-            edgesonly->set_inconsistent (false);
-            eonlyConn.block (true);
-            edgesonly->set_active (false);
-            eonlyConn.block (false);
-        } else if (lastEdgesOnly) {
-            edgesonly->set_inconsistent (true);
-        }
-
-        lastEdgesOnly = edgesonly->get_active ();
+    if (edgesonly->get_active ()) {
+        edgebin->pack_start (*edgebox);
     }
 
-    if (!batchMode) {
-        removeIfThere (edgebin, edgebox, false);
-
-        if (edgesonly->get_active ()) {
-            edgebin->pack_start (*edgebox);
-        }
-    }
-
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         if (edgesonly->get_inconsistent()) {
             listener->panelChanged (EvShrEdgeOnly, M("GENERAL_INITIALVALUES"));
         } else if (edgesonly->get_active ()) {
@@ -436,29 +348,13 @@ void Sharpening::edgesonly_toggled ()
 
 void Sharpening::halocontrol_toggled ()
 {
+    removeIfThere (hcbin, hcbox, false);
 
-    if (multiImage) {
-        if (halocontrol->get_inconsistent()) {
-            halocontrol->set_inconsistent (false);
-            hcConn.block (true);
-            halocontrol->set_active (false);
-            hcConn.block (false);
-        } else if (lastHaloControl) {
-            halocontrol->set_inconsistent (true);
-        }
-
-        lastHaloControl = halocontrol->get_active ();
+    if (halocontrol->get_active ()) {
+        hcbin->pack_start (*hcbox);
     }
 
-    if (!batchMode) {
-        removeIfThere (hcbin, hcbox, false);
-
-        if (halocontrol->get_active ()) {
-            hcbin->pack_start (*hcbox);
-        }
-    }
-
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         if (halocontrol->get_inconsistent()) {
             listener->panelChanged (EvShrHaloControl, M("GENERAL_INITIALVALUES"));
         } else if (halocontrol->get_active ()) {
@@ -471,63 +367,19 @@ void Sharpening::halocontrol_toggled ()
 
 void Sharpening::method_changed ()
 {
+    removeIfThere (this, usm, false);
+    removeIfThere (this, rld, false);
 
-    if (!batchMode) {
-        removeIfThere (this, usm, false);
-        removeIfThere (this, rld, false);
-
-        if (method->get_active_row_number() == 0) {
-            pack_start (*usm);
-        } else if (method->get_active_row_number() == 1) {
-            pack_start (*rld);
-        }
+    if (method->get_active_row_number() == 0) {
+        pack_start (*usm);
+    } else if (method->get_active_row_number() == 1) {
+        pack_start (*rld);
     }
 
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged (EvShrMethod, method->get_active_text ());
     }
 
-}
-
-void Sharpening::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-
-    removeIfThere (hcbin, hcbox, false);
-    hcbin->pack_start (*hcbox);
-    removeIfThere (edgebin, edgebox, false);
-    edgebin->pack_start (*edgebox);
-    pack_start (*rld);
-
-    contrast->showEditedCB ();
-    blur->showEditedCB ();
-    radius->showEditedCB ();
-    amount->showEditedCB ();
-    threshold->showEditedCB ();
-    eradius->showEditedCB ();
-    etolerance->showEditedCB ();
-    hcamount->showEditedCB ();
-    dradius->showEditedCB ();
-    damount->showEditedCB ();
-    ddamping->showEditedCB ();
-    diter->showEditedCB ();
-    method->append (M("GENERAL_UNCHANGED"));
-}
-
-void Sharpening::setAdjusterBehavior (bool contrastadd, bool radiusadd, bool amountadd, bool dampingadd, bool iteradd, bool edgetoladd, bool haloctrladd)
-{
-
-    contrast->setAddMode(contrastadd);
-    radius->setAddMode(radiusadd);
-    dradius->setAddMode(radiusadd);
-    amount->setAddMode(amountadd);
-    damount->setAddMode(amountadd);
-    ddamping->setAddMode(dampingadd);
-    diter->setAddMode(iteradd);
-    eradius->setAddMode(radiusadd);
-    etolerance->setAddMode(edgetoladd);
-    hcamount->setAddMode(haloctrladd);
 }
 
 void Sharpening::trimValues (rtengine::procparams::ProcParams* pp)

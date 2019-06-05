@@ -642,6 +642,7 @@ void ProfilePanel::paste_clicked (GdkEventButton* event)
     } else if (isDefaultSelected()) {
         selected = defprofile;
     } else {
+        const ProfileStoreEntry *entry = profiles->getSelectedEntry();        
         if (entry) {
             const PartialProfile* partProfile = ProfileStore::getInstance()->getProfile (entry);
             selected = partProfile;

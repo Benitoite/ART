@@ -76,8 +76,6 @@ public:
     void curveChanged(CurveEditor* ce) override;
     float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3) override;
 
-    void setBatchMode();
-
     bool button1Released() override;
     void switchOffEditMode() override;
     void setEditProvider(EditDataProvider *provider);

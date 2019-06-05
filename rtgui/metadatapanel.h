@@ -38,10 +38,9 @@ public:
     MetaDataPanel();
     ~MetaDataPanel() override;
     
-    void setBatchMode(bool batchMode) override;
-    void read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    void setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) override;
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
 
     void setImageData(const rtengine::FramesMetaData* id);
     void setListener(ToolPanelListener *tpl) override;

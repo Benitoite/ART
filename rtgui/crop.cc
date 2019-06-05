@@ -328,7 +328,7 @@ void Crop::readOptions ()
     enableListener ();
 }
 
-void Crop::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Crop::read(const ProcParams* pp)
 {
 
     disableListener ();
@@ -414,28 +414,6 @@ void Crop::read (const ProcParams* pp, const ParamsEdited* pedited)
     xDirty = false;
     yDirty = false;
 
-    if (pedited) {
-        wDirty = pedited->crop.w;
-        hDirty = pedited->crop.h;
-        xDirty = pedited->crop.x;
-        yDirty = pedited->crop.y;
-
-        if (!pedited->crop.ratio) {
-            ratio->set_active_text (M("GENERAL_UNCHANGED"));
-        }
-
-        if (!pedited->crop.orientation) {
-            orientation->set_active_text (M("GENERAL_UNCHANGED"));
-        }
-
-        if (!pedited->crop.guide) {
-            guide->set_active_text (M("GENERAL_UNCHANGED"));
-        }
-
-        set_inconsistent (multiImage && !pedited->crop.enabled);
-        fixr->set_inconsistent (!pedited->crop.fixratio);
-    }
-
     lastFixRatio = pp->crop.fixratio;
 
     xconn.block (false);
@@ -450,7 +428,7 @@ void Crop::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void Crop::write (ProcParams* pp, ParamsEdited* pedited)
+void Crop::write(ProcParams* pp)
 {
 
     pp->crop.enabled = getEnabled ();
@@ -497,19 +475,6 @@ void Crop::write (ProcParams* pp, ParamsEdited* pedited)
     } else if (guide->get_active_row_number() == 8) {
         pp->crop.guide = "ePassport";
     }
-
-    if (pedited) {
-        pedited->crop.enabled       = !get_inconsistent();
-        pedited->crop.ratio         = ratio->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->crop.orientation   = orientation->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->crop.guide         = guide->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->crop.fixratio      = !fixr->get_inconsistent();
-        pedited->crop.w             = wDirty;
-        pedited->crop.h             = hDirty;
-        pedited->crop.x             = xDirty;
-        pedited->crop.y             = yDirty;
-    }
-
 }
 
 void Crop::trim (ProcParams* pp, int ow, int oh)
@@ -739,18 +704,6 @@ void Crop::heightChanged ()
 // Fixed ratio toggle button
 void Crop::ratioFixedChanged ()
 {
-    // Batch mode handling when enabling/disabling fixed crop
-    if (batchMode && lastFixRatio != fixr->get_active ()) {
-        if (fixr->get_inconsistent()) {
-            fixr->set_inconsistent (false);
-            fconn.block (true);
-            fixr->set_active (false);
-            fconn.block (false);
-        } else if (lastFixRatio) {
-            fixr->set_inconsistent (true);
-        }
-    }
-
     lastFixRatio = fixr->get_active ();
     adjustCropToRatio();
 }
@@ -838,23 +791,19 @@ void Crop::adjustCropToRatio()
 
 void Crop::refreshSize ()
 {
+    std::ostringstream ostrin;
+    ostrin.precision (3);
+    //    ostrin << h->get_value()/ppi->get_value() << " in x " << w->get_value()/ppi->get_value() << " in";;
+    ostrin << nh / ppi->get_value() << " in x " << nw / ppi->get_value() << " in";
 
-    if (!batchMode) {
+    sizein->set_text (ostrin.str ());
 
-        std::ostringstream ostrin;
-        ostrin.precision (3);
-        //    ostrin << h->get_value()/ppi->get_value() << " in x " << w->get_value()/ppi->get_value() << " in";;
-        ostrin << nh / ppi->get_value() << " in x " << nw / ppi->get_value() << " in";;
+    std::ostringstream ostrcm;
+    ostrcm.precision (3);
+    //    ostrcm << h->get_value()/ppi->get_value()*2.54 << " cm x " << w->get_value()/ppi->get_value()*2.54 << " cm";;
+    ostrcm << nh / ppi->get_value() * 2.54 << " cm x " << nw / ppi->get_value() * 2.54 << " cm";;
 
-        sizein->set_text (ostrin.str ());
-
-        std::ostringstream ostrcm;
-        ostrcm.precision (3);
-        //    ostrcm << h->get_value()/ppi->get_value()*2.54 << " cm x " << w->get_value()/ppi->get_value()*2.54 << " cm";;
-        ostrcm << nh / ppi->get_value() * 2.54 << " cm x " << nw / ppi->get_value() * 2.54 << " cm";;
-
-        sizecm->set_text (ostrcm.str ());
-    }
+    sizecm->set_text (ostrcm.str ());
 }
 
 /*
@@ -1520,19 +1469,6 @@ double Crop::getRatio () const
         return maxh <= maxw ? r : 1.0 / r;
     }
 
-}
-
-void Crop::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-
-    ratio->append (M("GENERAL_UNCHANGED"));
-    orientation->append (M("GENERAL_UNCHANGED"));
-    guide->append (M("GENERAL_UNCHANGED"));
-    removeIfThere (this, ppigrid);
-    removeIfThere (methodgrid, selectCrop);
-    removeIfThere (methodgrid, resetCrop);
 }
 
 

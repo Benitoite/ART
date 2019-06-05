@@ -457,7 +457,7 @@ IPTCPanel::IPTCPanel ()
     show_all ();
 }
 
-void IPTCPanel::read (const ProcParams* pp, const ParamsEdited* pedited)
+void IPTCPanel::read(const ProcParams* pp)
 {
 
     disableListener ();
@@ -473,13 +473,13 @@ void IPTCPanel::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void IPTCPanel::write (ProcParams* pp, ParamsEdited* pedited)
+void IPTCPanel::write(ProcParams* pp)
 {
 
     pp->iptc = changeList;
 }
 
-void IPTCPanel::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void IPTCPanel::setDefaults(const ProcParams* defParams)
 {
 
     defChangeList = defParams->iptc;

@@ -65,20 +65,10 @@ ShadowsHighlights::ShadowsHighlights () : FoldableToolPanel(this, "shadowshighli
     show_all_children ();
 }
 
-void ShadowsHighlights::read (const ProcParams* pp, const ParamsEdited* pedited)
+void ShadowsHighlights::read(const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        radius->setEditedState       (pedited->sh.radius ? Edited : UnEdited);
-        highlights->setEditedState   (pedited->sh.highlights ? Edited : UnEdited);
-        h_tonalwidth->setEditedState (pedited->sh.htonalwidth ? Edited : UnEdited);
-        shadows->setEditedState      (pedited->sh.shadows ? Edited : UnEdited);
-        s_tonalwidth->setEditedState (pedited->sh.stonalwidth ? Edited : UnEdited);
-        set_inconsistent             (multiImage && !pedited->sh.enabled);
-
-    }
 
     setEnabled (pp->sh.enabled);
 
@@ -88,9 +78,7 @@ void ShadowsHighlights::read (const ProcParams* pp, const ParamsEdited* pedited)
     shadows->setValue       (pp->sh.shadows);
     s_tonalwidth->setValue  (pp->sh.stonalwidth);
 
-    if (pedited && !pedited->sh.lab) {
-        colorspace->set_active(2);
-    } else if (pp->sh.lab) {
+    if (pp->sh.lab) {
         colorspace->set_active(1);
     } else {
         colorspace->set_active(0);
@@ -99,7 +87,7 @@ void ShadowsHighlights::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void ShadowsHighlights::write (ProcParams* pp, ParamsEdited* pedited)
+void ShadowsHighlights::write(ProcParams* pp)
 {
 
     pp->sh.radius        = (int)radius->getValue ();
@@ -114,19 +102,9 @@ void ShadowsHighlights::write (ProcParams* pp, ParamsEdited* pedited)
     } else if (colorspace->get_active_row_number() == 1) {
         pp->sh.lab = true;
     }
-
-    if (pedited) {
-        pedited->sh.radius          = radius->getEditedState ();
-        pedited->sh.highlights      = highlights->getEditedState ();
-        pedited->sh.htonalwidth     = h_tonalwidth->getEditedState ();
-        pedited->sh.shadows         = shadows->getEditedState ();
-        pedited->sh.stonalwidth     = s_tonalwidth->getEditedState ();
-        pedited->sh.enabled         = !get_inconsistent();
-        pedited->sh.lab = colorspace->get_active_row_number() != 2;
-    }
 }
 
-void ShadowsHighlights::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void ShadowsHighlights::setDefaults(const ProcParams* defParams)
 {
 
     radius->setDefault (defParams->sh.radius);
@@ -134,20 +112,6 @@ void ShadowsHighlights::setDefaults (const ProcParams* defParams, const ParamsEd
     h_tonalwidth->setDefault (defParams->sh.htonalwidth);
     shadows->setDefault (defParams->sh.shadows);
     s_tonalwidth->setDefault (defParams->sh.stonalwidth);
-
-    if (pedited) {
-        radius->setDefaultEditedState       (pedited->sh.radius ? Edited : UnEdited);
-        highlights->setDefaultEditedState   (pedited->sh.highlights ? Edited : UnEdited);
-        h_tonalwidth->setDefaultEditedState (pedited->sh.htonalwidth ? Edited : UnEdited);
-        shadows->setDefaultEditedState      (pedited->sh.shadows ? Edited : UnEdited);
-        s_tonalwidth->setDefaultEditedState (pedited->sh.stonalwidth ? Edited : UnEdited);
-    } else {
-        radius->setDefaultEditedState       (Irrelevant);
-        highlights->setDefaultEditedState   (Irrelevant);
-        h_tonalwidth->setDefaultEditedState (Irrelevant);
-        shadows->setDefaultEditedState      (Irrelevant);
-        s_tonalwidth->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void ShadowsHighlights::adjusterChanged (Adjuster* a, double newval)
@@ -189,29 +153,11 @@ void ShadowsHighlights::enabledChanged ()
 
 void ShadowsHighlights::colorspaceChanged()
 {
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged(EvSHColorspace, colorspace->get_active_text());
     }
 }
 
-void ShadowsHighlights::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    radius->showEditedCB ();
-    highlights->showEditedCB ();
-    h_tonalwidth->showEditedCB ();
-    shadows->showEditedCB ();
-    s_tonalwidth->showEditedCB ();
-    colorspace->append(M("GENERAL_UNCHANGED"));    
-}
-
-void ShadowsHighlights::setAdjusterBehavior (bool hadd, bool sadd)
-{
-
-    highlights->setAddMode(hadd);
-    shadows->setAddMode(sadd);
-}
 
 void ShadowsHighlights::trimValues (rtengine::procparams::ProcParams* pp)
 {

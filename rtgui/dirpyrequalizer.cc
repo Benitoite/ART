@@ -222,7 +222,7 @@ DirPyrEqualizer::~DirPyrEqualizer ()
 
 }
 
-void DirPyrEqualizer::read (const ProcParams* pp, const ParamsEdited* pedited)
+void DirPyrEqualizer::read(const ProcParams* pp)
 {
     disableListener();
 
@@ -237,21 +237,11 @@ void DirPyrEqualizer::read (const ProcParams* pp, const ParamsEdited* pedited)
     labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->dirpyrequalizer.showMask);
         
-    
-    if (pedited) {
-        set_inconsistent(multiImage && !pedited->dirpyrequalizer.enabled);
-        if (pedited->dirpyrequalizer.levels) {
-            labMasks->setEdited(true);
-        } else {
-            labMasks->setEdited(false);
-        }
-    }
-
     enableListener();
 }
 
 
-void DirPyrEqualizer::write (ProcParams* pp, ParamsEdited* pedited)
+void DirPyrEqualizer::write(ProcParams* pp)
 {
     pp->dirpyrequalizer.enabled = getEnabled();
 
@@ -261,15 +251,10 @@ void DirPyrEqualizer::write (ProcParams* pp, ParamsEdited* pedited)
     assert(pp->dirpyrequalizer.levels.size() == pp->dirpyrequalizer.labmasks.size());
 
     labMasks->updateSelected();
-        
-    if (pedited) {
-        pedited->dirpyrequalizer.enabled = !get_inconsistent();
-        pedited->dirpyrequalizer.levels = labMasks->getEdited();
-    }
 }
 
 
-void DirPyrEqualizer::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void DirPyrEqualizer::setDefaults (const ProcParams* defParams)
 {
 
     if (defParams->dirpyrequalizer.levels.size() == 1) {
@@ -279,27 +264,6 @@ void DirPyrEqualizer::setDefaults (const ProcParams* defParams, const ParamsEdit
 
         threshold->setDefault(defParams->dirpyrequalizer.levels[0].threshold);
     }
-
-    if (pedited) {
-        for (int i = 0; i < 6; i++) {
-            multiplier[i]->setDefaultEditedState(pedited->dirpyrequalizer.levels ? Edited : UnEdited);
-        }
-
-        threshold->setDefaultEditedState(pedited->dirpyrequalizer.levels ? Edited : UnEdited);
-    } else {
-        for (int i = 0; i < 6; i++) {
-            multiplier[i]->setDefaultEditedState(Irrelevant);
-        }
-
-        threshold->setDefaultEditedState(Irrelevant);
-    }
-}
-
-
-void DirPyrEqualizer::setBatchMode (bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    labMasks->setBatchMode();
 }
 
 
@@ -378,10 +342,6 @@ void DirPyrEqualizer::lumacontrastMinusPressed ()
     }
 }
 
-
-void DirPyrEqualizer::setAdjusterBehavior (bool multiplieradd, bool thresholdadd, bool skinadd)
-{
-}
 
 void DirPyrEqualizer::trimValues (rtengine::procparams::ProcParams* pp)
 {

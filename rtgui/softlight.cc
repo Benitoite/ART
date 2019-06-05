@@ -39,14 +39,9 @@ SoftLight::SoftLight(): FoldableToolPanel(this, "softlight", M("TP_SOFTLIGHT_LAB
 }
 
 
-void SoftLight::read(const ProcParams *pp, const ParamsEdited *pedited)
+void SoftLight::read(const ProcParams *pp)
 {
     disableListener();
-
-    if (pedited) {
-        strength->setEditedState(pedited->softlight.strength ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->softlight.enabled);
-    }
 
     setEnabled(pp->softlight.enabled);
     strength->setValue(pp->softlight.strength);
@@ -55,26 +50,15 @@ void SoftLight::read(const ProcParams *pp, const ParamsEdited *pedited)
 }
 
 
-void SoftLight::write(ProcParams *pp, ParamsEdited *pedited)
+void SoftLight::write(ProcParams *pp)
 {
     pp->softlight.strength = strength->getValue();
     pp->softlight.enabled = getEnabled();
-
-    if (pedited) {
-        pedited->softlight.strength = strength->getEditedState();
-        pedited->softlight.enabled = !get_inconsistent();
-    }
 }
 
-void SoftLight::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void SoftLight::setDefaults(const ProcParams *defParams)
 {
     strength->setDefault(defParams->softlight.strength);
-
-    if (pedited) {
-        strength->setDefaultEditedState(pedited->softlight.strength ? Edited : UnEdited);
-    } else {
-        strength->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -102,19 +86,5 @@ void SoftLight::enabledChanged ()
             listener->panelChanged(EvSoftLightEnabled, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void SoftLight::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-
-    strength->showEditedCB();
-}
-
-
-void SoftLight::setAdjusterBehavior(bool strengthAdd)
-{
-    strength->setAddMode(strengthAdd);
 }
 

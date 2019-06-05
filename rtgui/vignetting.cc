@@ -48,18 +48,10 @@ Vignetting::Vignetting () : FoldableToolPanel(this, "vignetting", M("TP_VIGNETTI
     show_all();
 }
 
-void Vignetting::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Vignetting::read(const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        amount->setEditedState (pedited->vignetting.amount ? Edited : UnEdited);
-        radius->setEditedState (pedited->vignetting.radius ? Edited : UnEdited);
-        strength->setEditedState (pedited->vignetting.strength ? Edited : UnEdited);
-        centerX->setEditedState (pedited->vignetting.centerX ? Edited : UnEdited);
-        centerY->setEditedState (pedited->vignetting.centerY ? Edited : UnEdited);
-    }
 
     amount->setValue (pp->vignetting.amount);
     radius->setValue (pp->vignetting.radius);
@@ -70,25 +62,16 @@ void Vignetting::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void Vignetting::write (ProcParams* pp, ParamsEdited* pedited)
+void Vignetting::write(ProcParams* pp)
 {
-
     pp->vignetting.amount = amount->getIntValue ();
     pp->vignetting.radius = radius->getIntValue ();
     pp->vignetting.strength = strength->getIntValue ();
     pp->vignetting.centerX = centerX->getIntValue ();
     pp->vignetting.centerY = centerY->getIntValue ();
-
-    if (pedited) {
-        pedited->vignetting.amount = amount->getEditedState ();
-        pedited->vignetting.radius = radius->getEditedState ();
-        pedited->vignetting.strength = strength->getEditedState ();
-        pedited->vignetting.centerX = centerX->getEditedState ();
-        pedited->vignetting.centerY = centerY->getEditedState ();
-    }
 }
 
-void Vignetting::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Vignetting::setDefaults(const ProcParams* defParams)
 {
 
     amount->setDefault (defParams->vignetting.amount);
@@ -96,20 +79,6 @@ void Vignetting::setDefaults (const ProcParams* defParams, const ParamsEdited* p
     strength->setDefault (defParams->vignetting.strength);
     centerX->setDefault (defParams->vignetting.centerX);
     centerY->setDefault (defParams->vignetting.centerY);
-
-    if (pedited) {
-        amount->setDefaultEditedState (pedited->vignetting.amount ? Edited : UnEdited);
-        radius->setDefaultEditedState (pedited->vignetting.radius ? Edited : UnEdited);
-        strength->setDefaultEditedState (pedited->vignetting.strength ? Edited : UnEdited);
-        centerX->setDefaultEditedState (pedited->vignetting.centerX ? Edited : UnEdited);
-        centerY->setDefaultEditedState (pedited->vignetting.centerY ? Edited : UnEdited);
-    } else {
-        amount->setDefaultEditedState (Irrelevant);
-        radius->setDefaultEditedState (Irrelevant);
-        strength->setDefaultEditedState (Irrelevant);
-        centerX->setDefaultEditedState (Irrelevant);
-        centerY->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void Vignetting::adjusterChanged(Adjuster* a, double newval)
@@ -131,16 +100,6 @@ void Vignetting::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void Vignetting::setAdjusterBehavior (bool amountadd, bool radiusadd, bool strengthadd, bool centeradd)
-{
-
-    amount->setAddMode(amountadd);
-    radius->setAddMode(radiusadd);
-    strength->setAddMode(strengthadd);
-    centerX->setAddMode(centeradd);
-    centerY->setAddMode(centeradd);
-}
-
 void Vignetting::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
@@ -151,13 +110,3 @@ void Vignetting::trimValues (rtengine::procparams::ProcParams* pp)
     centerY->trimValue(pp->vignetting.centerY);
 }
 
-void Vignetting::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    amount->showEditedCB ();
-    radius->showEditedCB ();
-    strength->showEditedCB ();
-    centerX->showEditedCB ();
-    centerY->showEditedCB ();
-}

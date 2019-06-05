@@ -47,14 +47,13 @@ class CheckBox : public Gtk::CheckButton  // Should ideally be private, but in t
 
     CheckBoxListener *listener;
     bool lastActive;
-    bool const& multiImage;
     sigc::connection conn;
     void buttonToggled ();
     void setLastActive();
 
 public:
     //using CheckButton::CheckButton;
-    explicit CheckBox (Glib::ustring label, bool const& multiImageVal);
+    explicit CheckBox (Glib::ustring label);
     bool getLastActive();
     void setValue (CheckValue newValue);
     void setValue (bool active);

@@ -99,22 +99,13 @@ ChMixer::ChMixer (): FoldableToolPanel(this, "chmixer", M("TP_CHMIXER_LABEL"), f
     show_all();
 }
 
-void ChMixer::read (const ProcParams* pp, const ParamsEdited* pedited)
+void ChMixer::read(const ProcParams* pp)
 {
 
     disableListener ();
 
     setEnabled(pp->chmixer.enabled);
     
-    if (pedited) {
-        for (int i = 0; i < 3; i++) {
-            red[i]->setEditedState (pedited->chmixer.red[i] ? Edited : UnEdited);
-            green[i]->setEditedState (pedited->chmixer.green[i] ? Edited : UnEdited);
-            blue[i]->setEditedState (pedited->chmixer.blue[i] ? Edited : UnEdited);
-        }
-        set_inconsistent(multiImage && !pedited->chmixer.enabled);
-    }
-
     for (int i = 0; i < 3; i++) {
         red[i]->setValue (pp->chmixer.red[i] / 10.0);
         green[i]->setValue (pp->chmixer.green[i] / 10.0);
@@ -124,7 +115,7 @@ void ChMixer::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void ChMixer::write (ProcParams* pp, ParamsEdited* pedited)
+void ChMixer::write(ProcParams* pp)
 {
 
     for (int i = 0; i < 3; i++) {
@@ -133,18 +124,9 @@ void ChMixer::write (ProcParams* pp, ParamsEdited* pedited)
         pp->chmixer.blue[i] = blue[i]->getValue() * 10;
     }
     pp->chmixer.enabled = getEnabled();
-
-    if (pedited) {
-        for (int i = 0; i < 3; i++) {
-            pedited->chmixer.red[i] = red[i]->getEditedState ();
-            pedited->chmixer.green[i] = green[i]->getEditedState ();
-            pedited->chmixer.blue[i] = blue[i]->getEditedState ();
-        }
-        pedited->chmixer.enabled = !get_inconsistent();
-    }
 }
 
-void ChMixer::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void ChMixer::setDefaults(const ProcParams* defParams)
 {
 
     for (int i = 0; i < 3; i++) {
@@ -152,19 +134,6 @@ void ChMixer::setDefaults (const ProcParams* defParams, const ParamsEdited* pedi
         green[i]->setDefault (defParams->chmixer.green[i] / 10.f);
         blue[i]->setDefault (defParams->chmixer.blue[i] / 10.f);
     }
-
-    if (pedited)
-        for (int i = 0; i < 3; i++) {
-            red[i]->setDefaultEditedState (pedited->chmixer.red[i] ? Edited : UnEdited);
-            green[i]->setDefaultEditedState (pedited->chmixer.green[i] ? Edited : UnEdited);
-            blue[i]->setDefaultEditedState (pedited->chmixer.blue[i] ? Edited : UnEdited);
-        }
-    else
-        for (int i = 0; i < 3; i++) {
-            red[i]->setDefaultEditedState (Irrelevant);
-            green[i]->setDefaultEditedState (Irrelevant);
-            blue[i]->setDefaultEditedState (Irrelevant);
-        }
 }
 
 void ChMixer::adjusterChanged(Adjuster* a, double newval)
@@ -196,28 +165,6 @@ void ChMixer::enabledChanged()
     }
 }
 
-
-void ChMixer::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-
-    for (int i = 0; i < 3; i++) {
-        red[i]->showEditedCB ();
-        green[i]->showEditedCB ();
-        blue[i]->showEditedCB ();
-    }
-}
-
-void ChMixer::setAdjusterBehavior (bool rgbadd)
-{
-
-    for (int i = 0; i < 3; i++) {
-        red[i]->setAddMode(rgbadd);
-        green[i]->setAddMode(rgbadd);
-        blue[i]->setAddMode(rgbadd);
-    }
-}
 
 void ChMixer::trimValues (rtengine::procparams::ProcParams* pp)
 {

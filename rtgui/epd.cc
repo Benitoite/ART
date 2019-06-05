@@ -190,7 +190,7 @@ EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPa
     show_all_children();
 }
 
-void EdgePreservingDecompositionUI::read(const ProcParams *pp, const ParamsEdited *pedited)
+void EdgePreservingDecompositionUI::read(const ProcParams *pp)
 {
     disableListener();
 
@@ -204,19 +204,10 @@ void EdgePreservingDecompositionUI::read(const ProcParams *pp, const ParamsEdite
     labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->epd.showMask);
 
-    if (pedited) {
-        set_inconsistent(multiImage && !pedited->epd.enabled);
-        if (pedited->epd.regions) {
-            labMasks->setEdited(true);
-        } else {
-            labMasks->setEdited(false);
-        }
-    }
-
     enableListener();
 }
 
-void EdgePreservingDecompositionUI::write(ProcParams *pp, ParamsEdited *pedited)
+void EdgePreservingDecompositionUI::write(ProcParams *pp)
 {
     pp->epd.enabled = getEnabled();
 
@@ -227,34 +218,15 @@ void EdgePreservingDecompositionUI::write(ProcParams *pp, ParamsEdited *pedited)
     assert(pp->epd.regions.size() == pp->epd.labmasks.size());
 
     labMasks->updateSelected();
-        
-    if (pedited) {
-        pedited->epd.enabled = !get_inconsistent();
-        pedited->epd.regions = labMasks->getEdited();
-    }
 }
 
-void EdgePreservingDecompositionUI::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void EdgePreservingDecompositionUI::setDefaults(const ProcParams *defParams)
 {
     strength->setDefault(defParams->epd.regions[0].strength);
     gamma->setDefault(defParams->epd.regions[0].gamma);
     edgeStopping->setDefault(defParams->epd.regions[0].edgeStopping);
     scale->setDefault(defParams->epd.regions[0].scale);
     reweightingIterates->setDefault(defParams->epd.regions[0].reweightingIterates);
-
-    if(pedited) {
-        strength->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
-        gamma->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
-        edgeStopping->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
-        scale->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
-        reweightingIterates->setDefaultEditedState(pedited->epd.regions ? Edited : UnEdited);
-    } else {
-        strength->setDefaultEditedState(Irrelevant);
-        gamma->setDefaultEditedState(Irrelevant);
-        edgeStopping->setDefaultEditedState(Irrelevant);
-        scale->setDefaultEditedState(Irrelevant);
-        reweightingIterates->setDefaultEditedState(Irrelevant);
-    }
 }
 
 void EdgePreservingDecompositionUI::adjusterChanged(Adjuster* a, double newval)
@@ -291,16 +263,6 @@ void EdgePreservingDecompositionUI::enabledChanged ()
             listener->panelChanged (EvEPDEnabled, M("GENERAL_DISABLED"));
         }
     }
-}
-
-void EdgePreservingDecompositionUI::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    labMasks->setBatchMode();
-}
-
-void EdgePreservingDecompositionUI::setAdjusterBehavior (bool stAdd, bool gAdd, bool esAdd, bool scAdd, bool rAdd)
-{
 }
 
 

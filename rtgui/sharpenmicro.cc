@@ -56,17 +56,9 @@ SharpenMicro::SharpenMicro () : FoldableToolPanel(this, "sharpenmicro", M("TP_SH
     matrixconn = matrix->signal_toggled().connect( sigc::mem_fun(*this, &SharpenMicro::matrix_toggled) );
 }
 
-void SharpenMicro::read(const ProcParams* pp, const ParamsEdited* pedited)
+void SharpenMicro::read(const ProcParams* pp)
 {
     disableListener ();
-
-    if(pedited ) {
-        set_inconsistent           (multiImage && !pedited->sharpenMicro.enabled);
-        matrix->set_inconsistent   (!pedited->sharpenMicro.matrix);
-        amount->setEditedState     (pedited->sharpenMicro.amount ? Edited : UnEdited);
-        contrast->setEditedState   (pedited->sharpenMicro.contrast ? Edited : UnEdited);
-        uniformity->setEditedState (pedited->sharpenMicro.uniformity ? Edited : UnEdited);
-    }
 
     setEnabled(pp->sharpenMicro.enabled);
 
@@ -82,21 +74,13 @@ void SharpenMicro::read(const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void SharpenMicro::write( ProcParams* pp, ParamsEdited* pedited)
+void SharpenMicro::write(ProcParams* pp)
 {
     pp->sharpenMicro.enabled    = getEnabled();
     pp->sharpenMicro.matrix     = matrix->get_active ();
     pp->sharpenMicro.amount     = amount->getValue ();
     pp->sharpenMicro.contrast   = contrast->getValue ();
     pp->sharpenMicro.uniformity = uniformity->getValue ();
-
-    if (pedited) {
-        pedited->sharpenMicro.enabled    = !get_inconsistent();
-        pedited->sharpenMicro.matrix     = !matrix->get_inconsistent();
-        pedited->sharpenMicro.amount     = amount->getEditedState ();
-        pedited->sharpenMicro.contrast   = contrast->getEditedState ();
-        pedited->sharpenMicro.uniformity = uniformity->getEditedState ();
-    }
 }
 
 void SharpenMicro::enabledChanged ()
@@ -115,19 +99,6 @@ void SharpenMicro::enabledChanged ()
 
 void SharpenMicro::matrix_toggled ()
 {
-    if (batchMode) {
-        if (matrix->get_inconsistent()) {
-            matrix->set_inconsistent (false);
-            matrixconn.block (true);
-            matrix->set_active (false);
-            matrixconn.block (false);
-        } else if (lastmatrix) {
-            matrix->set_inconsistent (true);
-        }
-
-        lastmatrix = matrix->get_active ();
-    }
-
     if (listener && getEnabled()) {
         if (matrix->get_active ()) {
             listener->panelChanged (EvSharpenMicroMatrix, M("GENERAL_ENABLED"));
@@ -156,35 +127,11 @@ void SharpenMicro::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void SharpenMicro::setBatchMode(bool batchMode)
-{
-    amount->showEditedCB     ();
-    contrast->showEditedCB   ();
-    uniformity->showEditedCB ();
-}
-
-void SharpenMicro::setDefaults(const ProcParams* defParams, const ParamsEdited* pedited)
+void SharpenMicro::setDefaults(const ProcParams* defParams)
 {
     amount->setDefault     (defParams->sharpenMicro.amount);
     contrast->setDefault   (defParams->sharpenMicro.contrast);
     uniformity->setDefault (defParams->sharpenMicro.uniformity);
-
-    if (pedited) {
-        amount->setDefaultEditedState     (pedited->sharpenMicro.amount ? Edited : UnEdited);
-        contrast->setDefaultEditedState   (pedited->sharpenMicro.contrast ? Edited : UnEdited);
-        uniformity->setDefaultEditedState (pedited->sharpenMicro.uniformity ? Edited : UnEdited);
-    } else {
-        amount->setDefaultEditedState     (Irrelevant);
-        contrast->setDefaultEditedState   (Irrelevant);
-        uniformity->setDefaultEditedState (Irrelevant);
-    }
-}
-
-void SharpenMicro::setAdjusterBehavior (bool amountadd, bool contrastadd, bool uniformityadd)
-{
-    amount->setAddMode     (amountadd);
-    contrast->setAddMode   (contrastadd);
-    uniformity->setAddMode (uniformityadd);
 }
 
 void SharpenMicro::trimValues (ProcParams* pp)

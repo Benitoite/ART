@@ -60,49 +60,31 @@ MetaDataPanel::~MetaDataPanel()
 }
 
 
-void MetaDataPanel::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    metadataMode->append(M("GENERAL_UNCHANGED"));
-    tagsNotebook->remove_page(-1);
-    tagsNotebook->remove_page(-1);
-}
-
-
-void MetaDataPanel::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void MetaDataPanel::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener();
     metadataMode->set_active(int(pp->metadata.mode));
-    if (pedited) {
-        if (!pedited->metadata.mode) {
-            metadataMode->set_active(3);
-        }
-    }
 
-    exifpanel->read(pp, pedited);
-    iptcpanel->read(pp, pedited);
+    exifpanel->read(pp);
+    iptcpanel->read(pp);
     
     enableListener();
 }
 
 
-void MetaDataPanel::write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void MetaDataPanel::write(rtengine::procparams::ProcParams* pp)
 {
     pp->metadata.mode = static_cast<MetaDataParams::Mode>(min(metadataMode->get_active_row_number(), 2));
     
-    if (pedited) {
-        pedited->metadata.mode = metadataMode->get_active_row_number() != 3;
-    }
-
-    exifpanel->write(pp, pedited);
-    iptcpanel->write(pp, pedited);
+    exifpanel->write(pp);
+    iptcpanel->write(pp);
 }
 
 
-void MetaDataPanel::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void MetaDataPanel::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
-    exifpanel->setDefaults(defParams, pedited);
-    iptcpanel->setDefaults(defParams, pedited);
+    exifpanel->setDefaults(defParams);
+    iptcpanel->setDefaults(defParams);
 }
 
 

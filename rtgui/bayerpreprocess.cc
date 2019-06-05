@@ -75,20 +75,9 @@ BayerPreProcess::BayerPreProcess() : FoldableToolPanel(this, "bayerpreprocess", 
     pack_start(*pdafLinesFilter, Gtk::PACK_SHRINK, 4);
 }
 
-void BayerPreProcess::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void BayerPreProcess::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener();
-
-    if (pedited) {
-        lineDenoise->setEditedState(pedited->raw.bayersensor.linenoise ? Edited : UnEdited);
-        greenEqThreshold->setEditedState(pedited->raw.bayersensor.greenEq ? Edited : UnEdited);
-
-        if (!pedited->raw.bayersensor.linenoiseDirection) {
-            lineDenoiseDirection->set_active(3);
-        }
-
-        pdafLinesFilter->set_inconsistent(!pedited->raw.bayersensor.pdafLinesFilter);
-    }
 
     lineDenoise->setValue(pp->raw.bayersensor.linenoise);
     int d = int(pp->raw.bayersensor.linenoiseDirection) - 1;
@@ -104,7 +93,7 @@ void BayerPreProcess::read(const rtengine::procparams::ProcParams* pp, const Par
     enableListener();
 }
 
-void BayerPreProcess::write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void BayerPreProcess::write(rtengine::procparams::ProcParams* pp)
 {
     pp->raw.bayersensor.linenoise = lineDenoise->getIntValue();
     int d = lineDenoiseDirection->get_active_row_number() + 1;
@@ -116,13 +105,6 @@ void BayerPreProcess::write(rtengine::procparams::ProcParams* pp, ParamsEdited* 
     pp->raw.bayersensor.linenoiseDirection = RAWParams::BayerSensor::LineNoiseDirection(d);
     pp->raw.bayersensor.greenthresh = greenEqThreshold->getIntValue();
     pp->raw.bayersensor.pdafLinesFilter = pdafLinesFilter->get_active();
-
-    if (pedited) {
-        pedited->raw.bayersensor.linenoise = lineDenoise->getEditedState();
-        pedited->raw.bayersensor.greenEq = greenEqThreshold->getEditedState();
-        pedited->raw.bayersensor.linenoise = lineDenoiseDirection->get_active_row_number() != 3;
-        pedited->raw.bayersensor.pdafLinesFilter = !pdafLinesFilter->get_inconsistent();
-    }
 }
 
 void BayerPreProcess::adjusterChanged(Adjuster* a, double newval)
@@ -143,37 +125,12 @@ void BayerPreProcess::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void BayerPreProcess::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    lineDenoise->showEditedCB();
-    greenEqThreshold->showEditedCB();
-
-    if (batchMode) {
-        lineDenoiseDirection->append(M("GENERAL_UNCHANGED"));
-    }
-}
-
-void BayerPreProcess::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void BayerPreProcess::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     lineDenoise->setDefault(defParams->raw.bayersensor.linenoise);
     greenEqThreshold->setDefault(defParams->raw.bayersensor.greenthresh);
-
-    if (pedited) {
-        lineDenoise->setDefaultEditedState(pedited->raw.bayersensor.linenoise ? Edited : UnEdited);
-        greenEqThreshold->setDefaultEditedState(pedited->raw.bayersensor.greenEq ? Edited : UnEdited);
-    } else {
-        lineDenoise->setDefaultEditedState(Irrelevant);
-        greenEqThreshold->setDefaultEditedState(Irrelevant);
-    }
 }
 
-void BayerPreProcess::setAdjusterBehavior(bool linedenoiseadd, bool greenequiladd)
-{
-
-    lineDenoise->setAddMode(linedenoiseadd);
-    greenEqThreshold->setAddMode(greenequiladd);
-}
 
 void BayerPreProcess::trimValues(rtengine::procparams::ProcParams* pp)
 {

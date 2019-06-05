@@ -74,18 +74,9 @@ RGBCurves::~RGBCurves ()
     delete curveEditorG;
 }
 
-void RGBCurves::read (const ProcParams* pp, const ParamsEdited* pedited)
+void RGBCurves::read(const ProcParams* pp)
 {
-
     disableListener ();
-
-    if (pedited) {
-        Rshape->setUnChanged (!pedited->rgbCurves.rcurve);
-        Gshape->setUnChanged (!pedited->rgbCurves.gcurve);
-        Bshape->setUnChanged (!pedited->rgbCurves.bcurve);
-        lumamode->set_inconsistent (!pedited->rgbCurves.lumamode);
-        set_inconsistent(multiImage && !pedited->rgbCurves.enabled);
-    }
 
     lumamodeConn.block (true);
     lumamode->set_active (pp->rgbCurves.lumamode);
@@ -123,21 +114,13 @@ void RGBCurves::autoOpenCurve  ()
     }
 }
 
-void RGBCurves::write (ProcParams* pp, ParamsEdited* pedited)
+void RGBCurves::write(ProcParams* pp)
 {
     pp->rgbCurves.enabled = getEnabled();
     pp->rgbCurves.rcurve         = Rshape->getCurve ();
     pp->rgbCurves.gcurve         = Gshape->getCurve ();
     pp->rgbCurves.bcurve         = Bshape->getCurve ();
     pp->rgbCurves.lumamode       = lumamode->get_active();
-
-    if (pedited) {
-        pedited->rgbCurves.enabled = !get_inconsistent();
-        pedited->rgbCurves.rcurve    = !Rshape->isUnChanged ();
-        pedited->rgbCurves.gcurve    = !Gshape->isUnChanged ();
-        pedited->rgbCurves.bcurve    = !Bshape->isUnChanged ();
-        pedited->rgbCurves.lumamode  = !lumamode->get_inconsistent();
-    }
 }
 
 
@@ -167,20 +150,6 @@ void RGBCurves::curveChanged (CurveEditor* ce)
 
 void RGBCurves::lumamodeChanged ()
 {
-
-    if (batchMode) {
-        if (lumamode->get_inconsistent()) {
-            lumamode->set_inconsistent (false);
-            lumamodeConn.block (true);
-            lumamode->set_active (false);
-            lumamodeConn.block (false);
-        } else if (lastLumamode) {
-            lumamode->set_inconsistent (true);
-        }
-
-        lastLumamode = lumamode->get_active ();
-    }
-
     if (listener && getEnabled()) {
         if (lumamode->get_active ()) {
             listener->panelChanged (EvRGBrCurveLumamode, M("GENERAL_ENABLED"));
@@ -188,13 +157,6 @@ void RGBCurves::lumamodeChanged ()
             listener->panelChanged (EvRGBrCurveLumamode, M("GENERAL_DISABLED"));
         }
     }
-}
-
-void RGBCurves::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    curveEditorG->setBatchMode (batchMode);
 }
 
 

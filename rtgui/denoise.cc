@@ -304,7 +304,7 @@ bool Denoise::chromaComputed(double chroma, double red, double blue)
 }
 
 
-void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
+void Denoise::read(const ProcParams *pp)
 {
     disableListener();
 
@@ -340,54 +340,6 @@ void Denoise::read(const ProcParams *pp, const ParamsEdited *pedited)
     guidedChromaRadius->setValue(pp->denoise.guidedChromaRadius);
     guidedChromaStrength->setValue(pp->denoise.guidedChromaStrength);
 
-    if (pedited) {
-        if (!pedited->denoise.colorSpace) {
-            colorSpace->set_active(2);
-        }
-
-        if (!pedited->denoise.aggressive) {
-            aggressive->set_active(2);
-        }
-
-        if (!pedited->denoise.luminanceMethod) {
-            luminanceMethod->set_active(2);
-        }
-
-        if (!pedited->denoise.chrominanceMethod) {
-            chrominanceMethod->set_active(2);
-        }
-
-        if (!pedited->denoise.medianType) {
-            medianType->set_active(6);
-        }
-
-        if (!pedited->denoise.medianMethod) {
-            medianMethod->set_active(5);
-        }
-
-        if (!pedited->denoise.smoothingMethod) {
-            smoothingMethod->set_active(2);
-        }
-
-        luminance->setEditedState(pedited->denoise.luminance ? Edited : UnEdited);
-        luminanceDetail->setEditedState(pedited->denoise.luminanceDetail ? Edited : UnEdited);
-        chrominanceAutoFactor->setEditedState(pedited->denoise.chrominanceAutoFactor ? Edited : UnEdited);
-        chrominance->setEditedState(pedited->denoise.chrominance ? Edited : UnEdited);
-        chrominanceRedGreen->setEditedState(pedited->denoise.chrominanceRedGreen ? Edited : UnEdited);
-        chrominanceBlueYellow->setEditedState(pedited->denoise.chrominanceBlueYellow ? Edited : UnEdited);
-
-        gamma->setEditedState(pedited->denoise.gamma ? Edited : UnEdited);
-        medianIterations->setEditedState(pedited->denoise.medianIterations ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->denoise.enabled);
-        smoothingEnabled->set_inconsistent(!pedited->denoise.smoothingEnabled);
-        // chrominanceCurve->setUnChanged(!pedited->denoise.chrominanceCurve);
-        luminanceCurve->setUnChanged(!pedited->denoise.luminanceCurve);
-
-        guidedLumaRadius->setEditedState(pedited->denoise.guidedLumaRadius ? Edited : UnEdited);
-        guidedLumaStrength->setEditedState(pedited->denoise.guidedLumaStrength ? Edited : UnEdited);
-        guidedChromaRadius->setEditedState(pedited->denoise.guidedChromaRadius ? Edited : UnEdited);
-        guidedChromaStrength->setEditedState(pedited->denoise.guidedChromaStrength ? Edited : UnEdited);
-    }
     enableListener ();
 }
 
@@ -406,7 +358,7 @@ void Denoise::autoOpenCurve ()
 }
 
 
-void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
+void Denoise::write(ProcParams *pp)
 {
     pp->denoise.enabled = getEnabled();
     if (colorSpace->get_active_row_number() < 2) {
@@ -444,32 +396,6 @@ void Denoise::write(ProcParams *pp, ParamsEdited *pedited)
     pp->denoise.guidedLumaStrength = guidedLumaStrength->getValue();
     pp->denoise.guidedChromaRadius = guidedChromaRadius->getValue();
     pp->denoise.guidedChromaStrength = guidedChromaStrength->getValue();
-
-    if (pedited) {
-        pedited->denoise.enabled  = !get_inconsistent();
-        pedited->denoise.colorSpace = colorSpace->get_active_row_number() != 2;
-        pedited->denoise.aggressive = aggressive->get_active_row_number() != 2;
-        pedited->denoise.gamma = gamma->getEditedState();
-        pedited->denoise.luminanceMethod = luminanceMethod->get_active_row_number() != 2;
-        pedited->denoise.luminance = luminance->getEditedState();
-        pedited->denoise.luminanceCurve = !luminanceCurve->isUnChanged();
-        pedited->denoise.luminanceDetail = luminanceDetail->getEditedState();
-        pedited->denoise.chrominanceMethod = chrominanceMethod->get_active_row_number() != 2;
-        pedited->denoise.chrominance = chrominance->getEditedState();
-        // pedited->denoise.chrominanceCurve = !chrominanceCurve->isUnChanged();
-        pedited->denoise.chrominanceAutoFactor = chrominanceAutoFactor->getEditedState();
-        pedited->denoise.chrominanceRedGreen = chrominanceRedGreen->getEditedState();
-        pedited->denoise.chrominanceBlueYellow = chrominanceBlueYellow->getEditedState();
-        pedited->denoise.smoothingEnabled = !smoothingEnabled->get_inconsistent();
-        pedited->denoise.smoothingMethod = smoothingMethod->get_active_row_number() != 2;
-        pedited->denoise.medianType = medianType->get_active_row_number() != 6;
-        pedited->denoise.medianMethod = medianMethod->get_active_row_number() != 5;
-        pedited->denoise.medianIterations = medianIterations->getEditedState();
-        pedited->denoise.guidedLumaRadius = guidedLumaRadius->getEditedState();
-        pedited->denoise.guidedLumaStrength = guidedLumaStrength->getEditedState();
-        pedited->denoise.guidedChromaRadius = guidedChromaRadius->getEditedState();
-        pedited->denoise.guidedChromaStrength = guidedChromaStrength->getEditedState();
-    }
 }
 
 
@@ -490,7 +416,7 @@ void Denoise::curveChanged(CurveEditor* ce)
 
 void Denoise::colorSpaceChanged()
 {
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNmet, colorSpace->get_active_text());
     }
 }
@@ -498,17 +424,15 @@ void Denoise::colorSpaceChanged()
 
 void Denoise::luminanceMethodChanged()
 {
-    if (!batchMode) {
-        if (luminanceMethod->get_active_row_number() == 1) {
-            luminance->hide();
-            luminanceEditorGroup->show();
-        } else if (luminanceMethod->get_active_row_number() == 0) {
-            luminance->show();
-            luminanceEditorGroup->hide();
-        }
+    if (luminanceMethod->get_active_row_number() == 1) {
+        luminance->hide();
+        luminanceEditorGroup->show();
+    } else if (luminanceMethod->get_active_row_number() == 0) {
+        luminance->show();
+        luminanceEditorGroup->hide();
     }
 
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNLmet, luminanceMethod->get_active_text());
     }
 }
@@ -516,21 +440,19 @@ void Denoise::luminanceMethodChanged()
 
 void Denoise::chrominanceMethodChanged()
 {
-    if (!batchMode) {
-        if (chrominanceMethod->get_active_row_number() == 0) {
-            chrominance->set_sensitive(true);
-            chrominanceRedGreen->set_sensitive(true);
-            chrominanceBlueYellow->set_sensitive(true);
-            chrominanceAutoFactor->hide();
-        } else if (chrominanceMethod->get_active_row_number() == 1) {
-            chrominance->set_sensitive(false);
-            chrominanceRedGreen->set_sensitive(false);
-            chrominanceBlueYellow->set_sensitive(false);
-            chrominanceAutoFactor->show();
-        }
+    if (chrominanceMethod->get_active_row_number() == 0) {
+        chrominance->set_sensitive(true);
+        chrominanceRedGreen->set_sensitive(true);
+        chrominanceBlueYellow->set_sensitive(true);
+        chrominanceAutoFactor->hide();
+    } else if (chrominanceMethod->get_active_row_number() == 1) {
+        chrominance->set_sensitive(false);
+        chrominanceRedGreen->set_sensitive(false);
+        chrominanceBlueYellow->set_sensitive(false);
+        chrominanceAutoFactor->show();
     }
 
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNCmet, chrominanceMethod->get_active_text());
     }
 }
@@ -538,7 +460,7 @@ void Denoise::chrominanceMethodChanged()
 
 void Denoise::aggressiveChanged()
 {
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNsmet, aggressive->get_active_text());
     }
 }
@@ -546,7 +468,7 @@ void Denoise::aggressiveChanged()
 
 void Denoise::medianTypeChanged()
 {
-    if (listener && (multiImage || getEnabled())  && smoothingEnabled->getEnabled()) {
+    if (listener && getEnabled()  && smoothingEnabled->getEnabled()) {
         listener->panelChanged(EvDPDNmedmet, medianType->get_active_text());
     }
 }
@@ -554,13 +476,13 @@ void Denoise::medianTypeChanged()
 
 void Denoise::medianMethodChanged()
 {
-    if (listener && (multiImage || getEnabled())  && smoothingEnabled->getEnabled()) {
+    if (listener && getEnabled()  && smoothingEnabled->getEnabled()) {
         listener->panelChanged(EvDPDNmetmed, medianMethod->get_active_text());
     }
 }
 
 
-void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void Denoise::setDefaults(const ProcParams *defParams)
 {
     luminance->setDefault(defParams->denoise.luminance);
     luminanceDetail->setDefault(defParams->denoise.luminanceDetail);
@@ -574,34 +496,6 @@ void Denoise::setDefaults(const ProcParams *defParams, const ParamsEdited *pedit
     guidedLumaStrength->setDefault(defParams->denoise.guidedLumaStrength);
     guidedChromaRadius->setDefault(defParams->denoise.guidedChromaRadius);
     guidedChromaStrength->setDefault(defParams->denoise.guidedChromaStrength);
-
-    if (pedited) {
-        luminance->setDefaultEditedState(pedited->denoise.luminance ? Edited : UnEdited);
-        luminanceDetail->setDefaultEditedState(pedited->denoise.luminanceDetail ? Edited : UnEdited);
-        chrominance->setDefaultEditedState(pedited->denoise.chrominance ? Edited : UnEdited);
-        chrominanceAutoFactor->setDefaultEditedState(pedited->denoise.chrominanceAutoFactor ? Edited : UnEdited);
-        chrominanceRedGreen->setDefaultEditedState(pedited->denoise.chrominanceRedGreen ? Edited : UnEdited);
-        chrominanceBlueYellow->setDefaultEditedState(pedited->denoise.chrominanceBlueYellow ? Edited : UnEdited);
-        gamma->setDefaultEditedState(pedited->denoise.gamma ? Edited : UnEdited);
-        medianIterations->setDefaultEditedState(pedited->denoise.medianIterations ? Edited : UnEdited);
-        guidedLumaRadius->setDefaultEditedState(pedited->denoise.guidedLumaRadius ? Edited : UnEdited);
-        guidedLumaStrength->setDefaultEditedState(pedited->denoise.guidedLumaStrength ? Edited : UnEdited);
-        guidedChromaRadius->setDefaultEditedState(pedited->denoise.guidedChromaRadius ? Edited : UnEdited);
-        guidedChromaStrength->setDefaultEditedState(pedited->denoise.guidedChromaStrength ? Edited : UnEdited);
-    } else {
-        luminance->setDefaultEditedState(Irrelevant);
-        luminanceDetail->setDefaultEditedState(Irrelevant);
-        chrominance->setDefaultEditedState(Irrelevant);
-        chrominanceAutoFactor->setDefaultEditedState(Irrelevant);
-        chrominanceRedGreen->setDefaultEditedState(Irrelevant);
-        chrominanceBlueYellow->setDefaultEditedState(Irrelevant);
-        gamma->setDefaultEditedState(Irrelevant);
-        medianIterations->setDefaultEditedState(Irrelevant);
-        guidedLumaRadius->setDefaultEditedState(Irrelevant);
-        guidedLumaStrength->setDefaultEditedState(Irrelevant);
-        guidedChromaRadius->setDefaultEditedState(Irrelevant);
-        guidedChromaStrength->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -666,46 +560,6 @@ void Denoise::smoothingEnabledToggled()
             listener->panelChanged(EvDPDNmedian, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void Denoise::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    luminance->showEditedCB ();
-    luminanceDetail->showEditedCB ();
-    chrominance->showEditedCB ();
-    chrominanceAutoFactor->showEditedCB();
-    chrominanceRedGreen->showEditedCB ();
-    chrominanceBlueYellow->showEditedCB ();
-    gamma->showEditedCB ();
-    medianIterations->showEditedCB ();
-    luminanceEditorGroup->setBatchMode (batchMode);
-    // chrominanceEditorGroup->setBatchMode (batchMode);
-    guidedLumaRadius->showEditedCB();
-    guidedLumaStrength->showEditedCB();
-    guidedChromaRadius->showEditedCB();
-    guidedChromaStrength->showEditedCB();
-
-    colorSpace->append (M("GENERAL_UNCHANGED"));
-    aggressive->append (M("GENERAL_UNCHANGED"));
-    luminanceMethod->append (M("GENERAL_UNCHANGED"));
-    chrominanceMethod->append (M("GENERAL_UNCHANGED"));
-    medianMethod->append (M("GENERAL_UNCHANGED"));
-    medianType->append (M("GENERAL_UNCHANGED"));
-    smoothingMethod->append(M("GENERAL_UNCHANGED"));
-}
-
-
-void Denoise::setAdjusterBehavior (bool lumaadd, bool lumdetadd, bool chromaadd, bool chromaredadd, bool chromablueadd, bool gammaadd, bool passesadd)
-{
-    luminance->setAddMode(lumaadd);
-    luminanceDetail->setAddMode(lumdetadd);
-    chrominance->setAddMode(chromaadd);
-    chrominanceRedGreen->setAddMode(chromaredadd);
-    chrominanceBlueYellow->setAddMode(chromablueadd);
-    gamma->setAddMode(gammaadd);
-    medianIterations->setAddMode(passesadd);
 }
 
 
@@ -774,14 +628,12 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
 
 void Denoise::smoothingMethodChanged()
 {
-    if (!batchMode) {
-        if (smoothingMethod->get_active_row_number() == 0) {
-            medianBox->show();
-            guidedBox->hide();
-        } else if (smoothingMethod->get_active_row_number() == 1) {
-            medianBox->hide();
-            guidedBox->show();
-        }
+    if (smoothingMethod->get_active_row_number() == 0) {
+        medianBox->show();
+        guidedBox->hide();
+    } else if (smoothingMethod->get_active_row_number() == 1) {
+        medianBox->hide();
+        guidedBox->show();
     }
     if (listener) {
         listener->panelChanged(EvSmoothingMethod, M("GENERAL_CHANGED"));

@@ -440,7 +440,7 @@ void ICMPanel::updateDCP(int dcpIlluminant, Glib::ustring dcp_name)
     }
 }
 
-void ICMPanel::read(const ProcParams* pp, const ParamsEdited* pedited)
+void ICMPanel::read(const ProcParams* pp)
 {
 
     disableListener();
@@ -512,35 +512,10 @@ void ICMPanel::read(const ProcParams* pp, const ParamsEdited* pedited)
     ckbApplyHueSatMap->set_active(pp->icm.applyHueSatMap);
     lastApplyHueSatMap = pp->icm.applyHueSatMap;
 
-    if (pedited) {
-        iunchanged->set_active(!pedited->icm.inputProfile);
-        obpc->set_inconsistent(!pedited->icm.outputBPC);
-        ckbToneCurve->set_inconsistent(!pedited->icm.toneCurve);
-        ckbApplyLookTable->set_inconsistent(!pedited->icm.applyLookTable);
-        ckbApplyBaselineExposureOffset->set_inconsistent(!pedited->icm.applyBaselineExposureOffset);
-        ckbApplyHueSatMap->set_inconsistent(!pedited->icm.applyHueSatMap);
-
-        if (!pedited->icm.workingProfile) {
-            wProfNames->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-
-        if (!pedited->icm.outputProfile) {
-            oProfNames->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-
-        if (!pedited->icm.outputIntent) {
-            oRendIntent->setSelected(4);
-        }
-
-        if (!pedited->icm.dcpIlluminant) {
-            dcpIll->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-    }
-
     enableListener();
 }
 
-void ICMPanel::write(ProcParams* pp, ParamsEdited* pedited)
+void ICMPanel::write(ProcParams* pp)
 {
 
     if (inone->get_active()) {
@@ -583,22 +558,9 @@ void ICMPanel::write(ProcParams* pp, ParamsEdited* pedited)
     pp->icm.applyHueSatMap = ckbApplyHueSatMap->get_active();
     pp->icm.outputBPC = obpc->get_active();
     pp->toneCurve.fromHistMatching = false;
-
-    if (pedited) {
-        pedited->icm.inputProfile = !iunchanged->get_active();
-        pedited->icm.workingProfile = wProfNames->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->icm.outputProfile = oProfNames->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->icm.outputIntent = oRendIntent->getSelected() < 4;
-        pedited->icm.outputBPC = !obpc->get_inconsistent();
-        pedited->icm.dcpIlluminant = dcpIll->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->icm.toneCurve = !ckbToneCurve->get_inconsistent();
-        pedited->icm.applyLookTable = !ckbApplyLookTable->get_inconsistent();
-        pedited->icm.applyBaselineExposureOffset = !ckbApplyBaselineExposureOffset->get_inconsistent();
-        pedited->icm.applyHueSatMap = !ckbApplyHueSatMap->get_inconsistent();
-    }
 }
 
-void ICMPanel::setDefaults(const ProcParams* defParams, const ParamsEdited* pedited)
+void ICMPanel::setDefaults(const ProcParams* defParams)
 {
 }
 
@@ -626,19 +588,6 @@ void ICMPanel::dcpIlluminantChanged()
 
 void ICMPanel::toneCurveChanged()
 {
-    if (multiImage) {
-        if (ckbToneCurve->get_inconsistent()) {
-            ckbToneCurve->set_inconsistent(false);
-            tcurveconn.block(true);
-            ckbToneCurve->set_active(false);
-            tcurveconn.block(false);
-        } else if (lastToneCurve) {
-            ckbToneCurve->set_inconsistent(true);
-        }
-
-        lastToneCurve = ckbToneCurve->get_active();
-    }
-
     if (listener) {
         if (ckbToneCurve->get_inconsistent()) {
             listener->panelChanged(EvDCPToneCurve, M("GENERAL_UNCHANGED"));
@@ -652,19 +601,6 @@ void ICMPanel::toneCurveChanged()
 
 void ICMPanel::applyLookTableChanged()
 {
-    if (multiImage) {
-        if (ckbApplyLookTable->get_inconsistent()) {
-            ckbApplyLookTable->set_inconsistent(false);
-            ltableconn.block(true);
-            ckbApplyLookTable->set_active(false);
-            ltableconn.block(false);
-        } else if (lastApplyLookTable) {
-            ckbApplyLookTable->set_inconsistent(true);
-        }
-
-        lastApplyLookTable = ckbApplyLookTable->get_active();
-    }
-
     if (listener) {
         if (ckbApplyLookTable->get_inconsistent()) {
             listener->panelChanged(EvDCPApplyLookTable, M("GENERAL_UNCHANGED"));
@@ -678,19 +614,6 @@ void ICMPanel::applyLookTableChanged()
 
 void ICMPanel::applyBaselineExposureOffsetChanged()
 {
-    if (multiImage) {
-        if (ckbApplyBaselineExposureOffset->get_inconsistent()) {
-            ckbApplyBaselineExposureOffset->set_inconsistent(false);
-            beoconn.block(true);
-            ckbApplyBaselineExposureOffset->set_active(false);
-            beoconn.block(false);
-        } else if (lastApplyBaselineExposureOffset) {
-            ckbApplyBaselineExposureOffset->set_inconsistent(true);
-        }
-
-        lastApplyBaselineExposureOffset = ckbApplyBaselineExposureOffset->get_active();
-    }
-
     if (listener) {
         if (ckbApplyBaselineExposureOffset->get_inconsistent()) {
             listener->panelChanged(EvDCPApplyBaselineExposureOffset, M("GENERAL_UNCHANGED"));
@@ -704,19 +627,6 @@ void ICMPanel::applyBaselineExposureOffsetChanged()
 
 void ICMPanel::applyHueSatMapChanged()
 {
-    if (multiImage) {
-        if (ckbApplyHueSatMap->get_inconsistent()) {
-            ckbApplyHueSatMap->set_inconsistent(false);
-            hsmconn.block(true);
-            ckbApplyHueSatMap->set_active(false);
-            hsmconn.block(false);
-        } else if (lastApplyHueSatMap) {
-            ckbApplyHueSatMap->set_inconsistent(true);
-        }
-
-        lastApplyHueSatMap = ckbApplyHueSatMap->get_active();
-    }
-
     if (listener) {
         if (ckbApplyHueSatMap->get_inconsistent()) {
             listener->panelChanged(EvDCPApplyHueSatMap, M("GENERAL_UNCHANGED"));
@@ -756,9 +666,7 @@ void ICMPanel::ipChanged()
 
 void ICMPanel::opChanged()
 {
-    if (!batchMode) {
-        updateRenderingIntent(oProfNames->get_active_text());
-    }
+    updateRenderingIntent(oProfNames->get_active_text());
 
     if (listener) {
         listener->panelChanged(EvOProfile, oProfNames->get_active_text());
@@ -800,19 +708,6 @@ void ICMPanel::oiChanged(int n)
 
 void ICMPanel::oBPCChanged()
 {
-    if (multiImage) {
-        if (obpc->get_inconsistent()) {
-            obpc->set_inconsistent(false);
-            obpcconn.block(true);
-            obpc->set_active(false);
-            obpcconn.block(false);
-        } else if (lastobpc) {
-            obpc->set_inconsistent(true);
-        }
-
-        lastobpc = obpc->get_active();
-    }
-
     if (listener) {
         if (obpc->get_inconsistent()) {
             listener->panelChanged(EvOBPCompens, M("GENERAL_UNCHANGED"));
@@ -908,22 +803,5 @@ void ICMPanel::saveReferencePressed()
     } while (!done);
 
     return;
-}
-
-void ICMPanel::setBatchMode(bool batchMode)
-{
-
-    isBatchMode = true;
-    ToolPanel::setBatchMode(batchMode);
-    iunchanged = Gtk::manage(new Gtk::RadioButton(M("GENERAL_UNCHANGED")));
-    iunchanged->set_group(opts);
-    iVBox->pack_start(*iunchanged, Gtk::PACK_SHRINK, 4);
-    iVBox->reorder_child(*iunchanged, 5);
-    removeIfThere(this, saveRef);
-    oProfNames->append(M("GENERAL_UNCHANGED"));
-    oRendIntent->addEntry("template-24.png", M("GENERAL_UNCHANGED"));
-    oRendIntent->show();
-    wProfNames->append(M("GENERAL_UNCHANGED"));
-    dcpIll->append(M("GENERAL_UNCHANGED"));
 }
 

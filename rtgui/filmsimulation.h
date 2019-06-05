@@ -1,3 +1,23 @@
+/** -*- C++ -*-
+ *  
+ *  This file is part of RawTherapee.
+ *
+ *  Copyright (c) 2017 Alberto Griggio <alberto.griggio@gmail.com>
+ *
+ *  RawTherapee is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  RawTherapee is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef FILM_SIMULATION_INCLUDED
 #define FILM_SIMULATION_INCLUDED
 
@@ -16,7 +36,6 @@ public:
     int foundClutsCount() const;
     Glib::ustring getSelectedClut();
     void setSelectedClut( Glib::ustring filename );
-    void setBatchMode(bool yes);
 
     static void cleanup();
 
@@ -47,7 +66,6 @@ private:
 
     static std::unique_ptr<ClutModel> cm; // we use a shared TreeModel for all the combo boxes, to save time (no need to reparse the clut dir multiple times)...
     static std::unique_ptr<ClutModel> cm2; // ... except when options.multiDisplayMode (i.e. editors in their own window), where we need two. This is because we might have two combo boxes displayed at the same time in this case
-    bool batchMode;
 };
 
 class FilmSimulation : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
@@ -57,10 +75,8 @@ public:
 
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void setBatchMode(bool batchMode) override;
-    void read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    void setAdjusterBehavior(bool strength);
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
     void trimValues(rtengine::procparams::ProcParams* pp) override;
 
 private:

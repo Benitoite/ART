@@ -77,7 +77,6 @@ public:
     ~CurveEditorGroup() override;
     void newLine();
     void curveListComplete();
-    void setBatchMode (bool batchMode);
     void setCurveExternal (CurveEditor* ce, const std::vector<double>& c);
     void setCurveListener (CurveListener* l)
     {

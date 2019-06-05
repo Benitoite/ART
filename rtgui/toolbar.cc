@@ -471,32 +471,3 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
     return false;
 }
 
-void ToolBar::setBatchMode()
-{
-    if (wbTool) {
-        wbConn.disconnect();
-        removeIfThere(this, wbTool, false);
-        wbTool = nullptr;
-    }
-    if (colPickerTool) {
-        cpConn.disconnect();
-        removeIfThere(this, colPickerTool, false);
-        colPickerTool = nullptr;
-    }
-
-    allowNoTool = true;
-    switch (current) {
-    case TMHand:
-        hand_pressed();
-        break;
-    case TMCropSelect:
-        crop_pressed();
-        break;
-    case TMStraighten:
-        stra_pressed();
-        break;
-    default:
-        break;
-    }
-}
-

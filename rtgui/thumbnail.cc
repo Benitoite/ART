@@ -185,7 +185,9 @@ const ProcParams& Thumbnail::getProcParamsU ()
     if (pparamsValid) {
         return pparams;
     } else {
-        pparams = *(ProfileStore::getInstance()->getDefaultProcParams (getType() == FT_Raw));
+        auto pp = ProfileStore::getInstance()->getDefaultPartialProfile(getType() == FT_Raw);
+        pp->applyTo(pparams);
+        //pparams = *(ProfileStore::getInstance()->getDefaultProcParams (getType() == FT_Raw));
 
         if (pparams.wb.method == "Camera") {
             double ct;

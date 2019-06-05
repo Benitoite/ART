@@ -51,16 +51,9 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
 }
 
 
-void Dehaze::read(const ProcParams *pp, const ParamsEdited *pedited)
+void Dehaze::read(const ProcParams *pp)
 {
     disableListener();
-
-    if (pedited) {
-        strength->setEditedState(pedited->dehaze.strength ? Edited : UnEdited);
-        depth->setEditedState(pedited->dehaze.depth ? Edited : UnEdited);
-        set_inconsistent(multiImage && !pedited->dehaze.enabled);
-        showDepthMap->set_inconsistent(!pedited->dehaze.showDepthMap);
-    }
 
     setEnabled(pp->dehaze.enabled);
     strength->setValue(pp->dehaze.strength);
@@ -71,33 +64,18 @@ void Dehaze::read(const ProcParams *pp, const ParamsEdited *pedited)
 }
 
 
-void Dehaze::write(ProcParams *pp, ParamsEdited *pedited)
+void Dehaze::write(ProcParams *pp)
 {
     pp->dehaze.strength = strength->getValue();
     pp->dehaze.depth = depth->getValue();
     pp->dehaze.enabled = getEnabled();
     pp->dehaze.showDepthMap = showDepthMap->get_active();
-
-    if (pedited) {
-        pedited->dehaze.strength = strength->getEditedState();
-        pedited->dehaze.depth = depth->getEditedState();
-        pedited->dehaze.enabled = !get_inconsistent();
-        pedited->dehaze.showDepthMap = !showDepthMap->get_inconsistent();
-    }
 }
 
-void Dehaze::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void Dehaze::setDefaults(const ProcParams *defParams)
 {
     strength->setDefault(defParams->dehaze.strength);
     depth->setDefault(defParams->dehaze.depth);
-
-    if (pedited) {
-        strength->setDefaultEditedState(pedited->dehaze.strength ? Edited : UnEdited);
-        depth->setDefaultEditedState(pedited->dehaze.depth ? Edited : UnEdited);
-    } else {
-        strength->setDefaultEditedState(Irrelevant);
-        depth->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -135,17 +113,4 @@ void Dehaze::showDepthMapChanged()
 }
 
 
-void Dehaze::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-
-    strength->showEditedCB();
-    depth->showEditedCB();
-}
-
-
-void Dehaze::setAdjusterBehavior(bool strengthAdd)
-{
-    strength->setAddMode(strengthAdd);
-}
 

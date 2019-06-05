@@ -138,7 +138,7 @@ ExifPanel::~ExifPanel ()
 }
 
 
-void ExifPanel::read (const ProcParams* pp, const ParamsEdited* pedited)
+void ExifPanel::read(const ProcParams* pp)
 {
     disableListener ();
 
@@ -150,13 +150,13 @@ void ExifPanel::read (const ProcParams* pp, const ParamsEdited* pedited)
 }
 
 
-void ExifPanel::write (ProcParams* pp, ParamsEdited* pedited)
+void ExifPanel::write(ProcParams* pp)
 {
     pp->exif = changeList;
 }
 
 
-void ExifPanel::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void ExifPanel::setDefaults(const ProcParams* defParams)
 {
 
     defChangeList = defParams->exif;

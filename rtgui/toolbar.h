@@ -97,7 +97,6 @@ public:
     void stopEditMode();
 
     bool handleShortcutKey (GdkEventKey* event);
-    void setBatchMode();
 };
 
 #endif

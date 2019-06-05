@@ -416,17 +416,17 @@ void ProfileStore::releaseFileList()
  * If the profile doesn't already exist in the profile list,
  * it will add it with default internal values, so this method never fails
  */
-bool ProfileStore::applyDefaultProcParams(bool isRaw, rtengine::procparams::ProcParams &pp)
-{
-    return applyProfile(isRaw ? options.defProfRaw : options.defProfImg, pp);
-}
+// bool ProfileStore::applyDefaultProcParams(bool isRaw, rtengine::procparams::ProcParams &pp)
+// {
+//     return applyProfile(isRaw ? options.defProfRaw : options.defProfImg, pp);
+// }
 
 /*
  * Send back a pointer to the default partial profile for raw or standard images.
  * If it doesn't already exist in the profile list, it will add it with default internal values,
  * so this method will never fails
  */
-bool ProfileStore::getDefaultPartialProfile (bool isRaw)
+const PartialProfile *ProfileStore::getDefaultPartialProfile (bool isRaw)
 {
 
     //Note: the mutex is locked in getProfile, called below
@@ -441,7 +441,7 @@ bool ProfileStore::getDefaultPartialProfile (bool isRaw)
     return pProf;
 }
 
-const Glib::ustring ProfileStore::getPathFromId (int folderId)
+Glib::ustring ProfileStore::getPathFromId (int folderId)
 {
     // initialization must have been done when calling this
     return folders.at (folderId);

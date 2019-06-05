@@ -45,15 +45,10 @@ PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("
     show_all();
 }
 
-void PerspCorrection::read (const ProcParams* pp, const ParamsEdited* pedited)
+void PerspCorrection::read(const ProcParams* pp)
 {
 
     disableListener ();
-
-    if (pedited) {
-        horiz->setEditedState (pedited->perspective.horizontal ? Edited : UnEdited);
-        vert->setEditedState (pedited->perspective.vertical ? Edited : UnEdited);
-    }
 
     horiz->setValue (pp->perspective.horizontal);
     vert->setValue (pp->perspective.vertical);
@@ -61,31 +56,18 @@ void PerspCorrection::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void PerspCorrection::write (ProcParams* pp, ParamsEdited* pedited)
+void PerspCorrection::write(ProcParams* pp)
 {
 
     pp->perspective.horizontal  = horiz->getValue ();
     pp->perspective.vertical = vert->getValue ();
-
-    if (pedited) {
-        pedited->perspective.horizontal = horiz->getEditedState ();
-        pedited->perspective.vertical = vert->getEditedState ();
-    }
 }
 
-void PerspCorrection::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void PerspCorrection::setDefaults(const ProcParams* defParams)
 {
 
     horiz->setDefault (defParams->perspective.horizontal);
     vert->setDefault (defParams->perspective.vertical);
-
-    if (pedited) {
-        horiz->setDefaultEditedState (pedited->perspective.horizontal ? Edited : UnEdited);
-        vert->setDefaultEditedState (pedited->perspective.vertical ? Edited : UnEdited);
-    } else {
-        horiz->setDefaultEditedState (Irrelevant);
-        vert->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void PerspCorrection::adjusterChanged(Adjuster* a, double newval)
@@ -99,12 +81,6 @@ void PerspCorrection::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void PerspCorrection::setAdjusterBehavior (bool badd)
-{
-
-    horiz->setAddMode(badd);
-    vert->setAddMode(badd);
-}
 
 void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
 {
@@ -113,10 +89,3 @@ void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
     vert->trimValue(pp->perspective.vertical);
 }
 
-void PerspCorrection::setBatchMode (bool batchMode)
-{
-
-    ToolPanel::setBatchMode (batchMode);
-    horiz->showEditedCB ();
-    vert->showEditedCB ();
-}

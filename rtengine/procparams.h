@@ -28,6 +28,7 @@
 #include <lcms2.h>
 
 #include "noncopyable.h"
+#include "../rtgui/paramsedited.h"
 
 class ParamsEdited;
 
@@ -96,7 +97,7 @@ public:
     bool load(const Glib::KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix);
     void save(Glib::KeyFile &keyfile, const Glib::ustring &group_name,
-              const Glib::ustring &prefix, const Glib::ustring &suffix);
+              const Glib::ustring &prefix, const Glib::ustring &suffix) const;
 };
 
 
@@ -1357,7 +1358,7 @@ public:
     int load(const Glib::ustring& fname, const ParamsEdited *pedited=nullptr);
 
     int load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
-             bool resetOnError=true);
+             bool resetOnError=true, const Glib::ustring &fname="");
     int save(Glib::KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
              const Glib::ustring &fname="", bool fnameAbsolute=true) const;
 
@@ -1404,6 +1405,7 @@ private:
 
 class FilePartialProfile: public PartialProfile {
 public:
+    FilePartialProfile(): fname_(""), full_(true) {}
     explicit FilePartialProfile(const Glib::ustring &fname, bool full=false);
     bool applyTo(ProcParams &pp) const override;
 

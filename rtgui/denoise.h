@@ -40,10 +40,9 @@ public:
     Denoise();
     ~Denoise() override;
 
-    void read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    void setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) override;
-    void setBatchMode(bool batchMode) override;
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
     void curveChanged(CurveEditor* ce) override;
     void setEditProvider(EditDataProvider *provider) override;
     void autoOpenCurve() override;
@@ -60,7 +59,6 @@ public:
 
     void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
 
-    void setAdjusterBehavior(bool lumaadd, bool lumdetadd, bool chromaadd, bool chromaredadd, bool chromablueadd, bool gammaadd, bool passesadd);
     void trimValues(rtengine::procparams::ProcParams* pp) override;
     Glib::ustring getSettingString();
 

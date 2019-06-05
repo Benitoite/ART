@@ -109,7 +109,7 @@ FlatField::~FlatField ()
     idle_register.destroy();
 }
 
-void FlatField::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void FlatField::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
     flatFieldAutoSelectconn.block (true);
@@ -123,7 +123,7 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
         }
     }
 
-    if (multiImage || pp->raw.ff_BlurType == procparams::RAWParams::getFlatFieldBlurTypeString(procparams::RAWParams::FlatFieldBlurType::AREA)) {
+    if (pp->raw.ff_BlurType == procparams::RAWParams::getFlatFieldBlurTypeString(procparams::RAWParams::FlatFieldBlurType::AREA)) {
         flatFieldClipControl->show();
     } else {
         flatFieldClipControl->hide();
@@ -133,17 +133,6 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
     flatFieldBlurRadius->setValue (pp->raw.ff_BlurRadius);
     flatFieldClipControl->setValue (pp->raw.ff_clipControl);
     flatFieldClipControl->setAutoValue (pp->raw.ff_AutoClipControl);
-
-    if(pedited ) {
-        flatFieldAutoSelect->set_inconsistent (!pedited->raw.ff_AutoSelect);
-        flatFieldBlurRadius->setEditedState( pedited->raw.ff_BlurRadius ? Edited : UnEdited );
-        flatFieldClipControl->setEditedState( pedited->raw.ff_clipControl ? Edited : UnEdited );
-        flatFieldClipControl->setAutoInconsistent(multiImage && !pedited->raw.ff_AutoClipControl);
-
-        if( !pedited->raw.ff_BlurType ) {
-            flatFieldBlurType->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-    }
 
     if (Glib::file_test (pp->raw.ff_file, Glib::FILE_TEST_EXISTS)) {
         flatFieldFile->set_filename (pp->raw.ff_file);
@@ -156,7 +145,7 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
     lastFFAutoSelect = pp->raw.ff_AutoSelect;
     lastFFAutoClipCtrl = pp->raw.ff_AutoClipControl;
 
-    if( pp->raw.ff_AutoSelect  && ffp && !batchMode) {
+    if( pp->raw.ff_AutoSelect  && ffp) {
         // retrieve the auto-selected ff filename
         rtengine::RawImage *img = ffp->getFF();
 
@@ -176,7 +165,7 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
     enableListener ();
 
     // Add filter with the current file extension if the current file is raw
-    if (ffp && !batchMode) {
+    if (ffp) {
 
         if (b_filter_asCurrent) {
             //First, remove last filter_asCurrent if it was set for a raw file
@@ -212,7 +201,7 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp, const ParamsEdi
 
 }
 
-void FlatField::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void FlatField::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.ff_file = flatFieldFile->get_filename();
     pp->raw.ff_AutoSelect = flatFieldAutoSelect->get_active();
@@ -225,16 +214,6 @@ void FlatField::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedit
     if( currentRow >= 0 && flatFieldBlurType->get_active_text() != M("GENERAL_UNCHANGED")) {
         pp->raw.ff_BlurType = procparams::RAWParams::getFlatFieldBlurTypeStrings()[currentRow];
     }
-
-    if (pedited) {
-        pedited->raw.ff_file = ffChanged;
-        pedited->raw.ff_AutoSelect = !flatFieldAutoSelect->get_inconsistent();
-        pedited->raw.ff_BlurRadius = flatFieldBlurRadius->getEditedState ();
-        pedited->raw.ff_clipControl = flatFieldClipControl->getEditedState ();
-        pedited->raw.ff_AutoClipControl = !flatFieldClipControl->getAutoInconsistent();
-        pedited->raw.ff_BlurType = flatFieldBlurType->get_active_text() != M("GENERAL_UNCHANGED");
-    }
-
 }
 
 void FlatField::adjusterChanged(Adjuster* a, double newval)
@@ -252,18 +231,6 @@ void FlatField::adjusterChanged(Adjuster* a, double newval)
 
 void FlatField::adjusterAutoToggled (Adjuster* a, bool newval)
 {
-    if (multiImage) {
-        if (flatFieldClipControl->getAutoInconsistent()) {
-            flatFieldClipControl->setAutoInconsistent(false);
-            flatFieldClipControl->setAutoValue(false);
-        } else if (lastFFAutoClipCtrl) {
-            flatFieldClipControl->setAutoInconsistent(true);
-        }
-
-        lastFFAutoClipCtrl = flatFieldClipControl->getAutoValue();
-
-    }
-
     if (listener) {
         if(a == flatFieldClipControl) {
             if (flatFieldClipControl->getAutoInconsistent()) {
@@ -277,35 +244,16 @@ void FlatField::adjusterAutoToggled (Adjuster* a, bool newval)
     }
 }
 
-void FlatField::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode (batchMode);
-    flatFieldBlurRadius->showEditedCB ();
-    flatFieldClipControl->showEditedCB ();
-}
-
-void FlatField::setAdjusterBehavior (bool clipctrladd)
-{
-    flatFieldClipControl->setAddMode(clipctrladd);
-}
 
 void FlatField::trimValues (rtengine::procparams::ProcParams* pp)
 {
     flatFieldClipControl->trimValue(pp->raw.ff_clipControl);
 }
 
-void FlatField::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void FlatField::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     flatFieldBlurRadius->setDefault( defParams->raw.ff_BlurRadius);
     flatFieldClipControl->setDefault( defParams->raw.ff_clipControl);
-
-    if (pedited) {
-        flatFieldBlurRadius->setDefaultEditedState( pedited->raw.ff_BlurRadius ? Edited : UnEdited);
-        flatFieldClipControl->setDefaultEditedState( pedited->raw.ff_clipControl ? Edited : UnEdited);
-    } else {
-        flatFieldBlurRadius->setDefaultEditedState( Irrelevant );
-        flatFieldClipControl->setDefaultEditedState( Irrelevant );
-    }
 }
 
 void FlatField::flatFieldFileChanged()
@@ -343,7 +291,7 @@ void FlatField::flatFieldBlurTypeChanged ()
     const int curSelection = flatFieldBlurType->get_active_row_number();
     const RAWParams::FlatFieldBlurType blur_type = RAWParams::FlatFieldBlurType(curSelection);
 
-    if (multiImage || blur_type == procparams::RAWParams::FlatFieldBlurType::AREA) {
+    if (blur_type == procparams::RAWParams::FlatFieldBlurType::AREA) {
         flatFieldClipControl->show();
     } else {
         flatFieldClipControl->hide();
@@ -356,22 +304,9 @@ void FlatField::flatFieldBlurTypeChanged ()
 
 void FlatField::flatFieldAutoSelectChanged()
 {
-    if (batchMode) {
-        if (flatFieldAutoSelect->get_inconsistent()) {
-            flatFieldAutoSelect->set_inconsistent (false);
-            flatFieldAutoSelectconn.block (true);
-            flatFieldAutoSelect->set_active (false);
-            flatFieldAutoSelectconn.block (false);
-        } else if (lastFFAutoSelect) {
-            flatFieldAutoSelect->set_inconsistent (true);
-        }
-
-        lastFFAutoSelect = flatFieldAutoSelect->get_active ();
-    }
-
     hbff->set_sensitive( !flatFieldAutoSelect->get_active() );
 
-    if( flatFieldAutoSelect->get_active()  && ffp && !batchMode) {
+    if( flatFieldAutoSelect->get_active()  && ffp) {
         // retrieve the auto-selected ff filename
         rtengine::RawImage *img = ffp->getFF();
 

@@ -5,3 +5,5 @@ Thumbnail::setProcParams
 partialPasteDlg.getParamsEdited();
 ProfilePanel::paste_clicked
 main-cli
+
+setBatchMode|batchMode|multiImage

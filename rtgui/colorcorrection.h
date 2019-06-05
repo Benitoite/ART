@@ -31,10 +31,9 @@ public:
 
     ColorCorrection();
 
-    void read(const rtengine::procparams::ProcParams *pp, const ParamsEdited *pedited=nullptr);
-    void write(rtengine::procparams::ProcParams *pp, ParamsEdited *pedited=nullptr);
-    void setDefaults(const rtengine::procparams::ProcParams *defParams, const ParamsEdited *pedited=nullptr);
-    void setBatchMode(bool batchMode);
+    void read(const rtengine::procparams::ProcParams *pp);
+    void write(rtengine::procparams::ProcParams *pp);
+    void setDefaults(const rtengine::procparams::ProcParams *defParams);
 
     void adjusterChanged(Adjuster *a, double newval);
     void enabledChanged();

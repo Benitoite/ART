@@ -108,7 +108,7 @@ void FilmSimulation::enabledChanged ()
 
 void FilmSimulation::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener && (multiImage || getEnabled())) {
+    if (listener && getEnabled()) {
         const Glib::ustring value = a->getTextValue();
         listener->panelChanged(EvFilmSimulationStrength, value);
     }
@@ -118,13 +118,7 @@ void FilmSimulation::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void FilmSimulation::setBatchMode( bool batchMode )
-{
-    ToolPanel::setBatchMode( batchMode );
-    m_clutComboBox->setBatchMode(batchMode);
-}
-
-void FilmSimulation::read( const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited )
+void FilmSimulation::read( const rtengine::procparams::ProcParams* pp)
 {
     //copypasted from lensprofile.cc & sharpening.cc
     disableListener();
@@ -145,19 +139,6 @@ void FilmSimulation::read( const rtengine::procparams::ProcParams* pp, const Par
 
     m_strength->setValue(pp->filmSimulation.strength);
 
-    if (pedited) {
-        set_inconsistent (multiImage && !pedited->filmSimulation.enabled);
-        m_strength->setEditedState(
-            pedited->filmSimulation.strength
-                ? Edited
-                : UnEdited
-        );
-
-        if (!pedited->filmSimulation.clutFilename) {
-            m_clutComboBox->setSelectedClut("NULL");
-        }
-    }
-
     if (!get_inconsistent() && !pp->filmSimulation.enabled) {
         if (options.clutCacheSize == 1) {
             CLUTStore::getInstance().clearCache();
@@ -173,14 +154,8 @@ void FilmSimulation::updateDisable( bool value )
     m_clutComboBoxConn.block( value );
 }
 
-void FilmSimulation::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited )
+void FilmSimulation::write( rtengine::procparams::ProcParams* pp)
 {
-    if (pedited) {
-        pedited->filmSimulation.enabled = !get_inconsistent();
-        pedited->filmSimulation.strength = m_strength->getEditedState();
-        pedited->filmSimulation.clutFilename = m_clutComboBox->getSelectedClut() != "NULL";
-    }
-
     pp->filmSimulation.enabled = getEnabled();
     const Glib::ustring clutFName = m_clutComboBox->getSelectedClut();
 
@@ -189,11 +164,6 @@ void FilmSimulation::write( rtengine::procparams::ProcParams* pp, ParamsEdited* 
     }
 
     pp->filmSimulation.strength = m_strength->getValue();
-}
-
-void FilmSimulation::setAdjusterBehavior( bool strength )
-{
-    m_strength->setAddMode( strength );
 }
 
 void FilmSimulation::trimValues( rtengine::procparams::ProcParams* pp )
@@ -208,8 +178,7 @@ std::unique_ptr<ClutComboBox::ClutModel> ClutComboBox::cm;
 std::unique_ptr<ClutComboBox::ClutModel> ClutComboBox::cm2;
 
 ClutComboBox::ClutComboBox(const Glib::ustring &path):
-    MyComboBox(),
-    batchMode(false)
+    MyComboBox()
 {
     if (!cm) {
         cm.reset(new ClutModel(path));
@@ -232,7 +201,7 @@ ClutComboBox::ClutComboBox(const Glib::ustring &path):
 
 inline Glib::RefPtr<Gtk::TreeStore> &ClutComboBox::m_model()
 {
-    if (!batchMode || !options.multiDisplayMode) {
+    if (!options.multiDisplayMode) {
         return cm->m_model;
     } else {
         return cm2->m_model;
@@ -242,22 +211,10 @@ inline Glib::RefPtr<Gtk::TreeStore> &ClutComboBox::m_model()
 
 inline ClutComboBox::ClutColumns &ClutComboBox::m_columns()
 {
-    if (!batchMode || !options.multiDisplayMode) {
+    if (!options.multiDisplayMode) {
         return cm->m_columns;
     } else {
         return cm2->m_columns;
-    }
-}
-
-
-void ClutComboBox::setBatchMode(bool yes)
-{
-    if (batchMode != yes) {
-        batchMode = yes;
-        set_model(m_model());
-        if (batchMode) {
-            updateUnchangedEntry();
-        }
     }
 }
 
@@ -273,18 +230,10 @@ void ClutComboBox::updateUnchangedEntry()
 {
     auto c = m_model()->children();
 
-    if (batchMode) {
-        if (c.empty() || c[c.size()-1][m_columns().clutFilename] != "NULL") {
-            Gtk::TreeModel::Row row = *(m_model()->append());
-            row[m_columns().label] = M("GENERAL_UNCHANGED");
-            row[m_columns().clutFilename] = "NULL";
-        }
-    } else {
-        if (c.size() > 0) {
-            Gtk::TreeModel::Row row = c[c.size()-1];
-            if (row[m_columns().clutFilename] == "NULL") {
-                m_model()->erase(row);
-            }
+    if (c.size() > 0) {
+        Gtk::TreeModel::Row row = c[c.size()-1];
+        if (row[m_columns().clutFilename] == "NULL") {
+            m_model()->erase(row);
         }
     }
 }

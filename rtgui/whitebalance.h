@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -98,11 +99,9 @@ public:
 
     static void init    ();
     static void cleanup ();
-    void read           (const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) override;
-    void write          (rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) override;
-    void setDefaults    (const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited = nullptr) override;
-    void setBatchMode   (bool batchMode) override;
-
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
     void optChanged ();
     void spotPressed ();
     void spotSizeChanged ();
@@ -120,7 +119,6 @@ public:
     void setWB (int temp, double green);
     void WBChanged           (double temp, double green) override;
 
-    void setAdjusterBehavior (bool tempadd, bool greenadd, bool equaladd, bool tempbiasadd);
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
     void enabledChanged() override;
 };

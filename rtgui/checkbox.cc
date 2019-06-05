@@ -23,11 +23,10 @@
 #include "checkbox.h"
 #include "guiutils.h"
 
-CheckBox::CheckBox (Glib::ustring label, bool const& multiImageVal)
+CheckBox::CheckBox (Glib::ustring label)
     : Gtk::CheckButton (label)
     , listener (nullptr)
     , lastActive (false)
-    , multiImage (multiImageVal)
 {
     conn = signal_toggled().connect( sigc::mem_fun(*this, &CheckBox::buttonToggled) );
 }
@@ -37,19 +36,7 @@ void CheckBox::buttonToggled ()
 
     CheckValue newValue = CheckValue::unchanged;
 
-    if (multiImage) {
-        if (get_inconsistent()) {
-            set_inconsistent (false);
-            ConnectionBlocker bloker (conn);
-            set_active (false);
-            newValue = CheckValue::off;
-        } else if (getLastActive()) {
-            set_inconsistent (true);
-            newValue = CheckValue::unchanged;
-        }
-    } else {
-        newValue = get_active () ? CheckValue::on : CheckValue::off;
-    }
+    newValue = get_active () ? CheckValue::on : CheckValue::off;
     setLastActive();
 
     if (listener) {

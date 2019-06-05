@@ -131,7 +131,7 @@ Resize::~Resize ()
     delete sizeBox;
 }
 
-void Resize::read (const ProcParams* pp, const ParamsEdited* pedited)
+void Resize::read(const ProcParams* pp)
 {
 
     disableListener ();
@@ -168,27 +168,6 @@ void Resize::read (const ProcParams* pp, const ParamsEdited* pedited)
     wDirty = false;
     hDirty = false;
 
-    if (pedited) {
-        wDirty = pedited->resize.width;
-        hDirty = pedited->resize.height;
-        scale->setEditedState (pedited->resize.scale ? Edited : UnEdited);
-
-        if (!pedited->resize.appliesTo) {
-            appliesTo->set_active (2);
-        }
-
-        if (!pedited->resize.method) {
-            method->set_active (3);
-        }
-
-        if (!pedited->resize.dataspec) {
-            spec->set_active (4);
-        }
-
-        allowUpscaling->set_inconsistent(!pedited->resize.allowUpscaling);
-        set_inconsistent (multiImage && !pedited->resize.enabled);
-    }
-
     scale->block(false);
     sconn.block (false);
     wconn.block (false);
@@ -197,7 +176,7 @@ void Resize::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void Resize::write (ProcParams* pp, ParamsEdited* pedited)
+void Resize::write(ProcParams* pp)
 {
     int dataSpec = spec->get_active_row_number();
 
@@ -226,50 +205,23 @@ void Resize::write (ProcParams* pp, ParamsEdited* pedited)
     //printf("  L:%d   H:%d\n", pp->resize.width, pp->resize.height);
 
     pp->resize.allowUpscaling = allowUpscaling->get_active();
-
-    if (pedited) {
-        pedited->resize.enabled   = !get_inconsistent();
-        pedited->resize.dataspec  = dataSpec != MAX_SCALE;
-        pedited->resize.appliesTo = appliesTo->get_active_row_number() != 2;
-        pedited->resize.method    = method->get_active_row_number() != 3;
-
-        if (pedited->resize.dataspec) {
-            pedited->resize.scale     = scale->getEditedState ();
-            pedited->resize.width     = wDirty;
-            pedited->resize.height    = hDirty;
-        } else {
-            pedited->resize.scale     = false;
-            pedited->resize.width     = false;
-            pedited->resize.height    = false;
-        }
-        pedited->resize.allowUpscaling = !allowUpscaling->get_inconsistent();
-    }
 }
 
-void Resize::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void Resize::setDefaults(const ProcParams* defParams)
 {
-
     scale->setDefault (defParams->resize.scale);
-
-    if (pedited) {
-        scale->setDefaultEditedState (pedited->resize.scale ? Edited : UnEdited);
-    } else {
-        scale->setDefaultEditedState (Irrelevant);
-    }
 }
 
 void Resize::adjusterChanged(Adjuster* a, double newval)
 {
-    if (!batchMode) {
-        wconn.block (true);
-        hconn.block (true);
-        h->set_value ((croph && appliesTo->get_active_row_number() == 0 ? croph : maxh) * a->getValue ());
-        w->set_value ((cropw && appliesTo->get_active_row_number() == 0 ? cropw : maxw) * a->getValue ());
-        wconn.block (false);
-        hconn.block (false);
-    }
+    wconn.block (true);
+    hconn.block (true);
+    h->set_value ((croph && appliesTo->get_active_row_number() == 0 ? croph : maxh) * a->getValue ());
+    w->set_value ((cropw && appliesTo->get_active_row_number() == 0 ? cropw : maxw) * a->getValue ());
+    wconn.block (false);
+    hconn.block (false);
 
-    if (listener && (getEnabled () || batchMode)) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvResizeScale, Glib::ustring::format (std::setw(5), std::fixed, std::setprecision(2), scale->getValue()));
     }
 }
@@ -312,7 +264,7 @@ void Resize::appliesToChanged ()
     //printf("\nPASSAGE EN MODE \"%s\"\n\n", appliesTo->get_active_text().c_str());
     setDimensions();
 
-    if (listener && (getEnabled () || batchMode)) {
+    if (listener && getEnabled()) {
         //printf("Appel du listener\n");
         listener->panelChanged (EvResizeAppliesTo, appliesTo->get_active_text());
     }
@@ -321,7 +273,7 @@ void Resize::appliesToChanged ()
 void Resize::methodChanged ()
 {
 
-    if (listener && (getEnabled () || batchMode)) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvResizeMethod, method->get_active_text());
     }
 
@@ -473,28 +425,26 @@ void Resize::entryWChanged ()
     wDirty = true;
 
     // updating width
-    if (!batchMode) {
-        if (spec->get_active_row_number() == 3) {
-            // Fit box mode
-            fitBoxScale();
-        } else {
-            // Other modes
-            hconn.block (true);
-            scale->block (true);
+    if (spec->get_active_row_number() == 3) {
+        // Fit box mode
+        fitBoxScale();
+    } else {
+        // Other modes
+        hconn.block (true);
+        scale->block (true);
 
-            h->set_value ((double)(getComputedHeight()));
-            scale->setValue (w->get_value () / (cropw && appliesTo->get_active_row_number() == 0 ? (double)cropw : (double)maxw));
+        h->set_value ((double)(getComputedHeight()));
+        scale->setValue (w->get_value () / (cropw && appliesTo->get_active_row_number() == 0 ? (double)cropw : (double)maxw));
 
-            scale->block (false);
-            hconn.block (false);
-        }
+        scale->block (false);
+        hconn.block (false);
     }
 
     if (listener) {
         if (spec->get_active_row_number() == 3) {
             notifyBBox();
         } else {
-            if (getEnabled () || batchMode) {
+            if (getEnabled()) {
                 listener->panelChanged (EvResizeWidth, Glib::ustring::format (w->get_value_as_int()));
             }
         }
@@ -506,7 +456,7 @@ void Resize::entryHChanged ()
 
     hDirty = true;
 
-    if (!batchMode && listener) {
+    if (listener) {
         if (spec->get_active_row_number() == 3) {
             // Fit box mode
             fitBoxScale();
@@ -527,7 +477,7 @@ void Resize::entryHChanged ()
         if (spec->get_active_row_number() == 3) {
             notifyBBox();
         } else {
-            if (getEnabled () || batchMode) {
+            if (getEnabled()) {
                 listener->panelChanged (EvResizeHeight, Glib::ustring::format (h->get_value_as_int()));
             }
         }
@@ -607,19 +557,11 @@ void Resize::updateGUI ()
 
 void Resize::notifyBBox()
 {
-    if (listener && (getEnabled () || batchMode)) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvResizeBoundingBox, Glib::ustring::compose("(%1x%2)", (int)w->get_value(), (int)h->get_value() ));
     }
 }
 
-void Resize::setBatchMode (bool batchMode)
-{
-
-    method->append (M("GENERAL_UNCHANGED"));
-    spec->append (M("GENERAL_UNCHANGED"));
-    ToolPanel::setBatchMode (batchMode);
-    scale->showEditedCB ();
-}
 
 void Resize::enabledChanged ()
 {
@@ -650,12 +592,6 @@ void Resize::allowUpscalingChanged()
     }
 }
 
-
-void Resize::setAdjusterBehavior (bool scaleadd)
-{
-
-    scale->setAddMode(scaleadd);
-}
 
 void Resize::trimValues (rtengine::procparams::ProcParams* pp)
 {

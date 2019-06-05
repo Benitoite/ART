@@ -21,141 +21,154 @@
 #define _PARTIALPASTEDLG_
 
 #include <gtkmm.h>
-#include "../rtengine/rtengine.h"
+#include <unordered_map>
+#include <string>
+#include "paramsedited.h"
 
-class PartialPasteDlg : public Gtk::Dialog
-{
+class PartialPasteDlg: public Gtk::Dialog {
+private:
+    ParamsEdited pedited_;
+    
+    Gtk::ScrolledWindow *scrolledwindow_;
 
-public:
+    Gtk::CheckButton *everything_;
+    sigc::connection everything_conn_;
+    
+    struct ButtonInfo {
+        sigc::connection conn;
+        std::vector<Gtk::CheckButton *> related;
+        bool is_master;
+        bool *edited;
+    };
+    std::unordered_map<Gtk::CheckButton *, ButtonInfo> buttons_;
 
-    Gtk::ScrolledWindow *scrolledwindow;
+    void toggled(Gtk::CheckButton *which);
+    
+    // // main groups:
+    // Gtk::CheckButton* basic;
+    // Gtk::CheckButton* detail;
+    // Gtk::CheckButton* color;
+    // Gtk::CheckButton* lens;
+    // Gtk::CheckButton* composition;
+    // Gtk::CheckButton* meta;
+    // Gtk::CheckButton* raw;
+    // Gtk::CheckButton* local;
 
-    Gtk::CheckButton* everything;
+    // // options in basic:
+    // Gtk::CheckButton* wb;
+    // Gtk::CheckButton* exposure;
+    // Gtk::CheckButton* localcontrast;
+    // Gtk::CheckButton* logenc;
+    // Gtk::CheckButton* sh;
+    // Gtk::CheckButton* toneEqualizer;
+    // Gtk::CheckButton* fattal;
+    // Gtk::CheckButton* pcvignette;
+    // Gtk::CheckButton* gradient;
+    // Gtk::CheckButton* labcurve;
 
-    // main groups:
-    Gtk::CheckButton* basic;
-    Gtk::CheckButton* detail;
-    Gtk::CheckButton* color;
-    Gtk::CheckButton* lens;
-    Gtk::CheckButton* composition;
-    Gtk::CheckButton* meta;
-    Gtk::CheckButton* raw;
-    Gtk::CheckButton* local;
+    // // options in detail:
+    // Gtk::CheckButton* sharpen;
+    // Gtk::CheckButton* sharpenmicro;
+    // Gtk::CheckButton* impden;
+    // //Gtk::CheckButton* waveq;
+    // Gtk::CheckButton* dirpyrden;
+    // Gtk::CheckButton* defringe;
+    // //Gtk::CheckButton* dirpyreq;
+    // Gtk::CheckButton* dehaze;
+    // Gtk::CheckButton* grain;
+    // //Gtk::CheckButton* smoothing;
 
-    // options in basic:
-    Gtk::CheckButton* wb;
-    Gtk::CheckButton* exposure;
-    Gtk::CheckButton* localcontrast;
-    Gtk::CheckButton* logenc;
-    Gtk::CheckButton* sh;
-    Gtk::CheckButton* toneEqualizer;
-    Gtk::CheckButton* fattal;
-    Gtk::CheckButton* pcvignette;
-    Gtk::CheckButton* gradient;
-    Gtk::CheckButton* labcurve;
+    // // options in color:
+    // Gtk::CheckButton* icm;
+    // Gtk::CheckButton* chmixer;
+    // Gtk::CheckButton* blackwhite;
+    // Gtk::CheckButton* softlight;
+    // Gtk::CheckButton* filmSimulation;
+    // Gtk::CheckButton* rgbcurves;
 
-    // options in detail:
-    Gtk::CheckButton* sharpen;
-    Gtk::CheckButton* sharpenmicro;
-    Gtk::CheckButton* impden;
-    //Gtk::CheckButton* waveq;
-    Gtk::CheckButton* dirpyrden;
-    Gtk::CheckButton* defringe;
-    //Gtk::CheckButton* dirpyreq;
-    Gtk::CheckButton* dehaze;
-    Gtk::CheckButton* grain;
-    //Gtk::CheckButton* smoothing;
+    // // options in lens:
+    // Gtk::CheckButton* distortion;
+    // Gtk::CheckButton* cacorr;
+    // Gtk::CheckButton* vignetting;
+    // Gtk::CheckButton* lcp;
 
-    // options in color:
-    Gtk::CheckButton* icm;
-    Gtk::CheckButton* chmixer;
-    Gtk::CheckButton* blackwhite;
-    Gtk::CheckButton* softlight;
-    Gtk::CheckButton* filmSimulation;
-    Gtk::CheckButton* rgbcurves;
+    // // options in composition:
+    // Gtk::CheckButton* coarserot;
+    // Gtk::CheckButton* finerot;
+    // Gtk::CheckButton* crop;
+    // Gtk::CheckButton* resize;
+    // Gtk::CheckButton* prsharpening;
+    // Gtk::CheckButton* perspective;
+    // Gtk::CheckButton* commonTrans;
 
-    // options in lens:
-    Gtk::CheckButton* distortion;
-    Gtk::CheckButton* cacorr;
-    Gtk::CheckButton* vignetting;
-    Gtk::CheckButton* lcp;
+    // // options in meta:
+    // Gtk::CheckButton *metadata;
+    // Gtk::CheckButton* exifch;
+    // Gtk::CheckButton* iptc;
 
-    // options in composition:
-    Gtk::CheckButton* coarserot;
-    Gtk::CheckButton* finerot;
-    Gtk::CheckButton* crop;
-    Gtk::CheckButton* resize;
-    Gtk::CheckButton* prsharpening;
-    Gtk::CheckButton* perspective;
-    Gtk::CheckButton* commonTrans;
+    // // options in local:
+    // Gtk::CheckButton *colorcorrection;
+    // Gtk::CheckButton *cbdl;
+    // Gtk::CheckButton *smoothing;
+    // Gtk::CheckButton* epd;
 
-    // options in meta:
-    Gtk::CheckButton *metadata;
-    Gtk::CheckButton* exifch;
-    Gtk::CheckButton* iptc;
+    // // options in raw:
+    // Gtk::CheckButton* raw_expos;
+    // Gtk::CheckButton* raw_black;
+    // Gtk::CheckButton* raw_ca_autocorrect;
+    // Gtk::CheckButton* raw_caredblue;
+    // Gtk::CheckButton* raw_ca_avoid_colourshift;
+    // Gtk::CheckButton* raw_hotpix_filt;
+    // Gtk::CheckButton* raw_deadpix_filt;
+    // Gtk::CheckButton* raw_pdaf_lines_filter;
+    // Gtk::CheckButton* raw_linenoise;
+    // Gtk::CheckButton* raw_greenthresh;
+    // Gtk::CheckButton* raw_method;
+    // Gtk::CheckButton* raw_border;
+    // Gtk::CheckButton* raw_imagenum;
+    // Gtk::CheckButton* raw_ccSteps;
+    // Gtk::CheckButton* raw_dcb_iterations;
+    // Gtk::CheckButton* raw_dcb_enhance;
+    // Gtk::CheckButton* raw_lmmse_iterations;
+    // Gtk::CheckButton* raw_pixelshift;
 
-    // options in local:
-    Gtk::CheckButton *colorcorrection;
-    Gtk::CheckButton *cbdl;
-    Gtk::CheckButton *smoothing;
-    Gtk::CheckButton* epd;
+    // Gtk::CheckButton* df_file;
+    // Gtk::CheckButton* df_AutoSelect;
+    // Gtk::CheckButton* ff_file;
+    // Gtk::CheckButton* ff_AutoSelect;
+    // Gtk::CheckButton* ff_BlurRadius;
+    // Gtk::CheckButton* ff_BlurType;
+    // Gtk::CheckButton* ff_ClipControl;
 
-    // options in raw:
-    Gtk::CheckButton* raw_expos;
-    Gtk::CheckButton* raw_black;
-    Gtk::CheckButton* raw_ca_autocorrect;
-    Gtk::CheckButton* raw_caredblue;
-    Gtk::CheckButton* raw_ca_avoid_colourshift;
-    Gtk::CheckButton* raw_hotpix_filt;
-    Gtk::CheckButton* raw_deadpix_filt;
-    Gtk::CheckButton* raw_pdaf_lines_filter;
-    Gtk::CheckButton* raw_linenoise;
-    Gtk::CheckButton* raw_greenthresh;
-    Gtk::CheckButton* raw_method;
-    Gtk::CheckButton* raw_border;
-    Gtk::CheckButton* raw_imagenum;
-    Gtk::CheckButton* raw_ccSteps;
-    Gtk::CheckButton* raw_dcb_iterations;
-    Gtk::CheckButton* raw_dcb_enhance;
-    Gtk::CheckButton* raw_lmmse_iterations;
-    Gtk::CheckButton* raw_pixelshift;
+    // sigc::connection everythingConn, basicConn, detailConn, colorConn, lensConn, compositionConn, metaConn, rawConn, localConn;
 
-    Gtk::CheckButton* df_file;
-    Gtk::CheckButton* df_AutoSelect;
-    Gtk::CheckButton* ff_file;
-    Gtk::CheckButton* ff_AutoSelect;
-    Gtk::CheckButton* ff_BlurRadius;
-    Gtk::CheckButton* ff_BlurType;
-    Gtk::CheckButton* ff_ClipControl;
-
-    sigc::connection everythingConn, basicConn, detailConn, colorConn, lensConn, compositionConn, metaConn, rawConn, localConn;
-
-    sigc::connection wbConn, exposureConn, localcontrastConn, shConn, pcvignetteConn, gradientConn, labcurveConn;
-    sigc::connection toneEqualizerConn;
-    sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, dehazeConn, logencConn;
-    sigc::connection grainConn;
-    sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
-    sigc::connection chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;
-    sigc::connection distortionConn, cacorrConn, vignettingConn, lcpConn;
-    sigc::connection coarserotConn, finerotConn, cropConn, resizeConn, prsharpeningConn, perspectiveConn, commonTransConn;
-    sigc::connection metadataConn, exifchConn, iptcConn, icmConn;
-    sigc::connection df_fileConn, df_AutoSelectConn, ff_fileConn, ff_AutoSelectConn, ff_BlurRadiusConn, ff_BlurTypeConn, ff_ClipControlConn;
-    sigc::connection raw_caredblueConn, raw_ca_autocorrectConn, raw_ca_avoid_colourshiftconn, raw_hotpix_filtConn, raw_deadpix_filtConn, raw_pdaf_lines_filterConn, raw_linenoiseConn, raw_greenthreshConn, raw_ccStepsConn, raw_methodConn, raw_borderConn, raw_imagenumConn, raw_dcb_iterationsConn, raw_lmmse_iterationsConn, raw_pixelshiftConn, raw_dcb_enhanceConn, raw_exposConn, raw_blackConn;
+    // sigc::connection wbConn, exposureConn, localcontrastConn, shConn, pcvignetteConn, gradientConn, labcurveConn;
+    // sigc::connection toneEqualizerConn;
+    // sigc::connection sharpenConn, microcontrastConn, impdenConn, dirpyrdenConn, defringeConn, epdConn, fattalConn, dirpyreqConn, dehazeConn, logencConn;
+    // sigc::connection grainConn;
+    // sigc::connection colorcorrectionConn, cbdlConn, smoothingConn;
+    // sigc::connection chmixerConn, rgbcurvesConn, chmixerbwConn, filmSimulationConn, softlightConn;
+    // sigc::connection distortionConn, cacorrConn, vignettingConn, lcpConn;
+    // sigc::connection coarserotConn, finerotConn, cropConn, resizeConn, prsharpeningConn, perspectiveConn, commonTransConn;
+    // sigc::connection metadataConn, exifchConn, iptcConn, icmConn;
+    // sigc::connection df_fileConn, df_AutoSelectConn, ff_fileConn, ff_AutoSelectConn, ff_BlurRadiusConn, ff_BlurTypeConn, ff_ClipControlConn;
+    // sigc::connection raw_caredblueConn, raw_ca_autocorrectConn, raw_ca_avoid_colourshiftconn, raw_hotpix_filtConn, raw_deadpix_filtConn, raw_pdaf_lines_filterConn, raw_linenoiseConn, raw_greenthreshConn, raw_ccStepsConn, raw_methodConn, raw_borderConn, raw_imagenumConn, raw_dcb_iterationsConn, raw_lmmse_iterationsConn, raw_pixelshiftConn, raw_dcb_enhanceConn, raw_exposConn, raw_blackConn;
 
 public:
     PartialPasteDlg (const Glib::ustring &title, Gtk::Window* parent);
+    ParamsEdited getParamsEdited();
 
-    void applyPaste (rtengine::procparams::ProcParams* dstPP, ParamsEdited* dstPE, const rtengine::procparams::ProcParams* srcPP, const ParamsEdited* srcPE = nullptr);
+    // void applyPaste (rtengine::procparams::ProcParams* dstPP, ParamsEdited* dstPE, const rtengine::procparams::ProcParams* srcPP, const ParamsEdited* srcPE = nullptr);
 
-    void everythingToggled ();
-    void basicToggled ();
-    void detailToggled ();
-    void colorToggled ();
-    void lensToggled ();
-    void compositionToggled ();
-    void metaToggled ();
-    void rawToggled ();
-    void localToggled();
+    // void everythingToggled ();
+    // void basicToggled ();
+    // void detailToggled ();
+    // void colorToggled ();
+    // void lensToggled ();
+    // void compositionToggled ();
+    // void metaToggled ();
+    // void rawToggled ();
+    // void localToggled();
 };
 
 #endif

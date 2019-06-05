@@ -114,7 +114,7 @@ XTransProcess::~XTransProcess () {
     idle_register.destroy();
 }
 
-void XTransProcess::read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited)
+void XTransProcess::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
     methodconn.block (true);
@@ -127,33 +127,21 @@ void XTransProcess::read(const rtengine::procparams::ProcParams* pp, const Param
             break;
         }
 
-    if(pedited ) {
-        border->setEditedState (pedited->raw.xtranssensor.border ? Edited : UnEdited);
-        dualDemosaicContrast->setAutoInconsistent   (multiImage && !pedited->raw.xtranssensor.dualDemosaicAutoContrast);
-        dualDemosaicContrast->setEditedState ( pedited->raw.xtranssensor.dualDemosaicContrast ? Edited : UnEdited);
-        ccSteps->setEditedState (pedited->raw.xtranssensor.ccSteps ? Edited : UnEdited);
-
-        if( !pedited->raw.xtranssensor.method ) {
-            method->set_active_text(M("GENERAL_UNCHANGED"));
-        }
-    }
     dualDemosaicContrast->setAutoValue(pp->raw.xtranssensor.dualDemosaicAutoContrast);
     dualDemosaicContrast->setValue (pp->raw.xtranssensor.dualDemosaicContrast);
     ccSteps->setValue (pp->raw.xtranssensor.ccSteps);
 
     lastAutoContrast = pp->raw.xtranssensor.dualDemosaicAutoContrast;
 
-    if (!batchMode) {
-        dualDemosaicOptions->set_visible(pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::FOUR_PASS)
-                                         || pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::TWO_PASS));
-    }
+    dualDemosaicOptions->set_visible(pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::FOUR_PASS)
+                                     || pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::TWO_PASS));
 
     methodconn.block (false);
 
     enableListener ();
 }
 
-void XTransProcess::write( rtengine::procparams::ProcParams* pp, ParamsEdited* pedited)
+void XTransProcess::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.xtranssensor.dualDemosaicAutoContrast = dualDemosaicContrast->getAutoValue();
     pp->raw.xtranssensor.dualDemosaicContrast = dualDemosaicContrast->getValue();
@@ -165,48 +153,14 @@ void XTransProcess::write( rtengine::procparams::ProcParams* pp, ParamsEdited* p
     if (currentRow >= 0 && method->get_active_text() != M("GENERAL_UNCHANGED")) {
         pp->raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodStrings()[currentRow];
     }
-
-    if (pedited) {
-        pedited->raw.xtranssensor.border = border->getEditedState ();
-        pedited->raw.xtranssensor.method = method->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->raw.xtranssensor.dualDemosaicAutoContrast = !dualDemosaicContrast->getAutoInconsistent ();
-        pedited->raw.xtranssensor.dualDemosaicContrast = dualDemosaicContrast->getEditedState ();
-        pedited->raw.xtranssensor.ccSteps = ccSteps->getEditedState ();
-    }
 }
 
-void XTransProcess::setAdjusterBehavior (bool falsecoloradd, bool dualDemosaicContrastAdd)
-{
-    border->setAddMode(false);
-    dualDemosaicContrast->setAddMode(dualDemosaicContrastAdd);
-    ccSteps->setAddMode(falsecoloradd);
-}
 
-void XTransProcess::setBatchMode(bool batchMode)
-{
-    method->append (M("GENERAL_UNCHANGED"));
-    method->set_active_text(M("GENERAL_UNCHANGED"));
-    ToolPanel::setBatchMode (batchMode);
-    dualDemosaicContrast->showEditedCB ();
-    border->showEditedCB ();
-    ccSteps->showEditedCB ();
-}
-
-void XTransProcess::setDefaults(const rtengine::procparams::ProcParams* defParams, const ParamsEdited* pedited)
+void XTransProcess::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     dualDemosaicContrast->setDefault( defParams->raw.xtranssensor.dualDemosaicContrast);
     border->setDefault (defParams->raw.xtranssensor.border);
     ccSteps->setDefault (defParams->raw.xtranssensor.ccSteps);
-
-    if (pedited) {
-        dualDemosaicContrast->setDefaultEditedState( pedited->raw.xtranssensor.dualDemosaicContrast ? Edited : UnEdited);
-        border->setDefaultEditedState(pedited->raw.xtranssensor.border ? Edited : UnEdited);
-        ccSteps->setDefaultEditedState(pedited->raw.xtranssensor.ccSteps ? Edited : UnEdited);
-    } else {
-        dualDemosaicContrast->setDefaultEditedState(Irrelevant );
-        border->setDefaultEditedState(Irrelevant);
-        ccSteps->setDefaultEditedState(Irrelevant );
-    }
 }
 
 void XTransProcess::adjusterChanged(Adjuster* a, double newval)
@@ -224,17 +178,6 @@ void XTransProcess::adjusterChanged(Adjuster* a, double newval)
 
 void XTransProcess::adjusterAutoToggled(Adjuster* a, bool newval)
 {
-    if (multiImage) {
-        if (dualDemosaicContrast->getAutoInconsistent()) {
-            dualDemosaicContrast->setAutoInconsistent (false);
-            dualDemosaicContrast->setAutoValue (false);
-        } else if (lastAutoContrast) {
-            dualDemosaicContrast->setAutoInconsistent (true);
-        }
-
-        lastAutoContrast = dualDemosaicContrast->getAutoValue();
-    }
-
     if (listener) {
 
         if (a == dualDemosaicContrast) {
@@ -256,13 +199,10 @@ void XTransProcess::methodChanged ()
 
     oldSelection = curSelection;
 
-    if (!batchMode) {
-        if (currentMethod == procparams::RAWParams::XTransSensor::Method::FOUR_PASS || currentMethod == procparams::RAWParams::XTransSensor::Method::TWO_PASS) {
-            dualDemosaicOptions->show();
-        } else {
-            dualDemosaicOptions->hide();
-        }
-
+    if (currentMethod == procparams::RAWParams::XTransSensor::Method::FOUR_PASS || currentMethod == procparams::RAWParams::XTransSensor::Method::TWO_PASS) {
+        dualDemosaicOptions->show();
+    } else {
+        dualDemosaicOptions->hide();
     }
     if (listener && method->get_active_row_number() >= 0) {
         listener->panelChanged (

@@ -252,7 +252,7 @@ BlackWhite::~BlackWhite ()
 }
 
 
-void BlackWhite::read (const ProcParams* pp, const ParamsEdited* pedited)
+void BlackWhite::read(const ProcParams* pp)
 {
 
     disableListener ();
@@ -262,9 +262,7 @@ void BlackWhite::read (const ProcParams* pp, const ParamsEdited* pedited)
     settingconn.block(true);
     enaccconn.block (true);
 
-    if (pedited && !pedited->blackwhite.setting) {
-        setting->set_active (13);    // "Unchanged"
-    } else if (pp->blackwhite.setting == "NormalContrast") {
+    if (pp->blackwhite.setting == "NormalContrast") {
         setting->set_active (0);
     } else if (pp->blackwhite.setting == "HighContrast") {
         setting->set_active (1);
@@ -295,9 +293,7 @@ void BlackWhite::read (const ProcParams* pp, const ParamsEdited* pedited)
     settingChanged();
 
 
-    if (pedited && !pedited->blackwhite.method) {
-        method->set_active (3);    // "Unchanged"
-    } else if (pp->blackwhite.method == "Desaturation") {
+    if (pp->blackwhite.method == "Desaturation") {
         method->set_active (0);
     } else if (pp->blackwhite.method == "LumEqualizer") {
         method->set_active (1);
@@ -308,9 +304,7 @@ void BlackWhite::read (const ProcParams* pp, const ParamsEdited* pedited)
     methodChanged();
 
 
-    if (pedited && !pedited->blackwhite.filter) {
-        filter->set_active (9);    // "Unchanged"
-    } else if (pp->blackwhite.filter == "None") {
+    if (pp->blackwhite.filter == "None") {
         filter->set_active (0);
     } else if (pp->blackwhite.filter == "Red") {
         filter->set_active (1);
@@ -342,18 +336,6 @@ void BlackWhite::read (const ProcParams* pp, const ParamsEdited* pedited)
     gammaBlue->setValue (pp->blackwhite.gammaBlue);
     luminanceCurve->setCurve (pp->blackwhite.luminanceCurve);
 
-    if (pedited) {
-        luminanceCurve->setUnChanged (!pedited->blackwhite.luminanceCurve);
-        set_inconsistent (multiImage && !pedited->blackwhite.enabled);
-        mixerRed->setEditedState (pedited->blackwhite.mixerRed ? Edited : UnEdited);
-        mixerGreen->setEditedState (pedited->blackwhite.mixerGreen ? Edited : UnEdited);
-        mixerBlue->setEditedState (pedited->blackwhite.mixerBlue ? Edited : UnEdited);
-        gammaRed->setEditedState (pedited->blackwhite.gammaRed ? Edited : UnEdited);
-        gammaGreen->setEditedState (pedited->blackwhite.gammaGreen ? Edited : UnEdited);
-        gammaBlue->setEditedState (pedited->blackwhite.gammaBlue ? Edited : UnEdited);
-
-    }
-
     methodconn.block(false);
     filterconn.block(false);
     settingconn.block(false);
@@ -365,7 +347,7 @@ void BlackWhite::read (const ProcParams* pp, const ParamsEdited* pedited)
     enableListener ();
 }
 
-void BlackWhite::write (ProcParams* pp, ParamsEdited* pedited)
+void BlackWhite::write (ProcParams* pp)
 {
     pp->blackwhite.enabled = getEnabled();
     pp->blackwhite.luminanceCurve = luminanceCurve->getCurve ();
@@ -375,20 +357,6 @@ void BlackWhite::write (ProcParams* pp, ParamsEdited* pedited)
     pp->blackwhite.gammaRed = gammaRed->getValue ();
     pp->blackwhite.gammaGreen = gammaGreen->getValue ();
     pp->blackwhite.gammaBlue = gammaBlue->getValue ();
-
-    if (pedited) {
-        pedited->blackwhite.enabled = !get_inconsistent();
-        pedited->blackwhite.luminanceCurve = !luminanceCurve->isUnChanged ();
-        pedited->blackwhite.mixerRed = mixerRed->getEditedState ();
-        pedited->blackwhite.mixerGreen = mixerGreen->getEditedState ();
-        pedited->blackwhite.mixerBlue = mixerBlue->getEditedState ();
-        pedited->blackwhite.gammaRed = gammaRed->getEditedState ();
-        pedited->blackwhite.gammaGreen = gammaGreen->getEditedState ();
-        pedited->blackwhite.gammaBlue = gammaBlue->getEditedState ();
-        pedited->blackwhite.filter = filter->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->blackwhite.setting = setting->get_active_text() != M("GENERAL_UNCHANGED");
-        pedited->blackwhite.method = method->get_active_text() != M("GENERAL_UNCHANGED");
-    }
 
     if (method->get_active_row_number() == 0) {
         pp->blackwhite.method = "Desaturation";
@@ -462,7 +430,7 @@ void BlackWhite::settingChanged ()
 
     updateRGBLabel();
 
-    if (listener && (multiImage || getEnabled())) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvBWsetting, setting->get_active_text ());
     }
 }
@@ -474,7 +442,7 @@ void BlackWhite::filterChanged ()
 
     updateRGBLabel();
 
-    if (listener && (multiImage || getEnabled())) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvBWfilter, filter->get_active_text ());
     }
 }
@@ -507,7 +475,7 @@ void BlackWhite::methodChanged ()
         hideMixer();
     }
 
-    if (listener && (multiImage || getEnabled())) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvBWmethod, method->get_active_text ());
     }
 }
@@ -552,7 +520,7 @@ void BlackWhite::neutral_pressed ()
 }
 
 
-void BlackWhite::setDefaults (const ProcParams* defParams, const ParamsEdited* pedited)
+void BlackWhite::setDefaults (const ProcParams* defParams)
 {
 
     mixerRed->setDefault (defParams->blackwhite.mixerRed);
@@ -561,22 +529,6 @@ void BlackWhite::setDefaults (const ProcParams* defParams, const ParamsEdited* p
     gammaRed->setDefault (defParams->blackwhite.gammaRed);
     gammaGreen->setDefault (defParams->blackwhite.gammaGreen);
     gammaBlue->setDefault (defParams->blackwhite.gammaBlue);
-
-    if (pedited) {
-        mixerRed->setDefaultEditedState (pedited->blackwhite.mixerRed ? Edited : UnEdited);
-        mixerGreen->setDefaultEditedState (pedited->blackwhite.mixerGreen ? Edited : UnEdited);
-        mixerBlue->setDefaultEditedState (pedited->blackwhite.mixerBlue ? Edited : UnEdited);
-        gammaRed->setDefaultEditedState (pedited->blackwhite.gammaRed ? Edited : UnEdited);
-        gammaGreen->setDefaultEditedState (pedited->blackwhite.gammaGreen ? Edited : UnEdited);
-        gammaBlue->setDefaultEditedState (pedited->blackwhite.gammaBlue ? Edited : UnEdited);
-    } else {
-        mixerRed->setDefaultEditedState (Irrelevant);
-        mixerGreen->setDefaultEditedState (Irrelevant);
-        mixerBlue->setDefaultEditedState (Irrelevant);
-        gammaRed->setDefaultEditedState (Irrelevant);
-        gammaGreen->setDefaultEditedState (Irrelevant);
-        gammaBlue->setDefaultEditedState (Irrelevant);
-    }
 }
 
 
@@ -586,7 +538,7 @@ void BlackWhite::adjusterChanged(Adjuster* a, double newval)
         updateRGBLabel();
     }
 
-    if (listener  && (multiImage || getEnabled())) {
+    if (listener  && getEnabled()) {
         Glib::ustring value = a->getTextValue();
 
         if (a == mixerRed) {
@@ -611,65 +563,40 @@ void BlackWhite::adjusterAutoToggled(Adjuster* a, bool newval)
 
 void BlackWhite::updateRGBLabel ()
 {
-    if (!batchMode) {
-        float kcorrec = 1.f;
-        float r, g, b;
+    float kcorrec = 1.f;
+    float r, g, b;
 
-        r = mixerRed->getValue();
-        g = mixerGreen->getValue();
-        b = mixerBlue->getValue();
+    r = mixerRed->getValue();
+    g = mixerGreen->getValue();
+    b = mixerBlue->getValue();
 
-        double mixR, mixG, mixB;
-        float filcor;
-        Glib::ustring sSetting = getSettingString();
-        Color::computeBWMixerConstants(sSetting, getFilterString(), "", filcor, r, g, b, kcorrec, mixR, mixG, mixB);
+    double mixR, mixG, mixB;
+    float filcor;
+    Glib::ustring sSetting = getSettingString();
+    Color::computeBWMixerConstants(sSetting, getFilterString(), "", filcor, r, g, b, kcorrec, mixR, mixG, mixB);
 
-        if( filcor != 1.f) {
-            r = kcorrec * r / (r + g + b);
-            g = kcorrec * g / (r + g + b);
-            b = kcorrec * b / (r + g + b);
-        }
+    if( filcor != 1.f) {
+        r = kcorrec * r / (r + g + b);
+        g = kcorrec * g / (r + g + b);
+        b = kcorrec * b / (r + g + b);
+    }
 
-        RGBLabels->set_text(
-            Glib::ustring::compose(M("TP_BWMIX_RGBLABEL"),
-                                   Glib::ustring::format(std::fixed, std::setprecision(1), r * 100.),
-                                   Glib::ustring::format(std::fixed, std::setprecision(1), g * 100.),
-                                   Glib::ustring::format(std::fixed, std::setprecision(1), b * 100.),
-                                   Glib::ustring::format(std::fixed, std::setprecision(0), ceil(kcorrec * 100./*(r+g+b)*100.)*/)))
+    RGBLabels->set_text(
+        Glib::ustring::compose(M("TP_BWMIX_RGBLABEL"),
+                               Glib::ustring::format(std::fixed, std::setprecision(1), r * 100.),
+                               Glib::ustring::format(std::fixed, std::setprecision(1), g * 100.),
+                               Glib::ustring::format(std::fixed, std::setprecision(1), b * 100.),
+                               Glib::ustring::format(std::fixed, std::setprecision(0), ceil(kcorrec * 100./*(r+g+b)*100.)*/)))
         );
 
-        // We have to update the RGB sliders too if preset values has been chosen
-        if (sSetting != "RGB-Abs" && sSetting != "RGB-Rel") {
-            mixerRed->setValue(mixR);
-            mixerGreen->setValue(mixG);
-            mixerBlue->setValue(mixB);
-        }
+    // We have to update the RGB sliders too if preset values has been chosen
+    if (sSetting != "RGB-Abs" && sSetting != "RGB-Rel") {
+        mixerRed->setValue(mixR);
+        mixerGreen->setValue(mixG);
+        mixerBlue->setValue(mixB);
     }
 }
 
-void BlackWhite::setBatchMode (bool batchMode)
-{
-    removeIfThere (mixerVBox, RGBLabels, false);
-    delete RGBLabels;
-    RGBLabels = nullptr;
-
-    ToolPanel::setBatchMode (batchMode);
-    mixerRed->showEditedCB ();
-    mixerGreen->showEditedCB ();
-    mixerBlue->showEditedCB ();
-    gammaRed->showEditedCB ();
-    gammaGreen->showEditedCB ();
-    gammaBlue->showEditedCB ();
-    method->append (M("GENERAL_UNCHANGED"));
-    filter->append (M("GENERAL_UNCHANGED"));
-    setting->append (M("GENERAL_UNCHANGED"));
-    luminanceCEG->setBatchMode (batchMode);
-
-    showLuminance();
-    showFilter();
-    showGamma();
-    showMixer(3);
-}
 
 void BlackWhite::autoOpenCurve ()
 {
@@ -678,18 +605,6 @@ void BlackWhite::autoOpenCurve ()
 void BlackWhite::setEditProvider (EditDataProvider *provider)
 {
     luminanceCurve->setEditProvider(provider);
-}
-
-void BlackWhite::setAdjusterBehavior (bool bwadd, bool bwgadd)
-{
-
-    mixerRed->setAddMode(bwadd);
-    mixerGreen->setAddMode(bwadd);
-    mixerBlue->setAddMode(bwadd);
-
-    gammaRed->setAddMode(bwgadd);
-    gammaGreen->setAddMode(bwgadd);
-    gammaBlue->setAddMode(bwgadd);
 }
 
 void BlackWhite::trimValues (rtengine::procparams::ProcParams* pp)
@@ -711,10 +626,8 @@ void BlackWhite::showLuminance()
 
 void BlackWhite::hideLuminance()
 {
-    if (!batchMode) {
-        luminanceCEG->hide();
-        luminanceSep->hide();
-    }
+    luminanceCEG->hide();
+    luminanceSep->hide();
 }
 
 void BlackWhite::showFilter()
@@ -725,19 +638,15 @@ void BlackWhite::showFilter()
 
 void BlackWhite::hideFilter()
 {
-    if (!batchMode) {
-        filterHBox->hide();
-        filterSep->hide();
-    }
+    filterHBox->hide();
+    filterSep->hide();
 }
 
 void BlackWhite::showMixer(int nChannels, bool RGBIsSensitive)
 {
-    if (!batchMode) {
-        RGBLabels->show();
-    }
+    RGBLabels->show();
 
-    if (!batchMode && nChannels == 3) {
+    if (nChannels == 3) {
         mixerRed->show();
         mixerRed->set_sensitive (RGBIsSensitive);
         mixerGreen->show();
@@ -758,9 +667,7 @@ void BlackWhite::showMixer(int nChannels, bool RGBIsSensitive)
 
 void BlackWhite::hideMixer()
 {
-    if (!batchMode) {
-        mixerFrame->hide();
-    }
+    mixerFrame->hide();
 }
 
 void BlackWhite::showGamma()
@@ -770,9 +677,7 @@ void BlackWhite::showGamma()
 
 void BlackWhite::hideGamma()
 {
-    if (!batchMode) {
-        gammaFrame->hide();
-    }
+    gammaFrame->hide();
 }
 
 Glib::ustring BlackWhite::getSettingString()

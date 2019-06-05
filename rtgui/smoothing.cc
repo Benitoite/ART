@@ -199,7 +199,7 @@ Smoothing::Smoothing(): FoldableToolPanel(this, "smoothing", M("TP_SMOOTHING_LAB
 }
 
 
-void Smoothing::read(const ProcParams *pp, const ParamsEdited *pedited)
+void Smoothing::read(const ProcParams *pp)
 {
     disableListener();
 
@@ -213,20 +213,11 @@ void Smoothing::read(const ProcParams *pp, const ParamsEdited *pedited)
     labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->smoothing.showMask);
 
-    if (pedited) {
-        set_inconsistent(multiImage && !pedited->smoothing.enabled);
-        if (pedited->smoothing.regions) {
-            labMasks->setEdited(true);
-        } else {
-            labMasks->setEdited(false);
-        }
-    }
-
     enableListener();
 }
 
 
-void Smoothing::write(ProcParams *pp, ParamsEdited *pedited)
+void Smoothing::write(ProcParams *pp)
 {
     pp->smoothing.enabled = getEnabled();
 
@@ -237,24 +228,12 @@ void Smoothing::write(ProcParams *pp, ParamsEdited *pedited)
     assert(pp->smoothing.regions.size() == pp->smoothing.labmasks.size());
 
     labMasks->updateSelected();
-        
-    if (pedited) {
-        pedited->smoothing.enabled = !get_inconsistent();
-        pedited->smoothing.regions = labMasks->getEdited();
-    }
 }
 
-void Smoothing::setDefaults(const ProcParams *defParams, const ParamsEdited *pedited)
+void Smoothing::setDefaults(const ProcParams *defParams)
 {
     radius->setDefault(defParams->smoothing.regions[0].radius);
     epsilon->setDefault(defParams->smoothing.regions[0].epsilon);
-    if (pedited) {
-        radius->setDefaultEditedState(pedited->smoothing.regions ? Edited : UnEdited);
-        epsilon->setDefaultEditedState(pedited->smoothing.regions ? Edited : UnEdited);
-    } else {
-        radius->setDefaultEditedState(Irrelevant);
-        epsilon->setDefaultEditedState(Irrelevant);
-    }
 }
 
 
@@ -283,13 +262,6 @@ void Smoothing::enabledChanged ()
             listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void Smoothing::setBatchMode(bool batchMode)
-{
-    ToolPanel::setBatchMode(batchMode);
-    labMasks->setBatchMode();
 }
 
 
@@ -348,7 +320,7 @@ void Smoothing::regionShow(int idx)
 
 void Smoothing::channelChanged()
 {
-    if (listener && (multiImage || getEnabled()) ) {
+    if (listener && getEnabled() ) {
         listener->panelChanged(EvChannel, channel->get_active_text());
     }
 }
