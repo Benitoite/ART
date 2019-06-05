@@ -504,15 +504,26 @@ std::unique_ptr<PartialProfile> ProfileStore::loadDynamicProfile(const FramesMet
         loadRules();
     }
 
+    const auto get_path =
+        [&](Glib::ustring pth) -> Glib::ustring
+        {
+            auto d = options.findProfilePath(pth);
+            if (Glib::file_test(d, Glib::FILE_TEST_EXISTS)) {
+                return Glib::build_filename(d, Glib::path_get_basename(pth) + paramFileExtension);
+            }
+            return pth;
+        };
+
     for (auto rule : dynamicRules) {
         if (rule.matches(im)) {
+            auto pth = get_path(rule.profilepath);
             if (options.rtSettings.verbose) {
                 printf("found matching profile %s\n", rule.profilepath.c_str());
             }
 
-            FilePartialProfile fp(rule.profilepath);
+            FilePartialProfile fp(pth);
             if (!fp.applyTo(pp)) {
-                printf ("ERROR loading matching profile from: %s\n", rule.profilepath.c_str());
+                printf ("ERROR loading matching profile from: %s\n", pth.c_str());
             }
         }
     }
