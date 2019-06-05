@@ -94,13 +94,13 @@ CropWindow::~CropWindow ()
 
 void CropWindow::initZoomSteps()
 {
-    zoomSteps.push_back(ZoomStep("  1%", 0.01, 999, true));
-    zoomSteps.push_back(ZoomStep("  2%", 0.02, 500, true));
-    zoomSteps.push_back(ZoomStep("  5%", 0.05, 200, true));
-    zoomSteps.push_back(ZoomStep("  6%", 1.0/15.0, 150, true));
-    zoomSteps.push_back(ZoomStep("  8%", 1.0/12.0, 120, true));
+    // zoomSteps.push_back(ZoomStep("  1%", 0.01, 999, true));
+    // zoomSteps.push_back(ZoomStep("  2%", 0.02, 500, true));
+    // zoomSteps.push_back(ZoomStep("  5%", 0.05, 200, true));
+    // zoomSteps.push_back(ZoomStep("  6%", 1.0/15.0, 150, true));
+    // zoomSteps.push_back(ZoomStep("  8%", 1.0/12.0, 120, true));
     char lbl[64];
-    for (int s = 100; s >= 11; --s) {
+    for (int s = 1000; s >= 11; --s) {
         float z = 10./float(s);
         sprintf(lbl, "% 2d%%", int(z * 100));
         bool is_major = (s == s/10 * 10);
