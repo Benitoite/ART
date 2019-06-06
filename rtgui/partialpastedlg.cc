@@ -44,15 +44,15 @@ PartialPasteDlg::PartialPasteDlg(const Glib::ustring &title, Gtk::Window *parent
     Gtk::VBox *vbCol2 = Gtk::manage(new Gtk::VBox());
     Gtk::VBox *vbCol3 = Gtk::manage(new Gtk::VBox());
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
         vbCol1->pack_start(*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
-    for (int i = 3; i < 8; i++) {
+    for (int i = 2; i < 5; i++) {
         vbCol2->pack_start(*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
-    for (int i = 8; i < 9; i++) {
+    for (int i = 5; i < 9; i++) {
         vbCol3->pack_start(*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
@@ -90,8 +90,8 @@ PartialPasteDlg::PartialPasteDlg(const Glib::ustring &title, Gtk::Window *parent
         "PARTIALPASTE_LENSGROUP",
         "PARTIALPASTE_COMPOSITIONGROUP",
         "PARTIALPASTE_LOCALGROUP",
-        "PARTIALPASTE_METAGROUP",
-        "PARTIALPASTE_RAWGROUP"
+        "PARTIALPASTE_RAWGROUP",
+        "PARTIALPASTE_METAGROUP"
     };
     std::vector<Gtk::CheckButton *> gbtns;
     size_t i = 0;
@@ -157,18 +157,18 @@ PartialPasteDlg::PartialPasteDlg(const Glib::ustring &title, Gtk::Window *parent
         {"PARTIALPASTE_SMOOTHING", &pedited_.smoothing, 5},
         {"PARTIALPASTE_EPD", &pedited_.epd, 5},
 
-        {"PARTIALPASTE_METADATA", &pedited_.metadata, 6},
-        {"PARTIALPASTE_EXIFCHANGES", &pedited_.exif, 6},
-        {"PARTIALPASTE_IPTCINFO", &pedited_.iptc, 6},
+        {"PARTIALPASTE_RAW_DEMOSAIC", &pedited_.demosaic, 6},
+        {"PARTIALPASTE_RAW_BLACK", &pedited_.rawBlack, 6},
+        {"PARTIALPASTE_RAW_WHITE", &pedited_.rawWhite, 6},
+        {"PARTIALPASTE_RAW_PREPROCESSING", &pedited_.rawPreprocessing, 6},
+        {"PARTIALPASTE_HOT_DEAD_PIXEL_FILTER", &pedited_.hotDeadPixelFilter, 6},
+        {"PARTIALPASTE_DARKFRAME", &pedited_.darkframe, 6},
+        {"PARTIALPASTE_FLATFIELD", &pedited_.flatfield, 6},
+        {"PARTIALPASTE_RAWCA", &pedited_.rawCA, 6},
 
-        {"PARTIALPASTE_RAW_DEMOSAIC", &pedited_.demosaic, 7},
-        {"PARTIALPASTE_RAW_BLACK", &pedited_.rawBlack, 7},
-        {"PARTIALPASTE_RAW_WHITE", &pedited_.rawWhite, 7},
-        {"PARTIALPASTE_RAW_PREPROCESSING", &pedited_.rawPreprocessing, 7},
-        {"PARTIALPASTE_HOT_DEAD_PIXEL_FILTER", &pedited_.hotDeadPixelFilter, 7},
-        {"PARTIALPASTE_DARKFRAME", &pedited_.darkframe, 7},
-        {"PARTIALPASTE_FLATFIELD", &pedited_.flatfield, 7},
-        {"PARTIALPASTE_RAWCA", &pedited_.rawCA, 7}
+        {"PARTIALPASTE_METADATA", &pedited_.metadata, 7},
+        {"PARTIALPASTE_EXIFCHANGES", &pedited_.exif, 7},
+        {"PARTIALPASTE_IPTCINFO", &pedited_.iptc, 7}
     };
 
     for (const auto &t : toggles) {
