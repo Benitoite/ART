@@ -500,8 +500,8 @@ void Thumbnail::setProcParams(const PartialProfile &pp, int whoChangedIt, bool u
 
     {
         MyMutex::MyLock lock(mutex);
-        ProcParams tmp;
-        pp.applyTo(tmp);
+        ProcParams tmp = pparams;
+        pp.applyTo(pparams);
 
         if (pparams != tmp) {
             cfs.recentlySaved = false;
@@ -511,7 +511,6 @@ void Thumbnail::setProcParams(const PartialProfile &pp, int whoChangedIt, bool u
         }
 
         // do not update rank, colorlabel and inTrash
-        pparams = std::move(tmp);
         pparamsValid = true;
         if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
             saveRating();
