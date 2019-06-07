@@ -24,6 +24,7 @@
 #include "rt_algo.h"
 #include "curves.h"
 #include "labmasks.h"
+#include "sleef.c"
 #include <iostream>
 #include <queue>
 
@@ -39,6 +40,28 @@ enum class Channel {
     LC
 };
 
+
+void guided_filter_log(float base, array2D<float> &chan, int r, float eps, bool multithread)
+{
+#ifdef _OPENMP
+#    pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < chan.height(); ++y) {
+        for (int x = 0; x < chan.width(); ++x) {
+            chan[y][x] = xlin2log(max(chan[y][x], 0.f), base);
+        }
+    }
+    guidedFilter(chan, chan, chan, r, eps, multithread);
+#ifdef _OPENMP
+#    pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < chan.height(); ++y) {
+        for (int x = 0; x < chan.width(); ++x) {
+            chan[y][x] = xlog2lin(max(chan[y][x], 0.f), base);
+        }
+    }
+}
+
 void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
 {
     if (radius > 0 && strength > 0) {
@@ -49,9 +72,12 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         array2D<float> iG(W, H, G, 0);
         array2D<float> iB(W, H, B, 0);
         
-        guidedFilter(R, R, R, r, epsilon, multithread);
-        guidedFilter(G, G, G, r, epsilon, multithread);
-        guidedFilter(B, B, B, r, epsilon, multithread);
+        // guidedFilter(R, R, R, r, epsilon, multithread);
+        // guidedFilter(G, G, G, r, epsilon, multithread);
+        // guidedFilter(B, B, B, r, epsilon, multithread);
+        guided_filter_log(10.f, R, r, epsilon, multithread);
+        guided_filter_log(10.f, G, r, epsilon, multithread);
+        guided_filter_log(10.f, B, r, epsilon, multithread);
 
         const float blend = LIM01(float(strength) / 100.f);
 
