@@ -48,7 +48,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 # Cache name suffix examples: "" = ~/.config/RawTherapee, "5" = ~/.config/RawTherapee-5, "_testing" = ~/.config/RawTherapee_testing
 # Use "" for stable releases and "5-dev" for anything else.
-set(CACHE_NAME_SUFFIX "" CACHE STRING "RawTherapee's cache folder suffix")
+set(CACHE_NAME_SUFFIX "-ART" CACHE STRING "RawTherapee's cache folder suffix")
 
 # By default we don't use a specific processor target, so PROC_TARGET_NUMBER is set to 0.
 # Specify other values to optimize for specific processor architecture as listed in ProcessorTargets.cmake:
