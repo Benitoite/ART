@@ -26,6 +26,7 @@
 #include "color.h"
 #include "iimage.h"
 #include <iostream>
+#include "pixelsmap.h"
 #define HR_SCALE 2
 
 namespace rtengine
@@ -249,11 +250,11 @@ protected:
     );
     void ddct8x8s(int isgn, float a[8][8]);
 
-    int  interpolateBadPixelsBayer( PixelsMap &bitmapBads, array2D<float> &rawData );
-    int  interpolateBadPixelsNColours( PixelsMap &bitmapBads, const int colours );
-    int  interpolateBadPixelsXtrans( PixelsMap &bitmapBads );
-    int  findHotDeadPixels( PixelsMap &bpMap, float thresh, bool findHotPixels, bool findDeadPixels );
-
+    int interpolateBadPixelsBayer(const PixelsMap &bitmapBads, array2D<float> &rawData);
+    int interpolateBadPixelsNColours(const PixelsMap &bitmapBads, int colours);
+    int interpolateBadPixelsXtrans(const PixelsMap &bitmapBads);
+    int findHotDeadPixels(PixelsMap &bpMap, float thresh, bool findHotPixels, bool findDeadPixels) const;
+    int findZeroPixels(PixelsMap &bpMap) const;
     void cfa_linedn (float linenoiselevel, bool horizontal, bool vertical, const CFALineDenoiseRowBlender &rowblender);//Emil's line denoise
 
     void green_equilibrate_global (array2D<float> &rawData);
