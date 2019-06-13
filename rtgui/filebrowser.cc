@@ -1022,7 +1022,7 @@ void FileBrowser::pasteProfile ()
 
         for (unsigned int i = 0; i < mselected.size(); i++) {
             // applying the PartialProfile to the thumb's ProcParams
-            mselected[i]->thumbnail->setProcParams(rtengine::procparams::PEditedPartialProfile(clipboard.getProcParams(), clipboard.getParamsEdited()), FILEBROWSER);
+            mselected[i]->thumbnail->setProcParams(rtengine::procparams::FullPartialProfile(clipboard.getProcParams()), FILEBROWSER);
         }
 
         if (!mselected.empty() && bppcl) {
