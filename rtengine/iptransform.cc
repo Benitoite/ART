@@ -29,8 +29,7 @@
 
 using namespace std;
 
-namespace
-{
+namespace {
 
 float pow3 (float x)
 {
@@ -86,14 +85,30 @@ float normn (float a, float b, int n)
     }
 }
 
-
+template <class T1, class T2>
+inline T1 CLIPTOC(T1 a, T2 b, T2 c, bool &clipped)
+{
+    if (a >= b) {
+        if (a <= c) {
+            return a;
+        } else {
+            clipped = true;
+            return c;
+        }
+    } else {
+        clipped = true;
+        return b;
+    }
 }
+
+} // namespace
 
 namespace rtengine
 {
-#undef CLIPTOC
+// #undef CLIPTOC
 
-#define CLIPTOC(a,b,c,d) ((a)>=(b)?((a)<=(c)?(a):(d=true,(c))):(d=true,(b)))
+// #define CLIPTOC(a,b,c,d) ((a)>=(b)?((a)<=(c)?(a):(d=true,(c))):(d=true,(b)))
+
 
 bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src, std::vector<Coord2D> &red,  std::vector<Coord2D> &green, std::vector<Coord2D> &blue, double ascaleDef,
                                   const LensCorrection *pLCPMap)
