@@ -215,77 +215,56 @@ inline void interpolateTransformChannelsCubic(float** src, int xs, int ys, doubl
 }
 
 
-// // void transform_perspective(const ProcParams *params, Imagefloat *img, Imagefloat *tmp, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
-// // {
-// //     return;
-    
-// //     PerspectiveCorrection pc;
-// //     pc.init(oW, oH, params->perspective);
+void transform_perspective(const ProcParams *params, Imagefloat *orig, Imagefloat *dest, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
+{
+    PerspectiveCorrection pc;
+    pc.init(oW, oH, params->perspective);
 
-// //     int W = img->getWidth();
-// //     int H = img->getHeight();
+    int W = dest->getWidth();
+    int H = dest->getHeight();
+    int orig_W = orig->getWidth();
+    int orig_H = orig->getHeight();
 
-// //     double w2 = (double) oW  / 2.0 - 0.5;
-// //     double h2 = (double) oH  / 2.0 - 0.5;
-    
-// // #ifdef _OPENMP
-// //     #pragma omp parallel for if (multiThread)
-// // #endif
-// //     for (int y = 0; y < H; ++y) {
-// //         for (int x = 0; x < W; ++x) {
-// //             tmp->r(y, x) = img->r(y, x);
-// //             tmp->g(y, x) = img->g(y, x);
-// //             tmp->b(y, x) = img->b(y, x);
-// //         }
-// //     }
-    
-// // #ifdef _OPENMP
-// //     #pragma omp parallel for if (multiThread)
-// // #endif
-// //     for (int y = 0; y < H; ++y) {
-// //         for (int x = 0; x < W; ++x) {
-// //             double Dx = x + cx, Dy = y + cy;
-// //             pc(Dx, Dy);
-// //             Dx -= cx;
-// //             Dy -= cy;
+#ifdef _OPENMP
+    #pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            double Dx = x + cx, Dy = y + cy;
+            pc(Dx, Dy);
+            Dx -= sx;
+            Dy -= sy;
 
-// //             Dx += (cx - w2);     // centering x coord & scale
-// //             Dy += (cy - h2);     // centering y coord & scale
-// //             Dx += w2;
-// //             Dy += h2;
-            
-// //             // Extract integer and fractions of source screen coordinates
-// //             int xc = Dx;
-// //             Dx -= xc;
-// //             xc -= sx;
-// //             int yc = Dy;
-// //             Dy -= yc;
-// //             yc -= sy;
+            // Extract integer and fractions of source screen coordinates
+            int xc = Dx;
+            Dx -= xc;
+            int yc = Dy;
+            Dy -= yc;
 
-// //             // Convert only valid pixels
-// //             if (yc >= 0 && yc < H && xc >= 0 && xc < W) {
-// //                 if (yc > 0 && yc < H - 2 && xc > 0 && xc < W - 2) {
-// //                     // all interpolation pixels inside image
-// //                     interpolateTransformCubic(tmp, xc - 1, yc - 1, Dx, Dy, &(img->r(y, x)), &(img->g(y, x)), &(img->b(y, x)), 1.0);
-// //                 } else {
-// //                     // edge pixels
-// //                     int y1 = LIM (yc, 0, H - 1);
-// //                     int y2 = LIM (yc + 1, 0, H - 1);
-// //                     int x1 = LIM (xc, 0, W - 1);
-// //                     int x2 = LIM (xc + 1, 0, W - 1);
+            // Convert only valid pixels
+            if (yc >= 0 && yc < orig_H && xc >= 0 && xc < orig_W) {
+                if (yc > 0 && yc < orig_H - 2 && xc > 0 && xc < orig_W - 2) {
+                    // all interpolation pixels inside image
+                    interpolateTransformCubic(orig, xc - 1, yc - 1, Dx, Dy, &(dest->r(y, x)), &(dest->g(y, x)), &(dest->b(y, x)), 1.0);
+                } else {
+                    // edge pixels
+                    int y1 = LIM (yc, 0, H - 1);
+                    int y2 = LIM (yc + 1, 0, H - 1);
+                    int x1 = LIM (xc, 0, W - 1);
+                    int x2 = LIM (xc + 1, 0, W - 1);
 
-// //                     img->r(y, x) = (tmp->r (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + tmp->r (y1, x2) * Dx * (1.0 - Dy) + tmp->r (y2, x1) * (1.0 - Dx) * Dy + tmp->r (y2, x2) * Dx * Dy);
-// //                     img->g (y, x) = (tmp->g (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + tmp->g (y1, x2) * Dx * (1.0 - Dy) + tmp->g (y2, x1) * (1.0 - Dx) * Dy + tmp->g (y2, x2) * Dx * Dy);
-// //                     img->b (y, x) = (tmp->b (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + tmp->b (y1, x2) * Dx * (1.0 - Dy) + tmp->b (y2, x1) * (1.0 - Dx) * Dy + tmp->b (y2, x2) * Dx * Dy);
-// //                 }
-// //             } else {
-// //                 img->r(y, x) = 0;
-// //                 img->g(y, x) = 0;
-// //                 img->b(y, x) = 0;
-// //             }
-// //         }
-// //     }
-// // }
+                    dest->r(y, x) = (orig->r (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + orig->r (y1, x2) * Dx * (1.0 - Dy) + orig->r (y2, x1) * (1.0 - Dx) * Dy + orig->r (y2, x2) * Dx * Dy);
+                    dest->g (y, x) = (orig->g (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + orig->g (y1, x2) * Dx * (1.0 - Dy) + orig->g (y2, x1) * (1.0 - Dx) * Dy + orig->g (y2, x2) * Dx * Dy);
+                    dest->b (y, x) = (orig->b (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + orig->b (y1, x2) * Dx * (1.0 - Dy) + orig->b (y2, x1) * (1.0 - Dx) * Dy + orig->b (y2, x2) * Dx * Dy);
+                }
+            } else {
+                dest->r(y, x) = 0;
+                dest->g(y, x) = 0;
+                dest->b(y, x) = 0;
+            }
+        }
+    }
+}
 
 } // namespace
 
@@ -327,25 +306,8 @@ bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src,
     double cost = cos (params->rotate.degree * rtengine::RT_PI / 180.0);
     double sint = sin (params->rotate.degree * rtengine::RT_PI / 180.0);
 
-    // auxiliary variables for vertical perspective correction
-    // double vpdeg = params->perspective.vertical / 100.0 * 45.0;
-    // double vpalpha = (90.0 - vpdeg) / 180.0 * rtengine::RT_PI;
-    // double vpteta  = fabs (vpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((vpdeg > 0 ? 1.0 : -1.0) * sqrt ((-oW * oW * tan (vpalpha) * tan (vpalpha) + (vpdeg > 0 ? 1.0 : -1.0) * oW * tan (vpalpha) * sqrt (16 * maxRadius * maxRadius + oW * oW * tan (vpalpha) * tan (vpalpha))) / (maxRadius * maxRadius * 8)));
-    // double vpcospt = (vpdeg >= 0 ? 1.0 : -1.0) * cos (vpteta), vptanpt = tan (vpteta);
-
-    // auxiliary variables for horizontal perspective correction
-    // double hpdeg = params->perspective.horizontal / 100.0 * 45.0;
-    // double hpalpha = (90.0 - hpdeg) / 180.0 * rtengine::RT_PI;
-    // double hpteta  = fabs (hpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((hpdeg > 0 ? 1.0 : -1.0) * sqrt ((-oH * oH * tan (hpalpha) * tan (hpalpha) + (hpdeg > 0 ? 1.0 : -1.0) * oH * tan (hpalpha) * sqrt (16 * maxRadius * maxRadius + oH * oH * tan (hpalpha) * tan (hpalpha))) / (maxRadius * maxRadius * 8)));
-    // double hpcospt = (hpdeg >= 0 ? 1.0 : -1.0) * cos (hpteta), hptanpt = tan (hpteta);
-
     double ascale = ascaleDef > 0 ? ascaleDef : (params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0);
 
-    PerspectiveCorrection pc;
-    if (needsPerspective()) {
-        pc.init(oW * ascale, oH * ascale, params->perspective);
-    }
-    
     for (size_t i = 0; i < src.size(); i++) {
         double x_d = src[i].x, y_d = src[i].y;
 
@@ -356,19 +318,6 @@ bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src,
             y_d *= ascale;
         }
 
-        // x_d += ascale * (0 - w2);     // centering x coord & scale
-        // y_d += ascale * (0 - h2);     // centering y coord & scale
-
-        if (needsPerspective()) {
-            // // horizontal perspective transformation
-            // y_d *= maxRadius / (maxRadius + x_d * hptanpt);
-            // x_d *= maxRadius * hpcospt / (maxRadius + x_d * hptanpt);
-
-            // // vertical perspective transformation
-            // x_d *= maxRadius / (maxRadius - y_d * vptanpt);
-            // y_d *= maxRadius * vpcospt / (maxRadius - y_d * vptanpt);
-            pc(x_d, y_d);
-        }
         x_d += ascale * (0 - w2);     // centering x coord & scale
         y_d += ascale * (0 - h2);     // centering y coord & scale
 
@@ -529,40 +478,47 @@ void ImProcFunctions::transform (Imagefloat* original, Imagefloat* transformed, 
         }
     }
 
-    if (! (needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsLCP() || needsLensfun()) && (needsVignetting() || needsPCVignetting() || needsGradient())) {
+    bool highQuality = needsCA() && scale == 1;
+    bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
+    bool needs_perspective = needsPerspective();
+    bool needs_luminance = (needsVignetting() || needsPCVignetting() || needsGradient());
+    bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
+    bool needs_transform_general = needs_dist_rot_ca || needs_luminance;
+
+    if (! (needs_dist_rot_ca || needs_perspective) && needs_luminance) {
         transformLuminanceOnly (original, transformed, cx, cy, oW, oH, fW, fH);
     } else {
-        bool highQuality;
         std::unique_ptr<Imagefloat> tmpimg;
         Imagefloat *dest = transformed;
-        if (!needsCA() && scale != 1) {
-            highQuality = false;
+        int dest_x = sx, dest_y = sy;
+        
+        if (needs_lcp_ca || needs_perspective) {
+            tmpimg.reset(new Imagefloat(original->getWidth(), original->getHeight()));
+            dest = tmpimg.get();
+            dest_x = cx;
+            dest_y = cy;
+        }
+        
+        if (needs_transform_general) {
+            transformGeneral(highQuality, original, dest, cx, cy, dest_x, dest_y, oW, oH, fW, fH, pLCPMap.get());
         } else {
-            highQuality = true;
-            // agriggio: CA correction via the lens profile has to be
-            // performed before separately from the the other transformations
-            // (except for the coarse rotation/flipping). In order to not
-            // change the code too much, I simply introduced a new mode
-            // TRANSFORM_HIGH_QUALITY_CA, which applies *only* profile-based
-            // CA correction. So, the correction in this case occurs in two
-            // steps, using an intermediate temporary image. There's room for
-            // optimization of course...
-            if (pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable()) {
-                tmpimg.reset(new Imagefloat(original->getWidth(), original->getHeight()));
-                dest = tmpimg.get();
+            dest = original;
+        }
+        
+        if (needs_lcp_ca) {
+            Imagefloat *out = transformed;
+            if (needs_perspective) {
+                out = new Imagefloat(dest->getWidth(), dest->getHeight());
+            }
+            transformLCPCAOnly(dest, out, cx, cy, pLCPMap.get());
+            if (needs_perspective) {
+                tmpimg.reset(out);
+                dest = out;
             }
         }
-        transformGeneral(highQuality, original, dest, cx, cy, sx, sy, oW, oH, fW, fH, pLCPMap.get());
-        
-        if (highQuality && dest != transformed) {
-            transformLCPCAOnly(dest, transformed, cx, cy, pLCPMap.get());
+        if (needs_perspective) {
+            transform_perspective(params, dest, transformed, cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
         }
-        // if (needsPerspective()) {
-        //     if (!tmpimg || tmpimg->getWidth() != transformed->getWidth() || tmpimg->getHeight() != transformed->getHeight()) {
-        //         tmpimg.reset(new Imagefloat(transformed->getWidth(), transformed->getHeight()));
-        //     }
-        //     transform_perspective(params, transformed, tmpimg.get(), cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
-        // }
     }
 }
 
@@ -963,7 +919,6 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     bool enableGradient = needsGradient();
     bool enablePCVignetting = needsPCVignetting();
     bool enableVignetting = needsVignetting();
-    bool enablePerspective = needsPerspective();
     bool enableDistortion = needsDistortion();
 
     double w2 = (double) oW  / 2.0 - 0.5;
@@ -1007,27 +962,8 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     double cost = cos (params->rotate.degree * rtengine::RT_PI / 180.0);
     double sint = sin (params->rotate.degree * rtengine::RT_PI / 180.0);
 
-    // auxiliary variables for vertical perspective correction
-    // double vpdeg = params->perspective.vertical / 100.0 * 45.0;
-    // double vpalpha = (90.0 - vpdeg) / 180.0 * rtengine::RT_PI;
-    // double vpteta  = fabs (vpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((vpdeg > 0 ? 1.0 : -1.0) * sqrt ((-SQR (oW * tan (vpalpha)) + (vpdeg > 0 ? 1.0 : -1.0) *
-    //                  oW * tan (vpalpha) * sqrt (SQR (4 * maxRadius) + SQR (oW * tan (vpalpha)))) / (SQR (maxRadius) * 8)));
-    // double vpcospt = (vpdeg >= 0 ? 1.0 : -1.0) * cos (vpteta), vptanpt = tan (vpteta);
-
-    // // auxiliary variables for horizontal perspective correction
-    // double hpdeg = params->perspective.horizontal / 100.0 * 45.0;
-    // double hpalpha = (90.0 - hpdeg) / 180.0 * rtengine::RT_PI;
-    // double hpteta  = fabs (hpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((hpdeg > 0 ? 1.0 : -1.0) * sqrt ((-SQR (oH * tan (hpalpha)) + (hpdeg > 0 ? 1.0 : -1.0) *
-    //                  oH * tan (hpalpha) * sqrt (SQR (4 * maxRadius) + SQR (oH * tan (hpalpha)))) / (SQR (maxRadius) * 8)));
-    // double hpcospt = (hpdeg >= 0 ? 1.0 : -1.0) * cos (hpteta), hptanpt = tan (hpteta);
-
     double ascale = params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0;
 
-    PerspectiveCorrection pc;
-    if (enablePerspective) {
-        pc.init(oW * ascale, oH * ascale, params->perspective);
-    }
-    
 #if defined( __GNUC__ ) && __GNUC__ >= 7// silence warning
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
@@ -1052,8 +988,8 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
                 y_d *= ascale;
             }
 
-            // x_d += ascale * (cx - w2);     // centering x coord & scale
-            // y_d += ascale * (cy - h2);     // centering y coord & scale
+            x_d += ascale * (cx - w2);     // centering x coord & scale
+            y_d += ascale * (cy - h2);     // centering y coord & scale
 
             double vig_x_d = 0., vig_y_d = 0.;
 
@@ -1061,24 +997,6 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
                 vig_x_d = ascale * (x + cx - vig_w2);       // centering x coord & scale
                 vig_y_d = ascale * (y + cy - vig_h2);       // centering y coord & scale
             }
-
-            if (enablePerspective) {
-                // // horizontal perspective transformation
-                // y_d *= maxRadius / (maxRadius + x_d * hptanpt);
-                // x_d *= maxRadius * hpcospt / (maxRadius + x_d * hptanpt);
-
-                // // vertical perspective transformation
-                // x_d *= maxRadius / (maxRadius - y_d * vptanpt);
-                // y_d *= maxRadius * vpcospt / (maxRadius - y_d * vptanpt);
-                x_d += cx * ascale;
-                y_d += cy * ascale;
-                pc(x_d, y_d);
-                x_d -= cx;
-                y_d -= cy;
-            }
-
-            x_d += ascale * (cx - w2);     // centering x coord & scale
-            y_d += ascale * (cy - h2);     // centering y coord & scale
 
             // rotate
             double Dxc = x_d * cost - y_d * sint;
