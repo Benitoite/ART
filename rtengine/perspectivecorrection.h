@@ -28,16 +28,21 @@ namespace rtengine {
 class PerspectiveCorrection {
 public:
     PerspectiveCorrection();
-    void init(int width, int height, const procparams::PerspectiveParams &params);
+    void init(int width, int height, const procparams::PerspectiveParams &params, bool fill);
     void operator()(double &x, double &y);
 
 private:
-    void calc_scale(int w, int h, const procparams::PerspectiveParams &params);
+    void correct(double &x, double &y, double scale, double offx, double offy);
+    void calc_scale(int w, int h, const procparams::PerspectiveParams &params, bool fill);
+    bool test_scale(int w, int h, double scale);
     
     bool ok_;
     double scale_;
     double offx_;
     double offy_;
+    double scalein_;
+    double offxin_;
+    double offyin_;
     float ihomograph_[3][3];
 };
 

@@ -218,7 +218,8 @@ inline void interpolateTransformChannelsCubic(float** src, int xs, int ys, doubl
 void transform_perspective(const ProcParams *params, Imagefloat *orig, Imagefloat *dest, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
 {
     PerspectiveCorrection pc;
-    pc.init(oW, oH, params->perspective);
+    pc.init(fW, fH, params->perspective, params->commonTrans.autofill);
+    double s = double(fW) / double(oW);
 
     int W = dest->getWidth();
     int H = dest->getHeight();
@@ -230,8 +231,11 @@ void transform_perspective(const ProcParams *params, Imagefloat *orig, Imagefloa
 #endif
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            double Dx = x + cx, Dy = y + cy;
+            double Dx = (x + cx) * s;
+            double Dy = (y + cy) * s;
             pc(Dx, Dy);
+            Dx /= s;
+            Dy /= s;
             Dx -= sx;
             Dy -= sy;
 
@@ -267,10 +271,6 @@ void transform_perspective(const ProcParams *params, Imagefloat *orig, Imagefloa
 }
 
 } // namespace
-
-// #undef CLIPTOC
-
-// #define CLIPTOC(a,b,c,d) ((a)>=(b)?((a)<=(c)?(a):(d=true,(c))):(d=true,(b)))
 
 
 bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src, std::vector<Coord2D> &red,  std::vector<Coord2D> &green, std::vector<Coord2D> &blue, double ascaleDef,

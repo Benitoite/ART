@@ -342,29 +342,25 @@ PerspectiveCorrection::PerspectiveCorrection():
     ok_(false),
     scale_(1.0),
     offx_(0.0),
-    offy_(0.0)
+    offy_(0.0),
+    scalein_(1.0),
+    offxin_(0.0),
+    offyin_(0.0)
 {
 }
 
 
-void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params)
+void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill)
 {
     const float f_length = 28.f;
     homography((float *)ihomograph_, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, f_length, 0.f, 1.f, width, height, true);
 
     ok_ = true;
-    calc_scale(width, height, params);
-
-    // // TODO -- compute the four corners to recenter the image
-    // float pin[3];
-    // float pout[3] = { 0.f, 0.f, 1.f };
-    // mat3mulv(pin, (float *)ihomograph_, pout);
-    // pin[0] /= pin[2];
-    // pin[1] /= pin[2];
+    calc_scale(width, height, params, fill);
 }
 
 
-void PerspectiveCorrection::operator()(double &x, double &y)
+inline void PerspectiveCorrection::correct(double &x, double &y, double scale, double offx, double offy)
 {
     if (ok_) {       
         float pin[3], pout[3];
@@ -378,24 +374,22 @@ void PerspectiveCorrection::operator()(double &x, double &y)
         mat3mulv(pin, (float *)ihomograph_, pout);
         pin[0] /= pin[2];
         pin[1] /= pin[2];
-        x = pin[0];
-        y = pin[1];
-        // x *= scale_;
-        // y *= scale_;
-        // x += offx_;
-        // y += offy_;
-        // x -= cx;
-        // y -= cy;
+        x = pin[0] * scale + offx;
+        y = pin[1] * scale + offy;
     }
 }
 
 
-void PerspectiveCorrection::calc_scale(int w, int h, const procparams::PerspectiveParams &params)
+void PerspectiveCorrection::operator()(double &x, double &y)
 {
-    float homo[3][3];
-    constexpr float f_length = 28.f;
-    homography((float *)homo, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, f_length, 0.f, 1.f, w, h, false);
-    
+    correct(x, y, scalein_, offxin_, offyin_);
+}
+
+
+namespace {
+
+std::vector<Coord2D> get_samples(int w, int h)
+{
     constexpr int nsteps = 32;
 
     int x1 = 0, y1 = 0;
@@ -436,9 +430,22 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
         corners.push_back(Coord2D(x2, i));
     }
 
+    return corners;
+}
+
+} // namespace
+
+void PerspectiveCorrection::calc_scale(int w, int h, const procparams::PerspectiveParams &params, bool fill)
+{
     double min_x = RT_INFINITY, max_x = -RT_INFINITY;
     double min_y = RT_INFINITY, max_y = -RT_INFINITY;
 
+    auto corners = get_samples(w, h);
+
+    float homo[3][3];
+    constexpr float f_length = 28.f;
+    homography((float *)homo, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, f_length, 0.f, 1.f, w, h, false);
+    
     for (auto &c : corners) {
         float pin[3] = { float(c.x), float(c.y), 1.f };
         float pout[3];
@@ -457,6 +464,41 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
     scale_ = max(cw / double(w), ch / double(h));
     offx_ = (cw - w * scale_) * 0.5;
     offy_ = (ch - h * scale_) * 0.5;
+
+    if (fill) {
+        double scaleU = 2, scaleL = 0.001;  // upper and lower border, iterate inbetween
+        do {
+            double scale = (scaleU + scaleL) * 0.5;
+            bool clipped = test_scale(w, h, scale);
+
+            if (clipped) {
+                scaleU = scale;
+            } else {
+                scaleL = scale;
+            }
+        } while (scaleU - scaleL > 0.001);
+
+        scalein_ = scaleL;
+        offxin_ = (w - scalein_ * w) * 0.5;
+        offyin_ = (h - scalein_ * h) * 0.5;
+        return;
+    }
+}
+
+
+bool PerspectiveCorrection::test_scale(int w, int h, double scale)
+{
+    auto samples = get_samples(w, h);
+    double offx = (w - scale * w) * 0.5;
+    double offy = (h - scale * h) * 0.5;
+    for (auto &s : samples) {
+        int x = s.x, y = s.y;
+        correct(s.x, s.y, scale, offx, offy);
+        if (s.x < 0 || s.x > w - 1 || s.y < 0 || s.y > h - 1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace rtengine
