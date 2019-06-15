@@ -1912,8 +1912,10 @@ TP_PCVIGNETTE_ROUNDNESS;Roundness
 TP_PCVIGNETTE_ROUNDNESS_TOOLTIP;Roundness:\n0 = rectangle,\n50 = fitted ellipse,\n100 = circle.
 TP_PCVIGNETTE_STRENGTH;Strength
 TP_PCVIGNETTE_STRENGTH_TOOLTIP;Filter strength in stops (reached in corners).
+TP_PERSPECTIVE_ANGLE;Angle
 TP_PERSPECTIVE_HORIZONTAL;Horizontal
 TP_PERSPECTIVE_LABEL;Perspective
+TP_PERSPECTIVE_SHEAR;Shear
 TP_PERSPECTIVE_VERTICAL;Vertical
 TP_PFCURVE_CURVEEDITOR_CH;Hue
 TP_PFCURVE_CURVEEDITOR_CH_TOOLTIP;Controls defringe strength by color.\nHigher = more,\nLower = less.

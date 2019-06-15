@@ -41,10 +41,10 @@ PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("
     angle->setAdjusterListener(this);
     shear->setAdjusterListener(this);
 
+    pack_start(*angle);
     pack_start (*horiz);
     pack_start (*vert);
     pack_start(*shear);
-    pack_start(*angle);
 
     horiz->setLogScale(2, 0);
     vert->setLogScale(2, 0);
