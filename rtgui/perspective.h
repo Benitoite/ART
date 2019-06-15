@@ -30,6 +30,8 @@ class PerspCorrection : public ToolParamBlock, public AdjusterListener, public F
 protected:
     Adjuster* horiz;
     Adjuster* vert;
+    Adjuster *angle;
+    Adjuster *shear;
 
 public:
 

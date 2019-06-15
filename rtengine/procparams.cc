@@ -1307,7 +1307,9 @@ LensProfParams::LcMode LensProfParams::getMethodNumber(const Glib::ustring& mode
 
 PerspectiveParams::PerspectiveParams() :
     horizontal(0.0),
-    vertical(0.0)
+    vertical(0.0),
+    angle(0.0),
+    shear(0.0)
 {
 }
 
@@ -1315,7 +1317,9 @@ bool PerspectiveParams::operator ==(const PerspectiveParams& other) const
 {
     return
         horizontal == other.horizontal
-        && vertical == other.vertical;
+        && vertical == other.vertical
+        && angle == other.angle
+        && shear == other.shear;
 }
 
 bool PerspectiveParams::operator !=(const PerspectiveParams& other) const
@@ -2531,6 +2535,8 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         if (RELEVANT_(perspective)) {
             saveToKeyfile("Perspective", "Horizontal", perspective.horizontal, keyFile);
             saveToKeyfile("Perspective", "Vertical", perspective.vertical, keyFile);
+            saveToKeyfile("Perspective", "Angle", perspective.angle, keyFile);
+            saveToKeyfile("Perspective", "Shear", perspective.shear, keyFile);
         }
 
 // Gradient
@@ -3398,6 +3404,8 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         if (keyFile.has_group("Perspective") && RELEVANT_(perspective)) {
             assignFromKeyfile(keyFile, "Perspective", "Horizontal", perspective.horizontal);
             assignFromKeyfile(keyFile, "Perspective", "Vertical", perspective.vertical);
+            assignFromKeyfile(keyFile, "Perspective", "Angle", perspective.angle);
+            assignFromKeyfile(keyFile, "Perspective", "Shear", perspective.shear);
         }
 
         if (keyFile.has_group("Gradient") && RELEVANT_(gradient)) {

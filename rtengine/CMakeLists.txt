@@ -139,6 +139,7 @@ set(RTENGINESOURCEFILES
     iptonemapping.cc
     metadata.cc
     iplabadjustments.cc
+    perspectivecorrection.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)

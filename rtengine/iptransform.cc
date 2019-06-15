@@ -25,9 +25,12 @@
 #include "rt_math.h"
 #include "sleef.c"
 #include "rtlensfun.h"
+#include "perspectivecorrection.h"
 
 
 using namespace std;
+
+namespace rtengine {
 
 namespace {
 
@@ -101,10 +104,191 @@ inline T1 CLIPTOC(T1 a, T2 b, T2 c, bool &clipped)
     }
 }
 
+inline void interpolateTransformCubic(Imagefloat* src, int xs, int ys, double Dx, double Dy, float *r, float *g, float *b, double mul)
+{
+    const double A = -0.85;
+
+    double w[4];
+
+    {
+        double t1, t2;
+        t1 = -A * (Dx - 1.0) * Dx;
+        t2 = (3.0 - 2.0 * Dx) * Dx * Dx;
+        w[3] = t1 * Dx;
+        w[2] = t1 * (Dx - 1.0) + t2;
+        w[1] = -t1 * Dx + 1.0 - t2;
+        w[0] = -t1 * (Dx - 1.0);
+    }
+
+    double rd, gd, bd;
+    double yr[4] = {0.0}, yg[4] = {0.0}, yb[4] = {0.0};
+
+    for (int k = ys, kx = 0; k < ys + 4; k++, kx++) {
+        rd = gd = bd = 0.0;
+
+        for (int i = xs, ix = 0; i < xs + 4; i++, ix++) {
+            rd += src->r(k, i) * w[ix];
+            gd += src->g(k, i) * w[ix];
+            bd += src->b(k, i) * w[ix];
+        }
+
+        yr[kx] = rd;
+        yg[kx] = gd;
+        yb[kx] = bd;
+    }
+
+
+    {
+        double t1, t2;
+
+        t1 = -A * (Dy - 1.0) * Dy;
+        t2 = (3.0 - 2.0 * Dy) * Dy * Dy;
+        w[3] = t1 * Dy;
+        w[2] = t1 * (Dy - 1.0) + t2;
+        w[1] = -t1 * Dy + 1.0 - t2;
+        w[0] = -t1 * (Dy - 1.0);
+    }
+
+    rd = gd = bd = 0.0;
+
+    for (int i = 0; i < 4; i++) {
+        rd += yr[i] * w[i];
+        gd += yg[i] * w[i];
+        bd += yb[i] * w[i];
+    }
+
+    *r = rd * mul;
+    *g = gd * mul;
+    *b = bd * mul;
+
+    //  if (xs==100 && ys==100)
+    //    printf ("r=%g, g=%g\n", *r, *g);
+}
+
+inline void interpolateTransformChannelsCubic(float** src, int xs, int ys, double Dx, double Dy, float *r, double mul)
+{
+    const double A = -0.85;
+
+    double w[4];
+
+    {
+        double t1, t2;
+        t1 = -A * (Dx - 1.0) * Dx;
+        t2 = (3.0 - 2.0 * Dx) * Dx * Dx;
+        w[3] = t1 * Dx;
+        w[2] = t1 * (Dx - 1.0) + t2;
+        w[1] = -t1 * Dx + 1.0 - t2;
+        w[0] = -t1 * (Dx - 1.0);
+    }
+
+    double rd;
+    double yr[4] = {0.0};
+
+    for (int k = ys, kx = 0; k < ys + 4; k++, kx++) {
+        rd = 0.0;
+
+        for (int i = xs, ix = 0; i < xs + 4; i++, ix++) {
+            rd += src[k][i] * w[ix];
+        }
+
+        yr[kx] = rd;
+    }
+
+
+    {
+        double t1, t2;
+        t1 = -A * (Dy - 1.0) * Dy;
+        t2 = (3.0 - 2.0 * Dy) * Dy * Dy;
+        w[3] = t1 * Dy;
+        w[2] = t1 * (Dy - 1.0) + t2;
+        w[1] = -t1 * Dy + 1.0 - t2;
+        w[0] = -t1 * (Dy - 1.0);
+    }
+
+    rd = 0.0;
+
+    for (int i = 0; i < 4; i++) {
+        rd += yr[i] * w[i];
+    }
+
+    *r = rd * mul;
+}
+
+
+// // void transform_perspective(const ProcParams *params, Imagefloat *img, Imagefloat *tmp, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
+// // {
+// //     return;
+    
+// //     PerspectiveCorrection pc;
+// //     pc.init(oW, oH, params->perspective);
+
+// //     int W = img->getWidth();
+// //     int H = img->getHeight();
+
+// //     double w2 = (double) oW  / 2.0 - 0.5;
+// //     double h2 = (double) oH  / 2.0 - 0.5;
+    
+// // #ifdef _OPENMP
+// //     #pragma omp parallel for if (multiThread)
+// // #endif
+// //     for (int y = 0; y < H; ++y) {
+// //         for (int x = 0; x < W; ++x) {
+// //             tmp->r(y, x) = img->r(y, x);
+// //             tmp->g(y, x) = img->g(y, x);
+// //             tmp->b(y, x) = img->b(y, x);
+// //         }
+// //     }
+    
+// // #ifdef _OPENMP
+// //     #pragma omp parallel for if (multiThread)
+// // #endif
+// //     for (int y = 0; y < H; ++y) {
+// //         for (int x = 0; x < W; ++x) {
+// //             double Dx = x + cx, Dy = y + cy;
+// //             pc(Dx, Dy);
+// //             Dx -= cx;
+// //             Dy -= cy;
+
+// //             Dx += (cx - w2);     // centering x coord & scale
+// //             Dy += (cy - h2);     // centering y coord & scale
+// //             Dx += w2;
+// //             Dy += h2;
+            
+// //             // Extract integer and fractions of source screen coordinates
+// //             int xc = Dx;
+// //             Dx -= xc;
+// //             xc -= sx;
+// //             int yc = Dy;
+// //             Dy -= yc;
+// //             yc -= sy;
+
+// //             // Convert only valid pixels
+// //             if (yc >= 0 && yc < H && xc >= 0 && xc < W) {
+// //                 if (yc > 0 && yc < H - 2 && xc > 0 && xc < W - 2) {
+// //                     // all interpolation pixels inside image
+// //                     interpolateTransformCubic(tmp, xc - 1, yc - 1, Dx, Dy, &(img->r(y, x)), &(img->g(y, x)), &(img->b(y, x)), 1.0);
+// //                 } else {
+// //                     // edge pixels
+// //                     int y1 = LIM (yc, 0, H - 1);
+// //                     int y2 = LIM (yc + 1, 0, H - 1);
+// //                     int x1 = LIM (xc, 0, W - 1);
+// //                     int x2 = LIM (xc + 1, 0, W - 1);
+
+// //                     img->r(y, x) = (tmp->r (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + tmp->r (y1, x2) * Dx * (1.0 - Dy) + tmp->r (y2, x1) * (1.0 - Dx) * Dy + tmp->r (y2, x2) * Dx * Dy);
+// //                     img->g (y, x) = (tmp->g (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + tmp->g (y1, x2) * Dx * (1.0 - Dy) + tmp->g (y2, x1) * (1.0 - Dx) * Dy + tmp->g (y2, x2) * Dx * Dy);
+// //                     img->b (y, x) = (tmp->b (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + tmp->b (y1, x2) * Dx * (1.0 - Dy) + tmp->b (y2, x1) * (1.0 - Dx) * Dy + tmp->b (y2, x2) * Dx * Dy);
+// //                 }
+// //             } else {
+// //                 img->r(y, x) = 0;
+// //                 img->g(y, x) = 0;
+// //                 img->b(y, x) = 0;
+// //             }
+// //         }
+// //     }
+// // }
+
 } // namespace
 
-namespace rtengine
-{
 // #undef CLIPTOC
 
 // #define CLIPTOC(a,b,c,d) ((a)>=(b)?((a)<=(c)?(a):(d=true,(c))):(d=true,(b)))
@@ -144,19 +328,24 @@ bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src,
     double sint = sin (params->rotate.degree * rtengine::RT_PI / 180.0);
 
     // auxiliary variables for vertical perspective correction
-    double vpdeg = params->perspective.vertical / 100.0 * 45.0;
-    double vpalpha = (90.0 - vpdeg) / 180.0 * rtengine::RT_PI;
-    double vpteta  = fabs (vpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((vpdeg > 0 ? 1.0 : -1.0) * sqrt ((-oW * oW * tan (vpalpha) * tan (vpalpha) + (vpdeg > 0 ? 1.0 : -1.0) * oW * tan (vpalpha) * sqrt (16 * maxRadius * maxRadius + oW * oW * tan (vpalpha) * tan (vpalpha))) / (maxRadius * maxRadius * 8)));
-    double vpcospt = (vpdeg >= 0 ? 1.0 : -1.0) * cos (vpteta), vptanpt = tan (vpteta);
+    // double vpdeg = params->perspective.vertical / 100.0 * 45.0;
+    // double vpalpha = (90.0 - vpdeg) / 180.0 * rtengine::RT_PI;
+    // double vpteta  = fabs (vpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((vpdeg > 0 ? 1.0 : -1.0) * sqrt ((-oW * oW * tan (vpalpha) * tan (vpalpha) + (vpdeg > 0 ? 1.0 : -1.0) * oW * tan (vpalpha) * sqrt (16 * maxRadius * maxRadius + oW * oW * tan (vpalpha) * tan (vpalpha))) / (maxRadius * maxRadius * 8)));
+    // double vpcospt = (vpdeg >= 0 ? 1.0 : -1.0) * cos (vpteta), vptanpt = tan (vpteta);
 
     // auxiliary variables for horizontal perspective correction
-    double hpdeg = params->perspective.horizontal / 100.0 * 45.0;
-    double hpalpha = (90.0 - hpdeg) / 180.0 * rtengine::RT_PI;
-    double hpteta  = fabs (hpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((hpdeg > 0 ? 1.0 : -1.0) * sqrt ((-oH * oH * tan (hpalpha) * tan (hpalpha) + (hpdeg > 0 ? 1.0 : -1.0) * oH * tan (hpalpha) * sqrt (16 * maxRadius * maxRadius + oH * oH * tan (hpalpha) * tan (hpalpha))) / (maxRadius * maxRadius * 8)));
-    double hpcospt = (hpdeg >= 0 ? 1.0 : -1.0) * cos (hpteta), hptanpt = tan (hpteta);
+    // double hpdeg = params->perspective.horizontal / 100.0 * 45.0;
+    // double hpalpha = (90.0 - hpdeg) / 180.0 * rtengine::RT_PI;
+    // double hpteta  = fabs (hpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((hpdeg > 0 ? 1.0 : -1.0) * sqrt ((-oH * oH * tan (hpalpha) * tan (hpalpha) + (hpdeg > 0 ? 1.0 : -1.0) * oH * tan (hpalpha) * sqrt (16 * maxRadius * maxRadius + oH * oH * tan (hpalpha) * tan (hpalpha))) / (maxRadius * maxRadius * 8)));
+    // double hpcospt = (hpdeg >= 0 ? 1.0 : -1.0) * cos (hpteta), hptanpt = tan (hpteta);
 
     double ascale = ascaleDef > 0 ? ascaleDef : (params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0);
 
+    PerspectiveCorrection pc;
+    if (needsPerspective()) {
+        pc.init(oW * ascale, oH * ascale, params->perspective);
+    }
+    
     for (size_t i = 0; i < src.size(); i++) {
         double x_d = src[i].x, y_d = src[i].y;
 
@@ -167,18 +356,21 @@ bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src,
             y_d *= ascale;
         }
 
-        x_d += ascale * (0 - w2);     // centering x coord & scale
-        y_d += ascale * (0 - h2);     // centering y coord & scale
+        // x_d += ascale * (0 - w2);     // centering x coord & scale
+        // y_d += ascale * (0 - h2);     // centering y coord & scale
 
         if (needsPerspective()) {
-            // horizontal perspective transformation
-            y_d *= maxRadius / (maxRadius + x_d * hptanpt);
-            x_d *= maxRadius * hpcospt / (maxRadius + x_d * hptanpt);
+            // // horizontal perspective transformation
+            // y_d *= maxRadius / (maxRadius + x_d * hptanpt);
+            // x_d *= maxRadius * hpcospt / (maxRadius + x_d * hptanpt);
 
-            // vertical perspective transformation
-            x_d *= maxRadius / (maxRadius - y_d * vptanpt);
-            y_d *= maxRadius * vpcospt / (maxRadius - y_d * vptanpt);
+            // // vertical perspective transformation
+            // x_d *= maxRadius / (maxRadius - y_d * vptanpt);
+            // y_d *= maxRadius * vpcospt / (maxRadius - y_d * vptanpt);
+            pc(x_d, y_d);
         }
+        x_d += ascale * (0 - w2);     // centering x coord & scale
+        y_d += ascale * (0 - h2);     // centering y coord & scale
 
         // rotate
         double Dx = x_d * cost - y_d * sint;
@@ -365,6 +557,12 @@ void ImProcFunctions::transform (Imagefloat* original, Imagefloat* transformed, 
         if (highQuality && dest != transformed) {
             transformLCPCAOnly(dest, transformed, cx, cy, pLCPMap.get());
         }
+        // if (needsPerspective()) {
+        //     if (!tmpimg || tmpimg->getWidth() != transformed->getWidth() || tmpimg->getHeight() != transformed->getHeight()) {
+        //         tmpimg.reset(new Imagefloat(transformed->getWidth(), transformed->getHeight()));
+        //     }
+        //     transform_perspective(params, transformed, tmpimg.get(), cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
+        // }
     }
 }
 
@@ -810,21 +1008,26 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     double sint = sin (params->rotate.degree * rtengine::RT_PI / 180.0);
 
     // auxiliary variables for vertical perspective correction
-    double vpdeg = params->perspective.vertical / 100.0 * 45.0;
-    double vpalpha = (90.0 - vpdeg) / 180.0 * rtengine::RT_PI;
-    double vpteta  = fabs (vpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((vpdeg > 0 ? 1.0 : -1.0) * sqrt ((-SQR (oW * tan (vpalpha)) + (vpdeg > 0 ? 1.0 : -1.0) *
-                     oW * tan (vpalpha) * sqrt (SQR (4 * maxRadius) + SQR (oW * tan (vpalpha)))) / (SQR (maxRadius) * 8)));
-    double vpcospt = (vpdeg >= 0 ? 1.0 : -1.0) * cos (vpteta), vptanpt = tan (vpteta);
+    // double vpdeg = params->perspective.vertical / 100.0 * 45.0;
+    // double vpalpha = (90.0 - vpdeg) / 180.0 * rtengine::RT_PI;
+    // double vpteta  = fabs (vpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((vpdeg > 0 ? 1.0 : -1.0) * sqrt ((-SQR (oW * tan (vpalpha)) + (vpdeg > 0 ? 1.0 : -1.0) *
+    //                  oW * tan (vpalpha) * sqrt (SQR (4 * maxRadius) + SQR (oW * tan (vpalpha)))) / (SQR (maxRadius) * 8)));
+    // double vpcospt = (vpdeg >= 0 ? 1.0 : -1.0) * cos (vpteta), vptanpt = tan (vpteta);
 
-    // auxiliary variables for horizontal perspective correction
-    double hpdeg = params->perspective.horizontal / 100.0 * 45.0;
-    double hpalpha = (90.0 - hpdeg) / 180.0 * rtengine::RT_PI;
-    double hpteta  = fabs (hpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((hpdeg > 0 ? 1.0 : -1.0) * sqrt ((-SQR (oH * tan (hpalpha)) + (hpdeg > 0 ? 1.0 : -1.0) *
-                     oH * tan (hpalpha) * sqrt (SQR (4 * maxRadius) + SQR (oH * tan (hpalpha)))) / (SQR (maxRadius) * 8)));
-    double hpcospt = (hpdeg >= 0 ? 1.0 : -1.0) * cos (hpteta), hptanpt = tan (hpteta);
+    // // auxiliary variables for horizontal perspective correction
+    // double hpdeg = params->perspective.horizontal / 100.0 * 45.0;
+    // double hpalpha = (90.0 - hpdeg) / 180.0 * rtengine::RT_PI;
+    // double hpteta  = fabs (hpalpha - rtengine::RT_PI / 2) < 3e-4 ? 0.0 : acos ((hpdeg > 0 ? 1.0 : -1.0) * sqrt ((-SQR (oH * tan (hpalpha)) + (hpdeg > 0 ? 1.0 : -1.0) *
+    //                  oH * tan (hpalpha) * sqrt (SQR (4 * maxRadius) + SQR (oH * tan (hpalpha)))) / (SQR (maxRadius) * 8)));
+    // double hpcospt = (hpdeg >= 0 ? 1.0 : -1.0) * cos (hpteta), hptanpt = tan (hpteta);
 
     double ascale = params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0;
 
+    PerspectiveCorrection pc;
+    if (enablePerspective) {
+        pc.init(oW * ascale, oH * ascale, params->perspective);
+    }
+    
 #if defined( __GNUC__ ) && __GNUC__ >= 7// silence warning
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
@@ -849,8 +1052,8 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
                 y_d *= ascale;
             }
 
-            x_d += ascale * (cx - w2);     // centering x coord & scale
-            y_d += ascale * (cy - h2);     // centering y coord & scale
+            // x_d += ascale * (cx - w2);     // centering x coord & scale
+            // y_d += ascale * (cy - h2);     // centering y coord & scale
 
             double vig_x_d = 0., vig_y_d = 0.;
 
@@ -860,14 +1063,22 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
             }
 
             if (enablePerspective) {
-                // horizontal perspective transformation
-                y_d *= maxRadius / (maxRadius + x_d * hptanpt);
-                x_d *= maxRadius * hpcospt / (maxRadius + x_d * hptanpt);
+                // // horizontal perspective transformation
+                // y_d *= maxRadius / (maxRadius + x_d * hptanpt);
+                // x_d *= maxRadius * hpcospt / (maxRadius + x_d * hptanpt);
 
-                // vertical perspective transformation
-                x_d *= maxRadius / (maxRadius - y_d * vptanpt);
-                y_d *= maxRadius * vpcospt / (maxRadius - y_d * vptanpt);
+                // // vertical perspective transformation
+                // x_d *= maxRadius / (maxRadius - y_d * vptanpt);
+                // y_d *= maxRadius * vpcospt / (maxRadius - y_d * vptanpt);
+                x_d += cx * ascale;
+                y_d += cy * ascale;
+                pc(x_d, y_d);
+                x_d -= cx;
+                y_d -= cy;
             }
+
+            x_d += ascale * (cx - w2);     // centering x coord & scale
+            y_d += ascale * (cy - h2);     // centering y coord & scale
 
             // rotate
             double Dxc = x_d * cost - y_d * sint;

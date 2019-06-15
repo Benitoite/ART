@@ -799,6 +799,8 @@ struct LensProfParams {
 struct PerspectiveParams {
     double  horizontal;
     double  vertical;
+    double angle;
+    double shear;
 
     PerspectiveParams();
 
