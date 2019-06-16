@@ -24,6 +24,7 @@ using namespace rtengine::procparams;
 
 PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("TP_PERSPECTIVE_LABEL"))
 {
+    lgl = nullptr;
 
     Gtk::Image* ipersHL =   Gtk::manage (new RTImage ("perspective-horizontal-left-small.png"));
     Gtk::Image* ipersHR =   Gtk::manage (new RTImage ("perspective-horizontal-right-small.png"));
@@ -49,12 +50,38 @@ PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("
     horiz->setLogScale(2, 0);
     vert->setLogScale(2, 0);
 
+    auto_horiz = Gtk::manage(new Gtk::Button());
+    auto_horiz->add(*Gtk::manage(new RTImage("perspective-horizontal-left.png")));
+    auto_horiz->get_style_context()->add_class("independent");
+
+    auto_vert = Gtk::manage(new Gtk::Button());
+    auto_vert->add(*Gtk::manage(new RTImage("perspective-vertical-top.png")));
+    auto_vert->get_style_context()->add_class("independent");
+
+    auto_both = Gtk::manage(new Gtk::Button());
+    auto_both->add(*Gtk::manage(new RTImage("perspective-horizontal-vertical.png")));
+    auto_both->get_style_context()->add_class("independent");
+
+    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start(*auto_horiz);
+    hb->pack_start(*auto_vert);
+    hb->pack_start(*auto_both);
+    auto_horiz->show();
+    auto_vert->show();
+    auto_both->show();
+
+    auto_horiz->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &PerspCorrection::autoPressed), auto_horiz));
+    auto_vert->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &PerspCorrection::autoPressed), auto_vert));
+    auto_both->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &PerspCorrection::autoPressed), auto_both));
+
+    pack_start(*hb, Gtk::PACK_EXPAND_WIDGET, 4);
+    hb->show();
+    
     show_all();
 }
 
 void PerspCorrection::read(const ProcParams* pp)
 {
-
     disableListener ();
 
     horiz->setValue (pp->perspective.horizontal);
@@ -67,7 +94,6 @@ void PerspCorrection::read(const ProcParams* pp)
 
 void PerspCorrection::write(ProcParams* pp)
 {
-
     pp->perspective.horizontal  = horiz->getValue ();
     pp->perspective.vertical = vert->getValue ();
     pp->perspective.angle = angle->getValue();
@@ -104,3 +130,34 @@ void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
     shear->trimValue(pp->perspective.shear);
 }
 
+
+void PerspCorrection::autoPressed(Gtk::Button *which)
+{
+    if (!lgl) {
+        return;
+    }
+    
+    double a, h, v, s;
+    bool hh = false;
+    bool vv = false;
+
+    if (which == auto_horiz) {
+        hh = true;
+    } else if (which == auto_vert) {
+        vv = true;
+    } else if (which == auto_both) {
+        hh = true;
+        vv = true;
+    }
+
+    lgl->autoPerspectiveRequested(hh, vv, a, h, v, s);
+
+    disableListener();
+    angle->setValue(a);
+    horiz->setValue(h);
+    vert->setValue(v);
+    shear->setValue(s);
+    enableListener();
+
+    adjusterChanged(nullptr, 0);
+}

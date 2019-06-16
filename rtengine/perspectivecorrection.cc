@@ -44,12 +44,57 @@
 
 
 #include "perspectivecorrection.h"
+#include "improcfun.h"
 #include "rt_math.h"
 #include <string.h>
 #include <math.h>
+#include <assert.h>
+#include <inttypes.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
-extern "C" {
+#include "../rtgui/threadutils.h"
+#include "settings.h"
 
+namespace rtengine { extern const Settings *settings; }
+
+#define _(msg) (msg)
+#define dt_control_log(msg) \
+    if (settings->verbose) { \
+        printf("%s\n", msg);       \
+        fflush(stdout);            \
+    }
+
+
+namespace rtengine {
+
+namespace {
+
+#define ROTATION_RANGE 10                   // allowed min/max default range for rotation parameter
+#define ROTATION_RANGE_SOFT 20              // allowed min/max range for rotation parameter with manual adjustment
+#define LENSSHIFT_RANGE 0.5                 // allowed min/max default range for lensshift parameters
+#define LENSSHIFT_RANGE_SOFT 1              // allowed min/max range for lensshift parameters with manual adjustment
+#define SHEAR_RANGE 0.2                     // allowed min/max range for shear parameter
+#define SHEAR_RANGE_SOFT 0.5                // allowed min/max range for shear parameter with manual adjustment
+#define MIN_LINE_LENGTH 5                   // the minimum length of a line in pixels to be regarded as relevant
+#define MAX_TANGENTIAL_DEVIATION 30         // by how many degrees a line may deviate from the +/-180 and +/-90 to be regarded as relevant
+#define LSD_SCALE 0.99                      // LSD: scaling factor for line detection
+#define LSD_SIGMA_SCALE 0.6                 // LSD: sigma for Gaussian filter is computed as sigma = sigma_scale/scale
+#define LSD_QUANT 2.0                       // LSD: bound to the quantization error on the gradient norm
+#define LSD_ANG_TH 22.5                     // LSD: gradient angle tolerance in degrees
+#define LSD_LOG_EPS 0.0                     // LSD: detection threshold: -log10(NFA) > log_eps
+#define LSD_DENSITY_TH 0.7                  // LSD: minimal density of region points in rectangle
+#define LSD_N_BINS 1024                     // LSD: number of bins in pseudo-ordering of gradient modulus
+#define LSD_GAMMA 0.45                      // gamma correction to apply on raw images prior to line detection
+#define RANSAC_RUNS 400                     // how many iterations to run in ransac
+#define RANSAC_EPSILON 2                    // starting value for ransac epsilon (in -log10 units)
+#define RANSAC_EPSILON_STEP 1               // step size of epsilon optimization (log10 units)
+#define RANSAC_ELIMINATION_RATIO 60         // percentage of lines we try to eliminate as outliers
+#define RANSAC_OPTIMIZATION_STEPS 5         // home many steps to optimize epsilon
+#define RANSAC_OPTIMIZATION_DRY_RUNS 50     // how man runs per optimization steps
+#define RANSAC_HURDLE 5                     // hurdle rate: the number of lines below which we do a complete permutation instead of random sampling
+#define MINIMUM_FITLINES 4                  // minimum number of lines needed for automatic parameter fit
 #define NMS_EPSILON 1e-3                    // break criterion for Nelder-Mead simplex
 #define NMS_SCALE 1.0                       // scaling factor for Nelder-Mead simplex
 #define NMS_ITERATIONS 400                  // number of iterations for Nelder-Mead simplex
@@ -60,45 +105,6 @@ extern "C" {
 #define NMS_BETA 0.5                        // contraction coefficient for Nelder-Mead simplex
 #define NMS_GAMMA 2.0                       // expansion coefficient for Nelder-Mead simplex
 #define DEFAULT_F_LENGTH 28.0               // focal length we assume if no exif data are available
-
-
-#include "ashift_lsd.c"
-#include "ashift_nmsimplex.c"
-
-} // extern "C"
-
-namespace rtengine {
-
-namespace {
-
-#define MAT3SWAP(a, b) { float (*tmp)[3] = (a); (a) = (b); (b) = tmp; }
-//#define CLAMP(v, lo, hi) LIM((v), (lo), (hi))
-
-// multiply 3x3 matrix with 3x1 vector
-// dst needs to be different from v
-inline void mat3mulv(float *dst, const float *const mat, const float *const v)
-{
-    for(int k = 0; k < 3; k++)
-    {
-        float x = 0.0f;
-        for(int i = 0; i < 3; i++) x += mat[3 * k + i] * v[i];
-        dst[k] = x;
-    }
-}
-
-
-// multiply two 3x3 matrices
-// dst needs to be different from m1 and m2
-inline void mat3mul(float *dst, const float *const m1, const float *const m2)
-{
-    for(int k = 0; k < 3; k++) {
-        for(int i = 0; i < 3; i++) {
-            float x = 0.0f;
-            for(int j = 0; j < 3; j++) x += m1[3 * k + j] * m2[3 * j + i];
-            dst[3 * k + i] = x;
-        }
-    }
-}
 
 
 inline int mat3inv(float *const dst, const float *const src)
@@ -123,217 +129,8 @@ inline int mat3inv(float *const dst, const float *const src)
 }
 
 
-void homography(float *homograph, const float angle, const float shift_v, const float shift_h,
-                const float shear, const float f_length_kb, const float orthocorr, const float aspect,
-                const int width, const int height, bool reverse)
-{
-    // calculate homograph that combines all translations, rotations
-    // and warping into one single matrix operation.
-    // this is heavily leaning on ShiftN where the homographic matrix expects
-    // input in (y : x : 1) format. in the darktable world we want to keep the
-    // (x : y : 1) convention. therefore we need to flip coordinates first and
-    // make sure that output is in correct format after corrections are applied.
-
-    const float u = width;
-    const float v = height;
-
-    const float phi = RT_PI_F * angle / 180.0f;
-    const float cosi = cos(phi);
-    const float sini = sin(phi);
-    const float ascale = sqrt(aspect);
-
-    // most of this comes from ShiftN
-    const float f_global = f_length_kb;
-    const float horifac = 1.0f - orthocorr / 100.0f;
-    const float exppa_v = exp(shift_v);
-    const float fdb_v = f_global / (14.4f + (v / u - 1) * 7.2f);
-    const float rad_v = fdb_v * (exppa_v - 1.0f) / (exppa_v + 1.0f);
-    const float alpha_v = CLAMP(atanf(rad_v), -1.5f, 1.5f);
-    const float rt_v = sin(0.5f * alpha_v);
-    const float r_v = fmax(0.1f, 2.0f * (horifac - 1.0f) * rt_v * rt_v + 1.0f);
-
-    const float vertifac = 1.0f - orthocorr / 100.0f;
-    const float exppa_h = exp(shift_h);
-    const float fdb_h = f_global / (14.4f + (u / v - 1) * 7.2f);
-    const float rad_h = fdb_h * (exppa_h - 1.0f) / (exppa_h + 1.0f);
-    const float alpha_h = CLAMP(atanf(rad_h), -1.5f, 1.5f);
-    const float rt_h = sin(0.5f * alpha_h);
-    const float r_h = fmax(0.1f, 2.0f * (vertifac - 1.0f) * rt_h * rt_h + 1.0f);
-
-
-    // three intermediate buffers for matrix calculation ...
-    float m1[3][3], m2[3][3], m3[3][3];
-
-    // ... and some pointers to handle them more intuitively
-    float (*mwork)[3] = m1;
-    float (*minput)[3] = m2;
-    float (*moutput)[3] = m3;
-
-    // Step 1: flip x and y coordinates (see above)
-    memset(minput, 0, 9 * sizeof(float));
-    minput[0][1] = 1.0f;
-    minput[1][0] = 1.0f;
-    minput[2][2] = 1.0f;
-
-
-    // Step 2: rotation of image around its center
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = cosi;
-    mwork[0][1] = -sini;
-    mwork[1][0] = sini;
-    mwork[1][1] = cosi;
-    mwork[0][2] = -0.5f * v * cosi + 0.5f * u * sini + 0.5f * v;
-    mwork[1][2] = -0.5f * v * sini - 0.5f * u * cosi + 0.5f * u;
-    mwork[2][2] = 1.0f;
-
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 3: apply shearing
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = 1.0f;
-    mwork[0][1] = shear;
-    mwork[1][1] = 1.0f;
-    mwork[1][0] = shear;
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 4: apply vertical lens shift effect
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = exppa_v;
-    mwork[1][0] = 0.5f * ((exppa_v - 1.0f) * u) / v;
-    mwork[1][1] = 2.0f * exppa_v / (exppa_v + 1.0f);
-    mwork[1][2] = -0.5f * ((exppa_v - 1.0f) * u) / (exppa_v + 1.0f);
-    mwork[2][0] = (exppa_v - 1.0f) / v;
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 5: horizontal compression
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = 1.0f;
-    mwork[1][1] = r_v;
-    mwork[1][2] = 0.5f * u * (1.0f - r_v);
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 6: flip x and y back again
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][1] = 1.0f;
-    mwork[1][0] = 1.0f;
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // from here output vectors would be in (x : y : 1) format
-
-    // Step 7: now we can apply horizontal lens shift with the same matrix format as above
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = exppa_h;
-    mwork[1][0] = 0.5f * ((exppa_h - 1.0f) * v) / u;
-    mwork[1][1] = 2.0f * exppa_h / (exppa_h + 1.0f);
-    mwork[1][2] = -0.5f * ((exppa_h - 1.0f) * v) / (exppa_h + 1.0f);
-    mwork[2][0] = (exppa_h - 1.0f) / u;
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 8: vertical compression
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = 1.0f;
-    mwork[1][1] = r_h;
-    mwork[1][2] = 0.5f * v * (1.0f - r_h);
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 9: apply aspect ratio scaling
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = 1.0f * ascale;
-    mwork[1][1] = 1.0f / ascale;
-    mwork[2][2] = 1.0f;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // Step 10: find x/y offsets and apply according correction so that
-    // no negative coordinates occur in output vector
-    float umin = FLT_MAX, vmin = FLT_MAX;
-    // visit all four corners
-    for(int y = 0; y < height; y += height - 1)
-        for(int x = 0; x < width; x += width - 1)
-        {
-            float pi[3], po[3];
-            pi[0] = x;
-            pi[1] = y;
-            pi[2] = 1.0f;
-            // moutput expects input in (x:y:1) format and gives output as (x:y:1)
-            mat3mulv(po, (float *)moutput, pi);
-            umin = fmin(umin, po[0] / po[2]);
-            vmin = fmin(vmin, po[1] / po[2]);
-        }
-
-    memset(mwork, 0, 9 * sizeof(float));
-    mwork[0][0] = 1.0f;
-    mwork[1][1] = 1.0f;
-    mwork[2][2] = 1.0f;
-    mwork[0][2] = -umin;
-    mwork[1][2] = -vmin;
-
-    // moutput (of last calculation) -> minput
-    MAT3SWAP(minput, moutput);
-    // multiply mwork * minput -> moutput
-    mat3mul((float *)moutput, (float *)mwork, (float *)minput);
-
-
-    // on request we either keep the final matrix for forward conversions
-    // or produce an inverted matrix for backward conversions
-    if (!reverse) {
-        // we have what we need -> copy it to the right place
-        memcpy(homograph, moutput, 9 * sizeof(float));
-    } else {
-        // generate inverted homograph (mat3inv function defined in colorspaces.c)
-        if(mat3inv((float *)homograph, (float *)moutput))
-        {
-            // in case of error we set to unity matrix
-            memset(mwork, 0, 9 * sizeof(float));
-            mwork[0][0] = 1.0f;
-            mwork[1][1] = 1.0f;
-            mwork[2][2] = 1.0f;
-            memcpy(homograph, mwork, 9 * sizeof(float));
-        }
-    }
-}
+// the darktable ashift iop (adapted to RT), which does most of the work
+#include "ashift_dt.c"
 
 } // namespace
 
@@ -352,8 +149,7 @@ PerspectiveCorrection::PerspectiveCorrection():
 
 void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill)
 {
-    const float f_length = 28.f;
-    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, f_length, 0.f, 1.f, width, height, true);
+    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, width, height, ASHIFT_HOMOGRAPH_INVERTED);
 
     ok_ = true;
     calc_scale(width, height, params, fill);
@@ -443,8 +239,7 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
     auto corners = get_samples(w, h);
 
     float homo[3][3];
-    constexpr float f_length = 28.f;
-    homography((float *)homo, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, f_length, 0.f, 1.f, w, h, false);
+    homography((float *)homo, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, w, h, ASHIFT_HOMOGRAPH_FORWARD);
     
     for (auto &c : corners) {
         float pin[3] = { float(c.x), float(c.y), 1.f };
@@ -492,13 +287,142 @@ bool PerspectiveCorrection::test_scale(int w, int h, double scale)
     double offx = (w - scale * w) * 0.5;
     double offy = (h - scale * h) * 0.5;
     for (auto &s : samples) {
-        int x = s.x, y = s.y;
         correct(s.x, s.y, scale, offx, offy);
         if (s.x < 0 || s.x > w - 1 || s.y < 0 || s.y > h - 1) {
             return true;
         }
     }
     return false;
+}
+
+
+procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams)
+{
+    dt_iop_ashift_params_t p = {
+        0.0f, 0.0f, 0.0f, 0.0f,
+        DEFAULT_F_LENGTH, 1.0f, 100.0f, 1.0f,
+        ASHIFT_MODE_GENERIC, 0,
+        ASHIFT_CROP_OFF, 0.0f, 1.0f, 0.0f, 1.0f
+    };
+
+    dt_iop_ashift_gui_data_t g;
+    g.buf = NULL;
+    g.buf_width = 0;
+    g.buf_height = 0;
+    g.buf_x_off = 0;
+    g.buf_y_off = 0;
+    g.buf_scale = 1.0f;
+    g.buf_hash = 0;
+    g.isflipped = -1;
+    g.lastfit = ASHIFT_FIT_NONE;
+    g.fitting = 0;
+    g.lines = NULL;
+    g.lines_count =0;
+    g.horizontal_count = 0;
+    g.vertical_count = 0;
+    g.grid_hash = 0;
+    g.lines_hash = 0;
+    g.rotation_range = ROTATION_RANGE_SOFT;
+    g.lensshift_v_range = LENSSHIFT_RANGE_SOFT;
+    g.lensshift_h_range = LENSSHIFT_RANGE_SOFT;
+    g.shear_range = SHEAR_RANGE_SOFT;
+    g.lines_suppressed = 0;
+    g.lines_version = 0;
+    g.show_guides = 0;
+    g.isselecting = 0;
+    g.isdeselecting = 0;
+    g.isbounding = ASHIFT_BOUNDING_OFF;
+    g.near_delta = 0;
+    g.selecting_lines_version = 0;
+    g.points = NULL;
+    g.points_idx = NULL;
+    g.points_lines_count = 0;
+    g.points_version = 0;
+    g.jobcode = ASHIFT_JOBCODE_NONE;
+    g.jobparams = 0;
+    g.adjust_crop = FALSE;
+    g.lastx = g.lasty = -1.0f;
+    g.crop_cx = g.crop_cy = 1.0f;
+
+    dt_iop_module_t module;
+    module.gui_data = &g;
+    module.is_raw = src->isRAW();
+
+    int tr = getCoarseBitMask(pparams->coarse);
+    int fw, fh;
+    src->getFullSize(fw, fh, tr);
+    float scale = float(max(fw, fh)) / 900.f;
+    PreviewProps pp(0, 0, fw, fh, scale);
+    int w, h;
+    src->getSize(pp, w, h);
+    std::unique_ptr<Imagefloat> img(new Imagefloat(w, h));
+
+    ProcParams neutral;
+    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
+    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
+    neutral.icm.outputProfile = ColorManagementParams::NoICMString;    
+    src->getImage(src->getWB(), tr, img.get(), pp, neutral.toneCurve, neutral.raw);
+    src->convertColorSpace(img.get(), pparams->icm, src->getWB());
+
+    neutral.rotate = pparams->rotate;
+    neutral.distortion = pparams->distortion;
+    neutral.lensProf = pparams->lensProf;
+    ImProcFunctions ipf(&neutral, true);
+    if (ipf.needsTransform()) {
+        Imagefloat *tmp = new Imagefloat(w, h);
+        ipf.transform(img.get(), tmp, 0, 0, 0, 0, w, h, w, h,
+                      src->getMetaData(), src->getRotateDegree(), false);
+        img.reset(tmp);
+    }
+
+    // allocate the gui buffer
+    g.buf = static_cast<float *>(malloc(sizeof(float) * w * h * 4));
+    g.buf_width = w;
+    g.buf_height = h;
+
+    img->normalizeFloatTo1();
+    
+#ifdef _OPENMP
+#   pragma omp parallel for
+#endif
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            int i = (y * w + x) * 4;
+            g.buf[i] = img->r(y, x);
+            g.buf[i+1] = img->g(y, x);
+            g.buf[i+2] = img->b(y, x);
+            g.buf[i+3] = 1.f;
+        }
+    }
+
+    dt_iop_ashift_fitaxis_t fitaxis = ASHIFT_FIT_NONE;
+    switch (dir) {
+    case HORIZONTAL:
+        fitaxis = ASHIFT_FIT_HORIZONTALLY;
+        break;
+    case VERTICAL:
+        fitaxis = ASHIFT_FIT_VERTICALLY;
+        break;
+    default:
+        fitaxis = ASHIFT_FIT_BOTH_SHEAR;
+        break;
+    }
+    auto res = do_fit(&module, &p, fitaxis);
+    procparams::PerspectiveParams retval;
+
+    // cleanup the gui
+    if (g.lines) free(g.lines);
+    if (g.points) free(g.points);
+    if (g.points_idx) free(g.points_idx);
+    free(g.buf);
+
+    if (res) {
+        retval.horizontal = p.lensshift_h * 100;
+        retval.vertical = p.lensshift_v * 100;
+        retval.angle = p.rotation;
+        retval.shear = p.shear * 100;
+    }
+    return retval;
 }
 
 } // namespace rtengine

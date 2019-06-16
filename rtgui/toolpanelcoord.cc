@@ -25,6 +25,7 @@
 #include "../rtengine/improcfun.h"
 #include "../rtengine/procevents.h"
 #include "../rtengine/refreshmap.h"
+#include "../rtengine/perspectivecorrection.h"
 
 using namespace rtengine::procparams;
 
@@ -260,6 +261,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     lensgeom->setLensGeomListener (this);
     rotate->setLensGeomListener (this);
     distortion->setLensGeomListener (this);
+    perspective->setLensGeomListener(this);
     crop->setCropPanelListener (this);
     icm->setICMPanelListener (this);
 
@@ -1000,4 +1002,40 @@ void ToolPanelCoordinator::setEditProvider (EditDataProvider *provider)
     for (size_t i = 0; i < toolPanels.size(); i++) {
         toolPanels.at (i)->setEditProvider (provider);
     }
+}
+
+void ToolPanelCoordinator::autoPerspectiveRequested(bool horiz, bool vert, double &angle, double &horizontal, double &vertical, double &shear)
+{
+    angle = 0;
+    horizontal = 0;
+    vertical = 0;
+    shear = 0;
+    
+    if (!ipc || !(horiz || vert)) {
+        return;
+    }
+
+    rtengine::ImageSource *src = dynamic_cast<rtengine::ImageSource *>(ipc->getInitialImage());
+    if (!src) {
+        return;
+    }
+
+    rtengine::procparams::ProcParams params;
+    ipc->getParams(&params);
+
+    rtengine::PerspectiveCorrection::Direction dir;
+    if (horiz && vert) {
+        dir = rtengine::PerspectiveCorrection::BOTH;
+    } else if (horiz) {
+        dir = rtengine::PerspectiveCorrection::HORIZONTAL;
+    } else {
+        dir = rtengine::PerspectiveCorrection::VERTICAL;
+    }
+
+    rtengine::PerspectiveCorrection pc;
+    auto res = pc.autocompute(src, dir, &params);
+    angle = res.angle;
+    horizontal = res.horizontal;
+    vertical = res.vertical;
+    shear = res.shear;
 }

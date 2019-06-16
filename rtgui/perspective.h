@@ -23,6 +23,7 @@
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
+#include "lensgeomlistener.h"
 
 class PerspCorrection : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
 {
@@ -32,6 +33,10 @@ protected:
     Adjuster* vert;
     Adjuster *angle;
     Adjuster *shear;
+    Gtk::Button *auto_horiz;
+    Gtk::Button *auto_vert;
+    Gtk::Button *auto_both;
+    LensGeomListener *lgl;
 
 public:
 
@@ -43,6 +48,9 @@ public:
     void adjusterChanged (Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
+
+    void setLensGeomListener (LensGeomListener* l) { lgl = l; }
+    void autoPressed(Gtk::Button *which);
 };
 
 #endif

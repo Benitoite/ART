@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -291,6 +292,7 @@ public:
     void straightenRequested () override;
     void autoCropRequested () override;
     double autoDistorRequested () override;
+    void autoPerspectiveRequested(bool horiz, bool vert, double &angle, double &horizontal, double &vertical, double &shear) override;
 
     // spotwblistener interface
     void spotWBRequested (int size) override;

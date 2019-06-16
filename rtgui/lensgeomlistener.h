@@ -26,6 +26,9 @@ public:
     virtual void straightenRequested () = 0;
     virtual void autoCropRequested   () = 0;
     virtual double autoDistorRequested () = 0;
+    virtual void autoPerspectiveRequested(
+        bool horiz, bool vert,
+        double &angle, double &horizontal, double &vertical, double &shear) = 0;
 };
 
 #endif

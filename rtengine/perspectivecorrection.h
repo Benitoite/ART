@@ -22,6 +22,7 @@
 
 #include "coord2d.h"
 #include "procparams.h"
+#include "imagesource.h"
 
 namespace rtengine {
 
@@ -30,6 +31,13 @@ public:
     PerspectiveCorrection();
     void init(int width, int height, const procparams::PerspectiveParams &params, bool fill);
     void operator()(double &x, double &y);
+
+    enum Direction {
+        HORIZONTAL,
+        VERTICAL,
+        BOTH
+    };
+    procparams::PerspectiveParams autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams);
 
 private:
     void correct(double &x, double &y, double scale, double offx, double offy);
