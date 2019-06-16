@@ -797,6 +797,7 @@ struct LensProfParams {
   * Parameters of the perspective correction
   */
 struct PerspectiveParams {
+    bool enabled;
     double  horizontal;
     double  vertical;
     double angle;

@@ -149,7 +149,7 @@ PerspectiveCorrection::PerspectiveCorrection():
 
 void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill)
 {
-    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, width, height, ASHIFT_HOMOGRAPH_INVERTED);
+    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, width, height, ASHIFT_HOMOGRAPH_INVERTED);
 
     ok_ = true;
     calc_scale(width, height, params, fill);
@@ -162,71 +162,79 @@ inline void PerspectiveCorrection::correct(double &x, double &y, double scale, d
         float pin[3], pout[3];
         pout[0] = x;
         pout[1] = y;
-        pout[0] *= scale_;
-        pout[1] *= scale_;
-        pout[0] += offx_;
-        pout[1] += offy_;
+        pout[0] *= scale;//_;
+        pout[1] *= scale;//_;
+        pout[0] += offx;//_;
+        pout[1] += offy;//_;
         pout[2] = 1.f;
         mat3mulv(pin, (float *)ihomograph_, pout);
         pin[0] /= pin[2];
         pin[1] /= pin[2];
-        x = pin[0] * scale + offx;
-        y = pin[1] * scale + offy;
+        x = pin[0];// * scale + offx;
+        y = pin[1];// * scale + offy;
     }
 }
 
 
 void PerspectiveCorrection::operator()(double &x, double &y)
 {
-    correct(x, y, scalein_, offxin_, offyin_);
+    correct(x, y, scale_, offx_, offy_);//scalein_, offxin_, offyin_);
 }
 
 
 namespace {
 
-std::vector<Coord2D> get_samples(int w, int h)
+std::vector<Coord2D> get_corners(int w, int h)
 {
-    constexpr int nsteps = 32;
+    // constexpr int nsteps = 32;
 
     int x1 = 0, y1 = 0;
     int x2 = x1 + w - 1;
     int y2 = y1 + h - 1;
 
-    // Build all edge points and half-way points
-    std::vector<Coord2D> corners(8);
-    corners[0].set(x1, y1);
-    corners[1].set(x1, y2);
-    corners[2].set(x2, y2);
-    corners[3].set(x2, y1);
-    corners[4].set((x1 + x2) / 2, y1);
-    corners[5].set((x1 + x2) / 2, y2);
-    corners[6].set(x1, (y1 + y2) / 2);
-    corners[7].set(x2, (y1 + y2) / 2);
-
-    // Add several steps inbetween
-    int xstep = (x2 - x1) / nsteps;
-
-    if (xstep < 1) {
-        xstep = 1;
-    }
-
-    for (int i = x1 + xstep; i <= x2 - xstep; i += xstep) {
-        corners.push_back(Coord2D(i, y1));
-        corners.push_back(Coord2D(i, y2));
-    }
-
-    int ystep = (y2 - y1) / nsteps;
-
-    if (ystep < 1) {
-        ystep = 1;
-    }
-
-    for (int i = y1 + ystep; i <= y2 - ystep; i += ystep) {
-        corners.push_back(Coord2D(x1, i));
-        corners.push_back(Coord2D(x2, i));
-    }
-
+    std::vector<Coord2D> corners = {
+        Coord2D(x1, y1),
+        Coord2D(x1, y2),
+        Coord2D(x2, y2),
+        Coord2D(x2, y1)
+    };
     return corners;
+
+    // // Build all edge points and half-way points
+    // std::vector<Coord2D> corners(8);
+    // corners[0].set(x1, y1);
+    // corners[1].set(x1, y2);
+    // corners[2].set(x2, y2);
+    // corners[3].set(x2, y1);
+    // corners[4].set((x1 + x2) / 2, y1);
+    // corners[5].set((x1 + x2) / 2, y2);
+    // corners[6].set(x1, (y1 + y2) / 2);
+    // corners[7].set(x2, (y1 + y2) / 2);
+
+    // // Add several steps inbetween
+    // int xstep = (x2 - x1) / nsteps;
+
+    // if (xstep < 1) {
+    //     xstep = 1;
+    // }
+
+    // for (int i = x1 + xstep; i <= x2 - xstep; i += xstep) {
+    //     corners.push_back(Coord2D(i, y1));
+    //     corners.push_back(Coord2D(i, y2));
+    // }
+
+    // int ystep = (y2 - y1) / nsteps;
+
+    // if (ystep < 1) {
+    //     ystep = 1;
+    // }
+
+    // for (int i = y1 + ystep; i <= y2 - ystep; i += ystep) {
+    //     corners.push_back(Coord2D(x1, i));
+    //     corners.push_back(Coord2D(x2, i));
+    // }
+
+    // return corners;
 }
 
 } // namespace
@@ -236,10 +244,10 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
     double min_x = RT_INFINITY, max_x = -RT_INFINITY;
     double min_y = RT_INFINITY, max_y = -RT_INFINITY;
 
-    auto corners = get_samples(w, h);
+    auto corners = get_corners(w, h);
 
     float homo[3][3];
-    homography((float *)homo, params.angle, params.vertical / 100.0, params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, w, h, ASHIFT_HOMOGRAPH_FORWARD);
+    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, w, h, ASHIFT_HOMOGRAPH_FORWARD);
     
     for (auto &c : corners) {
         float pin[3] = { float(c.x), float(c.y), 1.f };
@@ -253,8 +261,8 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
         max_y = max(max_y, y);
     }
 
-    double cw = max_x - min_x;
-    double ch = max_y - min_y;
+    double cw = floor(max_x - min_x + 1);
+    double ch = floor(max_y - min_y + 1);
 
     scale_ = max(cw / double(w), ch / double(h));
     offx_ = (cw - w * scale_) * 0.5;
@@ -273,9 +281,12 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
             }
         } while (scaleU - scaleL > 0.001);
 
-        scalein_ = scaleL;
-        offxin_ = (w - scalein_ * w) * 0.5;
-        offyin_ = (h - scalein_ * h) * 0.5;
+        // scalein_ = scaleL;
+        // offxin_ = (w - scalein_ * w) * 0.5;
+        // offyin_ = (h - scalein_ * h) * 0.5;
+        scale_ = scaleL;
+        offx_ = (w - scale_ * w) * 0.5;
+        offy_ = (h - scale_ * h) * 0.5;
         return;
     }
 }
@@ -283,7 +294,7 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
 
 bool PerspectiveCorrection::test_scale(int w, int h, double scale)
 {
-    auto samples = get_samples(w, h);
+    auto samples = get_corners(w, h);
     double offx = (w - scale * w) * 0.5;
     double offy = (h - scale * h) * 0.5;
     for (auto &s : samples) {
@@ -351,8 +362,8 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     int tr = getCoarseBitMask(pparams->coarse);
     int fw, fh;
     src->getFullSize(fw, fh, tr);
-    float scale = float(max(fw, fh)) / 900.f;
-    PreviewProps pp(0, 0, fw, fh, scale);
+    int skip = max(float(max(fw, fh)) / 900.f + 0.5f, 1.f);
+    PreviewProps pp(0, 0, fw, fh, skip);
     int w, h;
     src->getSize(pp, w, h);
     std::unique_ptr<Imagefloat> img(new Imagefloat(w, h));
@@ -407,7 +418,7 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
         fitaxis = ASHIFT_FIT_BOTH_SHEAR;
         break;
     }
-    auto res = do_fit(&module, &p, fitaxis);
+    auto res = do_get_structure(&module, &p, ASHIFT_ENHANCE_EDGES) && do_fit(&module, &p, fitaxis);
     procparams::PerspectiveParams retval;
 
     // cleanup the gui
@@ -417,7 +428,7 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     free(g.buf);
 
     if (res) {
-        retval.horizontal = p.lensshift_h * 100;
+        retval.horizontal = -p.lensshift_h * 100;
         retval.vertical = p.lensshift_v * 100;
         retval.angle = p.rotation;
         retval.shear = p.shear * 100;

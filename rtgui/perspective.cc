@@ -18,12 +18,16 @@
  */
 #include "perspective.h"
 #include "rtimage.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("TP_PERSPECTIVE_LABEL"))
+PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("TP_PERSPECTIVE_LABEL"), false, true)
 {
+    auto m = ProcEventMapper::getInstance();
+    EvEnabled = m->newEvent(TRANSFORM, "HISTORY_MSG_PERSPECTIVE_ENABLED");
+    
     lgl = nullptr;
 
     Gtk::Image* ipersHL =   Gtk::manage (new RTImage ("perspective-horizontal-left-small.png"));
@@ -31,7 +35,7 @@ PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("
     Gtk::Image* ipersVL =   Gtk::manage (new RTImage ("perspective-vertical-bottom-small.png"));
     Gtk::Image* ipersVR =   Gtk::manage (new RTImage ("perspective-vertical-top-small.png"));
 
-    horiz = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_HORIZONTAL"), -100, 100, 0.1, 0, ipersHR, ipersHL));
+    horiz = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_HORIZONTAL"), -100, 100, 0.1, 0, ipersHL, ipersHR));
     horiz->setAdjusterListener (this);
 
     vert = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_VERTICAL"), -100, 100, 0.1, 0, ipersVL, ipersVR));
@@ -53,16 +57,20 @@ PerspCorrection::PerspCorrection () : FoldableToolPanel(this, "perspective", M("
     auto_horiz = Gtk::manage(new Gtk::Button());
     auto_horiz->add(*Gtk::manage(new RTImage("perspective-horizontal-left.png")));
     auto_horiz->get_style_context()->add_class("independent");
+    auto_horiz->set_tooltip_markup(M("TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP"));
 
     auto_vert = Gtk::manage(new Gtk::Button());
     auto_vert->add(*Gtk::manage(new RTImage("perspective-vertical-top.png")));
     auto_vert->get_style_context()->add_class("independent");
+    auto_vert->set_tooltip_markup(M("TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP"));
 
     auto_both = Gtk::manage(new Gtk::Button());
     auto_both->add(*Gtk::manage(new RTImage("perspective-horizontal-vertical.png")));
     auto_both->get_style_context()->add_class("independent");
+    auto_both->set_tooltip_markup(M("TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP"));
 
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_PERSPECTIVE_AUTO") + ": ")), Gtk::PACK_EXPAND_WIDGET, 4);
     hb->pack_start(*auto_horiz);
     hb->pack_start(*auto_vert);
     hb->pack_start(*auto_both);
@@ -88,12 +96,14 @@ void PerspCorrection::read(const ProcParams* pp)
     vert->setValue (pp->perspective.vertical);
     angle->setValue(pp->perspective.angle);
     shear->setValue(pp->perspective.shear);
+    setEnabled(pp->perspective.enabled);
 
     enableListener ();
 }
 
 void PerspCorrection::write(ProcParams* pp)
 {
+    pp->perspective.enabled = getEnabled();
     pp->perspective.horizontal  = horiz->getValue ();
     pp->perspective.vertical = vert->getValue ();
     pp->perspective.angle = angle->getValue();
@@ -111,7 +121,7 @@ void PerspCorrection::setDefaults(const ProcParams* defParams)
 
 void PerspCorrection::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvPerspCorr, Glib::ustring::compose ("%1=%2  %3=%4\n%5=%6  %7=%8", M("TP_PERSPECTIVE_HORIZONTAL"), horiz->getValue(), M("TP_PERSPECTIVE_VERTICAL"), vert->getValue(), M("TP_PERSPECTIVE_ANGLE"), angle->getValue(), M("TP_PERSPECTIVE_SHEAR"), shear->getValue()));
     }
 }
@@ -131,9 +141,21 @@ void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
 }
 
 
+void PerspCorrection::enabledChanged()
+{
+    if (listener) {
+        if (getEnabled()) {
+            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
+        }
+    }
+}
+
+
 void PerspCorrection::autoPressed(Gtk::Button *which)
 {
-    if (!lgl) {
+    if (!lgl || !getEnabled()) {
         return;
     }
     

@@ -37,6 +37,7 @@ protected:
     Gtk::Button *auto_vert;
     Gtk::Button *auto_both;
     LensGeomListener *lgl;
+    rtengine::ProcEvent EvEnabled;
 
 public:
 
@@ -51,6 +52,7 @@ public:
 
     void setLensGeomListener (LensGeomListener* l) { lgl = l; }
     void autoPressed(Gtk::Button *which);
+    void enabledChanged();
 };
 
 #endif

@@ -1197,7 +1197,7 @@ bool ImProcFunctions::needsRotation ()
 
 bool ImProcFunctions::needsPerspective ()
 {
-    return params->perspective.horizontal || params->perspective.vertical;
+    return params->perspective.enabled && (params->perspective.horizontal || params->perspective.vertical || params->perspective.angle || params->perspective.shear);
 }
 
 bool ImProcFunctions::needsGradient ()

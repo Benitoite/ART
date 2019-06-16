@@ -1306,6 +1306,7 @@ LensProfParams::LcMode LensProfParams::getMethodNumber(const Glib::ustring& mode
 }
 
 PerspectiveParams::PerspectiveParams() :
+    enabled(false),
     horizontal(0.0),
     vertical(0.0),
     angle(0.0),
@@ -1316,7 +1317,8 @@ PerspectiveParams::PerspectiveParams() :
 bool PerspectiveParams::operator ==(const PerspectiveParams& other) const
 {
     return
-        horizontal == other.horizontal
+        enabled == other.enabled
+        && horizontal == other.horizontal
         && vertical == other.vertical
         && angle == other.angle
         && shear == other.shear;
@@ -2533,6 +2535,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
 
 // Perspective correction
         if (RELEVANT_(perspective)) {
+            saveToKeyfile("Perspective", "Enabled", perspective.enabled, keyFile);
             saveToKeyfile("Perspective", "Horizontal", perspective.horizontal, keyFile);
             saveToKeyfile("Perspective", "Vertical", perspective.vertical, keyFile);
             saveToKeyfile("Perspective", "Angle", perspective.angle, keyFile);
@@ -3402,6 +3405,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         }
 
         if (keyFile.has_group("Perspective") && RELEVANT_(perspective)) {
+            assignFromKeyfile(keyFile, "Perspective", "Enabled", perspective.enabled);
             assignFromKeyfile(keyFile, "Perspective", "Horizontal", perspective.horizontal);
             assignFromKeyfile(keyFile, "Perspective", "Vertical", perspective.vertical);
             assignFromKeyfile(keyFile, "Perspective", "Angle", perspective.angle);
