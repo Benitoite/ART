@@ -70,10 +70,10 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     auto_both->set_tooltip_markup(M("TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP"));
 
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_PERSPECTIVE_AUTO") + ": ")), Gtk::PACK_EXPAND_WIDGET, 4);
-    hb->pack_start(*auto_horiz);
-    hb->pack_start(*auto_vert);
-    hb->pack_start(*auto_both);
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_PERSPECTIVE_AUTO") + ": ")), Gtk::PACK_SHRINK, 4);
+    hb->pack_start(*auto_horiz, Gtk::PACK_EXPAND_WIDGET, 2);
+    hb->pack_start(*auto_vert, Gtk::PACK_EXPAND_WIDGET, 2);
+    hb->pack_start(*auto_both, Gtk::PACK_EXPAND_WIDGET, 2);
     auto_horiz->show();
     auto_vert->show();
     auto_both->show();
