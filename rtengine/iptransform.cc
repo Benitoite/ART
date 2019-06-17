@@ -451,7 +451,7 @@ bool ImProcFunctions::transCoord (int W, int H, int x, int y, int w, int h, int&
     return clipped;
 }
 
-void ImProcFunctions::transform (Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH,
+void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH,
                                  const FramesMetaData *metadata,
                                  int rawRotationDeg, bool fullImage)
 {
@@ -490,17 +490,17 @@ void ImProcFunctions::transform (Imagefloat* original, Imagefloat* transformed, 
     } else {
         std::unique_ptr<Imagefloat> tmpimg;
         Imagefloat *dest = transformed;
-        int dest_x = sx, dest_y = sy;
+        int dest_x = cx, dest_y = cy;
         
         if (needs_lcp_ca || needs_perspective) {
             tmpimg.reset(new Imagefloat(original->getWidth(), original->getHeight()));
             dest = tmpimg.get();
-            dest_x = cx;
-            dest_y = cy;
+            dest_x = sx;
+            dest_y = sy;
         }
         
         if (needs_transform_general) {
-            transformGeneral(highQuality, original, dest, cx, cy, dest_x, dest_y, oW, oH, fW, fH, pLCPMap.get());
+            transformGeneral(highQuality, original, dest, dest_x, dest_y, sx, sy, oW, oH, fW, fH, pLCPMap.get());
         } else {
             dest = original;
         }
