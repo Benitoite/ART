@@ -268,6 +268,32 @@ void init_dt_structures(dt_iop_ashift_params_t *p, dt_iop_ashift_gui_data_t *g,
 
 void PerspectiveCorrection::calc_scale(int w, int h, const procparams::PerspectiveParams &params, bool fill)
 {
+    double cw, ch;
+    get_view_size(w, h, params, cw, ch);
+
+    if (!fill) {
+        scale_ = max(cw / double(w), ch / double(h));
+        offx_ = (cw - w * scale_) * 0.5;
+        offy_ = (ch - h * scale_) * 0.5;
+    } else {
+        dt_iop_ashift_params_t p;
+        dt_iop_ashift_gui_data_t g;
+        init_dt_structures(&p, &g, &params);
+        dt_iop_module_t module = { &g, false };
+        g.buf_width = w;
+        g.buf_height = h;
+        p.cropmode = ASHIFT_CROP_ASPECT;
+        do_crop(&module, &p);
+        offx_ = p.cl * cw;
+        offy_ = p.ct * ch;
+        scale_ = (p.cr - p.cl) * cw/double(w);
+        scale_ *= 0.99; // add a safety factor to avoid border issues -- TODO
+    }
+}
+
+
+void PerspectiveCorrection::get_view_size(int w, int h, const procparams::PerspectiveParams &params, double &cw, double &ch)
+{
     double min_x = RT_INFINITY, max_x = -RT_INFINITY;
     double min_y = RT_INFINITY, max_y = -RT_INFINITY;
 
@@ -288,28 +314,9 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
         max_y = max(max_y, y);
     }
 
-    double cw = floor(max_x - min_x + 1);
-    double ch = floor(max_y - min_y + 1);
-
-    scale_ = max(cw / double(w), ch / double(h));
-    offx_ = (cw - w * scale_) * 0.5;
-    offy_ = (ch - h * scale_) * 0.5;
-    
-    if (fill) {
-        dt_iop_ashift_params_t p;
-        dt_iop_ashift_gui_data_t g;
-        init_dt_structures(&p, &g, &params);
-        dt_iop_module_t module = { &g, false };
-        g.buf_width = w;
-        g.buf_height = h;
-        p.cropmode = ASHIFT_CROP_ASPECT;
-        do_crop(&module, &p);
-        offx_ = p.cl * cw;
-        offy_ = p.ct * ch;
-        scale_ = (p.cr - p.cl) * cw/double(w);
-        scale_ *= 0.99; // add a safety factor to avoid border issues -- TODO
-    }
-}
+    cw = floor(max_x - min_x + 1);
+    ch = floor(max_y - min_y + 1);
+}    
 
 
 procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams)
@@ -396,6 +403,31 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
         retval.shear = p.shear * 100;
     }
     return retval;
+}
+
+
+void PerspectiveCorrection::autocrop(int width, int height, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h)
+{
+    double cw, ch;
+    get_view_size(width, height, params, cw, ch);
+    double s = min(double(width)/cw, double(height)/ch);
+    dt_iop_ashift_params_t p;
+    dt_iop_ashift_gui_data_t g;
+    init_dt_structures(&p, &g, &params);
+    dt_iop_module_t module = { &g, false };
+    g.buf_width = width;
+    g.buf_height = height;
+    p.cropmode = ASHIFT_CROP_ASPECT;
+    do_crop(&module, &p);
+    s *= 0.99; // make the crop a bit smaller just to stay safe
+    cw *= s;
+    ch *= s;
+    double ox = p.cl * cw;
+    double oy = p.ct * ch;
+    x = ceil(ox - (cw - width)/s * 0.5);
+    y = ceil(oy - (ch - height)/s * 0.5);
+    w = floor((p.cr - p.cl) * cw);
+    h = floor((p.cb - p.ct) * ch);
 }
 
 } // namespace rtengine

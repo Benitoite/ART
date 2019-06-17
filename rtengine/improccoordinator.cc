@@ -29,6 +29,7 @@
 #include <string>
 #include "color.h"
 #include "metadata.h"
+#include "perspectivecorrection.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -866,6 +867,16 @@ void ImProcCoordinator::getAutoCrop(double ratio, int &x, int &y, int &w, int &h
 
     x = (fullw - w) / 2;
     y = (fullh - h) / 2;
+
+    if (params.perspective.enabled && !params.commonTrans.autofill) {
+        PerspectiveCorrection pc;
+        int xx, yy, ww, hh;
+        pc.autocrop(w, h, params.perspective, xx, yy, ww, hh);
+        x += xx;
+        y += yy;
+        w = ww;
+        h = hh;
+    }
 }
 
 void ImProcCoordinator::setMonitorProfile(const Glib::ustring& profile, RenderingIntent intent)
