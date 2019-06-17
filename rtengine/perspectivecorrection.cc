@@ -324,7 +324,7 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     g.buf_y_off = 0;
     g.buf_scale = 1.0f;
     g.buf_hash = 0;
-    g.isflipped = -1;
+    g.isflipped = 0;
     g.lastfit = ASHIFT_FIT_NONE;
     g.fitting = 0;
     g.lines = NULL;
@@ -409,12 +409,10 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     dt_iop_ashift_fitaxis_t fitaxis = ASHIFT_FIT_NONE;
     switch (dir) {
     case HORIZONTAL:
-        fitaxis = ASHIFT_FIT_VERTICALLY;//HORIZONTALLY; // TODO - WHY??
-        printf("HORIZONTAL\n");
+        fitaxis = ASHIFT_FIT_HORIZONTALLY;
         break;  
     case VERTICAL:
-        fitaxis = ASHIFT_FIT_HORIZONTALLY;
-        printf("VERTICAL\n");
+        fitaxis = ASHIFT_FIT_VERTICALLY;
         break;
     default:
         fitaxis = ASHIFT_FIT_BOTH_SHEAR;
