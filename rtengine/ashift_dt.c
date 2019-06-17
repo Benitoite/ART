@@ -2293,6 +2293,8 @@ static void model_probe(dt_iop_module_t *module, dt_iop_ashift_params_t *p, dt_i
          quality, p->rotation, p->lensshift_v, p->lensshift_h, p->shear);
 }
 #endif
+#endif // if 0
+//-----------------------------------------------------------------------------
 
 // function to keep crop fitting parameters within constraints
 static void crop_constraint(double *params, int pcount)
@@ -2386,8 +2388,6 @@ static double crop_fitness(double *params, void *data)
   // and return -A to allow Nelder-Mead simplex to search for the minimum
   return -A;
 }
-#endif // if 0
-//-----------------------------------------------------------------------------
 
 // strategy: for a given center of the crop area and a specific aspect angle
 // we calculate the largest crop area that still lies within the output image;
@@ -2395,10 +2395,6 @@ static double crop_fitness(double *params, void *data)
 // (and optionally the aspect angle) that delivers the largest overall crop area.
 static void do_crop(dt_iop_module_t *module, dt_iop_ashift_params_t *p)
 {
-    return;
-//-----------------------------------------------------------------------------
-// RT: BEGIN COMMENT
-#if 0    
   dt_iop_ashift_gui_data_t *g = (dt_iop_ashift_gui_data_t *)module->gui_data;
 
   // skip if fitting is still running
@@ -2495,6 +2491,10 @@ static void do_crop(dt_iop_module_t *module, dt_iop_ashift_params_t *p)
   const int iter = simplex(crop_fitness, params, pcount, NMS_CROP_EPSILON, NMS_CROP_SCALE, NMS_CROP_ITERATIONS,
                            crop_constraint, (void*)&cropfit);
 
+  float A; // RT
+  float d; // RT
+  float Pc[3] = { 0.f, 0.f, 1.f }; // RT
+
   // in case the fit did not converge -> failed
   if(iter >= NMS_CROP_ITERATIONS) goto failed;
 
@@ -2504,17 +2504,19 @@ static void do_crop(dt_iop_module_t *module, dt_iop_ashift_params_t *p)
   cropfit.alpha = isnan(cropfit.alpha) ? params[2] : cropfit.alpha;
 
   // the area of the best fitting rectangle
-  const float A = fabs(crop_fitness(params, (void*)&cropfit));
+  /*RT const float*/ A = fabs(crop_fitness(params, (void*)&cropfit));
 
   // unlikely to happen but we need to catch this case
   if(A == 0.0f) goto failed;
 
   // we need the half diagonal of that rectangle (this is in output image dimensions);
   // no need to check for division by zero here as this case implies A == 0.0f, caught above
-  const float d = sqrt(A / (2.0f * sin(2.0f * cropfit.alpha)));
+  /*RT const float*/ d = sqrt(A / (2.0f * sin(2.0f * cropfit.alpha)));
 
   // the rectangle's center in input image (homogeneous) coordinates
-  const float Pc[3] = { cropfit.x * wd, cropfit.y * ht, 1.0f };
+  // RT const float Pc[3] = { cropfit.x * wd, cropfit.y * ht, 1.0f };
+  Pc[0] = cropfit.x * wd; // RT
+  Pc[1] = cropfit.y * ht; // RT
 
   // convert rectangle center to output image coordinates and normalize
   float P[3];
@@ -2537,7 +2539,13 @@ static void do_crop(dt_iop_module_t *module, dt_iop_ashift_params_t *p)
   printf("margins after crop fitting: iter %d, x %f, y %f, angle %f, crop area (%f %f %f %f), width %f, height %f\n",
          iter, cropfit.x, cropfit.y, cropfit.alpha, p->cl, p->cr, p->ct, p->cb, wd, ht);
 #endif
+//-----------------------------------------------------------------------------
+// RT: BEGIN COMMENT
+#if 0
   dt_control_queue_redraw_center();
+#endif // if 0
+//-----------------------------------------------------------------------------
+  
   return;
 
 failed:
@@ -2548,12 +2556,15 @@ failed:
   p->ct = 0.0f;
   p->cb = 1.0f;
   p->cropmode = ASHIFT_CROP_OFF;
+//-----------------------------------------------------------------------------
+// RT: BEGIN COMMENT
+#if 0
   dt_bauhaus_combobox_set(g->cropmode, p->cropmode);
+#endif // if 0
+//-----------------------------------------------------------------------------
   g->fitting = 0;
   dt_control_log(_("automatic cropping failed"));
   return;
-#endif // if 0
-//-----------------------------------------------------------------------------
 }
 
 //-----------------------------------------------------------------------------

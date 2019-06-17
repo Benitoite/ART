@@ -139,10 +139,7 @@ PerspectiveCorrection::PerspectiveCorrection():
     ok_(false),
     scale_(1.0),
     offx_(0.0),
-    offy_(0.0),
-    scalein_(1.0),
-    offxin_(0.0),
-    offyin_(0.0)
+    offy_(0.0)
 {
 }
 
@@ -170,15 +167,15 @@ inline void PerspectiveCorrection::correct(double &x, double &y, double scale, d
         mat3mulv(pin, (float *)ihomograph_, pout);
         pin[0] /= pin[2];
         pin[1] /= pin[2];
-        x = pin[0];// * scale + offx;
-        y = pin[1];// * scale + offy;
+        x = pin[0];
+        y = pin[1];
     }
 }
 
 
 void PerspectiveCorrection::operator()(double &x, double &y)
 {
-    correct(x, y, scale_, offx_, offy_);//scalein_, offxin_, offyin_);
+    correct(x, y, scale_, offx_, offy_);
 }
 
 
@@ -186,8 +183,6 @@ namespace {
 
 std::vector<Coord2D> get_corners(int w, int h)
 {
-    // constexpr int nsteps = 32;
-
     int x1 = 0, y1 = 0;
     int x2 = x1 + w - 1;
     int y2 = y1 + h - 1;
@@ -199,42 +194,74 @@ std::vector<Coord2D> get_corners(int w, int h)
         Coord2D(x2, y1)
     };
     return corners;
+}
 
-    // // Build all edge points and half-way points
-    // std::vector<Coord2D> corners(8);
-    // corners[0].set(x1, y1);
-    // corners[1].set(x1, y2);
-    // corners[2].set(x2, y2);
-    // corners[3].set(x2, y1);
-    // corners[4].set((x1 + x2) / 2, y1);
-    // corners[5].set((x1 + x2) / 2, y2);
-    // corners[6].set(x1, (y1 + y2) / 2);
-    // corners[7].set(x2, (y1 + y2) / 2);
+void init_dt_structures(dt_iop_ashift_params_t *p, dt_iop_ashift_gui_data_t *g,
+                        const procparams::PerspectiveParams *params)
+{
+    dt_iop_ashift_params_t dp = {
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        DEFAULT_F_LENGTH,
+        1.0f,
+        100.0f,
+        1.0f,
+        ASHIFT_MODE_GENERIC,
+        0,
+        ASHIFT_CROP_OFF,
+        0.0f,
+        1.0f,
+        0.0f,
+        1.0f
+    };
+    *p = dp;
 
-    // // Add several steps inbetween
-    // int xstep = (x2 - x1) / nsteps;
+    g->buf = NULL;
+    g->buf_width = 0;
+    g->buf_height = 0;
+    g->buf_x_off = 0;
+    g->buf_y_off = 0;
+    g->buf_scale = 1.0f;
+    g->buf_hash = 0;
+    g->isflipped = 0;
+    g->lastfit = ASHIFT_FIT_NONE;
+    g->fitting = 0;
+    g->lines = NULL;
+    g->lines_count =0;
+    g->horizontal_count = 0;
+    g->vertical_count = 0;
+    g->grid_hash = 0;
+    g->lines_hash = 0;
+    g->rotation_range = ROTATION_RANGE_SOFT;
+    g->lensshift_v_range = LENSSHIFT_RANGE_SOFT;
+    g->lensshift_h_range = LENSSHIFT_RANGE_SOFT;
+    g->shear_range = SHEAR_RANGE_SOFT;
+    g->lines_suppressed = 0;
+    g->lines_version = 0;
+    g->show_guides = 0;
+    g->isselecting = 0;
+    g->isdeselecting = 0;
+    g->isbounding = ASHIFT_BOUNDING_OFF;
+    g->near_delta = 0;
+    g->selecting_lines_version = 0;
+    g->points = NULL;
+    g->points_idx = NULL;
+    g->points_lines_count = 0;
+    g->points_version = 0;
+    g->jobcode = ASHIFT_JOBCODE_NONE;
+    g->jobparams = 0;
+    g->adjust_crop = FALSE;
+    g->lastx = g->lasty = -1.0f;
+    g->crop_cx = g->crop_cy = 1.0f;
 
-    // if (xstep < 1) {
-    //     xstep = 1;
-    // }
-
-    // for (int i = x1 + xstep; i <= x2 - xstep; i += xstep) {
-    //     corners.push_back(Coord2D(i, y1));
-    //     corners.push_back(Coord2D(i, y2));
-    // }
-
-    // int ystep = (y2 - y1) / nsteps;
-
-    // if (ystep < 1) {
-    //     ystep = 1;
-    // }
-
-    // for (int i = y1 + ystep; i <= y2 - ystep; i += ystep) {
-    //     corners.push_back(Coord2D(x1, i));
-    //     corners.push_back(Coord2D(x2, i));
-    // }
-
-    // return corners;
+    if (params) {
+        p->rotation = params->angle;
+        p->lensshift_v = params->vertical / 100.0;
+        p->lensshift_h = -params->horizontal / 100.0;
+        p->shear = params->shear / 100.0;
+    }
 }
 
 } // namespace
@@ -267,94 +294,29 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
     scale_ = max(cw / double(w), ch / double(h));
     offx_ = (cw - w * scale_) * 0.5;
     offy_ = (ch - h * scale_) * 0.5;
-
+    
     if (fill) {
-        double scaleU = 2, scaleL = 0.001;  // upper and lower border, iterate inbetween
-        do {
-            double scale = (scaleU + scaleL) * 0.5;
-            bool clipped = test_scale(w, h, scale);
-
-            if (clipped) {
-                scaleU = scale;
-            } else {
-                scaleL = scale;
-            }
-        } while (scaleU - scaleL > 0.001);
-
-        // scalein_ = scaleL;
-        // offxin_ = (w - scalein_ * w) * 0.5;
-        // offyin_ = (h - scalein_ * h) * 0.5;
-        scale_ = scaleL;
-        offx_ = (w - scale_ * w) * 0.5;
-        offy_ = (h - scale_ * h) * 0.5;
-        return;
+        dt_iop_ashift_params_t p;
+        dt_iop_ashift_gui_data_t g;
+        init_dt_structures(&p, &g, &params);
+        dt_iop_module_t module = { &g, false };
+        g.buf_width = w;
+        g.buf_height = h;
+        p.cropmode = ASHIFT_CROP_ASPECT;
+        do_crop(&module, &p);
+        offx_ = p.cl * cw;
+        offy_ = p.ct * ch;
+        scale_ = (p.cr - p.cl) * cw/double(w);
+        scale_ *= 0.99; // add a safety factor to avoid border issues -- TODO
     }
-}
-
-
-bool PerspectiveCorrection::test_scale(int w, int h, double scale)
-{
-    auto samples = get_corners(w, h);
-    double offx = (w - scale * w) * 0.5;
-    double offy = (h - scale * h) * 0.5;
-    for (auto &s : samples) {
-        correct(s.x, s.y, scale, offx, offy);
-        if (s.x < 0 || s.x > w - 1 || s.y < 0 || s.y > h - 1) {
-            return true;
-        }
-    }
-    return false;
 }
 
 
 procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams)
 {
-    dt_iop_ashift_params_t p = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        DEFAULT_F_LENGTH, 1.0f, 100.0f, 1.0f,
-        ASHIFT_MODE_GENERIC, 0,
-        ASHIFT_CROP_OFF, 0.0f, 1.0f, 0.0f, 1.0f
-    };
-
+    dt_iop_ashift_params_t p;
     dt_iop_ashift_gui_data_t g;
-    g.buf = NULL;
-    g.buf_width = 0;
-    g.buf_height = 0;
-    g.buf_x_off = 0;
-    g.buf_y_off = 0;
-    g.buf_scale = 1.0f;
-    g.buf_hash = 0;
-    g.isflipped = 0;
-    g.lastfit = ASHIFT_FIT_NONE;
-    g.fitting = 0;
-    g.lines = NULL;
-    g.lines_count =0;
-    g.horizontal_count = 0;
-    g.vertical_count = 0;
-    g.grid_hash = 0;
-    g.lines_hash = 0;
-    g.rotation_range = ROTATION_RANGE_SOFT;
-    g.lensshift_v_range = LENSSHIFT_RANGE_SOFT;
-    g.lensshift_h_range = LENSSHIFT_RANGE_SOFT;
-    g.shear_range = SHEAR_RANGE_SOFT;
-    g.lines_suppressed = 0;
-    g.lines_version = 0;
-    g.show_guides = 0;
-    g.isselecting = 0;
-    g.isdeselecting = 0;
-    g.isbounding = ASHIFT_BOUNDING_OFF;
-    g.near_delta = 0;
-    g.selecting_lines_version = 0;
-    g.points = NULL;
-    g.points_idx = NULL;
-    g.points_lines_count = 0;
-    g.points_version = 0;
-    g.jobcode = ASHIFT_JOBCODE_NONE;
-    g.jobparams = 0;
-    g.adjust_crop = FALSE;
-    g.lastx = g.lasty = -1.0f;
-    g.crop_cx = g.crop_cy = 1.0f;
-
+    init_dt_structures(&p, &g, nullptr);
     dt_iop_module_t module;
     module.gui_data = &g;
     module.is_raw = src->isRAW();
