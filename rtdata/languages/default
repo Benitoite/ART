@@ -1913,10 +1913,10 @@ TP_PCVIGNETTE_ROUNDNESS_TOOLTIP;Roundness:\n0 = rectangle,\n50 = fitted ellipse,
 TP_PCVIGNETTE_STRENGTH;Strength
 TP_PCVIGNETTE_STRENGTH_TOOLTIP;Filter strength in stops (reached in corners).
 TP_PERSPECTIVE_ANGLE;Angle
-TP_PERSPECTIVE_AUTO;Automatic fit
-TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP;Automatically correct for vertical and horizontal perspective distortions
-TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP;Automatically correct for horizontal perspective distortion
-TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP;Automatically correct for vertical perspective distortion
+TP_PERSPECTIVE_AUTO;Auto-fit
+TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP;Horizontal and vertical
+TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP;Horizontal
+TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP;Vertical
 TP_PERSPECTIVE_HORIZONTAL;Horizontal
 TP_PERSPECTIVE_LABEL;Perspective
 TP_PERSPECTIVE_SHEAR;Shear
