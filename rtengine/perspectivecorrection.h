@@ -37,12 +37,11 @@ public:
         VERTICAL,
         BOTH
     };
-    procparams::PerspectiveParams autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams);
+    static procparams::PerspectiveParams autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams);
 
-    void autocrop(int width, int height, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h);
+    static void autocrop(int width, int height, bool fixratio, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h);
 
 private:
-    void get_view_size(int w, int h, const procparams::PerspectiveParams &params, double &cw, double &ch);
     void correct(double &x, double &y, double scale, double offx, double offy);
     void calc_scale(int w, int h, const procparams::PerspectiveParams &params, bool fill);
     

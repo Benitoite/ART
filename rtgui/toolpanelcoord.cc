@@ -1032,8 +1032,7 @@ void ToolPanelCoordinator::autoPerspectiveRequested(bool horiz, bool vert, doubl
         dir = rtengine::PerspectiveCorrection::VERTICAL;
     }
 
-    rtengine::PerspectiveCorrection pc;
-    auto res = pc.autocompute(src, dir, &params);
+    auto res = rtengine::PerspectiveCorrection::autocompute(src, dir, &params);
     angle = res.angle;
     horizontal = res.horizontal;
     vertical = res.vertical;

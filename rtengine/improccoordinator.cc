@@ -869,9 +869,8 @@ void ImProcCoordinator::getAutoCrop(double ratio, int &x, int &y, int &w, int &h
     y = (fullh - h) / 2;
 
     if (params.perspective.enabled && !params.commonTrans.autofill) {
-        PerspectiveCorrection pc;
         int xx, yy, ww, hh;
-        pc.autocrop(w, h, params.perspective, xx, yy, ww, hh);
+        PerspectiveCorrection::autocrop(w, h, ratio > 0, params.perspective, xx, yy, ww, hh);
         x += xx;
         y += yy;
         w = ww;

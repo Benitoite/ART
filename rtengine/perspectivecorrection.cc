@@ -184,8 +184,7 @@ namespace {
 std::vector<Coord2D> get_corners(int w, int h)
 {
     int x1 = 0, y1 = 0;
-    int x2 = x1 + w - 1;
-    int y2 = y1 + h - 1;
+    int x2 = w, y2 = h;
 
     std::vector<Coord2D> corners = {
         Coord2D(x1, y1),
@@ -264,7 +263,35 @@ void init_dt_structures(dt_iop_ashift_params_t *p, dt_iop_ashift_gui_data_t *g,
     }
 }
 
+
+void get_view_size(int w, int h, const procparams::PerspectiveParams &params, double &cw, double &ch)
+{
+    double min_x = RT_INFINITY, max_x = -RT_INFINITY;
+    double min_y = RT_INFINITY, max_y = -RT_INFINITY;
+
+    auto corners = get_corners(w, h);
+
+    float homo[3][3];
+    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, w, h, ASHIFT_HOMOGRAPH_FORWARD);
+    
+    for (auto &c : corners) {
+        float pin[3] = { float(c.x), float(c.y), 1.f };
+        float pout[3];
+        mat3mulv(pout, (float *)homo, pin);
+        double x = pout[0] / pout[2];
+        double y = pout[1] / pout[2];
+        min_x = min(min_x, x);
+        max_x = max(max_x, x);
+        min_y = min(min_y, y);
+        max_y = max(max_y, y);
+    }
+
+    cw = max_x - min_x;
+    ch = max_y - min_y;
+}    
+
 } // namespace
+
 
 void PerspectiveCorrection::calc_scale(int w, int h, const procparams::PerspectiveParams &params, bool fill)
 {
@@ -287,36 +314,8 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
         offx_ = p.cl * cw;
         offy_ = p.ct * ch;
         scale_ = (p.cr - p.cl) * cw/double(w);
-        scale_ *= 0.99; // add a safety factor to avoid border issues -- TODO
     }
 }
-
-
-void PerspectiveCorrection::get_view_size(int w, int h, const procparams::PerspectiveParams &params, double &cw, double &ch)
-{
-    double min_x = RT_INFINITY, max_x = -RT_INFINITY;
-    double min_y = RT_INFINITY, max_y = -RT_INFINITY;
-
-    auto corners = get_corners(w, h);
-
-    float homo[3][3];
-    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, w, h, ASHIFT_HOMOGRAPH_FORWARD);
-    
-    for (auto &c : corners) {
-        float pin[3] = { float(c.x), float(c.y), 1.f };
-        float pout[3];
-        mat3mulv(pout, (float *)homo, pin);
-        double x = pout[0] / pout[2];
-        double y = pout[1] / pout[2];
-        min_x = min(min_x, x);
-        max_x = max(max_x, x);
-        min_y = min(min_y, y);
-        max_y = max(max_y, y);
-    }
-
-    cw = floor(max_x - min_x + 1);
-    ch = floor(max_y - min_y + 1);
-}    
 
 
 procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams)
@@ -406,7 +405,7 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
 }
 
 
-void PerspectiveCorrection::autocrop(int width, int height, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h)
+void PerspectiveCorrection::autocrop(int width, int height, bool fixratio, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h)
 {
     double cw, ch;
     get_view_size(width, height, params, cw, ch);
@@ -417,17 +416,16 @@ void PerspectiveCorrection::autocrop(int width, int height, const procparams::Pe
     dt_iop_module_t module = { &g, false };
     g.buf_width = width;
     g.buf_height = height;
-    p.cropmode = ASHIFT_CROP_ASPECT;
+    p.cropmode = fixratio ? ASHIFT_CROP_ASPECT : ASHIFT_CROP_LARGEST;
     do_crop(&module, &p);
-    s *= 0.99; // make the crop a bit smaller just to stay safe
     cw *= s;
     ch *= s;
     double ox = p.cl * cw;
     double oy = p.ct * ch;
-    x = ceil(ox - (cw - width)/s * 0.5);
-    y = ceil(oy - (ch - height)/s * 0.5);
-    w = floor((p.cr - p.cl) * cw);
-    h = floor((p.cb - p.ct) * ch);
+    x = ox - (cw - width)/2.0 + 0.5;
+    y = oy - (ch - height)/2.0 + 0.5;
+    w = (p.cr - p.cl) * cw;
+    h = (p.cb - p.ct) * ch;
 }
 
 } // namespace rtengine
