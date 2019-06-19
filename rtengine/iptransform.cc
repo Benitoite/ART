@@ -215,10 +215,10 @@ inline void interpolateTransformChannelsCubic(float** src, int xs, int ys, doubl
 }
 
 
-void transform_perspective(const ProcParams *params, Imagefloat *orig, Imagefloat *dest, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
+void transform_perspective(const ProcParams *params, const FramesMetaData *metadata, Imagefloat *orig, Imagefloat *dest, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
 {
     PerspectiveCorrection pc;
-    pc.init(fW, fH, params->perspective, params->commonTrans.autofill);
+    pc.init(fW, fH, params->perspective, params->commonTrans.autofill, metadata);
     double s = double(fW) / double(oW);
 
     int W = dest->getWidth();
@@ -517,7 +517,7 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
             }
         }
         if (needs_perspective) {
-            transform_perspective(params, dest, transformed, cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
+            transform_perspective(params, metadata, dest, transformed, cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
         }
     }
 }

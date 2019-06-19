@@ -578,6 +578,7 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
 
         icm->setRawMeta (raw, (const rtengine::FramesData*)pMetaData);
         lensProf->setRawMeta (raw, pMetaData);
+        perspective->setRawMeta(raw, pMetaData);
     }
 
 
@@ -1032,7 +1033,7 @@ void ToolPanelCoordinator::autoPerspectiveRequested(bool horiz, bool vert, doubl
         dir = rtengine::PerspectiveCorrection::VERTICAL;
     }
 
-    auto res = rtengine::PerspectiveCorrection::autocompute(src, dir, &params);
+    auto res = rtengine::PerspectiveCorrection::autocompute(src, dir, &params, src->getMetaData());
     angle = res.angle;
     horizontal = res.horizontal;
     vertical = res.vertical;

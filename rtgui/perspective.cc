@@ -27,13 +27,19 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
 {
     auto m = ProcEventMapper::getInstance();
     EvEnabled = m->newEvent(TRANSFORM, "HISTORY_MSG_PERSPECTIVE_ENABLED");
+    EvPerspCorrLens = m->newEvent(TRANSFORM, "HISTORY_MSG_PERSPECTIVE_LENS");
     
     lgl = nullptr;
+    metadata = nullptr;
 
-    Gtk::Image* ipersHL =   Gtk::manage (new RTImage ("perspective-horizontal-left-small.png"));
-    Gtk::Image* ipersHR =   Gtk::manage (new RTImage ("perspective-horizontal-right-small.png"));
-    Gtk::Image* ipersVL =   Gtk::manage (new RTImage ("perspective-vertical-bottom-small.png"));
-    Gtk::Image* ipersVR =   Gtk::manage (new RTImage ("perspective-vertical-top-small.png"));
+    Gtk::Image* ipersHL = Gtk::manage(new RTImage("perspective-horizontal-left-small.png"));
+    Gtk::Image* ipersHR = Gtk::manage(new RTImage("perspective-horizontal-right-small.png"));
+    Gtk::Image* ipersVL = Gtk::manage(new RTImage("perspective-vertical-bottom-small.png"));
+    Gtk::Image* ipersVR = Gtk::manage(new RTImage("perspective-vertical-top-small.png"));
+    Gtk::Image* ipersSL = Gtk::manage(new RTImage("perspective-shear-left-small.png"));
+    Gtk::Image* ipersSR = Gtk::manage(new RTImage("perspective-shear-right-small.png"));
+    Gtk::Image* irotateL = Gtk::manage(new RTImage("rotate-right-small.png"));
+    Gtk::Image* irotateR = Gtk::manage(new RTImage("rotate-left-small.png"));
 
     horiz = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_HORIZONTAL"), -100, 100, 0.1, 0, ipersHL, ipersHR));
     horiz->setAdjusterListener (this);
@@ -41,18 +47,30 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     vert = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_VERTICAL"), -100, 100, 0.1, 0, ipersVL, ipersVR));
     vert->setAdjusterListener (this);
 
-    angle = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_ANGLE"), -20, 20, 0.01, 0));
-    shear = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_SHEAR"), -50, 50, 0.1, 0));
+    angle = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_ANGLE"), -20, 20, 0.01, 0, irotateL, irotateR));
+    shear = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_SHEAR"), -50, 50, 0.1, 0, ipersSL, ipersSR));
+    flength = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_FLENGTH"), 1, 1200, 0.1, 28));
+    cropfactor = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_CROPFACTOR"), 0.1, 10, 0.01, 1));
+    aspect = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_ASPECT"), -0.5, 2, 0.01, 1));
     angle->setAdjusterListener(this);
     shear->setAdjusterListener(this);
+    flength->setAdjusterListener(this);
+    cropfactor->setAdjusterListener(this);
+    aspect->setAdjusterListener(this);
 
-    pack_start(*angle);
-    pack_start (*horiz);
-    pack_start (*vert);
+    pack_start(*horiz);
+    pack_start(*vert);
     pack_start(*shear);
+    pack_start(*angle);
+    pack_start(*flength);
+    pack_start(*cropfactor);
+    pack_start(*aspect);
 
     horiz->setLogScale(2, 0);
     vert->setLogScale(2, 0);
+    flength->setLogScale(100, 1);
+    cropfactor->setLogScale(2, 1);
+    aspect->setLogScale(2, 2);
 
     auto_horiz = Gtk::manage(new Gtk::Button());
     auto_horiz->add(*Gtk::manage(new RTImage("perspective-horizontal-left.png")));
@@ -96,6 +114,16 @@ void PerspCorrection::read(const ProcParams* pp)
     vert->setValue (pp->perspective.vertical);
     angle->setValue(pp->perspective.angle);
     shear->setValue(pp->perspective.shear);
+    aspect->setValue(pp->perspective.aspect);
+    if (pp->perspective.flength > 0) {
+        flength->setValue(pp->perspective.flength);
+        cropfactor->setValue(pp->perspective.cropfactor);
+    } else if (metadata) {
+        do_set_metadata(metadata);
+    } else {
+        flength->setValue(28);
+        cropfactor->setValue(1);
+    }
     setEnabled(pp->perspective.enabled);
 
     enableListener ();
@@ -108,6 +136,9 @@ void PerspCorrection::write(ProcParams* pp)
     pp->perspective.vertical = vert->getValue ();
     pp->perspective.angle = angle->getValue();
     pp->perspective.shear = shear->getValue();
+    pp->perspective.flength = flength->getValue();
+    pp->perspective.cropfactor = cropfactor->getValue();
+    pp->perspective.aspect = aspect->getValue();
 }
 
 void PerspCorrection::setDefaults(const ProcParams* defParams)
@@ -117,12 +148,19 @@ void PerspCorrection::setDefaults(const ProcParams* defParams)
     vert->setDefault (defParams->perspective.vertical);
     angle->setDefault(defParams->perspective.angle);
     shear->setDefault(defParams->perspective.shear);
+    flength->setDefault(defParams->perspective.flength);
+    cropfactor->setDefault(defParams->perspective.cropfactor);
+    aspect->setDefault(defParams->perspective.aspect);
 }
 
 void PerspCorrection::adjusterChanged(Adjuster* a, double newval)
 {
     if (listener && getEnabled()) {
-        listener->panelChanged (EvPerspCorr, Glib::ustring::compose ("%1=%2  %3=%4\n%5=%6  %7=%8", M("TP_PERSPECTIVE_HORIZONTAL"), horiz->getValue(), M("TP_PERSPECTIVE_VERTICAL"), vert->getValue(), M("TP_PERSPECTIVE_ANGLE"), angle->getValue(), M("TP_PERSPECTIVE_SHEAR"), shear->getValue()));
+        if (a == flength || a == cropfactor || a == aspect) {
+            listener->panelChanged(EvPerspCorrLens, Glib::ustring::compose("%1=%2  %3=%4\n%5=%6", M("TP_PERSPECTIVE_FLENGTH"), flength->getValue(), M("TP_PERSPECTIVE_CROPFACTOR"), cropfactor->getValue(), M("TP_PERSPECTIVE_ASPECT"), aspect->getValue()));
+        } else {
+            listener->panelChanged(EvPerspCorr, Glib::ustring::compose ("%1=%2  %3=%4\n%5=%6  %7=%8", M("TP_PERSPECTIVE_HORIZONTAL"), horiz->getValue(), M("TP_PERSPECTIVE_VERTICAL"), vert->getValue(), M("TP_PERSPECTIVE_ANGLE"), angle->getValue(), M("TP_PERSPECTIVE_SHEAR"), shear->getValue()));
+        }
     }
 }
 
@@ -133,11 +171,13 @@ void PerspCorrection::adjusterAutoToggled(Adjuster* a, bool newval)
 
 void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
 {
-
     horiz->trimValue(pp->perspective.horizontal);
     vert->trimValue(pp->perspective.vertical);
     angle->trimValue(pp->perspective.angle);
     shear->trimValue(pp->perspective.shear);
+    flength->trimValue(pp->perspective.flength);
+    cropfactor->trimValue(pp->perspective.cropfactor);
+    aspect->trimValue(pp->perspective.aspect);
 }
 
 
@@ -182,4 +222,31 @@ void PerspCorrection::autoPressed(Gtk::Button *which)
     enableListener();
 
     adjusterChanged(nullptr, 0);
+}
+
+
+void PerspCorrection::do_set_metadata(const rtengine::FramesMetaData *meta)
+{
+    metadata = meta;
+    if (metadata) {
+        double f = metadata->getFocalLen();
+        double f35 = metadata->getFocalLen35mm();
+        if (f > 0) {
+            flength->setValue(f);
+            flength->setDefault(f);
+            if (f35 > 0) {
+                double crop = f35 / f;
+                cropfactor->setValue(crop);
+                cropfactor->setDefault(crop);
+            }
+        }
+    }
+}
+
+
+void PerspCorrection::setRawMeta(bool raw, const rtengine::FramesMetaData *meta)
+{
+    disableListener();
+    do_set_metadata(meta);
+    enableListener();
 }

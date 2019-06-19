@@ -71,42 +71,6 @@ namespace rtengine {
 
 namespace {
 
-#define ROTATION_RANGE 10                   // allowed min/max default range for rotation parameter
-#define ROTATION_RANGE_SOFT 20              // allowed min/max range for rotation parameter with manual adjustment
-#define LENSSHIFT_RANGE 0.5                 // allowed min/max default range for lensshift parameters
-#define LENSSHIFT_RANGE_SOFT 1              // allowed min/max range for lensshift parameters with manual adjustment
-#define SHEAR_RANGE 0.2                     // allowed min/max range for shear parameter
-#define SHEAR_RANGE_SOFT 0.5                // allowed min/max range for shear parameter with manual adjustment
-#define MIN_LINE_LENGTH 5                   // the minimum length of a line in pixels to be regarded as relevant
-#define MAX_TANGENTIAL_DEVIATION 30         // by how many degrees a line may deviate from the +/-180 and +/-90 to be regarded as relevant
-#define LSD_SCALE 0.99                      // LSD: scaling factor for line detection
-#define LSD_SIGMA_SCALE 0.6                 // LSD: sigma for Gaussian filter is computed as sigma = sigma_scale/scale
-#define LSD_QUANT 2.0                       // LSD: bound to the quantization error on the gradient norm
-#define LSD_ANG_TH 22.5                     // LSD: gradient angle tolerance in degrees
-#define LSD_LOG_EPS 0.0                     // LSD: detection threshold: -log10(NFA) > log_eps
-#define LSD_DENSITY_TH 0.7                  // LSD: minimal density of region points in rectangle
-#define LSD_N_BINS 1024                     // LSD: number of bins in pseudo-ordering of gradient modulus
-#define LSD_GAMMA 0.45                      // gamma correction to apply on raw images prior to line detection
-#define RANSAC_RUNS 400                     // how many iterations to run in ransac
-#define RANSAC_EPSILON 2                    // starting value for ransac epsilon (in -log10 units)
-#define RANSAC_EPSILON_STEP 1               // step size of epsilon optimization (log10 units)
-#define RANSAC_ELIMINATION_RATIO 60         // percentage of lines we try to eliminate as outliers
-#define RANSAC_OPTIMIZATION_STEPS 5         // home many steps to optimize epsilon
-#define RANSAC_OPTIMIZATION_DRY_RUNS 50     // how man runs per optimization steps
-#define RANSAC_HURDLE 5                     // hurdle rate: the number of lines below which we do a complete permutation instead of random sampling
-#define MINIMUM_FITLINES 4                  // minimum number of lines needed for automatic parameter fit
-#define NMS_EPSILON 1e-3                    // break criterion for Nelder-Mead simplex
-#define NMS_SCALE 1.0                       // scaling factor for Nelder-Mead simplex
-#define NMS_ITERATIONS 400                  // number of iterations for Nelder-Mead simplex
-#define NMS_CROP_EPSILON 100.0              // break criterion for Nelder-Mead simplex on crop fitting
-#define NMS_CROP_SCALE 0.5                  // scaling factor for Nelder-Mead simplex on crop fitting
-#define NMS_CROP_ITERATIONS 100             // number of iterations for Nelder-Mead simplex on crop fitting
-#define NMS_ALPHA 1.0                       // reflection coefficient for Nelder-Mead simplex
-#define NMS_BETA 0.5                        // contraction coefficient for Nelder-Mead simplex
-#define NMS_GAMMA 2.0                       // expansion coefficient for Nelder-Mead simplex
-#define DEFAULT_F_LENGTH 28.0               // focal length we assume if no exif data are available
-
-
 inline int mat3inv(float *const dst, const float *const src)
 {
     std::array<std::array<float, 3>, 3> tmpsrc;
@@ -132,6 +96,23 @@ inline int mat3inv(float *const dst, const float *const src)
 // the darktable ashift iop (adapted to RT), which does most of the work
 #include "ashift_dt.c"
 
+
+procparams::PerspectiveParams import_meta(const procparams::PerspectiveParams &pp, const FramesMetaData *metadata)
+{
+    procparams::PerspectiveParams ret(pp);
+    if (metadata) {
+        double f = metadata->getFocalLen();
+        double f35 = metadata->getFocalLen35mm();
+        if (f > 0 && f35 > 0) {
+            ret.flength = f;
+            ret.cropfactor = f35 / f;
+        } else if (f > 0) {
+            ret.flength = f;
+        }
+    }
+    return ret;
+}
+
 } // namespace
 
 
@@ -144,12 +125,13 @@ PerspectiveCorrection::PerspectiveCorrection():
 }
 
 
-void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill)
+void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill, const FramesMetaData *metadata)
 {
-    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, width, height, ASHIFT_HOMOGRAPH_INVERTED);
+    auto pp = import_meta(params, metadata);
+    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 0.f, params.aspect, width, height, ASHIFT_HOMOGRAPH_INVERTED);
 
     ok_ = true;
-    calc_scale(width, height, params, fill);
+    calc_scale(width, height, pp, fill);
 }
 
 
@@ -159,10 +141,10 @@ inline void PerspectiveCorrection::correct(double &x, double &y, double scale, d
         float pin[3], pout[3];
         pout[0] = x;
         pout[1] = y;
-        pout[0] *= scale;//_;
-        pout[1] *= scale;//_;
-        pout[0] += offx;//_;
-        pout[1] += offy;//_;
+        pout[0] *= scale;
+        pout[1] *= scale;
+        pout[0] += offx;
+        pout[1] += offy;
         pout[2] = 1.f;
         mat3mulv(pin, (float *)ihomograph_, pout);
         pin[0] /= pin[2];
@@ -204,10 +186,10 @@ void init_dt_structures(dt_iop_ashift_params_t *p, dt_iop_ashift_gui_data_t *g,
         0.0f,
         0.0f,
         DEFAULT_F_LENGTH,
+        1.f,
+        0.0f,
         1.0f,
-        100.0f,
-        1.0f,
-        ASHIFT_MODE_GENERIC,
+        ASHIFT_MODE_SPECIFIC,
         0,
         ASHIFT_CROP_OFF,
         0.0f,
@@ -260,6 +242,9 @@ void init_dt_structures(dt_iop_ashift_params_t *p, dt_iop_ashift_gui_data_t *g,
         p->lensshift_v = params->vertical / 100.0;
         p->lensshift_h = -params->horizontal / 100.0;
         p->shear = params->shear / 100.0;
+        p->f_length = params->flength;
+        p->crop_factor = params->cropfactor;
+        p->aspect = params->aspect;
     }
 }
 
@@ -272,7 +257,7 @@ void get_view_size(int w, int h, const procparams::PerspectiveParams &params, do
     auto corners = get_corners(w, h);
 
     float homo[3][3];
-    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, DEFAULT_F_LENGTH, 0.f, 1.f, w, h, ASHIFT_HOMOGRAPH_FORWARD);
+    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 0.f, params.aspect, w, h, ASHIFT_HOMOGRAPH_FORWARD);
     
     for (auto &c : corners) {
         float pin[3] = { float(c.x), float(c.y), 1.f };
@@ -318,11 +303,12 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
 }
 
 
-procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams)
+procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams, const FramesMetaData *metadata)
 {
+    auto pcp = import_meta(pparams->perspective, metadata);
     dt_iop_ashift_params_t p;
     dt_iop_ashift_gui_data_t g;
-    init_dt_structures(&p, &g, nullptr);
+    init_dt_structures(&p, &g, &pcp);
     dt_iop_module_t module;
     module.gui_data = &g;
     module.is_raw = src->isRAW();
@@ -387,7 +373,7 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
         break;
     }
     auto res = do_get_structure(&module, &p, ASHIFT_ENHANCE_EDGES) && do_fit(&module, &p, fitaxis);
-    procparams::PerspectiveParams retval;
+    procparams::PerspectiveParams retval = pparams->perspective;
 
     // cleanup the gui
     if (g.lines) free(g.lines);
@@ -405,14 +391,15 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
 }
 
 
-void PerspectiveCorrection::autocrop(int width, int height, bool fixratio, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h)
+void PerspectiveCorrection::autocrop(int width, int height, bool fixratio, const procparams::PerspectiveParams &params, const FramesMetaData *metadata, int &x, int &y, int &w, int &h)
 {
+    auto pp = import_meta(params, metadata);
     double cw, ch;
     get_view_size(width, height, params, cw, ch);
     double s = min(double(width)/cw, double(height)/ch);
     dt_iop_ashift_params_t p;
     dt_iop_ashift_gui_data_t g;
-    init_dt_structures(&p, &g, &params);
+    init_dt_structures(&p, &g, &pp);
     dt_iop_module_t module = { &g, false };
     g.buf_width = width;
     g.buf_height = height;

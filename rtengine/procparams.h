@@ -802,6 +802,9 @@ struct PerspectiveParams {
     double  vertical;
     double angle;
     double shear;
+    double flength;
+    double cropfactor;
+    double aspect;
 
     PerspectiveParams();
 

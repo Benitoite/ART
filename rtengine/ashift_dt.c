@@ -50,40 +50,40 @@ using namespace std;
 // Thanks to Marcus for his support when implementing part of the ShiftN functionality
 // to darktable.
 
-/* #define ROTATION_RANGE 10                   // allowed min/max default range for rotation parameter */
-/* #define ROTATION_RANGE_SOFT 20              // allowed min/max range for rotation parameter with manual adjustment */
-/* #define LENSSHIFT_RANGE 0.5                 // allowed min/max default range for lensshift parameters */
-/* #define LENSSHIFT_RANGE_SOFT 1              // allowed min/max range for lensshift parameters with manual adjustment */
-/* #define SHEAR_RANGE 0.2                     // allowed min/max range for shear parameter */
-/* #define SHEAR_RANGE_SOFT 0.5                // allowed min/max range for shear parameter with manual adjustment */
-/* #define MIN_LINE_LENGTH 5                   // the minimum length of a line in pixels to be regarded as relevant */
-/* #define MAX_TANGENTIAL_DEVIATION 30         // by how many degrees a line may deviate from the +/-180 and +/-90 to be regarded as relevant */
-/* #define LSD_SCALE 0.99                      // LSD: scaling factor for line detection */
-/* #define LSD_SIGMA_SCALE 0.6                 // LSD: sigma for Gaussian filter is computed as sigma = sigma_scale/scale */
-/* #define LSD_QUANT 2.0                       // LSD: bound to the quantization error on the gradient norm */
-/* #define LSD_ANG_TH 22.5                     // LSD: gradient angle tolerance in degrees */
-/* #define LSD_LOG_EPS 0.0                     // LSD: detection threshold: -log10(NFA) > log_eps */
-/* #define LSD_DENSITY_TH 0.7                  // LSD: minimal density of region points in rectangle */
-/* #define LSD_N_BINS 1024                     // LSD: number of bins in pseudo-ordering of gradient modulus */
-/* #define LSD_GAMMA 0.45                      // gamma correction to apply on raw images prior to line detection */
-/* #define RANSAC_RUNS 400                     // how many iterations to run in ransac */
-/* #define RANSAC_EPSILON 2                    // starting value for ransac epsilon (in -log10 units) */
-/* #define RANSAC_EPSILON_STEP 1               // step size of epsilon optimization (log10 units) */
-/* #define RANSAC_ELIMINATION_RATIO 60         // percentage of lines we try to eliminate as outliers */
-/* #define RANSAC_OPTIMIZATION_STEPS 5         // home many steps to optimize epsilon */
-/* #define RANSAC_OPTIMIZATION_DRY_RUNS 50     // how man runs per optimization steps */
-/* #define RANSAC_HURDLE 5                     // hurdle rate: the number of lines below which we do a complete permutation instead of random sampling */
-/* #define MINIMUM_FITLINES 4                  // minimum number of lines needed for automatic parameter fit */
-/* #define NMS_EPSILON 1e-3                    // break criterion for Nelder-Mead simplex */
-/* #define NMS_SCALE 1.0                       // scaling factor for Nelder-Mead simplex */
-/* #define NMS_ITERATIONS 400                  // number of iterations for Nelder-Mead simplex */
-/* #define NMS_CROP_EPSILON 100.0              // break criterion for Nelder-Mead simplex on crop fitting */
-/* #define NMS_CROP_SCALE 0.5                  // scaling factor for Nelder-Mead simplex on crop fitting */
-/* #define NMS_CROP_ITERATIONS 100             // number of iterations for Nelder-Mead simplex on crop fitting */
-/* #define NMS_ALPHA 1.0                       // reflection coefficient for Nelder-Mead simplex */
-/* #define NMS_BETA 0.5                        // contraction coefficient for Nelder-Mead simplex */
-/* #define NMS_GAMMA 2.0                       // expansion coefficient for Nelder-Mead simplex */
-/* #define DEFAULT_F_LENGTH 28.0               // focal length we assume if no exif data are available */
+#define ROTATION_RANGE 10                   // allowed min/max default range for rotation parameter
+#define ROTATION_RANGE_SOFT 20              // allowed min/max range for rotation parameter with manual adjustment
+#define LENSSHIFT_RANGE 0.5                 // allowed min/max default range for lensshift parameters
+#define LENSSHIFT_RANGE_SOFT 1              // allowed min/max range for lensshift parameters with manual adjustment
+#define SHEAR_RANGE 0.2                     // allowed min/max range for shear parameter
+#define SHEAR_RANGE_SOFT 0.5                // allowed min/max range for shear parameter with manual adjustment
+#define MIN_LINE_LENGTH 5                   // the minimum length of a line in pixels to be regarded as relevant
+#define MAX_TANGENTIAL_DEVIATION 30         // by how many degrees a line may deviate from the +/-180 and +/-90 to be regarded as relevant
+#define LSD_SCALE 0.99                      // LSD: scaling factor for line detection
+#define LSD_SIGMA_SCALE 0.6                 // LSD: sigma for Gaussian filter is computed as sigma = sigma_scale/scale
+#define LSD_QUANT 2.0                       // LSD: bound to the quantization error on the gradient norm
+#define LSD_ANG_TH 22.5                     // LSD: gradient angle tolerance in degrees
+#define LSD_LOG_EPS 0.0                     // LSD: detection threshold: -log10(NFA) > log_eps
+#define LSD_DENSITY_TH 0.7                  // LSD: minimal density of region points in rectangle
+#define LSD_N_BINS 1024                     // LSD: number of bins in pseudo-ordering of gradient modulus
+#define LSD_GAMMA 0.45                      // gamma correction to apply on raw images prior to line detection
+#define RANSAC_RUNS 400                     // how many iterations to run in ransac
+#define RANSAC_EPSILON 2                    // starting value for ransac epsilon (in -log10 units)
+#define RANSAC_EPSILON_STEP 1               // step size of epsilon optimization (log10 units)
+#define RANSAC_ELIMINATION_RATIO 60         // percentage of lines we try to eliminate as outliers
+#define RANSAC_OPTIMIZATION_STEPS 5         // home many steps to optimize epsilon
+#define RANSAC_OPTIMIZATION_DRY_RUNS 50     // how man runs per optimization steps
+#define RANSAC_HURDLE 5                     // hurdle rate: the number of lines below which we do a complete permutation instead of random sampling
+#define MINIMUM_FITLINES 4                  // minimum number of lines needed for automatic parameter fit
+#define NMS_EPSILON 1e-3                    // break criterion for Nelder-Mead simplex
+#define NMS_SCALE 1.0                       // scaling factor for Nelder-Mead simplex
+#define NMS_ITERATIONS 400                  // number of iterations for Nelder-Mead simplex
+#define NMS_CROP_EPSILON 100.0              // break criterion for Nelder-Mead simplex on crop fitting
+#define NMS_CROP_SCALE 0.5                  // scaling factor for Nelder-Mead simplex on crop fitting
+#define NMS_CROP_ITERATIONS 100             // number of iterations for Nelder-Mead simplex on crop fitting
+#define NMS_ALPHA 1.0                       // reflection coefficient for Nelder-Mead simplex
+#define NMS_BETA 0.5                        // contraction coefficient for Nelder-Mead simplex
+#define NMS_GAMMA 2.0                       // expansion coefficient for Nelder-Mead simplex
+#define DEFAULT_F_LENGTH 28.0               // focal length we assume if no exif data are available
 
 /* // define to get debugging output */
 /* #undef ASHIFT_DEBUG */

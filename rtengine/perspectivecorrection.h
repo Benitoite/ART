@@ -29,7 +29,7 @@ namespace rtengine {
 class PerspectiveCorrection {
 public:
     PerspectiveCorrection();
-    void init(int width, int height, const procparams::PerspectiveParams &params, bool fill);
+    void init(int width, int height, const procparams::PerspectiveParams &params, bool fill, const FramesMetaData *meta);
     void operator()(double &x, double &y);
 
     enum Direction {
@@ -37,9 +37,9 @@ public:
         VERTICAL,
         BOTH
     };
-    static procparams::PerspectiveParams autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams);
+    static procparams::PerspectiveParams autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams, const FramesMetaData *metadata);
 
-    static void autocrop(int width, int height, bool fixratio, const procparams::PerspectiveParams &params, int &x, int &y, int &w, int &h);
+    static void autocrop(int width, int height, bool fixratio, const procparams::PerspectiveParams &params, const FramesMetaData *metadata, int &x, int &y, int &w, int &h);
 
 private:
     void correct(double &x, double &y, double scale, double offx, double offy);

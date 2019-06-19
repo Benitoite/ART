@@ -1310,7 +1310,10 @@ PerspectiveParams::PerspectiveParams() :
     horizontal(0.0),
     vertical(0.0),
     angle(0.0),
-    shear(0.0)
+    shear(0.0),
+    flength(0),
+    cropfactor(1),
+    aspect(1)
 {
 }
 
@@ -1321,7 +1324,10 @@ bool PerspectiveParams::operator ==(const PerspectiveParams& other) const
         && horizontal == other.horizontal
         && vertical == other.vertical
         && angle == other.angle
-        && shear == other.shear;
+        && shear == other.shear
+        && flength == other.flength
+        && cropfactor == other.cropfactor
+        && aspect == other.aspect;
 }
 
 bool PerspectiveParams::operator !=(const PerspectiveParams& other) const
@@ -2137,6 +2143,8 @@ void ProcParams::setDefaults()
 
     sh = SHParams();
 
+    toneEqualizer = ToneEqualizerParams();
+
     crop = CropParams();
 
     coarse = CoarseTransformParams();
@@ -2540,6 +2548,9 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("Perspective", "Vertical", perspective.vertical, keyFile);
             saveToKeyfile("Perspective", "Angle", perspective.angle, keyFile);
             saveToKeyfile("Perspective", "Shear", perspective.shear, keyFile);
+            saveToKeyfile("Perspective", "FocalLength", perspective.flength, keyFile);
+            saveToKeyfile("Perspective", "CropFactor", perspective.cropfactor, keyFile);
+            saveToKeyfile("Perspective", "Aspect", perspective.aspect, keyFile);
         }
 
 // Gradient
@@ -3410,6 +3421,9 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             assignFromKeyfile(keyFile, "Perspective", "Vertical", perspective.vertical);
             assignFromKeyfile(keyFile, "Perspective", "Angle", perspective.angle);
             assignFromKeyfile(keyFile, "Perspective", "Shear", perspective.shear);
+            assignFromKeyfile(keyFile, "Perspective", "FocalLength", perspective.flength);
+            assignFromKeyfile(keyFile, "Perspective", "CropFactor", perspective.cropfactor);
+            assignFromKeyfile(keyFile, "Perspective", "Aspect", perspective.aspect);
         }
 
         if (keyFile.has_group("Gradient") && RELEVANT_(gradient)) {

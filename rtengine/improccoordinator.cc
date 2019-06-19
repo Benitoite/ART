@@ -870,7 +870,7 @@ void ImProcCoordinator::getAutoCrop(double ratio, int &x, int &y, int &w, int &h
 
     if (params.perspective.enabled && !params.commonTrans.autofill) {
         int xx, yy, ww, hh;
-        PerspectiveCorrection::autocrop(w, h, ratio > 0, params.perspective, xx, yy, ww, hh);
+        PerspectiveCorrection::autocrop(w, h, ratio > 0, params.perspective, imgsrc->getMetaData(), xx, yy, ww, hh);
         x += xx;
         y += yy;
         w = ww;

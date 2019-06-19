@@ -25,22 +25,8 @@
 #include "toolpanel.h"
 #include "lensgeomlistener.h"
 
-class PerspCorrection : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
-{
-
-protected:
-    Adjuster* horiz;
-    Adjuster* vert;
-    Adjuster *angle;
-    Adjuster *shear;
-    Gtk::Button *auto_horiz;
-    Gtk::Button *auto_vert;
-    Gtk::Button *auto_both;
-    LensGeomListener *lgl;
-    rtengine::ProcEvent EvEnabled;
-
+class PerspCorrection: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
 public:
-
     PerspCorrection();
 
     void read(const rtengine::procparams::ProcParams* pp) override;
@@ -53,6 +39,26 @@ public:
     void setLensGeomListener (LensGeomListener* l) { lgl = l; }
     void autoPressed(Gtk::Button *which);
     void enabledChanged();
+
+    void setRawMeta(bool raw, const rtengine::FramesMetaData *meta);
+
+private:
+    void do_set_metadata(const rtengine::FramesMetaData *meta);
+    
+    Adjuster* horiz;
+    Adjuster* vert;
+    Adjuster *angle;
+    Adjuster *shear;
+    Adjuster *flength;
+    Adjuster *cropfactor;
+    Adjuster *aspect;
+    Gtk::Button *auto_horiz;
+    Gtk::Button *auto_vert;
+    Gtk::Button *auto_both;
+    LensGeomListener *lgl;
+    rtengine::ProcEvent EvEnabled;
+    rtengine::ProcEvent EvPerspCorrLens;
+    const rtengine::FramesMetaData *metadata;
 };
 
 #endif
