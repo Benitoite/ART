@@ -1,3 +1,4 @@
+// -*- C++ -*-
 #pragma once
 
 /*
@@ -21,6 +22,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string.h>
 
 #include "noncopyable.h"
 
