@@ -21,12 +21,15 @@
 #include "guiutils.h"
 #include <sstream>
 #include "rtimage.h"
+#include "../rtengine/refreshmap.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-DarkFrame::DarkFrame () : FoldableToolPanel(this, "darkframe", M("TP_DARKFRAME_LABEL")), dfChanged(false), lastDFauto(false), dfp(nullptr), israw(true)
+DarkFrame::DarkFrame () : FoldableToolPanel(this, "darkframe", M("TP_DARKFRAME_LABEL"), false, true), dfChanged(false), lastDFauto(false), dfp(nullptr), israw(true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
+    
     hbdf = Gtk::manage(new Gtk::HBox());
     hbdf->set_spacing(4);
     darkFrameFile = Gtk::manage(new MyFileChooserButton(M("TP_DARKFRAME_LABEL"), Gtk::FILE_CHOOSER_ACTION_OPEN));
@@ -73,6 +76,8 @@ void DarkFrame::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
     dfautoconn.block(true);
+
+    setEnabled(pp->raw.enable_darkframe);
 
     dfAuto->set_active( pp->raw.df_autoselect );
 
@@ -143,6 +148,7 @@ void DarkFrame::read(const rtengine::procparams::ProcParams* pp)
 
 void DarkFrame::write( rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.enable_darkframe = getEnabled();
     pp->raw.dark_frame = darkFrameFile->get_filename();
     pp->raw.df_autoselect = dfAuto->get_active();
 }
@@ -164,7 +170,7 @@ void DarkFrame::dfAutoChanged()
 
     hbdf->set_sensitive( !dfAuto->get_active() );
 
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvPreProcessAutoDF, dfAuto->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }
@@ -173,7 +179,7 @@ void DarkFrame::darkFrameChanged()
 {
     dfChanged = true;
 
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvPreProcessDFFile, Glib::path_get_basename(darkFrameFile->get_filename()));
     }
 }
@@ -194,7 +200,7 @@ void DarkFrame::darkFrameReset()
 
     dfInfo->set_text("");
 
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvPreProcessDFFile, M("GENERAL_NONE"));
     }
 

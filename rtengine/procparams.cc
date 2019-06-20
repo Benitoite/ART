@@ -1869,7 +1869,9 @@ RAWParams::BayerSensor::BayerSensor() :
     pixelShiftNonGreenCross(true),
     pixelShiftDemosaicMethod(getPSDemosaicMethodString(PSDemosaicMethod::AMAZE)),
     dcb_enhance(true),
-    pdafLinesFilter(false)
+    pdafLinesFilter(false),
+    enable_black(false),
+    enable_preproc(false)
 {
 }
 
@@ -1907,7 +1909,9 @@ bool RAWParams::BayerSensor::operator ==(const BayerSensor& other) const
         && pixelShiftNonGreenCross == other.pixelShiftNonGreenCross
         && pixelShiftDemosaicMethod == other.pixelShiftDemosaicMethod
         && dcb_enhance == other.dcb_enhance
-        && pdafLinesFilter == other.pdafLinesFilter;
+        && pdafLinesFilter == other.pdafLinesFilter
+        && enable_black == other.enable_black
+        && enable_preproc == other.enable_preproc;
 }
 
 bool RAWParams::BayerSensor::operator !=(const BayerSensor& other) const
@@ -1984,7 +1988,8 @@ RAWParams::XTransSensor::XTransSensor() :
     ccSteps(0),
     blackred(0.0),
     blackgreen(0.0),
-    blackblue(0.0)
+    blackblue(0.0),
+    enable_black(false)
 {
 }
 
@@ -1998,7 +2003,8 @@ bool RAWParams::XTransSensor::operator ==(const XTransSensor& other) const
         && ccSteps == other.ccSteps
         && blackred == other.blackred
         && blackgreen == other.blackgreen
-        && blackblue == other.blackblue;
+        && blackblue == other.blackblue
+        && enable_black == other.enable_black;
 }
 
 bool RAWParams::XTransSensor::operator !=(const XTransSensor& other) const
@@ -2040,7 +2046,12 @@ RAWParams::RAWParams() :
     expos(1.0),
     hotPixelFilter(false),
     deadPixelFilter(false),
-    hotdeadpix_thresh(100)
+    hotdeadpix_thresh(100),
+    enable_darkframe(false),
+    enable_flatfield(false),
+    enable_ca(false),
+    enable_hotdeadpix(false),
+    enable_whitepoint(false)
 {
 }
 
@@ -2065,7 +2076,12 @@ bool RAWParams::operator ==(const RAWParams& other) const
         && expos == other.expos
         && hotPixelFilter == other.hotPixelFilter
         && deadPixelFilter == other.deadPixelFilter
-        && hotdeadpix_thresh == other.hotdeadpix_thresh;
+        && hotdeadpix_thresh == other.hotdeadpix_thresh
+        && enable_darkframe == other.enable_darkframe
+        && enable_flatfield == other.enable_flatfield
+        && enable_ca == other.enable_ca
+        && enable_hotdeadpix == other.enable_hotdeadpix
+        && enable_whitepoint == other.enable_whitepoint;
 }
 
 bool RAWParams::operator !=(const RAWParams& other) const
@@ -2734,10 +2750,12 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         
 // Raw
         if (RELEVANT_(darkframe)) {
+            saveToKeyfile("RAW", "DarkFrameEnabled", raw.enable_darkframe, keyFile);
             saveToKeyfile("RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
             saveToKeyfile("RAW", "DarkFrameAuto", raw.df_autoselect, keyFile);
         }
         if (RELEVANT_(flatfield)) {
+            saveToKeyfile("RAW", "FlatFieldEnabled", raw.enable_flatfield, keyFile);
             saveToKeyfile("RAW", "FlatFieldFile", relativePathIfInside(fname, fnameAbsolute, raw.ff_file), keyFile);
             saveToKeyfile("RAW", "FlatFieldAutoSelect", raw.ff_AutoSelect, keyFile);
             saveToKeyfile("RAW", "FlatFieldBlurRadius", raw.ff_BlurRadius, keyFile);
@@ -2746,6 +2764,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("RAW", "FlatFieldClipControl", raw.ff_clipControl, keyFile);
         }
         if (RELEVANT_(rawCA)) {
+            saveToKeyfile("RAW", "CAEnabled", raw.enable_ca, keyFile);
             saveToKeyfile("RAW", "CA", raw.ca_autocorrect, keyFile);
             saveToKeyfile("RAW", "CAAvoidColourshift", raw.ca_avoidcolourshift, keyFile);
             saveToKeyfile("RAW", "CAAutoIterations", raw.caautoiterations, keyFile);
@@ -2753,6 +2772,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("RAW", "CABlue", raw.cablue, keyFile);
         }
         if (RELEVANT_(hotDeadPixelFilter)) {
+            saveToKeyfile("RAW", "HotDeadPixelEnabled", raw.enable_hotdeadpix, keyFile);
             saveToKeyfile("RAW", "HotPixelFilter", raw.hotPixelFilter, keyFile);
             saveToKeyfile("RAW", "DeadPixelFilter", raw.deadPixelFilter, keyFile);
             saveToKeyfile("RAW", "HotDeadPixelThresh", raw.hotdeadpix_thresh, keyFile);
@@ -2764,6 +2784,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("RAW Bayer", "CcSteps", raw.bayersensor.ccSteps, keyFile);
         }
         if (RELEVANT_(rawBlack)) {
+            saveToKeyfile("RAW Bayer", "PreBlackEnabled", raw.bayersensor.enable_black, keyFile);
             saveToKeyfile("RAW Bayer", "PreBlack0", raw.bayersensor.black0, keyFile);
             saveToKeyfile("RAW Bayer", "PreBlack1", raw.bayersensor.black1, keyFile);
             saveToKeyfile("RAW Bayer", "PreBlack2", raw.bayersensor.black2, keyFile);
@@ -2771,6 +2792,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("RAW Bayer", "PreTwoGreen", raw.bayersensor.twogreen, keyFile);
         }
         if (RELEVANT_(rawPreprocessing)) {
+            saveToKeyfile("RAW Bayer", "PreprocessingEnabled", raw.bayersensor.enable_preproc, keyFile);
             saveToKeyfile("RAW Bayer", "LineDenoise", raw.bayersensor.linenoise, keyFile);
             saveToKeyfile("RAW Bayer", "LineDenoiseDirection", toUnderlying(raw.bayersensor.linenoiseDirection), keyFile);
             saveToKeyfile("RAW Bayer", "GreenEqThreshold", raw.bayersensor.greenthresh, keyFile);
@@ -2807,6 +2829,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("RAW X-Trans", "CcSteps", raw.xtranssensor.ccSteps, keyFile);
         }
         if (RELEVANT_(rawBlack)) {
+            saveToKeyfile("RAW X-Trans", "PreBlackEnabled", raw.xtranssensor.enable_black, keyFile);
             saveToKeyfile("RAW X-Trans", "PreBlackRed", raw.xtranssensor.blackred, keyFile);
             saveToKeyfile("RAW X-Trans", "PreBlackGreen", raw.xtranssensor.blackgreen, keyFile);
             saveToKeyfile("RAW X-Trans", "PreBlackBlue", raw.xtranssensor.blackblue, keyFile);
@@ -2814,6 +2837,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
 
 // Raw exposition
         if (RELEVANT_(rawWhite)) {
+            saveToKeyfile("RAW", "PreExposureEnabled", raw.enable_whitepoint, keyFile);
             saveToKeyfile("RAW", "PreExposure", raw.expos, keyFile);
         }
 
@@ -3792,6 +3816,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
 
         if (keyFile.has_group("RAW")) {
             if (RELEVANT_(darkframe)) {
+                assignFromKeyfile(keyFile, "RAW", "DarkFrameEnabled", raw.enable_darkframe);
                 if (keyFile.has_key("RAW", "DarkFrame")) {
                     raw.dark_frame = expandRelativePath(fname, "", keyFile.get_string("RAW", "DarkFrame"));
                 }
@@ -3800,6 +3825,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             }
 
             if (RELEVANT_(flatfield)) {
+                assignFromKeyfile(keyFile, "RAW", "FlatFieldEnabled", raw.enable_flatfield);
                 if (keyFile.has_key("RAW", "FlatFieldFile")) {
                     raw.ff_file = expandRelativePath(fname, "", keyFile.get_string("RAW", "FlatFieldFile"));
                 }
@@ -3819,6 +3845,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             }
 
             if (RELEVANT_(rawCA)) {
+                assignFromKeyfile(keyFile, "RAW", "CAEnabled", raw.enable_ca);
                 assignFromKeyfile(keyFile, "RAW", "CA", raw.ca_autocorrect);
                 if (ppVersion >= 342) {
                     assignFromKeyfile(keyFile, "RAW", "CAAutoIterations", raw.caautoiterations);
@@ -3836,6 +3863,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             }
 
             if (RELEVANT_(hotDeadPixelFilter)) {
+                assignFromKeyfile(keyFile, "RAW", "HotDeadPixelEnabled", raw.enable_hotdeadpix);
                 // For compatibility to elder pp3 versions
                 assignFromKeyfile(keyFile, "RAW", "HotDeadPixels", raw.hotPixelFilter);
                 raw.deadPixelFilter = raw.hotPixelFilter;
@@ -3845,6 +3873,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                 assignFromKeyfile(keyFile, "RAW", "HotDeadPixelThresh", raw.hotdeadpix_thresh);
             }
             if (RELEVANT_(rawWhite)) {
+                assignFromKeyfile(keyFile, "RAW", "PreExposureEnabled", raw.enable_whitepoint);
                 assignFromKeyfile(keyFile, "RAW", "PreExposure", raw.expos);
             }
 
@@ -3883,6 +3912,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             }
 
             if (RELEVANT_(rawBlack)) {
+                assignFromKeyfile(keyFile, "RAW Bayer", "PreBlackEnabled", raw.bayersensor.enable_black);
                 assignFromKeyfile(keyFile, "RAW Bayer", "PreBlack0", raw.bayersensor.black0);
                 assignFromKeyfile(keyFile, "RAW Bayer", "PreBlack1", raw.bayersensor.black1);
                 assignFromKeyfile(keyFile, "RAW Bayer", "PreBlack2", raw.bayersensor.black2);
@@ -3891,6 +3921,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             }
 
             if (RELEVANT_(rawPreprocessing)) {
+                assignFromKeyfile(keyFile, "RAW Bayer", "PreprocessingEnabled", raw.bayersensor.enable_preproc);
                 assignFromKeyfile(keyFile, "RAW Bayer", "LineDenoise", raw.bayersensor.linenoise);
 
                 if (keyFile.has_key("RAW Bayer", "LineDenoiseDirection")) {
@@ -3961,6 +3992,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                 assignFromKeyfile(keyFile, "RAW X-Trans", "CcSteps", raw.xtranssensor.ccSteps);
             }
             if (RELEVANT_(rawBlack)) {
+                assignFromKeyfile(keyFile, "RAW X-Trans", "PreBlackEnabled", raw.xtranssensor.enable_black);
                 assignFromKeyfile(keyFile, "RAW X-Trans", "PreBlackRed", raw.xtranssensor.blackred);
                 assignFromKeyfile(keyFile, "RAW X-Trans", "PreBlackGreen", raw.xtranssensor.blackgreen);
                 assignFromKeyfile(keyFile, "RAW X-Trans", "PreBlackBlue", raw.xtranssensor.blackblue);

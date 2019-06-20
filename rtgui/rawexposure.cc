@@ -19,12 +19,15 @@
 #include "rawexposure.h"
 #include "guiutils.h"
 #include <sstream>
+#include "../rtengine/refreshmap.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-RAWExposure::RAWExposure () : FoldableToolPanel(this, "rawexposure", M("TP_EXPOS_WHITEPOINT_LABEL"))
+RAWExposure::RAWExposure () : FoldableToolPanel(this, "rawexposure", M("TP_EXPOS_WHITEPOINT_LABEL"), false, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
+    
     PexPos = Gtk::manage(new Adjuster (M("TP_RAWEXPOS_LINEAR"), 0.1, 16.0, 0.01, 1));
     PexPos->setAdjusterListener (this);
 
@@ -40,18 +43,20 @@ RAWExposure::RAWExposure () : FoldableToolPanel(this, "rawexposure", M("TP_EXPOS
 void RAWExposure::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
+    setEnabled(pp->raw.enable_whitepoint);
     PexPos->setValue (pp->raw.expos);
     enableListener ();
 }
 
 void RAWExposure::write(rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.enable_whitepoint = getEnabled();
     pp->raw.expos = PexPos->getValue();
 }
 
 void RAWExposure::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         Glib::ustring value = a->getTextValue();
 
         if (a == PexPos ) {

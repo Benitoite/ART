@@ -118,6 +118,7 @@ protected:
     sigc::connection enaConn;
     void foldThemAll (GdkEventButton* event);
     void enabled_toggled();
+    rtengine::ProcEvent EvToolEnabled;
 
 public:
 
@@ -162,7 +163,7 @@ public:
         return parentContainer;
     }
 
-    virtual void enabledChanged  () {}
+    virtual void enabledChanged();
 
     bool getUseEnabled ()
     {

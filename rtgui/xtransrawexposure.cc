@@ -19,12 +19,15 @@
 #include "xtransrawexposure.h"
 #include "guiutils.h"
 #include <sstream>
+#include "../rtengine/refreshmap.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-XTransRAWExposure::XTransRAWExposure () : FoldableToolPanel(this, "xtransrawexposure", M("TP_EXPOS_BLACKPOINT_LABEL"))
+XTransRAWExposure::XTransRAWExposure () : FoldableToolPanel(this, "xtransrawexposure", M("TP_EXPOS_BLACKPOINT_LABEL"), false, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
+    
     PexBlackRed = Gtk::manage(new Adjuster (M("TP_RAWEXPOS_BLACK_RED"), -2048, 2048, 0.1, 0)); //black level
     PexBlackRed->setAdjusterListener (this);
 
@@ -63,6 +66,8 @@ void XTransRAWExposure::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
 
+    setEnabled(pp->raw.xtranssensor.enable_black);
+    
     PexBlackRed->setValue (pp->raw.xtranssensor.blackred);//black
     PexBlackGreen->setValue (pp->raw.xtranssensor.blackgreen);//black
     PexBlackBlue->setValue (pp->raw.xtranssensor.blackblue);//black
@@ -72,6 +77,7 @@ void XTransRAWExposure::read(const rtengine::procparams::ProcParams* pp)
 
 void XTransRAWExposure::write(rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.xtranssensor.enable_black = getEnabled();
     pp->raw.xtranssensor.blackred   = PexBlackRed->getValue();// black
     pp->raw.xtranssensor.blackgreen = PexBlackGreen->getValue();// black
     pp->raw.xtranssensor.blackblue  = PexBlackBlue->getValue();// black
@@ -79,7 +85,7 @@ void XTransRAWExposure::write(rtengine::procparams::ProcParams* pp)
 
 void XTransRAWExposure::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         Glib::ustring value = a->getTextValue();
 
         if      (a == PexBlackRed) {

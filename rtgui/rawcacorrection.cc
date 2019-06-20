@@ -24,8 +24,9 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-RAWCACorr::RAWCACorr () : FoldableToolPanel(this, "rawcacorrection", M("TP_RAWCACORR_LABEL"))
+RAWCACorr::RAWCACorr () : FoldableToolPanel(this, "rawcacorrection", M("TP_RAWCACORR_LABEL"), false, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
     auto m = ProcEventMapper::getInstance();
     EvPreProcessCAAutoiterations = m->newEvent(DARKFRAME, "HISTORY_MSG_RAWCACORR_AUTOIT");
     EvPreProcessCAColourshift = m->newEvent(DARKFRAME, "HISTORY_MSG_RAWCACORR_COLORSHIFT");
@@ -83,6 +84,7 @@ void RAWCACorr::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
 
+    setEnabled(pp->raw.enable_ca);
     // disable Red and Blue sliders when caAutocorrect is enabled
     caAutoiterations->set_sensitive(pp->raw.ca_autocorrect);
     caRed->set_sensitive(!pp->raw.ca_autocorrect);
@@ -98,6 +100,7 @@ void RAWCACorr::read(const rtengine::procparams::ProcParams* pp)
 
 void RAWCACorr::write(rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.enable_ca = getEnabled();
     pp->raw.ca_autocorrect = caAutocorrect->getLastActive();
     pp->raw.ca_avoidcolourshift = caAvoidcolourshift->getLastActive();
     pp->raw.caautoiterations = caAutoiterations->getValue();
@@ -107,7 +110,7 @@ void RAWCACorr::write(rtengine::procparams::ProcParams* pp)
 
 void RAWCACorr::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
 
         Glib::ustring value = a->getTextValue();
 

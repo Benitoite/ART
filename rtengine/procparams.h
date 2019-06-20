@@ -1196,6 +1196,10 @@ struct RAWParams {
         bool dcb_enhance;
         bool pdafLinesFilter;
 
+        // some enable flags
+        bool enable_black;
+        bool enable_preproc;
+
         BayerSensor();
 
         bool operator ==(const BayerSensor& other) const;
@@ -1232,6 +1236,8 @@ struct RAWParams {
         double blackred;
         double blackgreen;
         double blackblue;
+
+        bool enable_black;
 
         XTransSensor();
 
@@ -1274,6 +1280,13 @@ struct RAWParams {
     bool hotPixelFilter;
     bool deadPixelFilter;
     int hotdeadpix_thresh;
+
+    // some enable flags
+    bool enable_darkframe;
+    bool enable_flatfield;
+    bool enable_ca;
+    bool enable_hotdeadpix;
+    bool enable_whitepoint;
 
     RAWParams();
 

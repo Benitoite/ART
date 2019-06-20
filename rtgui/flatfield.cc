@@ -21,12 +21,15 @@
 #include "guiutils.h"
 #include <sstream>
 #include "rtimage.h"
+#include "../rtengine/refreshmap.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-FlatField::FlatField () : FoldableToolPanel(this, "flatfield", M("TP_FLATFIELD_LABEL"))
+FlatField::FlatField () : FoldableToolPanel(this, "flatfield", M("TP_FLATFIELD_LABEL"), false, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
+    
     hbff = Gtk::manage(new Gtk::HBox());
     hbff->set_spacing(2);
     flatFieldFile = Gtk::manage(new MyFileChooserButton(M("TP_FLATFIELD_LABEL"), Gtk::FILE_CHOOSER_ACTION_OPEN));
@@ -112,6 +115,8 @@ FlatField::~FlatField ()
 void FlatField::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
+    setEnabled(pp->raw.enable_flatfield);
+    
     flatFieldAutoSelectconn.block (true);
     flatFieldBlurTypeconn.block (true);
 
@@ -203,6 +208,7 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp)
 
 void FlatField::write( rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.enable_flatfield = getEnabled();
     pp->raw.ff_file = flatFieldFile->get_filename();
     pp->raw.ff_AutoSelect = flatFieldAutoSelect->get_active();
     pp->raw.ff_BlurRadius = flatFieldBlurRadius->getIntValue();
@@ -218,7 +224,7 @@ void FlatField::write( rtengine::procparams::ProcParams* pp)
 
 void FlatField::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         const Glib::ustring value = a->getTextValue();
 
         if (a == flatFieldBlurRadius) {
@@ -231,7 +237,7 @@ void FlatField::adjusterChanged(Adjuster* a, double newval)
 
 void FlatField::adjusterAutoToggled (Adjuster* a, bool newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         if(a == flatFieldClipControl) {
             if (flatFieldClipControl->getAutoInconsistent()) {
                 listener->panelChanged (EvFlatFieldAutoClipControl, M("GENERAL_UNCHANGED"));
@@ -260,7 +266,7 @@ void FlatField::flatFieldFileChanged()
 {
     ffChanged = true;
 
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvFlatFieldFile, Glib::path_get_basename(flatFieldFile->get_filename()));
     }
 }
@@ -281,7 +287,7 @@ void FlatField::flatFieldFile_Reset()
 
     ffInfo->set_text("");
 
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvFlatFieldFile, M("GENERAL_NONE") );
     }
 }
@@ -297,7 +303,7 @@ void FlatField::flatFieldBlurTypeChanged ()
         flatFieldClipControl->hide();
     }
 
-    if (listener && curSelection >= 0) {
+    if (listener && curSelection >= 0 && getEnabled()) {
         listener->panelChanged (EvFlatFieldBlurType, flatFieldBlurType->get_active_text());
     }
 }
@@ -319,7 +325,7 @@ void FlatField::flatFieldAutoSelectChanged()
         ffInfo->set_text("");
     }
 
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvFlatFieldAutoSelect, flatFieldAutoSelect->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 

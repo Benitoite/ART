@@ -18,12 +18,15 @@
  */
 #include "bayerrawexposure.h"
 #include "guiutils.h"
+#include "../rtengine/refreshmap.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-BayerRAWExposure::BayerRAWExposure () : FoldableToolPanel(this, "bayerrawexposure", M("TP_EXPOS_BLACKPOINT_LABEL"), true)
+BayerRAWExposure::BayerRAWExposure () : FoldableToolPanel(this, "bayerrawexposure", M("TP_EXPOS_BLACKPOINT_LABEL"), true, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
+    
     PexBlack1 = Gtk::manage(new Adjuster (M("TP_RAWEXPOS_BLACK_1"), -2048, 2048, 0.1, 0)); //black level
     PexBlack1->setAdjusterListener (this);
 
@@ -76,6 +79,8 @@ void BayerRAWExposure::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener ();
 
+    setEnabled(pp->raw.bayersensor.enable_black);
+    
     PextwoGreen->setValue (pp->raw.bayersensor.twogreen);
 
     PexBlack0->setValue (pp->raw.bayersensor.black0);//black
@@ -93,6 +98,7 @@ void BayerRAWExposure::read(const rtengine::procparams::ProcParams* pp)
 
 void BayerRAWExposure::write( rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.bayersensor.enable_black = getEnabled();
     pp->raw.bayersensor.black0 = PexBlack0->getValue();// black
     pp->raw.bayersensor.black1 = PexBlack1->getValue();// black
     pp->raw.bayersensor.black2 = PexBlack2->getValue();// black
@@ -107,7 +113,7 @@ void BayerRAWExposure::write( rtengine::procparams::ProcParams* pp)
 
 void BayerRAWExposure::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         Glib::ustring value = a->getTextValue();
 
         if (a == PexBlack0) {
@@ -139,7 +145,7 @@ void BayerRAWExposure::adjusterAutoToggled(Adjuster* a, bool newval)
 void BayerRAWExposure::checkBoxToggled (CheckBox* c, CheckValue newval)
 {
     if (c == PextwoGreen) {
-        if (listener) {
+        if (listener && getEnabled()) {
             listener->panelChanged (EvPreProcessExptwoGreen, PextwoGreen->getLastActive() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
             if (PextwoGreen->getLastActive()) {
                 PexBlack3->setValue (PexBlack0->getValue());//two green together

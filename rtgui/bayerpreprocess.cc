@@ -24,8 +24,10 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-BayerPreProcess::BayerPreProcess() : FoldableToolPanel(this, "bayerpreprocess", M("TP_PREPROCESS_LABEL"), true)
+BayerPreProcess::BayerPreProcess() : FoldableToolPanel(this, "bayerpreprocess", M("TP_PREPROCESS_LABEL"), true, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
+    
     auto m = ProcEventMapper::getInstance();
     EvLineDenoiseDirection = m->newEvent(DARKFRAME, "HISTORY_MSG_PREPROCESS_LINEDENOISE_DIRECTION");
     EvPDAFLinesFilter = m->newEvent(DARKFRAME, "HISTORY_MSG_PREPROCESS_PDAFLINESFILTER");
@@ -79,6 +81,8 @@ void BayerPreProcess::read(const rtengine::procparams::ProcParams* pp)
 {
     disableListener();
 
+    setEnabled(pp->raw.bayersensor.enable_preproc);
+
     lineDenoise->setValue(pp->raw.bayersensor.linenoise);
     int d = int(pp->raw.bayersensor.linenoiseDirection) - 1;
 
@@ -95,6 +99,7 @@ void BayerPreProcess::read(const rtengine::procparams::ProcParams* pp)
 
 void BayerPreProcess::write(rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.bayersensor.enable_preproc = getEnabled();
     pp->raw.bayersensor.linenoise = lineDenoise->getIntValue();
     int d = lineDenoiseDirection->get_active_row_number() + 1;
 
@@ -109,7 +114,7 @@ void BayerPreProcess::write(rtengine::procparams::ProcParams* pp)
 
 void BayerPreProcess::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
 
         Glib::ustring value = a->getTextValue();
 
@@ -142,14 +147,14 @@ void BayerPreProcess::trimValues(rtengine::procparams::ProcParams* pp)
 
 void BayerPreProcess::lineDenoiseDirectionChanged()
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged(EvLineDenoiseDirection, lineDenoiseDirection->get_active_text());
     }
 }
 
 void BayerPreProcess::pdafLinesFilterChanged()
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged(EvPDAFLinesFilter, pdafLinesFilter->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }

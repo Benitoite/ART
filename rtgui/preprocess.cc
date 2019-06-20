@@ -19,12 +19,14 @@
 #include "preprocess.h"
 #include "guiutils.h"
 #include <sstream>
+#include "../rtengine/refreshmap.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCESS_LABEL"), true)
+PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCESS_LABEL"), true, true)
 {
+    EvToolEnabled.set_action(DARKFRAME);
 
     Gtk::HBox* hotdeadPixel = Gtk::manage( new Gtk::HBox () );
     hotdeadPixel->set_spacing(4);
@@ -59,6 +61,8 @@ void PreProcess::read(const rtengine::procparams::ProcParams* pp)
     hpixelconn.block (true);
     dpixelconn.block (true);
 
+    setEnabled(pp->raw.enable_hotdeadpix);
+
     lastHot = pp->raw.hotPixelFilter;
     lastDead = pp->raw.deadPixelFilter;
     hotPixel->set_active (pp->raw.hotPixelFilter);
@@ -71,6 +75,7 @@ void PreProcess::read(const rtengine::procparams::ProcParams* pp)
 
 void PreProcess::write( rtengine::procparams::ProcParams* pp)
 {
+    pp->raw.enable_hotdeadpix = getEnabled();
     pp->raw.hotPixelFilter = hotPixel->get_active();
     pp->raw.deadPixelFilter = deadPixel->get_active();
     pp->raw.hotdeadpix_thresh = hdThreshold->getIntValue();
@@ -78,7 +83,7 @@ void PreProcess::write( rtengine::procparams::ProcParams* pp)
 
 void PreProcess::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         if (a == hdThreshold) {
             listener->panelChanged (EvPreProcessHotDeadThresh, a->getTextValue() );
         }
@@ -91,14 +96,14 @@ void PreProcess::adjusterAutoToggled(Adjuster* a, bool newval)
 
 void PreProcess::hotPixelChanged ()
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvPreProcessHotPixel, hotPixel->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }
 
 void PreProcess::deadPixelChanged ()
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvPreProcessDeadPixel, deadPixel->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }

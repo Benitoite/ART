@@ -629,6 +629,8 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
     }
 
     if (true) {
+        double raw_expos = raw.enable_whitepoint ? raw.expos : 1.0;
+        
         // adjust gain so the maximum raw value of the least scaled channel just hits max
         const float new_pre_mul[4] = { ri->get_pre_mul(0) / rm, ri->get_pre_mul(1) / gm, ri->get_pre_mul(2) / bm, ri->get_pre_mul(3) / gm };
         float new_scale_mul[4];
@@ -637,7 +639,7 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
                       || (ri->getSensorType() == ST_BAYER && raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::MONO));
 
         for (int i = 0; i < 4; ++i) {
-            c_white[i] = (ri->get_white(i) - cblacksom[i]) / raw.expos + cblacksom[i];
+            c_white[i] = (ri->get_white(i) - cblacksom[i]) / raw_expos + cblacksom[i];
         }
 
         float gain = calculate_scale_mul(new_scale_mul, new_pre_mul, c_white, cblacksom, isMono, ri->get_colors());
@@ -1189,12 +1191,14 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
     Glib::ustring newDF = raw.dark_frame;
     RawImage *rid = nullptr;
 
-    if (!raw.df_autoselect) {
-        if( !raw.dark_frame.empty()) {
-            rid = dfm.searchDarkFrame( raw.dark_frame );
+    if (raw.enable_darkframe) {
+        if (!raw.df_autoselect) {
+            if( !raw.dark_frame.empty()) {
+                rid = dfm.searchDarkFrame( raw.dark_frame );
+            }
+        } else {
+            rid = dfm.searchDarkFrame(idata->getMake(), idata->getModel(), idata->getISOSpeed(), idata->getShutterSpeed(), idata->getDateTimeAsTS());
         }
-    } else {
-        rid = dfm.searchDarkFrame(idata->getMake(), idata->getModel(), idata->getISOSpeed(), idata->getShutterSpeed(), idata->getDateTimeAsTS());
     }
 
     if( rid && settings->verbose) {
@@ -1217,12 +1221,14 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
     //FLATFIELD start
     RawImage *rif = nullptr;
 
-    if (!raw.ff_AutoSelect) {
-        if( !raw.ff_file.empty()) {
-            rif = ffm.searchFlatField( raw.ff_file );
+    if (raw.enable_flatfield) {
+        if (!raw.ff_AutoSelect) {
+            if( !raw.ff_file.empty()) {
+                rif = ffm.searchFlatField( raw.ff_file );
+            }
+        } else {
+            rif = ffm.searchFlatField( idata->getMake(), idata->getModel(), idata->getLens(), idata->getFocalLen(), idata->getFNumber(), idata->getDateTimeAsTS());
         }
-    } else {
-        rif = ffm.searchFlatField( idata->getMake(), idata->getModel(), idata->getLens(), idata->getFocalLen(), idata->getFNumber(), idata->getDateTimeAsTS());
     }
 
 
@@ -1360,7 +1366,7 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
 
     defGain = 0.0;//log(initialGain) / log(2.0);
 
-    if ( ri->getSensorType() == ST_BAYER && (raw.hotPixelFilter > 0 || raw.deadPixelFilter > 0)) {
+    if ( ri->getSensorType() == ST_BAYER && (raw.hotPixelFilter > 0 || raw.deadPixelFilter > 0) && raw.enable_hotdeadpix) {
         if (plistener) {
             plistener->setProgressStr ("Hot/Dead Pixel Filter...");
             plistener->setProgress (0.0);
@@ -1378,7 +1384,7 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
         }
     }
 
-    if (ri->getSensorType() == ST_BAYER && raw.bayersensor.pdafLinesFilter) {
+    if (ri->getSensorType() == ST_BAYER && raw.bayersensor.pdafLinesFilter && raw.bayersensor.enable_preproc) {
         PDAFLinesFilter f(ri);
 
         if (!bitmapBads) {
@@ -1413,7 +1419,7 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
             return cc && cc->get_globalGreenEquilibration();
         };
     
-    if ( ri->getSensorType() == ST_BAYER && (raw.bayersensor.greenthresh || (globalGreenEq() && raw.bayersensor.method != RAWParams::BayerSensor::getMethodString( RAWParams::BayerSensor::Method::VNG4))) ) {
+    if ( ri->getSensorType() == ST_BAYER && (raw.bayersensor.greenthresh || (globalGreenEq() && raw.bayersensor.method != RAWParams::BayerSensor::getMethodString( RAWParams::BayerSensor::Method::VNG4))) && raw.bayersensor.enable_preproc) {
         if (settings->verbose) {
             printf("Performing global green equilibration...\n");
         }
@@ -1427,7 +1433,7 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
         }
     }
 
-    if ( ri->getSensorType() == ST_BAYER && raw.bayersensor.greenthresh > 0) {
+    if ( ri->getSensorType() == ST_BAYER && raw.bayersensor.greenthresh > 0 && raw.bayersensor.enable_preproc) {
         if (plistener) {
             plistener->setProgressStr ("Green equilibrate...");
             plistener->setProgress (0.0);
@@ -1461,7 +1467,7 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
         }
     }
 
-    if ( ri->getSensorType() == ST_BAYER && raw.bayersensor.linenoise > 0 ) {
+    if ( ri->getSensorType() == ST_BAYER && raw.bayersensor.enable_preproc && raw.bayersensor.linenoise > 0 ) {
         if (plistener) {
             plistener->setProgressStr ("Line Denoise...");
             plistener->setProgress (0.0);
@@ -1478,7 +1484,7 @@ void RawImageSource::preprocess  (const RAWParams &raw, const LensProfParams &le
         cfa_linedn(0.00002 * (raw.bayersensor.linenoise), int(raw.bayersensor.linenoiseDirection) & int(RAWParams::BayerSensor::LineNoiseDirection::VERTICAL), int(raw.bayersensor.linenoiseDirection) & int(RAWParams::BayerSensor::LineNoiseDirection::HORIZONTAL), *line_denoise_rowblender);
     }
 
-    if ( (raw.ca_autocorrect || fabs(raw.cared) > 0.001 || fabs(raw.cablue) > 0.001) && ri->getSensorType() == ST_BAYER ) { // Auto CA correction disabled for X-Trans, for now...
+    if ( (raw.ca_autocorrect || fabs(raw.cared) > 0.001 || fabs(raw.cablue) > 0.001) && ri->getSensorType() == ST_BAYER && raw.enable_ca) { // Auto CA correction disabled for X-Trans, for now...
         if (plistener) {
             plistener->setProgressStr ("CA Auto Correction...");
             plistener->setProgress (0.0);
@@ -1520,6 +1526,8 @@ void RawImageSource::demosaic(const RAWParams &raw, bool autoContrast, double &c
     MyTime t1, t2;
     t1.set();
 
+    double raw_expos = raw.enable_whitepoint ? raw.expos : 1.0;
+
     if (ri->getSensorType() == ST_BAYER) {
         if ( raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::HPHD) ) {
             hphd_demosaic ();
@@ -1539,7 +1547,7 @@ void RawImageSource::demosaic(const RAWParams &raw, bool autoContrast, double &c
                 dual_demosaic_RT (true, raw, W, H, rawData, red, green, blue, contrastThreshold, true);
             }
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::PIXELSHIFT) ) {
-            pixelshift(0, 0, W, H, raw, currFrame, ri->get_maker(), ri->get_model(), raw.expos);
+            pixelshift(0, 0, W, H, raw, currFrame, ri->get_maker(), ri->get_model(), raw_expos);
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::DCB) ) {
             dcb_demosaic(raw.bayersensor.dcb_iterations, raw.bayersensor.dcb_enhance);
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::EAHD)) {
@@ -2286,20 +2294,26 @@ void RawImageSource::scaleColors(int winx, int winy, int winw, int winh, const R
     //adjust black level  (eg Canon)
     bool isMono = false;
 
+    double raw_expos = raw.enable_whitepoint ? raw.expos : 1.0;
+
     if (getSensorType() == ST_BAYER || getSensorType() == ST_FOVEON ) {
 
-        black_lev[0] = raw.bayersensor.black1; //R
-        black_lev[1] = raw.bayersensor.black0; //G1
-        black_lev[2] = raw.bayersensor.black2; //B
-        black_lev[3] = raw.bayersensor.black3; //G2
+        if (raw.bayersensor.enable_black) {
+            black_lev[0] = raw.bayersensor.black1; //R
+            black_lev[1] = raw.bayersensor.black0; //G1
+            black_lev[2] = raw.bayersensor.black2; //B
+            black_lev[3] = raw.bayersensor.black3; //G2
+        }
 
         isMono = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::MONO) == raw.bayersensor.method;
     } else if (getSensorType() == ST_FUJI_XTRANS) {
 
-        black_lev[0] = raw.xtranssensor.blackred; //R
-        black_lev[1] = raw.xtranssensor.blackgreen; //G1
-        black_lev[2] = raw.xtranssensor.blackblue; //B
-        black_lev[3] = raw.xtranssensor.blackgreen; //G2  (set, only used with a Bayer filter)
+        if (raw.xtranssensor.enable_black) {
+            black_lev[0] = raw.xtranssensor.blackred; //R
+            black_lev[1] = raw.xtranssensor.blackgreen; //G1
+            black_lev[2] = raw.xtranssensor.blackblue; //B
+            black_lev[3] = raw.xtranssensor.blackgreen; //G2  (set, only used with a Bayer filter)
+        }
 
         isMono = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::MONO) == raw.xtranssensor.method;
     }
@@ -2309,7 +2323,7 @@ void RawImageSource::scaleColors(int winx, int winy, int winw, int winh, const R
     }
 
     for (int i = 0; i < 4; ++i) {
-        c_white[i] = (ri->get_white(i) - cblacksom[i]) / raw.expos + cblacksom[i];
+        c_white[i] = (ri->get_white(i) - cblacksom[i]) / raw_expos + cblacksom[i];
     }
 
     initialGain = calculate_scale_mul(scale_mul, ref_pre_mul, c_white, cblacksom, isMono, ri->get_colors()); // recalculate scale colors with adjusted levels

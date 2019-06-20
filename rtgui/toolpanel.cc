@@ -47,6 +47,10 @@ FoldableToolPanel::FoldableToolPanel(Gtk::Box* content, Glib::ustring toolName, 
         return;
     }
 
+    if (useEnabled) {
+        EvToolEnabled = ProcEventMapper::getInstance()->newEvent(0, UILabel);
+    }
+
 //  exp->set_use_markup (true);
     if (need11) {
         Gtk::HBox *titleHBox = Gtk::manage(new Gtk::HBox());
@@ -144,3 +148,13 @@ void FoldableToolPanel::setGrayedOut(bool doGrayOut)
     }
 }
 
+void FoldableToolPanel::enabledChanged()
+{
+    if (listener && EvToolEnabled.get_action()) {
+        if (getEnabled()) {
+            listener->panelChanged(EvToolEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvToolEnabled, M("GENERAL_DISABLED"));
+        }
+    }
+}
