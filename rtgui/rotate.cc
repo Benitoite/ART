@@ -16,18 +16,20 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "rotate.h"
 #include <iomanip>
+#include "rotate.h"
+#include "eventmapper.h"
 #include "guiutils.h"
 #include "rtimage.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"))
+Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"), false, true)
 {
-
     rlistener = nullptr;
+
+    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_ROTATE_LABEL"));
 
     //TODO the action of the rotation slider is counter-intuitive
     Gtk::Image* irotateL =   Gtk::manage (new RTImage ("rotate-right-small.png"));
@@ -52,12 +54,14 @@ Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"))
 void Rotate::read(const ProcParams* pp)
 {
     disableListener ();
+    setEnabled(pp->rotate.enabled);
     degree->setValue (pp->rotate.degree);
     enableListener ();
 }
 
 void Rotate::write(ProcParams* pp)
 {
+    pp->rotate.enabled = getEnabled();
     pp->rotate.degree = degree->getValue ();
 }
 
@@ -68,7 +72,7 @@ void Rotate::setDefaults(const ProcParams* defParams)
 
 void Rotate::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged(EvROTDegree, Glib::ustring::format (std::setw(3), std::fixed, std::setprecision(2), degree->getValue()));
     }
 }
@@ -79,7 +83,7 @@ void Rotate::adjusterAutoToggled(Adjuster* a, bool newval)
 
 void Rotate::straighten (double deg)
 {
-
+    setEnabled(true);
     degree->setValue (degree->getValue() + deg);
     degree->setEditedState (Edited);
 
@@ -99,6 +103,17 @@ void Rotate::selectStraightPressed ()
 
 void Rotate::trimValues (rtengine::procparams::ProcParams* pp)
 {
-
     degree->trimValue(pp->rotate.degree);
+}
+
+
+void Rotate::enabledChanged()
+{
+    if (listener) {
+        if (getEnabled()) {
+            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
+        }
+    }
 }

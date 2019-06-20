@@ -26,12 +26,13 @@
 #include "../rtengine/rtlensfun.h"
 #include <map>
 #include <set>
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
 LensProfilePanel::LensProfilePanel() :
-    FoldableToolPanel(this, "lensprof", M("TP_LENSPROFILE_LABEL")),
+    FoldableToolPanel(this, "lensprof", M("TP_LENSPROFILE_LABEL"), false, true),
     lcModeChanged(false),
     lcpFileChanged(false),
     useDistChanged(false),
@@ -46,8 +47,8 @@ LensProfilePanel::LensProfilePanel() :
     metadata(nullptr),
     modesGrid(Gtk::manage(new Gtk::Grid())),
     distGrid(Gtk::manage((new Gtk::Grid()))),
-    corrUnchangedRB(Gtk::manage((new Gtk::RadioButton(M("GENERAL_UNCHANGED"))))),
-    corrOffRB(Gtk::manage((new Gtk::RadioButton(corrGroup, M("GENERAL_NONE"))))),
+    // corrUnchangedRB(Gtk::manage((new Gtk::RadioButton(M("GENERAL_UNCHANGED"))))),
+    // corrOffRB(Gtk::manage((new Gtk::RadioButton(corrGroup, M("GENERAL_NONE"))))),
     corrLensfunAutoRB(Gtk::manage((new Gtk::RadioButton(corrGroup, M("TP_LENSPROFILE_CORRECTION_AUTOMATCH"))))),
     corrLensfunManualRB(Gtk::manage((new Gtk::RadioButton(corrGroup, M("TP_LENSPROFILE_CORRECTION_MANUAL"))))),
     corrLcpFileRB(Gtk::manage((new Gtk::RadioButton(corrGroup, M("TP_LENSPROFILE_CORRECTION_LCPFILE"))))),
@@ -61,6 +62,8 @@ LensProfilePanel::LensProfilePanel() :
     ckbUseVign(Gtk::manage((new Gtk::CheckButton(M("TP_LENSPROFILE_USE_VIGNETTING"))))),
     ckbUseCA(Gtk::manage((new Gtk::CheckButton(M("TP_LENSPROFILE_USE_CA")))))
 {
+    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_LENSPROFILE_LABEL"));
+    
     if (!lf) {
         lf = new LFDbHelper();
     }
@@ -133,7 +136,7 @@ LensProfilePanel::LensProfilePanel() :
 
     // Populate modes grid:
 
-    modesGrid->attach(*corrOffRB, 0, 0, 3, 1);
+    // modesGrid->attach(*corrOffRB, 0, 0, 3, 1);
     modesGrid->attach(*corrLensfunAutoRB, 0, 1, 3, 1);
     modesGrid->attach(*corrLensfunManualRB, 0, 2, 3, 1);
 
@@ -173,7 +176,7 @@ LensProfilePanel::LensProfilePanel() :
 
     lensfunCameras->signal_changed().connect(sigc::mem_fun(*this, &LensProfilePanel::onLensfunCameraChanged));
     lensfunLenses->signal_changed().connect(sigc::mem_fun(*this, &LensProfilePanel::onLensfunLensChanged));
-    corrOffRB->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &LensProfilePanel::onCorrModeChanged), corrOffRB));
+    // corrOffRB->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &LensProfilePanel::onCorrModeChanged), corrOffRB));
     corrLensfunAutoRB->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &LensProfilePanel::onCorrModeChanged), corrLensfunAutoRB));
     corrLensfunManualRB->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &LensProfilePanel::onCorrModeChanged), corrLensfunManualRB));
     corrLcpFileRB->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &LensProfilePanel::onCorrModeChanged), corrLcpFileRB));
@@ -185,6 +188,7 @@ void LensProfilePanel::read(const rtengine::procparams::ProcParams* pp)
     conUseDist.block(true);
 
     // corrLensfunAutoRB->set_sensitive(true);
+    setEnabled(true);
 
     switch (pp->lensProf.lcMode) {
         case procparams::LensProfParams::LcMode::LCP: {
@@ -204,8 +208,9 @@ void LensProfilePanel::read(const rtengine::procparams::ProcParams* pp)
         }
 
         case procparams::LensProfParams::LcMode::NONE: {
-            corrOffRB->set_active(true);
-            setManualParamsVisibility(false);
+            setEnabled(false);
+            // corrOffRB->set_active(true);
+            // setManualParamsVisibility(false);
             break;
         }
     }
@@ -251,20 +256,6 @@ void LensProfilePanel::read(const rtengine::procparams::ProcParams* pp)
     }
 
 
-    /*  
-   if (!batchMode && !checkLensfunCanCorrect(true)) {
-        if (corrLensfunAutoRB->get_active()) {
-            corrOffRB->set_active(true);
-        }
-
-        corrLensfunAutoRB->set_sensitive(false);
-    }
-
-    if (!batchMode && corrLensfunManualRB->get_active() && !checkLensfunCanCorrect(false)) {
-        corrOffRB->set_active(true);
-    } 
-    */
-    
     ckbUseDist->set_active(pp->lensProf.useDist);
     ckbUseVign->set_active(pp->lensProf.useVign);
     ckbUseCA->set_active(pp->lensProf.useCA);
@@ -279,7 +270,9 @@ void LensProfilePanel::read(const rtengine::procparams::ProcParams* pp)
 
 void LensProfilePanel::write(rtengine::procparams::ProcParams* pp)
 {
-    if (corrLcpFileRB->get_active()) {
+    if (!getEnabled()) {
+        pp->lensProf.lcMode = procparams::LensProfParams::LcMode::NONE;
+    } else if (corrLcpFileRB->get_active()) {
         pp->lensProf.lcMode = procparams::LensProfParams::LcMode::LCP;
     }
     else if (corrLensfunManualRB->get_active()) {
@@ -287,9 +280,6 @@ void LensProfilePanel::write(rtengine::procparams::ProcParams* pp)
     }
     else if (corrLensfunAutoRB->get_active()) {
         pp->lensProf.lcMode = procparams::LensProfParams::LcMode::LENSFUNAUTOMATCH;
-    }
-    else if (corrOffRB->get_active()) {
-        pp->lensProf.lcMode = procparams::LensProfParams::LcMode::NONE;
     }
 
     if (LCPStore::getInstance()->isValidLCPFileName(corrLcpFileChooser->get_filename())) {
@@ -441,19 +431,20 @@ void LensProfilePanel::onCorrModeChanged(const Gtk::RadioButton* rbChanged)
         // because the method gets called for the enabled AND the disabled RadioButton, we do the processing only for the enabled one
         Glib::ustring mode;
 
-        if (rbChanged == corrOffRB) {
-            lcModeChanged = true;
-            useLensfunChanged = true;
-            lensfunAutoChanged = true;
-            lcpFileChanged = false;
+        // if (rbChanged == corrOffRB) {
+        //     lcModeChanged = true;
+        //     useLensfunChanged = true;
+        //     lensfunAutoChanged = true;
+        //     lcpFileChanged = false;
 
-            ckbUseDist->set_sensitive(false);
-            ckbUseVign->set_sensitive(false);
-            ckbUseCA->set_sensitive(false);
+        //     ckbUseDist->set_sensitive(false);
+        //     ckbUseVign->set_sensitive(false);
+        //     ckbUseCA->set_sensitive(false);
 
-            mode = M("GENERAL_NONE");
+        //     mode = M("GENERAL_NONE");
             
-        } else if (rbChanged == corrLensfunAutoRB) {
+        // } else
+        if (rbChanged == corrLensfunAutoRB) {
             lcModeChanged = true;
             useLensfunChanged = true;
             lensfunAutoChanged = true;
@@ -502,21 +493,7 @@ void LensProfilePanel::onCorrModeChanged(const Gtk::RadioButton* rbChanged)
 
             updateDisabled(true);
 
-            mode = M("TP_LENSPROFILE_CORRECTION_LCPFILE");
-            
-        } else if (rbChanged == corrUnchangedRB) {
-            lcModeChanged = false;
-            useLensfunChanged = false;
-            lensfunAutoChanged = false;
-            lcpFileChanged = false;
-            lensfunCameraChanged = false;
-            lensfunLensChanged = false;
-
-            ckbUseDist->set_sensitive(true);
-            ckbUseVign->set_sensitive(true);
-            ckbUseCA->set_sensitive(true);
-
-            mode = M("GENERAL_UNCHANGED");
+            mode = M("TP_LENSPROFILE_CORRECTION_LCPFILE");            
         }
 
         updateLensfunWarning();
@@ -780,3 +757,15 @@ void LensProfilePanel::updateLensfunWarning()
 }
 
 LensProfilePanel::LFDbHelper* LensProfilePanel::lf(nullptr);
+
+
+void LensProfilePanel::enabledChanged()
+{
+    if (listener) {
+        if (getEnabled()) {
+            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
+        }
+    }
+}

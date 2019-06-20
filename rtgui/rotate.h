@@ -32,6 +32,7 @@ protected:
     Adjuster*           degree;
     Gtk::Button*        selectStraight;
     LensGeomListener*   rlistener;
+    rtengine::ProcEvent EvEnabled;
 
 public:
 
@@ -50,6 +51,8 @@ public:
     {
         rlistener = l;
     }
+
+    void enabledChanged() override;
 };
 
 #endif

@@ -19,12 +19,14 @@
 #include "cacorrection.h"
 #include <iomanip>
 #include "rtimage.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-CACorrection::CACorrection () : FoldableToolPanel(this, "cacorrection", M("TP_CACORRECTION_LABEL"))
+CACorrection::CACorrection () : FoldableToolPanel(this, "cacorrection", M("TP_CACORRECTION_LABEL"), false, true)
 {
+    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_CACORRECTION_LABEL"));
 
     Gtk::Image* icaredL =   Gtk::manage (new RTImage ("circle-red-cyan-small.png"));
     Gtk::Image* icaredR =   Gtk::manage (new RTImage ("circle-cyan-red-small.png"));
@@ -48,9 +50,9 @@ CACorrection::CACorrection () : FoldableToolPanel(this, "cacorrection", M("TP_CA
 
 void CACorrection::read (const ProcParams* pp)
 {
-
     disableListener ();
 
+    setEnabled(pp->cacorrection.enabled);
     red->setValue (pp->cacorrection.red);
     blue->setValue (pp->cacorrection.blue);
 
@@ -59,7 +61,7 @@ void CACorrection::read (const ProcParams* pp)
 
 void CACorrection::write (ProcParams* pp)
 {
-
+    pp->cacorrection.enabled = getEnabled();
     pp->cacorrection.red  = red->getValue ();
     pp->cacorrection.blue = blue->getValue ();
 }
@@ -72,8 +74,7 @@ void CACorrection::setDefaults (const ProcParams* defParams)
 
 void CACorrection::adjusterChanged (Adjuster* a, double newval)
 {
-
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvCACorr, Glib::ustring::compose ("%1=%3\n%2=%4", M("TP_CACORRECTION_RED"), M("TP_CACORRECTION_BLUE"), Glib::ustring::format (std::setw(5), std::fixed, std::setprecision(4), red->getValue()), Glib::ustring::format (std::setw(5), std::fixed, std::setprecision(4), blue->getValue())));
     }
 }
@@ -90,3 +91,14 @@ void CACorrection::trimValues (rtengine::procparams::ProcParams* pp)
     blue->trimValue(pp->cacorrection.blue);
 }
 
+
+void CACorrection::enabledChanged()
+{
+    if (listener) {
+        if (getEnabled()) {
+            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
+        }
+    }
+}

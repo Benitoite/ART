@@ -1205,13 +1205,14 @@ bool CommonTransformParams::operator !=(const CommonTransformParams& other) cons
 }
 
 RotateParams::RotateParams() :
+    enabled(false),
     degree(0.0)
 {
 }
 
 bool RotateParams::operator ==(const RotateParams& other) const
 {
-    return degree == other.degree;
+    return enabled == other.enabled && degree == other.degree;
 }
 
 bool RotateParams::operator !=(const RotateParams& other) const
@@ -1220,13 +1221,14 @@ bool RotateParams::operator !=(const RotateParams& other) const
 }
 
 DistortionParams::DistortionParams() :
+    enabled(false),
     amount(0.0)
 {
 }
 
 bool DistortionParams::operator ==(const DistortionParams& other) const
 {
-    return amount == other.amount;
+    return enabled == other.enabled && amount == other.amount;
 }
 
 bool DistortionParams::operator !=(const DistortionParams& other) const
@@ -1384,6 +1386,7 @@ bool PCVignetteParams::operator !=(const PCVignetteParams& other) const
 }
 
 VignettingParams::VignettingParams() :
+    enabled(false),
     amount(0),
     radius(50),
     strength(1),
@@ -1395,7 +1398,8 @@ VignettingParams::VignettingParams() :
 bool VignettingParams::operator ==(const VignettingParams& other) const
 {
     return
-        amount == other.amount
+        enabled == other.enabled
+        && amount == other.amount
         && radius == other.radius
         && strength == other.strength
         && centerX == other.centerX
@@ -1490,6 +1494,7 @@ bool BlackWhiteParams::operator !=(const BlackWhiteParams& other) const
 }
 
 CACorrParams::CACorrParams() :
+    enabled(false),
     red(0.0),
     blue(0.0)
 {
@@ -1498,7 +1503,8 @@ CACorrParams::CACorrParams() :
 bool CACorrParams::operator ==(const CACorrParams& other) const
 {
     return
-        red == other.red
+        enabled == other.enabled
+        && red == other.red
         && blue == other.blue;
 }
 
@@ -2521,11 +2527,13 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
 
 // Rotation
         if (RELEVANT_(rotate)) {
+            saveToKeyfile("Rotation", "Enabled", rotate.enabled, keyFile);
             saveToKeyfile("Rotation", "Degree", rotate.degree, keyFile);
         }
 
 // Distortion
         if (RELEVANT_(distortion)) {
+            saveToKeyfile("Distortion", "Enabled", distortion.enabled, keyFile);
             saveToKeyfile("Distortion", "Amount", distortion.amount, keyFile);
         }
 
@@ -2573,12 +2581,14 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
 
 // C/A correction
         if (RELEVANT_(cacorrection)) {
+            saveToKeyfile("CACorrection", "Enabled", cacorrection.enabled, keyFile);
             saveToKeyfile("CACorrection", "Red", cacorrection.red, keyFile);
             saveToKeyfile("CACorrection", "Blue", cacorrection.blue, keyFile);
         }
 
 // Vignetting correction
         if (RELEVANT_(vignetting)) {
+            saveToKeyfile("Vignetting Correction", "Enabled", vignetting.enabled, keyFile);
             saveToKeyfile("Vignetting Correction", "Amount", vignetting.amount, keyFile);
             saveToKeyfile("Vignetting Correction", "Radius", vignetting.radius, keyFile);
             saveToKeyfile("Vignetting Correction", "Strength", vignetting.strength, keyFile);
@@ -3374,6 +3384,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         }
 
         if (keyFile.has_group("Rotation") && RELEVANT_(rotate)) {
+            assignFromKeyfile(keyFile, "Rotation", "Enabled", rotate.enabled);
             assignFromKeyfile(keyFile, "Rotation", "Degree", rotate.degree);
         }
 
@@ -3382,6 +3393,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         }
 
         if (keyFile.has_group("Distortion") && RELEVANT_(distortion)) {
+            assignFromKeyfile(keyFile, "Distortion", "Enabled", distortion.enabled);
             assignFromKeyfile(keyFile, "Distortion", "Amount", distortion.amount);
         }
 
@@ -3443,11 +3455,13 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
         }
 
         if (keyFile.has_group("CACorrection") && RELEVANT_(cacorrection)) {
+            assignFromKeyfile(keyFile, "CACorrection", "Enabled", cacorrection.enabled);
             assignFromKeyfile(keyFile, "CACorrection", "Red", cacorrection.red);
             assignFromKeyfile(keyFile, "CACorrection", "Blue", cacorrection.blue);
         }
 
         if (keyFile.has_group("Vignetting Correction") && RELEVANT_(vignetting)) {
+            assignFromKeyfile(keyFile, "Vignetting Correction", "Enabled", vignetting.enabled);
             assignFromKeyfile(keyFile, "Vignetting Correction", "Amount", vignetting.amount);
             assignFromKeyfile(keyFile, "Vignetting Correction", "Radius", vignetting.radius);
             assignFromKeyfile(keyFile, "Vignetting Correction", "Strength", vignetting.strength);

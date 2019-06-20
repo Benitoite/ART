@@ -33,6 +33,7 @@ protected:
     Adjuster* strength;
     Adjuster* centerX;
     Adjuster* centerY;
+    rtengine::ProcEvent EvEnabled;
 
 public:
 
@@ -44,6 +45,7 @@ public:
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void enabledChanged() override;
 };
 
 #endif

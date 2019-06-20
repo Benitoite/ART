@@ -35,6 +35,7 @@ public:
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setRawMeta(bool raw, const rtengine::FramesMetaData* pMeta);
+    void enabledChanged() override;
 
     void onLCPFileChanged();
     void onUseDistChanged();
@@ -114,9 +115,7 @@ private:
 
     Gtk::Grid* const modesGrid;
     Gtk::Grid* const distGrid;
-    Gtk::RadioButton* const corrUnchangedRB;
     Gtk::RadioButton::Group corrGroup;
-    Gtk::RadioButton* const corrOffRB;
     Gtk::RadioButton* const corrLensfunAutoRB;
     Gtk::RadioButton* const corrLensfunManualRB;
     Gtk::RadioButton* const corrLcpFileRB;
@@ -129,6 +128,8 @@ private:
     Gtk::CheckButton* const ckbUseDist;
     Gtk::CheckButton* const ckbUseVign;
     Gtk::CheckButton* const ckbUseCA;
+
+    rtengine::ProcEvent EvEnabled;
 
     static LFDbHelper* lf;
 };

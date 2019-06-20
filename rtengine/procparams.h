@@ -741,6 +741,7 @@ struct CommonTransformParams {
   * Parameters of the rotation
   */
 struct RotateParams {
+    bool enabled;
     double  degree;
 
     RotateParams();
@@ -753,6 +754,7 @@ struct RotateParams {
   * Parameters of the distortion correction
   */
 struct DistortionParams {
+    bool enabled;
     double  amount;
 
     DistortionParams();
@@ -848,6 +850,7 @@ struct PCVignetteParams {
   * Parameters of the vignetting correction
   */
 struct VignettingParams {
+    bool enabled;
     int  amount;
     int  radius;
     int  strength;
@@ -899,6 +902,7 @@ struct BlackWhiteParams {
   * Parameters of the c/a correction
   */
 struct CACorrParams {
+    bool enabled;
     double red;
     double blue;
 

@@ -38,7 +38,7 @@ public:
 
     void setLensGeomListener (LensGeomListener* l) { lgl = l; }
     void autoPressed(Gtk::Button *which);
-    void enabledChanged();
+    void enabledChanged() override;
 
     void setRawMeta(bool raw, const rtengine::FramesMetaData *meta);
 

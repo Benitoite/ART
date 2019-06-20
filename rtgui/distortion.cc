@@ -19,14 +19,17 @@
 #include "distortion.h"
 #include <iomanip>
 #include "rtimage.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Distortion::Distortion (): FoldableToolPanel(this, "distortion", M("TP_DISTORTION_LABEL"))
+Distortion::Distortion (): FoldableToolPanel(this, "distortion", M("TP_DISTORTION_LABEL"), false, true)
 {
-
     rlistener = nullptr;
+
+    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_DISTORTION_LABEL"));
+    
     autoDistor = Gtk::manage (new Gtk::Button (M("GENERAL_AUTO")));
     autoDistor->set_image (*Gtk::manage (new RTImage ("distortion-auto-small.png")));
     autoDistor->get_style_context()->add_class("independent");
@@ -51,12 +54,14 @@ Distortion::Distortion (): FoldableToolPanel(this, "distortion", M("TP_DISTORTIO
 void Distortion::read(const ProcParams* pp)
 {
     disableListener ();
+    setEnabled(pp->distortion.enabled);
     distor->setValue (pp->distortion.amount);
     enableListener ();
 }
 
 void Distortion::write(ProcParams* pp)
 {
+    pp->distortion.enabled = getEnabled();
     pp->distortion.amount = distor->getValue ();
 }
 
@@ -67,7 +72,7 @@ void Distortion::setDefaults(const ProcParams* defParams)
 
 void Distortion::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener) {
+    if (listener && getEnabled()) {
         listener->panelChanged (EvDISTAmount, Glib::ustring::format (std::setw(4), std::fixed, std::setprecision(3), a->getValue()));
     }
 }
@@ -78,6 +83,7 @@ void Distortion::adjusterAutoToggled(Adjuster* a, bool newval)
 
 void Distortion::idPressed ()
 {
+    setEnabled(true);
     if (rlistener) {
         double new_amount = rlistener->autoDistorRequested();
         distor->setValue(new_amount);
@@ -89,4 +95,16 @@ void Distortion::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
     distor->trimValue(pp->distortion.amount);
+}
+
+
+void Distortion::enabledChanged()
+{
+    if (listener) {
+        if (getEnabled()) {
+            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
+        }
+    }
 }

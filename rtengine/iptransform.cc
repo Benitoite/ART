@@ -270,6 +270,17 @@ void transform_perspective(const ProcParams *params, const FramesMetaData *metad
     }
 }
 
+void get_rotation(const ProcParams *params, double &cost, double &sint)
+{
+    if (!params->rotate.enabled) {
+        cost = 1.0;
+        sint = 0.0;
+    } else {
+        cost = cos(params->rotate.degree * rtengine::RT_PI / 180.0);
+        sint = sin(params->rotate.degree * rtengine::RT_PI / 180.0);
+    }
+}
+
 } // namespace
 
 
@@ -303,8 +314,8 @@ bool ImProcFunctions::transCoord (int W, int H, const std::vector<Coord2D> &src,
     double distAmount = params->distortion.amount;
 
     // auxiliary variables for rotation
-    double cost = cos (params->rotate.degree * rtengine::RT_PI / 180.0);
-    double sint = sin (params->rotate.degree * rtengine::RT_PI / 180.0);
+    double cost, sint;
+    get_rotation(params, cost, sint);
 
     double ascale = ascaleDef > 0 ? ascaleDef : (params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0);
 
@@ -959,8 +970,8 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     double distAmount = params->distortion.amount;
 
     // auxiliary variables for rotation
-    double cost = cos (params->rotate.degree * rtengine::RT_PI / 180.0);
-    double sint = sin (params->rotate.degree * rtengine::RT_PI / 180.0);
+    double cost, sint;
+    get_rotation(params, cost, sint);
 
     double ascale = params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0;
 
@@ -1182,17 +1193,17 @@ double ImProcFunctions::getTransformAutoFill (int oW, int oH, const LensCorrecti
 
 bool ImProcFunctions::needsCA ()
 {
-    return fabs (params->cacorrection.red) > 1e-15 || fabs (params->cacorrection.blue) > 1e-15;
+    return params->cacorrection.enabled && (fabs (params->cacorrection.red) > 1e-15 || fabs (params->cacorrection.blue) > 1e-15);
 }
 
 bool ImProcFunctions::needsDistortion ()
 {
-    return fabs (params->distortion.amount) > 1e-15;
+    return params->distortion.enabled && (fabs (params->distortion.amount) > 1e-15);
 }
 
 bool ImProcFunctions::needsRotation ()
 {
-    return fabs (params->rotate.degree) > 1e-15;
+    return params->rotate.enabled && (fabs (params->rotate.degree) > 1e-15);
 }
 
 bool ImProcFunctions::needsPerspective ()
@@ -1212,7 +1223,7 @@ bool ImProcFunctions::needsPCVignetting ()
 
 bool ImProcFunctions::needsVignetting ()
 {
-    return params->vignetting.amount;
+    return params->vignetting.enabled && params->vignetting.amount;
 }
 
 bool ImProcFunctions::needsLCP ()
@@ -1231,5 +1242,4 @@ bool ImProcFunctions::needsTransform ()
 }
 
 
-}
-
+} // namespace rtengine

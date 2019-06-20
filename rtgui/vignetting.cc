@@ -17,12 +17,14 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "vignetting.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Vignetting::Vignetting () : FoldableToolPanel(this, "vignetting", M("TP_VIGNETTING_LABEL"))
+Vignetting::Vignetting () : FoldableToolPanel(this, "vignetting", M("TP_VIGNETTING_LABEL"), false, true)
 {
+    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_VIGNETTING_LABEL"));
 
     amount = Gtk::manage (new Adjuster (M("TP_VIGNETTING_AMOUNT"), -100, 100, 1, 0));
     amount->setAdjusterListener (this);
@@ -50,9 +52,9 @@ Vignetting::Vignetting () : FoldableToolPanel(this, "vignetting", M("TP_VIGNETTI
 
 void Vignetting::read(const ProcParams* pp)
 {
-
     disableListener ();
 
+    setEnabled(pp->vignetting.enabled);
     amount->setValue (pp->vignetting.amount);
     radius->setValue (pp->vignetting.radius);
     strength->setValue (pp->vignetting.strength);
@@ -64,6 +66,7 @@ void Vignetting::read(const ProcParams* pp)
 
 void Vignetting::write(ProcParams* pp)
 {
+    pp->vignetting.enabled = getEnabled();
     pp->vignetting.amount = amount->getIntValue ();
     pp->vignetting.radius = radius->getIntValue ();
     pp->vignetting.strength = strength->getIntValue ();
@@ -83,7 +86,7 @@ void Vignetting::setDefaults(const ProcParams* defParams)
 
 void Vignetting::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener)  {
+    if (listener && getEnabled())  {
         if (a == amount) {
             listener->panelChanged (EvVignettingAmount, amount->getTextValue());
         } else if (a == radius) {
@@ -110,3 +113,13 @@ void Vignetting::trimValues (rtengine::procparams::ProcParams* pp)
     centerY->trimValue(pp->vignetting.centerY);
 }
 
+void Vignetting::enabledChanged()
+{
+    if (listener) {
+        if (getEnabled()) {
+            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
+        } else {
+            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
+        }
+    }
+}
