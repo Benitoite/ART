@@ -540,24 +540,24 @@ ProcEvent RefreshMapper::newEvent()
 }
 
 
-void RefreshMapper::mapEvent(ProcEvent event, int action)
+void RefreshMapper::mapEvent(ProcEvent &event, int action)
 {
-    actions_[event] = action;
+    event.set_action(action);
 }
 
 
-int RefreshMapper::getAction(ProcEvent event) const
+int RefreshMapper::getAction(const ProcEvent &event) const
 {
     auto it = actions_.find(event);
     if (it == actions_.end()) {
-        return 0;
+        return event.get_action();
     } else {
         return it->second;
     }
 }
 
 
-void RefreshMapper::setAction(ProcEvent event, int action)
+void RefreshMapper::setAction(ProcEvent &event, int action)
 {
     mapEvent(event, action);
 }

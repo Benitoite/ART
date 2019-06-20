@@ -21,6 +21,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include "../rtengine/refreshmap.h"
 
 
@@ -28,10 +29,11 @@ class ProcEventMapper {
 public:
     static ProcEventMapper *getInstance();
     rtengine::ProcEvent newEvent(int action, const std::string &history_msg="");
-    const std::string &getHistoryMsg(rtengine::ProcEvent event) const;
+    std::string getHistoryMsg(const rtengine::ProcEvent &event) const;
 
 private:
     ProcEventMapper();
     
-    std::unordered_map<int, std::string> history_msgs_;
+    std::unordered_set<std::string> history_msgs_;
+    std::unordered_map<int, const char *> msgmap_;
 };

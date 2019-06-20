@@ -24,7 +24,8 @@
 ProcEventMapper::ProcEventMapper()
 {
     for (int event = 0; event < rtengine::NUMOFEVENTS; ++event) {
-        history_msgs_[event] = "HISTORY_MSG_" + std::to_string(event + 1);
+        auto it = history_msgs_.insert("HISTORY_MSG_" + std::to_string(event + 1));
+        msgmap_[event] = it.first->c_str();
     }
 }
 
@@ -38,26 +39,30 @@ ProcEventMapper *ProcEventMapper::getInstance()
 
 rtengine::ProcEvent ProcEventMapper::newEvent(int action, const std::string &history_msg)
 {
-    rtengine::ProcEvent event = rtengine::RefreshMapper::getInstance()->newEvent();
+    auto event = rtengine::RefreshMapper::getInstance()->newEvent();
     rtengine::RefreshMapper::getInstance()->mapEvent(event, action);    
 
-    if (history_msg.empty()) {
-        history_msgs_[event] = "HISTORY_MSG_" + std::to_string(event + 1);
-    } else {
-        history_msgs_[event] = history_msg;
-    }
+    auto it = history_msg.empty() ? 
+        history_msgs_.insert("HISTORY_MSG_" + std::to_string(event + 1)) :
+        history_msgs_.insert(history_msg);
+    event.set_message(it.first->c_str());
     
     return event;
 }
 
 
-const std::string &ProcEventMapper::getHistoryMsg(rtengine::ProcEvent event) const
+std::string ProcEventMapper::getHistoryMsg(const rtengine::ProcEvent &event) const
 {
     static std::string empty;
-    auto it = history_msgs_.find(event);
-    if (it == history_msgs_.end()) {
-        return empty;
+    auto msg = event.get_message();
+    if (msg) {
+        return std::string(msg);
     } else {
-        return it->second;
+        auto it = msgmap_.find(event);
+        if (it == msgmap_.end()) {
+            return empty;
+        } else {
+            return it->second;
+        }
     }
 }

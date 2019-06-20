@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -19,11 +20,7 @@
 #ifndef __PROCEVENT__
 #define __PROCEVENT__
 
-namespace rtengine
-{
-
-
-
+namespace rtengine {
 
 // Aligned so the first entry starts on line 30
 enum ProcEventCode {
@@ -529,13 +526,19 @@ enum ProcEventCode {
 
 class ProcEvent {
 public:
-    ProcEvent(): code_(0) {}
-    ProcEvent(ProcEventCode code): code_(code) {}
-    explicit ProcEvent(int code): code_(code) {}
+    ProcEvent(): code_(0), action_(0), msg_(nullptr) {}
+    ProcEvent(ProcEventCode code): code_(code), action_(0), msg_(nullptr) {}
+    explicit ProcEvent(int code): code_(code), action_(0), msg_(nullptr) {}
     operator int() const { return code_; }
+    int get_action() const { return action_; }
+    void set_action(int a) { action_ = a; }
+    const char *get_message() const { return msg_; }
+    void set_message(const char *msg) { msg_ = msg; }
 
 private:
     int code_;
+    int action_;
+    const char *msg_;
 };
 
 
@@ -546,6 +549,6 @@ inline bool operator!=(ProcEvent a, ProcEvent b) { return int(a) != int(b); }
 inline bool operator!=(ProcEvent a, ProcEventCode b) { return int(a) != int(b); }
 inline bool operator!=(ProcEventCode a, ProcEvent b) { return int(a) != int(b); }
 
-}
+} // namespace rtengine
 #endif
 

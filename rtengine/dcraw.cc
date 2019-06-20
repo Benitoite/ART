@@ -3608,6 +3608,11 @@ void CLASS samsung3_load_raw()
 
 #define HOLE(row) ((holes >> (((row) - raw_height) & 7)) & 1)
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
 /* Kudos to Rich Taylor for figuring out SMaL's compression algorithm. */
 void CLASS smal_decode_segment (unsigned seg[2][2], int holes)
 {
@@ -3674,6 +3679,11 @@ void CLASS smal_decode_segment (unsigned seg[2][2], int holes)
   }
   maximum = 0xff;
 }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 
 void CLASS smal_v6_load_raw()
 {

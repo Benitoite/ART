@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -84,9 +85,9 @@ class RefreshMapper {
 public:
     static RefreshMapper *getInstance();
     ProcEvent newEvent();
-    void mapEvent(ProcEvent event, int action);
-    int getAction(ProcEvent event) const;
-    void setAction(ProcEvent event, int action);
+    void mapEvent(ProcEvent &event, int action);
+    int getAction(const ProcEvent &event) const;
+    void setAction(ProcEvent &event, int action);
     
 private:
     RefreshMapper();
