@@ -35,7 +35,6 @@ public:
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setRawMeta(bool raw, const rtengine::FramesMetaData* pMeta);
-    void enabledChanged() override;
 
     void onLCPFileChanged();
     void onUseDistChanged();
@@ -128,8 +127,6 @@ private:
     Gtk::CheckButton* const ckbUseDist;
     Gtk::CheckButton* const ckbUseVign;
     Gtk::CheckButton* const ckbUseCA;
-
-    rtengine::ProcEvent EvEnabled;
 
     static LFDbHelper* lf;
 };

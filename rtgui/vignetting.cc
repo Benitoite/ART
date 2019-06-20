@@ -24,7 +24,7 @@ using namespace rtengine::procparams;
 
 Vignetting::Vignetting () : FoldableToolPanel(this, "vignetting", M("TP_VIGNETTING_LABEL"), false, true)
 {
-    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_VIGNETTING_LABEL"));
+    EvToolEnabled.set_action(TRANSFORM);
 
     amount = Gtk::manage (new Adjuster (M("TP_VIGNETTING_AMOUNT"), -100, 100, 1, 0));
     amount->setAdjusterListener (this);
@@ -111,15 +111,4 @@ void Vignetting::trimValues (rtengine::procparams::ProcParams* pp)
     strength->trimValue(pp->vignetting.strength);
     centerX->trimValue(pp->vignetting.centerX);
     centerY->trimValue(pp->vignetting.centerY);
-}
-
-void Vignetting::enabledChanged()
-{
-    if (listener) {
-        if (getEnabled()) {
-            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
-        }
-    }
 }

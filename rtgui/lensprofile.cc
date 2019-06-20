@@ -62,7 +62,7 @@ LensProfilePanel::LensProfilePanel() :
     ckbUseVign(Gtk::manage((new Gtk::CheckButton(M("TP_LENSPROFILE_USE_VIGNETTING"))))),
     ckbUseCA(Gtk::manage((new Gtk::CheckButton(M("TP_LENSPROFILE_USE_CA")))))
 {
-    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_LENSPROFILE_LABEL"));
+    EvToolEnabled.set_action(TRANSFORM);
     
     if (!lf) {
         lf = new LFDbHelper();
@@ -757,15 +757,3 @@ void LensProfilePanel::updateLensfunWarning()
 }
 
 LensProfilePanel::LFDbHelper* LensProfilePanel::lf(nullptr);
-
-
-void LensProfilePanel::enabledChanged()
-{
-    if (listener) {
-        if (getEnabled()) {
-            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
-        }
-    }
-}

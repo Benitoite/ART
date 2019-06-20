@@ -29,7 +29,7 @@ Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"), fals
 {
     rlistener = nullptr;
 
-    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_ROTATE_LABEL"));
+    EvToolEnabled.set_action(TRANSFORM);
 
     //TODO the action of the rotation slider is counter-intuitive
     Gtk::Image* irotateL =   Gtk::manage (new RTImage ("rotate-right-small.png"));
@@ -104,16 +104,4 @@ void Rotate::selectStraightPressed ()
 void Rotate::trimValues (rtengine::procparams::ProcParams* pp)
 {
     degree->trimValue(pp->rotate.degree);
-}
-
-
-void Rotate::enabledChanged()
-{
-    if (listener) {
-        if (getEnabled()) {
-            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
-        }
-    }
 }

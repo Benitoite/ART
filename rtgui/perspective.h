@@ -38,7 +38,6 @@ public:
 
     void setLensGeomListener (LensGeomListener* l) { lgl = l; }
     void autoPressed(Gtk::Button *which);
-    void enabledChanged() override;
 
     void setRawMeta(bool raw, const rtengine::FramesMetaData *meta);
 
@@ -56,7 +55,6 @@ private:
     Gtk::Button *auto_vert;
     Gtk::Button *auto_both;
     LensGeomListener *lgl;
-    rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvPerspCorrLens;
     const rtengine::FramesMetaData *metadata;
 };

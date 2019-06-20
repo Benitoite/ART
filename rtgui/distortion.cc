@@ -28,7 +28,7 @@ Distortion::Distortion (): FoldableToolPanel(this, "distortion", M("TP_DISTORTIO
 {
     rlistener = nullptr;
 
-    EvEnabled = ProcEventMapper::getInstance()->newEvent(TRANSFORM, M("TP_DISTORTION_LABEL"));
+    EvToolEnabled.set_action(TRANSFORM);
     
     autoDistor = Gtk::manage (new Gtk::Button (M("GENERAL_AUTO")));
     autoDistor->set_image (*Gtk::manage (new RTImage ("distortion-auto-small.png")));
@@ -95,16 +95,4 @@ void Distortion::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
     distor->trimValue(pp->distortion.amount);
-}
-
-
-void Distortion::enabledChanged()
-{
-    if (listener) {
-        if (getEnabled()) {
-            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
-        }
-    }
 }

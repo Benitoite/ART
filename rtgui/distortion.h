@@ -33,7 +33,6 @@ protected:
     Adjuster* distor;
     sigc::connection    idConn;
     LensGeomListener * rlistener;
-    rtengine::ProcEvent EvEnabled;
 
 public:
 
@@ -50,8 +49,6 @@ public:
     {
         rlistener = l;
     }
-
-    void enabledChanged() override;
 };
 
 #endif

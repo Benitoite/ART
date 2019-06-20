@@ -25,8 +25,8 @@ using namespace rtengine::procparams;
 
 PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("TP_PERSPECTIVE_LABEL"), false, true)
 {
+    EvToolEnabled.set_action(TRANSFORM);
     auto m = ProcEventMapper::getInstance();
-    EvEnabled = m->newEvent(TRANSFORM, "HISTORY_MSG_PERSPECTIVE_ENABLED");
     EvPerspCorrLens = m->newEvent(TRANSFORM, "HISTORY_MSG_PERSPECTIVE_LENS");
     
     lgl = nullptr;
@@ -178,18 +178,6 @@ void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
     flength->trimValue(pp->perspective.flength);
     cropfactor->trimValue(pp->perspective.cropfactor);
     aspect->trimValue(pp->perspective.aspect);
-}
-
-
-void PerspCorrection::enabledChanged()
-{
-    if (listener) {
-        if (getEnabled()) {
-            listener->panelChanged(EvEnabled, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged(EvEnabled, M("GENERAL_DISABLED"));
-        }
-    }
 }
 
 

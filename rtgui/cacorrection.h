@@ -30,7 +30,6 @@ class CACorrection : public ToolParamBlock, public AdjusterListener, public Fold
 protected:
     Adjuster* red;
     Adjuster* blue;
-    rtengine::ProcEvent EvEnabled;
 
 public:
 
@@ -42,7 +41,6 @@ public:
     void adjusterChanged (Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    void enabledChanged() override;
 };
 
 #endif
