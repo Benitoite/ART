@@ -46,10 +46,10 @@
 
 #define TS 64       // Tile size
 #define offset 25   // shift between tiles
-#define fTS ((TS/2+1))  // second dimension of Fourier tiles
+//#define fTS ((TS/2+1))  // second dimension of Fourier tiles
 #define blkrad 1    // radius of block averaging
 
-#define epsilon 0.001f/(TS*TS) //tolerance
+//#define epsilon 0.001f/(TS*TS) //tolerance
 
 namespace rtengine
 {
@@ -477,6 +477,10 @@ enum nrquality {QUALITY_STANDARD, QUALITY_HIGH};
 
 void ImProcFunctions::RGB_denoise(int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DenoiseParams & dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi)
 {
+    // const int TS = max(int(default_TS / scale), 4);
+    // const int offset = max(int(default_offset / scale), 1);
+    const float epsilon = 0.001f/(TS * TS);
+    
 BENCHFUN
 //#ifdef _DEBUG
     MyTime t1e, t2e;
@@ -2073,9 +2077,13 @@ BENCHFUN
 
 void ImProcFunctions::RGBtile_denoise(float * fLblox, int hblproc, float noisevar_Ldetail, float * nbrwt, float * blurbuffer)  //for DCT
 {
+    // const int TS = max(int(default_TS / scale), 4);
+    // const int offset = max(int(default_offset / scale), 1);
+    
     int blkstart = hblproc * TS * TS;
 
-    boxabsblur(fLblox + blkstart, nbrwt, 3, 3, TS, TS, blurbuffer); //blur neighbor weights for more robust estimation //for DCT
+    const int blur_rad = max(1, int(3 / scale));
+    boxabsblur(fLblox + blkstart, nbrwt, blur_rad, blur_rad, TS, TS, blurbuffer); //blur neighbor weights for more robust estimation //for DCT
 
 #ifdef __SSE2__
     __m128  tempv;
@@ -2106,6 +2114,9 @@ void ImProcFunctions::RGBtile_denoise(float * fLblox, int hblproc, float noiseva
 
 void ImProcFunctions::RGBoutput_tile_row(float *bloxrow_L, float ** Ldetail, float ** tilemask_out, int height, int width, int top)
 {
+    // const int TS = max(int(default_TS / scale), 4);
+    // const int offset = max(int(default_offset / scale), 1);
+    
     const int numblox_W = ceil((static_cast<float>(width)) / (offset));
     const float DCTnorm = 1.0f / (4 * TS * TS); //for DCT
 
@@ -2369,7 +2380,8 @@ bool ImProcFunctions::WaveletDenoiseAll_BiShrinkL(wavelet_decomposition &Wavelet
                         }
 
 #endif
-                        boxblur(sfave, sfaved, blurBuffer, lvl + 2, lvl + 2, Wlvl_L, Hlvl_L); //increase smoothness by locally averaging shrinkage
+                        const int blur_rad = max(1, int((lvl + 2) / scale));
+                        boxblur(sfave, sfaved, blurBuffer, blur_rad, blur_rad, Wlvl_L, Hlvl_L); //increase smoothness by locally averaging shrinkage
 #ifdef __SSE2__
                         __m128 sfavev;
                         __m128 sf_Lv;
@@ -2728,7 +2740,8 @@ void ImProcFunctions::ShrinkAllL(wavelet_decomposition &WaveletCoeffs_L, float *
     }
 
 #endif
-    boxblur(sfave, sfaved, blurBuffer, level + 2, level + 2, W_L, H_L); //increase smoothness by locally averaging shrinkage
+    const int blur_rad = max(1, int((level + 2) / scale));
+    boxblur(sfave, sfaved, blurBuffer, blur_rad, blur_rad, W_L, H_L); //increase smoothness by locally averaging shrinkage
 
 #ifdef __SSE2__
     __m128  sfv;
@@ -2836,7 +2849,8 @@ void ImProcFunctions::ShrinkAllAB(wavelet_decomposition &WaveletCoeffs_L, wavele
 
 #endif
 
-        boxblur(sfaveab, sfaveabd, blurBuffer, level + 2, level + 2, W_ab, H_ab); //increase smoothness by locally averaging shrinkage
+        const int blur_rad = max(1, int((level + 2) / scale));
+        boxblur(sfaveab, sfaveabd, blurBuffer, blur_rad, blur_rad, W_ab, H_ab); //increase smoothness by locally averaging shrinkage
 #ifdef __SSE2__
         __m128 epsv = _mm_set1_ps(eps);
         __m128 sfabv;
@@ -3650,7 +3664,7 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
     delete[] bcalc;
 
 #undef TS
-#undef fTS
+//#undef fTS
 #undef offset
 #undef epsilon
 
