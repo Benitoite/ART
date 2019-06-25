@@ -41,8 +41,9 @@ enum class Channel {
 };
 
 
-void guided_filter_log(float base, array2D<float> &chan, int r, float eps, bool multithread)
+inline void to_log(array2D<float> &chan, bool multithread)
 {
+    constexpr float base = 10.f;
 #ifdef _OPENMP
 #    pragma omp parallel for if (multithread)
 #endif
@@ -51,7 +52,12 @@ void guided_filter_log(float base, array2D<float> &chan, int r, float eps, bool 
             chan[y][x] = xlin2log(max(chan[y][x], 0.f), base);
         }
     }
-    guidedFilter(chan, chan, chan, r, eps, multithread);
+}
+
+
+inline void to_lin(array2D<float> &chan, bool multithread)
+{
+    constexpr float base = 10.f;
 #ifdef _OPENMP
 #    pragma omp parallel for if (multithread)
 #endif
@@ -62,22 +68,85 @@ void guided_filter_log(float base, array2D<float> &chan, int r, float eps, bool 
     }
 }
 
-void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
+
+// inline void guided_filter_log(float base, array2D<float> &chan, int r, float eps, bool multithread)
+// {
+//     to_log(chan, multithread);
+//     guidedFilter(chan, chan, chan, r, eps, multithread);
+//     to_lin(chan, multithread);
+// }
+
+
+void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, const TMatrix &iws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
 {
+    const auto rgb2xyY =
+        [&](float r, float g, float b, float &x, float &y, float &Y) -> void
+        {
+            float X, Z;
+            Color::rgbxyz(r, g, b, X, Y, Z, ws);
+            Color::XYZ_to_xyY(X, Y, Z, x, y);
+        };
+
+    const auto xyY2rgb =
+        [&](float x, float y, float Y, float &r, float &g, float &b) -> void
+        {
+            float X, Z;
+            Color::xyY_to_XYZ(x, y, Y, X, Z);
+            Color::xyz2rgb(X, Y, Z, r, g, b, iws);
+        };
+        
     if (radius > 0 && strength > 0) {
         const int W = R.width();
         const int H = R.height();
         int r = max(int(radius / scale), 1);
+
+        if (chan != Channel::LC) {
+#ifdef _OPENMP
+#           pragma omp parallel for if (multithread)
+#endif
+            for (int yy = 0; yy < H; ++yy) {
+                for (int xx = 0; xx < W; ++xx) {
+                    float x, y, Y;
+                    rgb2xyY(R[yy][xx], G[yy][xx], B[yy][xx], x, y, Y);
+                    R[yy][xx] = x;
+                    G[yy][xx] = Y;
+                    B[yy][xx] = y;
+                }
+            }
+        }
+        
         array2D<float> iR(W, H, R, 0);
         array2D<float> iG(W, H, G, 0);
         array2D<float> iB(W, H, B, 0);
+
+        if (chan == Channel::LC) {
+            to_log(R, multithread);
+            to_log(G, multithread);
+            to_log(B, multithread);
+            guidedFilter(R, R, R, r, epsilon, multithread);
+            guidedFilter(G, G, G, r, epsilon, multithread);
+            guidedFilter(B, B, B, r, epsilon, multithread);
+            to_lin(R, multithread);
+            to_lin(G, multithread);
+            to_lin(B, multithread);
+        } else if (chan == Channel::L) {
+            to_log(G, multithread);
+            guidedFilter(G, G, G, r, epsilon, multithread);
+            to_lin(G, multithread);
+        } else {
+            to_log(R, multithread);
+            to_log(G, multithread);
+            to_log(B, multithread);
+            guidedFilter(G, R, R, r, epsilon, multithread);
+            guidedFilter(G, B, B, r, epsilon, multithread);
+            to_lin(R, multithread);
+            to_lin(G, multithread);
+            to_lin(B, multithread);
+        }
         
-        // guidedFilter(R, R, R, r, epsilon, multithread);
-        // guidedFilter(G, G, G, r, epsilon, multithread);
-        // guidedFilter(B, B, B, r, epsilon, multithread);
-        guided_filter_log(10.f, R, r, epsilon, multithread);
-        guided_filter_log(10.f, G, r, epsilon, multithread);
-        guided_filter_log(10.f, B, r, epsilon, multithread);
+        // guided_filter_log(10.f, R, r, epsilon, multithread);
+        // guided_filter_log(10.f, G, r, epsilon, multithread);
+        // guided_filter_log(10.f, B, r, epsilon, multithread);
 
         const float blend = LIM01(float(strength) / 100.f);
 
@@ -99,15 +168,41 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                     B[y][x] = intp(bf, bb, ib);
                 } else {
                     const bool luminance = (chan == Channel::L);
-                    float Y = Color::rgbLuminance(rr, gg, bb, ws);
-                    float iY = Color::rgbLuminance(ir, ig, ib, ws);
-                    float oY = luminance ? intp(bf, Y, iY) : iY;
-                    rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
-                    gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
-                    bb = luminance ? ib - iY : intp(bf, bb - Y, ib - iY);
-                    R[y][x] = oY + rr;
-                    G[y][x] = oY + gg;
-                    B[y][x] = oY + bb;
+                    // float Y = Color::rgbLuminance(rr, gg, bb, ws);
+                    // float iY = Color::rgbLuminance(ir, ig, ib, ws);
+                    // float oY = luminance ? intp(bf, Y, iY) : iY;
+                    // rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
+                    // gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
+                    // bb = luminance ? ib - iY : intp(bf, bb - Y, ib - iY);
+                    // R[y][x] = oY + rr;
+                    // G[y][x] = oY + gg;
+                    // B[y][x] = oY + bb;
+
+                    // float ix, iy, iY;
+                    // float ox, oy, oY;
+                    // rgb2xyY(ir, ig, ib, ix, iy, iY);
+                    // rgb2xyY(rr, gg, bb, ox, oy, oY);
+                    // if (luminance) {
+                    //     oY = intp(bf, oY, iY);
+                    //     ox = ix;
+                    //     oy = iy;
+                    // } else {
+                    //     ox = intp(bf, ox, ix);
+                    //     oy = intp(bf, oy, iy);
+                    //     oY = iY;
+                    // }
+                    // xyY2rgb(ox, oy, oY, R[y][x], G[y][x], B[y][x]);
+                    float ox, oy, oY;
+                    if (luminance) {
+                        ox = iR[y][x];
+                        oy = iB[y][x];
+                        oY = intp(bf, G[y][x], iG[y][x]);
+                    } else {
+                        ox = intp(bf, R[y][x], iR[y][x]);
+                        oy = intp(bf, B[y][x], iB[y][x]);
+                        oY = iG[y][x];
+                    }
+                    xyY2rgb(ox, oy, oY, R[y][x], G[y][x], B[y][x]);
                 }
             }
         }
@@ -132,10 +227,11 @@ void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
     array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
 
     int r = max(int(params->denoise.guidedChromaRadius / scale), 1);
-    guided_smoothing(R, G, B, ws, Channel::C, params->denoise.guidedChromaRadius, 0.1f / float(min(r, 10)), params->denoise.guidedChromaStrength, scale, multiThread);
-    guided_smoothing(R, G, B, ws, Channel::L, params->denoise.guidedLumaRadius, 5e-4f, params->denoise.guidedLumaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, iws, Channel::C, params->denoise.guidedChromaRadius, 0.1f / float(min(r, 10)), params->denoise.guidedChromaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, iws, Channel::L, params->denoise.guidedLumaRadius, 5e-4f, params->denoise.guidedLumaStrength, scale, multiThread);
     
     rgb->normalizeFloatTo65535();
 }
@@ -169,6 +265,7 @@ void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
         Imagefloat rgb(lab->W, lab->H);
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+        TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
         
         for (int i = 0; i < n; ++i) {
             lab2rgb(*lab, rgb, params->icm.workingProfile);
@@ -183,7 +280,7 @@ void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
             array2D<float> B(W, H, rgb.b.ptrs, ARRAY2D_BYREFERENCE);
 
             const float epsilon = 0.001f * std::pow(2, -r.epsilon);
-            guided_smoothing(R, G, B, ws, Channel(int(r.channel)), r.radius, epsilon, 100, scale, multiThread);
+            guided_smoothing(R, G, B, ws, iws, Channel(int(r.channel)), r.radius, epsilon, 100, scale, multiThread);
             
             const auto &blend = mask[i];
             
