@@ -27,7 +27,8 @@
 
 using namespace std;
 
-namespace rtengine {
+namespace rtengine
+{
 
 extern const Settings* settings;
 
@@ -7022,30 +7023,4 @@ void Color::filmlike_clip(float *r, float *g, float *b)
     }
 }
 
-
-void Color::XYZ_to_xyY(float X, float Y, float Z, float &x, float &y)
-{
-    float d = X + Y + Z;
-    if (d > 1e-6f) {
-        x = X / d;
-        y = Y / d;
-    } else {
-        x = 0.31271f; // D65 reference white coordinates
-        y = 0.32902f;
-    }
 }
-
-
-void Color::xyY_to_XYZ(float x, float y, float Y, float &X, float &Z)
-{
-    if (y > 1e-6f) {
-        float f = Y / y;
-        X = x * f;
-        Z = (1.f - x - y) * f;
-    } else {
-        X = 0.f;
-        Z = 0.f;
-    }
-}
-
-} // namespace rtengine

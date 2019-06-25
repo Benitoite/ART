@@ -755,10 +755,6 @@ public:
     }
 #endif
 
-    // input and output in [0,1] (without clipping)
-    static void XYZ_to_xyY(float X, float Y, float Z, float &x, float &y);
-    static void xyY_to_XYZ(float x, float y, float Y, float &X, float &Z);
-
     /**
      * @brief Calculate the effective direction (up or down) to linearly interpolating 2 colors so that it follows the shortest or longest path
      * @param h1 First hue [0 ; 1]
