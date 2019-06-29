@@ -44,6 +44,32 @@
 
 
 class LabGridArea: public Gtk::DrawingArea, public BackBuffer {
+public:
+    LabGridArea(rtengine::ProcEvent evt, const Glib::ustring &msg, bool enable_low=true);
+
+    void getParams(double &la, double &lb, double &ha, double &hb) const;
+    void setParams(double la, double lb, double ha, double hb, bool notify);
+    void setDefault (double la, double lb, double ha, double hb);
+    void setEdited(bool yes);
+    bool getEdited() const;
+    void reset(bool toInitial);
+    void setListener(ToolPanelListener *l);
+
+    bool lowEnabled() const;
+    void setLowEnabled(bool yes);
+
+    void setLogScale(int scale);
+    int getLogScale() const;
+
+    bool on_draw(const ::Cairo::RefPtr<Cairo::Context> &crf) override;
+    void on_style_updated () override;
+    bool on_button_press_event(GdkEventButton *event) override;
+    bool on_button_release_event(GdkEventButton *event) override;
+    bool on_motion_notify_event(GdkEventMotion *event) override;
+    Gtk::SizeRequestMode get_request_mode_vfunc() const override;
+    void get_preferred_width_vfunc(int &minimum_width, int &natural_width) const override;
+    void get_preferred_height_for_width_vfunc (int width, int &minimum_height, int &natural_height) const override;
+
 private:
     rtengine::ProcEvent evt;
     Glib::ustring evtMsg;
@@ -67,32 +93,10 @@ private:
     static const int inset = 5;
 
     bool low_enabled;
+    int logscale;
 
     bool notifyListener();
     void getLitPoint();
-
-public:
-    LabGridArea(rtengine::ProcEvent evt, const Glib::ustring &msg, bool enable_low=true);
-
-    void getParams(double &la, double &lb, double &ha, double &hb) const;
-    void setParams(double la, double lb, double ha, double hb, bool notify);
-    void setDefault (double la, double lb, double ha, double hb);
-    void setEdited(bool yes);
-    bool getEdited() const;
-    void reset(bool toInitial);
-    void setListener(ToolPanelListener *l);
-
-    bool lowEnabled() const;
-    void setLowEnabled(bool yes);
-
-    bool on_draw(const ::Cairo::RefPtr<Cairo::Context> &crf) override;
-    void on_style_updated () override;
-    bool on_button_press_event(GdkEventButton *event) override;
-    bool on_button_release_event(GdkEventButton *event) override;
-    bool on_motion_notify_event(GdkEventMotion *event) override;
-    Gtk::SizeRequestMode get_request_mode_vfunc() const override;
-    void get_preferred_width_vfunc(int &minimum_width, int &natural_width) const override;
-    void get_preferred_height_for_width_vfunc (int width, int &minimum_height, int &natural_height) const override;
 };
 
 

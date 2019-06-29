@@ -68,7 +68,8 @@ LabGridArea::LabGridArea(rtengine::ProcEvent evt, const Glib::ustring &msg, bool
     listener(nullptr),
     edited(false),
     isDragged(false),
-    low_enabled(enable_low)
+    low_enabled(enable_low),
+    logscale(0)
 {
     set_can_focus(false); // prevent moving the grid while you're moving a point
     add_events(Gdk::EXPOSURE_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK);
@@ -133,6 +134,19 @@ bool LabGridArea::getEdited() const
 void LabGridArea::setListener(ToolPanelListener *l)
 {
     listener = l;
+}
+
+
+void LabGridArea::setLogScale(int scale)
+{
+    logscale = scale;
+    queue_draw();
+}
+
+
+int LabGridArea::getLogScale() const
+{
+    return logscale;
 }
 
 
@@ -227,10 +241,27 @@ bool LabGridArea::on_draw(const ::Cairo::RefPtr<Cairo::Context> &crf)
         // drawing the connection line
         cr->set_antialias(Cairo::ANTIALIAS_DEFAULT);
         float loa, hia, lob, hib;
-        loa = .5f * (width + width * low_a);
-        hia = .5f * (width + width * high_a);
-        lob = .5f * (height + height * low_b);
-        hib = .5f * (height + height * high_b);
+        if (logscale > 0) {
+            double s = logscale;
+            const auto tr =
+                [=](double v) -> double
+                {
+                    return rtengine::SGN(v) * rtengine::lin2log(std::abs(v), s);
+                };
+            loa = tr(low_a);
+            lob = tr(low_b);
+            hia = tr(high_a);
+            hib = tr(high_b);
+        } else {
+            loa = low_a;
+            hia = high_a;
+            lob = low_b;
+            hib = high_b;
+        }
+        loa = .5f * (width + width * loa);
+        hia = .5f * (width + width * hia);
+        lob = .5f * (height + height * lob);
+        hib = .5f * (height + height * hib);
         cr->set_line_width(2. * double(s));
         cr->set_source_rgb(0.6, 0.6, 0.6);
         cr->move_to(loa, lob);
@@ -310,13 +341,23 @@ bool LabGridArea::on_motion_notify_event(GdkEventMotion *event)
 
     State oldLitPoint = litPoint;
 
+    const auto tr =
+        [&](float v) -> float
+        {
+            if (logscale > 0) {
+                return rtengine::SGN(v) * rtengine::log2lin(std::abs(v), float(logscale));
+            } else {
+                return v;
+            }
+        };
+    
     int s = RTScalable::getScale();
     int width = get_allocated_width() - 2 * inset * s - padding.get_right() - padding.get_left();
     int height = get_allocated_height() - 2 * inset * s - padding.get_top() - padding.get_bottom();
     const float mouse_x = std::min(double(std::max(event->x - inset * s - padding.get_right(), 0.)), double(width));
     const float mouse_y = std::min(double(std::max(get_allocated_height() - 1 - event->y - inset * s - padding.get_bottom(), 0.)), double(height));
-    const float ma = (2.0 * mouse_x - width) / (float)width;
-    const float mb = (2.0 * mouse_y - height) / (float)height;
+    const float ma = tr((2.0 * mouse_x - width) / (float)width);
+    const float mb = tr((2.0 * mouse_y - height) / (float)height);
     if (isDragged) {
         if (litPoint == LOW) {
             low_a = ma;
@@ -417,6 +458,9 @@ LabGrid::LabGrid(rtengine::ProcEvent evt, const Glib::ustring &msg, bool enable_
 
     pack_start(grid, true, true);
     pack_start(*reset, false, false);
+
+    grid.setLogScale(10);
+    
     show_all_children();
 }
 
