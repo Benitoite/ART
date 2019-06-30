@@ -32,26 +32,28 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     lgl = nullptr;
     metadata = nullptr;
 
-    Gtk::Image* ipersHL = Gtk::manage(new RTImage("perspective-horizontal-left-small.png"));
-    Gtk::Image* ipersHR = Gtk::manage(new RTImage("perspective-horizontal-right-small.png"));
-    Gtk::Image* ipersVL = Gtk::manage(new RTImage("perspective-vertical-bottom-small.png"));
-    Gtk::Image* ipersVR = Gtk::manage(new RTImage("perspective-vertical-top-small.png"));
-    Gtk::Image* ipersSL = Gtk::manage(new RTImage("perspective-shear-left-small.png"));
-    Gtk::Image* ipersSR = Gtk::manage(new RTImage("perspective-shear-right-small.png"));
-    Gtk::Image* irotateL = Gtk::manage(new RTImage("rotate-right-small.png"));
-    Gtk::Image* irotateR = Gtk::manage(new RTImage("rotate-left-small.png"));
+    Gtk::Image *ipersHL = Gtk::manage(new RTImage("perspective-horizontal-left-small.png"));
+    Gtk::Image *ipersHR = Gtk::manage(new RTImage("perspective-horizontal-right-small.png"));
+    Gtk::Image *ipersVL = Gtk::manage(new RTImage("perspective-vertical-bottom-small.png"));
+    Gtk::Image *ipersVR = Gtk::manage(new RTImage("perspective-vertical-top-small.png"));
+    Gtk::Image *ipersSL = Gtk::manage(new RTImage("perspective-shear-left-small.png"));
+    Gtk::Image *ipersSR = Gtk::manage(new RTImage("perspective-shear-right-small.png"));
+    Gtk::Image *irotateL = Gtk::manage(new RTImage("rotate-right-small.png"));
+    Gtk::Image *irotateR = Gtk::manage(new RTImage("rotate-left-small.png"));
+    Gtk::Image *iaspectL = Gtk::manage(new RTImage("perspective-aspect-vertical-small.png"));
+    Gtk::Image *iaspectR = Gtk::manage(new RTImage("perspective-aspect-horizontal-small.png"));
 
-    horiz = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_HORIZONTAL"), -100, 100, 0.1, 0, ipersHL, ipersHR));
-    horiz->setAdjusterListener (this);
+    horiz = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_HORIZONTAL"), -100, 100, 0.1, 0, ipersHL, ipersHR));
+    horiz->setAdjusterListener(this);
 
-    vert = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_VERTICAL"), -100, 100, 0.1, 0, ipersVL, ipersVR));
-    vert->setAdjusterListener (this);
+    vert = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_VERTICAL"), -100, 100, 0.1, 0, ipersVL, ipersVR));
+    vert->setAdjusterListener(this);
 
-    angle = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_ANGLE"), -20, 20, 0.01, 0, irotateL, irotateR));
-    shear = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_SHEAR"), -50, 50, 0.1, 0, ipersSL, ipersSR));
-    flength = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_FLENGTH"), 1, 1200, 0.1, 28));
-    cropfactor = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_CROPFACTOR"), 0.1, 10, 0.01, 1));
-    aspect = Gtk::manage (new Adjuster (M("TP_PERSPECTIVE_ASPECT"), -0.5, 2, 0.01, 1));
+    angle = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_ANGLE"), -20, 20, 0.01, 0, irotateL, irotateR));
+    shear = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_SHEAR"), -50, 50, 0.1, 0, ipersSL, ipersSR));
+    flength = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_FLENGTH"), 1, 1200, 0.1, 28));
+    cropfactor = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_CROPFACTOR"), 0.1, 10, 0.01, 1));
+    aspect = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_ASPECT"), -0.5, 2, 0.001, 1, iaspectL, iaspectR));
     angle->setAdjusterListener(this);
     shear->setAdjusterListener(this);
     flength->setAdjusterListener(this);
@@ -70,7 +72,7 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     vert->setLogScale(2, 0);
     flength->setLogScale(100, 1);
     cropfactor->setLogScale(2, 1);
-    aspect->setLogScale(2, 2);
+    aspect->setLogScale(10, 1, true);
 
     auto_horiz = Gtk::manage(new Gtk::Button());
     auto_horiz->add(*Gtk::manage(new RTImage("perspective-horizontal-left.png")));
