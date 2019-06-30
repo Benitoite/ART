@@ -33,10 +33,10 @@ void adjust_params(procparams::DenoiseParams &dnparams, double scale)
     }
     
     double scale_factor = 1.0 / scale;
-    double noise_factor_c = scale_factor * 1.5;
-    //double noise_factor_l = scale_factor * 1.5; //std::pow(scale_factor, scale_factor);
+    double noise_factor_c = scale_factor * 1.8;
+    double noise_factor_l = scale_factor * 1.5; //std::pow(scale_factor, scale_factor);
     //dnparams.luminance *= noise_factor_l;
-    dnparams.luminance *= noise_factor_c;
+    dnparams.luminance *= noise_factor_l;
     //dnparams.luminanceDetail += dnparams.luminanceDetail * noise_factor_l;
     dnparams.luminanceDetail *= (1.0 + scale_factor * 1.2);
     // if (dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::MANUAL) {
