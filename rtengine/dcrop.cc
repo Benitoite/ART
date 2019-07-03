@@ -189,7 +189,7 @@ void Crop::update(int todo)
         }
 
         if ((todo & M_LINDENOISE) && show_denoise) {
-            parent->ipf.denoise(0, parent->imgsrc, parent->currWB, origCrop, parent->denoiseInfoStore, params.denoise);
+            parent->ipf.denoise(parent->imgsrc, parent->currWB, origCrop, parent->denoiseInfoStore, params.denoise);
 
             if (parent->adnListener && params.denoise.chrominanceMethod == DenoiseParams::ChrominanceMethod::AUTOMATIC) {
                 parent->adnListener->chromaChanged(params.denoise.chrominance, params.denoise.chrominanceRedGreen, params.denoise.chrominanceBlueYellow);

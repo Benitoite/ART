@@ -332,7 +332,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
 }
 
 
-void ImProcFunctions::denoise(int kall, ImageSource *imgsrc, const ColorTemp &currWB, Imagefloat *img, const DenoiseInfoStore &store, const procparams::DenoiseParams &dnparams)
+void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imagefloat *img, const DenoiseInfoStore &store, const procparams::DenoiseParams &dnparams)
 {
     procparams::DenoiseParams denoiseParams = dnparams;
     NoiseCurve noiseLCurve;
@@ -373,7 +373,7 @@ void ImProcFunctions::denoise(int kall, ImageSource *imgsrc, const ColorTemp &cu
 
     adjust_params(denoiseParams, scale);    
     
-    RGB_denoise(kall, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
+    RGB_denoise(0, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
 
     guidedSmoothing(img);
 }

@@ -330,7 +330,7 @@ private:
         ImProcFunctions &ipf = *(ipf_p.get());
 
         if (params.denoise.enabled) {
-            ipf.denoise(2, imgsrc, currWB, baseImg, dnstore, params.denoise);
+            ipf.denoise(imgsrc, currWB, baseImg, dnstore, params.denoise);
 #ifdef _OPENMP
 #endif
         }
