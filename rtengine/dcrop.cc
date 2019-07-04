@@ -512,8 +512,8 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
     double adjust = 0.f;
     if (check_need_larger_crop_for_transform(parent->fw, parent->fh, orx, ory, orw, orh, parent->params, adjust)) {
         // TODO - "adjust" is an estimate of the max distortion relative to the image size. It is hardcoded to be 15% for lens distortion correction, and 100% for perspective (because we don't know better yet -- ideally this should be calculated)
-        int dW = int (double (parent->fw) * adjust / (2 * skip));
-        int dH = int (double (parent->fh) * adjust / (2 * skip));
+        int dW = int (double (parent->fw) * adjust / 2);//(2 * skip));
+        int dH = int (double (parent->fh) * adjust / 2);//(2 * skip));
         int x1 = orx - dW;
         int x2 = orx + orw + dW;
         int y1 = ory - dH;
