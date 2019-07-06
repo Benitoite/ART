@@ -481,45 +481,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
         readyphase++;
     
-    //     if (todo & (M_LUMACURVE | M_CROP)) {
-    //         LUTu lhist16(32768);
-    //         lhist16.clear();
-    // #ifdef _OPENMP
-    //         const int numThreads = min(max(pW * pH / (int)lhist16.getSize(), 1), omp_get_max_threads());
-    //         #pragma omp parallel num_threads(numThreads) if(numThreads>1)
-    // #endif
-    //         {
-    //             LUTu lhist16thr(lhist16.getSize());
-    //             lhist16thr.clear();
-    // #ifdef _OPENMP
-    //             #pragma omp for nowait
-    // #endif
-    
-    //             for (int x = 0; x < pH; x++)
-    //                 for (int y = 0; y < pW; y++) {
-    //                     int pos = (int)(oprevl->L[x][y]);
-    //                     lhist16thr[pos]++;
-    //                 }
-    
-    // #ifdef _OPENMP
-    //             #pragma omp critical
-    // #endif
-    //             lhist16 += lhist16thr;
-    //         }
-    // #ifdef _OPENMP
-    //         static_cast<void>(numThreads);  // to silence cppcheck warning
-    // #endif
-    //         CurveFactory::complexLCurve(params.labCurve.brightness, params.labCurve.contrast, params.labCurve.lcurve, lhist16, lumacurve, histLCurve, scale == 1 ? 1 : 16, utili);
-    //     }
-    
-    //     if (todo & M_LUMACURVE) {
-    
-    //         CurveFactory::curveCL(clcutili, params.labCurve.clcurve, clcurve, scale == 1 ? 1 : 16);
-    
-    //         CurveFactory::complexsgnCurve(autili, butili, ccutili, cclutili, params.labCurve.acurve, params.labCurve.bcurve, params.labCurve.cccurve,
-    //                                       params.labCurve.lccurve, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, scale == 1 ? 1 : 16);
-    //     }
-    
         if (todo & M_LUMACURVE) {
             ipf.labColorCorrectionRegions(oprevl);
             ipf.guidedSmoothing(oprevl);
@@ -528,8 +489,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             progress("Applying Color Boost...", 100 * readyphase / numofphases);
             histCCurve.clear();
             histLCurve.clear();
-            //ipf.chromiLuminanceCurve(pW, oprevl, oprevl, chroma_acurve, chroma_bcurve, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
-            ipf.labAdjustments(oprevl, pW, &histCCurve, &histLCurve);
+            ipf.labAdjustments(oprevl, &histCCurve, &histLCurve);
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {

@@ -1246,45 +1246,14 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     LUTu histToneCurve;
     ipf.rgbProc(baseImg, labView);
-
-    // luminance histogram update
-    // if (params.labCurve.contrast != 0) {
-    //     hist16.clear();
-
-    //     for (int i = 0; i < fh; i++)
-    //         for (int j = 0; j < fw; j++) {
-    //             hist16[ (int) ((labView->L[i][j]))]++;
-    //         }
-    // }
-
-    
-    // luminance processing
-//  ipf.EPDToneMap(labView,0,6);
-
-    // bool utili;
-    // CurveFactory::complexLCurve (params.labCurve.brightness, params.labCurve.contrast, params.labCurve.lcurve,
-    //                              hist16, lumacurve, dummy, 16, utili);
-
-    // bool clcutili;
-    // CurveFactory::curveCL (clcutili, params.labCurve.clcurve, clcurve, 16);
-
-    // bool autili, butili, ccutili, cclutili;
-    // CurveFactory::complexsgnCurve (autili, butili, ccutili, cclutili, params.labCurve.acurve, params.labCurve.bcurve, params.labCurve.cccurve,
-    //                                params.labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, 16);
-
     ipf.labColorCorrectionRegions(labView);
     ipf.guidedSmoothing(labView);
     ipf.logEncoding(labView);
-    
-    // ipf.chromiLuminanceCurve (1, labView, labView, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
     ipf.labAdjustments(labView);
 
     ipf.toneMapping(labView);
     ipf.softLight(labView);
     ipf.localContrast(labView);
-
-    // color processing
-    //ipf.colorCurve (labView, labView);
 
     // obtain final image
     Image8* readyImg = nullptr;
