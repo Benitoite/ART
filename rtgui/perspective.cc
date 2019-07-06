@@ -64,9 +64,9 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     pack_start(*vert);
     pack_start(*shear);
     pack_start(*angle);
+    pack_start(*aspect);
     pack_start(*flength);
     pack_start(*cropfactor);
-    pack_start(*aspect);
 
     horiz->setLogScale(2, 0);
     vert->setLogScale(2, 0);
