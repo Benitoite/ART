@@ -1942,7 +1942,7 @@ void EditorPanel::do_save_image(bool fast_export)
                 sendtogimp->set_sensitive (false);
             }
         } else {
-            BatchQueueEntry* bqe = createBatchQueueEntry ();
+            BatchQueueEntry* bqe = createBatchQueueEntry(fast_export);
             bqe->outFileName = fnameOut;
             bqe->saveFormat = saveAsDialog->getFormat ();
             bqe->forceFormatOpts = saveAsDialog->getForceFormatOpts ();
@@ -1973,7 +1973,7 @@ void EditorPanel::do_queue_image(bool fast_export)
     }
 
     saveProfile();
-    parent->addBatchQueueJob(createBatchQueueEntry ());
+    parent->addBatchQueueJob(createBatchQueueEntry(fast_export));
 }
 
 void EditorPanel::sendToGimpPressed ()
