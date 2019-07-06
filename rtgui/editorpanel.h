@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -132,8 +133,8 @@ public:
     void tbTopPanel_1_toggled ();
     void beforeAfterToggled ();
     void tbBeforeLock_toggled();
-    void saveAsPressed ();
-    void queueImgPressed ();
+    void saveAsPressed(GdkEventButton *event);
+    void queueImgPressed(GdkEventButton *event);
     void sendToGimpPressed ();
     void openNextEditorImage ();
     void openPreviousEditorImage ();
@@ -167,13 +168,15 @@ public:
 private:
     void close ();
 
-    BatchQueueEntry*    createBatchQueueEntry ();
+    BatchQueueEntry *createBatchQueueEntry(bool fast_export=false);
     bool                idle_imageSaved (ProgressConnector<int> *pc, rtengine::IImagefloat* img, Glib::ustring fname, SaveFormat sf, rtengine::procparams::ProcParams &pparams);
     bool                idle_saveImage (ProgressConnector<rtengine::IImagefloat*> *pc, Glib::ustring fname, SaveFormat sf, rtengine::procparams::ProcParams &pparams);
     bool                idle_sendToGimp ( ProgressConnector<rtengine::IImagefloat*> *pc, Glib::ustring fname);
     bool                idle_sentToGimp (ProgressConnector<int> *pc, rtengine::IImagefloat* img, Glib::ustring filename);
     void                histogramProfile_toggled ();
 
+    void do_save_image(bool fast_export);
+    void do_queue_image(bool fast_export);
 
     Glib::ustring lastSaveAsFileName;
     bool realized;

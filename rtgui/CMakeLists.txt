@@ -158,6 +158,7 @@ set(NONCLISOURCEFILES
     grain.cc
     smoothing.cc
     colorcorrection.cc
+    fastexport.cc
     )
 
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")

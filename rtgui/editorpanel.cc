@@ -32,6 +32,7 @@
 #include "progressconnector.h"
 #include "procparamchangers.h"
 #include "placesbrowser.h"
+#include "fastexport.h"
 
 using namespace rtengine::procparams;
 
@@ -818,8 +819,10 @@ EditorPanel::EditorPanel (FilePanel* filePanel)
     beforeAfter->signal_toggled().connect ( sigc::mem_fun (*this, &EditorPanel::beforeAfterToggled) );
     hidehp->signal_toggled().connect ( sigc::mem_fun (*this, &EditorPanel::hideHistoryActivated) );
     tbRightPanel_1->signal_toggled().connect ( sigc::mem_fun (*this, &EditorPanel::tbRightPanel_1_toggled) );
-    saveimgas->signal_pressed().connect ( sigc::mem_fun (*this, &EditorPanel::saveAsPressed) );
-    queueimg->signal_pressed().connect ( sigc::mem_fun (*this, &EditorPanel::queueImgPressed) );
+    // saveimgas->signal_pressed().connect ( sigc::mem_fun (*this, &EditorPanel::saveAsPressed) );
+    // queueimg->signal_pressed().connect ( sigc::mem_fun (*this, &EditorPanel::queueImgPressed) );
+    saveimgas->signal_button_release_event().connect_notify(sigc::mem_fun(*this, &EditorPanel::saveAsPressed));
+    queueimg->signal_button_release_event().connect_notify(sigc::mem_fun(*this, &EditorPanel::queueImgPressed));
     sendtogimp->signal_pressed().connect ( sigc::mem_fun (*this, &EditorPanel::sendToGimpPressed) );
     toggleHistogramProfile->signal_toggled().connect( sigc::mem_fun (*this, &EditorPanel::histogramProfile_toggled) );
 
@@ -1652,24 +1655,34 @@ bool EditorPanel::handleShortcutKey (GdkEventKey* event)
             // With control
             switch (event->keyval) {
                 case GDK_KEY_S:
-                    saveProfile();
-                    setProgressStr (M ("PROGRESSBAR_PROCESSING_PROFILESAVED"));
-                    return true;
+                    if (!gimpPlugin) {
+                        do_save_image(true);
+                    }
+                    // saveProfile();
+                    // setProgressStr (M ("PROGRESSBAR_PROCESSING_PROFILESAVED"));
+                    // return true;
 
                 case GDK_KEY_s:
                     if (!gimpPlugin) {
-                        saveAsPressed();
+                        do_save_image(false);
                     }
 
                     return true;
 
                 case GDK_KEY_b:
                     if (!gimpPlugin && !simpleEditor) {
-                        queueImgPressed();
+                        do_queue_image(false);
                     }
 
                     return true;
+ 
+                case GDK_KEY_B:
+                    if (!gimpPlugin && !simpleEditor) {
+                        do_queue_image(true);
+                    }
 
+                    return true;
+                   
                 case GDK_KEY_e:
                     if (!gimpPlugin) {
                         sendToGimpPressed();
@@ -1823,13 +1836,13 @@ bool EditorPanel::idle_imageSaved (ProgressConnector<int> *pc, rtengine::IImagef
     return false;
 }
 
-BatchQueueEntry* EditorPanel::createBatchQueueEntry ()
-{
 
+BatchQueueEntry* EditorPanel::createBatchQueueEntry(bool fast_export)
+{
     rtengine::procparams::ProcParams pparams;
     ipc->getParams (&pparams);
-    //rtengine::ProcessingJob* job = rtengine::ProcessingJob::create (ipc->getInitialImage(), pparams);
-    rtengine::ProcessingJob* job = rtengine::ProcessingJob::create (openThm->getFileName (), openThm->getType() == FT_Raw, pparams);
+    // rtengine::ProcessingJob* job = rtengine::ProcessingJob::create (openThm->getFileName (), openThm->getType() == FT_Raw, pparams);
+    rtengine::ProcessingJob* job = create_processing_job(openThm->getFileName(), openThm->getType() == FT_Raw, pparams, fast_export);
     int fullW = 0, fullH = 0;
     isrc->getImageSource()->getFullSize (fullW, fullH, pparams.coarse.rotate == 90 || pparams.coarse.rotate == 270 ? TR_R90 : TR_NONE);
     int prevh = BatchQueue::calcMaxThumbnailHeight();
@@ -1838,8 +1851,13 @@ BatchQueueEntry* EditorPanel::createBatchQueueEntry ()
 }
 
 
+void EditorPanel::saveAsPressed(GdkEventButton *event)
+{
+    do_save_image(event->state & GDK_CONTROL_MASK);
+}
 
-void EditorPanel::saveAsPressed ()
+
+void EditorPanel::do_save_image(bool fast_export)
 {
     if (!ipc || !openThm) {
         return;
@@ -1915,7 +1933,7 @@ void EditorPanel::saveAsPressed ()
                 // save image
                 rtengine::procparams::ProcParams pparams;
                 ipc->getParams (&pparams);
-                rtengine::ProcessingJob* job = rtengine::ProcessingJob::create (ipc->getInitialImage(), pparams);
+                rtengine::ProcessingJob *job = create_processing_job(ipc->getInitialImage(), pparams, fast_export);
 
                 ProgressConnector<rtengine::IImagefloat*> *ld = new ProgressConnector<rtengine::IImagefloat*>();
                 ld->startFunc (sigc::bind (sigc::ptr_fun (&rtengine::processImage), job, err, parent->getProgressListener(), false ),
@@ -1941,14 +1959,21 @@ void EditorPanel::saveAsPressed ()
     delete saveAsDialog;
 }
 
-void EditorPanel::queueImgPressed ()
+
+void EditorPanel::queueImgPressed(GdkEventButton *event)
+{
+    do_queue_image(event->state & GDK_CONTROL_MASK);
+}
+
+
+void EditorPanel::do_queue_image(bool fast_export)
 {
     if (!ipc || !openThm) {
         return;
     }
 
-    saveProfile ();
-    parent->addBatchQueueJob (createBatchQueueEntry ());
+    saveProfile();
+    parent->addBatchQueueJob(createBatchQueueEntry ());
 }
 
 void EditorPanel::sendToGimpPressed ()
