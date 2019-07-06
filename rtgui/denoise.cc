@@ -38,11 +38,6 @@ Denoise::Denoise():
     EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
     EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
 
-    std::vector<GradientMilestone> milestones;
-    CurveListener::setMulti(true);
-
-    std::vector<double> defaultCurve;
-
     Gtk::Frame *lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
     lumaFrame->set_label_align(0.025, 0.5);
 
@@ -75,35 +70,10 @@ Denoise::Denoise():
     gamma->setAdjusterListener(this);
     pack_start(*gamma, Gtk::PACK_EXPAND_WIDGET, 1);
 
-    hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_LUMINANCE_CONTROL") + ":")), Gtk::PACK_SHRINK, 1);
-    luminanceMethod = Gtk::manage(new MyComboBoxText ());
-    luminanceMethod->append(M("GENERAL_SLIDER"));
-    luminanceMethod->append(M("CURVEEDITOR_CURVE"));
-    luminanceMethod->set_active(0);
-    hb->pack_start(*luminanceMethod);
-    lumaVBox->pack_start(*hb);
-    
     luminance = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING"), 0, 100, 0.01, 0));
     luminanceDetail = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL"), 0, 100, 0.01, 50));
-    luminanceEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastDenoiseCurvesDir, M("TP_DIRPYRDENOISE_LUMINANCE_CURVE"), 0.7));
-    luminanceEditorGroup->setCurveListener (this);
-    defaultCurve = rtengine::DenoiseParams().luminanceCurve;
-    luminanceCurve = static_cast<FlatCurveEditor*>(luminanceEditorGroup->addCurve(CT_Flat, "", nullptr, false, false));
-    luminanceCurve->setIdentityValue(0.);
-    luminanceCurve->setResetCurve(FlatCurveType(defaultCurve.at(0)), defaultCurve);
-
-    milestones.push_back(GradientMilestone(0., 0., 0., 0.));
-    milestones.push_back(GradientMilestone(1., 1., 1., 1.));
-    luminanceCurve->setBottomBarBgGradient(milestones);
-
-    milestones.push_back(GradientMilestone(0., 0., 0., 0.));
-    milestones.push_back(GradientMilestone(1., 1., 1., 1.));
-    luminanceEditorGroup->curveListComplete();
-    luminanceEditorGroup->show();
 
     lumaVBox->pack_start(*luminance);
-    lumaVBox->pack_start(*luminanceEditorGroup, Gtk::PACK_SHRINK, 4);
     lumaVBox->pack_start(*luminanceDetail);
     lumaFrame->add(*lumaVBox);
     pack_start(*lumaFrame);
@@ -260,7 +230,6 @@ Denoise::Denoise():
 
     colorSpace->signal_changed().connect(sigc::mem_fun(*this, &Denoise::colorSpaceChanged));
     aggressive->signal_changed().connect(sigc::mem_fun(*this, &Denoise::aggressiveChanged));
-    luminanceMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::luminanceMethodChanged));
     chrominanceMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::chrominanceMethodChanged));
     medianType->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianTypeChanged));
     medianMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianMethodChanged));
@@ -313,10 +282,7 @@ void Denoise::read(const ProcParams *pp)
     colorSpace->set_active(int(pp->denoise.colorSpace));
     aggressive->set_active(pp->denoise.aggressive ? 1 : 0);
     gamma->setValue(pp->denoise.gamma);
-    luminanceMethod->set_active(int(pp->denoise.luminanceMethod));
-    luminanceMethodChanged();
     luminance->setValue(pp->denoise.luminance);
-    luminanceCurve->setCurve(pp->denoise.luminanceCurve);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
 
     chrominanceMethod->set_active(int(pp->denoise.chrominanceMethod));
@@ -325,7 +291,6 @@ void Denoise::read(const ProcParams *pp)
     chrominance->setValue(pp->denoise.chrominance);
     chrominanceRedGreen->setValue(pp->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->setValue(pp->denoise.chrominanceBlueYellow);
-    // chrominanceCurve->setCurve(pp->denoise.chrominanceCurve);
 
     smoothingEnabled->setEnabled(pp->denoise.smoothingEnabled);
     smoothingMethod->set_active(int(pp->denoise.smoothingMethod));
@@ -344,20 +309,6 @@ void Denoise::read(const ProcParams *pp)
 }
 
 
-void Denoise::setEditProvider(EditDataProvider *provider)
-{
-    luminanceCurve->setEditProvider(provider);
-    // chrominanceCurve->setEditProvider(provider);
-}
-
-
-void Denoise::autoOpenCurve ()
-{
-    luminanceCurve->openIfNonlinear();
-    // chrominanceCurve->openIfNonlinear();
-}
-
-
 void Denoise::write(ProcParams *pp)
 {
     pp->denoise.enabled = getEnabled();
@@ -368,12 +319,8 @@ void Denoise::write(ProcParams *pp)
         pp->denoise.aggressive = aggressive->get_active_row_number();
     }
     pp->denoise.gamma = gamma->getValue();
-    if (luminanceMethod->get_active_row_number() < 3) {
-        pp->denoise.luminanceMethod = static_cast<DenoiseParams::LuminanceMethod>(luminanceMethod->get_active_row_number());
-    }
     pp->denoise.luminance = luminance->getValue();
     pp->denoise.luminanceDetail = luminanceDetail->getValue();
-    pp->denoise.luminanceCurve = luminanceCurve->getCurve();
     if (chrominanceMethod->get_active_row_number() < 2) {
         pp->denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(chrominanceMethod->get_active_row_number());
     }
@@ -399,41 +346,10 @@ void Denoise::write(ProcParams *pp)
 }
 
 
-void Denoise::curveChanged(CurveEditor* ce)
-{
-
-    if (listener && getEnabled()) {
-        if (ce == luminanceCurve) {
-            listener->panelChanged(EvDPDNLCurve, M("HISTORY_CUSTOMCURVE"));
-        }
-
-        // if (ce == chrominanceCurve) {
-        //     listener->panelChanged(EvDPDNCCCurve, M("HISTORY_CUSTOMCURVE"));
-        // }
-    }
-}
-
-
 void Denoise::colorSpaceChanged()
 {
     if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNmet, colorSpace->get_active_text());
-    }
-}
-
-
-void Denoise::luminanceMethodChanged()
-{
-    if (luminanceMethod->get_active_row_number() == 1) {
-        luminance->hide();
-        luminanceEditorGroup->show();
-    } else if (luminanceMethod->get_active_row_number() == 0) {
-        luminance->show();
-        luminanceEditorGroup->hide();
-    }
-
-    if (listener && getEnabled() ) {
-        listener->panelChanged(EvDPDNLmet, luminanceMethod->get_active_text());
     }
 }
 
@@ -560,52 +476,6 @@ void Denoise::smoothingEnabledToggled()
             listener->panelChanged(EvDPDNmedian, M("GENERAL_DISABLED"));
         }
     }
-}
-
-
-void Denoise::colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller)
-{
-
-    float R = 0.f, G = 0.f, B = 0.f;
-
-    if (elemType == ColorCaller::CCET_VERTICAL_BAR) {
-        valY = 0.5;
-    }
-
-    if (callerId == 1) {         // ch - main curve
-
-        Color::hsv2rgb01(float(valX), float(valY), 0.5f, R, G, B);
-    } else if (callerId == 2) {  // cc - bottom bar
-
-        float value = (1.f - 0.7f) * float(valX) + 0.7f;
-        // whole hue range
-        // Y axis / from 0.15 up to 0.75 (arbitrary values; was 0.45 before)
-        Color::hsv2rgb01(float(valY), float(valX), value, R, G, B);
-    } else if (callerId == 3) {  // lc - bottom bar
-
-        float value = (1.f - 0.7f) * float(valX) + 0.7f;
-        // whole hue range
-        // Y axis / from 0.15 up to 0.75 (arbitrary values; was 0.45 before)
-        Color::hsv2rgb01(float(valY), float(valX), value, R, G, B);
-    }
-
-    else if (callerId == 4) {    // LH - bottom bar
-        Color::hsv2rgb01(float(valX), 0.5f, float(valY), R, G, B);
-    } else if (callerId == 5) {  // HH - bottom bar
-        float h = float((valY - 0.5) * 0.3 + valX);
-
-        if (h > 1.0f) {
-            h -= 1.0f;
-        } else if (h < 0.0f) {
-            h += 1.0f;
-        }
-
-        Color::hsv2rgb01(h, 0.5f, 0.5f, R, G, B);
-    }
-
-    caller->ccRed = double(R);
-    caller->ccGreen = double(G);
-    caller->ccBlue = double(B);
 }
 
 

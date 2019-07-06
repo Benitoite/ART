@@ -537,11 +537,6 @@ struct DenoiseParams {
         AUTOMATIC
     };
 
-    enum class LuminanceMethod {
-        SLIDER,
-        CURVE
-    };
-
     enum class MedianType {
         TYPE_3X3_SOFT,
         TYPE_3X3_STRONG,
@@ -571,15 +566,12 @@ struct DenoiseParams {
     bool aggressive;
     double gamma;
 
-    LuminanceMethod luminanceMethod;
     double luminance;
-    std::vector<double> luminanceCurve;
     double luminanceDetail;
 
     ChrominanceMethod chrominanceMethod;
     double chrominanceAutoFactor;
     double chrominance;
-    std::vector<double> chrominanceCurve; // not used anymore
     double chrominanceRedGreen;
     double chrominanceBlueYellow;
 
@@ -599,9 +591,6 @@ struct DenoiseParams {
 
     bool operator ==(const DenoiseParams& other) const;
     bool operator !=(const DenoiseParams& other) const;
-
-    void getCurves(NoiseCurve& lCurve, NoiseCurve& cCurve) const;
-
 };
 
 // EPD related parameters.

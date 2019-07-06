@@ -887,34 +887,11 @@ DenoiseParams::DenoiseParams() :
     colorSpace(ColorSpace::LAB),
     aggressive(false),
     gamma(1.7),
-    luminanceMethod(LuminanceMethod::SLIDER),
     luminance(0),
-    luminanceCurve{
-        FCT_MinMaxCPoints,
-        0.05,
-        0.15,
-        0.35,
-        0.35,
-        0.55,
-        0.04,
-        0.35,
-        0.35
-    },
     luminanceDetail(0),
     chrominanceMethod(ChrominanceMethod::AUTOMATIC),
     chrominanceAutoFactor(1),
     chrominance(15),
-    chrominanceCurve{
-        FCT_MinMaxCPoints,
-        0.05,
-        0.50,
-        0.35,
-        0.35,
-        0.35,
-        0.05,
-        0.35,
-        0.35
-    },
     chrominanceRedGreen(0),
     chrominanceBlueYellow(0),
     smoothingEnabled(false),
@@ -937,14 +914,11 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && colorSpace == other.colorSpace
         && aggressive == other.aggressive
         && gamma == other.gamma
-        && luminanceMethod == other.luminanceMethod
         && luminance == other.luminance
-        && luminanceCurve == other.luminanceCurve
         && luminanceDetail == other.luminanceDetail
         && chrominanceMethod == other.chrominanceMethod
         && chrominanceAutoFactor == other.chrominanceAutoFactor
         && chrominance == other.chrominance
-        && chrominanceCurve == other.chrominanceCurve
         && chrominanceRedGreen == other.chrominanceRedGreen
         && chrominanceBlueYellow == other.chrominanceBlueYellow
         && smoothingEnabled == other.smoothingEnabled
@@ -962,12 +936,6 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
 bool DenoiseParams::operator !=(const DenoiseParams& other) const
 {
     return !(*this == other);
-}
-
-void DenoiseParams::getCurves(NoiseCurve &lCurve, NoiseCurve &cCurve) const
-{
-    lCurve.Set(luminanceCurve);
-    cCurve.Set(chrominanceCurve);
 }
 
 
@@ -2439,14 +2407,11 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("Denoise", "ColorSpace", Glib::ustring(denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? "Lab" : "RGB"), keyFile);
             saveToKeyfile("Denoise", "Aggressive", denoise.aggressive, keyFile);
             saveToKeyfile("Denoise", "Gamma", denoise.gamma, keyFile);
-            saveToKeyfile("Denoise", "LuminanceMethod", int(denoise.luminanceMethod), keyFile);
             saveToKeyfile("Denoise", "Luminance", denoise.luminance, keyFile);
-            saveToKeyfile("Denoise", "LuminanceCurve", denoise.luminanceCurve, keyFile);
             saveToKeyfile("Denoise", "LuminanceDetail", denoise.luminanceDetail, keyFile);
             saveToKeyfile("Denoise", "ChrominanceMethod", int(denoise.chrominanceMethod), keyFile);
             saveToKeyfile("Denoise", "ChrominanceAutoFactor", denoise.chrominanceAutoFactor, keyFile);
             saveToKeyfile("Denoise", "Chrominance", denoise.chrominance, keyFile);
-            saveToKeyfile("Denoise", "ChrominanceCurve", denoise.chrominanceCurve, keyFile);
             saveToKeyfile("Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen, keyFile);
             saveToKeyfile("Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow, keyFile);
             saveToKeyfile("Denoise", "SmoothingEnabled", denoise.smoothingEnabled, keyFile);
@@ -3195,13 +3160,6 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                         denoise.colorSpace = DenoiseParams::ColorSpace::LAB;
                     }
                 }
-                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LMethod", val)) {
-                    if (val == "CUR") {
-                        denoise.luminanceMethod = DenoiseParams::LuminanceMethod::CURVE;
-                    } else {
-                        denoise.luminanceMethod = DenoiseParams::LuminanceMethod::SLIDER;
-                    }
-                }
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "C2Method", val)) {
                     if (val == "MANU") {
                         denoise.chrominanceMethod = DenoiseParams::ChrominanceMethod::MANUAL;
@@ -3226,8 +3184,6 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                         denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(it - med.begin());
                     }
                 }
-                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "LCurve", denoise.luminanceCurve);
-                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "CCCurve", denoise.chrominanceCurve);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Redchro", denoise.chrominanceRedGreen);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Bluechro", denoise.chrominanceBlueYellow);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Passes", denoise.medianIterations);
@@ -3242,18 +3198,13 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                 }
                 assignFromKeyfile(keyFile, "Denoise", "Aggressive", denoise.aggressive);
                 assignFromKeyfile(keyFile, "Denoise", "Gamma", denoise.gamma);
-                if (assignFromKeyfile(keyFile, "Denoise", "LuminanceMethod", val)) {
-                    denoise.luminanceMethod = static_cast<DenoiseParams::LuminanceMethod>(val);
-                }
                 assignFromKeyfile(keyFile, "Denoise", "Luminance", denoise.luminance);
-                assignFromKeyfile(keyFile, "Denoise", "LuminanceCurve", denoise.luminanceCurve);
                 assignFromKeyfile(keyFile, "Denoise", "LuminanceDetail", denoise.luminanceDetail);
                 if (assignFromKeyfile(keyFile, "Denoise", "ChrominanceMethod", val)) {
                     denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(val);
                 }
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceAutoFactor", denoise.chrominanceAutoFactor);
                 assignFromKeyfile(keyFile, "Denoise", "Chrominance", denoise.chrominance);
-                assignFromKeyfile(keyFile, "Denoise", "ChrominanceCurve", denoise.chrominanceCurve);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow);
                 assignFromKeyfile(keyFile, "Denoise", "SmoothingEnabled", denoise.smoothingEnabled);

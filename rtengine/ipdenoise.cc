@@ -232,21 +232,21 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
 
         float adjustr = 1.f;
 
-        if (params->icm.workingProfile == "ProPhoto")   {
-            adjustr = 1.f;   //
-        } else if (params->icm.workingProfile == "Adobe RGB")  {
-            adjustr = 1.f / 1.3f;
-        } else if (params->icm.workingProfile == "sRGB")       {
-            adjustr = 1.f / 1.3f;
-        } else if (params->icm.workingProfile == "WideGamut")  {
-            adjustr = 1.f / 1.1f;
-        } else if (params->icm.workingProfile == "Beta RGB")   {
-            adjustr = 1.f / 1.2f;
-        } else if (params->icm.workingProfile == "BestRGB")    {
-            adjustr = 1.f / 1.2f;
-        } else if (params->icm.workingProfile == "BruceRGB")   {
-            adjustr = 1.f / 1.2f;
-        }
+        // if (params->icm.workingProfile == "ProPhoto")   {
+        //     adjustr = 1.f;   //
+        // } else if (params->icm.workingProfile == "Adobe RGB")  {
+        //     adjustr = 1.f / 1.3f;
+        // } else if (params->icm.workingProfile == "sRGB")       {
+        //     adjustr = 1.f / 1.3f;
+        // } else if (params->icm.workingProfile == "WideGamut")  {
+        //     adjustr = 1.f / 1.1f;
+        // } else if (params->icm.workingProfile == "Beta RGB")   {
+        //     adjustr = 1.f / 1.2f;
+        // } else if (params->icm.workingProfile == "BestRGB")    {
+        //     adjustr = 1.f / 1.2f;
+        // } else if (params->icm.workingProfile == "BruceRGB")   {
+        //     adjustr = 1.f / 1.2f;
+        // }
 
         float delta[9];
         int mode = 1;
@@ -337,37 +337,8 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
     procparams::DenoiseParams denoiseParams = dnparams;
     NoiseCurve noiseLCurve;
     NoiseCurve noiseCCurve;
-    denoiseParams.getCurves(noiseLCurve, noiseCCurve);
-    if (denoiseParams.luminanceMethod == procparams::DenoiseParams::LuminanceMethod::CURVE) {
-        if (noiseLCurve) {
-            denoiseParams.luminance = 0.5f;    //very small value to init process - select curve or slider
-        } else {
-            denoiseParams.luminance = 0.0f;
-        }
-    } else {
-        noiseLCurve.Reset();
-    }
-    noiseCCurve.Reset();
 
-    Imagefloat *calclum = nullptr;//for Luminance denoise curve
-        
-    if (noiseLCurve || noiseCCurve) {
-        // we only need image reduced to 1/4 here
-        int W = img->getWidth();
-        int H = img->getHeight();
-        calclum = new Imagefloat((W + 1) / 2, (H + 1) / 2);  //for denoise curves
-
-        for (int ii = 0; ii < H; ii += 2) {
-            for (int jj = 0; jj < W; jj += 2) {
-                calclum->r(ii >> 1, jj >> 1) = img->r(ii, jj);
-                calclum->g(ii >> 1, jj >> 1) = img->g(ii, jj);
-                calclum->b(ii >> 1, jj >> 1) = img->b(ii, jj);
-            }
-        }
-
-        imgsrc->convertColorSpace(calclum, params->icm, currWB);  //for denoise luminance curve
-    }
-
+    Imagefloat *calclum = nullptr;
     float nresi, highresi;
     DenoiseInfoStore &dnstore = const_cast<DenoiseInfoStore &>(store);
 

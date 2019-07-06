@@ -32,9 +32,7 @@ class Denoise final :
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
-    public rtengine::AutoChromaListener,
-    public CurveListener,
-    public ColorProvider
+    public rtengine::AutoChromaListener
 {
 public:
     Denoise();
@@ -43,10 +41,6 @@ public:
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void curveChanged(CurveEditor* ce) override;
-    void setEditProvider(EditDataProvider *provider) override;
-    void autoOpenCurve() override;
-
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void enabledChanged() override;
@@ -57,15 +51,12 @@ public:
     void noiseChanged(double nresid, double highresid) override {}
     void noiseTilePrev(int tileX, int tileY, int prevX, int prevY, int sizeT, int sizeP) override {}
 
-    void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
-
     void trimValues(rtengine::procparams::ProcParams* pp) override;
     Glib::ustring getSettingString();
 
 private:
     void colorSpaceChanged();
     void aggressiveChanged();
-    void luminanceMethodChanged();
     void chrominanceMethodChanged();
     void medianTypeChanged();
     void medianMethodChanged();
@@ -82,15 +73,10 @@ private:
     MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
     Adjuster *gamma;
-    MyComboBoxText *luminanceMethod;
-    CurveEditorGroup *luminanceEditorGroup;
-    FlatCurveEditor *luminanceCurve;
     Adjuster *luminance;
     Adjuster *luminanceDetail;
     MyComboBoxText *chrominanceMethod;
     Adjuster *chrominanceAutoFactor;
-//    CurveEditorGroup *chrominanceEditorGroup;
-//    FlatCurveEditor *chrominanceCurve;
     Adjuster *chrominance;
     Adjuster *chrominanceRedGreen;
     Adjuster *chrominanceBlueYellow;
