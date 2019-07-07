@@ -42,6 +42,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     localPanel = Gtk::manage(new ToolVBox());
 
     coarse              = Gtk::manage (new CoarsePanel ());
+    exposure = Gtk::manage(new Exposure());
+    brightContrSat = Gtk::manage(new BrightnessContrastSaturation());
+    brightContrSat->setAutoLevelsButton(exposure->getAutoLevelsButton());
     toneCurve           = Gtk::manage (new ToneCurve ());
     shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
     toneEqualizer = Gtk::manage(new ToneEqualizer());
@@ -104,6 +107,8 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     favorites.resize(options.favorites.size(), nullptr);
 
     addfavoritePanel (colorPanel, whitebalance);
+    addfavoritePanel (exposurePanel, exposure);
+    addfavoritePanel (exposurePanel, brightContrSat);
     addfavoritePanel (exposurePanel, toneCurve);
     addfavoritePanel (colorPanel, chmixer);
     //addfavoritePanel (colorPanel, blackwhite);
@@ -563,7 +568,7 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         const rtengine::FramesMetaData* pMetaData = ipc->getInitialImage()->getMetaData();
         metadata->setImageData(pMetaData);
 
-        ipc->setAutoExpListener (toneCurve);
+        ipc->setAutoExpListener(this);
         ipc->setFrameCountListener (bayerprocess);
         ipc->setFlatFieldAutoClipListener (flatfield);
         ipc->setBayerAutoContrastListener (bayerprocess);
@@ -581,8 +586,8 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         perspective->setRawMeta(raw, pMetaData);
     }
 
-
-    toneCurve->setRaw (raw);
+    exposure->setRaw(raw);
+    toneCurve->setRaw(raw);
     hasChanged = true;
 }
 
@@ -1038,4 +1043,17 @@ void ToolPanelCoordinator::autoPerspectiveRequested(bool horiz, bool vert, doubl
     horizontal = res.horizontal;
     vertical = res.vertical;
     shear = res.shear;
+}
+
+
+void ToolPanelCoordinator::autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons)
+{
+    exposure->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
+    brightContrSat->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
+}
+
+
+void ToolPanelCoordinator::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve)
+{
+    toneCurve->autoMatchedToneCurveChanged(curveMode, curve);
 }

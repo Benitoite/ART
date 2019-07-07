@@ -31,6 +31,8 @@ ParamsEdited::ParamsEdited(bool value)
 void ParamsEdited::set(bool v)
 {
     general = v;
+    exposure = v;
+    brightContrSat = v;
     toneCurve = v;
     labCurve = v;
     localContrast = v;

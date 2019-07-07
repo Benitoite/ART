@@ -481,18 +481,21 @@ void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
     LUTf shtonecurve(65536);
     LUTf rCurve, gCurve, bCurve;
 
-    double expcomp = params->toneCurve.expcomp;
-    int hlcompr = params->toneCurve.hlcompr;
-    int hlcomprthresh = params->toneCurve.hlcomprthresh;
+    double expcomp = params->exposure.enabled ? params->exposure.expcomp : 0.0;
+    int hlcompr = params->exposure.enabled ? params->exposure.hlcompr : 0;
+    int hlcomprthresh = params->exposure.hlcomprthresh;
 
     {
+        int black = params->exposure.enabled ? params->exposure.black : 0;
+        int shcompr = params->exposure.enabled ? params->exposure.shcompr : 0;
+        
         LUTf tonecurve(65536);
         LUTu vhist16(65536), histToneCurve(256);
         ToneCurve customToneCurve1, customToneCurve2;
         
-        CurveFactory::complexCurve(expcomp, params->toneCurve.black / 65535.0,
+        CurveFactory::complexCurve(expcomp, black / 65535.0,
                                    hlcompr, hlcomprthresh,
-                                   params->toneCurve.shcompr, 0, 0, 
+                                   shcompr, 0, 0, 
                                    { DCT_Linear }, { DCT_Linear },
                                    vhist16, hltonecurve, shtonecurve, tonecurve,
                                    histToneCurve, customToneCurve1,
@@ -591,7 +594,7 @@ void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
     const float shoulder = ((65536.0 / max (1.0f, exp_scale)) * (hlcomprthresh / 200.0)) + 0.1;
     const float hlrange = 65536.0 - shoulder;
     const bool isProPhoto = (params->icm.workingProfile == "ProPhoto");
-    bool highlight = params->toneCurve.hrenabled;//Get the value if "highlight reconstruction" is activated
+    bool highlight = params->exposure.enabled && params->exposure.hrenabled;//Get the value if "highlight reconstruction" is activated
 
     float chMixRR = float (params->chmixer.red[0])/10.f;
     float chMixRG = float (params->chmixer.red[1])/10.f;

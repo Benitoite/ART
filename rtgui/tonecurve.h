@@ -17,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _TONECURVE_H_
-#define _TONECURVE_H_
+#pragma once
 
 #include <gtkmm.h>
 #include "adjuster.h"
@@ -28,42 +27,18 @@
 #include "mycurve.h"
 #include "guiutils.h"
 
-class ToneCurve : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public rtengine::AutoExpListener, public CurveListener, public PParamsChangeListener
+class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener, public PParamsChangeListener
 {
 private:
     IdleRegister idle_register;
 
 protected:
-    // from HLRecovery
-    Gtk::CheckButton*   hrenabled;
-    MyComboBoxText*     method;
-    sigc::connection    methconn;
-    sigc::connection    enaconn;
-    bool                lasthrEnabled;
-
-    Gtk::HBox* abox;
-    Gtk::HBox* hlrbox;
-
-    Gtk::ToggleButton* autolevels;
-    Gtk::Label* lclip;
-    MySpinButton* sclip;
-    Gtk::Button* neutral;
-    Adjuster* expcomp;
-    Adjuster* brightness;
-    Adjuster* black;
-    Adjuster* hlcompr;
-    Adjuster* hlcomprthresh;
-    Adjuster* shcompr;
-    Adjuster* contrast;
-    Adjuster* saturation;
     MyComboBoxText* toneCurveMode;
     MyComboBoxText* toneCurveMode2;
     Gtk::ToggleButton *histmatching;
     bool fromHistMatching;
-    Gtk::CheckButton *clampOOG;
 
-    bool clipDirty, lastAuto;
-    sigc::connection autoconn, neutralconn, tcmodeconn, tcmode2conn;
+    sigc::connection tcmodeconn, tcmode2conn;
     sigc::connection histmatchconn;
     CurveEditorGroup* curveEditorG;
     CurveEditorGroup* curveEditorG2;
@@ -72,25 +47,8 @@ protected:
 
     rtengine::ProcEvent EvHistMatching;
     rtengine::ProcEvent EvHistMatchingBatch;
-    rtengine::ProcEvent EvClampOOG;
 
-    rtengine::ProcEvent EvLogBrightness;
-    rtengine::ProcEvent EvLogContrast;
-    rtengine::ProcEvent EvLogSaturation;
-    rtengine::ProcEvent EvLogToneCurve1;
-    rtengine::ProcEvent EvLogToneCurve2;
-    rtengine::ProcEvent EvLogToneCurveMode1;
-    rtengine::ProcEvent EvLogToneCurveMode2;
-    bool logenc;
-    
     // used temporarily in eventing
-    double nextExpcomp;
-    int nextBrightness;
-    int nextContrast;
-    int nextBlack;
-    int nextHlcompr;
-    int nextHlcomprthresh;
-    bool nextHLRecons;
     rtengine::procparams::ToneCurveParams::TcMode nextToneCurveMode;
     std::vector<double> nextToneCurve;
 
@@ -103,20 +61,13 @@ public:
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    void autoOpenCurve       () override;
-    void setEditProvider     (EditDataProvider *provider) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+    void autoOpenCurve() override;
+    void setEditProvider(EditDataProvider *provider) override;
 
-    float blendPipetteValues (CurveEditor *ce, float chan1, float chan2, float chan3) override;
+    float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3) override;
 
-    void adjusterChanged (Adjuster* a, double newval) override;
-    void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void neutral_pressed ();
-    void autolevels_toggled ();
-    void clip_changed ();
-    bool clip_changed_ ();
-    void waitForAutoExp ();
-    void enableAll ();
+    void enableAll(bool yes=true);
     void curveChanged (CurveEditor* ce) override;
     void curveMode1Changed ();
     bool curveMode1Changed_ ();
@@ -139,14 +90,9 @@ public:
 
     void histmatchingToggled();
 
-    void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons) override;
-    void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) override;
+    void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve);
 
     void setRaw (bool raw);
-
-    void hrenabledChanged ();
-    void methodChanged ();
-    void clampOOGChanged();
 
     PParamsChangeListener *getPParamsChangeListener() override { return this; }
     void procParamsChanged(
@@ -156,5 +102,3 @@ public:
         const ParamsEdited* paramsEdited = nullptr) override;
     void clearParamChanges() override {}
 };
-
-#endif

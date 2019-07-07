@@ -166,12 +166,12 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     const float dynamic_range = params->logenc.whiteEv - params->logenc.blackEv;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
-    const bool brightness_enabled = params->toneCurve.brightness;
-    const float brightness = 1.f + params->toneCurve.brightness / 100.f;
-    const bool contrast_enabled = params->toneCurve.contrast;
-    const float contrast = 1.f + params->toneCurve.contrast / 100.f;
-    const bool saturation_enabled = params->toneCurve.saturation;
-    const float saturation = 1.f + params->toneCurve.saturation / 100.f;
+    const bool brightness_enabled = params->brightContrSat.enabled && params->brightContrSat.brightness;
+    const float brightness = 1.f + params->brightContrSat.brightness / 100.f;
+    const bool contrast_enabled = params->brightContrSat.enabled && params->brightContrSat.contrast;
+    const float contrast = 1.f + params->brightContrSat.contrast / 100.f;
+    const bool saturation_enabled = params->brightContrSat.enabled && params->brightContrSat.saturation;
+    const float saturation = 1.f + params->brightContrSat.saturation / 100.f;
     const float b = params->logenc.targetGray > 1 && params->logenc.targetGray < 100 && dynamic_range > 0 ? find_gray(std::abs(params->logenc.blackEv) / dynamic_range, params->logenc.targetGray / 100.f) : 0.f;
     const float linbase = max(b, 0.f);
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -348,8 +348,8 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
 void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, float scale, bool multithread)
 {
     LUTf curve(65536);
-    int bright = params->toneCurve.brightness;
-    int contr = params->toneCurve.contrast;
+    int bright = params->brightContrSat.enabled ? params->brightContrSat.brightness : 0;
+    int contr = params->brightContrSat.enabled ? params->brightContrSat.contrast : 0;
     if (bright || contr) {
         LUTf curve1(65536);
         LUTf curve2(65536);
@@ -370,7 +370,7 @@ void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, f
     const int W = rgb->getWidth();
     const int H = rgb->getHeight();
 
-    if (params->toneCurve.clampOOG) {
+    if (!params->exposure.enabled || params->exposure.clampOOG) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
@@ -413,8 +413,8 @@ void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, f
         }
     }
 
-    if (params->toneCurve.saturation) {
-        const float saturation = 1.f + params->toneCurve.saturation / 100.f;
+    if (params->brightContrSat.enabled && params->brightContrSat.saturation) {
+        const float saturation = 1.f + params->brightContrSat.saturation / 100.f;
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         const float noise = pow_F(2.f, -16.f);
         
@@ -446,13 +446,14 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     PreviewProps pp(0, 0, fw, fh, SCALE);
     Imagefloat img(int(fw / SCALE + 0.5), int(fh / SCALE + 0.5));
     ProcParams neutral;
-    neutral.toneCurve.clampOOG = false;
-    imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, neutral.toneCurve, neutral.raw);
+    neutral.exposure.enabled = true;
+    neutral.exposure.clampOOG = false;
+    imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, neutral.exposure, neutral.raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 
     float vmin = RT_INFINITY;
     float vmax = -RT_INFINITY;
-    const float ec = std::pow(2.f, params->toneCurve.expcomp);
+    const float ec = params->exposure.enabled ? std::pow(2.f, params->exposure.expcomp) : 1.f;
 
     constexpr float noise = 1e-5;
 
@@ -559,19 +560,21 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
         update_tone_curve_histogram(&working, *histToneCurve, params->icm.workingProfile, multiThread);
     }
 
-    ToneCurve tc;
-    const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+    if (params->toneCurve.enabled) {
+        ToneCurve tc;
+        const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
 
-    if (!tcurve1.isIdentity()) {
-        tc.Set(tcurve1, Color::sRGBGammaCurve);
-        apply_tc(&working, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
-    }
+        if (!tcurve1.isIdentity()) {
+            tc.Set(tcurve1, Color::sRGBGammaCurve);
+            apply_tc(&working, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
+        }
 
-    const DiagonalCurve tcurve2(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+        const DiagonalCurve tcurve2(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
 
-    if (!tcurve2.isIdentity()) {
-        tc.Set(tcurve2, Color::sRGBGammaCurve);
-        apply_tc(&working, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
+        if (!tcurve2.isIdentity()) {
+            tc.Set(tcurve2, Color::sRGBGammaCurve);
+            apply_tc(&working, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
+        }
     }
 
     shadowsHighlights(&working);

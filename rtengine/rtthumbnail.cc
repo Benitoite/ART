@@ -337,7 +337,7 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType,
     PreviewProps pp(0, 0, w, h, 1);
 
     Imagefloat tmp(w, h);
-    src.getImage(src.getWB(), TR_NONE, &tmp, pp, neutral.toneCurve, neutral.raw);
+    src.getImage(src.getWB(), TR_NONE, &tmp, pp, neutral.exposure, neutral.raw);
     src.convertColorSpace(&tmp, neutral.icm, src.getWB());
 
     Image8 *img = new Image8(w, h);
@@ -1139,6 +1139,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         baseImg->vflip ();
     }
 
+    const bool hrenabled = params.exposure.enabled && params.exposure.hrenabled;
 
     // apply white balance and raw white point (simulated)
     for (int i = 0; i < rheight; i++) {
@@ -1151,7 +1152,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
             float blue = baseImg->b (i, j) * bmi;
             
             // avoid magenta highlights if highlight recovery is enabled
-            if (params.toneCurve.hrenabled && red > MAXVALF && blue > MAXVALF) {
+            if (hrenabled && red > MAXVALF && blue > MAXVALF) {
                 baseImg->r(i, j) = baseImg->g(i, j) = baseImg->b(i, j) = CLIP((red + green + blue) / 3.f);
             } else {
                 baseImg->r(i, j) = CLIP(red);
@@ -1200,25 +1201,25 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     }
 
     // RGB processing
-    double  expcomp = params.toneCurve.expcomp;
-    int     bright = params.toneCurve.brightness;
-    int     contr = params.toneCurve.contrast;
-    int     black = params.toneCurve.black;
-    int     hlcompr = params.toneCurve.hlcompr;
-    int     hlcomprthresh = params.toneCurve.hlcomprthresh;
+    // double  expcomp = params.toneCurve.expcomp;
+    // int bright = params.toneCurve.brightness;
+    // int contr = params.toneCurve.contrast;
+    // int black = params.toneCurve.black;
+    // int hlcompr = params.toneCurve.hlcompr;
+    // int hlcomprthresh = params.toneCurve.hlcomprthresh;
 
-    if (params.toneCurve.autoexp) {
-        if (aeValid) {
-            expcomp = aeExposureCompensation;
-            bright = aeLightness;
-            contr = aeContrast;
-            black = aeBlack;
-            hlcompr = aeHighlightCompression;
-            hlcomprthresh = aeHighlightCompressionThreshold;
-        } else if (aeHistogram) {
-            ipf.getAutoExp (aeHistogram, aeHistCompression, 0.02, expcomp, bright, contr, black, hlcompr, hlcomprthresh);
-        }
-    }
+    // if (params.toneCurve.autoexp) {
+    //     if (aeValid) {
+    //         expcomp = aeExposureCompensation;
+    //         bright = aeLightness;
+    //         contr = aeContrast;
+    //         black = aeBlack;
+    //         hlcompr = aeHighlightCompression;
+    //         hlcomprthresh = aeHighlightCompressionThreshold;
+    //     } else if (aeHistogram) {
+    //         ipf.getAutoExp (aeHistogram, aeHistCompression, 0.02, expcomp, bright, contr, black, hlcompr, hlcomprthresh);
+    //     }
+    // }
 
     LUTf curve1 (65536);
     LUTf curve2 (65536);
@@ -1361,10 +1362,11 @@ void Thumbnail::getAutoWBMultipliers (double& rm, double& gm, double& bm)
 void Thumbnail::applyAutoExp (procparams::ProcParams& params)
 {
 
-    if (params.toneCurve.autoexp && aeHistogram) {
+    if (params.exposure.enabled && params.exposure.autoexp && aeHistogram) {
         ImProcFunctions ipf (&params, false);
-        ipf.getAutoExp (aeHistogram, aeHistCompression, params.toneCurve.clip, params.toneCurve.expcomp,
-                        params.toneCurve.brightness, params.toneCurve.contrast, params.toneCurve.black, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh);
+        params.brightContrSat.enabled = true;
+        ipf.getAutoExp (aeHistogram, aeHistCompression, params.exposure.clip, params.exposure.expcomp,
+                        params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
     }
 }
 

@@ -481,12 +481,70 @@ void LabCorrectionMask::save(Glib::KeyFile &keyfile, const Glib::ustring &group_
 }
 
 
-ToneCurveParams::ToneCurveParams() :
+ExposureParams::ExposureParams():
+    enabled(true),
     autoexp(false),
     clip(0.02),
     hrenabled(false),
     method("Blend"),
     expcomp(0),
+    black(0),
+    shcompr(50),
+    hlcompr(0),
+    hlcomprthresh(0),
+    clampOOG(true)
+{
+}
+
+
+bool ExposureParams::operator==(const ExposureParams &other) const
+{
+    return enabled == other.enabled
+        && autoexp == other.autoexp
+        && clip == other.clip
+        && hrenabled == other.hrenabled
+        && method == other.method
+        && expcomp == other.expcomp
+        && black == other.black
+        && shcompr == other.shcompr
+        && hlcompr == other.hlcompr
+        && hlcomprthresh == other.hlcomprthresh
+        && clampOOG == other.clampOOG;    
+}
+
+
+bool ExposureParams::operator!=(const ExposureParams &other) const
+{
+    return !(*this == other);
+}
+
+
+BrightnessContrastSaturationParams::BrightnessContrastSaturationParams():
+    enabled(false),
+    brightness(0),
+    contrast(0),
+    saturation(0)
+{
+}
+
+
+bool BrightnessContrastSaturationParams::operator==(const BrightnessContrastSaturationParams &other) const
+{
+    return enabled == other.enabled
+        && brightness == other.brightness
+        && contrast == other.contrast
+        && saturation == other.saturation;
+}
+
+
+bool BrightnessContrastSaturationParams::operator!=(const BrightnessContrastSaturationParams &other) const
+{
+    return !(*this == other);
+}
+
+
+ToneCurveParams::ToneCurveParams():
+    enabled(false),
     curve{
         DCT_Linear
     },
@@ -495,42 +553,23 @@ ToneCurveParams::ToneCurveParams() :
     },
     curveMode(ToneCurveParams::TcMode::STD),
     curveMode2(ToneCurveParams::TcMode::STD),
-    brightness(0),
-    black(0),
-    contrast(0),
-    saturation(0),
-    shcompr(50),
-    hlcompr(0),
-    hlcomprthresh(0),
     histmatching(false),
-    fromHistMatching(false),
-    clampOOG(true)
+    fromHistMatching(false)
 {
 }
 
+
 bool ToneCurveParams::operator ==(const ToneCurveParams& other) const
 {
-    return
-        autoexp == other.autoexp
-        && clip == other.clip
-        && hrenabled == other.hrenabled
-        && method == other.method
-        && expcomp == other.expcomp
+    return enabled == other.enabled
         && curve == other.curve
         && curve2 == other.curve2
         && curveMode == other.curveMode
         && curveMode2 == other.curveMode2
-        && brightness == other.brightness
-        && black == other.black
-        && contrast == other.contrast
-        && saturation == other.saturation
-        && shcompr == other.shcompr
-        && hlcompr == other.hlcompr
-        && hlcomprthresh == other.hlcomprthresh
         && histmatching == other.histmatching
-        && fromHistMatching == other.fromHistMatching
-        && clampOOG == other.clampOOG;
+        && fromHistMatching == other.fromHistMatching;
 }
+
 
 bool ToneCurveParams::operator !=(const ToneCurveParams& other) const
 {
@@ -2097,6 +2136,10 @@ ProcParams::ProcParams()
 
 void ProcParams::setDefaults()
 {
+    exposure = ExposureParams();
+
+    brightContrSat = BrightnessContrastSaturationParams();
+        
     toneCurve = ToneCurveParams();
 
     labCurve = LCurveParams();
@@ -2244,25 +2287,35 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("General", "InTrash", inTrash, keyFile);
         }
 
+// Exposure
+        if (RELEVANT_(exposure)) {
+            saveToKeyfile("Exposure", "Enabled", exposure.enabled, keyFile);
+            saveToKeyfile("Exposure", "Auto", exposure.autoexp, keyFile);
+            saveToKeyfile("Exposure", "Clip", exposure.clip, keyFile);
+            saveToKeyfile("Exposure", "Compensation", exposure.expcomp, keyFile);
+            saveToKeyfile("Exposure", "Black", exposure.black, keyFile);
+            saveToKeyfile("Exposure", "HighlightCompr", exposure.hlcompr, keyFile);
+            saveToKeyfile("Exposure", "HighlightComprThreshold", exposure.hlcomprthresh, keyFile);
+            saveToKeyfile("Exposure", "ShadowCompr", exposure.shcompr, keyFile);
+            saveToKeyfile("Exposure", "ClampOOG", exposure.clampOOG, keyFile);
+
+            saveToKeyfile("Exposure", "HLRecoveryEnabled", exposure.hrenabled, keyFile);
+            saveToKeyfile("Exposure", "HLRecoveryMethod", exposure.method, keyFile);
+        }
+
+// Brightness, Contrast, Saturation
+        if (RELEVANT_(brightContrSat)) {
+            saveToKeyfile("BrightnessContrastSaturation", "Enabled", brightContrSat.enabled, keyFile);
+            saveToKeyfile("BrightnessContrastSaturation", "Brightness", brightContrSat.brightness, keyFile);
+            saveToKeyfile("BrightnessContrastSaturation", "Contrast", brightContrSat.contrast, keyFile);
+            saveToKeyfile("BrightnessContrastSaturation", "Saturation", brightContrSat.saturation, keyFile);
+        }
+
 // Tone curve
         if (RELEVANT_(toneCurve)) {
-            saveToKeyfile("Exposure", "Auto", toneCurve.autoexp, keyFile);
-            saveToKeyfile("Exposure", "Clip", toneCurve.clip, keyFile);
-            saveToKeyfile("Exposure", "Compensation", toneCurve.expcomp, keyFile);
-            saveToKeyfile("Exposure", "Brightness", toneCurve.brightness, keyFile);
-            saveToKeyfile("Exposure", "Contrast", toneCurve.contrast, keyFile);
-            saveToKeyfile("Exposure", "Saturation", toneCurve.saturation, keyFile);
-            saveToKeyfile("Exposure", "Black", toneCurve.black, keyFile);
-            saveToKeyfile("Exposure", "HighlightCompr", toneCurve.hlcompr, keyFile);
-            saveToKeyfile("Exposure", "HighlightComprThreshold", toneCurve.hlcomprthresh, keyFile);
-            saveToKeyfile("Exposure", "ShadowCompr", toneCurve.shcompr, keyFile);
-            saveToKeyfile("Exposure", "HistogramMatching", toneCurve.histmatching, keyFile);
-            saveToKeyfile("Exposure", "CurveFromHistogramMatching", toneCurve.fromHistMatching, keyFile);
-            saveToKeyfile("Exposure", "ClampOOG", toneCurve.clampOOG, keyFile);
-
-// Highlight recovery
-            saveToKeyfile("HLRecovery", "Enabled", toneCurve.hrenabled, keyFile);
-            saveToKeyfile("HLRecovery", "Method", toneCurve.method, keyFile);
+            saveToKeyfile("ToneCurve", "Enabled", toneCurve.enabled, keyFile);
+            saveToKeyfile("ToneCurve", "HistogramMatching", toneCurve.histmatching, keyFile);
+            saveToKeyfile("ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching, keyFile);
 
             const std::map<ToneCurveParams::TcMode, const char*> tc_mapping = {
                 {ToneCurveParams::TcMode::STD, "Standard"},
@@ -2273,11 +2326,11 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
                 {ToneCurveParams::TcMode::PERCEPTUAL, "Perceptual"}
             };
 
-            saveToKeyfile("Exposure", "CurveMode", tc_mapping, toneCurve.curveMode, keyFile);
-            saveToKeyfile("Exposure", "CurveMode2", tc_mapping, toneCurve.curveMode2, keyFile);
+            saveToKeyfile("ToneCurve", "CurveMode", tc_mapping, toneCurve.curveMode, keyFile);
+            saveToKeyfile("ToneCurve", "CurveMode2", tc_mapping, toneCurve.curveMode2, keyFile);
 
-            saveToKeyfile("Exposure", "Curve", toneCurve.curve, keyFile);
-            saveToKeyfile("Exposure", "Curve2", toneCurve.curve2, keyFile);
+            saveToKeyfile("ToneCurve", "Curve", toneCurve.curve, keyFile);
+            saveToKeyfile("ToneCurve", "Curve2", toneCurve.curve2, keyFile);
         }
 
 // Local contrast
@@ -2902,56 +2955,98 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             assignFromKeyfile(keyFile, "General", "InTrash", inTrash);
         }
 
-        if (keyFile.has_group("Exposure") && RELEVANT_(toneCurve)) {
-            if (ppVersion < PPVERSION_AEXP) {
-                toneCurve.autoexp = false; // prevent execution of autoexp when opening file created with earlier versions of autoexp algorithm
-            } else {
-                assignFromKeyfile(keyFile, "Exposure", "Auto", toneCurve.autoexp);
+        const std::map<std::string, ToneCurveParams::TcMode> tc_mapping = {
+            {"Standard", ToneCurveParams::TcMode::STD},
+            {"FilmLike", ToneCurveParams::TcMode::FILMLIKE},
+            {"SatAndValueBlending", ToneCurveParams::TcMode::SATANDVALBLENDING},
+            {"WeightedStd", ToneCurveParams::TcMode::WEIGHTEDSTD},
+            {"Luminance", ToneCurveParams::TcMode::LUMINANCE},
+            {"Perceptual", ToneCurveParams::TcMode::PERCEPTUAL}
+        };
+
+        if (ppVersion < 350) {
+            if (keyFile.has_group("Exposure")) {
+                if (RELEVANT_(exposure)) {
+                    exposure.enabled = true;
+                    
+                    if (ppVersion < PPVERSION_AEXP) {
+                        exposure.autoexp = false; // prevent execution of autoexp when opening file created with earlier versions of autoexp algorithm
+                    } else {
+                        assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
+                    }
+
+                    assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
+                    assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
+                    assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
+                    assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
+                    assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
+                    assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
+                    assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
+
+                    if (exposure.shcompr > 100) {
+                        exposure.shcompr = 100; // older pp3 files can have values above 100.
+                    }
+                }
+
+                if (RELEVANT_(toneCurve)) {
+                    toneCurve.enabled = true;
+                    
+                    assignFromKeyfile(keyFile, "Exposure", "CurveMode", tc_mapping, toneCurve.curveMode);
+                    assignFromKeyfile(keyFile, "Exposure", "CurveMode2", tc_mapping, toneCurve.curveMode2);
+
+                    if (ppVersion > 200) {
+                        assignFromKeyfile(keyFile, "Exposure", "Curve", toneCurve.curve);
+                        assignFromKeyfile(keyFile, "Exposure", "Curve2", toneCurve.curve2);
+                    }
+
+                    assignFromKeyfile(keyFile, "Exposure", "HistogramMatching", toneCurve.histmatching);
+                    if (ppVersion < 340) {
+                        toneCurve.fromHistMatching = false;
+                    } else {
+                        assignFromKeyfile(keyFile, "Exposure", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
+                    }
+                }
+                if (RELEVANT_(brightContrSat)) {
+                    brightContrSat.enabled = true;
+                    assignFromKeyfile(keyFile, "Exposure", "Brightness", brightContrSat.brightness);
+                    assignFromKeyfile(keyFile, "Exposure", "Contrast", brightContrSat.contrast);
+                    assignFromKeyfile(keyFile, "Exposure", "Saturation", brightContrSat.saturation);
+                }
             }
-
-            assignFromKeyfile(keyFile, "Exposure", "Clip", toneCurve.clip);
-            assignFromKeyfile(keyFile, "Exposure", "Compensation", toneCurve.expcomp);
-            assignFromKeyfile(keyFile, "Exposure", "Brightness", toneCurve.brightness);
-            assignFromKeyfile(keyFile, "Exposure", "Contrast", toneCurve.contrast);
-            assignFromKeyfile(keyFile, "Exposure", "Saturation", toneCurve.saturation);
-            assignFromKeyfile(keyFile, "Exposure", "Black", toneCurve.black);
-            assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", toneCurve.hlcompr);
-            assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", toneCurve.hlcomprthresh);
-            assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", toneCurve.shcompr);
-
-            if (toneCurve.shcompr > 100) {
-                toneCurve.shcompr = 100; // older pp3 files can have values above 100.
+            if (keyFile.has_group("HLRecovery") && RELEVANT_(exposure)) {
+                assignFromKeyfile(keyFile, "HLRecovery", "Enabled", exposure.hrenabled);
+                assignFromKeyfile(keyFile, "HLRecovery", "Method", exposure.method);
             }
-
-            const std::map<std::string, ToneCurveParams::TcMode> tc_mapping = {
-                {"Standard", ToneCurveParams::TcMode::STD},
-                {"FilmLike", ToneCurveParams::TcMode::FILMLIKE},
-                {"SatAndValueBlending", ToneCurveParams::TcMode::SATANDVALBLENDING},
-                {"WeightedStd", ToneCurveParams::TcMode::WEIGHTEDSTD},
-                {"Luminance", ToneCurveParams::TcMode::LUMINANCE},
-                {"Perceptual", ToneCurveParams::TcMode::PERCEPTUAL}
-            };
-
-            assignFromKeyfile(keyFile, "Exposure", "CurveMode", tc_mapping, toneCurve.curveMode);
-            assignFromKeyfile(keyFile, "Exposure", "CurveMode2", tc_mapping, toneCurve.curveMode2);
-
-            if (ppVersion > 200) {
-                assignFromKeyfile(keyFile, "Exposure", "Curve", toneCurve.curve);
-                assignFromKeyfile(keyFile, "Exposure", "Curve2", toneCurve.curve2);
+        } else {
+            if (keyFile.has_group("Exposure") && RELEVANT_(exposure)) {
+                assignFromKeyfile(keyFile, "Exposure", "Enabled", exposure.enabled);
+                assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
+                assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
+                assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
+                assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
+                assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
+                assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
+                assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
+                assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
+                assignFromKeyfile(keyFile, "Exposure", "HLRecoveryEnabled", exposure.hrenabled);
+                assignFromKeyfile(keyFile, "Exposure", "HLRecoveryMethod", exposure.method);
             }
-
-            assignFromKeyfile(keyFile, "Exposure", "HistogramMatching", toneCurve.histmatching);
-            if (ppVersion < 340) {
-                toneCurve.fromHistMatching = false;
-            } else {
-                assignFromKeyfile(keyFile, "Exposure", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
+            if (keyFile.has_group("BrightnessContrastSaturation") && RELEVANT_(brightContrSat)) {
+                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Enabled", brightContrSat.enabled);
+                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Brightness", brightContrSat.brightness);
+                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Contrast", brightContrSat.contrast);
+                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Saturation", brightContrSat.saturation);
             }
-            assignFromKeyfile(keyFile, "Exposure", "ClampOOG", toneCurve.clampOOG);
-        }
+            if (keyFile.has_group("ToneCurve") && RELEVANT_(toneCurve)) {
+                assignFromKeyfile(keyFile, "ToneCurve", "Enabled", toneCurve.enabled);
+                assignFromKeyfile(keyFile, "ToneCurve", "CurveMode", tc_mapping, toneCurve.curveMode);
+                assignFromKeyfile(keyFile, "ToneCurve", "CurveMode2", tc_mapping, toneCurve.curveMode2);
 
-        if (keyFile.has_group("HLRecovery") && RELEVANT_(toneCurve)) {
-            assignFromKeyfile(keyFile, "HLRecovery", "Enabled", toneCurve.hrenabled);
-            assignFromKeyfile(keyFile, "HLRecovery", "Method", toneCurve.method);
+                assignFromKeyfile(keyFile, "ToneCurve", "Curve", toneCurve.curve);
+                assignFromKeyfile(keyFile, "ToneCurve", "Curve2", toneCurve.curve2);
+                assignFromKeyfile(keyFile, "ToneCurve", "HistogramMatching", toneCurve.histmatching);
+                assignFromKeyfile(keyFile, "ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
+            }
         }
 
         if (keyFile.has_group("Channel Mixer") && RELEVANT_(chmixer)) {
@@ -4036,7 +4131,9 @@ void ProcParams::destroy(ProcParams* pp)
 bool ProcParams::operator ==(const ProcParams& other) const
 {
     return
-        toneCurve == other.toneCurve
+        exposure == other.exposure
+        && brightContrSat == other.brightContrSat
+        && toneCurve == other.toneCurve
         && localContrast == other.localContrast
         && labCurve == other.labCurve
         && sharpenMicro == other.sharpenMicro

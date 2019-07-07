@@ -1,11 +1,14 @@
 #pragma once
 
 // This number has to be incremented whenever the PP3 file format is modified or the behaviour of a tool changes
-#define PPVERSION 349
+#define PPVERSION 350
 #define PPVERSION_AEXP 301 //value of PPVERSION when auto exposure algorithm was modified
 
 /*
   Log of version changes
+   350  2019-07-07
+        split ToneCurveParams into ExposureParams,
+        BrightnessContrastSaturationParams and ToneCurveParams
    349  2019-01-14
         changed logenc.base to logenc.targetGray
    348  2018-12-30

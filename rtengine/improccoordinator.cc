@@ -249,11 +249,14 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         if (imageTypeListener) {
             imageTypeListener->imageTypeChanged(imgsrc->isRAW(), imgsrc->getSensorType() == ST_BAYER, imgsrc->getSensorType() == ST_FUJI_XTRANS, imgsrc->isMono());
         }
-    
+
+        const bool hrenabled = params.exposure.enabled && params.exposure.hrenabled;
+        const bool hrcolor = params.exposure.enabled && params.exposure.method == "Color";
+        
         if ((todo & M_RAW)
                 || (!highDetailRawComputed && highDetailNeeded)
-                || (params.toneCurve.hrenabled && params.toneCurve.method != "Color" && imgsrc->isRGBSourceModified())
-                || (!params.toneCurve.hrenabled && params.toneCurve.method == "Color" && imgsrc->isRGBSourceModified())) {
+                || (hrenabled && !hrcolor && imgsrc->isRGBSourceModified())
+                || (!hrenabled && hrcolor && imgsrc->isRGBSourceModified())) {
     
             if (settings->verbose) {
                 if (imgsrc->getSensorType() == ST_BAYER) {
@@ -295,7 +298,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         if (todo & (M_INIT | M_LINDENOISE | M_HDR)) {
             MyMutex::MyLock initLock(minit);  // Also used in crop window
     
-            imgsrc->HLRecovery_Global(params.toneCurve);   // this handles Color HLRecovery
+            imgsrc->HLRecovery_Global(params.exposure);   // this handles Color HLRecovery
     
     
             if (settings->verbose) {
@@ -373,7 +376,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             // Tells to the ImProcFunctions' tools what is the preview scale, which may lead to some simplifications
             ipf.setScale(scale);
     
-            imgsrc->getImage(currWB, tr, orig_prev, pp, params.toneCurve, params.raw);
+            imgsrc->getImage(currWB, tr, orig_prev, pp, params.exposure, params.raw);
             denoiseInfoStore.valid = false;
             imgsrc->convertColorSpace(orig_prev, params.icm, currWB);
     
@@ -421,16 +424,16 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         readyphase++;
     
         if (todo & M_AUTOEXP) {
-            if (params.toneCurve.autoexp) {
+            if (params.exposure.enabled && params.exposure.autoexp) {
                 LUTu aehist;
                 int aehistcompr;
                 imgsrc->getAutoExpHistogram(aehist, aehistcompr);
-                ipf.getAutoExp(aehist, aehistcompr, params.toneCurve.clip, params.toneCurve.expcomp,
-                               params.toneCurve.brightness, params.toneCurve.contrast, params.toneCurve.black, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh);
+                ipf.getAutoExp(aehist, aehistcompr, params.exposure.clip, params.exposure.expcomp,
+                               params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
     
                 if (aeListener)
-                    aeListener->autoExpChanged(params.toneCurve.expcomp, params.toneCurve.brightness, params.toneCurve.contrast,
-                                               params.toneCurve.black, params.toneCurve.hlcompr, params.toneCurve.hlcomprthresh, params.toneCurve.hrenabled);
+                    aeListener->autoExpChanged(params.exposure.expcomp, params.brightContrSat.brightness, params.brightContrSat.contrast,
+                                               params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh, params.exposure.hrenabled);
             }
     
             if (params.toneCurve.histmatching) {
@@ -438,11 +441,11 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                     imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);
                 }
     
-                if (params.toneCurve.autoexp) {
-                    params.toneCurve.expcomp = 0.0;
-                }
+                // if (params.toneCurve.autoexp) {
+                //     params.toneCurve.expcomp = 0.0;
+                // }
     
-                params.toneCurve.autoexp = false;
+                // params.toneCurve.autoexp = false;
                 // params.toneCurve.curveMode = ToneCurveParams::TcMode::FILMLIKE;
                 // params.toneCurve.curve2 = { 0 };
                 // params.toneCurve.brightness = 0;
@@ -879,7 +882,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     imgsrc->getFullSize(fW, fH, tr);
     PreviewProps pp(0, 0, fW, fH, 1);
     ProcParams ppar = params;
-    ppar.toneCurve.hrenabled = false;
+    ppar.exposure.hrenabled = false;
     ppar.icm.inputProfile = "(none)";
     Imagefloat* im = new Imagefloat(fW, fH);
     imgsrc->preprocess(ppar.raw, ppar.lensProf, ppar.coarse);
@@ -912,7 +915,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
         currWB = ColorTemp(); // = no white balance
     }
 
-    imgsrc->getImage(currWB, tr, im, pp, ppar.toneCurve, ppar.raw);
+    imgsrc->getImage(currWB, tr, im, pp, ppar.exposure, ppar.raw);
     ImProcFunctions ipf(&ppar, true);
 
     if (ipf.needsTransform()) {

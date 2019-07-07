@@ -171,7 +171,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
             for (int wcr = 0; wcr <= 2; wcr++) {
                 for (int hcr = 0; hcr <= 2; hcr++) {
                     PreviewProps ppP(coordW[wcr], coordH[hcr], crW, crH, 1);
-                    imgsrc->getImage(currWB, tr, origCropPart, ppP, params->toneCurve, params->raw);
+                    imgsrc->getImage(currWB, tr, origCropPart, ppP, params->exposure, params->raw);
 
                     // we only need image reduced to 1/4 here
                     for (int ii = 0; ii < crH; ii += 2) {

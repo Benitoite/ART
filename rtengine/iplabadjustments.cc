@@ -25,6 +25,7 @@
 #include "improcfun.h"
 #include "curves.h"
 #include "settings.h"
+#include "mytime.h"
 
 namespace rtengine {
 
@@ -246,7 +247,7 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
     // }
 
     // reference to the params structure has to be done outside of the parallelization to avoid CPU cache problem
-    const bool highlight = params->toneCurve.hrenabled; //Get the value if "highlight reconstruction" is activated
+    const bool highlight = params->exposure.enabled && params->exposure.hrenabled; //Get the value if "highlight reconstruction" is activated
     const int chromaticity = params->labCurve.chromaticity;
     const float chromapro = (chromaticity + 100.0f) / 100.0f;
     const bool bwonly = params->blackwhite.enabled;
@@ -339,12 +340,13 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
 #endif
 
         for (int i = 0; i < H; i++) {
-            if (avoidColorShift)
-
+            if (avoidColorShift) {
+                bool hrenabled = params->exposure.enabled && params->exposure.hrenabled;
                 // only if user activate Lab adjustments
                 if (autili || butili || ccutili ||  cclutili || chutili || lhutili || hhutili || clcutili || utili || chromaticity) {
-                    Color::LabGamutMunsell (lold->L[i], lold->a[i], lold->b[i], W, /*corMunsell*/true, /*lumaMuns*/false, params->toneCurve.hrenabled, /*gamut*/true, wip);
+                    Color::LabGamutMunsell (lold->L[i], lold->a[i], lold->b[i], W, /*corMunsell*/true, /*lumaMuns*/false, hrenabled, /*gamut*/true, wip);
                 }
+            }
 
 #ifdef __SSE2__
 

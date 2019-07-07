@@ -298,10 +298,45 @@ private:
     bool is_double;
 };
 
+
+struct ExposureParams {
+    bool enabled;
+    bool autoexp;
+    double clip;
+    bool hrenabled;  // Highlight Reconstruction enabled
+    Glib::ustring method;   // Highlight Reconstruction's method
+    double expcomp;
+    int black;
+    int shcompr;
+    int hlcompr;        // Highlight Recovery's compression
+    int hlcomprthresh;  // Highlight Recovery's threshold
+    bool clampOOG; // clamp out of gamut colours
+
+    ExposureParams();
+
+    bool operator==(const ExposureParams &other) const;
+    bool operator!=(const ExposureParams &other) const;
+};
+
+
+struct BrightnessContrastSaturationParams {
+    bool enabled;
+    int brightness;
+    int contrast;
+    int saturation;
+
+    BrightnessContrastSaturationParams();
+
+    bool operator ==(const BrightnessContrastSaturationParams &other) const;
+    bool operator !=(const BrightnessContrastSaturationParams &other) const;
+};
+
 /**
   * Parameters of the tone curve
   */
 struct ToneCurveParams {
+    bool enabled;
+    
     enum class TcMode {
         STD,               // Standard modes, the curve is applied on all component individually
         WEIGHTEDSTD,       // Weighted standard mode
@@ -311,31 +346,17 @@ struct ToneCurveParams {
         PERCEPTUAL         // Keep color appearance constant using perceptual modeling
     };
 
-    bool        autoexp;
-    double      clip;
-    bool        hrenabled;  // Highlight Reconstruction enabled
-    Glib::ustring method;   // Highlight Reconstruction's method
-    double      expcomp;
-    std::vector<double>   curve;
-    std::vector<double>   curve2;
-    TcMode   curveMode;
-    TcMode   curveMode2;
-    int         brightness;
-    int         black;
-    int         contrast;
-    int         saturation;
-    int         shcompr;
-    int         hlcompr;        // Highlight Recovery's compression
-    int         hlcomprthresh;  // Highlight Recovery's threshold
+    std::vector<double> curve;
+    std::vector<double> curve2;
+    TcMode curveMode;
+    TcMode curveMode2;
     bool histmatching; // histogram matching
     bool fromHistMatching;
-    bool clampOOG; // clamp out of gamut colours
 
     ToneCurveParams();
 
-    bool operator ==(const ToneCurveParams& other) const;
-    bool operator !=(const ToneCurveParams& other) const;
-
+    bool operator==(const ToneCurveParams &other) const;
+    bool operator!=(const ToneCurveParams &other) const;
 };
 
 
@@ -1289,10 +1310,10 @@ struct RAWParams {
 /**
   * This class holds all the processing parameters applied on the images
   */
-class ProcParams
-{
-
+class ProcParams {
 public:
+    ExposureParams          exposure;
+    BrightnessContrastSaturationParams brightContrSat;
     ToneCurveParams         toneCurve;       ///< Tone curve parameters
     LCurveParams            labCurve;        ///< CIELAB luminance curve parameters
     LocalContrastParams     localContrast;   ////< Local contrast parameters

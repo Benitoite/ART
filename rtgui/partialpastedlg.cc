@@ -45,7 +45,9 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
 {
     return {
         {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 0},
-        {"PARTIALPASTE_EXPOSURE", &pedited.toneCurve, 0},
+        {"PARTIALPASTE_EXPOSURE", &pedited.exposure, 0},
+        {"PARTIALPASTE_BRIGHTCONTRSAT", &pedited.brightContrSat, 0},
+        {"PARTIALPASTE_TONECURVE", &pedited.toneCurve, 0},
         {"PARTIALPASTE_TM_LOG", &pedited.logenc, 0},
         {"PARTIALPASTE_SHADOWSHIGHLIGHTS", &pedited.sh, 0},
         {"PARTIALPASTE_TONE_EQUALIZER", &pedited.toneEqualizer, 0},

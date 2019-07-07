@@ -258,13 +258,13 @@ HISTORY_MSG_1;Photo loaded
 HISTORY_MSG_2;PP3 loaded
 HISTORY_MSG_3;PP3 changed
 HISTORY_MSG_4;History browsing
-HISTORY_MSG_5;Exposure - Lightness
-HISTORY_MSG_6;Exposure - Contrast
+HISTORY_MSG_5;B, C &amp; S - Brightness
+HISTORY_MSG_6;B, C &amp; S - Contrast
 HISTORY_MSG_7;Exposure - Black
 HISTORY_MSG_8;Exposure - Compensation
 HISTORY_MSG_9;Exposure - Highlight compression
 HISTORY_MSG_10;Exposure - Shadow compression
-HISTORY_MSG_11;Exposure - Tone curve 1
+HISTORY_MSG_11;Tone Curve - Curve 1
 HISTORY_MSG_12;Exposure - Auto levels
 HISTORY_MSG_13;Exposure - Clip
 HISTORY_MSG_14;L*a*b* - Lightness
@@ -294,9 +294,9 @@ HISTORY_MSG_37;Exposure - Auto levels
 HISTORY_MSG_38;White Balance - Method
 HISTORY_MSG_39;WB - Temperature
 HISTORY_MSG_40;WB - Tint
-HISTORY_MSG_41;Exposure - Tone curve 1 mode
-HISTORY_MSG_42;Exposure - Tone curve 2
-HISTORY_MSG_43;Exposure - Tone curve 2 mode
+HISTORY_MSG_41;Tone Curve - Curve 1 mode
+HISTORY_MSG_42;Tone Curve - Curve 2
+HISTORY_MSG_43;Tone Curve - Curve 2 mode
 HISTORY_MSG_44;Lum. denoising radius
 HISTORY_MSG_45;Lum. denoising edge tolerance
 HISTORY_MSG_46;Color denoising
@@ -353,7 +353,7 @@ HISTORY_MSG_96;L*a*b* - a* curve
 HISTORY_MSG_97;L*a*b* - b* curve
 HISTORY_MSG_98;Demosaicing method
 HISTORY_MSG_99;Hot pixel filter
-HISTORY_MSG_100;Exposure - Saturation
+HISTORY_MSG_100;B, C &amp; S - Saturation
 HISTORY_MSG_101;HSV - Hue
 HISTORY_MSG_102;HSV - Saturation
 HISTORY_MSG_103;HSV - Value
@@ -1386,6 +1386,7 @@ TOOLBAR_TOOLTIP_CROP;<b>Crop</b> selection.\nShortcut: <b>c</b>\nMove the crop u
 TOOLBAR_TOOLTIP_HAND;Hand tool.\nShortcut: <b>h</b>
 TOOLBAR_TOOLTIP_STRAIGHTEN;<b>Straighten</b> / <b>fine rotation</b>.\nShortcut: <b>s</b>\n\nIndicate the vertical or horizontal by drawing a guide line over the image preview. Angle of rotation will be shown next to the guide line. Center of rotation is the geometrical center of the image.
 TOOLBAR_TOOLTIP_WB;Spot white balance.\nShortcut: <b>w</b>
+TP_BRIGHTCONTRSAT_LABEL;Brightness, Contrast & Saturation
 TP_BWMIX_ALGO;Algorithm OYCPM
 TP_BWMIX_ALGO_LI;Linear
 TP_BWMIX_ALGO_SP;Special effects
@@ -1701,7 +1702,7 @@ TP_EPD_STRENGTH;Strength
 TP_EXPOSURE_AUTOLEVELS;Auto Levels
 TP_EXPOSURE_AUTOLEVELS_TIP;Toggles execution of Auto Levels to automatically set Exposure slider values based on an image analysis.\nEnables Highlight Reconstruction if necessary.
 TP_EXPOSURE_BLACKLEVEL;Black
-TP_EXPOSURE_BRIGHTNESS;Lightness
+TP_EXPOSURE_BRIGHTNESS;Brightness
 TP_EXPOSURE_CLAMPOOG;Clip out-of-gamut colors
 TP_EXPOSURE_CLIP;Clip %
 TP_EXPOSURE_CLIP_TIP;The fraction of pixels to be clipped in Auto Levels operation.
@@ -2187,6 +2188,7 @@ TP_TM_FATTAL_AMOUNT;Amount
 TP_TM_FATTAL_ANCHOR;Anchor
 TP_TM_FATTAL_LABEL;Dynamic Range Compression
 TP_TM_FATTAL_THRESHOLD;Detail
+TP_TONECURVE_LABEL;Tone Curves
 TP_TONE_EQUALIZER_BAND_0;Blacks
 TP_TONE_EQUALIZER_BAND_1;Shadows
 TP_TONE_EQUALIZER_BAND_2;Midtones

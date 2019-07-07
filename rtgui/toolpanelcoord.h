@@ -29,6 +29,8 @@
 #include <gtkmm.h>
 #include "whitebalance.h"
 #include "coarsepanel.h"
+#include "exposure.h"
+#include "brightcontrsat.h"
 #include "tonecurve.h"
 #include "shadowshighlights.h"
 #include "toneequalizer.h"
@@ -96,7 +98,8 @@ class ToolPanelCoordinator :
     public CropPanelListener,
     public ICMPanelListener,
     public ImageAreaToolListener,
-    public rtengine::ImageTypeListener
+    public rtengine::ImageTypeListener,
+    public rtengine::AutoExpListener
 {
 protected:
     WhiteBalance* whitebalance;
@@ -115,6 +118,8 @@ protected:
     PrSharpening* prsharpening;
     ICMPanel* icm;
     Crop* crop;
+    Exposure *exposure;
+    BrightnessContrastSaturation *brightContrSat;
     ToneCurve* toneCurve;
     ShadowsHighlights* shadowshighlights;
     ToneEqualizer *toneEqualizer;
@@ -320,6 +325,10 @@ public:
     void editModeSwitchedOff () override;
 
     void setEditProvider (EditDataProvider *provider);
+
+    // AutoExpListener interface
+    void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons) override;
+    void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) override;
 
 private:
     IdleRegister idle_register;

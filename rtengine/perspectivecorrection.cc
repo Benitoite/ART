@@ -326,7 +326,7 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
     neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
     neutral.icm.outputProfile = ColorManagementParams::NoICMString;    
-    src->getImage(src->getWB(), tr, img.get(), pp, neutral.toneCurve, neutral.raw);
+    src->getImage(src->getWB(), tr, img.get(), pp, neutral.exposure, neutral.raw);
     src->convertColorSpace(img.get(), pparams->icm, src->getWB());
 
     neutral.rotate = pparams->rotate;

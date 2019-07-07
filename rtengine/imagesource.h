@@ -71,7 +71,7 @@ public:
     virtual void        demosaic    (const RAWParams &raw, bool autoContrast, double &contrastThreshold) {};
     virtual void        flushRawData       () {};
     virtual void        flushRGB           () {};
-    virtual void        HLRecovery_Global  (const ToneCurveParams &hrp) {};
+    virtual void        HLRecovery_Global  (const ExposureParams &hrp) {};
     virtual void        HLRecovery_inpaint (float** red, float** green, float** blue) {};
 
     virtual bool        isRGBSourceModified () const = 0; // tracks whether cached rgb output of demosaic has been modified
@@ -83,7 +83,7 @@ public:
 
 
     // use right after demosaicing image, add coarse transformation and put the result in the provided Imagefloat*
-    virtual void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ToneCurveParams &hlp, const RAWParams &raw) = 0;
+    virtual void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hlp, const RAWParams &raw) = 0;
     virtual eSensorType getSensorType () const = 0;
     virtual bool        isMono () const = 0;
     // true is ready to provide the AutoWB, i.e. when the image has been demosaiced for RawImageSource

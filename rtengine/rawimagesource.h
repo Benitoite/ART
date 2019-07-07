@@ -117,7 +117,7 @@ public:
     void        demosaic    (const RAWParams &raw, bool autoContrast, double &contrastThreshold) override;
     void        flushRawData      () override;
     void        flushRGB          () override;
-    void        HLRecovery_Global (const ToneCurveParams &hrp) override;
+    void        HLRecovery_Global (const ExposureParams &hrp) override;
     void        refinement_lassus (int PassCount);
     void        refinement(int PassCount);
     void        setBorder(unsigned int rawBorder) override {border = rawBorder;}
@@ -131,7 +131,7 @@ public:
     void        cfaboxblur  (RawImage *riFlatFile, float* cfablur, int boxH, int boxW);
     void        scaleColors (int winx, int winy, int winw, int winh, const RAWParams &raw, array2D<float> &rawData); // raw for cblack
 
-    void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ToneCurveParams &hrp, const RAWParams &raw) override;
+    void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hrp, const RAWParams &raw) override;
     eSensorType getSensorType () const override
     {
         return ri != nullptr ? ri->getSensorType() : ST_NONE;

@@ -45,7 +45,7 @@ int main(int argc, const char **argv)
     int w, h;
     src->getFullSize(w, h);
     Imagefloat im(w, h);
-    src->getImage(ColorTemp(), TR_NONE, &im, PreviewProps(0, 0, w, h, 1), ToneCurveParams(), RAWParams());
+    src->getImage(ColorTemp(), TR_NONE, &im, PreviewProps(0, 0, w, h, 1), ExposureParams(), RAWParams());
 
     fprintf(stderr, "before saving\n");
     

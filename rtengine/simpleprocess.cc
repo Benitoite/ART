@@ -75,12 +75,12 @@ public:
         tilesize(0),
         overlap(0),
         dnstore(),
-        expcomp(0.0),
-        bright(0),
-        contr(0),
-        black(0),
-        hlcompr(0),
-        hlcomprthresh(0),
+        // expcomp(0.0),
+        // bright(0),
+        // contr(0),
+        // black(0),
+        // hlcompr(0),
+        // hlcomprthresh(0),
         baseImg(nullptr),
         labView(nullptr),
         autili(false),
@@ -238,7 +238,7 @@ private:
             pl->setProgress (0.40);
         }
 
-        imgsrc->HLRecovery_Global ( params.toneCurve );
+        imgsrc->HLRecovery_Global(params.exposure);
 
 
         if (pl) {
@@ -271,7 +271,7 @@ private:
         }
         
         baseImg = new Imagefloat (fw, fh);
-        imgsrc->getImage (currWB, tr, baseImg, pp, params.toneCurve, params.raw);
+        imgsrc->getImage (currWB, tr, baseImg, pp, params.exposure, params.raw);
 
         if (pl) {
             pl->setProgress (0.50);
@@ -279,30 +279,31 @@ private:
 
 //  LUTf Noisecurve (65536,0);
 //!!!// auto exposure!!!
-        expcomp = params.toneCurve.expcomp;
-        bright = params.toneCurve.brightness;
-        contr = params.toneCurve.contrast;
-        black = params.toneCurve.black;
-        hlcompr = params.toneCurve.hlcompr;
-        hlcomprthresh = params.toneCurve.hlcomprthresh;
+        // expcomp = params.toneCurve.expcomp;
+        // bright = params.toneCurve.brightness;
+        // contr = params.toneCurve.contrast;
+        // black = params.toneCurve.black;
+        // hlcompr = params.toneCurve.hlcompr;
+        // hlcomprthresh = params.toneCurve.hlcomprthresh;
 
 
-        if (params.toneCurve.autoexp) {
+        if (params.exposure.enabled && params.exposure.autoexp) {
             LUTu aehist;
             int aehistcompr;
             imgsrc->getAutoExpHistogram (aehist, aehistcompr);
-            ipf.getAutoExp (aehist, aehistcompr, params.toneCurve.clip, expcomp, bright, contr, black, hlcompr, hlcomprthresh);
+            params.brightContrSat.enabled = true;
+            ipf.getAutoExp (aehist, aehistcompr, params.exposure.clip, params.exposure.expcomp, params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
         }
         if (params.toneCurve.histmatching) {
             if (!params.toneCurve.fromHistMatching) {
                 imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);
             }
 
-            if (params.toneCurve.autoexp) {
-                params.toneCurve.expcomp = 0.0;
-            }
+            // if (params.toneCurve.autoexp) {
+            //     params.toneCurve.expcomp = 0.0;
+            // }
 
-            params.toneCurve.autoexp = false;
+            // params.toneCurve.autoexp = false;
             // params.toneCurve.curveMode = ToneCurveParams::TcMode::FILMLIKE;
             // params.toneCurve.curve2 = { 0 };
             // params.toneCurve.brightness = 0;
@@ -718,12 +719,12 @@ private:
 
     ImProcFunctions::DenoiseInfoStore dnstore;
 
-    double expcomp;
-    int bright;
-    int contr;
-    int black;
-    int hlcompr;
-    int hlcomprthresh;
+    // double expcomp;
+    // int bright;
+    // int contr;
+    // int black;
+    // int hlcompr;
+    // int hlcomprthresh;
 
     ColorTemp currWB;
     Imagefloat *baseImg;

@@ -606,7 +606,7 @@ float calculate_scale_mul(float scale_mul[4], const float pre_mul_[4], const flo
     return gain;
 }
 
-void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ToneCurveParams &hrp, const RAWParams &raw )
+void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hrp, const RAWParams &raw )
 {
     MyMutex::MyLock lock(getImageMutex);
 
@@ -714,13 +714,16 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
     hlmax[1] = clmax[1] * gm;
     hlmax[2] = clmax[2] * bm;
 
-    const bool doClip = (chmax[0] >= clmax[0] || chmax[1] >= clmax[1] || chmax[2] >= clmax[2]) && !hrp.hrenabled && hrp.clampOOG;
+    const bool hrenabled = hrp.enabled && hrp.hrenabled;
+    const bool clampOOG = !hrp.enabled || hrp.clampOOG;
+
+    const bool doClip = (chmax[0] >= clmax[0] || chmax[1] >= clmax[1] || chmax[2] >= clmax[2]) && !hrenabled && clampOOG;
 
     float area = skip * skip;
     rm /= area;
     gm /= area;
     bm /= area;
-    bool doHr = (hrp.hrenabled && hrp.method != "Color");
+    bool doHr = (hrenabled && hrp.method != "Color");
     const float expcomp = std::pow(2, ri->getBaselineExposure());
     rm *= expcomp;
     gm *= expcomp;
@@ -1627,9 +1630,9 @@ void RawImageSource::flushRGB()
     }
 }
 
-void RawImageSource::HLRecovery_Global(const ToneCurveParams &hrp)
+void RawImageSource::HLRecovery_Global(const ExposureParams &hrp)
 {
-    if (hrp.hrenabled && hrp.method == "Color") {
+    if (hrp.enabled && hrp.hrenabled && hrp.method == "Color") {
         if(!rgbSourceModified) {
             if (settings->verbose) {
                 printf ("Applying Highlight Recovery: Color propagation...\n");

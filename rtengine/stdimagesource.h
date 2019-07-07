@@ -43,7 +43,7 @@ public:
     ~StdImageSource () override;
 
     int         load        (const Glib::ustring &fname) override;
-    void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ToneCurveParams &hrp, const RAWParams &raw) override;
+    void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hrp, const RAWParams &raw) override;
     ColorTemp   getWB       () const override
     {
         return wb;
