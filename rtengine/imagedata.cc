@@ -224,7 +224,7 @@ FramesData::FramesData(const Glib::ustring &fname):
         if (find_tag(Exiv2::lensName)) {
             lens = pos->print(&exif);
         }
-        if (lens.empty()) {
+        if (lens.empty() || lens.find_first_not_of('-') == std::string::npos) {
             lens = "Unknown";
         }
 
