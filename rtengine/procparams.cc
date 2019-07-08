@@ -1703,7 +1703,8 @@ DehazeParams::DehazeParams() :
     enabled(false),
     strength(50),
     showDepthMap(false),
-    depth(25)
+    depth(25),
+    luminance(false)
 {
 }
 
@@ -1713,7 +1714,8 @@ bool DehazeParams::operator ==(const DehazeParams& other) const
         enabled == other.enabled
         && strength == other.strength
         && showDepthMap == other.showDepthMap
-        && depth == other.depth;
+        && depth == other.depth
+        && luminance == other.luminance;
 }
 
 bool DehazeParams::operator !=(const DehazeParams& other) const
@@ -2452,6 +2454,7 @@ int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             saveToKeyfile("Dehaze", "Strength", dehaze.strength, keyFile);        
             saveToKeyfile("Dehaze", "ShowDepthMap", dehaze.showDepthMap, keyFile);        
             saveToKeyfile("Dehaze", "Depth", dehaze.depth, keyFile);
+            saveToKeyfile("Dehaze", "Luminance", dehaze.luminance, keyFile);
         }
 
 // Denoising
@@ -3724,6 +3727,7 @@ int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
             assignFromKeyfile(keyFile, "Dehaze", "Strength", dehaze.strength);
             assignFromKeyfile(keyFile, "Dehaze", "ShowDepthMap", dehaze.showDepthMap);
             assignFromKeyfile(keyFile, "Dehaze", "Depth", dehaze.depth);
+            assignFromKeyfile(keyFile, "Dehaze", "Luminance", dehaze.luminance);
         }
         
         if (keyFile.has_group("Film Simulation") && RELEVANT_(filmSimulation)) {

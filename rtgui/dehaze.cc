@@ -32,6 +32,7 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
     EvDehazeStrength = m->newEvent(HDR, "HISTORY_MSG_DEHAZE_STRENGTH");
     EvDehazeShowDepthMap = m->newEvent(HDR, "HISTORY_MSG_DEHAZE_SHOW_DEPTH_MAP");
     EvDehazeDepth = m->newEvent(HDR, "HISTORY_MSG_DEHAZE_DEPTH");
+    EvDehazeLuminance = m->newEvent(HDR, "HISTORY_MSG_DEHAZE_LUMINANCE");
     
     strength = Gtk::manage(new Adjuster(M("TP_DEHAZE_STRENGTH"), 0., 100., 1., 50.));
     strength->setAdjusterListener(this);
@@ -41,12 +42,17 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
     depth->setAdjusterListener(this);
     depth->show();
 
+    luminance = Gtk::manage(new Gtk::CheckButton(M("TP_DEHAZE_LUMINANCE")));
+    luminance->signal_toggled().connect(sigc::mem_fun(*this, &Dehaze::luminanceChanged));
+    luminance->show();
+
     showDepthMap = Gtk::manage(new Gtk::CheckButton(M("TP_DEHAZE_SHOW_DEPTH_MAP")));
     showDepthMap->signal_toggled().connect(sigc::mem_fun(*this, &Dehaze::showDepthMapChanged));
     showDepthMap->show();
 
     pack_start(*strength);
     pack_start(*depth);
+    pack_start(*luminance);
     pack_start(*showDepthMap);
 }
 
@@ -59,6 +65,7 @@ void Dehaze::read(const ProcParams *pp)
     strength->setValue(pp->dehaze.strength);
     depth->setValue(pp->dehaze.depth);
     showDepthMap->set_active(pp->dehaze.showDepthMap);
+    luminance->set_active(pp->dehaze.luminance);
 
     enableListener();
 }
@@ -70,6 +77,7 @@ void Dehaze::write(ProcParams *pp)
     pp->dehaze.depth = depth->getValue();
     pp->dehaze.enabled = getEnabled();
     pp->dehaze.showDepthMap = showDepthMap->get_active();
+    pp->dehaze.luminance = luminance->get_active();
 }
 
 void Dehaze::setDefaults(const ProcParams *defParams)
@@ -113,4 +121,9 @@ void Dehaze::showDepthMapChanged()
 }
 
 
-
+void Dehaze::luminanceChanged()
+{
+    if (listener) {
+        listener->panelChanged(EvDehazeLuminance, luminance->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+    }
+}

@@ -304,6 +304,9 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     float depth = -float(params->dehaze.depth) / 100.f;
     const float t0 = max(1e-3f, std::exp(depth * max_t));
     const float teps = 1e-3f;
+    const bool luminance = params->dehaze.luminance;
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    const float ambientY = Color::rgbLuminance(ambient[0], ambient[1], ambient[2], ws);
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
 #endif
@@ -323,6 +326,15 @@ void ImProcFunctions::dehaze(Imagefloat *img)
             float mt = max(t[y][x], t0, tl + teps, tu + teps);
             if (params->dehaze.showDepthMap) {
                 img->r(y, x) = img->g(y, x) = img->b(y, x) = LIM01(1.f - mt);
+            } else if (luminance) {
+                float Y = Color::rgbLuminance(rgb[0], rgb[1], rgb[2], ws);
+                float YY = (Y - ambientY) / mt + ambientY;
+                if (Y > 1e-5f) {
+                    float f = YY / Y;
+                    img->r(y, x) = rgb[0] * f;
+                    img->g(y, x) = rgb[1] * f;
+                    img->b(y, x) = rgb[2] * f;
+                }
             } else {
                 float r = (rgb[0] - ambient[0]) / mt + ambient[0];
                 float g = (rgb[1] - ambient[1]) / mt + ambient[1];
