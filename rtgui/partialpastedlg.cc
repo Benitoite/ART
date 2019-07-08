@@ -24,7 +24,7 @@
 namespace {
 
 const std::vector<std::string> groups = {
-    "PARTIALPASTE_BASICGROUP",
+    "PARTIALPASTE_EXPOSUREGROUP",
     "PARTIALPASTE_DETAILGROUP",
     "PARTIALPASTE_COLORGROUP",
     "PARTIALPASTE_LENSGROUP",
@@ -44,7 +44,6 @@ struct ToggleInfo {
 std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
 {
     return {
-        {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 0},
         {"PARTIALPASTE_EXPOSURE", &pedited.exposure, 0},
         {"PARTIALPASTE_BRIGHTCONTRSAT", &pedited.brightContrSat, 0},
         {"PARTIALPASTE_TONECURVE", &pedited.toneCurve, 0},
@@ -65,6 +64,7 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_DEHAZE", &pedited.dehaze, 1},
         {"PARTIALPASTE_GRAIN", &pedited.grain, 1},
 
+        {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 2},
         {"PARTIALPASTE_ICMSETTINGS", &pedited.icm, 2},
         {"PARTIALPASTE_CHANNELMIXER", &pedited.chmixer, 2},
         {"PARTIALPASTE_FILMSIMULATION", &pedited.filmSimulation, 2},
