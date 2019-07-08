@@ -42,8 +42,15 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
     depth->setAdjusterListener(this);
     depth->show();
 
-    luminance = Gtk::manage(new Gtk::CheckButton(M("TP_DEHAZE_LUMINANCE")));
-    luminance->signal_toggled().connect(sigc::mem_fun(*this, &Dehaze::luminanceChanged));
+    Gtk::HBox *hb = Gtk::manage (new Gtk::HBox ());
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DEHAZE_MODE") + ": ")), Gtk::PACK_SHRINK);
+    luminance = Gtk::manage(new MyComboBoxText());
+    luminance->append(M("TP_DEHAZE_RGB"));
+    luminance->append(M("TP_DEHAZE_LUMINANCE"));
+    hb->pack_start(*luminance);
+    pack_start(*hb);
+    luminance->signal_changed().connect(sigc::mem_fun(*this, &Dehaze::luminanceChanged));
+    hb->show();
     luminance->show();
 
     showDepthMap = Gtk::manage(new Gtk::CheckButton(M("TP_DEHAZE_SHOW_DEPTH_MAP")));
@@ -52,7 +59,7 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
 
     pack_start(*strength);
     pack_start(*depth);
-    pack_start(*luminance);
+    //pack_start(*luminance);
     pack_start(*showDepthMap);
 }
 
@@ -65,7 +72,7 @@ void Dehaze::read(const ProcParams *pp)
     strength->setValue(pp->dehaze.strength);
     depth->setValue(pp->dehaze.depth);
     showDepthMap->set_active(pp->dehaze.showDepthMap);
-    luminance->set_active(pp->dehaze.luminance);
+    luminance->set_active(pp->dehaze.luminance ? 1 : 0);
 
     enableListener();
 }
@@ -77,7 +84,7 @@ void Dehaze::write(ProcParams *pp)
     pp->dehaze.depth = depth->getValue();
     pp->dehaze.enabled = getEnabled();
     pp->dehaze.showDepthMap = showDepthMap->get_active();
-    pp->dehaze.luminance = luminance->get_active();
+    pp->dehaze.luminance = luminance->get_active_row_number() == 1;
 }
 
 void Dehaze::setDefaults(const ProcParams *defParams)
@@ -124,6 +131,6 @@ void Dehaze::showDepthMapChanged()
 void Dehaze::luminanceChanged()
 {
     if (listener) {
-        listener->panelChanged(EvDehazeLuminance, luminance->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+        listener->panelChanged(EvDehazeLuminance, luminance->get_active_row_number() == 1 ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }

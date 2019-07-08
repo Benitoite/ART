@@ -29,7 +29,7 @@ private:
     Adjuster *strength;
     Adjuster *depth;
     Gtk::CheckButton *showDepthMap;
-    Gtk::CheckButton *luminance;
+    MyComboBoxText *luminance;
 
     rtengine::ProcEvent EvDehazeEnabled;
     rtengine::ProcEvent EvDehazeStrength;
