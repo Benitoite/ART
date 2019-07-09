@@ -19,6 +19,7 @@
 
 #include <gtkmm.h>
 #include "rtwindow.h"
+#include "version.h"
 #include "options.h"
 #include "preferences.h"
 #include "iccprofilecreator.h"
@@ -76,9 +77,10 @@ osx_open_file_cb (GtkosxApplication *app, gchar *path_, gpointer data)
 
     Glib::ustring path = Glib::ustring (path_);
     Glib::ustring suffix = path.length() > 4 ? path.substr (path.length() - 3) : "";
+    const Glib::ustring ext = paramFileExtension.substr(1).lowercase();
     suffix = suffix.lowercase();
 
-    if (suffix == "pp3")  {
+    if (suffix == ext)  {
         path = path.substr (0, path.length() - 4);
     }
 
@@ -268,7 +270,7 @@ RTWindow::RTWindow ()
         gtkosx_application_ready (osxApp);
     }
 #endif
-    versionStr = "RawTherapee " + versionString;
+    versionStr = Glib::ustring(RTNAME " ") + versionString;
 
     set_title_decorated ("");
     set_resizable (true);

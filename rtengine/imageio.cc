@@ -1124,7 +1124,7 @@ int ImageIO::saveTIFF (const Glib::ustring &fname, int bps, bool isFloat, bool u
 
     bool needsReverse = false;
 
-    TIFFSetField (out, TIFFTAG_SOFTWARE, "RawTherapee " RTVERSION);
+    TIFFSetField (out, TIFFTAG_SOFTWARE, RTNAME " " RTVERSION);
     TIFFSetField (out, TIFFTAG_IMAGEWIDTH, width);
     TIFFSetField (out, TIFFTAG_IMAGELENGTH, height);
     TIFFSetField (out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);

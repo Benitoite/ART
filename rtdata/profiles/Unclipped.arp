@@ -1,0 +1,11 @@
+[Exposure]
+ClampOOG=false
+
+[ToneCurve]
+Enabled=false
+
+[RGB Curves]
+LumaMode=false
+
+[Color Management]
+ApplyLookTable=false

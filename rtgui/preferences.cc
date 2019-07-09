@@ -1835,7 +1835,7 @@ void Preferences::storePreferences ()
     moptions.cropGuides = Options::CropGuidesMode(cropGuidesCombo->get_active_row_number());
     moptions.cropAutoFit = cropAutoFitCB->get_active();
 
-    moptions.thumbnail_rating_mode = thumbRatingMode->get_active() ? Options::ThumbnailRatingMode::XMP : Options::ThumbnailRatingMode::PP3;
+    moptions.thumbnail_rating_mode = thumbRatingMode->get_active() ? Options::ThumbnailRatingMode::XMP : Options::ThumbnailRatingMode::PROCPARAMS;
     moptions.rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync(metadataSyncCombo->get_active_row_number());
     moptions.rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle(xmpSidecarCombo->get_active_row_number());
 }

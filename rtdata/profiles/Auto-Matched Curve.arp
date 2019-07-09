@@ -1,10 +1,11 @@
 [Exposure]
 Auto=false
-HistogramMatching=true
+HLRecoveryEnabled=true
+HLRecoveryMethod=Blend
 
-[HLRecovery]
+[ToneCurve]
 Enabled=true
-Method=Blend
+HistogramMatching=true
 
 [LensProfile]
 LcMode=lfauto
@@ -20,4 +21,5 @@ ApplyHueSatMap=true
 DCPIlluminant=0
 
 [RAW]
+CAEnabled=true
 CA=true

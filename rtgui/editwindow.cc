@@ -16,6 +16,7 @@
 */
 
 #include "editwindow.h"
+#include "version.h"
 #include "options.h"
 #include "preferences.h"
 #include "cursormanager.h"
@@ -397,5 +398,5 @@ void EditWindow::set_title_decorated(Glib::ustring fname)
         subtitle = " - " + fname;
     }
 
-    set_title("RawTherapee " + M("EDITWINDOW_TITLE") + subtitle);
+    set_title(Glib::ustring(RTNAME " ") + M("EDITWINDOW_TITLE") + subtitle);
 }

@@ -32,9 +32,9 @@
 
 // Default bundled profile name to use for Raw images
 #ifdef WIN32
-#define DEFPROFILE_RAW      "${G}\\Auto-Matched Curve - ISO Low"
+#define DEFPROFILE_RAW      "${G}\\Auto-Matched Curve"
 #else
-#define DEFPROFILE_RAW      "${G}/Auto-Matched Curve - ISO Low"
+#define DEFPROFILE_RAW      "${G}/Auto-Matched Curve"
 #endif
 // Default bundled profile name to use for Standard images
 #define DEFPROFILE_IMG      "Neutral"
@@ -400,7 +400,7 @@ public:
     std::vector<Glib::ustring> recentFolders;  // List containing all recent folders
 
     enum class ThumbnailRatingMode {
-        PP3, // store ranking and color labels in .pp3 sidecars
+        PROCPARAMS, // store ranking and color labels in procparams sidecars
         XMP // store in FILENAME.xmp for FILENAME.raw
     };
     ThumbnailRatingMode thumbnail_rating_mode;

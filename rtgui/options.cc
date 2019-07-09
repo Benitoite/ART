@@ -48,7 +48,7 @@ Glib::ustring Options::cacheBaseDir;
 
 Options options;
 Glib::ustring versionString = RTVERSION;
-Glib::ustring paramFileExtension = ".pp3";
+Glib::ustring paramFileExtension = ".arp";
 
 Options::Options()
 {
@@ -631,7 +631,7 @@ void Options::setDefaults()
 
     rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
 
-    thumbnail_rating_mode = Options::ThumbnailRatingMode::PP3;
+    thumbnail_rating_mode = Options::ThumbnailRatingMode::PROCPARAMS;
     rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::STD;
     rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::NONE;
 }
@@ -1046,12 +1046,12 @@ void Options::readFromFile(Glib::ustring fname)
 
                 if (keyFile.has_key("File Browser", "ThumbnailRatingMode")) {
                     auto s = keyFile.get_string("File Browser", "ThumbnailRatingMode");
-                    if (s == "pp3") {
-                        thumbnail_rating_mode = ThumbnailRatingMode::PP3;
+                    if (s == "procparams") {
+                        thumbnail_rating_mode = ThumbnailRatingMode::PROCPARAMS;
                     } else if (s == "xmp") {
                         thumbnail_rating_mode = ThumbnailRatingMode::XMP;
                     } else {
-                        thumbnail_rating_mode = ThumbnailRatingMode::PP3;
+                        thumbnail_rating_mode = ThumbnailRatingMode::PROCPARAMS;
                     }
                 }
             }
@@ -1980,8 +1980,8 @@ void Options::saveToFile(Glib::ustring fname)
         case ThumbnailRatingMode::XMP:
             keyFile.set_string("File Browser", "ThumbnailRatingMode", "xmp");
             break;
-        default: // ThumbnailRatingMode::PP3
-            keyFile.set_string("File Browser", "ThumbnailRatingMode", "pp3");
+        default: // ThumbnailRatingMode::PROCPARAMS
+            keyFile.set_string("File Browser", "ThumbnailRatingMode", "procparams");
             break;
         }
         keyFile.set_integer("Clipping Indication", "HighlightThreshold", highlightThreshold);

@@ -1,4 +1,10 @@
-RAWTHERAPEE 5.5-dev RELEASE NOTES
+ART 0.1-dev RELEASE NOTES
+
+ART is a fork of a development version RawTherapee. The fork took place
+between versions 5.5 and 5.6. The following are the release notes for that
+version of RawTherapee.
+
+---------------------------------------------------------------------------
 
 This is a development version of RawTherapee. We update the code almost daily. Every few months, once enough changes have accumulated and the code is stabilized, we make a new official release. Every code change between these releases is known as a "development" version, and this is one of them.
 

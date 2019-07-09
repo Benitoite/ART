@@ -1,34 +1,13 @@
 [Exposure]
 Auto=false
+HLRecoveryEnabled=true
+HLRecoveryMethod=Blend
+
+[ToneCurve]
+Enabled=true
 HistogramMatching=false
 CurveMode=FilmLike
 Curve=1;0;0;0.11;0.089999999999999997;0.32000000000000001;0.42999999999999999;0.66000000000000003;0.87;1;1;
-
-[HLRecovery]
-Enabled=true
-Method=Blend
-
-[Directional Pyramid Denoising]
-Enabled=true
-Enhance=false
-Median=false
-Luma=0
-Ldetail=0
-Chroma=0
-Method=Lab
-LMethod=SLI
-CMethod=AUT
-C2Method=AUTO
-SMethod=shal
-MedMethod=soft
-RGBMethod=soft
-MethodMed=Lonly
-Redchro=0
-Bluechro=0
-Gamma=1.7
-Passes=1
-LCurve=0;
-CCCurve=0;
 
 [LensProfile]
 LcMode=lfauto
@@ -44,4 +23,5 @@ ApplyHueSatMap=true
 DCPIlluminant=0
 
 [RAW]
+CAEnabled=true
 CA=true

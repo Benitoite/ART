@@ -419,7 +419,7 @@ void Thumbnail::clearProcParams (int whoClearedIt)
         pparams.setDefaults();
 
         // and restore rank and inTrash
-        if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
+        if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PROCPARAMS) {
             saveRating();
         }
 
@@ -512,7 +512,7 @@ void Thumbnail::setProcParams(const PartialProfile &pp, int whoChangedIt, bool u
 
         // do not update rank, colorlabel and inTrash
         pparamsValid = true;
-        if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
+        if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PROCPARAMS) {
             saveRating();
         }
 
@@ -1170,7 +1170,7 @@ std::string xmp_color2label(int color)
 
 void Thumbnail::saveRating()
 {
-    if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
+    if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PROCPARAMS) {
         if (rating_.rank != pparams.rank) {
             pparams.rank = rating_.rank;
             pparamsValid = true;
@@ -1221,7 +1221,7 @@ void Thumbnail::saveRating()
 void Thumbnail::loadRating()
 {
     rating_ = Rating();
-    if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PP3) {
+    if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PROCPARAMS) {
         if (pparamsValid) {
             rating_.rank.value = pparams.rank;
             rating_.color.value = pparams.colorlabel;

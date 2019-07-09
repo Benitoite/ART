@@ -132,7 +132,7 @@ void Exiv2Metadata::saveToImage(const Glib::ustring &path) const
         dst->setXmpData(xmp_data_);
     }
 
-    dst->exifData()["Exif.Image.Software"] = "RawTherapee " RTVERSION;
+    dst->exifData()["Exif.Image.Software"] = RTNAME " " RTVERSION;
     import_exif_pairs(dst->exifData());
     import_iptc_pairs(dst->iptcData());
     dst->writeMetadata();    

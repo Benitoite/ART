@@ -210,7 +210,7 @@ int main (int argc, char **argv)
     int ret = 0;
 
     // printing RT's version in all case, particularly useful for the 'verbose' mode, but also for the batch processing
-    std::cout << "RawTherapee, version " << RTVERSION << ", command line." << std::endl;
+    std::cout << RTNAME << ", version " << RTVERSION << ", command line." << std::endl;
 
     if (argc > 1) {
         ret = processLineParams (argc, argv);
@@ -535,7 +535,7 @@ int processLineParams ( int argc, char **argv )
                     std::cout << "  " << Glib::path_get_basename (argv[0]) << " <other options> -c <dir>|<files>   Convert files in batch with your own settings." << std::endl;
                     std::cout << std::endl;
                     std::cout << "Options:" << std::endl;
-                    std::cout << "  " << Glib::path_get_basename (argv[0]) << "[-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one.pp3> [-p <two.pp3> ...] ] [-d] [ -j[1-100] -js<1-3> | -t[z] -b<8|16|16f|32> | -n -b<8|16> ] [-Y] [-f] -c <input>" << std::endl;
+                    std::cout << "  " << Glib::path_get_basename (argv[0]) << "[-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one" << paramFileExtension << "> [-p <two" << paramFileExtension << "> ...] ] [-d] [ -j[1-100] -js<1-3> | -t[z] -b<8|16|16f|32> | -n -b<8|16> ] [-Y] [-f] -c <input>" << std::endl;
                     std::cout << std::endl;
                     std::cout << "  -c <files>       Specify one or more input files or folders." << std::endl;
                     std::cout << "                   When specifying folders, Rawtherapee will look for image file types which comply" << std::endl;
@@ -552,8 +552,8 @@ int processLineParams ( int argc, char **argv )
                     std::cout << "                   e.g. for photo.raw there should be a photo.raw." << pparamsExt << " file in the same folder." << std::endl;
                     std::cout << "                   If the sidecar file does not exist, neutral values will be used." << std::endl;
                     std::cout << "  -S               Like -s but skip if the sidecar file does not exist." << std::endl;
-                    std::cout << "  -p <file.pp3>    Specify processing profile to be used for all conversions." << std::endl;
-                    std::cout << "                   You can specify as many sets of \"-p <file.pp3>\" options as you like," << std::endl;
+                    std::cout << "  -p <file" << paramFileExtension << ">    Specify processing profile to be used for all conversions." << std::endl;
+                    std::cout << "                   You can specify as many sets of \"-p <file" << paramFileExtension << ">\" options as you like," << std::endl;
                     std::cout << "                   each will be built on top of the previous one, as explained below." << std::endl;
                     std::cout << "  -d               Use the default raw or non-raw processing profile as set in" << std::endl;
                     std::cout << "                   Preferences > Image Processing > Default Processing Profile" << std::endl;

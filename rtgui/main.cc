@@ -138,7 +138,7 @@ int processLineParams ( int argc, char **argv )
 #endif
 
                 case 'v':
-                    printf("RawTherapee, version %s\n", RTVERSION);
+                    printf("%s, version %s\n", RTNAME, RTVERSION);
                     ret = 0;
                     break;
 
@@ -454,7 +454,7 @@ int main (int argc, char **argv)
                     SetConsoleCtrlHandler ( NULL, true );
                     // Set title of console
                     char consoletitle[128];
-                    sprintf (consoletitle, "RawTherapee %s Console", RTVERSION);
+                    sprintf (consoletitle, "%s %s Console", RTNAME, RTVERSION);
                     SetConsoleTitle (consoletitle);
                     // increase size of screen buffer
                     COORD c;

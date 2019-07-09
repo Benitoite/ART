@@ -13,7 +13,7 @@ if(${CMAKE_EXTRA_GENERATOR} MATCHES "Eclipse CDT4")
     #set(CMAKE_ECLIPSE_VERSION "4.6.0" CACHE STRING "Eclipse version" FORCE)
 endif()
 
-project(RawTherapee)
+project(ART)
 
 # The default target is Debug:
 if(CMAKE_BUILD_TYPE STREQUAL "")
@@ -27,7 +27,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9")
-    message(FATAL_ERROR "Building RawTherapee requires using GCC version 4.9 or higher!")
+    message(FATAL_ERROR "Building ART requires using GCC version 4.9 or higher!")
 endif()
 
 # We might want to build using the old C++ ABI, even when using a new GCC version:
@@ -48,7 +48,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 # Cache name suffix examples: "" = ~/.config/RawTherapee, "5" = ~/.config/RawTherapee-5, "_testing" = ~/.config/RawTherapee_testing
 # Use "" for stable releases and "5-dev" for anything else.
-set(CACHE_NAME_SUFFIX "-ART" CACHE STRING "RawTherapee's cache folder suffix")
+set(CACHE_NAME_SUFFIX "" CACHE STRING "ART's cache folder suffix")
 
 # By default we don't use a specific processor target, so PROC_TARGET_NUMBER is set to 0.
 # Specify other values to optimize for specific processor architecture as listed in ProcessorTargets.cmake:
@@ -172,7 +172,7 @@ if(NOT DEFINED DATADIR)
             set(DATADIR .)
         endif()
     else()
-        set(DATADIR "${CMAKE_INSTALL_PREFIX}/share/rawtherapee")
+        set(DATADIR "${CMAKE_INSTALL_PREFIX}/share/ART")
     endif()
 endif()
 
@@ -201,7 +201,7 @@ if(NOT DEFINED DOCDIR)
     if(BUILD_BUNDLE)
         set(DOCDIR "${DATADIR}/share/doc")
     else()
-        set(DOCDIR "${CMAKE_INSTALL_PREFIX}/share/doc/rawtherapee")
+        set(DOCDIR "${CMAKE_INSTALL_PREFIX}/share/doc/ART")
     endif()
 endif()
 
@@ -209,7 +209,7 @@ if(NOT DEFINED CREDITSDIR)
     if(BUILD_BUNDLE)
         set(CREDITSDIR "${DATADIR}")
     else()
-        set(CREDITSDIR "${CMAKE_INSTALL_PREFIX}/share/doc/rawtherapee")
+        set(CREDITSDIR "${CMAKE_INSTALL_PREFIX}/share/doc/ART")
     endif()
 endif()
 
@@ -217,7 +217,7 @@ if(NOT DEFINED LICENCEDIR)
     if(BUILD_BUNDLE)
         set(LICENCEDIR "${DATADIR}")
     else()
-        set(LICENCEDIR "${CMAKE_INSTALL_PREFIX}/share/doc/rawtherapee")
+        set(LICENCEDIR "${CMAKE_INSTALL_PREFIX}/share/doc/ART")
     endif()
 endif()
 
@@ -527,40 +527,51 @@ install(FILES RELEASE_NOTES.txt DESTINATION "${CREDITSDIR}" OPTIONAL)
 
 # The standard location for man pages in Linux is /usr/share/man
 # Use "manpath" to see the search paths for man pages on your system.
-if(BUILD_BUNDLE)
-    install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/rawtherapee.1" DESTINATION "${DATADIR}/share/man/man1")
-else()
-    install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/rawtherapee.1" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1")
-endif()
+# if(BUILD_BUNDLE)
+#     install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${DATADIR}/share/man/man1")
+# else()
+#     install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1")
+# endif()
 
 if(WIN32)
     install(DIRECTORY "licenses" DESTINATION "${LICENCEDIR}")
 endif()
 
-if(UNIX)
-    install(FILES com.rawtherapee.RawTherapee.appdata.xml DESTINATION "${APPDATADIR}")
-endif()
+# if(UNIX)
+#     install(FILES com.rawtherapee.RawTherapee.appdata.xml DESTINATION "${APPDATADIR}")
+# endif()
 
 # check whether the used version of lensfun has lfDatabase::LoadDirectory
+set(_lf_libs ${LENSFUN_LIBRARIES})
+set(LENSFUN_LIBRARIES "")
+foreach(l ${_lf_libs})
+    set(_el "_el-NOTFOUND")
+    if(LENSFUN_LIBRARY_DIRS)
+        find_library(_el ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
+    else()
+        find_library(_el ${l} PATHS ${LENSFUN_LIBRARY_DIRS})
+    endif()
+    set(LENSFUN_LIBRARIES ${LENSFUN_LIBRARIES} ${_el})
+endforeach()
 include(CheckCXXSourceCompiles)
 set(CMAKE_REQUIRED_INCLUDES ${LENSFUN_INCLUDE_DIRS})
-set(CMAKE_REQUIRED_LIBRARIES)
-foreach(l ${LENSFUN_LIBRARIES})
-    if(LENSFUN_LIBRARY_DIRS)
-        # the NO_DEFAULT_PATH is to make sure we find the lensfun version we
-        # want, and not the system's one (e.g. if we have a custom version
-        # installed in a non-standard location)
-        set(_l "_l-NOTFOUND")
-        find_library(_l ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
-    else()
-        # LENSFUN_LIBRARY_DIRS can be empty if lensfun is installed in the
-        # default path. In this case, adding NO_DEFAULT_PATH would make
-        # find_library fail...
-        set(_l "_l-NOTFOUND")
-        find_library(_l ${l})
-    endif()
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${_l})
-endforeach()
+set(CMAKE_REQUIRED_LIBRARIES ${LENSFUN_LIBRARIES})
+# foreach(l ${LENSFUN_LIBRARIES})
+#     if(LENSFUN_LIBRARY_DIRS)
+#         # the NO_DEFAULT_PATH is to make sure we find the lensfun version we
+#         # want, and not the system's one (e.g. if we have a custom version
+#         # installed in a non-standard location)
+#         set(_l "_l-NOTFOUND")
+#         find_library(_l ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
+#     else()
+#         # LENSFUN_LIBRARY_DIRS can be empty if lensfun is installed in the
+#         # default path. In this case, adding NO_DEFAULT_PATH would make
+#         # find_library fail...
+#         set(_l "_l-NOTFOUND")
+#         find_library(_l ${l})
+#     endif()
+#     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${_l})
+# endforeach()
 check_cxx_source_compiles(
     "#include <lensfun.h>
 int main()
