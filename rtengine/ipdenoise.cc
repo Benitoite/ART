@@ -338,7 +338,38 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
     NoiseCurve noiseLCurve;
     NoiseCurve noiseCCurve;
 
+    noiseCCurve.Set({
+        FCT_MinMaxCPoints,
+        0.05,
+        0.50,
+        0.35,
+        0.35,
+        0.35,
+        0.05,
+        0.35,
+        0.35
+        });
+
     Imagefloat *calclum = nullptr;
+    {
+        const int fw = img->getWidth();
+        const int fh = img->getHeight();
+        // we only need image reduced to 1/4 here
+        calclum = new Imagefloat((fw + 1) / 2, (fh + 1) / 2); //for luminance denoise curve
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+
+        for (int ii = 0; ii < fh; ii += 2) {
+            for (int jj = 0; jj < fw; jj += 2) {
+                calclum->r(ii >> 1, jj >> 1) = img->r(ii, jj);
+                calclum->g(ii >> 1, jj >> 1) = img->g(ii, jj);
+                calclum->b(ii >> 1, jj >> 1) = img->b(ii, jj);
+            }
+        }
+        imgsrc->convertColorSpace(calclum, params->icm, currWB);
+    }
+    
     float nresi, highresi;
     DenoiseInfoStore &dnstore = const_cast<DenoiseInfoStore &>(store);
 
