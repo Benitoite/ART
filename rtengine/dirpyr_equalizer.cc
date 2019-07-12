@@ -75,6 +75,14 @@ void ImProcFunctions :: dirpyr_equalizer(float ** src, float ** dst, int srcwidt
     }
 
     if (lastlevel == 0) {
+        if (src != dst) {
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int i = 0; i < srcheight; i++) {
+                memcpy(dst[i], src[i], sizeof(float) * srcwidth);
+            }
+        }
         return;
     }
 
@@ -222,7 +230,7 @@ void ImProcFunctions :: dirpyr_equalizer(float ** src, float ** dst, int srcwidt
 
     scale = scales[0];
 
-    idirpyr_eq_channel(dirpyrlo[0], dst, buffer, srcwidth, srcheight, 0, multi, dirpyrThreshold, tmpHue, tmpChr, skinprot, b_l, t_l, t_r);
+    idirpyr_eq_channel(dirpyrlo[0], src/*dst*/, buffer, srcwidth, srcheight, 0, multi, dirpyrThreshold, tmpHue, tmpChr, skinprot, b_l, t_l, t_r);
 
     if(skinprot != 0.f) {
         for (int i = 0; i < srcheight; i++) {

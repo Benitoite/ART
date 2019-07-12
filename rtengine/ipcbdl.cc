@@ -55,16 +55,16 @@ void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
 
         array2D<float> L(lab->W, lab->H, lab->L, 0);
 
-        double mult[6];
-        const double scale_factor = 1.0;//min(1.5 / scale, 1.0);
+        // double mult[6];
+        // const double scale_factor = 1.0;//min(1.5 / scale, 1.0);
 
         for (int i = 0; i < n; ++i) {
             auto &l = params->dirpyrequalizer.levels[i];
-            for (int k = 0; k < 6; ++k) {
-                mult[k] = 1.0 + (l.mult[k] - 1.0) * scale_factor;
-            }
+            // for (int k = 0; k < 6; ++k) {
+            //     mult[k] = 1.0 + (l.mult[k] - 1.0) * scale_factor;
+            // }
             const double threshold = l.threshold / scale;
-            dirpyr_equalizer(lab->L, L, lab->W, lab->H, lab->a, lab->b, /*l.*/mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
+            dirpyr_equalizer(lab->L, L, lab->W, lab->H, lab->a, lab->b, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
             const auto &blend = mask[i];
 
 #ifdef _OPENMP
@@ -72,9 +72,9 @@ void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
 #endif
             for (int y = 0; y < lab->H; ++y) {
                 for (int x = 0; x < lab->W; ++x) {
-                    float l = lab->L[y][x];
+                    // float l = lab->L[y][x];
                     lab->L[y][x] = intp(blend[y][x], L[y][x], lab->L[y][x]);
-                    L[y][x] = l;
+                    // L[y][x] = l;
                 }
             }
         }
