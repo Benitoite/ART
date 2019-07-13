@@ -373,10 +373,61 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
     float nresi, highresi;
     DenoiseInfoStore &dnstore = const_cast<DenoiseInfoStore &>(store);
 
-    adjust_params(denoiseParams, scale);    
+    adjust_params(denoiseParams, scale);
+
+//     array2D<float> Y(img->getWidth(), img->getHeight());
+//     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+// #ifdef _OPENMP
+// #    pragma omp parallel for if (multiThread)
+// #endif
+//     for (int y = 0; y < Y.height(); ++y) {
+//         for (int x = 0; x < Y.width(); ++x) {
+//             Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
+//         }
+//     }
     
     RGB_denoise(0, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
 
+//     LUTf lcurve(65536, LUT_CLIP_ABOVE|LUT_CLIP_BELOW);
+//     {
+//         FlatCurve curve({
+//         FCT_MinMaxCPoints,
+//             0, 1,
+//             0.35, 0,
+//             1, 0.75,
+//             0.399383, 0.35
+//             }, CURVES_MIN_POLY_POINTS / scale);
+//         const bool raw = imgsrc->isRAW();
+//         const float gamma = denoiseParams.gamma;
+//         int m = 65535.0 / scale;
+//         for (int i = 0; i <= m; ++i) {
+//             double x = double(i) / double(m);
+//             if (raw) {
+//                 x = Color::gammanf(x, gamma);
+//             }
+//             lcurve[i] = curve.getVal(x);
+//         }
+//     }
+
+// #ifdef _OPENMP
+// #   pragma omp parallel for if (multiThread)
+// #endif
+//     for (int y = 0; y < Y.height(); ++y) {
+//         for (int x = 0; x < Y.width(); ++x) {
+//             float iY = Y[y][x];
+//             float oY = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
+//             if (oY > 1e-5f) {
+//                 float blend = lcurve[iY];//noiseLCurve[gammalut[CLIP(iY)]];
+//                 iY = intp(blend, oY, iY);
+//                 float f = iY / oY;
+//                 img->r(y, x) *= f;
+//                 img->g(y, x) *= f;
+//                 img->b(y, x) *= f;
+//             }
+//         }
+//     }
+//     Y.free();
+    
     guidedSmoothing(img);
 }
 
