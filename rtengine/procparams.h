@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <type_traits>
 #include <vector>
+#include <list>
 
 #include <glibmm.h>
 #include <lcms2.h>
@@ -32,8 +33,7 @@
 
 class ParamsEdited;
 
-namespace rtengine
-{
+namespace rtengine {
 
 class ColorGradientCurve;
 class NoiseCurve;
@@ -1455,6 +1455,26 @@ private:
     * @return Error code (=0 if no error)
     * */
     int write(const Glib::ustring& fname, const Glib::ustring& content) const;
+};
+
+
+class ProcParamsCollection {
+public:
+    ProcParamsCollection();
+    int load(const Glib::ustring &fname);
+    int save(const Glib::ustring &fname, const Glib::ustring &fname2=Glib::ustring(), bool fnameAbsolute=true);
+
+    size_t size() const;
+    ProcParams &operator()(size_t idx);
+    const ProcParams &operator()(size_t idx) const;
+
+    void add(const Glib::ustring &name, const ProcParams &pp);
+    bool erase(size_t idx);
+    bool rename(size_t idx, const Glib::ustring &newname);
+    const Glib::ustring &name(size_t idx) const;
+
+private:
+    std::list<std::pair<Glib::ustring, ProcParams>> pplist_;
 };
 
 

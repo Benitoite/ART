@@ -18,6 +18,7 @@
  */
 
 #include <map>
+#include <iterator>
 
 #include <locale.h>
 
@@ -4393,6 +4394,88 @@ bool PEditedPartialProfile::applyTo(ProcParams &pp) const
         }
     }
     return false;
+}
+
+
+//-----------------------------------------------------------------------------
+// ProcParamsCollection
+//-----------------------------------------------------------------------------
+
+ProcParamsCollection::ProcParamsCollection()
+{
+    pplist_.push_back(std::make_pair("", ProcParams()));
+}
+
+
+size_t ProcParamsCollection::size() const
+{
+    return pplist_.size();
+}
+
+
+ProcParams &ProcParamsCollection::operator()(size_t idx)
+{
+    auto it = pplist_.begin();
+    std::advance(it, idx);
+    return it->second;
+}
+
+
+const ProcParams &ProcParamsCollection::operator()(size_t idx) const
+{
+    return const_cast<ProcParamsCollection *>(this)->operator()(idx);
+}
+
+
+void ProcParamsCollection::add(const Glib::ustring &name, const ProcParams &pp)
+{
+    pplist_.push_back(std::make_pair(name, pp));
+}
+
+
+bool ProcParamsCollection::erase(size_t idx)
+{
+    if (idx > 0 && idx < pplist_.size()) {
+        auto it = pplist_.begin();
+        std::advance(it, idx);
+        pplist_.erase(it);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool ProcParamsCollection::rename(size_t idx, const Glib::ustring &newname)
+{
+    if (idx > 0 && idx < pplist_.size()) {
+        auto it = pplist_.begin();
+        std::advance(it, idx);
+        it->first = newname;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+const Glib::ustring &ProcParamsCollection::name(size_t idx) const
+{
+    auto it = pplist_.begin();
+    std::advance(it, idx);
+    return it->first;
+}
+
+
+int ProcParamsCollection::load(const Glib::ustring &fname)
+{
+    return -1; // TODO
+}
+
+
+int ProcParamsCollection::save(const Glib::ustring &fname, const Glib::ustring &fname2, bool fnameAbsolute)
+{
+    return -1; // TODO
 }
 
 }} // namespace rtengine::procparams
