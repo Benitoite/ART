@@ -191,7 +191,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     box->pack_start(*saturation);
 
     slope = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_SLOPE"), 0.01, 10.0, 0.001, 1));
-    slope->setLogScale(4, 0.1);
+    slope->setLogScale(10, 1, true);
     slope->setAdjusterListener(this);
     box->pack_start(*slope);
     offset = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.001, 0));
@@ -199,7 +199,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     box->pack_start(*offset);
     power = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_POWER"), 0.1, 4.0, 0.001, 1));
     power->setAdjusterListener(this);
-    power->setLogScale(4, 0.1);
+    power->setLogScale(10, 1, true);
     box->pack_start(*power);
 
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
