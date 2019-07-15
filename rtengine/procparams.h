@@ -1308,6 +1308,44 @@ struct RAWParams {
     static Glib::ustring getFlatFieldBlurTypeString(FlatFieldBlurType type);
 };
 
+
+class KeyFile {
+public:
+    explicit KeyFile(const Glib::ustring &prefix=""): prefix_(prefix) {}
+    
+    bool has_group(const Glib::ustring &grp) const;
+    bool has_key(const Glib::ustring &grp, const Glib::ustring &key) const;
+    
+    Glib::ustring get_string(const Glib::ustring &grp, const Glib::ustring &key) const;
+    int get_integer(const Glib::ustring &grp, const Glib::ustring &key) const;
+    double get_double(const Glib::ustring &grp, const Glib::ustring &key) const;
+    bool get_boolean(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<Glib::ustring> get_string_list(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<int> get_integer_list(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<double> get_double_list(const Glib::ustring &grp, const Glib::ustring &key) const;
+    
+    void set_string(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ustring& string);
+    void set_boolean(const Glib::ustring &grp, const Glib::ustring &key, bool value);
+    void set_integer(const Glib::ustring &grp, const Glib::ustring &key, int value);
+    void set_double(const Glib::ustring &grp, const Glib::ustring &key, double value);
+    void set_string_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<Glib::ustring> &list);
+    void set_integer_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<int> &list);
+    void set_double_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<double> &list);
+
+    bool load_from_file(const Glib::ustring &fn);
+    Glib::ustring to_data();
+
+    Glib::ustring get_prefix() const { return prefix_; }
+    void set_prefix(const Glib::ustring &prefix) { prefix_ = prefix; }
+    
+private:
+    Glib::ustring GRP(const Glib::ustring &g) const { return prefix_ + g; }
+    
+    Glib::ustring prefix_;
+    Glib::KeyFile kf_;
+};
+
+
 /**
   * This class holds all the processing parameters applied on the images
   */
@@ -1391,9 +1429,9 @@ public:
       */
     int load(const Glib::ustring& fname, const ParamsEdited *pedited=nullptr);
 
-    int load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
+    int load(const KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
              bool resetOnError=true, const Glib::ustring &fname="");
-    int save(Glib::KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
+    int save(KeyFile &keyFile, const ParamsEdited *pedited=nullptr,
              const Glib::ustring &fname="", bool fnameAbsolute=true) const;
 
     /** Creates a new instance of ProcParams.

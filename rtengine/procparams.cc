@@ -34,8 +34,121 @@
 
 using namespace std;
 
-namespace
+namespace rtengine { namespace procparams {
+
+//-----------------------------------------------------------------------------
+// KeyFile
+//-----------------------------------------------------------------------------
+
+bool KeyFile::has_group(const Glib::ustring &grp) const
 {
+    return kf_.has_group(GRP(grp));
+}
+
+
+bool KeyFile::has_key(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.has_key(GRP(grp), key);
+}
+
+
+Glib::ustring KeyFile::get_string(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_string(GRP(grp), key);
+}
+
+
+int KeyFile::get_integer(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_integer(GRP(grp), key);
+}
+
+
+double KeyFile::get_double(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_double(GRP(grp), key);
+}
+
+
+bool KeyFile::get_boolean(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_boolean(GRP(grp), key);
+}
+
+
+Glib::ArrayHandle<Glib::ustring> KeyFile::get_string_list(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_string_list(GRP(grp), key);
+}
+
+
+Glib::ArrayHandle<int> KeyFile::get_integer_list(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_integer_list(GRP(grp), key);
+}
+
+
+Glib::ArrayHandle<double> KeyFile::get_double_list(const Glib::ustring &grp, const Glib::ustring &key) const
+{
+    return kf_.get_double_list(GRP(grp), key);
+}
+
+
+void KeyFile::set_string(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ustring &string)
+{
+    kf_.set_string(GRP(grp), key, string);
+}
+
+
+void KeyFile::set_boolean(const Glib::ustring &grp, const Glib::ustring &key, bool value)
+{
+    kf_.set_boolean(GRP(grp), key, value);
+}
+
+
+void KeyFile::set_integer(const Glib::ustring &grp, const Glib::ustring &key, int value)
+{
+    kf_.set_integer(GRP(grp), key, value);
+}
+
+
+void KeyFile::set_double(const Glib::ustring &grp, const Glib::ustring &key, double value)
+{
+    kf_.set_double(GRP(grp), key, value);
+}
+
+
+void KeyFile::set_string_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<Glib::ustring> &list)
+{
+    kf_.set_string_list(GRP(grp), key, list);
+}
+
+
+void KeyFile::set_integer_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<int> &list)
+{
+    kf_.set_integer_list(GRP(grp), key, list);
+}
+
+
+void KeyFile::set_double_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<double> &list)
+{
+    kf_.set_double_list(GRP(grp), key, list);
+}
+
+
+bool KeyFile::load_from_file(const Glib::ustring &fn)
+{
+    return kf_.load_from_file();
+}
+
+
+Glib::ustring KeyFile::to_data()
+{
+    return kf_.to_data();
+}
+
+
+namespace {
 
 Glib::ustring expandRelativePath(const Glib::ustring &procparams_fname, const Glib::ustring &prefix, Glib::ustring embedded_fname)
 {
@@ -88,7 +201,7 @@ Glib::ustring relativePathIfInside(const Glib::ustring &procparams_fname, bool f
 }
 
 void getFromKeyfile(
-    const Glib::KeyFile& keyfile,
+    const KeyFile& keyfile,
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     int& value
@@ -98,7 +211,7 @@ void getFromKeyfile(
 }
 
 void getFromKeyfile(
-    const Glib::KeyFile& keyfile,
+    const KeyFile& keyfile,
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     double& value
@@ -108,7 +221,7 @@ void getFromKeyfile(
 }
 
 void getFromKeyfile(
-    const Glib::KeyFile& keyfile,
+    const KeyFile& keyfile,
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     bool& value
@@ -123,7 +236,7 @@ void getFromKeyfile(
 }
 
 void getFromKeyfile(
-    const Glib::KeyFile& keyfile,
+    const KeyFile& keyfile,
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     Glib::ustring& value
@@ -133,7 +246,7 @@ void getFromKeyfile(
 }
 
 void getFromKeyfile(
-    const Glib::KeyFile& keyfile,
+    const KeyFile& keyfile,
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     std::vector<double>& value
@@ -144,7 +257,7 @@ void getFromKeyfile(
 }
 
 template<typename T>
-bool assignFromKeyfile(const Glib::KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, T &value)
+bool assignFromKeyfile(const KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, T &value)
 {
     if (keyfile.has_key(group_name, key)) {
         getFromKeyfile(keyfile, group_name, key, value);
@@ -156,7 +269,7 @@ bool assignFromKeyfile(const Glib::KeyFile& keyfile, const Glib::ustring& group_
 }
 
 template<typename T, typename = typename std::enable_if<std::is_enum<T>::value>::type>
-bool assignFromKeyfile(const Glib::KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, const std::map<std::string, T>& mapping, T& value)
+bool assignFromKeyfile(const KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, const std::map<std::string, T>& mapping, T& value)
 {
     if (keyfile.has_key(group_name, key)) {
         Glib::ustring v;
@@ -180,7 +293,7 @@ void putToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     int value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     keyfile.set_integer(group_name, key, value);
@@ -190,7 +303,7 @@ void putToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     double value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     keyfile.set_double(group_name, key, value);
@@ -200,7 +313,7 @@ void putToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     bool value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     keyfile.set_boolean(group_name, key, value);
@@ -210,7 +323,7 @@ void putToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     const Glib::ustring& value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     keyfile.set_string(group_name, key, value);
@@ -220,7 +333,7 @@ void putToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     const std::vector<int>& value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     const Glib::ArrayHandle<int> list = value;
@@ -231,7 +344,7 @@ void putToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     const std::vector<double>& value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     const Glib::ArrayHandle<double> list = value;
@@ -243,7 +356,7 @@ bool saveToKeyfile(
     const Glib::ustring& group_name,
     const Glib::ustring& key,
     const T& value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     putToKeyfile(group_name, key, value, keyfile);
@@ -256,7 +369,7 @@ bool saveToKeyfile(
     const Glib::ustring& key,
     const std::map<T, const char*>& mapping,
     const T& value,
-    Glib::KeyFile& keyfile
+    KeyFile& keyfile
 )
 {
     const typename std::map<T, const char*>::const_iterator m = mapping.find(value);
@@ -300,7 +413,7 @@ const std::map<Glib::ustring, Glib::ustring> iptc_keys = {
 
 } // namespace
 
-namespace rtengine { namespace procparams {
+
 
 AreaMask::Shape::Shape():
     x(0),
@@ -419,7 +532,7 @@ bool LabCorrectionMask::operator!=(const LabCorrectionMask &other) const
 }
 
 
-bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
+bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
 {
     bool ret = false;
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, hueMask);
@@ -458,7 +571,7 @@ bool LabCorrectionMask::load(const Glib::KeyFile &keyfile, const Glib::ustring &
 }
 
 
-void LabCorrectionMask::save(Glib::KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
+void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
 {
     putToKeyfile(group_name, prefix + "HueMask" + suffix, hueMask, keyfile);
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask, keyfile);
@@ -2247,7 +2360,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
     Glib::ustring sPParams;
 
     try {
-        Glib::KeyFile keyFile;
+        KeyFile keyFile;
         int ret = save(keyFile, pedited, fname, fnameAbsolute);
         if (ret != 0) {
             return ret;
@@ -2274,7 +2387,7 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 }
 
 
-int ProcParams::save(Glib::KeyFile &keyFile, const ParamsEdited *pedited,
+int ProcParams::save(KeyFile &keyFile, const ParamsEdited *pedited,
                      const Glib::ustring &fname, bool fnameAbsolute) const
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
@@ -2912,7 +3025,7 @@ int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
         return 1;
     }
 
-    Glib::KeyFile keyFile;
+    KeyFile keyFile;
 
     try {
         if (!Glib::file_test(fname, Glib::FILE_TEST_EXISTS) ||
@@ -2933,7 +3046,7 @@ int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
 }
 
 
-int ProcParams::load(const Glib::KeyFile &keyFile, const ParamsEdited *pedited,
+int ProcParams::load(const KeyFile &keyFile, const ParamsEdited *pedited,
                      bool resetOnError, const Glib::ustring &fname)
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
@@ -4262,7 +4375,7 @@ PEditedPartialProfile::PEditedPartialProfile(const ProcParams &pp, const ParamsE
 bool PEditedPartialProfile::applyTo(ProcParams &pp) const
 {
     if (!fname_.empty()) {
-        Glib::KeyFile keyfile;
+        KeyFile keyfile;
         try {
             if (!Glib::file_test(fname_, Glib::FILE_TEST_EXISTS) ||
                 !keyfile.load_from_file(fname_)) {
@@ -4274,7 +4387,7 @@ bool PEditedPartialProfile::applyTo(ProcParams &pp) const
         }
         return pp.load(keyfile, &pe_, false) == 0;
     } else {
-        Glib::KeyFile keyfile;
+        KeyFile keyfile;
         if (pp_.save(keyfile, &pe_) == 0) {
             return pp.load(keyfile, &pe_, false) == 0;
         }
