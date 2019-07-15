@@ -37,30 +37,16 @@ namespace rtengine
 {
 extern const Settings* settings;
 
-namespace
-{
+namespace {
 
-template <typename T>
-void adjust_radius (const T &default_param, double scale_factor, T &param)
-{
-    const double delta = (param - default_param) * scale_factor;
-    param = default_param + delta;
-}
-
-
-class ImageProcessor
-{
+class ImageProcessor {
 public:
-    ImageProcessor(
-        ProcessingJob* pjob,
-        int& errorCode,
-        ProgressListener* pl,
-        bool flush
-    ) :
-        job (static_cast<ProcessingJobImpl*> (pjob)),
-        errorCode (errorCode),
-        pl (pl),
-        flush (flush),
+    ImageProcessor(ProcessingJob* pjob,int &errorCode,ProgressListener *pl,
+                   bool flush):
+        job(static_cast<ProcessingJobImpl*>(pjob)),
+        errorCode(errorCode),
+        pl(pl),
+        flush(flush),
         // internal state
         ii(nullptr),
         imgsrc(nullptr),
@@ -75,16 +61,7 @@ public:
         tilesize(0),
         overlap(0),
         dnstore(),
-        // expcomp(0.0),
-        // bright(0),
-        // contr(0),
-        // black(0),
-        // hlcompr(0),
-        // hlcomprthresh(0),
-        baseImg(nullptr),
         labView(nullptr),
-        autili(false),
-        butili(false),
         pipeline_scale(1.0)
     {
     }
@@ -225,8 +202,7 @@ private:
         }
         bool autoContrast = imgsrc->getSensorType() == ST_BAYER ? params.raw.bayersensor.dualDemosaicAutoContrast : params.raw.xtranssensor.dualDemosaicAutoContrast;
         double contrastThreshold = imgsrc->getSensorType() == ST_BAYER ? params.raw.bayersensor.dualDemosaicContrast : params.raw.xtranssensor.dualDemosaicContrast;
-
-        imgsrc->demosaic (params.raw, autoContrast, contrastThreshold);
+        imgsrc->demosaic(params.raw, autoContrast, contrastThreshold);
 
 
         if (pl) {
@@ -260,14 +236,6 @@ private:
 
         if (params.denoise.enabled) {
             ipf.denoiseComputeParams(imgsrc, currWB, dnstore, params.denoise);
-#ifdef _OPENMP
-#endif
-#ifdef _OPENMP
-#endif
-#ifdef _OPENMP
-#endif
-#ifdef _OPENMP
-#endif
         }
         
         baseImg = new Imagefloat (fw, fh);
@@ -276,16 +244,6 @@ private:
         if (pl) {
             pl->setProgress (0.50);
         }
-
-//  LUTf Noisecurve (65536,0);
-//!!!// auto exposure!!!
-        // expcomp = params.toneCurve.expcomp;
-        // bright = params.toneCurve.brightness;
-        // contr = params.toneCurve.contrast;
-        // black = params.toneCurve.black;
-        // hlcompr = params.toneCurve.hlcompr;
-        // hlcomprthresh = params.toneCurve.hlcomprthresh;
-
 
         if (params.exposure.enabled && params.exposure.autoexp) {
             LUTu aehist;
@@ -298,25 +256,11 @@ private:
             if (!params.toneCurve.fromHistMatching) {
                 imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);
             }
-
-            // if (params.toneCurve.autoexp) {
-            //     params.toneCurve.expcomp = 0.0;
-            // }
-
-            // params.toneCurve.autoexp = false;
-            // params.toneCurve.curveMode = ToneCurveParams::TcMode::FILMLIKE;
-            // params.toneCurve.curve2 = { 0 };
-            // params.toneCurve.brightness = 0;
-            // params.toneCurve.contrast = 0;
-            // params.toneCurve.black = 0;
         }
         if (params.logenc.enabled && params.logenc.autocompute) {
             ipf.getAutoLog(imgsrc, params.logenc);
         }
 
-        // at this stage, we can flush the raw data to free up quite an important amount of memory
-        // commented out because it makes the application crash when batch processing...
-        // TODO: find a better place to flush rawData and rawRGB
         if (flush) {
             imgsrc->flushRawData();
             imgsrc->flushRGB();
@@ -332,38 +276,33 @@ private:
 
         if (params.denoise.enabled) {
             ipf.denoise(imgsrc, currWB, baseImg, dnstore, params.denoise);
-#ifdef _OPENMP
-#endif
         }
     }
 
     void stage_transform()
     {
-        procparams::ProcParams& params = job->pparams;
-        //ImProcFunctions ipf (&params, true);
-        ImProcFunctions &ipf = * (ipf_p.get());
+        procparams::ProcParams &params = job->pparams;
+        ImProcFunctions &ipf = *(ipf_p.get());
 
-        imgsrc->convertColorSpace (baseImg, params.icm, currWB);
+        imgsrc->convertColorSpace(baseImg, params.icm, currWB);
 
-        // perform first analysis
-        hist16 (65536);
-
-        ipf.firstAnalysis (baseImg, params, hist16);
+        LUTu hist16(65536);
+        ipf.firstAnalysis(baseImg, params, hist16);
 
         ipf.dehaze(baseImg);
         ipf.dynamicRangeCompression(baseImg);
 
         // perform transform (excepted resizing)
         if (ipf.needsTransform()) {
-            Imagefloat* trImg = nullptr;
+            Imagefloat *trImg = nullptr;
             if (ipf.needsLuminanceOnly()) {
                 trImg = baseImg;
             } else {
                 trImg = new Imagefloat (fw, fh);
             }
-            ipf.transform (baseImg, trImg, 0, 0, 0, 0, fw, fh, fw, fh,
-                           imgsrc->getMetaData(), imgsrc->getRotateDegree(), true);
-            if(trImg != baseImg) {
+            ipf.transform(baseImg, trImg, 0, 0, 0, 0, fw, fh, fw, fh,
+                          imgsrc->getMetaData(), imgsrc->getRotateDegree(), true);
+            if (trImg != baseImg) {
                 delete baseImg;
                 baseImg = trImg;
             }
@@ -373,19 +312,9 @@ private:
     Imagefloat *stage_finish(bool is_fast)
     {
         procparams::ProcParams& params = job->pparams;
-        //ImProcFunctions ipf (&params, true);
         ImProcFunctions &ipf = * (ipf_p.get());
 
         // RGB processing
-        curve1 (65536);
-        curve2 (65536);
-        curve (65536, 0);
-        satcurve (65536, 0);
-        lhskcurve (65536, 0);
-        lumacurve (32770, 0); // lumacurve[32768] and lumacurve[32769] will be set to 32768 and 32769 later to allow linear interpolation
-        clcurve (65536, 0);
-        wavclCurve (65536, 0);
-
         labView = new LabImage (fw, fh);
 
         DCPProfile::ApplyState as;
@@ -400,14 +329,6 @@ private:
         if ( params.filmSimulation.enabled && !params.filmSimulation.clutFilename.empty() && options.clutCacheSize == 1) {
             CLUTStore::getInstance().clearCache();
         }
-
-        // freeing up some memory
-        customToneCurve1.Reset();
-        customToneCurve2.Reset();
-        ctColorCurve.Reset();
-        ctOpacityCurve.Reset();
-        customToneCurvebw1.Reset();
-        customToneCurvebw2.Reset();
 
         // Freeing baseImg because not used anymore
         delete baseImg;
@@ -495,13 +416,7 @@ private:
         cmsHPROFILE jprof = nullptr;
         constexpr bool customGamma = false;
         constexpr bool useLCMS = false;
-        bool bwonly = params.blackwhite.enabled && !autili && !butili;
-
-        ///////////// Custom output gamma has been removed, the user now has to create
-        ///////////// a new output profile with the ICCProfileCreator
-
-        // if Default gamma mode: we use the profile selected in the "Output profile" combobox;
-        // gamma come from the selected profile, otherwise it comes from "Free gamma" tool
+        bool bwonly = params.blackwhite.enabled;
 
         Imagefloat* readyImg = ipf.lab2rgbOut (labView, cx, cy, cw, ch, params.icm);
 
@@ -542,17 +457,12 @@ private:
         Exiv2Metadata info(imgsrc->getFileName());
         switch (params.metadata.mode) {
         case MetaDataParams::TUNNEL:
-            // Sending back the whole first root, which won't necessarily be the selected frame number
-            // and may contain subframe depending on initial raw's hierarchy
-            // readyImg->setMetadata (ii->getMetaData()->getRootExifData ());
             readyImg->setMetadata(info);
             break;
         case MetaDataParams::EDIT:
             info.setExif(params.exif);
             info.setIptc(params.iptc);
             readyImg->setMetadata(info);
-            // ask for the correct frame number, but may contain subframe depending on initial raw's hierarchy
-            // readyImg->setMetadata (ii->getMetaData()->getBestExifData(imgsrc, &params.raw), params.exif, params.iptc);
             break;
         default: // case MetaDataParams::STRIP
             // nothing to do
@@ -572,7 +482,6 @@ private:
 
             if (params.icm.outputProfile != "" && params.icm.outputProfile != ColorManagementParams::NoICMString) {
 
-                // if ICCStore::getInstance()->getProfile send back an object, then ICCStore::getInstance()->getContent will do too
                 cmsHPROFILE jprof = ICCStore::getInstance()->getProfile (params.icm.outputProfile); //get outProfile
 
                 if (jprof == nullptr) {
@@ -593,10 +502,6 @@ private:
             }
         }
 
-//    t2.set();
-//    if( settings->verbose )
-//           printf("Total:- %d usec\n", t2.etime(t1));
-
         if (!job->initialImage) {
             ii->decreaseRef ();
         }
@@ -607,17 +512,6 @@ private:
             pl->setProgress (0.75);
         }
 
-        /*  curve1.reset();curve2.reset();
-            curve.reset();
-            satcurve.reset();
-            lhskcurve.reset();
-
-            rCurve.reset();
-            gCurve.reset();
-            bCurve.reset();
-            hist16.reset();
-            hist16C.reset();
-        */
         return readyImg;
     }
 
@@ -665,7 +559,6 @@ private:
             baseImg = resized;
         }
 
-//        adjust_procparams (scale_factor);
         params.resize.enabled = false;
         params.crop.enabled = false;
 
@@ -719,43 +612,9 @@ private:
 
     ImProcFunctions::DenoiseInfoStore dnstore;
 
-    // double expcomp;
-    // int bright;
-    // int contr;
-    // int black;
-    // int hlcompr;
-    // int hlcomprthresh;
-
     ColorTemp currWB;
     Imagefloat *baseImg;
     LabImage* labView;
-
-    LUTu hist16;
-
-    LUTf curve1;
-    LUTf curve2;
-    LUTf curve;
-    LUTf satcurve;
-    LUTf lhskcurve;
-    LUTf lumacurve;
-    LUTf clcurve;
-    LUTf clToningcurve;
-    LUTf cl2Toningcurve;
-    LUTf wavclCurve;
-
-    LUTf rCurve;
-    LUTf gCurve;
-    LUTf bCurve;
-    LUTu dummy;
-
-    ToneCurve customToneCurve1, customToneCurve2;
-    ColorGradientCurve ctColorCurve;
-    OpacityCurve ctOpacityCurve;
-    ColorAppearance customColCurve1, customColCurve2, customColCurve3 ;
-    ToneCurve customToneCurvebw1;
-    ToneCurve customToneCurvebw2;
-
-    bool autili, butili;
 
     double pipeline_scale;
 };
