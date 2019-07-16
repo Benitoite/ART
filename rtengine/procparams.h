@@ -1463,11 +1463,11 @@ private:
              KeyFile &keyFile, const ParamsEdited *pedited,
              const Glib::ustring &fname, bool fnameAbsolute) const;
 
-    friend class ProcParamsCollection;
+    friend class ProcParamsWithSnapshots;
 };
 
 
-class ProcParamsCollection {
+class ProcParamsWithSnapshots {
 public:
     int load(const Glib::ustring &fname);
     int save(const Glib::ustring &fname, const Glib::ustring &fname2=Glib::ustring(), bool fnameAbsolute=true);

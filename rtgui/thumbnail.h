@@ -47,7 +47,7 @@ class Thumbnail: public PParamsSnapshotListener {
 //        double          scale;            // portion of the sizes of the processed thumbnail image and the full scale image
 
     //rtengine::procparams::ProcParams pparams;
-    rtengine::procparams::ProcParamsCollection pparams;
+    rtengine::procparams::ProcParamsWithSnapshots pparams;
     
     bool pparamsValid;
     bool needsReProcessing;

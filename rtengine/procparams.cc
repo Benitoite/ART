@@ -4424,10 +4424,10 @@ bool PEditedPartialProfile::applyTo(ProcParams &pp) const
 
 
 //-----------------------------------------------------------------------------
-// ProcParamsCollection
+// ProcParamsWithSnapshots
 //-----------------------------------------------------------------------------
 
-int ProcParamsCollection::load(const Glib::ustring &fname)
+int ProcParamsWithSnapshots::load(const Glib::ustring &fname)
 {
     setlocale(LC_NUMERIC, "C");  // to set decimal point to "."
 
@@ -4484,7 +4484,7 @@ int ProcParamsCollection::load(const Glib::ustring &fname)
 }
 
 
-int ProcParamsCollection::save(const Glib::ustring &fname, const Glib::ustring &fname2, bool fnameAbsolute)
+int ProcParamsWithSnapshots::save(const Glib::ustring &fname, const Glib::ustring &fname2, bool fnameAbsolute)
 {
     if (fname.empty() && fname2.empty()) {
         return 0;
