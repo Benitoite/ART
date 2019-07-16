@@ -500,3 +500,9 @@ void History::snapshotNameEdited(const Glib::ustring &sold, const Glib::ustring 
         snapshotListener->snapshotsChanged(getSnapshots());
     }
 }
+
+
+void History::enableSnapshots(bool yes)
+{
+    bTreeView->set_sensitive(yes);
+}

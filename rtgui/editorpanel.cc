@@ -1068,6 +1068,7 @@ void EditorPanel::open (Thumbnail* tmb, rtengine::InitialImage* isrc)
 
     history->setPParamsSnapshotListener(openThm);
     history->setSnapshots(openThm->getProcParamsSnapshots());
+    history->enableSnapshots(false);
 
     // When passing a photo as an argument to the RawTherapee executable, the user wants
     // this auto-loaded photo's thumbnail to be selected and visible in the Filmstrip.
@@ -1317,6 +1318,8 @@ void EditorPanel::refreshProcessingState (bool inProcessingP)
 
 #endif
         firstProcessingDone = true;
+
+        history->enableSnapshots(true);
     }
 
     isProcessing = inProcessingP;
