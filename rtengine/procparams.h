@@ -23,7 +23,6 @@
 #include <cstdio>
 #include <type_traits>
 #include <vector>
-#include <list>
 
 #include <glibmm.h>
 #include <lcms2.h>
@@ -56,6 +55,44 @@ enum RenderingIntent {
 
 
 namespace procparams {
+
+class KeyFile {
+public:
+    explicit KeyFile(const Glib::ustring &prefix=""): prefix_(prefix) {}
+    
+    bool has_group(const Glib::ustring &grp) const;
+    bool has_key(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<Glib::ustring> get_keys(const Glib::ustring &grp) const;
+    
+    Glib::ustring get_string(const Glib::ustring &grp, const Glib::ustring &key) const;
+    int get_integer(const Glib::ustring &grp, const Glib::ustring &key) const;
+    double get_double(const Glib::ustring &grp, const Glib::ustring &key) const;
+    bool get_boolean(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<Glib::ustring> get_string_list(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<int> get_integer_list(const Glib::ustring &grp, const Glib::ustring &key) const;
+    Glib::ArrayHandle<double> get_double_list(const Glib::ustring &grp, const Glib::ustring &key) const;
+    
+    void set_string(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ustring& string);
+    void set_boolean(const Glib::ustring &grp, const Glib::ustring &key, bool value);
+    void set_integer(const Glib::ustring &grp, const Glib::ustring &key, int value);
+    void set_double(const Glib::ustring &grp, const Glib::ustring &key, double value);
+    void set_string_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<Glib::ustring> &list);
+    void set_integer_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<int> &list);
+    void set_double_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<double> &list);
+
+    bool load_from_file(const Glib::ustring &fn);
+    Glib::ustring to_data();
+
+    Glib::ustring get_prefix() const { return prefix_; }
+    void set_prefix(const Glib::ustring &prefix) { prefix_ = prefix; }
+    
+private:
+    Glib::ustring GRP(const Glib::ustring &g) const { return prefix_ + g; }
+    
+    Glib::ustring prefix_;
+    Glib::KeyFile kf_;
+};
+
 
 struct AreaMask {
     struct Shape {
@@ -94,9 +131,9 @@ public:
     bool operator==(const LabCorrectionMask &other) const;
     bool operator!=(const LabCorrectionMask &other) const;
 
-    bool load(const Glib::KeyFile &keyfile, const Glib::ustring &group_name,
+    bool load(const KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix);
-    void save(Glib::KeyFile &keyfile, const Glib::ustring &group_name,
+    void save(KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix) const;
 };
 
@@ -1309,43 +1346,6 @@ struct RAWParams {
 };
 
 
-class KeyFile {
-public:
-    explicit KeyFile(const Glib::ustring &prefix=""): prefix_(prefix) {}
-    
-    bool has_group(const Glib::ustring &grp) const;
-    bool has_key(const Glib::ustring &grp, const Glib::ustring &key) const;
-    
-    Glib::ustring get_string(const Glib::ustring &grp, const Glib::ustring &key) const;
-    int get_integer(const Glib::ustring &grp, const Glib::ustring &key) const;
-    double get_double(const Glib::ustring &grp, const Glib::ustring &key) const;
-    bool get_boolean(const Glib::ustring &grp, const Glib::ustring &key) const;
-    Glib::ArrayHandle<Glib::ustring> get_string_list(const Glib::ustring &grp, const Glib::ustring &key) const;
-    Glib::ArrayHandle<int> get_integer_list(const Glib::ustring &grp, const Glib::ustring &key) const;
-    Glib::ArrayHandle<double> get_double_list(const Glib::ustring &grp, const Glib::ustring &key) const;
-    
-    void set_string(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ustring& string);
-    void set_boolean(const Glib::ustring &grp, const Glib::ustring &key, bool value);
-    void set_integer(const Glib::ustring &grp, const Glib::ustring &key, int value);
-    void set_double(const Glib::ustring &grp, const Glib::ustring &key, double value);
-    void set_string_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<Glib::ustring> &list);
-    void set_integer_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<int> &list);
-    void set_double_list(const Glib::ustring &grp, const Glib::ustring &key, const Glib::ArrayHandle<double> &list);
-
-    bool load_from_file(const Glib::ustring &fn);
-    Glib::ustring to_data();
-
-    Glib::ustring get_prefix() const { return prefix_; }
-    void set_prefix(const Glib::ustring &prefix) { prefix_ = prefix; }
-    
-private:
-    Glib::ustring GRP(const Glib::ustring &g) const { return prefix_ + g; }
-    
-    Glib::ustring prefix_;
-    Glib::KeyFile kf_;
-};
-
-
 /**
   * This class holds all the processing parameters applied on the images
   */
@@ -1455,26 +1455,25 @@ private:
     * @return Error code (=0 if no error)
     * */
     int write(const Glib::ustring& fname, const Glib::ustring& content) const;
+
+    int load(bool load_general,
+             const KeyFile &keyFile, const ParamsEdited *pedited,
+             bool resetOnError, const Glib::ustring &fname);
+    int save(bool save_general,
+             KeyFile &keyFile, const ParamsEdited *pedited,
+             const Glib::ustring &fname, bool fnameAbsolute) const;
+
+    friend class ProcParamsCollection;
 };
 
 
 class ProcParamsCollection {
 public:
-    ProcParamsCollection();
     int load(const Glib::ustring &fname);
     int save(const Glib::ustring &fname, const Glib::ustring &fname2=Glib::ustring(), bool fnameAbsolute=true);
 
-    size_t size() const;
-    ProcParams &operator()(size_t idx);
-    const ProcParams &operator()(size_t idx) const;
-
-    void add(const Glib::ustring &name, const ProcParams &pp);
-    bool erase(size_t idx);
-    bool rename(size_t idx, const Glib::ustring &newname);
-    const Glib::ustring &name(size_t idx) const;
-
-private:
-    std::list<std::pair<Glib::ustring, ProcParams>> pplist_;
+    ProcParams master;
+    std::vector<std::pair<Glib::ustring, ProcParams>> snapshots;
 };
 
 

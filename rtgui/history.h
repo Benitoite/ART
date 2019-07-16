@@ -91,7 +91,11 @@ protected:
     //ParamsEdited defParamsEdited;
     int bmnum;
 
+    PParamsSnapshotListener *snapshotListener;
+
     bool on_query_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip);
+
+    std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> getSnapshots();
 
 public:
 
@@ -124,6 +128,7 @@ public:
     void addBookmarkWithText (Glib::ustring text);
     void addBookmarkPressed ();
     void delBookmarkPressed ();
+    void snapshotNameEdited(const Glib::ustring &sold, const Glib::ustring &snew);
 
     //void resized (Gtk::Allocation& req);
 
@@ -134,7 +139,10 @@ public:
     void resetSnapShotNumber()
     {
         bmnum = 1;
-    };
+    }
+
+    void setPParamsSnapshotListener(PParamsSnapshotListener *l);
+    void setSnapshots(const std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> &snapshots);
 };
 
 #endif

@@ -122,7 +122,6 @@ FilePanel::FilePanel () : parent(nullptr), error(0)
     fileCatalog->setExportPanel (exportPanel);
     //fileCatalog->setImageAreaToolListener (tpc);
     fileCatalog->setImageAreaToolListener(iatl_);
-    // fileCatalog->fileBrowser->setBatchPParamsChangeListener (tpc);
 
     //------------------
 

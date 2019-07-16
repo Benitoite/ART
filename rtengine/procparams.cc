@@ -53,6 +53,12 @@ bool KeyFile::has_key(const Glib::ustring &grp, const Glib::ustring &key) const
 }
 
 
+Glib::ArrayHandle<Glib::ustring> KeyFile::get_keys(const Glib::ustring &grp) const
+{
+    return kf_.get_keys(GRP(grp));
+}
+
+
 Glib::ustring KeyFile::get_string(const Glib::ustring &grp, const Glib::ustring &key) const
 {
     return kf_.get_string(GRP(grp), key);
@@ -139,7 +145,7 @@ void KeyFile::set_double_list(const Glib::ustring &grp, const Glib::ustring &key
 
 bool KeyFile::load_from_file(const Glib::ustring &fn)
 {
-    return kf_.load_from_file();
+    return kf_.load_from_file(fn);
 }
 
 
@@ -2388,19 +2394,22 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 }
 
 
-int ProcParams::save(KeyFile &keyFile, const ParamsEdited *pedited,
+int ProcParams::save(bool save_general,
+                     KeyFile &keyFile, const ParamsEdited *pedited,
                      const Glib::ustring &fname, bool fnameAbsolute) const
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
     try {
 // Version
-        keyFile.set_string("Version", "AppVersion", RTVERSION);
-        keyFile.set_integer("Version", "Version", PPVERSION);
+        if (save_general) {
+            keyFile.set_string("Version", "AppVersion", RTVERSION);
+            keyFile.set_integer("Version", "Version", PPVERSION);
 
-        if (RELEVANT_(general)) {
-            saveToKeyfile("General", "Rank", rank, keyFile);
-            saveToKeyfile("General", "ColorLabel", colorlabel, keyFile);
-            saveToKeyfile("General", "InTrash", inTrash, keyFile);
+            if (RELEVANT_(general)) {
+                saveToKeyfile("General", "Rank", rank, keyFile);
+                saveToKeyfile("General", "ColorLabel", colorlabel, keyFile);
+                saveToKeyfile("General", "InTrash", inTrash, keyFile);
+            }
         }
 
 // Exposure
@@ -3018,6 +3027,13 @@ int ProcParams::save(KeyFile &keyFile, const ParamsEdited *pedited,
 }
 
 
+int ProcParams::save(KeyFile &keyFile, const ParamsEdited *pedited,
+                     const Glib::ustring &fname, bool fnameAbsolute) const
+{
+    return save(true, keyFile, pedited, fname, fnameAbsolute);
+}
+
+
 int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
 {
     setlocale(LC_NUMERIC, "C");  // to set decimal point to "."
@@ -3047,29 +3063,32 @@ int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
 }
 
 
-int ProcParams::load(const KeyFile &keyFile, const ParamsEdited *pedited,
+int ProcParams::load(bool load_general,
+                     const KeyFile &keyFile, const ParamsEdited *pedited,
                      bool resetOnError, const Glib::ustring &fname)
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
     
     try {
-        ppVersion = PPVERSION;
-        appVersion = RTVERSION;
+        if (load_general) {
+            ppVersion = PPVERSION;
+            appVersion = RTVERSION;
 
-        if (keyFile.has_group("Version")) {
-            if (keyFile.has_key("Version", "AppVersion")) {
-                appVersion = keyFile.get_string("Version", "AppVersion");
+            if (keyFile.has_group("Version")) {
+                if (keyFile.has_key("Version", "AppVersion")) {
+                    appVersion = keyFile.get_string("Version", "AppVersion");
+                }
+
+                if (keyFile.has_key("Version", "Version")) {
+                    ppVersion = keyFile.get_integer("Version", "Version");
+                }
             }
 
-            if (keyFile.has_key("Version", "Version")) {
-                ppVersion = keyFile.get_integer("Version", "Version");
+            if (keyFile.has_group("General") && RELEVANT_(general)) {
+                assignFromKeyfile(keyFile, "General", "Rank", rank);
+                assignFromKeyfile(keyFile, "General", "ColorLabel", colorlabel);
+                assignFromKeyfile(keyFile, "General", "InTrash", inTrash);
             }
-        }
-
-        if (keyFile.has_group("General") && RELEVANT_(general)) {
-            assignFromKeyfile(keyFile, "General", "Rank", rank);
-            assignFromKeyfile(keyFile, "General", "ColorLabel", colorlabel);
-            assignFromKeyfile(keyFile, "General", "InTrash", inTrash);
         }
 
         const std::map<std::string, ToneCurveParams::TcMode> tc_mapping = {
@@ -4236,6 +4255,13 @@ int ProcParams::load(const KeyFile &keyFile, const ParamsEdited *pedited,
 }
 
 
+int ProcParams::load(const KeyFile &keyFile, const ParamsEdited *pedited,
+                     bool resetOnError, const Glib::ustring &fname)
+{
+    return load(true, keyFile, pedited, resetOnError, fname);
+}
+
+
 ProcParams* ProcParams::create()
 {
     return new ProcParams();
@@ -4401,81 +4427,118 @@ bool PEditedPartialProfile::applyTo(ProcParams &pp) const
 // ProcParamsCollection
 //-----------------------------------------------------------------------------
 
-ProcParamsCollection::ProcParamsCollection()
-{
-    pplist_.push_back(std::make_pair("", ProcParams()));
-}
-
-
-size_t ProcParamsCollection::size() const
-{
-    return pplist_.size();
-}
-
-
-ProcParams &ProcParamsCollection::operator()(size_t idx)
-{
-    auto it = pplist_.begin();
-    std::advance(it, idx);
-    return it->second;
-}
-
-
-const ProcParams &ProcParamsCollection::operator()(size_t idx) const
-{
-    return const_cast<ProcParamsCollection *>(this)->operator()(idx);
-}
-
-
-void ProcParamsCollection::add(const Glib::ustring &name, const ProcParams &pp)
-{
-    pplist_.push_back(std::make_pair(name, pp));
-}
-
-
-bool ProcParamsCollection::erase(size_t idx)
-{
-    if (idx > 0 && idx < pplist_.size()) {
-        auto it = pplist_.begin();
-        std::advance(it, idx);
-        pplist_.erase(it);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-bool ProcParamsCollection::rename(size_t idx, const Glib::ustring &newname)
-{
-    if (idx > 0 && idx < pplist_.size()) {
-        auto it = pplist_.begin();
-        std::advance(it, idx);
-        it->first = newname;
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-const Glib::ustring &ProcParamsCollection::name(size_t idx) const
-{
-    auto it = pplist_.begin();
-    std::advance(it, idx);
-    return it->first;
-}
-
-
 int ProcParamsCollection::load(const Glib::ustring &fname)
 {
-    return -1; // TODO
+    setlocale(LC_NUMERIC, "C");  // to set decimal point to "."
+
+    if (fname.empty()) {
+        return 1;
+    }
+
+    KeyFile keyfile;
+    snapshots.clear();
+
+    try {
+        if (!Glib::file_test(fname, Glib::FILE_TEST_EXISTS) ||
+            !keyfile.load_from_file(fname)) {
+            return 1;
+        }
+        if (master.load(true, keyfile, nullptr, true, fname) != 0) {
+            return 1;
+        }
+        const std::string sn = "Snapshot_";
+        if (keyfile.has_group("Snapshots")) {
+            for (size_t i = 1; ; ++i) {
+                Glib::ustring key = sn + std::to_string(i);
+                if (keyfile.has_key("Snapshots", key)) {
+                    auto name = keyfile.get_string("Snapshots", key);
+                    snapshots.push_back(std::make_pair(name, ProcParams()));
+                } else {
+                    break;
+                }
+            }
+        }
+
+        for (size_t i = 0; i < snapshots.size(); ++i) {
+            keyfile.set_prefix(sn + std::to_string(i+1) + " ");
+            snapshots[i].second.appVersion = master.appVersion;
+            snapshots[i].second.ppVersion = master.ppVersion;
+            if (snapshots[i].second.load(false, keyfile, nullptr, true, fname) != 0) {
+                snapshots.resize(i);
+                break;
+            }
+        }
+
+        return 0;
+    } catch (const Glib::Error &e) {
+        printf("-->%s\n", e.what().c_str());
+        master.setDefaults();
+        snapshots.clear();
+        return 1;
+    } catch (...) {
+        printf("-->unknown exception!\n");
+        master.setDefaults();
+        snapshots.clear();
+        return 1;
+    }
 }
 
 
 int ProcParamsCollection::save(const Glib::ustring &fname, const Glib::ustring &fname2, bool fnameAbsolute)
 {
-    return -1; // TODO
+    if (fname.empty() && fname2.empty()) {
+        return 0;
+    }
+
+    Glib::ustring data;
+
+    try {
+        KeyFile keyfile;
+
+        keyfile.set_string("Version", "AppVersion", RTVERSION);
+        keyfile.set_integer("Version", "Version", PPVERSION);
+        saveToKeyfile("General", "Rank", master.rank, keyfile);
+        saveToKeyfile("General", "ColorLabel", master.colorlabel, keyfile);
+        saveToKeyfile("General", "InTrash", master.inTrash, keyfile);
+        
+        const std::string sn = "Snapshot_";
+        for (size_t i = 0; i < snapshots.size(); ++i) {
+            Glib::ustring key = sn + std::to_string(i+1);
+            keyfile.set_string("Snapshots", key, snapshots[i].first);
+        }
+
+        int ret = master.save(false, keyfile, nullptr, fname, fnameAbsolute);
+        if (ret != 0) {
+            return ret;
+        }
+
+        for (size_t i = 0; i < snapshots.size(); ++i) {
+            keyfile.set_prefix(sn + std::to_string(i+1) + " ");
+            ret = snapshots[i].second.save(false, keyfile, nullptr, fname, fnameAbsolute);
+            if (ret != 0) {
+                return ret;
+            }
+        }
+        
+        data = keyfile.to_data();
+    } catch (Glib::KeyFileError&) {}
+
+    if (data.empty()) {
+        return 1;
+    }
+
+    int error1, error2;
+    error1 = master.write(fname, data);
+
+    if (!fname2.empty()) {
+        error2 = master.write(fname2, data);
+        // If at least one file has been saved, it's a success
+        return error1 & error2;
+    } else {
+        return error1;
+    }
+
+    return 0;
 }
 
 }} // namespace rtengine::procparams

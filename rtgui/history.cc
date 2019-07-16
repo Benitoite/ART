@@ -26,7 +26,9 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 
 
-History::History (bool bookmarkSupport) : historyVPaned(nullptr), blistener(nullptr), tpc (nullptr), bmnum (1)
+History::History (bool bookmarkSupport) :
+    historyVPaned(nullptr), blistener(nullptr), tpc (nullptr), bmnum (1),
+    snapshotListener(nullptr)
 {
 
     blistenerLock = false; // sets default that the Before preview will not be locked
@@ -135,6 +137,7 @@ History::History (bool bookmarkSupport) : historyVPaned(nullptr), blistener(null
 
     addBookmark->signal_clicked().connect( sigc::mem_fun(*this, &History::addBookmarkPressed) );
     delBookmark->signal_clicked().connect( sigc::mem_fun(*this, &History::delBookmarkPressed) );
+    static_cast<Gtk::CellRendererText *>(bTreeView->get_column_cell_renderer(0))->signal_edited().connect(sigc::mem_fun(*this, &History::snapshotNameEdited));
 
     //hTreeView->set_grid_lines (Gtk::TREE_VIEW_GRID_LINES_HORIZONTAL);
     hTreeView->set_grid_lines (Gtk::TREE_VIEW_GRID_LINES_BOTH);
@@ -331,6 +334,10 @@ void History::addBookmarkPressed ()
 
     if (hTreeView->get_selection()->get_selected()) {
         addBookmarkWithText (Glib::ustring::compose ("%1 %2", M("HISTORY_SNAPSHOT"), bmnum++));
+
+        if (snapshotListener) {
+            snapshotListener->snapshotsChanged(getSnapshots());
+        }
     }
 }
 
@@ -351,6 +358,10 @@ void History::delBookmarkPressed ()
     int size = historyModel->children().size ();
     Gtk::TreeModel::Row row = historyModel->children()[size - 1];
     hTreeView->get_selection()->select (row);
+
+    if (snapshotListener) {
+        snapshotListener->snapshotsChanged(getSnapshots());
+    }
 }
 
 void History::undo ()
@@ -452,4 +463,40 @@ bool History::on_query_tooltip(int x, int y, bool keyboard_tooltip, const Glib::
         }
     }
     return displayTooltip;
+}
+
+
+void History::setPParamsSnapshotListener(PParamsSnapshotListener *l)
+{
+    snapshotListener = l;
+}
+
+
+void History::setSnapshots(const std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> &snapshots)
+{
+    bookmarkModel->clear();
+    for (auto &p : snapshots) {
+        auto it = bookmarkModel->append();
+        auto &row = *it;
+        row[bookmarkColumns.text] = p.first;
+        row[bookmarkColumns.params] = p.second;
+    }
+}
+
+
+std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> History::getSnapshots()
+{
+    std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> ret;
+    for (const auto &row : bookmarkModel->children()) {
+        ret.push_back(std::make_pair(row[bookmarkColumns.text], row[bookmarkColumns.params]));
+    }
+    return ret;
+}
+
+
+void History::snapshotNameEdited(const Glib::ustring &sold, const Glib::ustring &snew)
+{
+    if (snapshotListener) {
+        snapshotListener->snapshotsChanged(getSnapshots());
+    }
 }

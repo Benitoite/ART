@@ -29,9 +29,10 @@
 #include "cacheimagedata.h"
 #include "thumbnaillistener.h"
 #include "threadutils.h"
+#include "pparamschangelistener.h"
 
 class CacheManager;
-class Thumbnail {
+class Thumbnail: public PParamsSnapshotListener {
     MyMutex mutex;
     Glib::ustring fname;              // file name corresponding to the thumbnail
     CacheImageData cfs;                // cache entry corresponding to the thumbnail
@@ -45,7 +46,9 @@ class Thumbnail {
     float imgRatio;           // hack to avoid rounding error
 //        double          scale;            // portion of the sizes of the processed thumbnail image and the full scale image
 
-    rtengine::procparams::ProcParams pparams;
+    //rtengine::procparams::ProcParams pparams;
+    rtengine::procparams::ProcParamsCollection pparams;
+    
     bool pparamsValid;
     bool needsReProcessing;
     bool imageLoading;
@@ -110,6 +113,7 @@ public:
     bool hasProcParams();
     const rtengine::procparams::ProcParams &getProcParams();
     const rtengine::procparams::ProcParams &getProcParamsU();  // Unprotected version
+    const std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> &getProcParamsSnapshots();
 
     // Use this to create params on demand for update ; if flaggingMode=true, the procparams is created for a file being flagged (inTrash, rank, colorLabel)
     rtengine::procparams::ProcParams *createProcParamsForUpdate(bool returnParams, bool force, bool flaggingMode = false);
@@ -215,6 +219,8 @@ public:
     std::shared_ptr<rtengine::FramesMetaData> getMetaData();
 
     static Glib::ustring getXmpSidecarPath(const Glib::ustring &path);
+
+    void snapshotsChanged(const std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> &snapshots) override;
 };
 
 

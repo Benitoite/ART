@@ -117,7 +117,6 @@ protected:
 
     Glib::RefPtr<Gtk::AccelGroup> pmaccelgroup;
 
-    BatchPParamsChangeListener* bppcl;
     FileBrowserListener* tbl;
     BrowserFilter filter;
     int numFiltered;
@@ -145,10 +144,6 @@ public:
 
     unsigned int session_id() const { return session_id_; }
 
-    void setBatchPParamsChangeListener (BatchPParamsChangeListener* l)
-    {
-        bppcl = l;
-    }
     void setFileBrowserListener (FileBrowserListener* l)
     {
         tbl = l;

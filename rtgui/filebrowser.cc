@@ -137,7 +137,6 @@ FileBrowser::FileBrowser () :
     clearFromCache(nullptr),
     clearFromCacheFull(nullptr),
     colorLabel_actionData(nullptr),
-    bppcl(nullptr),
     tbl(nullptr),
     numFiltered(0),
     exportPanel(nullptr)
@@ -795,21 +794,12 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
     }
 
     else if (m == autoDF) {
-        if (!mselected.empty() && bppcl) {
-            bppcl->beginBatchPParamsChange(mselected.size());
-        }
-
         for (size_t i = 0; i < mselected.size(); i++) {
             rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
             pp.raw.df_autoselect = true;
             pp.raw.dark_frame.clear();
             mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
         }
-
-        if (!mselected.empty() && bppcl) {
-            bppcl->endBatchPParamsChange();
-        }
-
     } else if (m == selectDF) {
         if( !mselected.empty() ) {
             rtengine::procparams::ProcParams pp = mselected[0]->thumbnail->getProcParams();
@@ -823,19 +813,11 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
             }
 
             if( fc.run() == Gtk::RESPONSE_APPLY ) {
-                if (bppcl) {
-                    bppcl->beginBatchPParamsChange(mselected.size());
-                }
-
                 for (size_t i = 0; i < mselected.size(); i++) {
                     rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
                     pp.raw.dark_frame = fc.get_filename();
                     pp.raw.df_autoselect = false;
                     mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
-                }
-
-                if (bppcl) {
-                    bppcl->endBatchPParamsChange();
                 }
             }
         }
@@ -872,19 +854,11 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
             msgd.run ();
         }
     } else if (m == autoFF) {
-        if (!mselected.empty() && bppcl) {
-            bppcl->beginBatchPParamsChange(mselected.size());
-        }
-
         for (size_t i = 0; i < mselected.size(); i++) {
             rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
             pp.raw.ff_AutoSelect = true;
             pp.raw.ff_file.clear();
             mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
-        }
-
-        if (!mselected.empty() && bppcl) {
-            bppcl->endBatchPParamsChange();
         }
     } else if (m == selectFF) {
         if( !mselected.empty() ) {
@@ -899,19 +873,11 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
             }
 
             if( fc.run() == Gtk::RESPONSE_APPLY ) {
-                if (bppcl) {
-                    bppcl->beginBatchPParamsChange(mselected.size());
-                }
-
                 for (size_t i = 0; i < mselected.size(); i++) {
                     rtengine::procparams::ProcParams pp = mselected[i]->thumbnail->getProcParams();
                     pp.raw.ff_file = fc.get_filename();
                     pp.raw.ff_AutoSelect = false;
                     mselected[i]->thumbnail->setProcParams(pp, FILEBROWSER, false);
-                }
-
-                if (bppcl) {
-                    bppcl->endBatchPParamsChange();
                 }
             }
         }
@@ -960,20 +926,12 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
 
         queue_draw ();
     } else if (m == resetdefaultprof) {
-        if (!mselected.empty() && bppcl) {
-            bppcl->beginBatchPParamsChange(mselected.size());
-        }
-
         for (size_t i = 0; i < mselected.size(); i++)  {
             mselected[i]->thumbnail->createProcParamsForUpdate (false, true);
 
             // Empty run to update the thumb
             rtengine::procparams::ProcParams params = mselected[i]->thumbnail->getProcParams ();
             mselected[i]->thumbnail->setProcParams(params, FILEBROWSER, true, true);
-        }
-
-        if (!mselected.empty() && bppcl) {
-            bppcl->endBatchPParamsChange();
         }
     } else if (m == clearFromCache) {
         tbl->clearFromCacheRequested (mselected, false);
@@ -1016,17 +974,9 @@ void FileBrowser::pasteProfile ()
             return;
         }
 
-        if (!mselected.empty() && bppcl) {
-            bppcl->beginBatchPParamsChange(mselected.size());
-        }
-
         for (unsigned int i = 0; i < mselected.size(); i++) {
             // applying the PartialProfile to the thumb's ProcParams
             mselected[i]->thumbnail->setProcParams(rtengine::procparams::FullPartialProfile(clipboard.getProcParams()), FILEBROWSER);
-        }
-
-        if (!mselected.empty() && bppcl) {
-            bppcl->endBatchPParamsChange();
         }
 
         queue_draw ();
@@ -1057,11 +1007,6 @@ void FileBrowser::partPasteProfile ()
         int i = partialPasteDlg.run ();
 
         if (i == Gtk::RESPONSE_OK) {
-
-            if (!mselected.empty() && bppcl) {
-                bppcl->beginBatchPParamsChange(mselected.size());
-            }
-
             for (unsigned int i = 0; i < mselected.size(); i++) {
                 // copying read only clipboard PartialProfile to a temporary one, initialized to the thumb's ProcParams
                 mselected[i]->thumbnail->createProcParamsForUpdate(false, false); // this can execute customprofilebuilder to generate param file
@@ -1077,10 +1022,6 @@ void FileBrowser::partPasteProfile ()
                 // mselected[i]->thumbnail->setProcParams(*pastedPartProf.pparams, pastedPartProf.pedited, FILEBROWSER);
                 mselected[i]->thumbnail->setProcParams(rtengine::procparams::PEditedPartialProfile(pp, ped), FILEBROWSER);
                 // pastedPartProf.deleteInstance();
-            }
-
-            if (!mselected.empty() && bppcl) {
-                bppcl->endBatchPParamsChange();
             }
 
             queue_draw ();
@@ -1349,16 +1290,8 @@ void FileBrowser::applyMenuItemActivated (ProfileStoreLabel *label)
     const rtengine::procparams::PartialProfile* partProfile = ProfileStore::getInstance()->getProfile (label->entry);
 
     if (partProfile/*->pparams*/ && !selected.empty()) {
-        if (bppcl) {
-            bppcl->beginBatchPParamsChange(selected.size());
-        }
-
         for (size_t i = 0; i < selected.size(); i++) {
             (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->setProcParams(*partProfile, FILEBROWSER);
-        }
-
-        if (bppcl) {
-            bppcl->endBatchPParamsChange();
         }
 
         queue_draw ();
@@ -1384,12 +1317,7 @@ void FileBrowser::applyPartialMenuItemActivated (ProfileStoreLabel *label)
         PartialPasteDlg partialPasteDlg (M("PARTIALPASTE_DIALOGLABEL"), toplevel);
 
         if (partialPasteDlg.run() == Gtk::RESPONSE_OK) {
-
             MYREADERLOCK(l, entryRW);
-
-            if (bppcl) {
-                bppcl->beginBatchPParamsChange(selected.size());
-            }
 
             for (size_t i = 0; i < selected.size(); i++) {
                 selected[i]->thumbnail->createProcParamsForUpdate(false, false);  // this can execute customprofilebuilder to generate param file
@@ -1403,10 +1331,6 @@ void FileBrowser::applyPartialMenuItemActivated (ProfileStoreLabel *label)
                 auto pe = partialPasteDlg.getParamsEdited();
                 (static_cast<FileBrowserEntry*>(selected[i]))->thumbnail->setProcParams(rtengine::procparams::PEditedPartialProfile(pp, pe), FILEBROWSER);
                 // dstProfile.deleteInstance();
-            }
-
-            if (bppcl) {
-                bppcl->endBatchPParamsChange();
             }
 
             queue_draw ();
@@ -1613,11 +1537,6 @@ void FileBrowser::fromTrashRequested (std::vector<FileBrowserEntry*> tbe)
 
 void FileBrowser::rankingRequested (std::vector<FileBrowserEntry*> tbe, int rank)
 {
-
-    if (!tbe.empty() && bppcl) {
-        bppcl->beginBatchPParamsChange(tbe.size());
-    }
-
     for (size_t i = 0; i < tbe.size(); i++) {
 
         // try to load the last saved parameters from the cache or from the paramfile file
@@ -1637,19 +1556,10 @@ void FileBrowser::rankingRequested (std::vector<FileBrowserEntry*> tbe, int rank
     }
 
     applyFilter (filter);
-
-    if (!tbe.empty() && bppcl) {
-        bppcl->endBatchPParamsChange();
-    }
 }
 
 void FileBrowser::colorlabelRequested (std::vector<FileBrowserEntry*> tbe, int colorlabel)
 {
-
-    if (!tbe.empty() && bppcl) {
-        bppcl->beginBatchPParamsChange(tbe.size());
-    }
-
     for (size_t i = 0; i < tbe.size(); i++) {
         // try to load the last saved parameters from the cache or from the paramfile file
         tbe[i]->thumbnail->createProcParamsForUpdate(false, false, true);  // this can execute customprofilebuilder to generate param file in "flagging" mode
@@ -1667,10 +1577,6 @@ void FileBrowser::colorlabelRequested (std::vector<FileBrowserEntry*> tbe, int c
     }
 
     applyFilter (filter);
-
-    if (!tbe.empty() && bppcl) {
-        bppcl->endBatchPParamsChange();
-    }
 }
 
 void FileBrowser::requestRanking(int rank)

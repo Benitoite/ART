@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -23,8 +24,7 @@
 #include <glibmm.h>
 #include "paramsedited.h"
 
-class PParamsChangeListener
-{
+class PParamsChangeListener {
 public:
     virtual ~PParamsChangeListener() = default;
     virtual void procParamsChanged(
@@ -36,12 +36,11 @@ public:
     virtual void clearParamChanges() = 0;
 };
 
-class BatchPParamsChangeListener
-{
+
+class PParamsSnapshotListener {
 public:
-    virtual ~BatchPParamsChangeListener() = default;
-    virtual void beginBatchPParamsChange(int numberOfEntries) = 0;
-    virtual void endBatchPParamsChange() = 0;
+    virtual ~PParamsSnapshotListener() = default;
+    virtual void snapshotsChanged(const std::vector<std::pair<Glib::ustring, rtengine::procparams::ProcParams>> &snapshots) = 0;
 };
 
 #endif
