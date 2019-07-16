@@ -113,7 +113,7 @@ History::History (bool bookmarkSupport) :
     bmFrame->add (*bmBox);
     bmBox->pack_start (*bscrollw, Gtk::PACK_EXPAND_WIDGET, 4);
     bmBox->pack_end (*ahbox, Gtk::PACK_SHRINK, 4);
-    bmBox->set_size_request(-1,60);
+    bmBox->set_size_request(-1,100);
 
     if (bookmarkSupport) {
         historyVPaned = Gtk::manage ( new Gtk::VPaned () );
