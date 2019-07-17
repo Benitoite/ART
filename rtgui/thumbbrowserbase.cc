@@ -15,6 +15,7 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <numeric>
+#include <iostream>
 
 #include <glibmm.h>
 
@@ -881,6 +882,8 @@ bool ThumbBrowserBase::Internal::on_draw(const ::Cairo::RefPtr< Cairo::Context> 
     Glib::RefPtr<Pango::Context> context = get_pango_context ();
     context->set_font_description (style->get_font());
 
+    // std::cout << "\nREDRAWING\n" << std::endl;
+
     {
         MYWRITERLOCK(l, parent->entryRW);
 
@@ -889,11 +892,17 @@ bool ThumbBrowserBase::Internal::on_draw(const ::Cairo::RefPtr< Cairo::Context> 
                 parent->fd[i]->updatepriority = false;
             } else {
                 parent->fd[i]->updatepriority = true;
+                // if (parent->fd[i]->requestDraw()) {
+                //     // to_draw.push_back(parent->fd[i]);
+                // } else {
+                //     // done = false;
+                // }
                 parent->fd[i]->draw (cr);
             }
         }
     }
     style->render_frame(cr, 0., 0., w, h);
+    
 
     return true;
 }
@@ -1138,7 +1147,10 @@ void ThumbBrowserBase::redrawNeeded (ThumbBrowserEntryBase* entry)
     GThreadLock tLock; // Acquire the GUI
 
     if (entry->insideWindow (0, 0, internal.get_width(), internal.get_height())) {
+        // std::cout << "REDRAW NEEDED: " << entry->shortname << std::endl;
+        
         if (!internal.isDirty ()) {
+            // std::cout << "   QUEUING" << std::endl;
             internal.setDirty ();
             internal.queue_draw ();
         }

@@ -78,7 +78,7 @@ public:
 #else
         int threadCount = 2;
 #endif
-        threadCount = 1;
+        //threadCount = 1;
 
         threadPool_ = new Glib::ThreadPool(threadCount, 0);
     }

@@ -69,6 +69,9 @@ class FileBrowserEntry : public ThumbBrowserEntryBase,
     void drawStraightenGuide (Cairo::RefPtr<Cairo::Context> c);
     void customBackBufferUpdate (Cairo::RefPtr<Cairo::Context> c) override;
 
+    enum class RefreshStatus { READY, PENDING, QUICK, FULL };
+    RefreshStatus refresh_status_;
+    
 public:
 
     static Glib::RefPtr<Gdk::Pixbuf> editedIcon;

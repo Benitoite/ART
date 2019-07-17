@@ -148,11 +148,15 @@ public:
         rtengine::IImage8* img = nullptr;
         Thumbnail* thm = j.tbe_->thumbnail;
 
-        if ( j.upgrade_ ) {
-            if ( thm->isQuick() ) {
+        DEBUG("working on %s", thm->getFileName().c_str());
+
+        if ( j.upgrade_ && thm->isQuick()) {
+            if (true) {// thm->isQuick() ) {
+                DEBUG("   trying to upgrade\n");
                 img = thm->upgradeThumbImage(thm->getProcParams(), j.tbe_->getPreviewHeight(), scale);
             }
         } else {
+            DEBUG("   trying to process\n");
             img = thm->processThumbImage(thm->getProcParams(), j.tbe_->getPreviewHeight(), scale);
         }
 

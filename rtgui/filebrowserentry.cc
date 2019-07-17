@@ -20,6 +20,7 @@
 
 #include <iomanip>
 #include <cstring>
+#include <iostream>
 
 #include "guiutils.h"
 #include "threadutils.h"
@@ -42,6 +43,7 @@ Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::ps;
 FileBrowserEntry::FileBrowserEntry (Thumbnail* thm, const Glib::ustring& fname)
     : ThumbBrowserEntryBase (fname), wasInside(false), iatlistener(nullptr), press_x(0), press_y(0), action_x(0), action_y(0), rot_deg(0.0), landscape(true), cropgl(nullptr), state(SNormal), crop_custom_ratio(0.f)
 {
+    refresh_status_ = RefreshStatus::READY;
     thumbnail = thm;
 
     feih = new FileBrowserEntryIdleHelper;
@@ -94,7 +96,8 @@ void FileBrowserEntry::refreshThumbnailImage ()
         return;
     }
 
-    thumbImageUpdater->add (this, &updatepriority, false, this);
+    refresh_status_ = RefreshStatus::FULL;
+    // thumbImageUpdater->add (this, &updatepriority, false, this);
 }
 
 void FileBrowserEntry::refreshQuickThumbnailImage ()
@@ -104,9 +107,10 @@ void FileBrowserEntry::refreshQuickThumbnailImage ()
         return;
     }
 
+    refresh_status_ = RefreshStatus::QUICK;
     // Only make a (slow) processed preview if the picture has been edited at all
-    bool upgrade_to_processed = (!options.internalThumbIfUntouched || thumbnail->isPParamsValid());
-    thumbImageUpdater->add(this, &updatepriority, upgrade_to_processed, this);
+    // bool upgrade_to_processed = (!options.internalThumbIfUntouched || thumbnail->isPParamsValid());
+    // thumbImageUpdater->add(this, &updatepriority, upgrade_to_processed, this);
 }
 
 void FileBrowserEntry::calcThumbnailSize ()
@@ -271,6 +275,8 @@ void FileBrowserEntry::_updateImage(rtengine::IImage8* img, double s, const rten
     landscape = newLandscape;
 
     img->free ();
+
+    refresh_status_ = RefreshStatus::READY;
 
     if (parent != nullptr) {
         if (rotated) {
@@ -716,8 +722,22 @@ void FileBrowserEntry::updateCursor (int x, int y)
     }
 }
 
+
 void FileBrowserEntry::draw (Cairo::RefPtr<Cairo::Context> cc)
 {
+    switch (refresh_status_) {
+    case RefreshStatus::QUICK:
+        refresh_status_ = RefreshStatus::PENDING;
+        // Only make a (slow) processed preview if the picture has been edited at all
+        thumbImageUpdater->add(this, &updatepriority, (!options.internalThumbIfUntouched || thumbnail->isPParamsValid()), this);
+        break;
+    case RefreshStatus::FULL:
+        refresh_status_ = RefreshStatus::PENDING;
+        thumbImageUpdater->add (this, &updatepriority, false, this);
+        break;
+    default:
+        break;
+    }
 
     ThumbBrowserEntryBase::draw (cc);
 
