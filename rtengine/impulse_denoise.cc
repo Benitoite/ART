@@ -25,11 +25,11 @@
 #include "sleef.c"
 #include "opthelper.h"
 #include "gauss.h"
+#include "rt_algo.h"
 
 using namespace std;
 
-namespace rtengine
-{
+namespace rtengine {
 
 void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
 {
@@ -41,112 +41,113 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
     int height = lab->H;
 
     // buffer for the lowpass image
-    float * lpf[height] ALIGNED16;
-    lpf[0] = new float [width * height];
+    // float * lpf[height] ALIGNED16;
+    // lpf[0] = new float [width * height];
     // buffer for the highpass image
     char * impish[height] ALIGNED16;
     impish[0] = new char [width * height];
 
     for (int i = 1; i < height; i++) {
-        lpf[i] = lpf[i - 1] + width;
+        // lpf[i] = lpf[i - 1] + width;
         impish[i] = impish[i - 1] + width;
     }
 
+    markImpulse(width, height, lab->L, impish, thresh);
 
-    //The cleaning algorithm starts here
+//     //The cleaning algorithm starts here
 
-    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    // modified bilateral filter for lowpass image, omitting input pixel; or Gaussian blur
+//     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//     // modified bilateral filter for lowpass image, omitting input pixel; or Gaussian blur
 
     const float eps = 1.0;
 
-#ifdef _OPENMP
-    #pragma omp parallel
-#endif
-    {
-        gaussianBlur (lab->L, lpf, width, height, max(2.0, thresh - 1.0));
-    }
+// #ifdef _OPENMP
+//     #pragma omp parallel
+// #endif
+//     {
+//         gaussianBlur (lab->L, lpf, width, height, max(2.0, thresh - 1.0));
+//     }
 
-    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    float impthr = max(1.0, 5.5 - thresh);
-    float impthrDiv24 = impthr / 24.0f;         //Issue 1671: moved the Division outside the loop, impthr can be optimized out too, but I let in the code at the moment
+//     float impthr = max(1.0, 5.5 - thresh);
+//     float impthrDiv24 = impthr / 24.0f;         //Issue 1671: moved the Division outside the loop, impthr can be optimized out too, but I let in the code at the moment
 
 
-#ifdef _OPENMP
-    #pragma omp parallel
-#endif
-    {
-        int i1, j1, j;
-        float hpfabs, hfnbrave;
-#ifdef __SSE2__
-        vfloat hfnbravev, hpfabsv;
-        vfloat impthrDiv24v = F2V( impthrDiv24 );
-#endif
-#ifdef _OPENMP
-        #pragma omp for
-#endif
+// #ifdef _OPENMP
+//     #pragma omp parallel
+// #endif
+//     {
+//         int i1, j1, j;
+//         float hpfabs, hfnbrave;
+// #ifdef __SSE2__
+//         vfloat hfnbravev, hpfabsv;
+//         vfloat impthrDiv24v = F2V( impthrDiv24 );
+// #endif
+// #ifdef _OPENMP
+//         #pragma omp for
+// #endif
 
-        for (int i = 0; i < height; i++) {
-            for (j = 0; j < 2; j++) {
-                hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
+//         for (int i = 0; i < height; i++) {
+//             for (j = 0; j < 2; j++) {
+//                 hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
 
-                //block average of high pass data
-                for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
-                    for (j1 = 0; j1 <= j + 2; j1++) {
-                        hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
-                    }
+//                 //block average of high pass data
+//                 for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
+//                     for (j1 = 0; j1 <= j + 2; j1++) {
+//                         hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
+//                     }
 
-                impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
-            }
+//                 impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
+//             }
 
-#ifdef __SSE2__
+// #ifdef __SSE2__
 
-            for (; j < width - 5; j += 4) {
-                hfnbravev = ZEROV;
-                hpfabsv = vabsf(LVFU(lab->L[i][j]) - LVFU(lpf[i][j]));
+//             for (; j < width - 5; j += 4) {
+//                 hfnbravev = ZEROV;
+//                 hpfabsv = vabsf(LVFU(lab->L[i][j]) - LVFU(lpf[i][j]));
 
-                //block average of high pass data
-                for (i1 = max(0, i - 2); i1 <= min(i + 2, height - 1); i1++ ) {
-                    for (j1 = j - 2; j1 <= j + 2; j1++) {
-                        hfnbravev += vabsf(LVFU(lab->L[i1][j1]) - LVFU(lpf[i1][j1]));
-                    }
-                }
+//                 //block average of high pass data
+//                 for (i1 = max(0, i - 2); i1 <= min(i + 2, height - 1); i1++ ) {
+//                     for (j1 = j - 2; j1 <= j + 2; j1++) {
+//                         hfnbravev += vabsf(LVFU(lab->L[i1][j1]) - LVFU(lpf[i1][j1]));
+//                     }
+//                 }
 
-                int mask = _mm_movemask_ps((hfnbravev - hpfabsv) * impthrDiv24v - hpfabsv);
-                impish[i][j] = (mask & 1);
-                impish[i][j + 1] = ((mask & 2) >> 1);
-                impish[i][j + 2] = ((mask & 4) >> 2);
-                impish[i][j + 3] = ((mask & 8) >> 3);
-            }
+//                 int mask = _mm_movemask_ps((hfnbravev - hpfabsv) * impthrDiv24v - hpfabsv);
+//                 impish[i][j] = (mask & 1);
+//                 impish[i][j + 1] = ((mask & 2) >> 1);
+//                 impish[i][j + 2] = ((mask & 4) >> 2);
+//                 impish[i][j + 3] = ((mask & 8) >> 3);
+//             }
 
-#endif
+// #endif
 
-            for (; j < width - 2; j++) {
-                hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
+//             for (; j < width - 2; j++) {
+//                 hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
 
-                //block average of high pass data
-                for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
-                    for (j1 = j - 2; j1 <= j + 2; j1++) {
-                        hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
-                    }
+//                 //block average of high pass data
+//                 for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
+//                     for (j1 = j - 2; j1 <= j + 2; j1++) {
+//                         hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
+//                     }
 
-                impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
-            }
+//                 impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
+//             }
 
-            for (; j < width; j++) {
-                hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
+//             for (; j < width; j++) {
+//                 hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
 
-                //block average of high pass data
-                for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
-                    for (j1 = j - 2; j1 < width; j1++) {
-                        hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
-                    }
+//                 //block average of high pass data
+//                 for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
+//                     for (j1 = j - 2; j1 < width; j1++) {
+//                         hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
+//                     }
 
-                impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
-            }
-        }
-    }
+//                 impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
+//             }
+//         }
+//     }
 
 //now impulsive values have been identified
 
@@ -254,10 +255,9 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
     }
 //now impulsive values have been corrected
 
-    delete [] lpf[0];
+    // delete [] lpf[0];
     delete [] impish[0];
 
 }
 
-
-}
+} // namespace rtengine

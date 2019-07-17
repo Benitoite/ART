@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2017-2018 Ingo Weyrich <heckflosse67@gmx.de>
@@ -21,8 +22,12 @@
 
 #include <cstddef>
 
-namespace rtengine
-{
+namespace rtengine {
+
 void findMinMaxPercentile(const float* data, size_t size, float minPrct, float& minOut, float maxPrct, float& maxOut, bool multiThread = true);
+
 void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount = 1.f, bool autoContrast = false);
-}
+
+void markImpulse(int W, int H, float **const src, char **impulse, float thresh);
+
+} // namespace rtengine

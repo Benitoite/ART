@@ -160,8 +160,7 @@ float calcContrastThreshold(float** luminance, int tileY, int tileX, int tilesiz
 }
 }
 
-namespace rtengine
-{
+namespace rtengine {
 
 void findMinMaxPercentile(const float* data, size_t size, float minPrct, float& minOut, float maxPrct, float& maxOut, bool multithread)
 {
@@ -470,4 +469,106 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
     }
 }
 
+
+void markImpulse(int width, int height, float **const src, char **impulse, float thresh)
+{
+    // buffer for the lowpass image
+    float * lpf[height] ALIGNED16;
+    lpf[0] = new float [width * height];
+
+    for (int i = 1; i < height; i++) {
+        lpf[i] = lpf[i - 1] + width;
+    }
+
+#ifdef _OPENMP
+    #pragma omp parallel
+#endif
+    {
+        gaussianBlur(const_cast<float **>(src), lpf, width, height, max(2.f, thresh - 1.f));
+    }
+
+    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    float impthr = max(1.f, 5.5f - thresh);
+    float impthrDiv24 = impthr / 24.0f;         //Issue 1671: moved the Division outside the loop, impthr can be optimized out too, but I let in the code at the moment
+
+
+#ifdef _OPENMP
+    #pragma omp parallel
+#endif
+    {
+        int i1, j1, j;
+        float hpfabs, hfnbrave;
+#ifdef __SSE2__
+        vfloat hfnbravev, hpfabsv;
+        vfloat impthrDiv24v = F2V( impthrDiv24 );
+#endif
+#ifdef _OPENMP
+        #pragma omp for
+#endif
+
+        for (int i = 0; i < height; i++) {
+            for (j = 0; j < 2; j++) {
+                hpfabs = fabs(src[i][j] - lpf[i][j]);
+
+                //block average of high pass data
+                for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
+                    for (j1 = 0; j1 <= j + 2; j1++) {
+                        hfnbrave += fabs(src[i1][j1] - lpf[i1][j1]);
+                    }
+
+                impulse[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
+            }
+
+#ifdef __SSE2__
+
+            for (; j < width - 5; j += 4) {
+                hfnbravev = ZEROV;
+                hpfabsv = vabsf(LVFU(src[i][j]) - LVFU(lpf[i][j]));
+
+                //block average of high pass data
+                for (i1 = max(0, i - 2); i1 <= min(i + 2, height - 1); i1++ ) {
+                    for (j1 = j - 2; j1 <= j + 2; j1++) {
+                        hfnbravev += vabsf(LVFU(src[i1][j1]) - LVFU(lpf[i1][j1]));
+                    }
+                }
+
+                int mask = _mm_movemask_ps((hfnbravev - hpfabsv) * impthrDiv24v - hpfabsv);
+                impulse[i][j] = (mask & 1);
+                impulse[i][j + 1] = ((mask & 2) >> 1);
+                impulse[i][j + 2] = ((mask & 4) >> 2);
+                impulse[i][j + 3] = ((mask & 8) >> 3);
+            }
+
+#endif
+
+            for (; j < width - 2; j++) {
+                hpfabs = fabs(src[i][j] - lpf[i][j]);
+
+                //block average of high pass data
+                for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
+                    for (j1 = j - 2; j1 <= j + 2; j1++) {
+                        hfnbrave += fabs(src[i1][j1] - lpf[i1][j1]);
+                    }
+
+                impulse[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
+            }
+
+            for (; j < width; j++) {
+                hpfabs = fabs(src[i][j] - lpf[i][j]);
+
+                //block average of high pass data
+                for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
+                    for (j1 = j - 2; j1 < width; j1++) {
+                        hfnbrave += fabs(src[i1][j1] - lpf[i1][j1]);
+                    }
+
+                impulse[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
+            }
+        }
+    }
+
+    delete [] lpf[0];
 }
+ 
+} // namespace rtengine

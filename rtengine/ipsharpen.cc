@@ -204,6 +204,9 @@ BENCHFUN
     const double sigma = sharpenParam.deconvradius / scale;
     const float amount = sharpenParam.deconvamount / 100.f;
 
+    JaggedArray<char> impulse(W, H);
+    markImpulse(W, H, luminance, impulse, 2.f);
+
 #ifdef _OPENMP
     #pragma omp parallel
 #endif
@@ -226,7 +229,8 @@ BENCHFUN
 
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
-                luminance[i][j] = intp(blend[i][j] * amount, max(tmpI[i][j], 0.0f), luminance[i][j]);
+                float b = impulse[i][j] ? 0.f : blend[i][j] * amount;
+                luminance[i][j] = intp(b, max(tmpI[i][j], 0.0f), luminance[i][j]);
             }
         }
 
