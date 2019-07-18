@@ -115,19 +115,19 @@ FilePanel::FilePanel () :
     inspectorPanel = new Inspector();
     fileCatalog->setInspector(inspectorPanel);
 
-    Gtk::ScrolledWindow* sExportPanel = Gtk::manage ( new Gtk::ScrolledWindow() );
-    exportPanel = Gtk::manage ( new ExportPanel () );
-    sExportPanel->add (*exportPanel);
-    sExportPanel->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    // Gtk::ScrolledWindow* sExportPanel = Gtk::manage ( new Gtk::ScrolledWindow() );
+    // exportPanel = Gtk::manage ( new ExportPanel () );
+    // sExportPanel->add (*exportPanel);
+    // sExportPanel->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 
     fileCatalog->setFilterPanel (filterPanel);
-    fileCatalog->setExportPanel (exportPanel);
+    // fileCatalog->setExportPanel (exportPanel);
     //fileCatalog->setImageAreaToolListener (tpc);
     fileCatalog->setImageAreaToolListener(iatl_);
 
     //------------------
 
-    rightNotebook->set_tab_pos (Gtk::POS_LEFT);
+    rightNotebook->set_tab_pos (Gtk::POS_RIGHT);
 
     Gtk::Label* devLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_DEVELOP")) );
     devLab->set_name ("LabelRightNotebook");
@@ -140,9 +140,9 @@ FilePanel::FilePanel () :
     filtLab->set_angle (90);
     //Gtk::Label* tagLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_TAGGING")) );
     //tagLab->set_angle (90);
-    Gtk::Label* exportLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_EXPORT")) );
-    exportLab->set_name ("LabelRightNotebook");
-    exportLab->set_angle (90);
+    // Gtk::Label* exportLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_EXPORT")) );
+    // exportLab->set_name ("LabelRightNotebook");
+    // exportLab->set_angle (90);
 
     // tpcPaned = Gtk::manage ( new Gtk::VPaned () );
     // tpcPaned->pack1 (*tpc->toolPanelNotebook, false, true);
@@ -152,7 +152,7 @@ FilePanel::FilePanel () :
     rightNotebook->append_page (*inspectorPanel, *inspectLab);
     // rightNotebook->append_page (*tpcPaned, *devLab);
     //rightNotebook->append_page (*taggingBox, *tagLab); commented out: currently the tab is empty ...
-    rightNotebook->append_page (*sExportPanel, *exportLab);
+    // rightNotebook->append_page (*sExportPanel, *exportLab);
     rightNotebook->set_name ("RightNotebook");
 
     rightBox->pack_start (*rightNotebook);

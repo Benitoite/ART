@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -25,6 +26,7 @@
 #include <vector>
 #include "rtwindow.h"
 #include "dynamicprofilepanel.h"
+#include "exportpanel.h"
 
 class Preferences : public Gtk::Dialog, public ProfileStoreListener
 {
@@ -248,6 +250,8 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::ScrolledWindow *swBatchProc;
     Gtk::ScrolledWindow *swPerformance;
     Gtk::ScrolledWindow *swSounds;
+    Gtk::ScrolledWindow *swFastExport;
+    ExportPanel *exportPanel;
 
     Gtk::Widget *getGeneralPanel();
     Gtk::Widget *getImageProcessingPanel();
@@ -256,6 +260,7 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::Widget *getColorManPanel();
     Gtk::Widget *getBatchProcPanel();
     Gtk::Widget *getPerformancePanel();
+    Gtk::Widget *getFastExportPanel();
     Gtk::Widget *getSoundsPanel();
 
 public:

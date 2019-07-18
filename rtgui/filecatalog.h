@@ -28,7 +28,7 @@
 #include "coarsepanel.h"
 #include "toolbar.h"
 #include "filterpanel.h"
-#include "exportpanel.h"
+//#include "exportpanel.h"
 #include "previewloader.h"
 #include "multilangmgr.h"
 #include "threadutils.h"
@@ -43,8 +43,8 @@ class FilePanel;
 class FileCatalog : public Gtk::VBox,
     public PreviewLoaderListener,
     public FilterPanelListener,
-    public FileBrowserListener,
-    public ExportPanelListener
+    public FileBrowserListener//,
+//    public ExportPanelListener
 {
 public:
     typedef sigc::slot<void, const Glib::ustring&> DirSelectionSlot;
@@ -126,7 +126,7 @@ private:
     bool hasValidCurrentEFS;
 
     FilterPanel* filterPanel;
-    ExportPanel* exportPanel;
+    // ExportPanel* exportPanel;
 
     int previewsToLoad;
     int previewsLoaded;
@@ -188,7 +188,7 @@ public:
     void exifFilterChanged () override;
 
     // exportpanel interface
-    void exportRequested() override;
+    // void exportRequested() override;
 
     Glib::ustring lastSelectedDir ()
     {
@@ -230,7 +230,7 @@ public:
     void setDirSelector (const DirSelectionSlot& selectDir);
 
     void setFilterPanel (FilterPanel* fpanel);
-    void setExportPanel (ExportPanel* expanel);
+    // void setExportPanel (ExportPanel* expanel);
     void exifInfoButtonToggled();
     void categoryButtonToggled (Gtk::ToggleButton* b, bool isMouseClick);
     bool capture_event(GdkEventButton* event);

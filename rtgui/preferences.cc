@@ -87,6 +87,7 @@ Preferences::Preferences (RTWindow *rtwindow)
     //nb->append_page(*getBatchProcPanel(), M("PREFERENCES_BATCH_PROCESSING"));
     getBatchProcPanel(); // TODO -- remove preferences as well
     nb->append_page(*getPerformancePanel(), M("PREFERENCES_TAB_PERFORMANCE"));
+    nb->append_page(*getFastExportPanel(), M("PREFERENCES_TAB_FASTEXPORT"));
     // Sounds only on Windows and Linux
 #if defined(WIN32) || defined(__linux__)
     nb->append_page(*getSoundsPanel(), M("PREFERENCES_TAB_SOUND"));
@@ -1524,6 +1525,17 @@ Gtk::Widget* Preferences::getSoundsPanel ()
     return swSounds;
 }
 
+
+Gtk::Widget *Preferences::getFastExportPanel()
+{
+    exportPanel = Gtk::manage(new ExportPanel());
+    swFastExport = Gtk::manage(new Gtk::ScrolledWindow());
+    swFastExport->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    swFastExport->add(*exportPanel);
+    return swFastExport;
+}
+
+
 void Preferences::parseDir (Glib::ustring dirname, std::vector<Glib::ustring>& items, Glib::ustring ext)
 {
 
@@ -1838,6 +1850,8 @@ void Preferences::storePreferences ()
     moptions.thumbnail_rating_mode = thumbRatingMode->get_active() ? Options::ThumbnailRatingMode::XMP : Options::ThumbnailRatingMode::PROCPARAMS;
     moptions.rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync(metadataSyncCombo->get_active_row_number());
     moptions.rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle(xmpSidecarCombo->get_active_row_number());
+
+    exportPanel->SaveSettings(moptions);
 }
 
 void Preferences::fillPreferences ()
@@ -2084,6 +2098,8 @@ void Preferences::fillPreferences ()
     thumbRatingMode->set_active(moptions.thumbnail_rating_mode == Options::ThumbnailRatingMode::XMP);
     metadataSyncCombo->set_active(int(moptions.rtSettings.metadata_xmp_sync));
     xmpSidecarCombo->set_active(int(moptions.rtSettings.xmp_sidecar_style));
+
+    exportPanel->LoadSettings(moptions);
 }
 
 /*

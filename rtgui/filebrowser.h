@@ -55,7 +55,7 @@ public:
  */
 class FileBrowser  : public ThumbBrowserBase,
     public LWButtonListener,
-    public ExportPanelListener,
+    /* public ExportPanelListener, */
     public ProfileStoreListener
 {
 private:
@@ -129,7 +129,7 @@ protected:
     void requestColorLabel(int colorlabel);
     void notifySelectionListener ();
     void openRequested( std::vector<FileBrowserEntry*> mselected);
-    ExportPanel* exportPanel;
+    // ExportPanel* exportPanel;
 
     type_trash_changed m_trash_changed;
 
@@ -190,9 +190,9 @@ public:
 
     void selectionChanged () override;
 
-    void setExportPanel (ExportPanel* expanel);
+    /* void setExportPanel (ExportPanel* expanel); */
     // exportpanel interface
-    void exportRequested() override;
+    /* void exportRequested() override; */
 
     void storeCurrentValue() override;
     void updateProfileList() override;

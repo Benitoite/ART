@@ -29,7 +29,7 @@
 #include "pparamschangelistener.h"
 #include "history.h"
 #include "filterpanel.h"
-#include "exportpanel.h"
+//#include "exportpanel.h"
 #include "progressconnector.h"
 
 class RTWindow;
@@ -49,7 +49,7 @@ public:
 
     DirBrowser* dirBrowser;
     FilterPanel* filterPanel;
-    ExportPanel* exportPanel;
+    // ExportPanel* exportPanel;
     FileCatalog* fileCatalog;
     Gtk::Paned *ribbonPane;
 

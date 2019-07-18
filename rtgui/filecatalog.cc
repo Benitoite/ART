@@ -52,7 +52,7 @@ FileCatalog::FileCatalog (CoarsePanel* cp, ToolBar* tb, FilePanel* filepanel) :
     hbToolBar1STB(nullptr),
     hasValidCurrentEFS(false),
     filterPanel(nullptr),
-    exportPanel(nullptr),
+//    exportPanel(nullptr),
     previewsToLoad(0),
     previewsLoaded(0),
     modifierKey(0),
@@ -534,9 +534,9 @@ void FileCatalog::closeDir ()
         filterPanel->set_sensitive (false);
     }
 
-    if (exportPanel) {
-        exportPanel->set_sensitive (false);
-    }
+    // if (exportPanel) {
+    //     exportPanel->set_sensitive (false);
+    // }
 
     if (dirMonitor) {
         dirMonitor->cancel ();
@@ -818,9 +818,9 @@ void FileCatalog::previewsFinishedUI ()
             }
         }
 
-        if (exportPanel) {
-            exportPanel->set_sensitive (true);
-        }
+        // if (exportPanel) {
+        //     exportPanel->set_sensitive (true);
+        // }
 
         // restart anything that might have been loaded low quality
         fileBrowser->refreshQuickThumbImages();
@@ -1888,9 +1888,9 @@ void FileCatalog::refreshEditedState (const std::set<Glib::ustring>& efiles)
     fileBrowser->refreshEditedState (efiles);
 }
 
-void FileCatalog::exportRequested()
-{
-}
+// void FileCatalog::exportRequested()
+// {
+// }
 
 // Called within GTK UI thread
 void FileCatalog::exifFilterChanged ()
@@ -1910,13 +1910,13 @@ void FileCatalog::setFilterPanel (FilterPanel* fpanel)
     filterPanel->setFilterPanelListener (this);
 }
 
-void FileCatalog::setExportPanel(ExportPanel* expanel)
-{
-    exportPanel = expanel;
-    exportPanel->set_sensitive (false);
-    exportPanel->setExportPanelListener (this);
-    fileBrowser->setExportPanel(expanel);
-}
+// void FileCatalog::setExportPanel(ExportPanel* expanel)
+// {
+//     exportPanel = expanel;
+//     exportPanel->set_sensitive (false);
+//     exportPanel->setExportPanelListener (this);
+//     fileBrowser->setExportPanel(expanel);
+// }
 
 void FileCatalog::trashChanged ()
 {
@@ -2220,11 +2220,11 @@ bool FileCatalog::handleShortcutKey (GdkEventKey* event)
     // GUI Layout
     switch(event->keyval) {
     case GDK_KEY_l:
-        if (!alt) {
+        if (!alt && !ctrl) {
             tbLeftPanel_1->set_active (!tbLeftPanel_1->get_active());    // toggle left panel
         }
 
-        if (alt && !ctrl) {
+        if (!alt && ctrl) {
             tbRightPanel_1->set_active (!tbRightPanel_1->get_active());    // toggle right panel
         }
 

@@ -23,14 +23,15 @@
 #include <gtkmm.h>
 #include "guiutils.h"
 #include "adjuster.h"
+#include "options.h"
 
-class ExportPanelListener
-{
-public:
-    virtual ~ExportPanelListener() = default;
+// class ExportPanelListener
+// {
+// public:
+//     virtual ~ExportPanelListener() = default;
 
-    virtual void exportRequested() = 0;
-};
+//     virtual void exportRequested() = 0;
+// };
 
 class ExportPanel : public Gtk::VBox
 {
@@ -73,7 +74,7 @@ protected:
 
     MyComboBoxText* raw_xtrans_method;
 
-    Gtk::Button* btnFastExport;
+//    Gtk::Button* btnFastExport;
 
     MySpinButton* MaxWidth;
     MySpinButton* MaxHeight;
@@ -98,25 +99,26 @@ protected:
     sigc::connection bypass_raw_ffConn            ;
 
 
-    ExportPanelListener* listener;
+    // ExportPanelListener* listener;
 
     void bypassALL_Toggled();
     void use_fast_pipeline_toggled();
-    void SaveSettingsAsDefault();
-    void LoadDefaultSettings();
-    void LoadSettings();
-    void SaveSettings();
+    // void SaveSettingsAsDefault();
+    // void LoadDefaultSettings();
 
 public:
     ExportPanel ();
 
-    void FastExportPressed ();
+    void LoadSettings(Options &opts);
+    void SaveSettings(Options &opts);
+
+    // void FastExportPressed ();
     //bool isEnabled ();
 
-    void setExportPanelListener (ExportPanelListener* l)
-    {
-        listener = l;
-    }
+    // void setExportPanelListener (ExportPanelListener* l)
+    // {
+    //     listener = l;
+    // }
 };
 
 #endif
