@@ -1996,3 +1996,13 @@ void FileBrowser::openRequested( std::vector<FileBrowserEntry*> mselected)
 
     tbl->openRequested (entries);
 }
+
+
+int FileBrowser::getColumnWidth() const
+{
+    int ret = 0;
+    for (auto t : fd) {
+        ret = std::max(ret, t->getEffectiveWidth());
+    }
+    return ret;
+}

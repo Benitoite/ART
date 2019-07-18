@@ -199,6 +199,8 @@ public:
     void restoreValue() override;
 
     type_trash_changed trash_changed();
+
+    int getColumnWidth() const;
 };
 
 #endif

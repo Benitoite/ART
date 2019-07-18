@@ -43,7 +43,9 @@ private:
 
 } // namespace
 
-FilePanel::FilePanel () : parent(nullptr), error(0)
+FilePanel::FilePanel () :
+    parent(nullptr), error(0),
+    pane_pos_(-1)
 {
 
     // Contains everything except for the batch Tool Panel and tabs (Fast Export, Inspect, etc)
@@ -191,6 +193,7 @@ void FilePanel::on_realize ()
 {
     Gtk::HPaned::on_realize ();
 //    tpc->closeAllTools();
+    pane_pos_ = get_position();
 }
 
 
@@ -245,9 +248,16 @@ void FilePanel::on_NB_switch_page(Gtk::Widget* page, guint page_num)
     if (page_num == 1) {
         // switching the inspector "on"
         fileCatalog->enableInspector();
+        pane_pos_ = get_position();
+        int pos = fileCatalog->fileBrowser->getColumnWidth();
+        pos += rightBox->get_width();
+        set_position(pos);
+        queue_draw();
     } else {
         // switching the inspector "off"
         fileCatalog->disableInspector();
+        set_position(pane_pos_);
+        queue_draw();
     }
 }
 

@@ -106,6 +106,7 @@ private:
     int error;
 
     IdleRegister idle_register;
+    int pane_pos_;
 };
 
 #endif
