@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -71,6 +72,7 @@ class FileBrowserEntry : public ThumbBrowserEntryBase,
 
     enum class RefreshStatus { READY, PENDING, QUICK, FULL };
     RefreshStatus refresh_status_;
+    void update_refresh_status();
     
 public:
 

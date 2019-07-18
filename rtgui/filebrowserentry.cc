@@ -28,6 +28,7 @@
 #include "cursormanager.h"
 #include "thumbbrowserbase.h"
 #include "inspector.h"
+#include "procparamchangers.h"
 
 #define CROPRESIZEBORDER 4
 
@@ -210,6 +211,10 @@ void FileBrowserEntry::procParamsChanged (Thumbnail* thm, int whoChangedIt)
         refreshQuickThumbnailImage ();
     } else {
         refreshThumbnailImage ();
+    }
+
+    if (whoChangedIt == EDITOR) {
+        update_refresh_status();
     }
 }
 
@@ -723,7 +728,7 @@ void FileBrowserEntry::updateCursor (int x, int y)
 }
 
 
-void FileBrowserEntry::draw (Cairo::RefPtr<Cairo::Context> cc)
+void FileBrowserEntry::update_refresh_status()
 {
     switch (refresh_status_) {
     case RefreshStatus::QUICK:
@@ -738,6 +743,12 @@ void FileBrowserEntry::draw (Cairo::RefPtr<Cairo::Context> cc)
     default:
         break;
     }
+}
+
+
+void FileBrowserEntry::draw (Cairo::RefPtr<Cairo::Context> cc)
+{
+    update_refresh_status();
 
     ThumbBrowserEntryBase::draw (cc);
 
