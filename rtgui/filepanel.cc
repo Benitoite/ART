@@ -129,15 +129,15 @@ FilePanel::FilePanel () :
 
     rightNotebook->set_tab_pos (Gtk::POS_RIGHT);
 
-    Gtk::Label* devLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_DEVELOP")) );
-    devLab->set_name ("LabelRightNotebook");
-    devLab->set_angle (90);
+    // Gtk::Label* devLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_DEVELOP")) );
+    // devLab->set_name ("LabelRightNotebook");
+    // devLab->set_angle (270);
     Gtk::Label* inspectLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_INSPECT")) );
     inspectLab->set_name ("LabelRightNotebook");
-    inspectLab->set_angle (90);
+    inspectLab->set_angle (270);
     Gtk::Label* filtLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_FILTER")) );
     filtLab->set_name ("LabelRightNotebook");
-    filtLab->set_angle (90);
+    filtLab->set_angle (270);
     //Gtk::Label* tagLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_TAGGING")) );
     //tagLab->set_angle (90);
     // Gtk::Label* exportLab = Gtk::manage ( new Gtk::Label (M("MAIN_TAB_EXPORT")) );
