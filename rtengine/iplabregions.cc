@@ -205,6 +205,12 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
 
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
+                    vfloat lblendv = LVFU(Lmask[i][y][x]);
+                    vmask b = vorm(vmaskf_gt(blendv, ZEROV), vmaskf_gt(lblendv, ZEROV));
+                    if (!_mm_movemask_ps((vfloat)b)) {
+                        continue;
+                    }
+                    
                     vfloat l_newv = lv;
                     vfloat lfv = vmaxf(lv, ZEROV);
                     vfloat a_newv = /*vclampf*/(av + lfv * F2V(abca[i]));//, cm42000v, c42000v);
@@ -212,7 +218,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i], rs[i]);
                     //l_newv = vmaxf(l_newv, ZEROV);
                     chan_v(lv, av, bv, l_newv, a_newv, b_newv, channel[i]);
-                    lv = vintpf(LVFU(Lmask[i][y][x]), l_newv, lv);
+                    lv = vintpf(lblendv, l_newv, lv);
                     av = vintpf(blendv, a_newv, av);
                     bv = vintpf(blendv, b_newv, bv);
                 }
@@ -228,6 +234,11 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
 
                 for (int i = 0; i < n; ++i) {
                     float blend = abmask[i][y][x];
+                    float lblend = Lmask[i][y][x];
+                    if (!(blend > 0.f || lblend > 0.f)) {
+                        continue;
+                    }
+                    
                     float l_new = l;
                     float lf = max(l, 0.f);
                     float a_new = /*LIM*/(a + lf * abca[i]);//, -42000.f, 42000.f);
@@ -235,7 +246,7 @@ void ImProcFunctions::labColorCorrectionRegions(LabImage *lab, int offset_x, int
                     CDL(l_new, a_new, b_new, slope[i], offset[i], power[i], rs[i]);
                     //l_new = max(l_new, 0.f);
                     chan(l, a, b, l_new, a_new, b_new, channel[i]);
-                    l = intp(Lmask[i][y][x], l_new, l);
+                    l = intp(lblend, l_new, l);
                     a = intp(blend, a_new, a);
                     b = intp(blend, b_new, b);
                 }

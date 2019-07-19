@@ -108,7 +108,7 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
                 p.get(r, a);
                 p.set(r, a - area.angle);
                 Coord ret(p);
-                         ret += center;
+                ret += center;
                 ret -= origin;
                 return ret;
             };
