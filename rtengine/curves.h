@@ -913,7 +913,8 @@ public:
 class LuminanceToneCurve : public ToneCurve
 {
 public:
-    void Apply(float& r, float& g, float& b) const;
+    // void Apply(float& r, float& g, float& b) const;
+    void Apply(float& r, float& g, float& b, const double ws[3][3]) const;
 };
 
 class PerceptualToneCurveState
@@ -1050,7 +1051,7 @@ inline void AdobeToneCurve::RGBTone (float& r, float& g, float& b) const
 }
 
 // Modifying the Luminance channel only
-inline void LuminanceToneCurve::Apply(float &ir, float &ig, float &ib) const
+inline void LuminanceToneCurve::Apply(float &ir, float &ig, float &ib, const double ws[3][3]) const
 {
     assert (lutToneCurve);
 
@@ -1058,7 +1059,8 @@ inline void LuminanceToneCurve::Apply(float &ir, float &ig, float &ib) const
     float g = CLIP(ig);
     float b = CLIP(ib);
 
-    float currLuminance = r * 0.2126729f + g * 0.7151521f + b * 0.0721750f;
+//    float currLuminance = r * 0.2126729f + g * 0.7151521f + b * 0.0721750f;
+    float currLuminance = Color::rgbLuminance(r, g, b, ws);
     const float newLuminance = lutToneCurve[currLuminance];
     currLuminance = currLuminance == 0.f ? 0.00001f : currLuminance;
     const float coef = newLuminance / currLuminance;
@@ -1068,6 +1070,27 @@ inline void LuminanceToneCurve::Apply(float &ir, float &ig, float &ib) const
 
     setUnlessOOG(ir, ig, ib, r, g, b);
 }
+
+
+// inline void LuminanceToneCurve::Apply(float &ir, float &ig, float &ib) const
+// {
+//     assert (lutToneCurve);
+
+//     float r = CLIP(ir);
+//     float g = CLIP(ig);
+//     float b = CLIP(ib);
+
+// //    float currLuminance = r * 0.2126729f + g * 0.7151521f + b * 0.0721750f;
+//     float currLuminance = Color::rgbLuminance(r, g, b);
+//     const float newLuminance = lutToneCurve[currLuminance];
+//     currLuminance = currLuminance == 0.f ? 0.00001f : currLuminance;
+//     const float coef = newLuminance / currLuminance;
+//     r = LIM<float>(r * coef, 0.f, 65535.f);
+//     g = LIM<float>(g * coef, 0.f, 65535.f);
+//     b = LIM<float>(b * coef, 0.f, 65535.f);
+
+//     setUnlessOOG(ir, ig, ib, r, g, b);
+// }
 
 inline float WeightedStdToneCurve::Triangle(float a, float a1, float b) const
 {

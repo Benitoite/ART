@@ -91,8 +91,17 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
         const SatAndValueBlendingToneCurve &c = static_cast<const SatAndValueBlendingToneCurve &>(tc);
         apply(c, rgb, W, H, multithread);
     } else if (curveMode == ToneCurveParams::TcMode::LUMINANCE) {
+        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
         const LuminanceToneCurve &c = static_cast<const LuminanceToneCurve &>(tc);
-        apply(c, rgb, W, H, multithread);
+//        apply(c, rgb, W, H, multithread);
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                c.Apply(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws);
+            }
+        }
     }
 }
 
