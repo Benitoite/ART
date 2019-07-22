@@ -506,7 +506,7 @@ void ThumbBrowserBase::selectLast (bool enlarge)
 void ThumbBrowserBase::selectEntry(const ThumbBrowserEntryBase *entry)
 {
     // no locking here, as this is called from an even handler
-    double h, v;
+    double h = 0, v = 0;
     {
         MYWRITERLOCK(l, entryRW);
         scrollToEntry(h, v, internal.get_width(), internal.get_height(), const_cast<ThumbBrowserEntryBase *>(entry));
