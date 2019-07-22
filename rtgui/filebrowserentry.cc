@@ -309,6 +309,13 @@ bool FileBrowserEntry::motionNotify (int x, int y)
         if (coord.x != -1.) {
             if (!wasInside) {
                 inspector->switchImage(filename);
+                idle_register.add(
+                    [this]() -> bool
+                    {
+                        this->parent->selectEntry(this);
+                        return false;
+                    },
+                    G_PRIORITY_LOW);
             }
 
             wasInside = true;

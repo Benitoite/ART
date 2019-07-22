@@ -502,6 +502,23 @@ void ThumbBrowserBase::selectLast (bool enlarge)
     setScrollPosition (h, v);
 }
 
+
+void ThumbBrowserBase::selectEntry(const ThumbBrowserEntryBase *entry)
+{
+    // no locking here, as this is called from an even handler
+    double h, v;
+    {
+        MYWRITERLOCK(l, entryRW);
+        scrollToEntry(h, v, internal.get_width(), internal.get_height(), const_cast<ThumbBrowserEntryBase *>(entry));
+        selectSingle(const_cast<ThumbBrowserEntryBase *>(entry));
+        MYWRITERLOCK_RELEASE(l);
+    }
+    selectionChanged();
+    setScrollPosition(h, v);
+    redraw();
+}
+
+
 void ThumbBrowserBase::resizeThumbnailArea (int w, int h)
 {
 
