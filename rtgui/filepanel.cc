@@ -389,7 +389,7 @@ void FilePanel::saveOptions ()
     parent->get_size(winW, winH);
     options.dirBrowserWidth = dirpaned->get_position ();
     options.dirBrowserHeight = placespaned->get_position ();
-    options.browserToolPanelWidth = winW - get_position();
+    options.browserToolPanelWidth = winW - (rightNotebook->get_current_page() == 0 ? get_position() : pane_pos_);
     // options.browserToolPanelHeight = tpcPaned->get_position ();
 
     if (options.startupDir == STARTUPDIR_LAST && fileCatalog->lastSelectedDir () != "") {
