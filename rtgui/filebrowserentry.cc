@@ -215,6 +215,7 @@ void FileBrowserEntry::procParamsChanged (Thumbnail* thm, int whoChangedIt)
 
     if (whoChangedIt == EDITOR) {
         update_refresh_status();
+        parent->redrawNeeded(this);
     }
 }
 
