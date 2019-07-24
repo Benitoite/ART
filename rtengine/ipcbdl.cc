@@ -28,7 +28,7 @@
 
 namespace rtengine {
 
-void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -50,7 +50,7 @@ void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(lab, params->dirpyrequalizer.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
-            return; // show mask is active, nothing more to do
+            return true; // show mask is active, nothing more to do
         }
 
         array2D<float> L(lab->W, lab->H, lab->L, 0);
@@ -81,6 +81,8 @@ void ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }
+
+    return false;
 }
 
 } // namespace rtengine

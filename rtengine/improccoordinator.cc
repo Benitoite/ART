@@ -483,32 +483,38 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
     
         readyphase++;
+        bool stop = false;
     
         if (todo & M_LUMACURVE) {
-            ipf.labColorCorrectionRegions(oprevl);
-            ipf.guidedSmoothing(oprevl);
-            ipf.logEncoding(oprevl, &histToneCurve);
+            stop = ipf.colorCorrection(oprevl);
+            stop = stop || ipf.guidedSmoothing(oprevl);
+
+            if (!stop) {
+                ipf.logEncoding(oprevl, &histToneCurve);
             
-            progress("Applying Color Boost...", 100 * readyphase / numofphases);
-            histCCurve.clear();
-            histLCurve.clear();
-            ipf.labAdjustments(oprevl, &histCCurve, &histLCurve);
+                progress("Applying Color Boost...", 100 * readyphase / numofphases);
+                histCCurve.clear();
+                histLCurve.clear();
+                ipf.labAdjustments(oprevl, &histCCurve, &histLCurve);
+            }
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
             nprevl->CopyFrom(oprevl);
     
-            ipf.toneMapping(nprevl);
+            stop = stop || ipf.toneMapping(nprevl);
     
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
             readyphase++;
     
 
-            ipf.contrastByDetailLevels(nprevl);
+            stop = stop || ipf.contrastByDetailLevels(nprevl);
             readyphase++;
-                    
-            ipf.softLight(nprevl);
-            ipf.localContrast(nprevl);            
+
+            if (!stop) {
+                ipf.softLight(nprevl);
+                ipf.localContrast(nprevl);
+            }
         }
     
         // Update the monitor color transform if necessary

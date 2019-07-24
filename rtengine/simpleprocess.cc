@@ -338,27 +338,33 @@ private:
             pl->setProgress (0.55);
         }
 
-        ipf.labColorCorrectionRegions(labView, oX, oY, oW, oH);
-        ipf.guidedSmoothing(labView, oX, oY, oW, oH);
-        ipf.logEncoding(labView);
-        ipf.labAdjustments(labView);
+        bool stop = ipf.colorCorrection(labView, oX, oY, oW, oH);
+        stop = stop || ipf.guidedSmoothing(labView, oX, oY, oW, oH);
+        if (!stop) {
+            ipf.logEncoding(labView);
+            ipf.labAdjustments(labView);
+        }
 
-        ipf.toneMapping(labView, oX, oY, oW, oH);
-        ipf.impulsedenoise (labView);
-        ipf.defringe (labView);
-        ipf.MLmicrocontrast (labView);
-        ipf.sharpening (labView, params.sharpening);
-        ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
-        ipf.softLight(labView);
-        ipf.localContrast(labView);
-        ipf.filmGrain(labView);
+        stop = stop || ipf.toneMapping(labView, oX, oY, oW, oH);
+        if (!stop) {
+            ipf.impulsedenoise(labView);
+            ipf.defringe(labView);
+            ipf.MLmicrocontrast(labView);
+            ipf.sharpening(labView, params.sharpening);
+        }
+        stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
+        if (!stop) {
+            ipf.softLight(labView);
+            ipf.localContrast(labView);
+            ipf.filmGrain(labView);
+        }
 
         if (pl) {
             pl->setProgress (0.60);
         }
 
         int imw, imh;
-        double tmpScale = ipf.resizeScale (&params, fw, fh, imw, imh);
+        double tmpScale = ipf.resizeScale(&params, fw, fh, imw, imh);
         bool labResize = params.resize.enabled && params.resize.method != "Nearest" && (tmpScale != 1.0 || params.prsharpening.enabled);
         LabImage *tmplab;
 
@@ -409,7 +415,7 @@ private:
                         labView->L[i][j] = labView->L[i][j] < 0.f ? 0.f : labView->L[i][j];
                     }
                 }
-                ipf.sharpening (labView, params.prsharpening);
+                ipf.sharpening(labView, params.prsharpening);
             }
         }
 
@@ -600,7 +606,7 @@ private:
     int fw;
     int fh;
     int oX; // parameters for the area masks 
-    int oY; // in labColorCorrectionRegions
+    int oY; // in colorCorrection
     int oW; //
     int oH; //
 

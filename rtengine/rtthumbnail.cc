@@ -1247,14 +1247,18 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     LUTu histToneCurve;
     ipf.rgbProc(baseImg, labView);
-    ipf.labColorCorrectionRegions(labView);
-    ipf.guidedSmoothing(labView);
-    ipf.logEncoding(labView);
-    ipf.labAdjustments(labView);
+    bool stop = ipf.colorCorrection(labView);
+    stop = stop || ipf.guidedSmoothing(labView);
+    if (!stop) {
+        ipf.logEncoding(labView);
+        ipf.labAdjustments(labView);
+    }
 
-    ipf.toneMapping(labView);
-    ipf.softLight(labView);
-    ipf.localContrast(labView);
+    stop = stop || ipf.toneMapping(labView);
+    if (!stop) {
+        ipf.softLight(labView);
+        ipf.localContrast(labView);
+    }
 
     // obtain final image
     Image8* readyImg = nullptr;

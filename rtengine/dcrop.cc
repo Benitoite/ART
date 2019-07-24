@@ -322,45 +322,36 @@ void Crop::update(int todo)
     int offset_y = cropy / skip;
     int full_width = parent->getFullWidth() / skip;
     int full_height = parent->getFullHeight() / skip;
-    
+
+    bool stop = false;
     // apply luminance operations
     if (todo & M_LUMACURVE) {
-        parent->ipf.labColorCorrectionRegions(laboCrop, offset_x, offset_y, full_width, full_height);
-        parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
-        parent->ipf.logEncoding(laboCrop);
-        
-        // bool utili = parent->utili;
-        // bool autili = parent->autili;
-        // bool butili = parent->butili;
-        // bool ccutili = parent->ccutili;
-        // bool clcutili = parent->clcutili;
-        // bool cclutili = parent->cclutili;
-
-        // LUTu dummy;
-        // parent->ipf.chromiLuminanceCurve(1, laboCrop, laboCrop, parent->chroma_acurve, parent->chroma_bcurve, parent->satcurve, parent->lhskcurve,  parent->clcurve, parent->lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, dummy, dummy);
-        parent->ipf.labAdjustments(laboCrop);
+        stop = parent->ipf.colorCorrection(laboCrop, offset_x, offset_y, full_width, full_height);
+        stop = stop || parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
+        if (!stop) {
+            parent->ipf.logEncoding(laboCrop);
+            parent->ipf.labAdjustments(laboCrop);
+        }
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
         labnCrop->CopyFrom(laboCrop);
 
-        parent->ipf.toneMapping(labnCrop, offset_x, offset_y, full_width, full_height);
-
-        //parent->ipf.EPDToneMap(labnCrop, 5, 1);    //Go with much fewer than normal iterates for fast redisplay.
-        // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
-        if (skip == 1) {
+        stop = stop || parent->ipf.toneMapping(labnCrop, offset_x, offset_y, full_width, full_height);
+        if (skip == 1 && !stop) {
             parent->ipf.impulsedenoise(labnCrop);
             parent->ipf.defringe(labnCrop);
             parent->ipf.MLmicrocontrast (labnCrop);
             parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
         }
 
-        parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
+        stop = stop || parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
 
-        parent->ipf.softLight(labnCrop);
-        parent->ipf.localContrast(labnCrop);
-        parent->ipf.filmGrain(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
-        
+        if (!stop) {
+            parent->ipf.softLight(labnCrop);
+            parent->ipf.localContrast(labnCrop);
+            parent->ipf.filmGrain(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+        }
     }
 
     // all pipette buffer processing should be finished now

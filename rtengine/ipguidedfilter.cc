@@ -188,7 +188,7 @@ void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 }
 
 
-void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -210,7 +210,7 @@ void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(lab, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, nullptr, &mask)) {
-            return; // show mask is active, nothing more to do
+            return true; // show mask is active, nothing more to do
         }
 
         Imagefloat rgb(lab->W, lab->H);
@@ -251,6 +251,8 @@ void ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }
+
+    return false;
 }
 
 } // namespace rtengine

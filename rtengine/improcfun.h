@@ -98,7 +98,7 @@ public:
 
 //    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
 //    void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
-    void toneMapping(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool toneMapping(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
 
     struct DenoiseInfoStore {
         DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {}
@@ -119,11 +119,11 @@ public:
     void shadowsHighlights(Imagefloat *rgb);
     void toneEqualizer(Imagefloat *rgb);
     void softLight(LabImage *lab);
-    void labColorCorrectionRegions(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool colorCorrection(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void logEncoding(LabImage *lab, LUTu *histToneCurve=nullptr);
-    void contrastByDetailLevels(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool contrastByDetailLevels(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void filmGrain(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    void guidedSmoothing(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool guidedSmoothing(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
