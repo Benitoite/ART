@@ -100,7 +100,7 @@ Exposure::Exposure():
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
     expcomp   = Gtk::manage (new Adjuster (M("TP_EXPOSURE_EXPCOMP"), -5, 12, 0.05, 0));
-    expcomp->setLogScale(2, 0, true);
+    expcomp->setLogScale(64, 0, true);
     pack_start (*expcomp);
 
     //----------- Highlight recovery & threshold -------------
