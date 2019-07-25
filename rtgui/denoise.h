@@ -28,11 +28,12 @@
 #include "guiutils.h"
 #include "options.h"
 
-class Denoise final :
+class Denoise:
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
-    public rtengine::AutoChromaListener
+    public rtengine::AutoChromaListener,
+    public CurveListener
 {
 public:
     Denoise();
@@ -52,7 +53,9 @@ public:
     void noiseTilePrev(int tileX, int tileY, int prevX, int prevY, int sizeT, int sizeP) override {}
 
     void trimValues(rtengine::procparams::ProcParams* pp) override;
-    Glib::ustring getSettingString();
+
+    void curveChanged() override;
+    void autoOpenCurve() override;
 
 private:
     void colorSpaceChanged();
@@ -69,12 +72,15 @@ private:
     rtengine::ProcEvent EvGuidedChromaRadius;
     rtengine::ProcEvent EvGuidedChromaStrength;
     rtengine::ProcEvent EvChrominanceAutoFactor;
+    rtengine::ProcEvent EvLuminanceIterations;
+    rtengine::ProcEvent EvLuminanceCurve;
 
     MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
     Adjuster *gamma;
     Adjuster *luminance;
     Adjuster *luminanceDetail;
+    Adjuster *luminanceIterations;
     MyComboBoxText *chrominanceMethod;
     Adjuster *chrominanceAutoFactor;
     Adjuster *chrominance;
@@ -91,6 +97,8 @@ private:
     Adjuster *guidedLumaStrength;
     Adjuster *guidedChromaRadius;
     Adjuster *guidedChromaStrength;
+    CurveEditorGroup *cg;
+    FlatCurveEditor *luminanceCurve;
 
     IdleRegister idle_register;
 };

@@ -37,6 +37,8 @@ Denoise::Denoise():
     EvGuidedChromaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS");
     EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
     EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
+    EvLuminanceIterations = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_ITERATIONS");
+    EvLuminanceCurve = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_CURVE");
 
     Gtk::Frame *lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
     lumaFrame->set_label_align(0.025, 0.5);
@@ -72,9 +74,32 @@ Denoise::Denoise():
 
     luminance = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING"), 0, 100, 0.01, 0));
     luminanceDetail = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL"), 0, 100, 0.01, 50));
+    luminanceIterations = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_ITERATIONS"), 1, 3, 1, 1));
+
+    cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_DIRPYRDENOISE_LUMINANCE_CURVE"), 0.7));
+    cg->setCurveListener(this);
+    luminanceCurve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, false));
+    luminanceCurve->setIdentityValue(1.);
+    std::vector<double> curve{
+                FCT_MinMaxCPoints,
+                    0.,
+                    1.,
+                    0.35,
+                    0.35,
+                    1.,
+                    1.,
+                    0.35,
+                    0.35
+                    };
+    luminanceCurve->setResetCurve(FlatCurveType(curve[0]), curve);
+    luminanceCurve->reset();
+    cg->curveListComplete();
+    cg->show();
 
     lumaVBox->pack_start(*luminance);
     lumaVBox->pack_start(*luminanceDetail);
+    lumaVBox->pack_start(*luminanceIterations);
+    lumaVBox->pack_start(*cg);
     lumaFrame->add(*lumaVBox);
     pack_start(*lumaFrame);
 
@@ -111,6 +136,7 @@ Denoise::Denoise():
 
     luminance->setAdjusterListener(this);
     luminanceDetail->setAdjusterListener(this);
+    luminanceIterations->setAdjusterListener(this);
     chrominanceAutoFactor->setAdjusterListener(this);
     chrominance->setAdjusterListener(this);
     chrominanceRedGreen->setAdjusterListener(this);
@@ -243,7 +269,8 @@ Denoise::~Denoise ()
     idle_register.destroy();
 }
 
-void Denoise::chromaChanged (double autchroma, double autred, double autblue)
+
+void Denoise::chromaChanged(double autchroma, double autred, double autblue)
 {
     struct Data {
         Denoise *dn;
@@ -284,6 +311,8 @@ void Denoise::read(const ProcParams *pp)
     gamma->setValue(pp->denoise.gamma);
     luminance->setValue(pp->denoise.luminance);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
+    luminanceIterations->setValue(pp->denoise.luminanceIterations);
+    luminanceCurve->setCurve(pp->denoise.luminanceCurve);
 
     chrominanceMethod->set_active(int(pp->denoise.chrominanceMethod));
     chrominanceMethodChanged();
@@ -321,6 +350,8 @@ void Denoise::write(ProcParams *pp)
     pp->denoise.gamma = gamma->getValue();
     pp->denoise.luminance = luminance->getValue();
     pp->denoise.luminanceDetail = luminanceDetail->getValue();
+    pp->denoise.luminanceIterations = luminanceIterations->getValue();
+    pp->denoise.luminanceCurve = luminanceCurve->getCurve();
     if (chrominanceMethod->get_active_row_number() < 2) {
         pp->denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(chrominanceMethod->get_active_row_number());
     }
@@ -402,6 +433,7 @@ void Denoise::setDefaults(const ProcParams *defParams)
 {
     luminance->setDefault(defParams->denoise.luminance);
     luminanceDetail->setDefault(defParams->denoise.luminanceDetail);
+    luminanceIterations->setDefault(defParams->denoise.luminanceIterations);
     chrominance->setDefault(defParams->denoise.chrominance);
     chrominanceAutoFactor->setDefault(defParams->denoise.chrominanceAutoFactor);
     chrominanceRedGreen->setDefault(defParams->denoise.chrominanceRedGreen);
@@ -424,6 +456,8 @@ void Denoise::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDPDNLdetail, costr);
         } else if (a == luminance) {
             listener->panelChanged(EvDPDNLuma, costr);
+        } else if (a == luminanceIterations) {
+            listener->panelChanged(EvLuminanceIterations, costr);
         } else if (a == chrominance) {
             listener->panelChanged(EvDPDNChroma, costr);
         } else if (a == chrominanceRedGreen) {
@@ -483,6 +517,7 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
 {
     luminance->trimValue(pp->denoise.luminance);
     luminanceDetail->trimValue(pp->denoise.luminanceDetail);
+    luminanceIterations->trimValue(pp->denoise.luminanceIterations);
     chrominance->trimValue(pp->denoise.chrominance);
     chrominanceAutoFactor->trimValue(pp->denoise.chrominanceAutoFactor);
     chrominanceRedGreen->trimValue(pp->denoise.chrominanceRedGreen);
@@ -508,4 +543,18 @@ void Denoise::smoothingMethodChanged()
     if (listener) {
         listener->panelChanged(EvSmoothingMethod, M("GENERAL_CHANGED"));
     }
+}
+
+
+void Denoise::curveChanged()
+{
+    if (listener) {
+        listener->panelChanged(EvLuminanceCurve, M("HISTORY_CUSTOMCURVE"));
+    }
+}
+
+
+void Denoise::autoOpenCurve()
+{
+    luminanceCurve->openIfNonlinear();
 }

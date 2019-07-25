@@ -1048,6 +1048,8 @@ DenoiseParams::DenoiseParams() :
     gamma(1.7),
     luminance(0),
     luminanceDetail(0),
+    luminanceIterations(1),
+    luminanceCurve{FCT_Linear},
     chrominanceMethod(ChrominanceMethod::AUTOMATIC),
     chrominanceAutoFactor(1),
     chrominance(15),
@@ -1075,6 +1077,8 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && gamma == other.gamma
         && luminance == other.luminance
         && luminanceDetail == other.luminanceDetail
+        && luminanceIterations == other.luminanceIterations
+        && luminanceCurve == other.luminanceCurve
         && chrominanceMethod == other.chrominanceMethod
         && chrominanceAutoFactor == other.chrominanceAutoFactor
         && chrominance == other.chrominance
@@ -2588,6 +2592,8 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Denoise", "Gamma", denoise.gamma, keyFile);
             saveToKeyfile("Denoise", "Luminance", denoise.luminance, keyFile);
             saveToKeyfile("Denoise", "LuminanceDetail", denoise.luminanceDetail, keyFile);
+            saveToKeyfile("Denoise", "LuminanceIterations", denoise.luminanceIterations, keyFile);
+            saveToKeyfile("Denoise", "LuminanceCurve", denoise.luminanceCurve, keyFile);
             saveToKeyfile("Denoise", "ChrominanceMethod", int(denoise.chrominanceMethod), keyFile);
             saveToKeyfile("Denoise", "ChrominanceAutoFactor", denoise.chrominanceAutoFactor, keyFile);
             saveToKeyfile("Denoise", "Chrominance", denoise.chrominance, keyFile);
@@ -3431,6 +3437,8 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "Denoise", "Gamma", denoise.gamma);
                 assignFromKeyfile(keyFile, "Denoise", "Luminance", denoise.luminance);
                 assignFromKeyfile(keyFile, "Denoise", "LuminanceDetail", denoise.luminanceDetail);
+                assignFromKeyfile(keyFile, "Denoise", "LuminanceIterations", denoise.luminanceIterations);
+                assignFromKeyfile(keyFile, "Denoise", "LuminanceCurve", denoise.luminanceCurve);
                 if (assignFromKeyfile(keyFile, "Denoise", "ChrominanceMethod", val)) {
                     denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(val);
                 }
