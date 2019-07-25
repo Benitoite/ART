@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -23,24 +24,9 @@
 #include "guiutils.h"
 #include "../rtengine/coord.h"
 
-class InspectorBuffer
-{
-//private:
-//    int infoFromImage (const Glib::ustring& fname);
+class InspectorBuffer;
 
-public:
-    BackBuffer imgBuffer;
-    Glib::ustring imgPath;
-    int currTransform;  // coarse rotation from RT, not from shot orientation
-    bool fromRaw;
-
-    explicit InspectorBuffer(const Glib::ustring &imgagePath);
-    //~InspectorBuffer();
-};
-
-class Inspector : public Gtk::DrawingArea
-{
-
+class Inspector: public Gtk::DrawingArea {
 private:
     rtengine::Coord center;
     std::vector<InspectorBuffer*> images;

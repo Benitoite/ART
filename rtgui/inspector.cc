@@ -26,6 +26,24 @@
 
 extern Options options;
 
+//-----------------------------------------------------------------------------
+// InspectorBuffer
+//-----------------------------------------------------------------------------
+
+class InspectorBuffer {
+//private:
+//    int infoFromImage (const Glib::ustring& fname);
+
+public:
+    BackBuffer imgBuffer;
+    Glib::ustring imgPath;
+    int currTransform;  // coarse rotation from RT, not from shot orientation
+    bool fromRaw;
+
+    explicit InspectorBuffer(const Glib::ustring &imgagePath);
+    //~InspectorBuffer();
+};
+
 InspectorBuffer::InspectorBuffer(const Glib::ustring &imagePath) : currTransform(0), fromRaw(false)
 {
     if (!imagePath.empty() && Glib::file_test(imagePath, Glib::FILE_TEST_EXISTS) && !Glib::file_test(imagePath, Glib::FILE_TEST_IS_DIR)) {
@@ -80,6 +98,10 @@ InspectorBuffer::~InspectorBuffer() {
 //    delete idata;
 //    return deg;
 //}
+
+//-----------------------------------------------------------------------------
+// Inspector
+//-----------------------------------------------------------------------------
 
 Inspector::Inspector () : currImage(nullptr), zoom(0.0), active(false)
 {
