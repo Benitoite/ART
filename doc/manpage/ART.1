@@ -1,43 +1,42 @@
-.TH RAWTHERAPEE 1 "May 10, 2017"
+.TH ART 1 "Jul 25, 2019"
 .SH NAME
-RawTherapee - An advanced, cross-platform program for developing raw photos.
+ART - An advanced, cross-platform program for developing raw photos.
 .SH DESCRIPTION
-\fBRawTherapee\fP is an advanced program for developing raw photos and for processing non-raw photos. It is non-destructive, makes use of OpenMP, supports all the cameras supported by dcraw and more, and carries out its calculations in a high precision 32-bit floating point engine.
+\fBART\fP is a fork of RawTherapee, an advanced program for developing raw photos and for processing non-raw photos. It is non-destructive, makes use of OpenMP, supports all the cameras supported by dcraw and more, and carries out its calculations in a high precision 32-bit floating point engine.
 .SH LINKS
-  Website: http://www.rawtherapee.com/
-  Documentation: http://rawpedia.rawtherapee.com/
-  Forum: https://discuss.pixls.us/c/software/rawtherapee
-  Code and bug reports: https://github.com/Beep6581/RawTherapee
+  Website: http://bitbucket.org/agriggio/ART/
+  RawTherapee website: http://www.rawtherapee.com/
+  RawTherapee documentation: http://rawpedia.rawtherapee.com/
 .SH SYMBOLS
   <Chevrons> indicate parameters you can change.
   [Square brackets] mean the parameter is optional.
   The pipe symbol | indicates a choice of one or the other.
-  The dash symbol - denotes a range of possible values from one to the other.
+  The dash symbol - denotes a range of possible values.
 .SH SYNOPSIS
-  RawTherapee GUI
-  rawtherapee <folder>           Start File Browser inside folder.
-  rawtherapee <file>             Start Image Editor with file.
+  ART GUI
+  ART <folder>           Start File Browser inside folder.
+  ART <file>             Start Image Editor with file.
 
-  RawTherapee CLI
-  rawtherapee-cli -c <dir>|<files>   Convert files in batch using default parameters.
-  rawtherapee-cli <other options> -c <dir>|<files>  Convert files in batch using your own settings.
-  rawtherapee-cli [-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one.pp3> [-p <two.pp3> ...] ] [-d] [ -j[1-100] [-js<1-3>] | [-b<8|16>] [-t[z] | [-n]] ] [-Y] -c <input>
+  ART CLI
+  ART-cli -c <dir>|<files>   Convert files in batch using default parameters.
+  ART-cli <other options> -c <dir>|<files>  Convert files in batch using your own settings.
+  ART-cli [-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one.arp> [-p <two.arp> ...] ] [-d] [ -j[1-100] [-js<1-3>] | [-b<8|16>] [-t[z] | [-n]] ] [-Y] -c <input>
 .SH OPTIONS
   -c <files>       Specify one or more input files.
                    -c must be the last option.
   -o <file>|<dir>  Set output file or folder.
                    Saves output file alongside input file if -o is not specified.
-  -O <file>|<dir>  Set output file or folder and copy pp3 file into it.
+  -O <file>|<dir>  Set output file or folder and copy arp file into it.
                    Saves output file alongside input file if -O is not specified.
   -q               Quick-start mode. Does not load cached files to speedup start time.
   -a               Process all supported image file types when specifying a folder, even those
                    not currently selected in Preferences > File Browser > Parsed Extensions.
   -s               Use the existing sidecar file to build the processing parameters,
-                   e.g. for photo.raw there should be a photo.raw.pp3 file in the same folder.
+                   e.g. for photo.raw there should be a photo.raw.arp file in the same folder.
                    If the sidecar file does not exist, neutral values will be used.
   -S               Like -s but skip if the sidecar file does not exist.
-  -p <file.pp3>    Specify processing profile to be used for all conversions.
-                   You can specify as many sets of "-p <file.pp3>" options as you like,
+  -p <file.arp>    Specify processing profile to be used for all conversions.
+                   You can specify as many sets of "-p <file.arp>" options as you like,
                    each will be built on top of the previous one, as explained below.
   -d               Use the default raw or non-raw processing profile as set in
                    Preferences > Image Processing > Default Processing Profile
@@ -58,7 +57,7 @@ RawTherapee - An advanced, cross-platform program for developing raw photos.
                    Compression is hard-coded to 6.
   -Y               Overwrite output if present.
 
-Your pp3 files can be incomplete, RawTherapee will build the final values as follows:
+Your arp files can be incomplete, ART will build the final values as follows:
   1- A new processing profile is created using neutral values,
   2- If the "-d" option is set, the values are overridden by those found in
      the default raw or non-raw processing profile.
@@ -68,6 +67,8 @@ Your pp3 files can be incomplete, RawTherapee will build the final values as fol
      found in the sidecar files.
   The processing profiles are processed in the order specified on the command line.
 .SH AUTHOR
-\fBRawTherapee\fP was originally written by Gabor Horvath of Budapest, Hungary, before being re-licensed as free and open-source software in January 2010.
+\fBART\fP is a fork of RawTherapee, developed by Alberto Griggio.
+.br
+RawTherapee was originally written by Gabor Horvath of Budapest, Hungary, before being re-licensed as free and open-source software in January 2010.
 .br
 The RawTherapee development team comprises of passionate people from all around the world.

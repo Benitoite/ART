@@ -240,11 +240,11 @@ RTWindow::RTWindow ()
 
 #ifndef WIN32
     const std::vector<Glib::RefPtr<Gdk::Pixbuf>> appIcons = {
-        RTImage::createPixbufFromFile("rawtherapee-logo-16.png"),
-        RTImage::createPixbufFromFile("rawtherapee-logo-24.png"),
-        RTImage::createPixbufFromFile("rawtherapee-logo-48.png"),
-        RTImage::createPixbufFromFile("rawtherapee-logo-128.png"),
-        RTImage::createPixbufFromFile("rawtherapee-logo-256.png")
+        RTImage::createPixbufFromFile("ART-logo-16.png"),
+        RTImage::createPixbufFromFile("ART-logo-24.png"),
+        RTImage::createPixbufFromFile("ART-logo-48.png"),
+        RTImage::createPixbufFromFile("ART-logo-128.png"),
+        RTImage::createPixbufFromFile("ART-logo-256.png")
     };
     try {
         set_default_icon_list(appIcons);

@@ -527,19 +527,15 @@ install(FILES RELEASE_NOTES.txt DESTINATION "${CREDITSDIR}" OPTIONAL)
 
 # The standard location for man pages in Linux is /usr/share/man
 # Use "manpath" to see the search paths for man pages on your system.
-# if(BUILD_BUNDLE)
-#     install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${DATADIR}/share/man/man1")
-# else()
-#     install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1")
-# endif()
+if(BUILD_BUNDLE)
+    install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${DATADIR}/share/man/man1")
+else()
+    install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1")
+endif()
 
 if(WIN32)
     install(DIRECTORY "licenses" DESTINATION "${LICENCEDIR}")
 endif()
-
-# if(UNIX)
-#     install(FILES com.rawtherapee.RawTherapee.appdata.xml DESTINATION "${APPDATADIR}")
-# endif()
 
 # check whether the used version of lensfun has lfDatabase::LoadDirectory
 set(_lf_libs ${LENSFUN_LIBRARIES})

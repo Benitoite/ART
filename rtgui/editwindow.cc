@@ -143,9 +143,9 @@ void EditWindow::setAppIcon()
     // findIconAbsolutePath won't be able to select the image based on resolution with the
     // storage of the images, we're doing the selection here
     if (resolution == RTScalable::baseDPI) {
-        fName = "rawtherapee-logo-24.png";
+        fName = "ART-logo-24.png";
     } else {
-        fName = "rawtherapee-logo-48.png";
+        fName = "ART-logo-48.png";
         if (resolution < RTScalable::baseHiDPI) {
             downsize = true;
         }
