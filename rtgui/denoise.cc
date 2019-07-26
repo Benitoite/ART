@@ -27,6 +27,23 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 extern Options options;
 
+namespace {
+
+const std::vector<double> default_luminance_curve{
+    FCT_MinMaxCPoints,
+    0.,
+    1.,
+    0.35,
+    0.35,
+    1.,
+    1.,
+    0.35,
+    0.35
+};
+
+} // namespace
+
+
 Denoise::Denoise():
     FoldableToolPanel(this, "dirpyrdenoise", M("TP_DIRPYRDENOISE_LABEL"), true, true)
 {
@@ -80,19 +97,7 @@ Denoise::Denoise():
     cg->setCurveListener(this);
     luminanceCurve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, false));
     luminanceCurve->setIdentityValue(1.);
-    std::vector<double> curve{
-                FCT_MinMaxCPoints,
-                    0.,
-                    1.,
-                    0.35,
-                    0.35,
-                    1.,
-                    1.,
-                    0.35,
-                    0.35
-                    };
-    luminanceCurve->setResetCurve(FlatCurveType(curve[0]), curve);
-    luminanceCurve->reset();
+    luminanceCurve->setResetCurve(FlatCurveType(default_luminance_curve[0]), default_luminance_curve);
     cg->curveListComplete();
     cg->show();
 
@@ -312,6 +317,7 @@ void Denoise::read(const ProcParams *pp)
     luminance->setValue(pp->denoise.luminance);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
     luminanceIterations->setValue(pp->denoise.luminanceIterations);
+    luminanceCurve->setCurve(default_luminance_curve);
     luminanceCurve->setCurve(pp->denoise.luminanceCurve);
 
     chrominanceMethod->set_active(int(pp->denoise.chrominanceMethod));
