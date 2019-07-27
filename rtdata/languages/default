@@ -729,6 +729,7 @@ HISTORY_MSG_490;DRC - Amount
 HISTORY_MSG_491;White Balance
 HISTORY_MSG_492;RGB Curves
 HISTORY_MSG_493;L*a*b* Adjustments
+HISTORY_MSG_BRIGHTCONTRSAT_VIBRANCE;B, C &amp; S - Vibrance
 HISTORY_MSG_CBDL_LIST;CbDL - regions
 HISTORY_MSG_CBDL_HUEMASK;CbDL - H mask
 HISTORY_MSG_CBDL_CHROMATICITYMASK;CbDL - C mask
@@ -1393,6 +1394,10 @@ TOOLBAR_TOOLTIP_HAND;Hand tool.\nShortcut: <b>h</b>
 TOOLBAR_TOOLTIP_STRAIGHTEN;<b>Straighten</b> / <b>fine rotation</b>.\nShortcut: <b>s</b>\n\nIndicate the vertical or horizontal by drawing a guide line over the image preview. Angle of rotation will be shown next to the guide line. Center of rotation is the geometrical center of the image.
 TOOLBAR_TOOLTIP_WB;Spot white balance.\nShortcut: <b>w</b>
 TP_BRIGHTCONTRSAT_LABEL;Brightness, Contrast & Saturation
+TP_BRIGHTCONTRSAT_BRIGHTNESS;Brightness
+TP_BRIGHTCONTRSAT_CONTRAST;Contrast
+TP_BRIGHTCONTRSAT_SATURATION;Saturation
+TP_BRIGHTCONTRSAT_VIBRANCE;Vibrance
 TP_BWMIX_ALGO;Algorithm OYCPM
 TP_BWMIX_ALGO_LI;Linear
 TP_BWMIX_ALGO_SP;Special effects
@@ -1712,14 +1717,12 @@ TP_EPD_STRENGTH;Strength
 TP_EXPOSURE_AUTOLEVELS;Auto Levels
 TP_EXPOSURE_AUTOLEVELS_TIP;Toggles execution of Auto Levels to automatically set Exposure slider values based on an image analysis.\nEnables Highlight Reconstruction if necessary.
 TP_EXPOSURE_BLACKLEVEL;Black
-TP_EXPOSURE_BRIGHTNESS;Brightness
 TP_EXPOSURE_CLAMPOOG;Clip out-of-gamut colors
 TP_EXPOSURE_CLIP;Clip %
 TP_EXPOSURE_CLIP_TIP;The fraction of pixels to be clipped in Auto Levels operation.
 TP_EXPOSURE_COMPRHIGHLIGHTS;Highlight compression
 TP_EXPOSURE_COMPRHIGHLIGHTSTHRESHOLD;Highlight compression threshold
 TP_EXPOSURE_COMPRSHADOWS;Shadow compression
-TP_EXPOSURE_CONTRAST;Contrast
 TP_EXPOSURE_CURVEEDITOR1;Tone curve 1
 TP_EXPOSURE_CURVEEDITOR2;Tone curve 2
 TP_EXPOSURE_CURVEEDITOR2_TOOLTIP;Please refer to the "Exposure > Tone Curves" RawPedia article to learn how to achieve the best results by using two tone curves.
@@ -1727,7 +1730,6 @@ TP_EXPOSURE_EXPCOMP;Exposure compensation
 TP_EXPOSURE_HISTMATCHING;Auto-Matched Tone Curve
 TP_EXPOSURE_HISTMATCHING_TOOLTIP;Automatically adjust sliders and curves (except exposure compensation) to match the look of the embedded JPEG thumbnail.
 TP_EXPOSURE_LABEL;Exposure
-TP_EXPOSURE_SATURATION;Saturation
 TP_EXPOSURE_TCMODE_FILMLIKE;Film-like
 TP_EXPOSURE_TCMODE_LABEL1;Curve mode 1
 TP_EXPOSURE_TCMODE_LABEL2;Curve mode 2

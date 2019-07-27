@@ -147,36 +147,9 @@ bool AreaMask::button1Pressed(const int modifierKey)
         int p = p1.y;
         p1.y = p2.y;
         p2.y = p;
-
         pCoord = p2 - p1;
         dragged_point_old_angle_ = pCoord.angle;
-
         dragged_point_adjuster_angle_ = angle_;
-
-        // if (last_object_ == 2 || last_object_ == 3) {
-        //     // Dragging a line to change the angle
-        //     PolarCoord draggedPoint;
-        //     rtengine::Coord currPos;
-        //     currPos = provider->posImage;
-        //     rtengine::Coord centerPos = dragged_center_;
-
-        //     double diagonal = sqrt(double(imW) * double(imW) + double(imH) * double(imH));
-
-        //     // trick to get the correct angle (clockwise/counter-clockwise)
-        //     int p = centerPos.y;
-        //     centerPos.y = currPos.y;
-        //     currPos.y = p;
-
-        //     draggedPoint = currPos - centerPos;
-        //     // compute the projected value of the dragged point
-        //     draggedFeatherOffset = draggedPoint.radius * sin((draggedPoint.angle - degree->getValue()) / 180.*rtengine::RT_PI);
-
-        //     if (last_object_ == 3) {
-        //         draggedFeatherOffset = -draggedFeatherOffset;
-        //     }
-
-        //     draggedFeatherOffset -= (feather->getValue() / 200. * diagonal);
-        // }
 
         EditSubscriber::action = ES_ACTION_DRAGGING;
         return false;

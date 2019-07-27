@@ -643,7 +643,8 @@ BrightnessContrastSaturationParams::BrightnessContrastSaturationParams():
     enabled(false),
     brightness(0),
     contrast(0),
-    saturation(0)
+    saturation(0),
+    vibrance(0)
 {
 }
 
@@ -653,7 +654,8 @@ bool BrightnessContrastSaturationParams::operator==(const BrightnessContrastSatu
     return enabled == other.enabled
         && brightness == other.brightness
         && contrast == other.contrast
-        && saturation == other.saturation;
+        && saturation == other.saturation
+        && vibrance == other.vibrance;
 }
 
 
@@ -2438,6 +2440,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("BrightnessContrastSaturation", "Brightness", brightContrSat.brightness, keyFile);
             saveToKeyfile("BrightnessContrastSaturation", "Contrast", brightContrSat.contrast, keyFile);
             saveToKeyfile("BrightnessContrastSaturation", "Saturation", brightContrSat.saturation, keyFile);
+            saveToKeyfile("BrightnessContrastSaturation", "Vibrance", brightContrSat.vibrance, keyFile);
         }
 
 // Tone curve
@@ -3178,6 +3181,7 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Brightness", brightContrSat.brightness);
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Contrast", brightContrSat.contrast);
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Saturation", brightContrSat.saturation);
+                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Vibrance", brightContrSat.vibrance);
             }
             if (keyFile.has_group("ToneCurve") && RELEVANT_(toneCurve)) {
                 assignFromKeyfile(keyFile, "ToneCurve", "Enabled", toneCurve.enabled);

@@ -106,6 +106,18 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
 }
 
 
+inline float apply_vibrance(float x, float vib)
+{
+    static const float noise = pow_F(2.f, -16.f);
+    float ax = std::abs(x / 65535.f);
+    if (ax > noise) {
+        return SGN(x) * pow_F(ax, vib) * 65535.f;
+    } else {
+        return x;
+    }
+}
+
+
 float find_gray(float source_gray, float target_gray)
 {
     // find a base such that log2lin(base, source_gray) = target_gray
@@ -179,8 +191,10 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     const float brightness = 1.f + params->brightContrSat.brightness / 100.f;
     const bool contrast_enabled = params->brightContrSat.enabled && params->brightContrSat.contrast;
     const float contrast = 1.f + params->brightContrSat.contrast / 100.f;
-    const bool saturation_enabled = params->brightContrSat.enabled && params->brightContrSat.saturation;
+    const bool saturation_enabled = params->brightContrSat.enabled && (params->brightContrSat.saturation || params->brightContrSat.vibrance);
     const float saturation = 1.f + params->brightContrSat.saturation / 100.f;
+    const float vibrance = 1.f - params->brightContrSat.vibrance / 1000.f;
+    const bool vib = params->brightContrSat.vibrance;
     const float b = params->logenc.targetGray > 1 && params->logenc.targetGray < 100 && dynamic_range > 0 ? find_gray(std::abs(params->logenc.blackEv) / dynamic_range, params->logenc.targetGray / 100.f) : 0.f;
     const float linbase = max(b, 0.f);
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -260,9 +274,17 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                     g *= f;
                     if (saturation_enabled) {
                         float l = Color::rgbLuminance(r, g, b, ws);
-                        r = max(l + saturation * (r - l), noise);
-                        g = max(l + saturation * (g - l), noise);
-                        b = max(l + saturation * (b - l), noise);
+                        float rl = r - l;
+                        float gl = g - l;
+                        float bl = b - l;
+                        if (vib) {
+                            rl = apply_vibrance(rl, vibrance);
+                            gl = apply_vibrance(gl, vibrance);
+                            bl = apply_vibrance(bl, vibrance);
+                        }
+                        r = max(l + saturation * rl, noise);
+                        g = max(l + saturation * gl, noise);
+                        b = max(l + saturation * bl, noise);
                     }
 
                     // if (OOG(r) || OOG(g) || OOG(b)) {
@@ -422,10 +444,13 @@ void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, f
         }
     }
 
-    if (params->brightContrSat.enabled && params->brightContrSat.saturation) {
+    if (params->brightContrSat.enabled &&
+        (params->brightContrSat.saturation || params->brightContrSat.vibrance)) {
         const float saturation = 1.f + params->brightContrSat.saturation / 100.f;
+        const float vibrance = 1.f - params->brightContrSat.vibrance / 1000.f;
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         const float noise = pow_F(2.f, -16.f);
+        const bool vib = params->brightContrSat.vibrance;
         
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
@@ -436,9 +461,20 @@ void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, f
                 float &g = rgb->g(i, j);
                 float &b = rgb->b(i, j);
                 float l = Color::rgbLuminance(r, g, b, ws);
-                r = max(l + saturation * (r - l), noise);
-                g = max(l + saturation * (g - l), noise);
-                b = max(l + saturation * (b - l), noise);
+                float rl = r - l;
+                float gl = g - l;
+                float bl = b - l;
+                if (vib) {
+                    rl = apply_vibrance(rl, vibrance);
+                    gl = apply_vibrance(gl, vibrance);
+                    bl = apply_vibrance(bl, vibrance);
+                    assert(rl == rl);
+                    assert(gl == gl);
+                    assert(bl == bl);
+                }
+                r = max(l + saturation * rl, noise);
+                g = max(l + saturation * gl, noise);
+                b = max(l + saturation * bl, noise);
             }
         }
     }

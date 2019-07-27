@@ -32,7 +32,10 @@ private:
     Adjuster *brightness;
     Adjuster *contrast;
     Adjuster *saturation;
+    Adjuster *vibrance;
 
+    rtengine::ProcEvent EvVibrance;
+    
     Gtk::ToggleButton *autolevels;
 
     // used temporarily in eventing

@@ -30,23 +30,29 @@ using namespace rtengine::procparams;
 BrightnessContrastSaturation::BrightnessContrastSaturation():
     FoldableToolPanel(this, "brightcontrsat", M("TP_BRIGHTCONTRSAT_LABEL"), false, true)
 {
+    auto m = ProcEventMapper::getInstance();
+    EvVibrance = m->newEvent(RGBCURVE, "HISTORY_MSG_BRIGHTCONTRSAT_VIBRANCE");
     EvToolEnabled.set_action(RGBCURVE);
     autolevels = nullptr;
     
-    brightness = Gtk::manage (new Adjuster (M("TP_EXPOSURE_BRIGHTNESS"), -100, 100, 1, 0));
+    brightness = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_BRIGHTNESS"), -100, 100, 1, 0));
     pack_start (*brightness);
-    contrast   = Gtk::manage (new Adjuster (M("TP_EXPOSURE_CONTRAST"), -100, 100, 1, 0));
+    contrast   = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_CONTRAST"), -100, 100, 1, 0));
     pack_start (*contrast);
-    saturation = Gtk::manage (new Adjuster (M("TP_EXPOSURE_SATURATION"), -100, 100, 1, 0));
+    saturation = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_SATURATION"), -100, 100, 1, 0));
     pack_start (*saturation);
+    vibrance = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_VIBRANCE"), -100, 100, 1, 0));
+    pack_start(*vibrance);
 
     brightness->setLogScale(2, 0, true);
     contrast->setLogScale(2, 0, true);
     saturation->setLogScale(2, 0, true);
+    vibrance->setLogScale(2, 0, true);
 
-    brightness->setAdjusterListener (this);
-    contrast->setAdjusterListener (this);
-    saturation->setAdjusterListener (this);
+    brightness->setAdjusterListener(this);
+    contrast->setAdjusterListener(this);
+    saturation->setAdjusterListener(this);
+    vibrance->setAdjusterListener(this);
 }
 
 
@@ -63,6 +69,7 @@ void BrightnessContrastSaturation::read(const ProcParams* pp)
     brightness->setValue(pp->brightContrSat.brightness);
     contrast->setValue(pp->brightContrSat.contrast);
     saturation->setValue(pp->brightContrSat.saturation);
+    vibrance->setValue(pp->brightContrSat.vibrance);
 
     enableListener ();
 }
@@ -74,6 +81,7 @@ void BrightnessContrastSaturation::write(ProcParams* pp)
     pp->brightContrSat.brightness = (int)brightness->getValue ();
     pp->brightContrSat.contrast = (int)contrast->getValue ();
     pp->brightContrSat.saturation = (int)saturation->getValue ();
+    pp->brightContrSat.vibrance = (int)vibrance->getValue ();
 }
 
 
@@ -81,7 +89,8 @@ void BrightnessContrastSaturation::setDefaults (const ProcParams* defParams)
 {
     brightness->setDefault (defParams->brightContrSat.brightness);
     contrast->setDefault (defParams->brightContrSat.contrast);
-    saturation->setDefault (defParams->brightContrSat.saturation);
+    saturation->setDefault(defParams->brightContrSat.saturation);
+    vibrance->setDefault(defParams->brightContrSat.vibrance);
 }
 
 
@@ -104,6 +113,8 @@ void BrightnessContrastSaturation::adjusterChanged(Adjuster* a, double newval)
         listener->panelChanged(EvContrast, costr);
     } else if (a == saturation) {
         listener->panelChanged(EvSaturation, costr);
+    } else if (a == vibrance) {
+        listener->panelChanged(EvVibrance, costr);
     }
 }
 
@@ -117,6 +128,7 @@ void BrightnessContrastSaturation::trimValues (rtengine::procparams::ProcParams*
     brightness->trimValue(pp->brightContrSat.brightness);
     contrast->trimValue(pp->brightContrSat.contrast);
     saturation->trimValue(pp->brightContrSat.saturation);
+    vibrance->trimValue(pp->brightContrSat.vibrance);
 }
 
 

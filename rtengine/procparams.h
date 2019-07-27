@@ -361,6 +361,7 @@ struct BrightnessContrastSaturationParams {
     int brightness;
     int contrast;
     int saturation;
+    int vibrance;
 
     BrightnessContrastSaturationParams();
 
