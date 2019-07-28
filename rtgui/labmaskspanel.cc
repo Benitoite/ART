@@ -674,16 +674,20 @@ void LabMasksPanel::curveChanged(CurveEditor* ce)
 void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
 {
     auto l = getListener();
-    if (!l) {
-        return;
-    }
+    // if (!l) {
+    //     return;
+    // }
 
     if (a == maskBlur) {
-        l->panelChanged(EvMaskBlur, a->getTextValue());
+        if (l) {
+            l->panelChanged(EvMaskBlur, a->getTextValue());
+        }
     } else if (std::find(areaMaskAdjusters.begin(), areaMaskAdjusters.end(), a) != areaMaskAdjusters.end()) {
         onAreaShapeSelectionChanged();
         populateShapeList(selected_, area_shape_index_);
-        l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        if (l) {
+            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        }
     }
     maskShow(selected_, true);
 }
