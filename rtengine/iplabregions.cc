@@ -206,10 +206,10 @@ bool ImProcFunctions::colorCorrection(LabImage *lab, int offset_x, int offset_y,
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
                     vfloat lblendv = LVFU(Lmask[i][y][x]);
-                    vmask b = vorm(vmaskf_gt(blendv, ZEROV), vmaskf_gt(lblendv, ZEROV));
-                    if (!_mm_movemask_ps((vfloat)b)) {
-                        continue;
-                    }
+                    // vmask b = vorm(vmaskf_gt(blendv, ZEROV), vmaskf_gt(lblendv, ZEROV));
+                    // if (!_mm_movemask_ps((vfloat)b)) {
+                    //     continue;
+                    // }
                     
                     vfloat l_newv = lv;
                     vfloat lfv = vmaxf(lv, ZEROV);
@@ -235,9 +235,9 @@ bool ImProcFunctions::colorCorrection(LabImage *lab, int offset_x, int offset_y,
                 for (int i = 0; i < n; ++i) {
                     float blend = abmask[i][y][x];
                     float lblend = Lmask[i][y][x];
-                    if (!(blend > 0.f || lblend > 0.f)) {
-                        continue;
-                    }
+                    // if (!(blend > 0.f || lblend > 0.f)) {
+                    //     continue;
+                    // }
                     
                     float l_new = l;
                     float lf = max(l, 0.f);
