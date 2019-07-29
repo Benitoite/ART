@@ -1,11 +1,13 @@
 #pragma once
 
 // This number has to be incremented whenever the PP3 file format is modified or the behaviour of a tool changes
-#define PPVERSION 350
+#define PPVERSION 1000
 #define PPVERSION_AEXP 301 //value of PPVERSION when auto exposure algorithm was modified
 
 /*
   Log of version changes
+  1000  2019-07-29
+        Bumped to 1000 for ART
    350  2019-07-07
         split ToneCurveParams into ExposureParams,
         BrightnessContrastSaturationParams and ToneCurveParams
