@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -100,7 +101,7 @@ class CropWindow : public LWButtonListener, public CropDisplayHandler, public Ed
     float crop_custom_ratio;
 
     bool onArea                    (CursorArea a, int x, int y);
-    void updateCursor              (int x, int y);
+    void updateCursor(int x, int y, int bstate);
     void drawDecoration            (Cairo::RefPtr<Cairo::Context> cr);
     void drawStraightenGuide       (Cairo::RefPtr<Cairo::Context> cr);
     void drawScaledSpotRectangle   (Cairo::RefPtr<Cairo::Context> cr, int rectSize);

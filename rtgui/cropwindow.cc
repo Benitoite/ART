@@ -406,53 +406,53 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                             action_x = 0;
                             action_y = 0;
                         }
-                    } else if (onArea (CropTopLeft, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropTopLeft, x, y)) {
                         state = SResizeTL;
                         press_x = x;
                         action_x = cropHandler.cropParams.x;
                         press_y = y;
                         action_y = cropHandler.cropParams.y;
-                    } else if (onArea (CropTopRight, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropTopRight, x, y)) {
                         state = SResizeTR;
                         press_x = x;
                         action_x = cropHandler.cropParams.w;
                         press_y = y;
                         action_y = cropHandler.cropParams.y;
-                    } else if (onArea (CropBottomLeft, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropBottomLeft, x, y)) {
                         state = SResizeBL;
                         press_x = x;
                         action_x = cropHandler.cropParams.x;
                         press_y = y;
                         action_y = cropHandler.cropParams.h;
-                    } else if (onArea (CropBottomRight, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropBottomRight, x, y)) {
                         state = SResizeBR;
                         press_x = x;
                         action_x = cropHandler.cropParams.w;
                         press_y = y;
                         action_y = cropHandler.cropParams.h;
-                    } else if (onArea (CropTop, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropTop, x, y)) {
                         state = SResizeH1;
                         press_y = y;
                         action_y = cropHandler.cropParams.y;
-                    } else if (onArea (CropBottom, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropBottom, x, y)) {
                         state = SResizeH2;
                         press_y = y;
                         action_y = cropHandler.cropParams.h;
-                    } else if (onArea (CropLeft, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropLeft, x, y)) {
                         state = SResizeW1;
                         press_x = x;
                         action_x = cropHandler.cropParams.x;
-                    } else if (onArea (CropRight, x, y)) {
+                    } else if ((bstate & GDK_CONTROL_MASK) && onArea(CropRight, x, y)) {
                         state = SResizeW2;
                         press_x = x;
                         action_x = cropHandler.cropParams.w;
-                    } else if ((bstate & GDK_SHIFT_MASK) && onArea (CropInside, x, y)) {
+                    } else if ((bstate & GDK_SHIFT_MASK) && onArea(CropInside, x, y)) {
                         state = SCropMove;
                         press_x = x;
                         press_y = y;
                         action_x = cropHandler.cropParams.x;
                         action_y = cropHandler.cropParams.y;
-                    } else if (onArea (CropObserved, x, y)) {
+                    } else if (onArea(CropObserved, x, y)) {
                         state = SObservedMove;
                         press_x = x;
                         press_y = y;
@@ -604,7 +604,7 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
         iarea->redraw ();
     }
 
-    updateCursor (x, y);
+    updateCursor(x, y, bstate);
 }
 
 void CropWindow::buttonRelease (int button, int num, int bstate, int x, int y)
@@ -780,7 +780,7 @@ void CropWindow::buttonRelease (int button, int num, int bstate, int x, int y)
         iarea->redraw ();
     }
 
-    updateCursor (x, y);
+    updateCursor(x, y, bstate);
 }
 
 void CropWindow::pointerMoved (int bstate, int x, int y)
@@ -1003,7 +1003,7 @@ void CropWindow::pointerMoved (int bstate, int x, int y)
         }
     }
 
-    updateCursor (x, y);
+    updateCursor(x, y, bstate);
 
     bool oRA = onArea (CropResize, x, y);
 
@@ -1222,7 +1222,7 @@ bool CropWindow::onArea (CursorArea a, int x, int y)
     return false;
 }
 
-void CropWindow::updateCursor (int x, int y)
+void CropWindow::updateCursor(int x, int y, int bstate)
 {
 
     EditSubscriber *editSubscriber = iarea->getCurrSubscriber();
@@ -1231,27 +1231,27 @@ void CropWindow::updateCursor (int x, int y)
     CursorShape newType = cursor_type;
 
     if (state == SNormal) {
-        if (onArea (CropWinButtons, x, y)) {
+        if (onArea(CropWinButtons, x, y)) {
             newType = CSArrow;
-        } else if (onArea (CropToolBar, x, y)) {
+        } else if (onArea(CropToolBar, x, y)) {
             newType = CSMove;
-        } else if (onArea (CropResize, x, y)) {
+        } else if (onArea(CropResize, x, y)) {
             newType = CSResizeDiagonal;
         } else if (tm == TMColorPicker && hoveredPicker) {
             newType = CSMove;
-        } else if (tm == TMHand && (onArea (CropTopLeft, x, y))) {
+        } else if (tm == TMHand && (bstate & GDK_CONTROL_MASK) && (onArea(CropTopLeft, x, y))) {
             newType = CSResizeTopLeft;
-        } else if (tm == TMHand && (onArea (CropTopRight, x, y))) {
+        } else if (tm == TMHand && (bstate & GDK_CONTROL_MASK) && (onArea(CropTopRight, x, y))) {
             newType = CSResizeTopRight;
-        } else if (tm == TMHand && (onArea (CropBottomLeft, x, y))) {
+        } else if (tm == TMHand && (bstate & GDK_CONTROL_MASK) && (onArea(CropBottomLeft, x, y))) {
             newType = CSResizeBottomLeft;
-        } else if (tm == TMHand && (onArea (CropBottomRight, x, y))) {
+        } else if (tm == TMHand && (bstate & GDK_CONTROL_MASK) && (onArea(CropBottomRight, x, y))) {
             newType = CSResizeBottomRight;
-        } else if (tm == TMHand && (onArea (CropTop, x, y) || onArea (CropBottom, x, y))) {
+        } else if (tm == TMHand && (bstate & GDK_CONTROL_MASK) && (onArea(CropTop, x, y) || onArea(CropBottom, x, y))) {
             newType = CSResizeHeight;
-        } else if (tm == TMHand && (onArea (CropLeft, x, y) || onArea (CropRight, x, y))) {
+        } else if (tm == TMHand && (bstate & GDK_CONTROL_MASK) && (onArea(CropLeft, x, y) || onArea(CropRight, x, y))) {
             newType = CSResizeWidth;
-        } else if (onArea (CropImage, x, y)) {
+        } else if (onArea(CropImage, x, y)) {
             int objectID = -1;
 
             if (editSubscriber && editSubscriber->getEditingType() == ET_OBJECTS) {
@@ -1263,7 +1263,7 @@ void CropWindow::updateCursor (int x, int y)
             if (objectID > -1) {
                 newType = editSubscriber->getCursor(objectID);
             } else if (tm == TMHand) {
-                if (onArea (CropObserved, x, y)) {
+                if (onArea(CropObserved, x, y)) {
                     newType = CSMove;
                 } else {
                     newType = CSCrosshair;
