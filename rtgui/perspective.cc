@@ -43,10 +43,10 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     Gtk::Image *iaspectL = Gtk::manage(new RTImage("perspective-aspect-vertical-small.png"));
     Gtk::Image *iaspectR = Gtk::manage(new RTImage("perspective-aspect-horizontal-small.png"));
 
-    horiz = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_HORIZONTAL"), -100, 100, 0.1, 0, ipersHL, ipersHR));
+    horiz = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_HORIZONTAL"), -200, 200, 0.1, 0, ipersHL, ipersHR));
     horiz->setAdjusterListener(this);
 
-    vert = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_VERTICAL"), -100, 100, 0.1, 0, ipersVL, ipersVR));
+    vert = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_VERTICAL"), -200, 200, 0.1, 0, ipersVL, ipersVR));
     vert->setAdjusterListener(this);
 
     angle = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_ANGLE"), -20, 20, 0.01, 0, irotateL, irotateR));
