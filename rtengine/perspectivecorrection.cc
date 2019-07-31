@@ -306,6 +306,12 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
 procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams, const FramesMetaData *metadata)
 {
     auto pcp = import_meta(pparams->perspective, metadata);
+    procparams::PerspectiveParams dflt;
+    pcp.horizontal = dflt.horizontal;
+    pcp.vertical = dflt.vertical;
+    pcp.angle = dflt.angle;
+    pcp.shear = dflt.shear;
+    
     dt_iop_ashift_params_t p;
     dt_iop_ashift_gui_data_t g;
     init_dt_structures(&p, &g, &pcp);
