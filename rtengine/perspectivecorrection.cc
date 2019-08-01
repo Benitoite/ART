@@ -378,6 +378,11 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
         fitaxis = ASHIFT_FIT_BOTH_SHEAR;
         break;
     }
+
+    // reset the pseudo-random seed for repeatability -- ashift_dt uses rand()
+    // internally!
+    srand(1);
+    
     auto res = do_get_structure(&module, &p, ASHIFT_ENHANCE_EDGES) && do_fit(&module, &p, fitaxis);
     procparams::PerspectiveParams retval = pparams->perspective;
 
