@@ -81,7 +81,7 @@ Exposure::Exposure():
     hrmode->append(M("TP_HLREC_COLOR"));
 
     hrmode->set_active(ExposureParams::HR_OFF);
-    hlrbox = Gtk::manage(new Gtk::HBox());
+    Gtk::HBox *hlrbox = Gtk::manage(new Gtk::HBox());
     Gtk::Label* lab = Gtk::manage(new Gtk::Label(M("TP_HLREC_LABEL") + ": "));
     hlrbox->pack_start(*lab, Gtk::PACK_SHRINK);//, 4);
     hlrbox->pack_start(*hrmode);
@@ -387,12 +387,6 @@ void Exposure::autoExpChanged(double expcomp, int bright, int contr, int black, 
             this->hlcomprthresh->setValue (nextHlcomprthresh);
             this->hrmode->set_active(nextHLRecons ? ExposureParams::HR_BLEND : ExposureParams::HR_OFF);
             
-            if (nextHLRecons) {
-                hlrbox->show();
-            } else {
-                hlrbox->hide();
-            }
-
             if (!this->black->getAddMode()) {
                 this->shcompr->set_sensitive(!((int)this->black->getValue () == 0));    //at black=0 shcompr value has no effect
             }

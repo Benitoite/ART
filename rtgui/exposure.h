@@ -35,7 +35,6 @@ protected:
     MyComboBoxText *hrmode;
 
     Gtk::HBox *abox;
-    Gtk::HBox *hlrbox;
 
     Gtk::ToggleButton *autolevels;
     Gtk::Label *lclip;
