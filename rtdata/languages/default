@@ -319,9 +319,9 @@ HISTORY_MSG_62;Distortion correction
 HISTORY_MSG_63;Snapshot selected
 HISTORY_MSG_64;Crop
 HISTORY_MSG_65;CA correction
-HISTORY_MSG_66;Exposure - Highlight reconstruction
-HISTORY_MSG_67;Exposure - HLR amount
-HISTORY_MSG_68;Exposure - HLR method
+HISTORY_MSG_66;Exposure - HL reconstruction
+HISTORY_MSG_67;Exposure - HLR reconstruction
+HISTORY_MSG_68;Exposure - HLR reconstruction
 HISTORY_MSG_69;Working color space
 HISTORY_MSG_70;Output color space
 HISTORY_MSG_71;Input color space
@@ -1772,12 +1772,10 @@ TP_GRAIN_LABEL;Film Grain
 TP_GRAIN_SCALE;Scale
 TP_GRAIN_STRENGTH;Strength
 TP_HLREC_BLEND;Blend
-TP_HLREC_CIELAB;CIELab Blending
 TP_HLREC_COLOR;Color Propagation
+TP_HLREC_OFF;Off
 TP_HLREC_ENA_TOOLTIP;Could be activated by Auto Levels.
 TP_HLREC_LABEL;Highlight reconstruction
-TP_HLREC_LUMINANCE;Luminance Recovery
-TP_HLREC_METHOD;Method:
 TP_HSVEQUALIZER_CHANNEL;Channel
 TP_HSVEQUALIZER_HUE;H
 TP_HSVEQUALIZER_LABEL;HSV Equalizer

@@ -32,11 +32,7 @@ private:
     IdleRegister idle_register;
 
 protected:
-    Gtk::CheckButton *hrenabled;
-    MyComboBoxText *method;
-    sigc::connection methconn;
-    sigc::connection enaconn;
-    bool lasthrEnabled;
+    MyComboBoxText *hrmode;
 
     Gtk::HBox *abox;
     Gtk::HBox *hlrbox;
@@ -86,8 +82,7 @@ public:
 
     void setRaw(bool raw);
 
-    void hrenabledChanged();
-    void methodChanged();
+    void hrmodeChanged();
     void clampOOGChanged();
 
     Gtk::ToggleButton *getAutoLevelsButton() { return autolevels; }

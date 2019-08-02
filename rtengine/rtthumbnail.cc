@@ -1139,7 +1139,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         baseImg->vflip ();
     }
 
-    const bool hrenabled = params.exposure.enabled && params.exposure.hrenabled;
+    const bool hrenabled = params.exposure.enabled && params.exposure.hrmode != procparams::ExposureParams::HR_OFF;
 
     // apply white balance and raw white point (simulated)
     for (int i = 0; i < rheight; i++) {

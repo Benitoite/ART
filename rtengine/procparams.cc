@@ -605,8 +605,7 @@ ExposureParams::ExposureParams():
     enabled(true),
     autoexp(false),
     clip(0.02),
-    hrenabled(false),
-    method("Blend"),
+    hrmode(HR_OFF),
     expcomp(0),
     black(0),
     shcompr(50),
@@ -622,8 +621,7 @@ bool ExposureParams::operator==(const ExposureParams &other) const
     return enabled == other.enabled
         && autoexp == other.autoexp
         && clip == other.clip
-        && hrenabled == other.hrenabled
-        && method == other.method
+        && hrmode == other.hrmode
         && expcomp == other.expcomp
         && black == other.black
         && shcompr == other.shcompr
@@ -2430,8 +2428,13 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Exposure", "ShadowCompr", exposure.shcompr, keyFile);
             saveToKeyfile("Exposure", "ClampOOG", exposure.clampOOG, keyFile);
 
-            saveToKeyfile("Exposure", "HLRecoveryEnabled", exposure.hrenabled, keyFile);
-            saveToKeyfile("Exposure", "HLRecoveryMethod", exposure.method, keyFile);
+            const char *hr = "Off";
+            switch (exposure.hrmode) {
+            case ExposureParams::HR_OFF: hr = "Off"; break;
+            case ExposureParams::HR_BLEND: hr = "Blend"; break;
+            case ExposureParams::HR_COLOR: hr = "Color"; break;
+            }
+            saveToKeyfile("Exposure", "HLRecovery", hr, keyFile);
         }
 
 // Brightness, Contrast, Saturation
@@ -3159,8 +3162,19 @@ int ProcParams::load(bool load_general,
                 }
             }
             if (keyFile.has_group("HLRecovery") && RELEVANT_(exposure)) {
-                assignFromKeyfile(keyFile, "HLRecovery", "Enabled", exposure.hrenabled);
-                assignFromKeyfile(keyFile, "HLRecovery", "Method", exposure.method);
+                bool en = false;
+                Glib::ustring method;
+                assignFromKeyfile(keyFile, "HLRecovery", "Enabled", en);
+                assignFromKeyfile(keyFile, "HLRecovery", "Method", method);
+                if (!en) {
+                    exposure.hrmode = ExposureParams::HR_OFF;
+                } else if (method == "Blend") {
+                    exposure.hrmode = ExposureParams::HR_BLEND;
+                } else if (method == "Color") {
+                    exposure.hrmode = ExposureParams::HR_COLOR;
+                } else {
+                    exposure.hrmode = ExposureParams::HR_OFF;
+                }
             }
         } else {
             if (keyFile.has_group("Exposure") && RELEVANT_(exposure)) {
@@ -3173,8 +3187,31 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
                 assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
                 assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
-                assignFromKeyfile(keyFile, "Exposure", "HLRecoveryEnabled", exposure.hrenabled);
-                assignFromKeyfile(keyFile, "Exposure", "HLRecoveryMethod", exposure.method);
+                if (ppVersion >= 1000) {
+                    Glib::ustring hr;
+                    assignFromKeyfile(keyFile, "Exposure", "HLRecovery", hr);
+                    if (hr == "Blend") {
+                        exposure.hrmode = ExposureParams::HR_BLEND;
+                    } else if (hr == "Color") {
+                        exposure.hrmode = ExposureParams::HR_COLOR;
+                    } else {
+                        exposure.hrmode = ExposureParams::HR_OFF;
+                    }
+                } else {
+                    bool en = false;
+                    Glib::ustring method;
+                    assignFromKeyfile(keyFile, "Exposure", "HLRecoveryEnabled", en);
+                    assignFromKeyfile(keyFile, "Exposure", "HLRecoveryMethod", method);
+                    if (!en) {
+                        exposure.hrmode = ExposureParams::HR_OFF;
+                    } else if (method == "Blend") {
+                        exposure.hrmode = ExposureParams::HR_BLEND;
+                    } else if (method == "Color") {
+                        exposure.hrmode = ExposureParams::HR_COLOR;
+                    } else {
+                        exposure.hrmode = ExposureParams::HR_OFF;
+                    }
+                }
             }
             if (keyFile.has_group("BrightnessContrastSaturation") && RELEVANT_(brightContrSat)) {
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Enabled", brightContrSat.enabled);

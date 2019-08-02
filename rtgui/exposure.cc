@@ -75,26 +75,19 @@ Exposure::Exposure():
 //-------------- Highlight Reconstruction -----------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
-    hrenabled = Gtk::manage (new Gtk::CheckButton (M("TP_HLREC_LABEL")));
-    hrenabled->set_active (false);
-    hrenabled->set_tooltip_markup (M("TP_HLREC_ENA_TOOLTIP"));
-    pack_start (*hrenabled);
+    hrmode = Gtk::manage (new MyComboBoxText ());
+    hrmode->append(M("TP_HLREC_OFF"));
+    hrmode->append(M("TP_HLREC_BLEND"));
+    hrmode->append(M("TP_HLREC_COLOR"));
 
-    method = Gtk::manage (new MyComboBoxText ());
-    method->append (M("TP_HLREC_LUMINANCE"));
-    method->append (M("TP_HLREC_CIELAB"));
-    method->append (M("TP_HLREC_COLOR"));
-    method->append (M("TP_HLREC_BLEND"));
-
-    method->set_active (0);
-    hlrbox = Gtk::manage (new Gtk::HBox ());
-    Gtk::Label* lab = Gtk::manage (new Gtk::Label (M("TP_HLREC_METHOD")));
-    hlrbox->pack_start (*lab, Gtk::PACK_SHRINK, 4);
-    hlrbox->pack_start (*method);
+    hrmode->set_active(ExposureParams::HR_OFF);
+    hlrbox = Gtk::manage(new Gtk::HBox());
+    Gtk::Label* lab = Gtk::manage(new Gtk::Label(M("TP_HLREC_LABEL") + ": "));
+    hlrbox->pack_start(*lab, Gtk::PACK_SHRINK);//, 4);
+    hlrbox->pack_start(*hrmode);
     pack_start (*hlrbox);
 
-    enaconn  = hrenabled->signal_toggled().connect( sigc::mem_fun(*this, &Exposure::hrenabledChanged) );
-    methconn = method->signal_changed().connect ( sigc::mem_fun(*this, &Exposure::methodChanged) );
+    hrmode->signal_changed().connect ( sigc::mem_fun(*this, &Exposure::hrmodeChanged) );
 
     //----------- Exposure Compensation ---------------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
@@ -161,28 +154,7 @@ void Exposure::read(const ProcParams* pp)
 
     clampOOG->set_active(pp->exposure.clampOOG);
 
-    enaconn.block (true);
-    hrenabled->set_active  (pp->exposure.hrenabled);
-    enaconn.block (false);
-
-    if (pp->exposure.method == "Luminance") {
-        method->set_active (0);
-    } else if (pp->exposure.method == "CIELab blending") {
-        method->set_active (1);
-    } else if (pp->exposure.method == "Color") {
-        method->set_active (2);
-    } else if (pp->exposure.method == "Blend") {
-        method->set_active (3);
-    }
-
-    if (hrenabled->get_active()) {
-        hlrbox->show();
-    } else {
-        hlrbox->hide();
-    }
-
-    lasthrEnabled = pp->exposure.hrenabled;
-
+    hrmode->set_active(pp->exposure.hrmode);
     autoconn.block (false);
 
     enableListener ();
@@ -200,55 +172,14 @@ void Exposure::write(ProcParams *pp)
     pp->exposure.hlcomprthresh = (int)hlcomprthresh->getValue ();
     pp->exposure.shcompr = (int)shcompr->getValue ();
     pp->exposure.clampOOG = clampOOG->get_active();
-
-    pp->exposure.hrenabled = hrenabled->get_active();
-
-    if (method->get_active_row_number() == 0) {
-        pp->exposure.method = "Luminance";
-    } else if (method->get_active_row_number() == 1) {
-        pp->exposure.method = "CIELab blending";
-    } else if (method->get_active_row_number() == 2) {
-        pp->exposure.method = "Color";
-    } else if (method->get_active_row_number() == 3) {
-        pp->exposure.method = "Blend";
-    }
+    pp->exposure.hrmode = ExposureParams::HighlightReconstruction(hrmode->get_active_row_number());
 }
 
-void Exposure::hrenabledChanged ()
-{
-    if (hrenabled->get_active()) {
-        hlrbox->show();
-    } else {
-        hlrbox->hide();
-    }
-
-    if (listener && getEnabled()) {
-        // Switch off auto exposure if user changes enabled manually
-        if (autolevels->get_active() ) {
-            autoconn.block(true);
-            autolevels->set_active (false);
-            autoconn.block(false);
-            autolevels->set_inconsistent (false);
-        }
-
-        //setHistmatching(false);
-
-        if (hrenabled->get_active ()) {
-            listener->panelChanged (EvHREnabled, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged (EvHREnabled, M("GENERAL_DISABLED"));
-        }
-    }
-}
-
-
-void Exposure::methodChanged ()
+void Exposure::hrmodeChanged ()
 {
     if (listener && getEnabled()) {
         //setHistmatching(false);
-        if (hrenabled->get_active ()) {
-            listener->panelChanged (EvHRMethod, method->get_active_text ());
-        }
+        listener->panelChanged(EvHRMethod, hrmode->get_active_text());
     }
 }
 
@@ -265,8 +196,12 @@ void Exposure::clampOOGChanged()
 void Exposure::setRaw (bool raw)
 {
     disableListener ();
-    method->set_sensitive (raw);
-    hrenabled->set_sensitive (raw);
+    if (raw) {
+        hrmode->set_sensitive(true);
+    } else {
+        hrmode->set_active(0);
+        hrmode->set_sensitive(false);
+    }
     enableListener ();
 }
 
@@ -341,11 +276,7 @@ void Exposure::neutral_pressed ()
     hlcomprthresh->setValue(0);
     black->setValue(0);
     shcompr->setValue(50);
-    enaconn.block (true);
-    hrenabled->set_active (false);
-    enaconn.block (false);
-
-    hlrbox->hide();
+    hrmode->set_active(0);
 
     if (!black->getAddMode()) {
         shcompr->set_sensitive(!((int)black->getValue () == 0));    //at black=0 shcompr value has no effect
@@ -410,8 +341,7 @@ void Exposure::waitForAutoExp ()
     hlcompr->setEnabled (false);
     hlcomprthresh->setEnabled (false);
     shcompr->setEnabled (false);
-    hrenabled->set_sensitive(false);
-    method->set_sensitive(false);
+    hrmode->set_sensitive(false);
 }
 
 
@@ -423,8 +353,7 @@ void Exposure::enableAll ()
     hlcompr->setEnabled (true);
     hlcomprthresh->setEnabled (true);
     shcompr->setEnabled (true);
-    hrenabled->set_sensitive(true);
-    method->set_sensitive(true);
+    hrmode->set_sensitive(true);
 }
 
 
@@ -456,9 +385,7 @@ void Exposure::autoExpChanged(double expcomp, int bright, int contr, int black, 
             this->black->setValue (nextBlack);
             this->hlcompr->setValue (nextHlcompr);
             this->hlcomprthresh->setValue (nextHlcomprthresh);
-            this->enaconn.block (true);
-            this->hrenabled->set_active (nextHLRecons);
-            this->enaconn.block (false);
+            this->hrmode->set_active(nextHLRecons ? ExposureParams::HR_BLEND : ExposureParams::HR_OFF);
             
             if (nextHLRecons) {
                 hlrbox->show();

@@ -714,7 +714,7 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
     hlmax[1] = clmax[1] * gm;
     hlmax[2] = clmax[2] * bm;
 
-    const bool hrenabled = hrp.enabled && hrp.hrenabled;
+    const bool hrenabled = hrp.enabled && hrp.hrmode != procparams::ExposureParams::HR_OFF;
     const bool clampOOG = !hrp.enabled || hrp.clampOOG;
 
     const bool doClip = (chmax[0] >= clmax[0] || chmax[1] >= clmax[1] || chmax[2] >= clmax[2]) && !hrenabled && clampOOG;
@@ -723,7 +723,7 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
     rm /= area;
     gm /= area;
     bm /= area;
-    bool doHr = (hrenabled && hrp.method != "Color");
+    bool doHr = (hrenabled && hrp.hrmode != procparams::ExposureParams::HR_COLOR);
     const float expcomp = std::pow(2, ri->getBaselineExposure());
     rm *= expcomp;
     gm *= expcomp;
@@ -813,7 +813,7 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
 
             //process all highlight recovery other than "Color"
             if (doHr) {
-                hlRecovery (hrp.method, line_red, line_grn, line_blue, imwidth, hlmax);
+                hlRecovery(line_red, line_grn, line_blue, imwidth, hlmax);
             }
 
             if(d1x) {
@@ -1632,7 +1632,7 @@ void RawImageSource::flushRGB()
 
 void RawImageSource::HLRecovery_Global(const ExposureParams &hrp)
 {
-    if (hrp.enabled && hrp.hrenabled && hrp.method == "Color") {
+    if (hrp.enabled && hrp.hrmode == procparams::ExposureParams::HR_COLOR) {
         if(!rgbSourceModified) {
             if (settings->verbose) {
                 printf ("Applying Highlight Recovery: Color propagation...\n");
@@ -1642,7 +1642,6 @@ void RawImageSource::HLRecovery_Global(const ExposureParams &hrp)
             rgbSourceModified = true;
         }
     }
-
 }
 
 
@@ -3428,18 +3427,9 @@ void RawImageSource::HLRecovery_CIELab (float* rin, float* gin, float* bin, floa
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-void RawImageSource::hlRecovery (const std::string &method, float* red, float* green, float* blue, int width, float* hlmax )
+void RawImageSource::hlRecovery(float* red, float* green, float* blue, int width, float* hlmax)
 {
-
-    if (method == "Luminance") {
-        HLRecovery_Luminance (red, green, blue, red, green, blue, width, 65535.0);
-    } else if (method == "CIELab blending") {
-        HLRecovery_CIELab (red, green, blue, red, green, blue, width, 65535.0, imatrices.xyz_cam, imatrices.cam_xyz);
-    }
-    else if (method == "Blend") { // derived from Dcraw
-        HLRecovery_blend(red, green, blue, width, 65535.0, hlmax);
-    }
-
+    HLRecovery_blend(red, green, blue, width, 65535.0, hlmax);
 }
 
 

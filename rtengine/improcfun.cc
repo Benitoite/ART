@@ -594,7 +594,7 @@ void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
     const float shoulder = ((65536.0 / max (1.0f, exp_scale)) * (hlcomprthresh / 200.0)) + 0.1;
     const float hlrange = 65536.0 - shoulder;
     const bool isProPhoto = (params->icm.workingProfile == "ProPhoto");
-    bool highlight = params->exposure.enabled && params->exposure.hrenabled;//Get the value if "highlight reconstruction" is activated
+    bool highlight = params->exposure.enabled && params->exposure.hrmode != procparams::ExposureParams::HR_OFF;
 
     float chMixRR = float (params->chmixer.red[0])/10.f;
     float chMixRG = float (params->chmixer.red[1])/10.f;

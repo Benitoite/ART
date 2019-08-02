@@ -340,8 +340,12 @@ struct ExposureParams {
     bool enabled;
     bool autoexp;
     double clip;
-    bool hrenabled;  // Highlight Reconstruction enabled
-    Glib::ustring method;   // Highlight Reconstruction's method
+    enum HighlightReconstruction {
+        HR_OFF,
+        HR_BLEND,
+        HR_COLOR
+    };
+    HighlightReconstruction hrmode;
     double expcomp;
     int black;
     int shcompr;

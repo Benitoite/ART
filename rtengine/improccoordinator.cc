@@ -250,8 +250,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             imageTypeListener->imageTypeChanged(imgsrc->isRAW(), imgsrc->getSensorType() == ST_BAYER, imgsrc->getSensorType() == ST_FUJI_XTRANS, imgsrc->isMono());
         }
 
-        const bool hrenabled = params.exposure.enabled && params.exposure.hrenabled;
-        const bool hrcolor = params.exposure.enabled && params.exposure.method == "Color";
+        const bool hrenabled = params.exposure.enabled && params.exposure.hrmode != procparams::ExposureParams::HR_OFF;
+        const bool hrcolor = params.exposure.enabled && params.exposure.hrmode == procparams::ExposureParams::HR_COLOR;
         
         if ((todo & M_RAW)
                 || (!highDetailRawComputed && highDetailNeeded)
@@ -431,9 +431,10 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.getAutoExp(aehist, aehistcompr, params.exposure.clip, params.exposure.expcomp,
                                params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
     
-                if (aeListener)
+                if (aeListener) {
                     aeListener->autoExpChanged(params.exposure.expcomp, params.brightContrSat.brightness, params.brightContrSat.contrast,
-                                               params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh, params.exposure.hrenabled);
+                                               params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh, hrenabled);
+                }
             }
     
             if (params.toneCurve.histmatching) {
@@ -888,7 +889,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     imgsrc->getFullSize(fW, fH, tr);
     PreviewProps pp(0, 0, fW, fH, 1);
     ProcParams ppar = params;
-    ppar.exposure.hrenabled = false;
+    ppar.exposure.hrmode = procparams::ExposureParams::HR_OFF;
     ppar.icm.inputProfile = "(none)";
     Imagefloat* im = new Imagefloat(fW, fH);
     imgsrc->preprocess(ppar.raw, ppar.lensProf, ppar.coarse);
