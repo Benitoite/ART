@@ -2428,7 +2428,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Exposure", "ShadowCompr", exposure.shcompr, keyFile);
             saveToKeyfile("Exposure", "ClampOOG", exposure.clampOOG, keyFile);
 
-            const char *hr = "Off";
+            Glib::ustring hr = "Off";
             switch (exposure.hrmode) {
             case ExposureParams::HR_OFF: hr = "Off"; break;
             case ExposureParams::HR_BLEND: hr = "Blend"; break;
