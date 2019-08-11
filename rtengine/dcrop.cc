@@ -326,7 +326,7 @@ void Crop::update(int todo)
     bool stop = false;
     // apply luminance operations
     if (todo & M_LUMACURVE) {
-        parent->ipf.sharpening(laboCrop, params.sharpening, parent->sharpMask);
+        //parent->ipf.sharpening(laboCrop, params.sharpening, parent->sharpMask);
         stop = parent->ipf.colorCorrection(laboCrop, offset_x, offset_y, full_width, full_height);
         stop = stop || parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
         if (!stop) {
@@ -343,7 +343,7 @@ void Crop::update(int todo)
             parent->ipf.impulsedenoise(labnCrop);
             parent->ipf.defringe(labnCrop);
             parent->ipf.MLmicrocontrast (labnCrop);
-            //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
+            parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
         }
 
         stop = stop || parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
