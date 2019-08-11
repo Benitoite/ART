@@ -206,7 +206,6 @@ private:
 
     void luminanceCurve(LabImage* lold, LabImage* lnew, LUTf &curve);
 
-    void deconvsharpening(float** luminance, float** buffer, int W, int H, const SharpeningParams &sharpenParam);
     void MLmicrocontrast(float** luminance, int W, int H);   //Manuel's microcontrast
     void impulse_nr(LabImage* lab, double thresh);
 

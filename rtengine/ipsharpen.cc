@@ -29,6 +29,7 @@
 #include "rt_algo.h"
 using namespace std;
 
+
 namespace {
 
 void sharpenHaloCtrl (float** luminance, float** blurmap, float** base, float** blend, int W, int H, const SharpeningParams &sharpenParam)
@@ -150,14 +151,7 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
     }
 }
 
-}
-
-namespace rtengine
-{
-
-extern const Settings* settings;
-
-void ImProcFunctions::deconvsharpening (float** luminance, float** tmp, int W, int H, const SharpeningParams &sharpenParam)
+void deconvsharpening(float** luminance, float ** L, float** tmp, int W, int H, const SharpeningParams &sharpenParam, double scale)
 {
     const auto blurradius = sharpenParam.blurradius / scale;
     if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
@@ -171,14 +165,14 @@ BENCHFUN
 #endif
     for (int i = 0; i < H; i++) {
         for(int j = 0; j < W; j++) {
-            tmpI[i][j] = max(luminance[i][j], 0.f);
+            tmpI[i][j] = std::max(luminance[i][j], 0.f);
         }
     }
 
     // calculate contrast based blend factors to reduce sharpening in regions with low contrast
     JaggedArray<float> blend(W, H);
     float contrast = sharpenParam.contrast / 100.f;
-    buildBlendMask(luminance, blend, W, H, contrast, 1.f);
+    buildBlendMask(L, blend, W, H, contrast, 1.f);
     JaggedArray<float>* blurbuffer = nullptr;
 
     if (blurradius >= 0.25f) {
@@ -230,7 +224,7 @@ BENCHFUN
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
                 float b = impulse[i][j] ? 0.f : blend[i][j] * amount;
-                luminance[i][j] = intp(b, max(tmpI[i][j], 0.0f), luminance[i][j]);
+                luminance[i][j] = intp(b, std::max(tmpI[i][j], 0.0f), luminance[i][j]);
             }
         }
 
@@ -241,7 +235,7 @@ BENCHFUN
 #endif
             for (int i = 0; i < H; ++i) {
                 for (int j = 0; j < W; ++j) {
-                    luminance[i][j] = intp(blend[i][j], luminance[i][j], max(blur[i][j], 0.0f));
+                    luminance[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
                 }
             }
         }
@@ -249,7 +243,13 @@ BENCHFUN
     delete blurbuffer;
 }
 
-void ImProcFunctions::sharpening (LabImage* lab, const SharpeningParams &sharpenParam, bool showMask)
+} // namespace
+
+namespace rtengine {
+
+extern const Settings* settings;
+
+void ImProcFunctions::sharpening(LabImage* lab, const SharpeningParams &sharpenParam, bool showMask)
 {
 
     if ((!sharpenParam.enabled) || sharpenParam.amount < 1 || lab->W < 8 || lab->H < 8) {
@@ -278,7 +278,34 @@ void ImProcFunctions::sharpening (LabImage* lab, const SharpeningParams &sharpen
     JaggedArray<float> b2(W, H);
 
     if (sharpenParam.method == "rld") {
-        deconvsharpening (lab->L, b2, lab->W, lab->H, sharpenParam);
+        Imagefloat rgb(W, H);
+        JaggedArray<float> Y(W, H);
+        auto ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+        lab2rgb(*lab, rgb, params->icm.workingProfile);
+#ifdef _OPENMP
+#       pragma omp parallel for
+#endif
+        for (int y = 0; y < lab->H; ++y) {
+            for (int x = 0; x < lab->W; ++x) {
+                Y[y][x] = Color::rgbLuminance(rgb.r(y, x), rgb.g(y, x), rgb.b(y, x), ws);
+            }
+        }
+        deconvsharpening(Y, lab->L, b2, W, H, sharpenParam, scale);
+#ifdef _OPENMP
+#       pragma omp parallel for
+#endif
+        for (int y = 0; y < lab->H; ++y) {
+            for (int x = 0; x < lab->W; ++x) {
+                float oY = Color::rgbLuminance(rgb.r(y, x), rgb.g(y, x), rgb.b(y, x), ws);
+                if (oY > 1e-5f) {
+                    float f = Y[y][x] / oY;
+                    rgb.r(y, x) *= f;
+                    rgb.g(y, x) *= f;
+                    rgb.b(y, x) *= f;
+                }
+            }
+        }
+        rgb2lab(rgb, *lab, params->icm.workingProfile);
         return;
     }
 BENCHFUN
@@ -388,7 +415,7 @@ BENCHFUN
 #endif
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
-                lab->L[i][j] = intp(blend[i][j], lab->L[i][j], max(blur[i][j], 0.0f));
+                lab->L[i][j] = intp(blend[i][j], lab->L[i][j], std::max(blur[i][j], 0.0f));
             }
         }
     }
