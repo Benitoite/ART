@@ -170,12 +170,12 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     DARKFRAME,        // EvPreProcessExptwoGreen
     SHARPENING,       // EvSharpenEdgePasses
     SHARPENING,       // EvSharpenEdgeStrength
-    SHARPENING,       // EvSharpenMicroStrength
-    SHARPENING,       // EvSharpenMicroUniformity
+    DIRPYREQUALIZER,  // EvSharpenMicroStrength
+    DIRPYREQUALIZER,  // EvSharpenMicroUniformity
     SHARPENING,       // EvSharpenEdgeEnabled
     SHARPENING,       // EvSharpenEdgeThreechannels
-    SHARPENING,       // EvSharpenMicroEnabled
-    SHARPENING,       // EvSharpenMicroMatrix
+    DIRPYREQUALIZER,  // EvSharpenMicroEnabled
+    DIRPYREQUALIZER,  // EvSharpenMicroMatrix
     DEMOSAIC,         // EvDemosaicALLEnhanced Disabled but not removed for now, may be reintroduced some day
     RGBCURVE,         // EvVibranceEnabled
     RGBCURVE,         // EvVibrancePastels
@@ -184,11 +184,11 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     RGBCURVE,         // EvVibranceAvoidColorShift
     RGBCURVE,         // EvVibrancePastSatTog
     RGBCURVE,         // EvVibrancePastSatThreshold
-    SHARPENING,       // EvEPDStrength
-    SHARPENING,       // EvEPDEdgeStopping
-    SHARPENING,       // EvEPDScale
-    SHARPENING,       // EvEPDReweightingIterates
-    SHARPENING,       // EvEPDEnabled
+    DIRPYREQUALIZER,  // EvEPDStrength
+    DIRPYREQUALIZER,  // EvEPDEdgeStopping
+    DIRPYREQUALIZER,  // EvEPDScale
+    DIRPYREQUALIZER,  // EvEPDReweightingIterates
+    DIRPYREQUALIZER,  // EvEPDEnabled
     RGBCURVE,         // EvRGBrCurve
     RGBCURVE,         // EvRGBgCurve
     RGBCURVE,         // EvRGBbCurve

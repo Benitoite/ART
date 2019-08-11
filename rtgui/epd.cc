@@ -149,13 +149,13 @@ private:
 EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvList = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_LIST");
-    EvHueMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_HUEMASK");
-    EvChromaticityMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_CHROMATICITYMASK");
-    EvLightnessMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_LIGHTNESSMASK");
-    EvMaskBlur = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_MASKBLUR");
-    EvShowMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_SHOWMASK");
-    EvAreaMask = m->newEvent(SHARPENING, "HISTORY_MSG_EPD_AREAMASK");
+    EvList = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_LIST");
+    EvHueMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_HUEMASK");
+    EvChromaticityMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_MASKBLUR");
+    EvShowMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_SHOWMASK");
+    EvAreaMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_AREAMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
     gamma = Gtk::manage(new Adjuster (M("TP_EPD_GAMMA"), 0.8, 1.5, 0.01, 1.));

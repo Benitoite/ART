@@ -28,10 +28,10 @@ using namespace rtengine::procparams;
 FilmGrain::FilmGrain(): FoldableToolPanel(this, "grain", M("TP_GRAIN_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvEnabled = m->newEvent(SHARPENING, "HISTORY_MSG_GRAIN_ENABLED");
-    EvStrength = m->newEvent(SHARPENING, "HISTORY_MSG_GRAIN_STRENGTH");
-    EvISO = m->newEvent(SHARPENING, "HISTORY_MSG_GRAIN_ISO");
-    EvScale = m->newEvent(SHARPENING, "HISTORY_MSG_GRAIN_SCALE");
+    EvEnabled = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_GRAIN_ENABLED");
+    EvStrength = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_GRAIN_STRENGTH");
+    EvISO = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_GRAIN_ISO");
+    EvScale = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_GRAIN_SCALE");
     
     iso = Gtk::manage(new Adjuster(M("TP_GRAIN_ISO"), 20., 6400., 1., 400.));
     iso->setAdjusterListener(this);

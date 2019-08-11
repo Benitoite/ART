@@ -338,6 +338,7 @@ private:
             pl->setProgress (0.55);
         }
 
+        ipf.sharpening(labView, params.sharpening);
         bool stop = ipf.colorCorrection(labView, oX, oY, oW, oH);
         stop = stop || ipf.guidedSmoothing(labView, oX, oY, oW, oH);
         if (!stop) {
@@ -350,7 +351,7 @@ private:
             ipf.impulsedenoise(labView);
             ipf.defringe(labView);
             ipf.MLmicrocontrast(labView);
-            ipf.sharpening(labView, params.sharpening);
+            //ipf.sharpening(labView, params.sharpening);
         }
         stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         if (!stop) {

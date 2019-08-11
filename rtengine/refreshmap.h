@@ -62,7 +62,7 @@
 #define AUTOEXP                                                                    (M_HDR|M_LINDENOISE|M_AUTOEXP|M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define RGBCURVE                                                                                   (M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define LUMINANCECURVE RGBCURVE //                                                                                        (M_LUMACURVE|M_LUMINANCE|M_COLOR)
-#define SHARPENING                                                                                                        (M_LUMINANCE|M_COLOR)
+#define SHARPENING RGBCURVE //                                                                                                        (M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define IMPULSEDENOISE                                                                                                    (M_LUMINANCE|M_COLOR)
 #define DEFRINGE                                                                                                          (M_LUMINANCE|M_COLOR)
 #define DIRPYRDENOISE                                                                                                     (M_LUMINANCE|M_COLOR)
