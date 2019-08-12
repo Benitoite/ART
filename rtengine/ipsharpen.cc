@@ -151,7 +151,7 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
     }
 }
 
-void deconvsharpening(float** luminance, float ** L, float** tmp, int W, int H, const SharpeningParams &sharpenParam, double scale)
+void deconvsharpening(float** luminance, float ** L, float** tmp, int W, int H, const SharpeningParams &sharpenParam, float contrast, double scale)
 {
     const auto blurradius = sharpenParam.blurradius / scale;
     if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
@@ -171,7 +171,7 @@ BENCHFUN
 
     // calculate contrast based blend factors to reduce sharpening in regions with low contrast
     JaggedArray<float> blend(W, H);
-    float contrast = sharpenParam.contrast / 100.f;
+    //float contrast = sharpenParam.contrast / 100.f;
     buildBlendMask(L, blend, W, H, contrast, 1.f);
     JaggedArray<float>* blurbuffer = nullptr;
 
@@ -257,11 +257,11 @@ void ImProcFunctions::sharpening(LabImage* lab, const SharpeningParams &sharpenP
     }
 
     int W = lab->W, H = lab->H;
+    float contrast = pow_F(sharpenParam.contrast / 100.f, 1.2f);
 
     if(showMask) {
         // calculate contrast based blend factors to reduce sharpening in regions with low contrast
         JaggedArray<float> blend(W, H);
-        float contrast = sharpenParam.contrast / 100.f;
         buildBlendMask(lab->L, blend, W, H, contrast, 1.f);
 #ifdef _OPENMP
         #pragma omp parallel for
@@ -290,7 +290,7 @@ void ImProcFunctions::sharpening(LabImage* lab, const SharpeningParams &sharpenP
                 Y[y][x] = Color::rgbLuminance(rgb.r(y, x), rgb.g(y, x), rgb.b(y, x), ws);
             }
         }
-        deconvsharpening(Y, lab->L, b2, W, H, sharpenParam, scale);
+        deconvsharpening(Y, lab->L, b2, W, H, sharpenParam, contrast, scale);
 #ifdef _OPENMP
 #       pragma omp parallel for
 #endif
@@ -323,7 +323,7 @@ BENCHFUN
 
     // calculate contrast based blend factors to reduce sharpening in regions with low contrast
     JaggedArray<float> blend(W, H);
-    float contrast = sharpenParam.contrast / 100.f;
+    //float contrast = sharpenParam.contrast / 100.f;
     buildBlendMask(lab->L, blend, W, H, contrast);
 
     JaggedArray<float> blur(W, H);
