@@ -69,10 +69,10 @@ private:
     LabMasksPanel *labMasks;
     
     Adjuster *strength;
-    Adjuster *gamma;
+    // Adjuster *gamma;
     Adjuster *edgeStopping;
     Adjuster *scale;
-    Adjuster *reweightingIterates;
+    // Adjuster *reweightingIterates;
     Gtk::VBox *box;
 };
 

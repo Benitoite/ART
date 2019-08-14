@@ -158,30 +158,30 @@ EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPa
     EvAreaMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_AREAMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
-    gamma = Gtk::manage(new Adjuster (M("TP_EPD_GAMMA"), 0.8, 1.5, 0.01, 1.));
+    // gamma = Gtk::manage(new Adjuster (M("TP_EPD_GAMMA"), 0.8, 1.5, 0.01, 1.));
     edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));
     scale = Gtk::manage(new Adjuster (M("TP_EPD_SCALE"), 0.1, 10.0, 0.01, 0.1));
-    reweightingIterates = Gtk::manage(new Adjuster (M("TP_EPD_REWEIGHTINGITERATES"), 0, 9, 1, 0));
+    // reweightingIterates = Gtk::manage(new Adjuster (M("TP_EPD_REWEIGHTINGITERATES"), 0, 9, 1, 0));
 
     box = Gtk::manage(new Gtk::VBox());
 
     strength->setAdjusterListener(this);
-    gamma->setAdjusterListener(this);
+    // gamma->setAdjusterListener(this);
     edgeStopping->setAdjusterListener(this);
     scale->setAdjusterListener(this);
-    reweightingIterates->setAdjusterListener(this);
+    // reweightingIterates->setAdjusterListener(this);
 
     strength->show();
-    gamma->show();
+    // gamma->show();
     edgeStopping->show();
     scale->show();
-    reweightingIterates->show();
+    // reweightingIterates->show();
 
     box->pack_start(*strength);
-    box->pack_start(*gamma);
+    // box->pack_start(*gamma);
     box->pack_start(*edgeStopping);
     box->pack_start(*scale);
-    box->pack_start(*reweightingIterates);
+    // box->pack_start(*reweightingIterates);
 
     labMasksContentProvider.reset(new EPDMasksContentProvider(this));
     labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
@@ -223,10 +223,10 @@ void EdgePreservingDecompositionUI::write(ProcParams *pp)
 void EdgePreservingDecompositionUI::setDefaults(const ProcParams *defParams)
 {
     strength->setDefault(defParams->epd.regions[0].strength);
-    gamma->setDefault(defParams->epd.regions[0].gamma);
+    // gamma->setDefault(defParams->epd.regions[0].gamma);
     edgeStopping->setDefault(defParams->epd.regions[0].edgeStopping);
     scale->setDefault(defParams->epd.regions[0].scale);
-    reweightingIterates->setDefault(defParams->epd.regions[0].reweightingIterates);
+    // reweightingIterates->setDefault(defParams->epd.regions[0].reweightingIterates);
 }
 
 void EdgePreservingDecompositionUI::adjusterChanged(Adjuster* a, double newval)
@@ -236,14 +236,14 @@ void EdgePreservingDecompositionUI::adjusterChanged(Adjuster* a, double newval)
 
         if(a == strength) {
             listener->panelChanged(EvEPDStrength, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
-        } else if(a == gamma) {
-            listener->panelChanged(EvEPDgamma, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
+        // } else if(a == gamma) {
+        //     listener->panelChanged(EvEPDgamma, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
         } else if(a == edgeStopping) {
             listener->panelChanged(EvEPDEdgeStopping, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
         } else if(a == scale) {
             listener->panelChanged(EvEPDScale, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
-        } else if(a == reweightingIterates) {
-            listener->panelChanged(EvEPDReweightingIterates, Glib::ustring::format((int)a->getValue()));
+        // } else if(a == reweightingIterates) {
+        //     listener->panelChanged(EvEPDReweightingIterates, Glib::ustring::format((int)a->getValue()));
         }
     }
 }
@@ -296,10 +296,10 @@ void EdgePreservingDecompositionUI::regionGet(int idx)
     
     auto &r = data[idx];
     r.strength = strength->getValue();
-    r.gamma = gamma->getValue();
+    // r.gamma = gamma->getValue();
     r.edgeStopping = edgeStopping->getValue();
     r.scale = scale->getValue();
-    r.reweightingIterates = reweightingIterates->getValue();
+    // r.reweightingIterates = reweightingIterates->getValue();
 }
 
 
@@ -312,10 +312,10 @@ void EdgePreservingDecompositionUI::regionShow(int idx)
 
     auto &r = data[idx];
     strength->setValue(r.strength);
-    gamma->setValue(r.gamma);
+    // gamma->setValue(r.gamma);
     edgeStopping->setValue(r.edgeStopping);
     scale->setValue(r.scale);
-    reweightingIterates->setValue(r.reweightingIterates);
+    // reweightingIterates->setValue(r.reweightingIterates);
     
     if (disable) {
         enableListener();

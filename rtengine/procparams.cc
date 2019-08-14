@@ -1104,10 +1104,10 @@ bool DenoiseParams::operator !=(const DenoiseParams& other) const
 
 EPDParams::Region::Region():
     strength(0.5),
-    gamma(1.0),
+    gamma(1.5),
     edgeStopping(1.4),
     scale(1.0),
-    reweightingIterates(0)
+    reweightingIterates(1)
 {
 }
 
@@ -2623,10 +2623,10 @@ int ProcParams::save(bool save_general,
                 std::string n = j ? std::string("_") + std::to_string(j) : std::string("");
                 auto &r = epd.regions[j];
                 putToKeyfile("EPD", Glib::ustring("Strength") + n, r.strength, keyFile);
-                putToKeyfile("EPD", Glib::ustring("Gamma") + n, r.gamma, keyFile);
+                //putToKeyfile("EPD", Glib::ustring("Gamma") + n, r.gamma, keyFile);
                 putToKeyfile("EPD", Glib::ustring("EdgeStopping") + n, r.edgeStopping, keyFile);
                 putToKeyfile("EPD", Glib::ustring("Scale") + n, r.scale, keyFile);
-                putToKeyfile("EPD", Glib::ustring("ReweightingIterates") + n, r.reweightingIterates, keyFile);
+                //putToKeyfile("EPD", Glib::ustring("ReweightingIterates") + n, r.reweightingIterates, keyFile);
                 epd.labmasks[j].save(keyFile, "EPD", "", n);
             }
             saveToKeyfile("EPD", "showMask", epd.showMask, keyFile);
@@ -3521,10 +3521,10 @@ int ProcParams::load(bool load_general,
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Gamma") + n, cur.gamma)) {
-                    found = true;
-                    done = false;
-                }
+                // if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Gamma") + n, cur.gamma)) {
+                //     found = true;
+                //     done = false;
+                // }
                 if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("EdgeStopping") + n, cur.edgeStopping)) {
                     found = true;
                     done = false;
@@ -3533,10 +3533,10 @@ int ProcParams::load(bool load_general,
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("ReweightingIterates") + n, cur.reweightingIterates)) {
-                    found = true;
-                    done = false;
-                }
+                // if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("ReweightingIterates") + n, cur.reweightingIterates)) {
+                //     found = true;
+                //     done = false;
+                // }
                 if (curmask.load(keyFile, "EPD", "", n)) {
                     found = true;
                     done = false;
