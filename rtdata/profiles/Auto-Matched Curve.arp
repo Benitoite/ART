@@ -1,11 +1,12 @@
 [Exposure]
 Auto=false
-HLRecoveryEnabled=true
-HLRecoveryMethod=Blend
+HLRecovery=Blend
 
 [ToneCurve]
 Enabled=true
 HistogramMatching=true
+CurveMode=FilmLike
+Curve2=0;
 
 [LensProfile]
 LcMode=lfauto
