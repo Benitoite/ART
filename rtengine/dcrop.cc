@@ -23,8 +23,7 @@
 #include "refreshmap.h"
 #include "rt_math.h"
 
-namespace
-{
+namespace {
 
 // "ceil" rounding
 template<typename T>
@@ -33,15 +32,15 @@ constexpr T skips(T a, T b)
     return a / b + static_cast<bool>(a % b);
 }
 
-}
+} // namespace
 
-namespace rtengine
-{
+namespace rtengine {
 
 extern const Settings* settings;
 
 Crop::Crop(ImProcCoordinator* parent, EditDataProvider *editDataProvider, bool isDetailWindow)
-    : PipetteBuffer(editDataProvider), origCrop(nullptr), laboCrop(nullptr), labnCrop(nullptr),
+    : PipetteBuffer(editDataProvider), origCrop(nullptr),
+      //laboCrop(nullptr), labnCrop(nullptr),
       cropImg (nullptr), transCrop (nullptr), 
       updating(false), newUpdatePending(false), skip(10),
       cropx(0), cropy(0), cropw(-1), croph(-1),
@@ -51,6 +50,9 @@ Crop::Crop(ImProcCoordinator* parent, EditDataProvider *editDataProvider, bool i
       cropAllocated(false),
       cropImageListener(nullptr), parent(parent), isDetailWindow(isDetailWindow)
 {
+    for (int i = 0; i < 3; ++i) {
+        bufs_[i] = nullptr;
+    }
     parent->crops.push_back(this);
 }
 
@@ -311,7 +313,7 @@ void Crop::update(int todo)
 
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
-        parent->ipf.rgbProc(workingCrop, laboCrop);
+        parent->ipf.rgbProc(workingCrop, bufs_[0]);
         
         if (workingCrop != baseCrop) {
             delete workingCrop;
@@ -326,34 +328,43 @@ void Crop::update(int todo)
     bool stop = false;
     // apply luminance operations
     if (todo & M_LUMACURVE) {
+        bufs_[1]->CopyFrom(bufs_[0]);
+        
         if (skip == 1) {
-            parent->ipf.sharpening(laboCrop, params.sharpening, parent->sharpMask);
+            parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
         }
-        stop = parent->ipf.colorCorrection(laboCrop, offset_x, offset_y, full_width, full_height);
-        stop = stop || parent->ipf.guidedSmoothing(laboCrop, offset_x, offset_y, full_width, full_height);
+        stop = parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
+        stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
+        stop = stop || parent->ipf.contrastByDetailLevels(bufs_[1], offset_x, offset_y, full_width, full_height); 
         if (!stop) {
-            parent->ipf.logEncoding(laboCrop);
-            parent->ipf.labAdjustments(laboCrop);
+            parent->ipf.localContrast(bufs_[1]);
+            // parent->ipf.logEncoding(bufs_[1]);
+            // parent->ipf.labAdjustments(bufs_[1]);
         }
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
-        labnCrop->CopyFrom(laboCrop);
+        bufs_[2]->CopyFrom(bufs_[1]);
 
-        stop = stop || parent->ipf.toneMapping(labnCrop, offset_x, offset_y, full_width, full_height);
+        if (!stop) {
+            parent->ipf.logEncoding(bufs_[2]);
+            parent->ipf.labAdjustments(bufs_[2]);
+        }
+
+        stop = stop || parent->ipf.toneMapping(bufs_[2], offset_x, offset_y, full_width, full_height);
         if (skip == 1 && !stop) {
-            parent->ipf.impulsedenoise(labnCrop);
-            parent->ipf.defringe(labnCrop);
-            parent->ipf.MLmicrocontrast (labnCrop);
+            parent->ipf.impulsedenoise(bufs_[2]);
+            parent->ipf.defringe(bufs_[2]);
+            parent->ipf.MLmicrocontrast(bufs_[2]);
             //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
         }
 
-        stop = stop || parent->ipf.contrastByDetailLevels(labnCrop, offset_x, offset_y, full_width, full_height); 
+        // stop = stop || parent->ipf.contrastByDetailLevels(bufs_[2], offset_x, offset_y, full_width, full_height); 
 
         if (!stop) {
-            parent->ipf.softLight(labnCrop);
-            parent->ipf.localContrast(labnCrop);
-            parent->ipf.filmGrain(labnCrop, cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+            parent->ipf.softLight(bufs_[2]);
+            // parent->ipf.localContrast(bufs_[2]);
+            parent->ipf.filmGrain(bufs_[2], cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
         }
     }
 
@@ -361,13 +372,13 @@ void Crop::update(int todo)
     PipetteBuffer::setReady();
 
     // Computing the preview image, i.e. converting from lab->Monitor color space (soft-proofing disabled) or lab->Output profile->Monitor color space (soft-proofing enabled)
-    parent->ipf.lab2monitorRgb(labnCrop, cropImg);
+    parent->ipf.lab2monitorRgb(bufs_[2], cropImg);
 
     if (cropImageListener) {
         // Computing the internal image for analysis, i.e. conversion from lab->Output profile (rtSettings.HistogramWorking disabled) or lab->WCS (rtSettings.HistogramWorking enabled)
 
         // internal image in output color space for analysis
-        Image8 *cropImgtrue = parent->ipf.lab2rgb(labnCrop, 0, 0, cropw, croph, params.icm);
+        Image8 *cropImgtrue = parent->ipf.lab2rgb(bufs_[2], 0, 0, cropw, croph, params.icm);
 
         int finalW = rqcropw;
 
@@ -410,15 +421,21 @@ void Crop::freeAll()
             transCrop = nullptr;
         }
 
-        if (laboCrop) {
-            delete    laboCrop;
-            laboCrop = nullptr;
+        for (int i = 3; i > 0; --i) {
+            if (bufs_[i-1]) {
+                delete bufs_[i-1];
+                bufs_[i-1] = nullptr;
+            }
         }
+        // if (laboCrop) {
+        //     delete    laboCrop;
+        //     laboCrop = nullptr;
+        // }
 
-        if (labnCrop) {
-            delete    labnCrop;
-            labnCrop = nullptr;
-        }
+        // if (labnCrop) {
+        //     delete    labnCrop;
+        //     labnCrop = nullptr;
+        // }
 
         if (cropImg) {
             delete    cropImg;
@@ -578,17 +595,24 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
             transCrop->allocate(cropw, croph);
         }
 
-        if (laboCrop) {
-            delete laboCrop;    // laboCrop can't be resized
+        // if (laboCrop) {
+        //     delete laboCrop;    // laboCrop can't be resized
+        // }
+
+        // laboCrop = new LabImage(cropw, croph);
+
+        // if (labnCrop) {
+        //     delete labnCrop;    // labnCrop can't be resized
+        // }
+
+        // labnCrop = new LabImage(cropw, croph);
+
+        for (int i = 0; i < 3; ++i) {
+            if (bufs_[i]) {
+                delete bufs_[i];
+            }
+            bufs_[i] = new LabImage(cropw, croph);
         }
-
-        laboCrop = new LabImage(cropw, croph);
-
-        if (labnCrop) {
-            delete labnCrop;    // labnCrop can't be resized
-        }
-
-        labnCrop = new LabImage(cropw, croph);
 
         if (!cropImg) {
             cropImg = new Image8;

@@ -28,7 +28,7 @@ using namespace rtengine::procparams;
 LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
-    const auto EVENT = RGBCURVE;
+    const auto EVENT = LUMINANCECURVE;
     EvEnabled = m->newEvent(RGBCURVE | M_AUTOEXP, "HISTORY_MSG_LOGENC_ENABLED");
     EvAuto = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTO");
     EvAutoGrayOn = m->newEvent(AUTOEXP, "HISTORY_MSG_LOGENC_AUTOGRAY");

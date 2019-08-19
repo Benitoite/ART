@@ -39,7 +39,9 @@ namespace rtengine
 extern const Settings* settings;
 
 ImProcCoordinator::ImProcCoordinator()
-    : orig_prev(nullptr), oprevi(nullptr), oprevl(nullptr), nprevl(nullptr), drcomp_11_dcrop_cache(nullptr), previmg(nullptr), workimg(nullptr),
+    : orig_prev(nullptr), oprevi(nullptr),
+      //oprevl(nullptr), nprevl(nullptr),
+      drcomp_11_dcrop_cache(nullptr), previmg(nullptr), workimg(nullptr),
       imgsrc (nullptr), lastAwbEqual (0.), lastAwbTempBias (0.0), ipf (&params, true), monitorIntent (RI_RELATIVE),
       softProof(false), gamutCheck(false), sharpMask(false), scale(10), highDetailPreprocessComputed(false), highDetailRawComputed(false),
       allocated(false), bwAutoR(-9000.f), bwAutoG(-9000.f), bwAutoB(-9000.f), CAMMean(NAN),
@@ -97,7 +99,11 @@ ImProcCoordinator::ImProcCoordinator()
       plistener(nullptr), imageListener(nullptr), aeListener(nullptr), acListener(nullptr), abwListener(nullptr), awbListener(nullptr), flatFieldAutoClipListener(nullptr), bayerAutoContrastListener(nullptr), xtransAutoContrastListener(nullptr), frameCountListener(nullptr), imageTypeListener(nullptr), actListener(nullptr), adnListener(nullptr), awavListener(nullptr), dehaListener(nullptr), hListener(nullptr), autoLogListener(nullptr),
       resultValid(false), lastOutputProfile("BADFOOD"), lastOutputIntent(RI__COUNT), lastOutputBPC(false), thread(nullptr), changeSinceLast(0), updaterRunning(false), destroying(false), utili(false), autili(false),
       butili(false), ccutili(false), cclutili(false), clcutili(false), opautili(false), wavcontlutili(false), colourToningSatLimit(0.f), colourToningSatLimitOpacity(0.f), highQualityComputed(false), customTransformIn(nullptr), customTransformOut(nullptr)
-{}
+{
+    for (int i = 0; i < 3; ++i) {
+        bufs_[i] = nullptr;
+    }
+}
 
 void ImProcCoordinator::assign(ImageSource* imgsrc)
 {
@@ -475,7 +481,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             // if it's just crop we just need the histogram, no image updates
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
-                ipf.rgbProc (oprevi, oprevl);
+                ipf.rgbProc (oprevi, bufs_[0]);
             }
     
             // compute L channel histogram
@@ -487,34 +493,46 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         bool stop = false;
     
         if (todo & M_LUMACURVE) {
-            stop = ipf.colorCorrection(oprevl);
-            stop = stop || ipf.guidedSmoothing(oprevl);
+            bufs_[1]->CopyFrom(bufs_[0]);
+            stop = ipf.colorCorrection(bufs_[1]);
+            stop = stop || ipf.guidedSmoothing(bufs_[1]);
+            stop = stop || ipf.contrastByDetailLevels(bufs_[1]);
 
             if (!stop) {
-                ipf.logEncoding(oprevl, &histToneCurve);
+                ipf.localContrast(bufs_[1]);
+                // ipf.logEncoding(bufs_[1], &histToneCurve);
             
-                progress("Applying Color Boost...", 100 * readyphase / numofphases);
-                histCCurve.clear();
-                histLCurve.clear();
-                ipf.labAdjustments(oprevl, &histCCurve, &histLCurve);
+                // progress("Applying Color Boost...", 100 * readyphase / numofphases);
+                // histCCurve.clear();
+                // histLCurve.clear();
+                // ipf.labAdjustments(bufs_[1], &histCCurve, &histLCurve);
             }
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
-            nprevl->CopyFrom(oprevl);
-    
-            stop = stop || ipf.toneMapping(nprevl);
+            bufs_[2]->CopyFrom(bufs_[1]);
+
+            if (!stop) {
+                ipf.logEncoding(bufs_[2], &histToneCurve);
+            
+                progress("Applying Color Boost...", 100 * readyphase / numofphases);
+                histCCurve.clear();
+                histLCurve.clear();
+                ipf.labAdjustments(bufs_[2], &histCCurve, &histLCurve);
+            }
+            
+            stop = stop || ipf.toneMapping(bufs_[2]);
     
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
             readyphase++;
     
 
-            stop = stop || ipf.contrastByDetailLevels(nprevl);
-            readyphase++;
+            // stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
+            // readyphase++;
 
             if (!stop) {
-                ipf.softLight(nprevl);
-                ipf.localContrast(nprevl);
+                ipf.softLight(bufs_[2]);
+                ipf.localContrast(bufs_[2]);
             }
         }
     
@@ -541,11 +559,11 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
 
             try {
                 // Computing the preview image, i.e. converting from WCS->Monitor color space (soft-proofing disabled) or WCS->Printer profile->Monitor color space (soft-proofing enabled)
-                ipf.lab2monitorRgb(nprevl, previmg);
+                ipf.lab2monitorRgb(bufs_[2], previmg);
 
                 // Computing the internal image for analysis, i.e. conversion from WCS->Output profile
                 delete workimg;
-                workimg = ipf.lab2rgb(nprevl, 0, 0, pW, pH, params.icm);
+                workimg = ipf.lab2rgb(bufs_[2], 0, 0, pW, pH, params.icm);
             } catch (char * str) {
                 progress("Error converting file...", 0);
                 return;
@@ -593,10 +611,16 @@ void ImProcCoordinator::freeAll()
         oprevi    = nullptr;
         delete orig_prev;
         orig_prev = nullptr;
-        delete oprevl;
-        oprevl    = nullptr;
-        delete nprevl;
-        nprevl    = nullptr;
+        for (int i = 3; i > 0; --i) {
+            if (bufs_[i-1]) {
+                delete bufs_[i-1];
+                bufs_[i-1] = nullptr;
+            }
+        }
+        // delete oprevl;
+        // oprevl    = nullptr;
+        // delete nprevl;
+        // nprevl    = nullptr;
 
         if (imageListener) {
             imageListener->delImage(previmg);
@@ -642,8 +666,11 @@ void ImProcCoordinator::setScale(int prevscale)
 
         orig_prev = new Imagefloat(pW, pH);
         oprevi = orig_prev;
-        oprevl = new LabImage(pW, pH);
-        nprevl = new LabImage(pW, pH);
+        for (int i = 0; i < 3; ++i) {
+            bufs_[i] = new LabImage(pW, pH);
+        }
+        // oprevl = new LabImage(pW, pH);
+        // nprevl = new LabImage(pW, pH);
         previmg = new Image8(pW, pH);
         workimg = new Image8(pW, pH);
 
@@ -681,7 +708,7 @@ void ImProcCoordinator::updateLRGBHistograms()
             for (int i = y1; i < y2; i++)
                 for (int j = x1; j < x2; j++)
                 {
-                    histChroma[(int)(sqrtf(SQR(nprevl->a[i][j]) + SQR(nprevl->b[i][j])) / 188.f)]++;      //188 = 48000/256
+                    histChroma[(int)(sqrtf(SQR(bufs_[2]->a[i][j]) + SQR(bufs_[2]->b[i][j])) / 188.f)]++;      //188 = 48000/256
                 }
         }
 #ifdef _OPENMP
@@ -693,7 +720,7 @@ void ImProcCoordinator::updateLRGBHistograms()
             for (int i = y1; i < y2; i++)
                 for (int j = x1; j < x2; j++)
                 {
-                    histLuma[(int)(nprevl->L[i][j] / 128.f)]++;
+                    histLuma[(int)(bufs_[2]->L[i][j] / 128.f)]++;
                 }
         }
 #ifdef _OPENMP

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -55,8 +56,9 @@ class ImProcCoordinator : public StagedImageProcessor
 protected:
     Imagefloat *orig_prev;
     Imagefloat *oprevi;
-    LabImage *oprevl;
-    LabImage *nprevl;
+    LabImage *bufs_[3];
+    // LabImage *oprevl;
+    // LabImage *nprevl;
     Imagefloat *drcomp_11_dcrop_cache; // global cache for dynamicRangeCompression used in 1:1 detail windows (except when denoise is active)
     Image8 *previmg;  // displayed image in monitor color space, showing the output profile as well (soft-proofing enabled, which then correspond to workimg) or not
     Image8 *workimg;  // internal image in output color space for analysis

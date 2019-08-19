@@ -31,8 +31,8 @@ BrightnessContrastSaturation::BrightnessContrastSaturation():
     FoldableToolPanel(this, "brightcontrsat", M("TP_BRIGHTCONTRSAT_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvVibrance = m->newEvent(RGBCURVE, "HISTORY_MSG_BRIGHTCONTRSAT_VIBRANCE");
-    EvToolEnabled.set_action(RGBCURVE);
+    EvVibrance = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_BRIGHTCONTRSAT_VIBRANCE");
+    EvToolEnabled.set_action(LUMINANCECURVE);
     autolevels = nullptr;
     
     brightness = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_BRIGHTNESS"), -100, 100, 1, 0));

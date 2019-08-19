@@ -61,12 +61,12 @@
 #define TRANSFORM                                                  (M_TRANSFORM|M_BLURMAP|M_AUTOEXP|M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define AUTOEXP                                                                    (M_HDR|M_LINDENOISE|M_AUTOEXP|M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define RGBCURVE                                                                                   (M_RGBCURVE|M_LUMACURVE|M_LUMINANCE|M_COLOR)
-#define LUMINANCECURVE RGBCURVE //                                                                                        (M_LUMACURVE|M_LUMINANCE|M_COLOR)
-#define SHARPENING RGBCURVE//                                                                                                       (M_LUMINANCE|M_COLOR)
+#define LUMINANCECURVE                                                                                         (M_LUMINANCE|M_COLOR)
+#define SHARPENING                                                                                                        (M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define IMPULSEDENOISE                                                                                                    (M_LUMINANCE|M_COLOR)
 #define DEFRINGE                                                                                                          (M_LUMINANCE|M_COLOR)
 #define DIRPYRDENOISE                                                                                                     (M_LUMINANCE|M_COLOR)
-#define DIRPYREQUALIZER                                                                                                   (M_LUMINANCE|M_COLOR)
+#define DIRPYREQUALIZER                                                                                                   (M_LUMACURVE|M_LUMINANCE|M_COLOR)
 #define GAMMA             M_VOID //M_MONITOR
 #define CROP              M_CROP
 #define RESIZE            M_VOID

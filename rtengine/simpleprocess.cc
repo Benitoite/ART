@@ -341,7 +341,9 @@ private:
         ipf.sharpening(labView, params.sharpening);
         bool stop = ipf.colorCorrection(labView, oX, oY, oW, oH);
         stop = stop || ipf.guidedSmoothing(labView, oX, oY, oW, oH);
+        stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         if (!stop) {
+            ipf.localContrast(labView);
             ipf.logEncoding(labView);
             ipf.labAdjustments(labView);
         }
@@ -353,10 +355,10 @@ private:
             ipf.MLmicrocontrast(labView);
             //ipf.sharpening(labView, params.sharpening);
         }
-        stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
+        //stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         if (!stop) {
             ipf.softLight(labView);
-            ipf.localContrast(labView);
+            // ipf.localContrast(labView);
             ipf.filmGrain(labView);
         }
 
