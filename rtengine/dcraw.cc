@@ -6548,6 +6548,38 @@ guess_cfa_pc:
 	cblack[4] = cblack[5] = MIN(sqrt(len),64);
       case 50714:			/* BlackLevel */
                 RT_blacklevel_from_constant = ThreeValBool::F;
+//-----------------------------------------------------------------------------
+// ALB -- taken from LibRaw. Fix for RT issue #4695
+/* 
+  Copyright 2008-2019 LibRaw LLC (info@libraw.org)
+
+LibRaw is free software; you can redistribute it and/or modify
+it under the terms of the one of two licenses as you choose:
+
+1. GNU LESSER GENERAL PUBLIC LICENSE version 2.1
+   (See file LICENSE.LGPL provided in LibRaw distribution archive for details).
+
+2. COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
+   (See file LICENSE.CDDL provided in LibRaw distribution archive for details).
+
+   This file is generated from Dave Coffin's dcraw.c
+   dcraw.c -- Dave Coffin's raw photo decoder
+   Copyright 1997-2010 by Dave Coffin, dcoffin a cybercom o net
+
+   Look into dcraw homepage (probably http://cybercom.net/~dcoffin/dcraw/)
+   for more information
+*/
+                if (tiff_ifd[ifd].samples > 1 && tiff_ifd[ifd].samples == len) // LinearDNG, per-channel black
+                {
+                    for (i = 0; i < 4 && i < len; i++)
+                    {
+                        double b = getreal(type);
+                        cblack[i] = b+0.5;
+                    }
+
+                    black = 0;
+                } else
+//-----------------------------------------------------------------------------
 		if(cblack[4] * cblack[5] == 0) {
 			int dblack[] = { 0,0,0,0 };
 			black = getreal(type);
