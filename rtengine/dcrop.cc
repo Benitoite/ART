@@ -336,11 +336,10 @@ void Crop::update(int todo)
         stop = parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
         stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
         stop = stop || parent->ipf.contrastByDetailLevels(bufs_[1], offset_x, offset_y, full_width, full_height); 
-        if (!stop) {
-            parent->ipf.localContrast(bufs_[1]);
-            // parent->ipf.logEncoding(bufs_[1]);
-            // parent->ipf.labAdjustments(bufs_[1]);
-        }
+        // if (!stop) {
+        //     parent->ipf.logEncoding(bufs_[1]);
+        //     parent->ipf.labAdjustments(bufs_[1]);
+        // }
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
@@ -363,7 +362,7 @@ void Crop::update(int todo)
 
         if (!stop) {
             parent->ipf.softLight(bufs_[2]);
-            // parent->ipf.localContrast(bufs_[2]);
+            parent->ipf.localContrast(bufs_[2]);
             parent->ipf.filmGrain(bufs_[2], cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
         }
     }

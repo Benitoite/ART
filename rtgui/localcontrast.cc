@@ -28,14 +28,15 @@ using namespace rtengine::procparams;
 LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_LOCALCONTRAST_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvLocalContrastEnabled = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_ENABLED");
-    EvLocalContrastMode = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_MODE");
-    EvLocalContrastRadius = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_RADIUS");
-    EvLocalContrastAmount = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_AMOUNT");
-    EvLocalContrastDarkness = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_DARKNESS");
-    EvLocalContrastLightness = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_LIGHTNESS");
-    EvLocalContrastContrast = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_CONTRAST");
-    EvLocalContrastCurve = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_LOCALCONTRAST_CURVE");
+    auto EVENT = SHARPENING;
+    EvLocalContrastEnabled = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_ENABLED");
+    EvLocalContrastMode = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_MODE");
+    EvLocalContrastRadius = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_RADIUS");
+    EvLocalContrastAmount = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_AMOUNT");
+    EvLocalContrastDarkness = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DARKNESS");
+    EvLocalContrastLightness = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_LIGHTNESS");
+    EvLocalContrastContrast = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CONTRAST");
+    EvLocalContrastCurve = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CURVE");
 
     usm = Gtk::manage(new Gtk::VBox());
     wavelets = Gtk::manage(new Gtk::VBox());

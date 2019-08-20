@@ -343,7 +343,6 @@ private:
         stop = stop || ipf.guidedSmoothing(labView, oX, oY, oW, oH);
         stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         if (!stop) {
-            ipf.localContrast(labView);
             ipf.logEncoding(labView);
             ipf.labAdjustments(labView);
         }
@@ -358,7 +357,7 @@ private:
         //stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
         if (!stop) {
             ipf.softLight(labView);
-            // ipf.localContrast(labView);
+            ipf.localContrast(labView);
             ipf.filmGrain(labView);
         }
 

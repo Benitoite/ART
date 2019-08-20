@@ -1250,7 +1250,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     bool stop = ipf.colorCorrection(labView);
     stop = stop || ipf.guidedSmoothing(labView);
     if (!stop) {
-        ipf.localContrast(labView);
         ipf.logEncoding(labView);
         ipf.labAdjustments(labView);
     }
@@ -1258,7 +1257,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     stop = stop || ipf.toneMapping(labView);
     if (!stop) {
         ipf.softLight(labView);
-        // ipf.localContrast(labView);
+        ipf.localContrast(labView);
     }
 
     // obtain final image

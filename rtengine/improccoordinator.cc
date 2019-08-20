@@ -498,15 +498,14 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             stop = stop || ipf.guidedSmoothing(bufs_[1]);
             stop = stop || ipf.contrastByDetailLevels(bufs_[1]);
 
-            if (!stop) {
-                ipf.localContrast(bufs_[1]);
-                // ipf.logEncoding(bufs_[1], &histToneCurve);
+            // if (!stop) {
+            //     ipf.logEncoding(bufs_[1], &histToneCurve);
             
-                // progress("Applying Color Boost...", 100 * readyphase / numofphases);
-                // histCCurve.clear();
-                // histLCurve.clear();
-                // ipf.labAdjustments(bufs_[1], &histCCurve, &histLCurve);
-            }
+            //     progress("Applying Color Boost...", 100 * readyphase / numofphases);
+            //     histCCurve.clear();
+            //     histLCurve.clear();
+            //     ipf.labAdjustments(bufs_[1], &histCCurve, &histLCurve);
+            // }
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
