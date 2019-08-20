@@ -37,11 +37,10 @@ public:
     bool rgbCurves;
     bool sharpening;
     bool prsharpening;
-    bool sharpenMicro;
     bool wb;
     bool defringe;
     bool denoise;
-    bool epd;
+    bool textureBoost;
     bool fattal;
     bool logenc;
     bool impulseDenoise;

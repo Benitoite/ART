@@ -479,9 +479,6 @@ void Options::setDefaults()
     ICCPC_appendParamsToDesc = false;
 
     fastexport_bypass_sharpening         = true;
-    fastexport_bypass_sharpenMicro       = true;
-    //fastexport_bypass_lumaDenoise        = true;
-    //fastexport_bypass_colorDenoise       = true;
     fastexport_bypass_defringe           = true;
     fastexport_bypass_dirpyrDenoise      = true;
     fastexport_bypass_dirpyrequalizer    = true;
@@ -1658,12 +1655,6 @@ void Options::readFromFile(Glib::ustring fname)
                     fastexport_bypass_sharpening = keyFile.get_boolean("Fast Export", "fastexport_bypass_sharpening");
                 }
 
-                if (keyFile.has_key("Fast Export", "fastexport_bypass_sharpenMicro")) {
-                    fastexport_bypass_sharpenMicro = keyFile.get_boolean("Fast Export", "fastexport_bypass_sharpenMicro");
-                }
-
-                //if (keyFile.has_key ("Fast Export", "fastexport_bypass_lumaDenoise" )) fastexport_bypass_lumaDenoise = keyFile.get_boolean ("Fast Export", "fastexport_bypass_lumaDenoise" );
-                //if (keyFile.has_key ("Fast Export", "fastexport_bypass_colorDenoise" )) fastexport_bypass_colorDenoise = keyFile.get_boolean ("Fast Export", "fastexport_bypass_colorDenoise" );
                 if (keyFile.has_key("Fast Export", "fastexport_bypass_defringe")) {
                     fastexport_bypass_defringe = keyFile.get_boolean("Fast Export", "fastexport_bypass_defringe");
                 }
@@ -2183,9 +2174,6 @@ void Options::saveToFile(Glib::ustring fname)
 
 
         keyFile.set_boolean("Fast Export", "fastexport_bypass_sharpening", fastexport_bypass_sharpening);
-        keyFile.set_boolean("Fast Export", "fastexport_bypass_sharpenMicro", fastexport_bypass_sharpenMicro);
-        //keyFile.set_boolean ("Fast Export", "fastexport_bypass_lumaDenoise" , fastexport_bypass_lumaDenoise);
-        //keyFile.set_boolean ("Fast Export", "fastexport_bypass_colorDenoise" , fastexport_bypass_colorDenoise);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_defringe", fastexport_bypass_defringe);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_dirpyrDenoise", fastexport_bypass_dirpyrDenoise);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_dirpyrequalizer", fastexport_bypass_dirpyrequalizer);

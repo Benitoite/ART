@@ -347,11 +347,10 @@ private:
             ipf.labAdjustments(labView);
         }
 
-        stop = stop || ipf.toneMapping(labView, oX, oY, oW, oH);
+        stop = stop || ipf.textureBoost(labView, oX, oY, oW, oH);
         if (!stop) {
             ipf.impulsedenoise(labView);
             ipf.defringe(labView);
-            ipf.MLmicrocontrast(labView);
             //ipf.sharpening(labView, params.sharpening);
         }
         stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);

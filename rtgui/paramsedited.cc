@@ -39,11 +39,10 @@ void ParamsEdited::set(bool v)
     rgbCurves = v;
     sharpening = v;
     prsharpening = v;
-    sharpenMicro = v;
     wb = v;
     defringe = v;
     denoise = v;
-    epd = v;
+    textureBoost = v;
     fattal = v;
     logenc = v;
     impulseDenoise = v;

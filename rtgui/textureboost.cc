@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "epd.h"
+#include "textureboost.h"
 #include "eventmapper.h"
 #include <iomanip>
 #include <cmath>
@@ -30,7 +30,7 @@ using namespace rtengine::procparams;
 
 class EPDMasksContentProvider: public LabMasksContentProvider {
 public:
-    EPDMasksContentProvider(EdgePreservingDecompositionUI *parent):
+    EPDMasksContentProvider(TextureBoost *parent):
         parent_(parent)
     {
     }
@@ -71,7 +71,7 @@ public:
 
     bool addPressed() override
     {
-        parent_->data.push_back(EPDParams::Region());
+        parent_->data.push_back(TextureBoostParams::Region());
         return true;
     }
 
@@ -89,7 +89,7 @@ public:
 
     bool resetPressed() override
     {
-        parent_->data = { EPDParams::Region() };
+        parent_->data = { TextureBoostParams::Region() };
         parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
         return true;
     }
@@ -127,7 +127,7 @@ public:
         auto &r = parent_->data[row];
 
         return Glib::ustring::compose(
-            "%1 %2 %3 %4 %5", r.strength, r.gamma, r.edgeStopping, r.scale, r.reweightingIterates); 
+            "%1 %2 %3", r.strength, r.edgeStopping, r.scale); 
     }
 
     void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
@@ -138,7 +138,7 @@ public:
     }
 
 private:
-    EdgePreservingDecompositionUI *parent_;
+    TextureBoost *parent_;
 };
 
 
@@ -146,7 +146,7 @@ private:
 // EPD
 //-----------------------------------------------------------------------------
 
-EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), true, true)
+TextureBoost::TextureBoost () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvList = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_LIST");
@@ -158,30 +158,22 @@ EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPa
     EvAreaMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_AREAMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
-    // gamma = Gtk::manage(new Adjuster (M("TP_EPD_GAMMA"), 0.8, 1.5, 0.01, 1.));
     edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));
     scale = Gtk::manage(new Adjuster (M("TP_EPD_SCALE"), 0.1, 10.0, 0.01, 0.1));
-    // reweightingIterates = Gtk::manage(new Adjuster (M("TP_EPD_REWEIGHTINGITERATES"), 0, 9, 1, 0));
 
     box = Gtk::manage(new Gtk::VBox());
 
     strength->setAdjusterListener(this);
-    // gamma->setAdjusterListener(this);
     edgeStopping->setAdjusterListener(this);
     scale->setAdjusterListener(this);
-    // reweightingIterates->setAdjusterListener(this);
 
     strength->show();
-    // gamma->show();
     edgeStopping->show();
     scale->show();
-    // reweightingIterates->show();
 
     box->pack_start(*strength);
-    // box->pack_start(*gamma);
     box->pack_start(*edgeStopping);
     box->pack_start(*scale);
-    // box->pack_start(*reweightingIterates);
 
     labMasksContentProvider.reset(new EPDMasksContentProvider(this));
     labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
@@ -190,69 +182,63 @@ EdgePreservingDecompositionUI::EdgePreservingDecompositionUI () : FoldableToolPa
     show_all_children();
 }
 
-void EdgePreservingDecompositionUI::read(const ProcParams *pp)
+void TextureBoost::read(const ProcParams *pp)
 {
     disableListener();
 
-    setEnabled(pp->epd.enabled);
-    data = pp->epd.regions;
-    auto m = pp->epd.labmasks;
+    setEnabled(pp->textureBoost.enabled);
+    data = pp->textureBoost.regions;
+    auto m = pp->textureBoost.labmasks;
     if (data.empty()) {
-        data.emplace_back(rtengine::EPDParams::Region());
+        data.emplace_back(rtengine::TextureBoostParams::Region());
         m.emplace_back(rtengine::LabCorrectionMask());
     }
     labMasks->updateAreaMaskDefaults(pp);
-    labMasks->setMasks(m, pp->epd.showMask);
+    labMasks->setMasks(m, pp->textureBoost.showMask);
 
     enableListener();
 }
 
-void EdgePreservingDecompositionUI::write(ProcParams *pp)
+void TextureBoost::write(ProcParams *pp)
 {
-    pp->epd.enabled = getEnabled();
+    pp->textureBoost.enabled = getEnabled();
 
     regionGet(labMasks->getSelected());
-    pp->epd.regions = data;
+    pp->textureBoost.regions = data;
 
-    labMasks->getMasks(pp->epd.labmasks, pp->epd.showMask);
-    assert(pp->epd.regions.size() == pp->epd.labmasks.size());
+    labMasks->getMasks(pp->textureBoost.labmasks, pp->textureBoost.showMask);
+    assert(pp->textureBoost.regions.size() == pp->textureBoost.labmasks.size());
 
     labMasks->updateSelected();
 }
 
-void EdgePreservingDecompositionUI::setDefaults(const ProcParams *defParams)
+void TextureBoost::setDefaults(const ProcParams *defParams)
 {
-    strength->setDefault(defParams->epd.regions[0].strength);
-    // gamma->setDefault(defParams->epd.regions[0].gamma);
-    edgeStopping->setDefault(defParams->epd.regions[0].edgeStopping);
-    scale->setDefault(defParams->epd.regions[0].scale);
-    // reweightingIterates->setDefault(defParams->epd.regions[0].reweightingIterates);
+    strength->setDefault(defParams->textureBoost.regions[0].strength);
+    edgeStopping->setDefault(defParams->textureBoost.regions[0].edgeStopping);
+    scale->setDefault(defParams->textureBoost.regions[0].scale);
 }
 
-void EdgePreservingDecompositionUI::adjusterChanged(Adjuster* a, double newval)
+void TextureBoost::adjusterChanged(Adjuster* a, double newval)
 {
     if (listener && getEnabled()) {
         labMasks->setEdited(true);
 
         if(a == strength) {
             listener->panelChanged(EvEPDStrength, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
-        // } else if(a == gamma) {
-        //     listener->panelChanged(EvEPDgamma, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
         } else if(a == edgeStopping) {
             listener->panelChanged(EvEPDEdgeStopping, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
         } else if(a == scale) {
             listener->panelChanged(EvEPDScale, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
-        // } else if(a == reweightingIterates) {
-        //     listener->panelChanged(EvEPDReweightingIterates, Glib::ustring::format((int)a->getValue()));
         }
     }
 }
 
-void EdgePreservingDecompositionUI::adjusterAutoToggled(Adjuster* a, bool newval)
+void TextureBoost::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void EdgePreservingDecompositionUI::enabledChanged ()
+void TextureBoost::enabledChanged ()
 {
     if (listener) {
         if (get_inconsistent()) {
@@ -266,13 +252,13 @@ void EdgePreservingDecompositionUI::enabledChanged ()
 }
 
 
-void EdgePreservingDecompositionUI::setEditProvider(EditDataProvider *provider)
+void TextureBoost::setEditProvider(EditDataProvider *provider)
 {
     labMasks->setEditProvider(provider);
 }
 
 
-void EdgePreservingDecompositionUI::procParamsChanged(
+void TextureBoost::procParamsChanged(
     const rtengine::procparams::ProcParams* params,
     const rtengine::ProcEvent& ev,
     const Glib::ustring& descr,
@@ -282,13 +268,13 @@ void EdgePreservingDecompositionUI::procParamsChanged(
 }
 
 
-void EdgePreservingDecompositionUI::updateGeometry(int fw, int fh)
+void TextureBoost::updateGeometry(int fw, int fh)
 {
     labMasks->updateGeometry(fw, fh);
 }
 
 
-void EdgePreservingDecompositionUI::regionGet(int idx)
+void TextureBoost::regionGet(int idx)
 {
     if (idx < 0 || size_t(idx) >= data.size()) {
         return;
@@ -296,14 +282,12 @@ void EdgePreservingDecompositionUI::regionGet(int idx)
     
     auto &r = data[idx];
     r.strength = strength->getValue();
-    // r.gamma = gamma->getValue();
     r.edgeStopping = edgeStopping->getValue();
     r.scale = scale->getValue();
-    // r.reweightingIterates = reweightingIterates->getValue();
 }
 
 
-void EdgePreservingDecompositionUI::regionShow(int idx)
+void TextureBoost::regionShow(int idx)
 {
     const bool disable = listener;
     if (disable) {
@@ -312,10 +296,8 @@ void EdgePreservingDecompositionUI::regionShow(int idx)
 
     auto &r = data[idx];
     strength->setValue(r.strength);
-    // gamma->setValue(r.gamma);
     edgeStopping->setValue(r.edgeStopping);
     scale->setValue(r.scale);
-    // reweightingIterates->setValue(r.reweightingIterates);
     
     if (disable) {
         enableListener();

@@ -49,7 +49,7 @@ set(NONCLISOURCEFILES
     edit.cc
     editorpanel.cc
     editwindow.cc
-    epd.cc
+    textureboost.cc
     exiffiltersettings.cc
     exifpanel.cc
     exportpanel.cc
@@ -125,7 +125,6 @@ set(NONCLISOURCEFILES
     shadowshighlights.cc
     toneequalizer.cc
     sharpening.cc
-    sharpenmicro.cc
     shcselector.cc
     soundman.cc
     splash.cc

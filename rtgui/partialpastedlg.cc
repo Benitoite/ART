@@ -57,7 +57,6 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
 
         {"PARTIALPASTE_SHARPENING", &pedited.sharpening, 1},
         {"PARTIALPASTE_LOCALCONTRAST", &pedited.localContrast, 1},
-        {"PARTIALPASTE_SHARPENMICRO", &pedited.sharpenMicro, 1},
         {"PARTIALPASTE_IMPULSEDENOISE", &pedited.impulseDenoise, 1},
         {"PARTIALPASTE_DIRPYRDENOISE", &pedited.denoise, 1},
         {"PARTIALPASTE_DEFRINGE", &pedited.defringe, 1},
@@ -88,7 +87,7 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_COLORCORRECTION", &pedited.colorcorrection, 5},
         {"PARTIALPASTE_DIRPYREQUALIZER", &pedited.dirpyrequalizer, 5},
         {"PARTIALPASTE_SMOOTHING", &pedited.smoothing, 5},
-        {"PARTIALPASTE_EPD", &pedited.epd, 5},
+        {"PARTIALPASTE_TEXTUREBOOST", &pedited.textureBoost, 5},
 
         {"PARTIALPASTE_RAW_DEMOSAIC", &pedited.demosaic, 6},
         {"PARTIALPASTE_RAW_BLACK", &pedited.rawBlack, 6},

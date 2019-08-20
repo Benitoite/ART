@@ -520,7 +520,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.labAdjustments(bufs_[2], &histCCurve, &histLCurve);
             }
             
-            stop = stop || ipf.toneMapping(bufs_[2]);
+            stop = stop || ipf.textureBoost(bufs_[2]);
     
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
             readyphase++;
@@ -1068,41 +1068,7 @@ void ImProcCoordinator::process()
     paramsUpdateMutex.lock();
 
     while (changeSinceLast) {
-        const bool panningRelatedChange = true ||
-               params.toneCurve != nextParams.toneCurve
-            || params.labCurve != nextParams.labCurve
-            || params.localContrast != nextParams.localContrast
-            || params.rgbCurves != nextParams.rgbCurves
-            || params.wb != nextParams.wb
-            || params.epd != nextParams.epd
-            || params.fattal != nextParams.fattal
-            || params.logenc != nextParams.logenc
-            || params.sh != nextParams.sh
-            || params.toneEqualizer != nextParams.toneEqualizer
-            || params.crop != nextParams.crop
-            || params.coarse != nextParams.coarse
-            || params.commonTrans != nextParams.commonTrans
-            || params.rotate != nextParams.rotate
-            || params.distortion != nextParams.distortion
-            || params.lensProf != nextParams.lensProf
-            || params.perspective != nextParams.perspective
-            || params.gradient != nextParams.gradient
-            || params.pcvignette != nextParams.pcvignette
-            || params.cacorrection != nextParams.cacorrection
-            || params.vignetting != nextParams.vignetting
-            || params.chmixer != nextParams.chmixer
-            || params.blackwhite != nextParams.blackwhite
-            || params.icm != nextParams.icm
-            || params.filmSimulation != nextParams.filmSimulation
-            || params.softlight != nextParams.softlight
-            || params.raw != nextParams.raw
-            || params.dirpyrequalizer != nextParams.dirpyrequalizer
-            || params.dehaze != nextParams.dehaze
-            || params.grain != nextParams.grain
-            || params.smoothing != nextParams.smoothing
-            || params.colorcorrection != nextParams.colorcorrection
-            || (params.denoise != nextParams.denoise && options.denoiseZoomedOut);
-
+        const bool panningRelatedChange = true;
         params = nextParams;
         int change = changeSinceLast;
         changeSinceLast = 0;

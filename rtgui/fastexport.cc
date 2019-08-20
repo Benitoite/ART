@@ -29,12 +29,6 @@ void adjust_fast_params(rtengine::procparams::ProcParams &params)
             params.sharpening.enabled = false;
         }
 
-        if (options.fastexport_bypass_sharpenMicro) {
-            params.sharpenMicro.enabled = false;
-        }
-
-        //if (options.fastexport_bypass_lumaDenoise) params.lumaDenoise.enabled = false;
-        //if (options.fastexport_bypass_colorDenoise) params.colorDenoise.enabled = false;
         if (options.fastexport_bypass_defringe) {
             params.defringe.enabled = false;
         }

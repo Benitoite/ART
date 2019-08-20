@@ -137,7 +137,7 @@ set(RTENGINESOURCEFILES
     ipcbdl.cc
     ipgrain.cc
     ipdenoise.cc
-    iptonemapping.cc
+    iptextureboost.cc
     metadata.cc
     iplabadjustments.cc
     perspectivecorrection.cc

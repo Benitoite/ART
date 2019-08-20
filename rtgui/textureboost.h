@@ -25,11 +25,11 @@
 #include "toolpanel.h"
 #include "labmaskspanel.h"
 
-class EdgePreservingDecompositionUI : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public PParamsChangeListener
+class TextureBoost: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public PParamsChangeListener
 {
 public:
 
-    EdgePreservingDecompositionUI();
+    TextureBoost();
 
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
@@ -61,7 +61,7 @@ private:
     rtengine::ProcEvent EvShowMask;
     rtengine::ProcEvent EvAreaMask;
 
-    std::vector<rtengine::procparams::EPDParams::Region> data;
+    std::vector<rtengine::procparams::TextureBoostParams::Region> data;
     int showMaskIdx;
 
     friend class EPDMasksContentProvider;

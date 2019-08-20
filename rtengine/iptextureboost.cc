@@ -31,15 +31,15 @@ namespace rtengine {
 
 namespace {
 
-void EPD(LabImage *lab, const rtengine::procparams::EPDParams::Region &pp, double scale, bool multithread)
+void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &pp, double scale, bool multithread)
 {
     unsigned int Iterates = 5;
 
     float stren = pp.strength; 
     float edgest = pp.edgeStopping; 
     float sca = pp.scale;
-    float gamm = pp.gamma;
-    float rew = pp.reweightingIterates; 
+    float gamm = 1.5f;
+    float rew = 1;
     
     //Pointers to whole data and size of it.
     float *L = lab->L[0];
@@ -140,7 +140,7 @@ void EPD(LabImage *lab, const rtengine::procparams::EPDParams::Region &pp, doubl
 } // namespace
 
 
-bool ImProcFunctions::toneMapping(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::textureBoost(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -149,19 +149,19 @@ bool ImProcFunctions::toneMapping(LabImage* lab, int offset_x, int offset_y, int
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
     
-    if (params->epd.enabled) {
+    if (params->textureBoost.enabled) {
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H4);
             fillPipetteLabMasks(lab, editWhatever, id, multiThread);
         }
         
-        int n = params->epd.regions.size();
-        int show_mask_idx = params->epd.showMask;
+        int n = params->textureBoost.regions.size();
+        int show_mask_idx = params->textureBoost.showMask;
         if (show_mask_idx >= n) {
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);
-        if (!generateLabMasks(lab, params->epd.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+        if (!generateLabMasks(lab, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
             return true; // show mask is active, nothing more to do
         }
 
@@ -170,7 +170,7 @@ bool ImProcFunctions::toneMapping(LabImage* lab, int offset_x, int offset_y, int
         array2D<float> b(lab->W, lab->H, lab->b, 0);
 
         for (int i = 0; i < n; ++i) {
-            auto &r = params->epd.regions[i];
+            auto &r = params->textureBoost.regions[i];
             EPD(lab, r, scale, multiThread);
             const auto &blend = mask[i];
 

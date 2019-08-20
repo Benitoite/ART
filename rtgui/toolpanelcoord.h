@@ -37,7 +37,7 @@
 #include "impulsedenoise.h"
 #include "defringe.h"
 #include "denoise.h"
-#include "epd.h"
+#include "textureboost.h"
 #include "sharpening.h"
 #include "labcurve.h"
 #include "metadatapanel.h"
@@ -70,7 +70,6 @@
 #include "rawexposure.h"
 #include "bayerrawexposure.h"
 #include "xtransrawexposure.h"
-#include "sharpenmicro.h"
 #include "rgbcurves.h"
 #include "filmsimulation.h"
 #include "prsharpening.h"
@@ -127,9 +126,8 @@ protected:
     Defringe* defringe;
     ImpulseDenoise* impulsedenoise;
     Denoise* denoise;
-    EdgePreservingDecompositionUI *epd;
+    TextureBoost *textureBoost;
     Sharpening* sharpening;
-    SharpenMicro* sharpenMicro;
     LCurve* lcurve;
     RGBCurves* rgbcurves;
     SoftLight *softlight;

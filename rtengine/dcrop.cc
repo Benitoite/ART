@@ -350,11 +350,10 @@ void Crop::update(int todo)
             parent->ipf.labAdjustments(bufs_[2]);
         }
 
-        stop = stop || parent->ipf.toneMapping(bufs_[2], offset_x, offset_y, full_width, full_height);
+        stop = stop || parent->ipf.textureBoost(bufs_[2], offset_x, offset_y, full_width, full_height);
         if (skip == 1 && !stop) {
             parent->ipf.impulsedenoise(bufs_[2]);
             parent->ipf.defringe(bufs_[2]);
-            parent->ipf.MLmicrocontrast(bufs_[2]);
             //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
         }
 

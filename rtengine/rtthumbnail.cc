@@ -1254,7 +1254,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         ipf.labAdjustments(labView);
     }
 
-    stop = stop || ipf.toneMapping(labView);
+    stop = stop || ipf.textureBoost(labView);
     if (!stop) {
         ipf.softLight(labView);
         ipf.localContrast(labView);

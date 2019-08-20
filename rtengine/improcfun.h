@@ -92,13 +92,11 @@ public:
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
     void Lanczos(const Imagefloat* src, Imagefloat* dst, float scale);
 
-    void MLmicrocontrast(LabImage* lab);   //Manuel's microcontrast
-
     void impulsedenoise(LabImage* lab);   //Emil's impulse denoise
 
 //    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
 //    void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
-    bool toneMapping(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool textureBoost(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
 
     struct DenoiseInfoStore {
         DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {}
@@ -206,7 +204,6 @@ private:
 
     void luminanceCurve(LabImage* lold, LabImage* lnew, LUTf &curve);
 
-    void MLmicrocontrast(float** luminance, int W, int H);   //Manuel's microcontrast
     void impulse_nr(LabImage* lab, double thresh);
 
     void dirpyrdenoise(LabImage* src);    //Emil's pyramid denoise

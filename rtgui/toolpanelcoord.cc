@@ -51,10 +51,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     impulsedenoise      = Gtk::manage (new ImpulseDenoise ());
     defringe            = Gtk::manage (new Defringe ());
     denoise             = Gtk::manage (new Denoise ());
-    epd                 = Gtk::manage (new EdgePreservingDecompositionUI ());
+    textureBoost        = Gtk::manage (new TextureBoost());
     sharpening          = Gtk::manage (new Sharpening ());
     localContrast       = Gtk::manage(new LocalContrast());
-    sharpenMicro        = Gtk::manage (new SharpenMicro ());
     lcurve              = Gtk::manage (new LCurve ());
     rgbcurves           = Gtk::manage (new RGBCurves ());
     lensgeom            = Gtk::manage (new LensGeometry ());
@@ -116,7 +115,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (exposurePanel, shadowshighlights);
     addfavoritePanel (detailsPanel, sharpening);
     addfavoritePanel (detailsPanel, localContrast);
-    addfavoritePanel (detailsPanel, sharpenMicro);
     addfavoritePanel (colorPanel, filmSimulation);
     addfavoritePanel (colorPanel, softlight);
     addfavoritePanel (colorPanel, rgbcurves);
@@ -159,7 +157,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(localPanel, colorcorrection);
     addfavoritePanel(localPanel, smoothing);
     addfavoritePanel(localPanel, cbdl);
-    addfavoritePanel(localPanel, epd);
+    addfavoritePanel(localPanel, textureBoost);
 
     int favoriteCount = 0;
     for(auto it = favorites.begin(); it != favorites.end(); ++it) {
@@ -524,7 +522,7 @@ void ToolPanelCoordinator::profileChange(
         colorcorrection->updateGeometry(fw, fh);
         smoothing->updateGeometry(fw, fh);
         cbdl->updateGeometry(fw, fh);
-        epd->updateGeometry(fw, fh);
+        textureBoost->updateGeometry(fw, fh);
     }
 
     // start the IPC processing

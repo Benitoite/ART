@@ -498,19 +498,6 @@ struct SharpeningParams {
     bool operator !=(const SharpeningParams& other) const;
 };
 
-struct SharpenMicroParams {
-    bool    enabled;
-    bool    matrix;
-    double  amount;
-    double  contrast;
-    int     uniformity;
-
-    SharpenMicroParams();
-
-    bool operator ==(const SharpenMicroParams& other) const;
-    bool operator !=(const SharpenMicroParams& other) const;
-};
-
 
 /**
   * Parameters of the white balance adjustments
@@ -659,13 +646,11 @@ struct DenoiseParams {
 };
 
 // EPD related parameters.
-struct EPDParams {
+struct TextureBoostParams {
     struct Region {
         double strength;
-        double gamma;
         double edgeStopping;
         double scale;
-        int    reweightingIterates;
 
         Region();
         bool operator==(const Region &other) const;
@@ -677,10 +662,10 @@ struct EPDParams {
     std::vector<LabCorrectionMask> labmasks;
     int showMask;
 
-    EPDParams();
+    TextureBoostParams();
 
-    bool operator ==(const EPDParams& other) const;
-    bool operator !=(const EPDParams& other) const;
+    bool operator ==(const TextureBoostParams& other) const;
+    bool operator !=(const TextureBoostParams& other) const;
 };
 
 
@@ -1366,12 +1351,11 @@ public:
     RGBCurvesParams         rgbCurves;       ///< RGB curves parameters
     SharpeningParams        sharpening;      ///< Sharpening parameters
     SharpeningParams        prsharpening;    ///< Sharpening parameters for post resize sharpening
-    SharpenMicroParams      sharpenMicro;    ///< Sharpen microcontrast parameters
     WBParams                wb;              ///< White balance parameters
     DefringeParams          defringe;        ///< Defringing parameters
     ImpulseDenoiseParams    impulseDenoise;  ///< Impulse denoising parameters
     DenoiseParams           denoise;   ///< Directional Pyramid denoising parameters
-    EPDParams               epd;             ///< Edge Preserving Decomposition parameters
+    TextureBoostParams      textureBoost;  ///< Edge Preserving Decomposition parameters
     FattalToneMappingParams fattal;          ///< Dynamic Range Compression
     LogEncodingParams       logenc;
     SHParams                sh;              ///< Shadow/highlight enhancement parameters

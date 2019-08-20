@@ -882,30 +882,6 @@ bool SharpeningParams::operator !=(const SharpeningParams& other) const
 }
 
 
-SharpenMicroParams::SharpenMicroParams() :
-    enabled(false),
-    matrix(false),
-    amount(20.0),
-    contrast(20.0),
-    uniformity(5)
-{
-}
-
-bool SharpenMicroParams::operator ==(const SharpenMicroParams& other) const
-{
-    return
-        enabled == other.enabled
-        && matrix == other.matrix
-        && amount == other.amount
-        && contrast == other.contrast
-        && uniformity == other.uniformity;
-}
-
-bool SharpenMicroParams::operator !=(const SharpenMicroParams& other) const
-{
-    return !(*this == other);
-}
-
 WBParams::WBParams() :
     enabled(true),
     method("Camera"),
@@ -1102,33 +1078,29 @@ bool DenoiseParams::operator !=(const DenoiseParams& other) const
 }
 
 
-EPDParams::Region::Region():
+TextureBoostParams::Region::Region():
     strength(0.5),
-    gamma(1.5),
     edgeStopping(1.4),
-    scale(1.0),
-    reweightingIterates(1)
+    scale(1.0)
 {
 }
 
 
-bool EPDParams::Region::operator==(const Region &other) const
+bool TextureBoostParams::Region::operator==(const Region &other) const
 {
     return strength == other.strength
-        && gamma == other.gamma
         && edgeStopping == other.edgeStopping
-        && scale == other.scale
-        && reweightingIterates == other.reweightingIterates;
+        && scale == other.scale;
 }
 
 
-bool EPDParams::Region::operator!=(const Region &other) const
+bool TextureBoostParams::Region::operator!=(const Region &other) const
 {
     return !(*this == other);
 }
 
 
-EPDParams::EPDParams() :
+TextureBoostParams::TextureBoostParams() :
     enabled(false),
     regions{Region()},
     labmasks{LabCorrectionMask()},
@@ -1136,7 +1108,7 @@ EPDParams::EPDParams() :
 {
 }
 
-bool EPDParams::operator ==(const EPDParams& other) const
+bool TextureBoostParams::operator ==(const TextureBoostParams& other) const
 {
     return
         enabled == other.enabled
@@ -1145,7 +1117,7 @@ bool EPDParams::operator ==(const EPDParams& other) const
         && showMask == other.showMask;
 }
 
-bool EPDParams::operator !=(const EPDParams& other) const
+bool TextureBoostParams::operator !=(const TextureBoostParams& other) const
 {
     return !(*this == other);
 }
@@ -2274,8 +2246,6 @@ void ProcParams::setDefaults()
 
     localContrast = LocalContrastParams();
 
-    sharpenMicro = SharpenMicroParams();
-
     sharpening = SharpeningParams();
 
     prsharpening = SharpeningParams();
@@ -2294,7 +2264,7 @@ void ProcParams::setDefaults()
 
     denoise = DenoiseParams();
 
-    epd = EPDParams();
+    textureBoost = TextureBoostParams();
 
     fattal = FattalToneMappingParams();
 
@@ -2547,15 +2517,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "DeconvIterations", sharpening.deconviter, keyFile);
         }
 
-// Micro-contrast sharpening
-        if (RELEVANT_(sharpenMicro)) {
-            saveToKeyfile("SharpenMicro", "Enabled", sharpenMicro.enabled, keyFile);
-            saveToKeyfile("SharpenMicro", "Matrix", sharpenMicro.matrix, keyFile);
-            saveToKeyfile("SharpenMicro", "Strength", sharpenMicro.amount, keyFile);
-            saveToKeyfile("SharpenMicro", "Contrast", sharpenMicro.contrast, keyFile);
-            saveToKeyfile("SharpenMicro", "Uniformity", sharpenMicro.uniformity, keyFile);
-        }
-
 // WB
         if (RELEVANT_(wb)) {
             saveToKeyfile("White Balance", "Enabled", wb.enabled, keyFile);
@@ -2616,20 +2577,18 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Denoise", "GuidedChromaStrength", denoise.guidedChromaStrength, keyFile);
         }
 
-// EPD
-        if (RELEVANT_(epd)) {
-            saveToKeyfile("EPD", "Enabled", epd.enabled, keyFile);
-            for (size_t j = 0; j < epd.regions.size(); ++j) {
+// TextureBoost
+        if (RELEVANT_(textureBoost)) {
+            saveToKeyfile("TextureBoost", "Enabled", textureBoost.enabled, keyFile);
+            for (size_t j = 0; j < textureBoost.regions.size(); ++j) {
                 std::string n = j ? std::string("_") + std::to_string(j) : std::string("");
-                auto &r = epd.regions[j];
-                putToKeyfile("EPD", Glib::ustring("Strength") + n, r.strength, keyFile);
-                //putToKeyfile("EPD", Glib::ustring("Gamma") + n, r.gamma, keyFile);
-                putToKeyfile("EPD", Glib::ustring("EdgeStopping") + n, r.edgeStopping, keyFile);
-                putToKeyfile("EPD", Glib::ustring("Scale") + n, r.scale, keyFile);
-                //putToKeyfile("EPD", Glib::ustring("ReweightingIterates") + n, r.reweightingIterates, keyFile);
-                epd.labmasks[j].save(keyFile, "EPD", "", n);
+                auto &r = textureBoost.regions[j];
+                putToKeyfile("TextureBoost", Glib::ustring("Strength") + n, r.strength, keyFile);
+                putToKeyfile("TextureBoost", Glib::ustring("EdgeStopping") + n, r.edgeStopping, keyFile);
+                putToKeyfile("TextureBoost", Glib::ustring("Scale") + n, r.scale, keyFile);
+                textureBoost.labmasks[j].save(keyFile, "TextureBoost", "", n);
             }
-            saveToKeyfile("EPD", "showMask", epd.showMask, keyFile);
+            saveToKeyfile("TextureBoost", "showMask", textureBoost.showMask, keyFile);
         }
 
 // Fattal
@@ -3374,24 +3333,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Sharpening", "DeconvIterations", sharpening.deconviter);
         }
 
-        if (keyFile.has_group("SharpenMicro") && RELEVANT_(sharpenMicro)) {
-            assignFromKeyfile(keyFile, "SharpenMicro", "Enabled", sharpenMicro.enabled);
-            assignFromKeyfile(keyFile, "SharpenMicro", "Matrix", sharpenMicro.matrix);
-            assignFromKeyfile(keyFile, "SharpenMicro", "Strength", sharpenMicro.amount);
-            if (ppVersion >= 334) {
-                assignFromKeyfile(keyFile, "SharpenMicro", "Contrast", sharpenMicro.contrast);
-            } else {
-                sharpenMicro.contrast = 0;
-            }
-            if (ppVersion >= 346) {
-                assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", sharpenMicro.uniformity);
-            } else {
-                double temp;
-                assignFromKeyfile(keyFile, "SharpenMicro", "Uniformity", temp);
-                sharpenMicro.uniformity = temp / 10;
-            }
-        }
-
         if (keyFile.has_group("White Balance") && RELEVANT_(wb)) {
             assignFromKeyfile(keyFile, "White Balance", "Enabled", wb.enabled);
             assignFromKeyfile(keyFile, "White Balance", "Setting", wb.method);
@@ -3505,39 +3446,32 @@ int ProcParams::load(bool load_general,
             }
         }            
 
-        if (keyFile.has_group("EPD") && RELEVANT_(epd)) {
-            assignFromKeyfile(keyFile, "EPD", "Enabled", epd.enabled);
+        const Glib::ustring tbgroup = ppVersion < 1001 ? "EPD" : "TextureBoost";
+        if (keyFile.has_group(tbgroup) && RELEVANT_(textureBoost)) {
+            assignFromKeyfile(keyFile, tbgroup, "Enabled", textureBoost.enabled);
                 
-            std::vector<EPDParams::Region> ll;
+            std::vector<TextureBoostParams::Region> ll;
             std::vector<LabCorrectionMask> lm;
             bool found = false;
             bool done = false;
             for (int i = 0; !done; ++i) {
-                EPDParams::Region cur;
+                TextureBoostParams::Region cur;
                 LabCorrectionMask curmask;
                 done = true;
                 std::string n = i ? std::string("_") + std::to_string(i) : std::string("");
-                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Strength") + n, cur.strength)) {
+                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("Strength") + n, cur.strength)) {
                     found = true;
                     done = false;
                 }
-                // if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Gamma") + n, cur.gamma)) {
-                //     found = true;
-                //     done = false;
-                // }
-                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("EdgeStopping") + n, cur.edgeStopping)) {
+                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("EdgeStopping") + n, cur.edgeStopping)) {
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("Scale") + n, cur.scale)) {
+                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("Scale") + n, cur.scale)) {
                     found = true;
                     done = false;
                 }
-                // if (assignFromKeyfile(keyFile, "EPD", Glib::ustring("ReweightingIterates") + n, cur.reweightingIterates)) {
-                //     found = true;
-                //     done = false;
-                // }
-                if (curmask.load(keyFile, "EPD", "", n)) {
+                if (curmask.load(keyFile, tbgroup, "", n)) {
                     found = true;
                     done = false;
                 }
@@ -3547,11 +3481,11 @@ int ProcParams::load(bool load_general,
                 }
             }
             if (found) {
-                epd.regions = std::move(ll);
-                epd.labmasks = std::move(lm);
+                textureBoost.regions = std::move(ll);
+                textureBoost.labmasks = std::move(lm);
             }
-            assert(epd.regions.size() == epd.labmasks.size());
-            assignFromKeyfile(keyFile, "EPD", "ShowMask", epd.showMask);
+            assert(textureBoost.regions.size() == textureBoost.labmasks.size());
+            assignFromKeyfile(keyFile, tbgroup, "ShowMask", textureBoost.showMask);
         }
 
         if (keyFile.has_group("FattalToneMapping") && RELEVANT_(fattal)) {
@@ -4329,13 +4263,12 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && toneCurve == other.toneCurve
         && localContrast == other.localContrast
         && labCurve == other.labCurve
-        && sharpenMicro == other.sharpenMicro
         && sharpening == other.sharpening
         && prsharpening == other.prsharpening
         && wb == other.wb
         && impulseDenoise == other.impulseDenoise
         && denoise == other.denoise
-        && epd == other.epd
+        && textureBoost == other.textureBoost
         && fattal == other.fattal
         && logenc == other.logenc
         && defringe == other.defringe
