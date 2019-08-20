@@ -71,7 +71,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     const int radius = float(detail) / scale + 0.5f;
     const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
     if (radius > 0) {
-        rtengine::guidedFilter(Y, Y, Y, radius, epsilon, multithread);
+        rtengine::guidedFilterLog(10.f, Y, radius, epsilon, multithread);
     }
     
     const auto log2 =

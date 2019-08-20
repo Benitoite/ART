@@ -41,40 +41,6 @@ enum class Channel {
 };
 
 
-inline void to_log(float base, array2D<float> &chan, bool multithread)
-{
-#ifdef _OPENMP
-#    pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < chan.height(); ++y) {
-        for (int x = 0; x < chan.width(); ++x) {
-            chan[y][x] = xlin2log(max(chan[y][x], 0.f), base);
-        }
-    }
-}
-
-
-inline void to_lin(float base, array2D<float> &chan, bool multithread)
-{
-#ifdef _OPENMP
-#    pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < chan.height(); ++y) {
-        for (int x = 0; x < chan.width(); ++x) {
-            chan[y][x] = xlog2lin(max(chan[y][x], 0.f), base);
-        }
-    }
-}
-
-
-inline void guided_filter_log(float base, array2D<float> &chan, int r, float eps, bool multithread)
-{
-    to_log(base, chan, multithread);
-    guidedFilter(chan, chan, chan, r, eps, multithread);
-    to_lin(base, chan, multithread);
-}
-
-
 void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, const TMatrix &iws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
 {
     const auto rgb2xyY =
@@ -102,9 +68,9 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         array2D<float> iG(W, H, G, 0);
         array2D<float> iB(W, H, B, 0);
 
-        guided_filter_log(10.f, R, r, epsilon, multithread);
-        guided_filter_log(10.f, G, r, epsilon, multithread);
-        guided_filter_log(10.f, B, r, epsilon, multithread);
+        rtengine::guidedFilterLog(10.f, R, r, epsilon, multithread);
+        rtengine::guidedFilterLog(10.f, G, r, epsilon, multithread);
+        rtengine::guidedFilterLog(10.f, B, r, epsilon, multithread);
 
         const float blend = LIM01(float(strength) / 100.f);
         const bool rgb = (chan == Channel::LC);

@@ -314,7 +314,8 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
         }
             
         const float epsilon = 0.01f;
-        guidedFilter(tmp, tmp, tmp, detail, epsilon, multithread);
+        //guidedFilter(tmp, tmp, tmp, detail, epsilon, multithread);
+        guidedFilterLog(10.f, tmp, detail, epsilon, multithread);
 
         // array2D<float> blend(W, H);
         // float contrast = 0.2f;
