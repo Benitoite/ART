@@ -496,7 +496,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             bufs_[1]->CopyFrom(bufs_[0]);
             stop = ipf.colorCorrection(bufs_[1]);
             stop = stop || ipf.guidedSmoothing(bufs_[1]);
-            stop = stop || ipf.contrastByDetailLevels(bufs_[1]);
+            //stop = stop || ipf.contrastByDetailLevels(bufs_[1]);
 
             // if (!stop) {
             //     ipf.logEncoding(bufs_[1], &histToneCurve);
@@ -526,8 +526,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             readyphase++;
     
 
-            // stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
-            // readyphase++;
+            stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
+            readyphase++;
 
             if (!stop) {
                 ipf.softLight(bufs_[2]);
