@@ -930,22 +930,22 @@ void solve_pde_fft (Array2Df *F, Array2Df *U, Array2Df *buf, bool multithread)/*
     // a solution which has no positive values: U_new(x,y)=U(x,y)-max
     // (not really needed but good for numerics as we later take exp(U))
     //DEBUG_STR << "solve_pde_fft: removing constant from solution" << std::endl;
-    float max = 0.f;
-#ifdef _OPENMP
-    #pragma omp parallel for reduction(max:max) if(multithread)
-#endif
+//     float max = 0.f;
+// #ifdef _OPENMP
+//     #pragma omp parallel for reduction(max:max) if(multithread)
+// #endif
 
-    for (int i = 0; i < width * height; i++) {
-        max = std::max (max, (*U) (i));
-    }
+//     for (int i = 0; i < width * height; i++) {
+//         max = std::max (max, (*U) (i));
+//     }
 
-#ifdef _OPENMP
-    #pragma omp parallel for if(multithread)
-#endif
+// #ifdef _OPENMP
+//     #pragma omp parallel for if(multithread)
+// #endif
 
-    for (int i = 0; i < width * height; i++) {
-        (*U) (i) -= max;
-    }
+//     for (int i = 0; i < width * height; i++) {
+//         (*U) (i) -= max;
+//     }
 }
 
 
@@ -1144,9 +1144,15 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
         }
         Array2Df tmp(ww, hh);
         rescale_nearest(Yr, tmp, multiThread);
-        findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
+        //findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
+        int sz = ww * hh;
+        int idx = LIM(int(sz * percentile), 0, sz - 1);
+        std::sort(tmp.data(), tmp.data() + sz);
+        oldMedian = tmp(idx);
         rescale_nearest(L, tmp, multiThread);
-        findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, newMedian, percentile, newMedian, multiThread);        
+        std::sort(tmp.data(), tmp.data() + sz);
+        newMedian = tmp(idx);
+        //findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, newMedian, percentile, newMedian, multiThread);        
     }
     const float scale = (oldMedian == 0.f || newMedian == 0.f) ? 65535.f : (oldMedian / newMedian); // avoid Nan
 
