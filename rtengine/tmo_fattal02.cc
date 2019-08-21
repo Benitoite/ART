@@ -479,7 +479,7 @@ void tmo_fattal02 (size_t width,
     }
 
     Array2Df* H = new Array2Df (width, height);
-    float temp = 100.f / maxLum;
+    //float temp = 100.f / maxLum;
     float eps = 1e-4f;
 #ifdef _OPENMP
     #pragma omp parallel if(multithread)
@@ -487,7 +487,7 @@ void tmo_fattal02 (size_t width,
     {
 #ifdef __SSE2__
         vfloat epsv = F2V (eps);
-        vfloat tempv = F2V (temp);
+        //vfloat tempv = F2V (temp);
 #endif
 #ifdef _OPENMP
         #pragma omp for schedule(dynamic,16)
@@ -498,13 +498,13 @@ void tmo_fattal02 (size_t width,
 #ifdef __SSE2__
 
             for (; j < width - 3; j += 4) {
-                STVFU ((*H)[i][j], xlogf (tempv * LVFU (Y[i][j]) + epsv));
+                STVFU ((*H)[i][j], xlogf(/*tempv **/ LVFU (Y[i][j]) + epsv));
             }
 
 #endif
 
             for (; j < width; ++j) {
-                (*H)[i][j] = xlogf (temp * Y[i][j] + eps);
+                (*H)[i][j] = xlogf(/*temp **/ Y[i][j] + eps);
             }
         }
     }
