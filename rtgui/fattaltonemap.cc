@@ -38,17 +38,17 @@ FattalToneMapping::FattalToneMapping(): FoldableToolPanel(this, "fattal", M("TP_
 
     amount->setAdjusterListener(this);
     threshold->setAdjusterListener(this);
-    anchor->setAdjusterListener(this);
+    //anchor->setAdjusterListener(this);
 
     threshold->setLogScale(10, 0);
 
     amount->show();
     threshold->show();
-    anchor->show();
+    //anchor->show();
 
     pack_start(*amount);
     pack_start(*threshold);
-    pack_start(*anchor);
+    //pack_start(*anchor);
 }
 
 void FattalToneMapping::read(const ProcParams *pp)
@@ -58,7 +58,7 @@ void FattalToneMapping::read(const ProcParams *pp)
     setEnabled(pp->fattal.enabled);
     threshold->setValue(pp->fattal.threshold);
     amount->setValue(pp->fattal.amount);
-    anchor->setValue(pp->fattal.anchor);
+    //anchor->setValue(pp->fattal.anchor);
 
     enableListener();
 }
@@ -67,7 +67,7 @@ void FattalToneMapping::write(ProcParams *pp)
 {
     pp->fattal.threshold = threshold->getValue();
     pp->fattal.amount = amount->getValue();
-    pp->fattal.anchor = anchor->getValue();
+    //pp->fattal.anchor = anchor->getValue();
     pp->fattal.enabled = getEnabled();
 }
 
@@ -75,7 +75,7 @@ void FattalToneMapping::setDefaults(const ProcParams *defParams)
 {
     threshold->setDefault(defParams->fattal.threshold);
     amount->setDefault(defParams->fattal.amount);
-    anchor->setDefault(defParams->fattal.anchor);
+    //anchor->setDefault(defParams->fattal.anchor);
 }
 
 void FattalToneMapping::adjusterChanged(Adjuster* a, double newval)

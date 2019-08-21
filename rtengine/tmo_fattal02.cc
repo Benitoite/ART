@@ -1128,9 +1128,10 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
     const float hr = float(h2) / float(h);
     const float wr = float(w2) / float(w);
 
-    float oldMedian, newMedian;
+    // float oldMedian, newMedian;
+    float scale = 65535.f;
     {
-        const float percentile = float(LIM(params->fattal.anchor, 1, 100)) / 100.f;
+//        const float percentile = float(LIM(params->fattal.anchor, 1, 100)-1) / 100.f;
         float ratio = 0.f;
         int ww, hh;
         if (w >= h) {
@@ -1142,19 +1143,54 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
             hh = 200;
             ww = ratio * w;
         }
-        Array2Df tmp(ww, hh);
-        rescale_nearest(Yr, tmp, multiThread);
-        //findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, oldMedian, percentile, oldMedian, multiThread);
+        Array2Df tmp1(ww, hh);
+        Array2Df tmp2(ww, hh);
         int sz = ww * hh;
-        int idx = LIM(int(sz * percentile), 0, sz - 1);
-        std::sort(tmp.data(), tmp.data() + sz);
-        oldMedian = tmp(idx);
-        rescale_nearest(L, tmp, multiThread);
-        std::sort(tmp.data(), tmp.data() + sz);
-        newMedian = tmp(idx);
-        //findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, newMedian, percentile, newMedian, multiThread);        
+        rescale_nearest(Yr, tmp1, multiThread); 
+        rescale_nearest(L, tmp2, multiThread);
+        float lo, hi;
+        //findMinMaxPercentile(tmp1.data(), sz, percentile, lo, percentile+0.01, hi, multiThread);
+        findMinMaxPercentile(tmp1.data(), sz, 0.49, lo, 0.51, hi, multiThread);
+        int pos = -1;
+        float maxr = -rtengine::RT_INFINITY_F, minr = rtengine::RT_INFINITY_F;
+        for (int i = 0; i < sz; ++i) {
+            float a = tmp1(i);
+            if (a >= lo && a <= hi) {
+                float b = tmp2(i);
+                if (a > 0.f && b > 0.f) {
+                    float r = a / b;
+                    if (r >= 1.f) {
+                        if (r > maxr) {
+                            pos = i;
+                            maxr = r;
+                        }
+                    } else {
+                        if (r < minr) {
+                            pos = i;
+                            minr = r;
+                        }
+                    }
+                }
+            }
+        }
+        if (pos >= 0) {
+            scale = tmp1(pos) / tmp2(pos);
+        } else {
+            scale = 65535.f;
+        }
+        
+        // int idx = LIM(int(sz * percentile), 0, sz - 1);
+        // //idx = sz / 2;
+        // std::sort(tmp.data(), tmp.data() + sz);
+        // oldMedian = tmp(idx);
+        // rescale_nearest(L, tmp, multiThread);
+        // std::sort(tmp.data(), tmp.data() + sz);
+        // //idx = LIM(int(sz * (1.f - percentile)), 0, sz - 1);
+        // idx = sz / 2;
+        // newMedian = tmp(idx);
+        // //findMinMaxPercentile(tmp.data(), tmp.getRows() * tmp.getCols(), percentile, newMedian, percentile, newMedian, multiThread);        
     }
-    const float scale = (oldMedian == 0.f || newMedian == 0.f) ? 65535.f : (oldMedian / newMedian); // avoid Nan
+    // const float scale = (oldMedian == 0.f || newMedian == 0.f) ? 65535.f : (oldMedian / newMedian); // avoid Nan
 
 #ifdef _OPENMP
     #pragma omp parallel for schedule(dynamic,16) if(multiThread)
