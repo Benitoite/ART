@@ -21,33 +21,11 @@
 #pragma once
 
 #include "array2D.h"
-#include "sleef.c"
 
 namespace rtengine {
 
 void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2D<float> &dst, int r, float epsilon, bool multithread, int subsampling=0);
 
-inline void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool multithread, int subsampling=0)
-{
-#ifdef _OPENMP
-#    pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < chan.height(); ++y) {
-        for (int x = 0; x < chan.width(); ++x) {
-            chan[y][x] = xlin2log(max(chan[y][x], 0.f), base);
-        }
-    }
-
-    guidedFilter(chan, chan, chan, r, eps, multithread, subsampling);
-
-#ifdef _OPENMP
-#    pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < chan.height(); ++y) {
-        for (int x = 0; x < chan.width(); ++x) {
-            chan[y][x] = xlog2lin(max(chan[y][x], 0.f), base);
-        }
-    }
-}
+void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool multithread, int subsampling=0);
 
 } // namespace rtengine

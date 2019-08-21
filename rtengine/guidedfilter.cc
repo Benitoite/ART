@@ -30,6 +30,7 @@
 
 #include "guidedfilter.h"
 #include "boxblur.h"
+#include "sleef.c"
 #include "rescale.h"
 #include "imagefloat.h"
 
@@ -231,5 +232,30 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
     apply(ADDMUL, q, meanA, I, meanB);
     DEBUG_DUMP(q);
 }
+
+
+void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool multithread, int subsampling)
+{
+#ifdef _OPENMP
+#    pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < chan.height(); ++y) {
+        for (int x = 0; x < chan.width(); ++x) {
+            chan[y][x] = xlin2log(max(chan[y][x], 0.f), base);
+        }
+    }
+
+    guidedFilter(chan, chan, chan, r, eps, multithread, subsampling);
+
+#ifdef _OPENMP
+#    pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < chan.height(); ++y) {
+        for (int x = 0; x < chan.width(); ++x) {
+            chan[y][x] = xlog2lin(max(chan[y][x], 0.f), base);
+        }
+    }
+}
+
 
 } // namespace rtengine
