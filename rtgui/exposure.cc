@@ -92,7 +92,7 @@ Exposure::Exposure():
     //----------- Exposure Compensation ---------------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
-    expcomp   = Gtk::manage (new Adjuster (M("TP_EXPOSURE_EXPCOMP"), -5, 12, 0.05, 0));
+    expcomp   = Gtk::manage (new Adjuster (M("TP_EXPOSURE_EXPCOMP"), -12, 12, 0.05, 0));
     expcomp->setLogScale(64, 0, true);
     pack_start (*expcomp);
 
