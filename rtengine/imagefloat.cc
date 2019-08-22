@@ -27,14 +27,24 @@
 #include "alignedbuffer.h"
 #include "rt_math.h"
 #include "color.h"
+#include "halffloat.h"
+#include "sleef.c"
 
-using namespace rtengine;
+namespace rtengine {
 
-Imagefloat::Imagefloat ()
+Imagefloat::Imagefloat():
+    color_space_("sRGB"),
+    mode_(Mode::RGB),
+    base_(0),
+    norm_1_(false)
 {
 }
 
-Imagefloat::Imagefloat (int w, int h)
+Imagefloat::Imagefloat (int w, int h):
+    color_space_("sRGB"),
+    mode_(Mode::RGB),
+    base_(0),
+    norm_1_(false)
 {
     allocate (w, h);
 }
@@ -60,9 +70,9 @@ void Imagefloat::setScanline (int row, unsigned char* buffer, int bps, unsigned 
         uint16_t* sbuffer = (uint16_t*) buffer;
 
         for (int i = 0; i < width; i++) {
-            r(row, i) = 65535.f * DNG_HalfToFloat(sbuffer[ix++]);
-            g(row, i) = 65535.f * DNG_HalfToFloat(sbuffer[ix++]);
-            b(row, i) = 65535.f * DNG_HalfToFloat(sbuffer[ix++]);
+            r(row, i) = 65535.f * DNG_HalfToFloat_f(sbuffer[ix++]);
+            g(row, i) = 65535.f * DNG_HalfToFloat_f(sbuffer[ix++]);
+            b(row, i) = 65535.f * DNG_HalfToFloat_f(sbuffer[ix++]);
         }
 
         break;
@@ -385,7 +395,10 @@ void Imagefloat::normalizeFloat(float srcMinVal, float srcMaxVal)
 // convert values's range to [0;1] ; this method assumes that the input values's range is [0;65535]
 void Imagefloat::normalizeFloatTo1()
 {
-
+    if (norm_1_) {
+        return;
+    }
+    
     int w = width;
     int h = height;
 
@@ -400,11 +413,16 @@ void Imagefloat::normalizeFloatTo1()
             b(y, x) /= 65535.f;
         }
     }
+
+    norm_1_ = true;
 }
 
 // convert values's range to [0;65535 ; this method assumes that the input values's range is [0;1]
 void Imagefloat::normalizeFloatTo65535()
 {
+    if (!norm_1_) {
+        return;
+    }
 
     int w = width;
     int h = height;
@@ -420,6 +438,8 @@ void Imagefloat::normalizeFloatTo65535()
             b(y, x) *= 65535.f;
         }
     }
+
+    norm_1_ = false;
 }
 
 void Imagefloat::calcCroppedHistogram(const ProcParams &params, float scale, LUTu & hist)
@@ -564,3 +584,236 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const LabImage &labI
         } // End of parallelization
     }
 }
+
+
+void Imagefloat::assignColorSpace(const Glib::ustring &space)
+{
+    color_space_ = space;
+}
+
+
+void Imagefloat::setMode(Mode mode, bool multithread)
+{
+    if (mode == mode_) {
+        return;
+    }
+
+    int b = logBase();
+    setLogEncoding(0, multithread);
+
+    switch (mode_) {
+    case Mode::RGB:
+        if (mode == Mode::XYZ) {
+            rgb_to_xyz(multithread);
+        } else {
+            assert(mode == Mode::YUV);
+            rgb_to_yuv(multithread);
+        }
+        break;
+    case Mode::XYZ:
+        if (mode == Mode::RGB) {
+            xyz_to_rgb(multithread);
+        } else {
+            assert(mode == Mode::YUV);
+            xyz_to_yuv(multithread);
+        }
+        break;
+    case Mode::YUV:
+        if (mode == Mode::RGB) {
+            yuv_to_rgb(multithread);
+        } else {
+            assert(mode == Mode::XYZ);
+            yuv_to_xyz(multithread);
+        }
+        break;
+    }
+    
+    mode_ = mode;
+    setLogEncoding(b, multithread);
+}
+
+
+void Imagefloat::rgb_to_xyz(bool multithread)
+{
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
+        for (int x = 0; x < width; ++x) {
+            float X, Y, Z;
+            Color::rgbxyz(r(y, x), g(y, x), b(y, x), X, Y, Z, ws);
+            r(y, x) = X;
+            g(y, x) = Y;
+            b(y, x) = Z;
+        }
+    }
+}
+
+
+void Imagefloat::rgb_to_yuv(bool multithread)
+{
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
+        for (int x = 0; x < width; ++x) {
+            float Y = Color::rgbLuminance(r(y, x), g(y, x), b(y, x), ws);
+            r(y, x) -= Y;
+            b(y, x) -= Y;
+            g(y, x) = Y;
+        }
+    }
+}
+
+
+void Imagefloat::xyz_to_rgb(bool multithread)
+{
+    TMatrix ws = ICCStore::getInstance()->workingSpaceInverseMatrix(color_space_);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
+        for (int x = 0; x < width; ++x) {
+            float R, G, B;
+            Color::xyz2rgb(r(y, x), g(y, x), b(y, x), R, G, B, ws);
+            r(y, x) = R;
+            g(y, x) = G;
+            b(y, x) = B;
+        }
+    }
+}
+
+
+void Imagefloat::xyz_to_yuv(bool multithread)
+{
+    TMatrix ws = ICCStore::getInstance()->workingSpaceInverseMatrix(color_space_);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
+        for (int x = 0; x < width; ++x) {
+            float R, G, B;
+            float Y = g(y, x);
+            Color::xyz2rgb(r(y, x), Y, b(y, x), R, G, B, ws);
+            r(y, x) = R - Y;
+            b(y, x) = B - Y;
+        }
+    }
+}
+
+
+void Imagefloat::yuv_to_rgb(bool multithread)
+{
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
+        for (int x = 0; x < width; ++x) {
+            float Y = g(y, x);
+            r(y, x) += Y;
+            b(y, x) += Y;
+            g(y, x) += -r(y, x) -b(y, x);
+        }
+    }
+}
+
+
+void Imagefloat::yuv_to_xyz(bool multithread)
+{
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
+        for (int x = 0; x < width; ++x) {
+            float Y = g(y, x);
+            float R = r(y, x) + Y;
+            float B = b(y, x) + Y;
+            float G = Y - R - B;
+            Color::rgbxyz(R, G, B, r(y, x), g(y, x), b(y, x), ws);
+        }
+    }
+}
+
+
+void Imagefloat::setLogEncoding(int base, bool multithread)
+{
+    if (base == base_) {
+        return;
+    }
+
+    if (base <= 0) { // linear
+        log_to_lin(base_, multithread);
+        base_ = 0;
+    } else {
+        if (base_ == 0) {
+            lin_to_log(base, multithread);
+        } else {
+            log_to_lin(base_, multithread);
+            lin_to_log(base, multithread);
+        }
+    }
+}
+
+
+void Imagefloat::log_to_lin(int base, bool multithread)
+{
+    const auto conv = 
+        [=](float x) -> float
+        {
+            if (base == 1) {
+                return xexpf(x);
+            } else {
+                return xlog2lin(x, base);
+            }
+        };
+    
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            g(y, x) = conv(g(y, x));
+            if (mode_ == Mode::RGB) {
+                r(y, x) = conv(r(y, x));
+                b(y, x) = conv(b(y, x));
+            }
+        }
+    }
+}
+
+
+void Imagefloat::lin_to_log(int base, bool multithread)
+{
+    const auto conv =
+        [=](float x) -> float
+        {
+            if (base == 1) {
+                return xlogf(max(x, 1e-5f));
+            } else {
+                return xlin2log(max(x, 1e-5f), base);
+            }
+        };
+    
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            g(y, x) = conv(g(y, x));
+            if (mode_ == Mode::RGB) {
+                r(y, x) = conv(r(y, x));
+                b(y, x) = conv(b(y, x));
+            }
+        }
+    }
+}
+
+} // namespace rtengine

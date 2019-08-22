@@ -28,6 +28,10 @@
 #include "opthelper.h"
 //#define BENCHMARK
 #include "StopWatch.h"
+#include "halffloat.h"
+
+using rtengine::DNG_HalfToFloat;
+using rtengine::DNG_FP24ToFloat;
 
 #include <zlib.h>
 #include <stdint.h>
@@ -1228,8 +1232,6 @@ void CLASS lossless_dng_load_raw()
     ljpeg_end (&jh);
   }
 }
-
-static uint32_t DNG_HalfToFloat(uint16_t halfValue);
 
 void CLASS packed_dng_load_raw()
 {
@@ -10442,74 +10444,6 @@ static void decodeFPDeltaRow(Bytef * src, Bytef * dst, size_t tileWidth, size_t 
       }
     }
 
-}
-
-// From DNG SDK dng_utils.h
-static //inline
-uint32_t DNG_HalfToFloat(uint16_t halfValue) {
-  int32_t sign     = (halfValue >> 15) & 0x00000001;
-  int32_t exponent = (halfValue >> 10) & 0x0000001f;
-  int32_t mantissa =  halfValue        & 0x000003ff;
-  if (exponent == 0) {
-    if (mantissa == 0) {
-      // Plus or minus zero
-      return (uint32_t) (sign << 31);
-    } else {
-      // Denormalized number -- renormalize it
-      while (!(mantissa & 0x00000400)) {
-        mantissa <<= 1;
-        exponent -=  1;
-      }
-      exponent += 1;
-      mantissa &= ~0x00000400;
-    }
-  } else if (exponent == 31) {
-    if (mantissa == 0) {
-      // Positive or negative infinity, convert to maximum (16 bit) values.
-      return (uint32_t) ((sign << 31) | ((0x1eL + 127 - 15) << 23) |  (0x3ffL << 13));
-    } else {
-      // Nan -- Just set to zero.
-      return 0;
-    }
-  }
-  // Normalized number
-  exponent += (127 - 15);
-  mantissa <<= 13;
-  // Assemble sign, exponent and mantissa.
-  return (uint32_t) ((sign << 31) | (exponent << 23) | mantissa);
-}
-
-static inline uint32_t DNG_FP24ToFloat(const uint8_t * input) {
-  int32_t sign     = (input [0] >> 7) & 0x01;
-  int32_t exponent = (input [0]     ) & 0x7F;
-  int32_t mantissa = (((int32_t) input [1]) << 8) | input[2];
-  if (exponent == 0) {
-    if (mantissa == 0) {
-      // Plus or minus zero
-      return (uint32_t) (sign << 31);
-    } else {
-      // Denormalized number -- renormalize it
-      while (!(mantissa & 0x00010000)) {
-        mantissa <<= 1;
-        exponent -=  1;
-      }
-      exponent += 1;
-      mantissa &= ~0x00010000;
-    }
-  } else if (exponent == 127) {
-    if (mantissa == 0) {
-      // Positive or negative infinity, convert to maximum (24 bit) values.
-      return (uint32_t) ((sign << 31) | ((0x7eL + 128 - 64) << 23) |  (0xffffL << 7));
-    } else {
-      // Nan -- Just set to zero.
-      return 0;
-    }
-  }
-  // Normalized number
-  exponent += (128 - 64);
-  mantissa <<= 7;
-  // Assemble sign, exponent and mantissa.
-  return (uint32_t) ((sign << 31) | (exponent << 23) | mantissa);
 }
 
 static void expandFloats(Bytef * dst, int tileWidth, int bytesps) {
