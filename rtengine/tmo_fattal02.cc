@@ -1157,10 +1157,10 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
     #pragma omp parallel for schedule(dynamic,16) if(multiThread)
 #endif
     for (int y = 0; y < h; y++) {
-        int yy = y * hr + 1;
+        int yy = std::min(int(y * hr + 1), h2-1);
 
         for (int x = 0; x < w; x++) {
-            int xx = x * wr + 1;
+            int xx = std::min(int(x * wr + 1), w2-1);
 
             float Y = std::max(Yr(x, y), epsilon);
             float l = std::max(L(xx, yy), epsilon) * (scale / Y);
