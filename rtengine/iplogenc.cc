@@ -313,7 +313,8 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             }
         }
             
-        const float epsilon = 0.01f;
+        //const float epsilon = 0.01f;
+        const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
         //guidedFilter(tmp, tmp, tmp, detail, epsilon, multithread);
         guidedFilterLog(10.f, tmp, detail, epsilon, multithread);
 
