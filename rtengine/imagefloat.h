@@ -100,7 +100,6 @@ public:
         delete this;
     }
 
-    void normalizeFloat(float srcMinVal, float srcMaxVal) override;
     void normalizeFloatTo1();
     void normalizeFloatTo65535();
     void calcCroppedHistogram(const ProcParams &params, float scale, LUTu & hist);

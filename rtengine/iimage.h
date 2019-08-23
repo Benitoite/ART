@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -84,8 +85,6 @@ public:
     // Write a raw dump of the data
     void writeData (FILE *fh) const {}
 
-    virtual void normalizeInt (int srcMinVal, int srcMaxVal) {};
-    virtual void normalizeFloat (float srcMinVal, float srcMaxVal) {};
     virtual void computeHistogramAutoWB (double &avg_r, double &avg_g, double &avg_b, int &n, LUTu &histogram, int compression) const {}
     virtual void getSpotWBData (double &reds, double &greens, double &blues, int &rn, int &gn, int &bn,
                                 std::vector<Coord2D> &red, std::vector<Coord2D> &green, std::vector<Coord2D> &blue,

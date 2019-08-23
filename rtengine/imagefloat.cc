@@ -164,11 +164,15 @@ void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFl
     }
 }
 
-Imagefloat* Imagefloat::copy () const
+Imagefloat *Imagefloat::copy() const
 {
-
-    Imagefloat* cp = new Imagefloat (width, height);
+    Imagefloat* cp = new Imagefloat(width, height);
     copyData(cp);
+    cp->color_space_ = color_space_;
+    cp->mode_ = mode_;
+    cp->base_ = base_;
+    cp->norm_1_ = norm_1_;
+    
     return cp;
 }
 
@@ -372,25 +376,6 @@ Imagefloat::to16() const
     return img16;
 }
 
-void Imagefloat::normalizeFloat(float srcMinVal, float srcMaxVal)
-{
-
-    float scale = MAXVALD / (srcMaxVal - srcMinVal);
-    int w = width;
-    int h = height;
-
-#ifdef _OPENMP
-    #pragma omp parallel for firstprivate(w, h, srcMinVal, scale) schedule(dynamic, 5)
-#endif
-
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            r(y, x) = (r(y, x) - srcMinVal) * scale;
-            g(y, x) = (g(y, x) - srcMinVal) * scale;
-            b(y, x) = (b(y, x) - srcMinVal) * scale;
-        }
-    }
-}
 
 // convert values's range to [0;1] ; this method assumes that the input values's range is [0;65535]
 void Imagefloat::normalizeFloatTo1()
@@ -766,13 +751,20 @@ void Imagefloat::setLogEncoding(int base, bool multithread)
 void Imagefloat::log_to_lin(int base, bool multithread)
 {
     const auto conv = 
-        [=](float x) -> float
+        [base,this](float x) -> float
         {
-            if (base == 1) {
-                return xexpf(x);
-            } else {
-                return xlog2lin(x, base);
+            if (!this->norm_1_) {
+                x /= 65535.f;
             }
+            if (base == 1) {
+                x = xexpf(x);
+            } else {
+                x = xlog2lin(x, base);
+            }
+            if (!this->norm_1_) {
+                x *= 65535.f;
+            }
+            return x;
         };
     
 #ifdef _OPENMP
@@ -793,13 +785,20 @@ void Imagefloat::log_to_lin(int base, bool multithread)
 void Imagefloat::lin_to_log(int base, bool multithread)
 {
     const auto conv =
-        [=](float x) -> float
+        [base,this](float x) -> float
         {
-            if (base == 1) {
-                return xlogf(max(x, 1e-5f));
-            } else {
-                return xlin2log(max(x, 1e-5f), base);
+            if (!this->norm_1_) {
+                x /= 65535.f;
             }
+            if (base == 1) {
+                x = xlogf(max(x, 1e-5f));
+            } else {
+                x = xlin2log(max(x, 1e-5f), base);
+            }
+            if (!this->norm_1_) {
+                x *= 65535.f;
+            }
+            return x;
         };
     
 #ifdef _OPENMP
