@@ -394,6 +394,7 @@ struct ToneCurveParams {
     TcMode curveMode2;
     bool histmatching; // histogram matching
     bool fromHistMatching;
+    std::vector<double> saturation;
 
     ToneCurveParams();
 
