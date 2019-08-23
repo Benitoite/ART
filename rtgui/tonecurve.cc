@@ -27,12 +27,28 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
+namespace {
+
+const std::vector<double> default_satcurve{
+    FCT_MinMaxCPoints,
+    0, 0.397626,
+    0.843827, 0,
+    0.5, 0.5,
+    0.35, 0.35,
+    1, 0.231454,
+    0, 0.35
+};
+
+} // namespace
+
+
 ToneCurve::ToneCurve():
     FoldableToolPanel(this, "tonecurve", M("TP_TONECURVE_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvHistMatching = m->newEvent(AUTOEXP, "HISTORY_MSG_HISTMATCHING");
     EvHistMatchingBatch = m->newEvent(M_VOID, "HISTORY_MSG_HISTMATCHING");
+    EvSatCurve = m->newEvent(RGBCURVE, "HISTORY_MSG_TONECURVE_SATCURVE");
     EvToolEnabled.set_action(AUTOEXP);
 
     CurveListener::setMulti(true);
@@ -101,6 +117,17 @@ ToneCurve::ToneCurve():
     pack_start( *curveEditorG2, Gtk::PACK_SHRINK, 2);
 
     tcmode2conn = toneCurveMode2->signal_changed().connect( sigc::mem_fun(*this, &ToneCurve::curveMode2Changed), true );
+
+
+    satcurveG = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_TONECURVE_SATCURVE"), 0.7));
+    satcurveG->setCurveListener(this);
+    satcurve = static_cast<FlatCurveEditor *>(satcurveG->addCurve(CT_Flat, "", nullptr, false, false));
+    satcurve->setResetCurve(FlatCurveType(default_satcurve[0]), default_satcurve);
+    satcurve->setBottomBarBgGradient(bottomMilestones);
+    satcurveG->curveListComplete();
+    satcurveG->show();
+
+    pack_start(*satcurveG, Gtk::PACK_SHRINK, 2);
 }
 
 
@@ -131,6 +158,9 @@ void ToneCurve::read(const ProcParams* pp)
     histmatching->set_active(pp->toneCurve.histmatching);
     fromHistMatching = pp->toneCurve.fromHistMatching;
 
+    satcurve->setCurve(default_satcurve);
+    satcurve->setCurve(pp->toneCurve.saturation);
+
     tcmode2conn.block(false);
     tcmodeconn.block(false);
 
@@ -142,6 +172,7 @@ void ToneCurve::autoOpenCurve  ()
 {
     shape->openIfNonlinear();
     shape2->openIfNonlinear();
+    satcurve->openIfNonlinear();
 }
 
 
@@ -149,6 +180,7 @@ void ToneCurve::setEditProvider(EditDataProvider *provider)
 {
     shape->setEditProvider(provider);
     shape2->setEditProvider(provider);
+    //satcurve->setEditProvider(provider);
 }
 
 
@@ -192,6 +224,8 @@ void ToneCurve::write(ProcParams* pp)
 
     pp->toneCurve.histmatching = histmatching->get_active();
     pp->toneCurve.fromHistMatching = fromHistMatching;
+
+    pp->toneCurve.saturation = satcurve->getCurve();
 }
 
 
@@ -211,11 +245,14 @@ void ToneCurve::setDefaults(const ProcParams* defParams)
 void ToneCurve::curveChanged(CurveEditor *ce)
 {
     if (listener && getEnabled()) {
-        setHistmatching(false);
         if (ce == shape) {
+            setHistmatching(false);
             listener->panelChanged(EvToneCurve1, M("HISTORY_CUSTOMCURVE"));
         } else if (ce == shape2) {
+            setHistmatching(false);
             listener->panelChanged(EvToneCurve2, M("HISTORY_CUSTOMCURVE"));
+        } else if (ce == satcurve) {
+            listener->panelChanged(EvSatCurve, M("HISTORY_CUSTOMCURVE"));
         }
     }
 }
@@ -280,6 +317,7 @@ void ToneCurve::enableAll(bool yes)
     curveEditorG2->set_sensitive(yes);
     toneCurveMode2->set_sensitive(yes);
     histmatching->set_sensitive(yes);
+    satcurveG->set_sensitive(yes);
 }
 
 
@@ -302,6 +340,7 @@ void ToneCurve::updateCurveBackgroundHistogram(
 )
 {
     shape->updateBackgroundHistogram(histToneCurve);
+    satcurve->updateBackgroundHistogram(histToneCurve);
 }
 
 

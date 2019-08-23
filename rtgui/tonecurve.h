@@ -44,9 +44,12 @@ protected:
     CurveEditorGroup* curveEditorG2;
     DiagonalCurveEditor* shape;
     DiagonalCurveEditor* shape2;
+    CurveEditorGroup *satcurveG;
+    FlatCurveEditor *satcurve;
 
     rtengine::ProcEvent EvHistMatching;
     rtengine::ProcEvent EvHistMatchingBatch;
+    rtengine::ProcEvent EvSatCurve;
 
     // used temporarily in eventing
     rtengine::procparams::ToneCurveParams::TcMode nextToneCurveMode;

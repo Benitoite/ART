@@ -674,7 +674,10 @@ ToneCurveParams::ToneCurveParams():
     curveMode(ToneCurveParams::TcMode::STD),
     curveMode2(ToneCurveParams::TcMode::STD),
     histmatching(false),
-    fromHistMatching(false)
+    fromHistMatching(false),
+    saturation{
+        FCT_Linear
+    }
 {
 }
 
@@ -687,7 +690,8 @@ bool ToneCurveParams::operator ==(const ToneCurveParams& other) const
         && curveMode == other.curveMode
         && curveMode2 == other.curveMode2
         && histmatching == other.histmatching
-        && fromHistMatching == other.fromHistMatching;
+        && fromHistMatching == other.fromHistMatching
+        && saturation == other.saturation;
 }
 
 
@@ -1157,8 +1161,7 @@ bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
 FattalToneMappingParams::FattalToneMappingParams() :
     enabled(false),
     threshold(30),
-    amount(20),
-    anchor(50)
+    amount(20)
 {
 }
 
@@ -1167,8 +1170,7 @@ bool FattalToneMappingParams::operator ==(const FattalToneMappingParams& other) 
     return
         enabled == other.enabled
         && threshold == other.threshold
-        && amount == other.amount
-        && anchor == other.anchor;
+        && amount == other.amount;
 }
 
 bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) const
@@ -2436,6 +2438,7 @@ int ProcParams::save(bool save_general,
 
             saveToKeyfile("ToneCurve", "Curve", toneCurve.curve, keyFile);
             saveToKeyfile("ToneCurve", "Curve2", toneCurve.curve2, keyFile);
+            saveToKeyfile("ToneCurve", "Saturation", toneCurve.saturation, keyFile);
         }
 
 // Local contrast
@@ -2596,7 +2599,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("FattalToneMapping", "Enabled", fattal.enabled, keyFile);
             saveToKeyfile("FattalToneMapping", "Threshold", fattal.threshold, keyFile);
             saveToKeyfile("FattalToneMapping", "Amount", fattal.amount, keyFile);
-            saveToKeyfile("FattalToneMapping", "Anchor", fattal.anchor, keyFile);
         }
 
 // Log encoding
@@ -3188,6 +3190,7 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "ToneCurve", "Curve2", toneCurve.curve2);
                 assignFromKeyfile(keyFile, "ToneCurve", "HistogramMatching", toneCurve.histmatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
+                assignFromKeyfile(keyFile, "ToneCurve", "Saturation", toneCurve.saturation);
             }
         }
 
@@ -3492,7 +3495,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "FattalToneMapping", "Enabled", fattal.enabled);
             assignFromKeyfile(keyFile, "FattalToneMapping", "Threshold", fattal.threshold);
             assignFromKeyfile(keyFile, "FattalToneMapping", "Amount", fattal.amount);
-            assignFromKeyfile(keyFile, "FattalToneMapping", "Anchor", fattal.anchor);
         }
 
         if (keyFile.has_group("LogEncoding") && RELEVANT_(logenc)) {
