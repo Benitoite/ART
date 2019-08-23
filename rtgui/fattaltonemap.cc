@@ -32,23 +32,17 @@ FattalToneMapping::FattalToneMapping(): FoldableToolPanel(this, "fattal", M("TP_
 
     amount = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_AMOUNT"), 1., 100., 1., 20.));
     threshold = Gtk::manage(new Adjuster (M("TP_TM_FATTAL_THRESHOLD"), -100., 300., 1., 30.0));
-    Gtk::Image *al = Gtk::manage(new RTImage("circle-black-small.png"));
-    Gtk::Image *ar = Gtk::manage(new RTImage("circle-white-small.png"));
-    anchor = Gtk::manage(new Adjuster(M("TP_TM_FATTAL_ANCHOR"), 1, 100, 1, 50, al, ar));
 
     amount->setAdjusterListener(this);
     threshold->setAdjusterListener(this);
-    //anchor->setAdjusterListener(this);
 
     threshold->setLogScale(10, 0);
 
     amount->show();
     threshold->show();
-    //anchor->show();
 
     pack_start(*amount);
     pack_start(*threshold);
-    //pack_start(*anchor);
 }
 
 void FattalToneMapping::read(const ProcParams *pp)
@@ -58,7 +52,6 @@ void FattalToneMapping::read(const ProcParams *pp)
     setEnabled(pp->fattal.enabled);
     threshold->setValue(pp->fattal.threshold);
     amount->setValue(pp->fattal.amount);
-    //anchor->setValue(pp->fattal.anchor);
 
     enableListener();
 }
@@ -67,7 +60,6 @@ void FattalToneMapping::write(ProcParams *pp)
 {
     pp->fattal.threshold = threshold->getValue();
     pp->fattal.amount = amount->getValue();
-    //pp->fattal.anchor = anchor->getValue();
     pp->fattal.enabled = getEnabled();
 }
 
@@ -75,7 +67,6 @@ void FattalToneMapping::setDefaults(const ProcParams *defParams)
 {
     threshold->setDefault(defParams->fattal.threshold);
     amount->setDefault(defParams->fattal.amount);
-    //anchor->setDefault(defParams->fattal.anchor);
 }
 
 void FattalToneMapping::adjusterChanged(Adjuster* a, double newval)
@@ -85,8 +76,6 @@ void FattalToneMapping::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvTMFattalThreshold, a->getTextValue());
         } else if(a == amount) {
             listener->panelChanged(EvTMFattalAmount, a->getTextValue());
-        } else if(a == anchor) {
-            listener->panelChanged(EvTMFattalAnchor, a->getTextValue());
         }
     }
 }

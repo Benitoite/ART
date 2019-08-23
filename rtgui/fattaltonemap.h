@@ -28,7 +28,6 @@ class FattalToneMapping: public ToolParamBlock, public AdjusterListener, public 
 protected:
     Adjuster *threshold;
     Adjuster *amount;
-    Adjuster *anchor;
 
     rtengine::ProcEvent EvTMFattalAnchor;
     
