@@ -61,7 +61,6 @@ public:
         tilesize(0),
         overlap(0),
         dnstore(),
-        labView(nullptr),
         pipeline_scale(1.0)
     {
     }
@@ -238,8 +237,8 @@ private:
             ipf.denoiseComputeParams(imgsrc, currWB, dnstore, params.denoise);
         }
         
-        baseImg = new Imagefloat (fw, fh);
-        imgsrc->getImage (currWB, tr, baseImg, pp, params.exposure, params.raw);
+        img = new Imagefloat (fw, fh);
+        imgsrc->getImage (currWB, tr, img, pp, params.exposure, params.raw);
 
         if (pl) {
             pl->setProgress (0.50);
@@ -275,7 +274,7 @@ private:
         ImProcFunctions &ipf = *(ipf_p.get());
 
         if (params.denoise.enabled) {
-            ipf.denoise(imgsrc, currWB, baseImg, dnstore, params.denoise);
+            ipf.denoise(imgsrc, currWB, img, dnstore, params.denoise);
         }
     }
 
@@ -284,27 +283,27 @@ private:
         procparams::ProcParams &params = job->pparams;
         ImProcFunctions &ipf = *(ipf_p.get());
 
-        imgsrc->convertColorSpace(baseImg, params.icm, currWB);
+        imgsrc->convertColorSpace(img, params.icm, currWB);
 
         LUTu hist16(65536);
-        ipf.firstAnalysis(baseImg, params, hist16);
+        ipf.firstAnalysis(img, params, hist16);
 
-        ipf.dehaze(baseImg);
-        ipf.dynamicRangeCompression(baseImg);
+        ipf.dehaze(img);
+        ipf.dynamicRangeCompression(img);
 
         // perform transform (excepted resizing)
         if (ipf.needsTransform()) {
             Imagefloat *trImg = nullptr;
             if (ipf.needsLuminanceOnly()) {
-                trImg = baseImg;
+                trImg = img;
             } else {
                 trImg = new Imagefloat (fw, fh);
             }
-            ipf.transform(baseImg, trImg, 0, 0, 0, 0, fw, fh, fw, fh,
+            ipf.transform(img, trImg, 0, 0, 0, 0, fw, fh, fw, fh,
                           imgsrc->getMetaData(), imgsrc->getRotateDegree(), true);
-            if (trImg != baseImg) {
-                delete baseImg;
-                baseImg = trImg;
+            if (trImg != img) {
+                delete img;
+                img = trImg;
             }
         }
     }
@@ -314,50 +313,43 @@ private:
         procparams::ProcParams& params = job->pparams;
         ImProcFunctions &ipf = * (ipf_p.get());
 
-        // RGB processing
-        labView = new LabImage (fw, fh);
-
         DCPProfile::ApplyState as;
         DCPProfile *dcpProf = imgsrc->getDCP (params.icm, as);
 
         LUTu histToneCurve;
 
         ipf.setDCPProfile(dcpProf, as);
-        ipf.rgbProc(baseImg, labView);
+        ipf.rgbProc(img);
 
         // if clut was used and size of clut cache == 1 we free the memory used by the clutstore (default clut cache size = 1 for 32 bit OS)
         if ( params.filmSimulation.enabled && !params.filmSimulation.clutFilename.empty() && options.clutCacheSize == 1) {
             CLUTStore::getInstance().clearCache();
         }
 
-        // Freeing baseImg because not used anymore
-        delete baseImg;
-        baseImg = nullptr;
-
         if (pl) {
             pl->setProgress (0.55);
         }
 
-        ipf.sharpening(labView, params.sharpening);
-        bool stop = ipf.colorCorrection(labView, oX, oY, oW, oH);
-        stop = stop || ipf.guidedSmoothing(labView, oX, oY, oW, oH);
-        // stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
+        ipf.sharpening(img, params.sharpening);
+        bool stop = ipf.colorCorrection(img, oX, oY, oW, oH);
+        stop = stop || ipf.guidedSmoothing(img, oX, oY, oW, oH);
+        // stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
         if (!stop) {
-            ipf.logEncoding(labView);
-            ipf.labAdjustments(labView);
+            ipf.logEncoding(img);
+            ipf.labAdjustments(img);
         }
 
-        stop = stop || ipf.textureBoost(labView, oX, oY, oW, oH);
+        stop = stop || ipf.textureBoost(img, oX, oY, oW, oH);
         if (!stop) {
-            ipf.impulsedenoise(labView);
-            ipf.defringe(labView);
-            //ipf.sharpening(labView, params.sharpening);
+            ipf.impulsedenoise(img);
+            ipf.defringe(img);
+            //ipf.sharpening(img, params.sharpening);
         }
-        stop = stop || ipf.contrastByDetailLevels(labView, oX, oY, oW, oH);
+        stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
         if (!stop) {
-            ipf.softLight(labView);
-            ipf.localContrast(labView);
-            ipf.filmGrain(labView);
+            ipf.softLight(img);
+            ipf.localContrast(img);
+            ipf.filmGrain(img);
         }
 
         if (pl) {
@@ -367,10 +359,10 @@ private:
         int imw, imh;
         double tmpScale = ipf.resizeScale(&params, fw, fh, imw, imh);
         bool labResize = params.resize.enabled && params.resize.method != "Nearest" && (tmpScale != 1.0 || params.prsharpening.enabled);
-        LabImage *tmplab;
+        Imagefloat *tmpimg;
 
         // crop and convert to rgb16
-        int cx = 0, cy = 0, cw = labView->W, ch = labView->H;
+        int cx = 0, cy = 0, cw = img->getWidth(), ch = img->getHeight();
 
         if (params.crop.enabled && !is_fast) {
             cx = params.crop.x;
@@ -379,44 +371,44 @@ private:
             ch = params.crop.h;
 
             if (labResize) { // crop lab data
-                tmplab = new LabImage (cw, ch);
+                tmpimg = new Imagefloat(cw, ch);
 
                 for (int row = 0; row < ch; row++) {
                     for (int col = 0; col < cw; col++) {
-                        tmplab->L[row][col] = labView->L[row + cy][col + cx];
-                        tmplab->a[row][col] = labView->a[row + cy][col + cx];
-                        tmplab->b[row][col] = labView->b[row + cy][col + cx];
+                        tmpimg->r(row, col) = img->r(row + cy, col + cx);
+                        tmpimg->g(row, col) = img->g(row + cy, col + cx);
+                        tmpimg->b(row, col) = img->b(row + cy, col + cx);
                     }
                 }
 
-                delete labView;
-                labView = tmplab;
+                delete img;
+                img = tmpimg;
                 cx = 0;
                 cy = 0;
             }
         }
 
         if (labResize && !is_fast) { // resize lab data
-            if ((labView->W != imw || labView->H != imh) &&
-                (params.resize.allowUpscaling || (labView->W >= imw && labView->H >= imh))) {
+            if ((img->getWidth() != imw || img->getHeight() != imh) &&
+                (params.resize.allowUpscaling || (img->getWidth() >= imw && img->getHeight() >= imh))) {
                 // resize image
-                tmplab = new LabImage (imw, imh);
-                ipf.Lanczos (labView, tmplab, tmpScale);
-                delete labView;
-                labView = tmplab;
+                tmpimg = new Imagefloat(imw, imh);
+                ipf.Lanczos(img, tmpimg, tmpScale);
+                delete img;
+                img = tmpimg;
             }
-            cw = labView->W;
-            ch = labView->H;
+            cw = img->getWidth();
+            ch = img->getHeight();
         }
 
         if (labResize || is_fast) {
             if (params.prsharpening.enabled) {
-                for (int i = 0; i < ch; i++) {
-                    for (int j = 0; j < cw; j++) {
-                        labView->L[i][j] = labView->L[i][j] < 0.f ? 0.f : labView->L[i][j];
-                    }
-                }
-                ipf.sharpening(labView, params.prsharpening);
+                // for (int i = 0; i < ch; i++) {
+                //     for (int j = 0; j < cw; j++) {
+                //         labView->L[i][j] = labView->L[i][j] < 0.f ? 0.f : labView->L[i][j];
+                //     }
+                // }
+                ipf.sharpening(img, params.prsharpening);
             }
         }
 
@@ -425,16 +417,19 @@ private:
         constexpr bool useLCMS = false;
         bool bwonly = params.blackwhite.enabled;
 
-        Imagefloat* readyImg = ipf.lab2rgbOut (labView, cx, cy, cw, ch, params.icm);
+        Imagefloat* readyImg = nullptr;
+        {
+            LabImage lab(img->getWidth(), img->getHeight());
+            ipf.rgb2lab(*img, lab);
+            ipf.lab2rgbOut(&lab, cx, cy, cw, ch, params.icm);
+        }
 
         if (settings->verbose) {
             printf ("Output profile_: \"%s\"\n", params.icm.outputProfile.c_str());
         }
 
-        delete labView;
-        labView = nullptr;
-
-
+        delete img;
+        img = nullptr;
 
         if (bwonly) { //force BW r=g=b
             if (settings->verbose) {
@@ -546,14 +541,14 @@ private:
 
             for (int row = 0; row < ch; row++) {
                 for (int col = 0; col < cw; col++) {
-                    cropped->r(row, col) = baseImg->r(row + cy, col + cx);
-                    cropped->g(row, col) = baseImg->g(row + cy, col + cx);
-                    cropped->b(row, col) = baseImg->b(row + cy, col + cx);
+                    cropped->r(row, col) = img->r(row + cy, col + cx);
+                    cropped->g(row, col) = img->g(row + cy, col + cx);
+                    cropped->b(row, col) = img->b(row + cy, col + cx);
                 }
             }
 
-            delete baseImg;
-            baseImg = cropped;
+            delete img;
+            img = cropped;
         }
 
         assert (params.resize.enabled);
@@ -561,9 +556,9 @@ private:
         // resize image
         if (params.resize.allowUpscaling || (imw <= fw && imh <= fh)) {
             Imagefloat *resized = new Imagefloat(imw, imh);
-            ipf.Lanczos(baseImg, resized, scale_factor);
-            delete baseImg;
-            baseImg = resized;
+            ipf.Lanczos(img, resized, scale_factor);
+            delete img;
+            img = resized;
         }
 
         params.resize.enabled = false;
@@ -620,8 +615,7 @@ private:
     ImProcFunctions::DenoiseInfoStore dnstore;
 
     ColorTemp currWB;
-    Imagefloat *baseImg;
-    LabImage* labView;
+    Imagefloat *img;
 
     double pipeline_scale;
 };

@@ -28,7 +28,7 @@
 
 namespace rtengine {
 
-bool ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -37,7 +37,11 @@ bool ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
     
-    if (params->dirpyrequalizer.enabled && lab->W >= 8 && lab->H >= 8) {
+    if (params->dirpyrequalizer.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8) {
+        LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+        rgb2lab(*rgb, tmplab);
+        LabImage *lab = &tmplab;
+        
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
             fillPipetteLabMasks(lab, editWhatever, id, multiThread);
@@ -50,6 +54,7 @@ bool ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(lab, params->dirpyrequalizer.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+            lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
@@ -78,6 +83,8 @@ bool ImProcFunctions::contrastByDetailLevels(LabImage* lab, int offset_x, int of
                 }
             }
         }
+
+        lab2rgb(*lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

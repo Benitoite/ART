@@ -1231,7 +1231,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     LUTf cl2Toningcurve;
     LUTu dummy;
 
-    LabImage* labView = new LabImage (fw, fh);
     DCPProfile *dcpProf = nullptr;
     DCPProfile::ApplyState as;
 
@@ -1246,29 +1245,32 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     ipf.setDCPProfile(dcpProf, as);
 
     LUTu histToneCurve;
-    ipf.rgbProc(baseImg, labView);
-    bool stop = ipf.colorCorrection(labView);
-    stop = stop || ipf.guidedSmoothing(labView);
+    ipf.rgbProc(baseImg);
+    bool stop = ipf.colorCorrection(baseImg);
+    stop = stop || ipf.guidedSmoothing(baseImg);
     if (!stop) {
-        ipf.logEncoding(labView);
-        ipf.labAdjustments(labView);
+        ipf.logEncoding(baseImg);
+        ipf.labAdjustments(baseImg);
     }
 
-    stop = stop || ipf.textureBoost(labView);
+    stop = stop || ipf.textureBoost(baseImg);
     if (!stop) {
-        ipf.softLight(labView);
-        ipf.localContrast(labView);
+        ipf.softLight(baseImg);
+        ipf.localContrast(baseImg);
     }
 
     // obtain final image
-    Image8* readyImg = nullptr;
-    if (forMonitor) {
-        readyImg = new Image8 (fw, fh);
-        ipf.lab2monitorRgb (labView, readyImg);
-    } else {
-        readyImg = ipf.lab2rgb(labView, 0, 0, fw, fh, params.icm, false);
+    Image8 *readyImg = nullptr;
+    {
+        LabImage lab(fw, fh);
+        ipf.rgb2lab(*baseImg, lab);
+        if (forMonitor) {
+            readyImg = new Image8 (fw, fh);
+            ipf.lab2monitorRgb(&lab, readyImg);
+        } else {
+            readyImg = ipf.lab2rgb(&lab, 0, 0, fw, fh, params.icm, false);
+        }
     }
-    delete labView;
     delete baseImg;
 
     // calculate scale

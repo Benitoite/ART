@@ -33,7 +33,7 @@
 
 namespace rtengine {
 
-bool ImProcFunctions::colorCorrection(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -48,6 +48,10 @@ bool ImProcFunctions::colorCorrection(LabImage *lab, int offset_x, int offset_y,
         }
         return false;
     }
+
+    LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+    rgb2lab(*rgb, tmplab);
+    LabImage *lab = &tmplab;
 
     if (editWhatever) {
         LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H1);
@@ -64,6 +68,7 @@ bool ImProcFunctions::colorCorrection(LabImage *lab, int offset_x, int offset_y,
     std::vector<array2D<float>> Lmask(n);
 
     if (!generateLabMasks(lab, params->colorcorrection.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &Lmask, &abmask)) {
+        lab2rgb(*lab, *rgb);
         return true; // show mask is active, nothing more to do
     }
     
@@ -256,6 +261,8 @@ bool ImProcFunctions::colorCorrection(LabImage *lab, int offset_x, int offset_y,
             }
         }
     }
+
+    lab2rgb(*lab, *rgb);
 
     return false;
 }

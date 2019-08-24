@@ -126,7 +126,7 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
 } // namespace
 
 
-void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
+void ImProcFunctions::denoiseGuidedSmoothing(Imagefloat *rgb)
 {
     if (!params->denoise.smoothingEnabled || params->denoise.smoothingMethod != procparams::DenoiseParams::SmoothingMethod::GUIDED) {
         return;
@@ -154,7 +154,7 @@ void ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 }
 
 
-bool ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -164,6 +164,10 @@ bool ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
     }
     
     if (params->smoothing.enabled) {
+        LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+        rgb2lab(*rgb, tmplab);
+        LabImage *lab = &tmplab;
+        
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H3);
             fillPipetteLabMasks(lab, editWhatever, id, multiThread);
@@ -176,25 +180,26 @@ bool ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(lab, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, nullptr, &mask)) {
+            lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
-        Imagefloat rgb(lab->W, lab->H);
+        Imagefloat working(lab->W, lab->H);
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
         
         for (int i = 0; i < n; ++i) {
-            lab2rgb(*lab, rgb, params->icm.workingProfile);
-            rgb.normalizeFloatTo1();
+            lab2rgb(*lab, working, params->icm.workingProfile);
+            working.normalizeFloatTo1();
             
             auto &r = params->smoothing.regions[i];
 
-            const int W = rgb.getWidth();
-            const int H = rgb.getHeight();
-            array2D<float> R(W, H, rgb.r.ptrs, ARRAY2D_BYREFERENCE);
-            array2D<float> G(W, H, rgb.g.ptrs, ARRAY2D_BYREFERENCE);
-            array2D<float> B(W, H, rgb.b.ptrs, ARRAY2D_BYREFERENCE);
+            const int W = working.getWidth();
+            const int H = working.getHeight();
+            array2D<float> R(W, H, working.r.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> G(W, H, working.g.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> B(W, H, working.b.ptrs, ARRAY2D_BYREFERENCE);
 
             const float epsilon = 0.001f * std::pow(2, -r.epsilon);
             guided_smoothing(R, G, B, ws, iws, Channel(int(r.channel)), r.radius, epsilon, 100, scale, multiThread);
@@ -214,6 +219,8 @@ bool ImProcFunctions::guidedSmoothing(LabImage *lab, int offset_x, int offset_y,
                 }
             }
         }
+
+        lab2rgb(*lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

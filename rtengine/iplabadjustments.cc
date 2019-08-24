@@ -294,11 +294,14 @@ void complexsgnCurve (bool & autili,  bool & butili, bool & ccutili, bool & cclu
     CurveFactory::fillCurveArray(dCurve.get(), lhskCurve, skip, cclutili);
 }
 
-
 } // namespace
 
-void ImProcFunctions::labAdjustments(LabImage *lab, LUTu *histCCurve, LUTu *histLCurve)
+
+void ImProcFunctions::labAdjustments(Imagefloat *rgb, LUTu *histCCurve, LUTu *histLCurve)
 {
+    LabImage lab(rgb->getWidth(), rgb->getHeight());
+    rgb2lab(*rgb, lab);
+    
     LUTu dummy;
     LUTu hist16;
     LUTf lumacurve;
@@ -318,8 +321,8 @@ void ImProcFunctions::labAdjustments(LabImage *lab, LUTu *histCCurve, LUTu *hist
 
     if (params->labCurve.contrast != 0) { //only use hist16 for contrast
         hist16.clear();
-        int fh = lab->H;
-        int fw = lab->W;
+        int fh = lab.H;
+        int fw = lab.W;
         
 #ifdef _OPENMP
 #       pragma omp parallel if (multiThread)
@@ -332,7 +335,7 @@ void ImProcFunctions::labAdjustments(LabImage *lab, LUTu *histCCurve, LUTu *hist
 #endif
             for (int i = 0; i < fh; i++) {
                 for (int j = 0; j < fw; j++) {
-                    hist16thr[(int)((lab->L[i][j]))]++;
+                    hist16thr[(int)((lab.L[i][j]))]++;
                 }
             }
             
@@ -356,7 +359,9 @@ void ImProcFunctions::labAdjustments(LabImage *lab, LUTu *histCCurve, LUTu *hist
     complexsgnCurve(autili, butili, ccutili, cclutili, params->labCurve.acurve, params->labCurve.bcurve, params->labCurve.cccurve,
                                   params->labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, scale == 1 ? 1 : 16);
 
-    chromiLuminanceCurve(lab, lab, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
+    chromiLuminanceCurve(&lab, &lab, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
+
+    lab2rgb(lab, *rgb);
 }
 
 

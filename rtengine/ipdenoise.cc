@@ -437,7 +437,7 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
         Y.free();
     }
     
-    guidedSmoothing(img);
+    denoiseGuidedSmoothing(img);
 }
 
 

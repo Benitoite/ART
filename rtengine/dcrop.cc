@@ -313,7 +313,8 @@ void Crop::update(int todo)
 
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
-        parent->ipf.rgbProc(workingCrop, bufs_[0]);
+        workingCrop->copyTo(bufs_[0]);
+        parent->ipf.rgbProc(bufs_[0]);
         
         if (workingCrop != baseCrop) {
             delete workingCrop;
@@ -328,7 +329,7 @@ void Crop::update(int todo)
     bool stop = false;
     // apply luminance operations
     if (todo & M_LUMACURVE) {
-        bufs_[1]->CopyFrom(bufs_[0]);
+        bufs_[0]->copyTo(bufs_[1]);
         
         if (skip == 1) {
             parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
@@ -343,7 +344,7 @@ void Crop::update(int todo)
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
-        bufs_[2]->CopyFrom(bufs_[1]);
+        bufs_[1]->copyTo(bufs_[2]);
 
         if (!stop) {
             parent->ipf.logEncoding(bufs_[2]);
@@ -370,13 +371,15 @@ void Crop::update(int todo)
     PipetteBuffer::setReady();
 
     // Computing the preview image, i.e. converting from lab->Monitor color space (soft-proofing disabled) or lab->Output profile->Monitor color space (soft-proofing enabled)
-    parent->ipf.lab2monitorRgb(bufs_[2], cropImg);
+    LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
+    parent->ipf.rgb2lab(*bufs_[2], lab);
+    parent->ipf.lab2monitorRgb(&lab, cropImg);
 
     if (cropImageListener) {
         // Computing the internal image for analysis, i.e. conversion from lab->Output profile (rtSettings.HistogramWorking disabled) or lab->WCS (rtSettings.HistogramWorking enabled)
 
         // internal image in output color space for analysis
-        Image8 *cropImgtrue = parent->ipf.lab2rgb(bufs_[2], 0, 0, cropw, croph, params.icm);
+        Image8 *cropImgtrue = parent->ipf.lab2rgb(&lab, 0, 0, cropw, croph, params.icm);
 
         int finalW = rqcropw;
 
@@ -593,23 +596,11 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
             transCrop->allocate(cropw, croph);
         }
 
-        // if (laboCrop) {
-        //     delete laboCrop;    // laboCrop can't be resized
-        // }
-
-        // laboCrop = new LabImage(cropw, croph);
-
-        // if (labnCrop) {
-        //     delete labnCrop;    // labnCrop can't be resized
-        // }
-
-        // labnCrop = new LabImage(cropw, croph);
-
         for (int i = 0; i < 3; ++i) {
             if (bufs_[i]) {
                 delete bufs_[i];
             }
-            bufs_[i] = new LabImage(cropw, croph);
+            bufs_[i] = new Imagefloat(cropw, croph);
         }
 
         if (!cropImg) {

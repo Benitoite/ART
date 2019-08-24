@@ -167,14 +167,20 @@ void Imagefloat::getScanline (int row, unsigned char* buffer, int bps, bool isFl
 Imagefloat *Imagefloat::copy() const
 {
     Imagefloat* cp = new Imagefloat(width, height);
-    copyData(cp);
-    cp->color_space_ = color_space_;
-    cp->mode_ = mode_;
-    cp->base_ = base_;
-    cp->norm_1_ = norm_1_;
-    
+    copyTo(cp);
     return cp;
 }
+
+
+void Imagefloat::copyTo(Imagefloat *dst) const
+{
+    copyData(dst);
+    dst->color_space_ = color_space_;
+    dst->mode_ = mode_;
+    dst->base_ = base_;
+    dst->norm_1_ = norm_1_;
+}
+
 
 // This is called by the StdImageSource class. We assume that fp images from StdImageSource don't have to deal with gamma
 void Imagefloat::getStdImage (const ColorTemp &ctemp, int tran, Imagefloat* image, PreviewProps pp) const

@@ -43,6 +43,7 @@ public:
     ~Imagefloat() override;
 
     Imagefloat* copy() const;
+    void copyTo(Imagefloat *dst) const;
 
     Image8* to8() const;
     Image16* to16() const;

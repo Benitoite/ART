@@ -80,11 +80,11 @@ public:
     //----------------------------------------------------------------------
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
-    void rgbProc(Imagefloat *working, LabImage *lab);
+    void rgbProc(Imagefloat *working);
 
-    void labAdjustments(LabImage *lab, LUTu *histCCurve=nullptr, LUTu *histLCurve=nullptr);
+    void labAdjustments(Imagefloat *rgb, LUTu *histCCurve=nullptr, LUTu *histLCurve=nullptr);
     
-    void sharpening(LabImage* lab, const SharpeningParams &sharpenParam, bool showMask = false);
+    void sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask = false);
     
     void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool fullImage);    
     
@@ -92,11 +92,11 @@ public:
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
     void Lanczos(const Imagefloat* src, Imagefloat* dst, float scale);
 
-    void impulsedenoise(LabImage* lab);   //Emil's impulse denoise
+    void impulsedenoise(Imagefloat *rgb);   //Emil's impulse denoise
 
 //    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
 //    void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
-    bool textureBoost(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool textureBoost(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
 
     struct DenoiseInfoStore {
         DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {}
@@ -109,19 +109,19 @@ public:
     void denoiseComputeParams(ImageSource *imgsrc, const ColorTemp &currWB, DenoiseInfoStore &store, procparams::DenoiseParams &dnparams);
     void denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imagefloat *img, const DenoiseInfoStore &store, const procparams::DenoiseParams &dnparams);
     
-    void defringe(LabImage* lab);
+    void defringe(Imagefloat *rgb);
     void dehaze(Imagefloat *rgb);
     void dynamicRangeCompression(Imagefloat *rgb);
-    void localContrast(LabImage *lab);
-    void shadowsHighlights(LabImage *lab);
+    void localContrast(Imagefloat *rgb);
+    //void shadowsHighlights(LabImage *lab);
     void shadowsHighlights(Imagefloat *rgb);
     void toneEqualizer(Imagefloat *rgb);
-    void softLight(LabImage *lab);
-    bool colorCorrection(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    void logEncoding(LabImage *lab, LUTu *histToneCurve=nullptr);
-    bool contrastByDetailLevels(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    void filmGrain(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    bool guidedSmoothing(LabImage *lab, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    void softLight(Imagefloat *rgb);
+    bool colorCorrection(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    void logEncoding(Imagefloat *rgb, LUTu *histToneCurve=nullptr);
+    bool contrastByDetailLevels(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    void filmGrain(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool guidedSmoothing(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
@@ -134,8 +134,10 @@ public:
     Imagefloat *lab2rgbOut(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm);
 
     void rgb2lab(const Imagefloat &src, LabImage &dst, const Glib::ustring &workingSpace);
+    void rgb2lab(const Imagefloat &src, LabImage &dst) { rgb2lab(src, dst, params->icm.workingProfile); }
     
     void lab2rgb(const LabImage &src, Imagefloat &dst, const Glib::ustring &workingSpace);    
+    void lab2rgb(const LabImage &src, Imagefloat &dst) { lab2rgb(src, dst, params->icm.workingProfile); }
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
@@ -189,7 +191,7 @@ private:
     void RGB_denoise_infoGamCurve(const procparams::DenoiseParams & dnparams, const bool isRAW, LUTf &gamcurve, float &gam, float &gamthresh, float &gamslope);    
     void RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc, bool isRAW, LUTf &gamcurve, float gam, float gamthresh, float gamslope, const procparams::DenoiseParams & dnparams, const double expcomp, float &chaut, int &Nb, float &redaut, float &blueaut, float &maxredaut, float & maxblueaut, float &minredaut, float & minblueaut, float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc, bool multiThread = false);
 
-    void guidedSmoothing(Imagefloat *rgb);
+    void denoiseGuidedSmoothing(Imagefloat *rgb);
 
     void chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu *histCCurve, LUTu *histLurve);    
     

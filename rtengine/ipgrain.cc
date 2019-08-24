@@ -360,13 +360,18 @@ private:
 } // namespace
 
 
-void ImProcFunctions::filmGrain(LabImage *lab, int offset_x, int offset_y, int full_width, int full_height)
+void ImProcFunctions::filmGrain(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
 {
     if (!params->grain.enabled) {
         return;
     }
-    GrainEvaluator ge(offset_x, offset_y, full_width < 0 ? lab->W : full_width, full_height < 0 ? lab->H : full_height, scale);
-    ge(params->grain, lab, multiThread);
+    LabImage lab(rgb->getWidth(), rgb->getHeight());
+    rgb2lab(*rgb, lab);
+    
+    GrainEvaluator ge(offset_x, offset_y, full_width < 0 ? lab.W : full_width, full_height < 0 ? lab.H : full_height, scale);
+    ge(params->grain, &lab, multiThread);
+
+    lab2rgb(lab, *rgb);
 }
 
 } // namespace rtengine

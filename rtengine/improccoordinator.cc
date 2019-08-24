@@ -481,7 +481,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             // if it's just crop we just need the histogram, no image updates
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
-                ipf.rgbProc (oprevi, bufs_[0]);
+                oprevi->copyTo(bufs_[0]);
+                ipf.rgbProc(bufs_[0]);
             }
     
             // compute L channel histogram
@@ -493,7 +494,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         bool stop = false;
     
         if (todo & M_LUMACURVE) {
-            bufs_[1]->CopyFrom(bufs_[0]);
+            bufs_[0]->copyTo(bufs_[1]);
             stop = ipf.colorCorrection(bufs_[1]);
             stop = stop || ipf.guidedSmoothing(bufs_[1]);
             //stop = stop || ipf.contrastByDetailLevels(bufs_[1]);
@@ -509,7 +510,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
-            bufs_[2]->CopyFrom(bufs_[1]);
+            bufs_[1]->copyTo(bufs_[2]);
 
             if (!stop) {
                 ipf.logEncoding(bufs_[2], &histToneCurve);
@@ -552,17 +553,19 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
 
     if (panningRelatedChange || (todo & M_MONITOR)) {
         progress("Conversion to RGB...", 100 * readyphase / numofphases);
+        LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
+        ipf.rgb2lab(*bufs_[2], lab);
 
         if ((todo != CROP && todo != MINUPDATE) || (todo & M_MONITOR)) {
             MyMutex::MyLock prevImgLock(previmg->getMutex());
 
             try {
                 // Computing the preview image, i.e. converting from WCS->Monitor color space (soft-proofing disabled) or WCS->Printer profile->Monitor color space (soft-proofing enabled)
-                ipf.lab2monitorRgb(bufs_[2], previmg);
+                ipf.lab2monitorRgb(&lab, previmg);
 
                 // Computing the internal image for analysis, i.e. conversion from WCS->Output profile
                 delete workimg;
-                workimg = ipf.lab2rgb(bufs_[2], 0, 0, pW, pH, params.icm);
+                workimg = ipf.lab2rgb(&lab, 0, 0, pW, pH, params.icm);
             } catch (char * str) {
                 progress("Error converting file...", 0);
                 return;
@@ -586,7 +589,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         readyphase++;
 
         if (hListener) {
-            updateLRGBHistograms();
+            updateLRGBHistograms(&lab);
             hListener->histogramChanged(histRed, histGreen, histBlue, histLuma, histToneCurve, histLCurve, histCCurve, /*histCLurve, histLLCurve,*/ histLCAM, histCCAM, histRedRaw, histGreenRaw, histBlueRaw, histChroma, histLRETI);
         }
     }
@@ -666,10 +669,8 @@ void ImProcCoordinator::setScale(int prevscale)
         orig_prev = new Imagefloat(pW, pH);
         oprevi = orig_prev;
         for (int i = 0; i < 3; ++i) {
-            bufs_[i] = new LabImage(pW, pH);
+            bufs_[i] = new Imagefloat(pW, pH);
         }
-        // oprevl = new LabImage(pW, pH);
-        // nprevl = new LabImage(pW, pH);
         previmg = new Image8(pW, pH);
         workimg = new Image8(pW, pH);
 
@@ -688,7 +689,7 @@ void ImProcCoordinator::setScale(int prevscale)
 }
 
 
-void ImProcCoordinator::updateLRGBHistograms()
+void ImProcCoordinator::updateLRGBHistograms(LabImage *lab)
 {
 
     int x1, y1, x2, y2;
@@ -707,7 +708,7 @@ void ImProcCoordinator::updateLRGBHistograms()
             for (int i = y1; i < y2; i++)
                 for (int j = x1; j < x2; j++)
                 {
-                    histChroma[(int)(sqrtf(SQR(bufs_[2]->a[i][j]) + SQR(bufs_[2]->b[i][j])) / 188.f)]++;      //188 = 48000/256
+                    histChroma[(int)(sqrtf(SQR(lab->a[i][j]) + SQR(lab->b[i][j])) / 188.f)]++;      //188 = 48000/256
                 }
         }
 #ifdef _OPENMP
@@ -719,7 +720,7 @@ void ImProcCoordinator::updateLRGBHistograms()
             for (int i = y1; i < y2; i++)
                 for (int j = x1; j < x2; j++)
                 {
-                    histLuma[(int)(bufs_[2]->L[i][j] / 128.f)]++;
+                    histLuma[(int)(lab->L[i][j] / 128.f)]++;
                 }
         }
 #ifdef _OPENMP

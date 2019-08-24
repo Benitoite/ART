@@ -586,10 +586,11 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 }
 
 
-void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
+void ImProcFunctions::logEncoding(Imagefloat *rgb, LUTu *histToneCurve)
 {
-    Imagefloat working(lab->W, lab->H);
-    lab2rgb(*lab, working, params->icm.workingProfile);
+    // Imagefloat working(lab->W, lab->H);
+    // lab2rgb(*lab, working, params->icm.workingProfile);
+    Imagefloat &working = *rgb;
 
     if (params->logenc.enabled) {
         log_encode(&working, params, scale, multiThread);
@@ -598,11 +599,11 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
     }
 
     if (dcpProf && dcpApplyState) {
-        for (int y = 0; y < lab->H; ++y) {
+        for (int y = 0; y < working.getHeight(); ++y) {
             float *r = working.r.ptrs[y];
             float *g = working.g.ptrs[y];
             float *b = working.b.ptrs[y];
-            dcpProf->step2ApplyTile(r, g, b, lab->W, 1, 1, *dcpApplyState);
+            dcpProf->step2ApplyTile(r, g, b, working.getWidth(), 1, 1, *dcpApplyState);
         }
     }
 
@@ -658,7 +659,7 @@ void ImProcFunctions::logEncoding(LabImage *lab, LUTu *histToneCurve)
 
     shadowsHighlights(&working);
 
-    rgb2lab(working, *lab, params->icm.workingProfile);
+    // rgb2lab(working, *lab, params->icm.workingProfile);
 }
 
 

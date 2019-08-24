@@ -471,7 +471,7 @@ void ImProcFunctions::moyeqt (Imagefloat* working, float &moyS, float &eqty)
 
 
 // Process RGB image and convert to LAB space
-void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
+void ImProcFunctions::rgbProc(Imagefloat *working)
 {
     BENCHFUN
         
@@ -502,9 +502,8 @@ void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
                                    customToneCurve2, scale);
     }
 
-    std::unique_ptr<Imagefloat> workimage(new Imagefloat(working->getWidth(), working->getHeight()));
-    working->copyData(workimage.get());
-    working = workimage.get();
+    // std::unique_ptr<Imagefloat> workimage(working->copy());
+    // working = workimage.get();
     
     Imagefloat *tmpImage = nullptr;
 
@@ -1039,7 +1038,12 @@ void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
                     }
                     // ready, fill lab
                     for (int i = istart, ti = 0; i < tH; i++, ti++) {
-                        Color::RGB2Lab(&rtemp[ti * TS], &gtemp[ti * TS], &btemp[ti * TS], &(lab->L[i][jstart]), &(lab->a[i][jstart]), &(lab->b[i][jstart]), toxyz, tW - jstart);
+                        for (int j = jstart, tj = 0; j < tW; j++, tj++) {
+                            int idx = ti * TS + tj;
+                            working->r(i, j) = rtemp[idx];
+                            working->g(i, j) = gtemp[idx];
+                            working->b(i, j) = btemp[idx];
+                        }
                     }
                 } else { // black & white
                     // Auto channel mixer needs whole image, so we now copy to tmpImage and close the tiled processing
@@ -1120,7 +1124,11 @@ void ImProcFunctions::rgbProc(Imagefloat *working, LabImage *lab)
 #endif
 
         for (int i = 0; i < tH; i++) {
-            Color::RGB2Lab(tmpImage->r(i), tmpImage->g(i), tmpImage->b(i), lab->L[i], lab->a[i], lab->b[i], toxyz, tW);
+            for (int j = 0; j < tW; j++) {
+                working->r(i, j) = tmpImage->r(i, j);
+                working->g(i, j) = tmpImage->g(i, j);
+                working->b(i, j) = tmpImage->b(i, j);
+            }
         }
     }
 
@@ -1715,23 +1723,28 @@ void ImProcFunctions::luminanceCurve (LabImage* lold, LabImage* lnew, LUTf & cur
     //delete [] cmultiplier;
 //}
 
-void ImProcFunctions::impulsedenoise (LabImage* lab)
+void ImProcFunctions::impulsedenoise(Imagefloat *rgb)
 {
 
-    if (params->impulseDenoise.enabled && lab->W >= 8 && lab->H >= 8)
+    if (params->impulseDenoise.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
 
     {
-        impulse_nr (lab, (float)params->impulseDenoise.thresh / 20.0 );
+        LabImage lab(rgb->getWidth(), rgb->getHeight());
+        rgb2lab(*rgb, lab);
+        impulse_nr(&lab, (float)params->impulseDenoise.thresh / 20.0 );
+        lab2rgb(lab, *rgb);
     }
 }
 
-void ImProcFunctions::defringe (LabImage* lab)
+void ImProcFunctions::defringe(Imagefloat *rgb)
 {
-
-    if (params->defringe.enabled && lab->W >= 8 && lab->H >= 8)
+    if (params->defringe.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
 
     {
-        PF_correct_RT (lab, params->defringe.radius, params->defringe.threshold);
+        LabImage lab(rgb->getWidth(), rgb->getHeight());
+        rgb2lab(*rgb, lab);
+        PF_correct_RT(&lab, params->defringe.radius, params->defringe.threshold);
+        lab2rgb(lab, *rgb);
     }
 }
 

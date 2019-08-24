@@ -140,7 +140,7 @@ void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &
 } // namespace
 
 
-bool ImProcFunctions::textureBoost(LabImage* lab, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::textureBoost(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -150,6 +150,10 @@ bool ImProcFunctions::textureBoost(LabImage* lab, int offset_x, int offset_y, in
     }
     
     if (params->textureBoost.enabled) {
+        LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+        rgb2lab(*rgb, tmplab);
+        LabImage *lab = &tmplab;
+        
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H4);
             fillPipetteLabMasks(lab, editWhatever, id, multiThread);
@@ -162,6 +166,7 @@ bool ImProcFunctions::textureBoost(LabImage* lab, int offset_x, int offset_y, in
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(lab, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+            lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
@@ -191,6 +196,8 @@ bool ImProcFunctions::textureBoost(LabImage* lab, int offset_x, int offset_y, in
                 }
             }
         }
+
+        lab2rgb(*lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

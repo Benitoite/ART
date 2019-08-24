@@ -274,16 +274,16 @@ private:
 } // namespace
 
 
-void ImProcFunctions::shadowsHighlights(LabImage *lab)
-{
-    if (!params->sh.enabled || (!params->sh.highlights && !params->sh.shadows)){
-        return;
-    }
+// void ImProcFunctions::shadowsHighlights(LabImage *lab)
+// {
+//     if (!params->sh.enabled || (!params->sh.highlights && !params->sh.shadows)){
+//         return;
+//     }
 
-    LabImageAdapter img(lab, params->icm.workingProfile);
-    ShadowsHighlights<LabImageAdapter> sh(params, scale, multiThread, &img);
-    sh();
-}
+//     LabImageAdapter img(lab, params->icm.workingProfile);
+//     ShadowsHighlights<LabImageAdapter> sh(params, scale, multiThread, &img);
+//     sh();
+// }
 
 
 void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)

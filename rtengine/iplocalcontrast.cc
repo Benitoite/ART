@@ -390,17 +390,22 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
 
 } // namespace
 
-void ImProcFunctions::localContrast(LabImage *lab)
+void ImProcFunctions::localContrast(Imagefloat *rgb)
 {
     if (!params->localContrast.enabled) {
         return;
     }
 
+    LabImage lab(rgb->getWidth(), rgb->getHeight());
+    rgb2lab(*rgb, lab);
+
     if (params->localContrast.mode == LocalContrastParams::USM) {
-        local_contrast_usm(lab, params, scale, multiThread);
+        local_contrast_usm(&lab, params, scale, multiThread);
     } else {
-        local_contrast_wavelets(lab, params, scale, multiThread);
+        local_contrast_wavelets(&lab, params, scale, multiThread);
     }
+
+    lab2rgb(lab, *rgb);
 }
 
 } // namespace rtengine

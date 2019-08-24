@@ -249,8 +249,11 @@ namespace rtengine {
 
 extern const Settings* settings;
 
-void ImProcFunctions::sharpening(LabImage* lab, const SharpeningParams &sharpenParam, bool showMask)
+void ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
 {
+    LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+    rgb2lab(*rgb, tmplab);
+    LabImage *lab = &tmplab;
 
     if ((!sharpenParam.enabled) || sharpenParam.amount < 1 || lab->W < 8 || lab->H < 8) {
         return;
@@ -272,22 +275,24 @@ void ImProcFunctions::sharpening(LabImage* lab, const SharpeningParams &sharpenP
                 lab->L[i][j] = blend[i][j] * 32768.f;
             }
         }
+
+        lab2rgb(*lab, *rgb);
         return;
     }
 
     JaggedArray<float> b2(W, H);
 
     if (sharpenParam.method == "rld") {
-        Imagefloat rgb(W, H);
+        // Imagefloat rgb(W, H);
         JaggedArray<float> Y(W, H);
         auto ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-        lab2rgb(*lab, rgb, params->icm.workingProfile);
+        // lab2rgb(*lab, rgb, params->icm.workingProfile);
 #ifdef _OPENMP
 #       pragma omp parallel for
 #endif
         for (int y = 0; y < lab->H; ++y) {
             for (int x = 0; x < lab->W; ++x) {
-                Y[y][x] = Color::rgbLuminance(rgb.r(y, x), rgb.g(y, x), rgb.b(y, x), ws);
+                Y[y][x] = Color::rgbLuminance(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws);
             }
         }
         deconvsharpening(Y, lab->L, b2, W, H, sharpenParam, contrast, scale);
@@ -296,16 +301,16 @@ void ImProcFunctions::sharpening(LabImage* lab, const SharpeningParams &sharpenP
 #endif
         for (int y = 0; y < lab->H; ++y) {
             for (int x = 0; x < lab->W; ++x) {
-                float oY = Color::rgbLuminance(rgb.r(y, x), rgb.g(y, x), rgb.b(y, x), ws);
+                float oY = Color::rgbLuminance(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws);
                 if (oY > 1e-5f) {
                     float f = Y[y][x] / oY;
-                    rgb.r(y, x) *= f;
-                    rgb.g(y, x) *= f;
-                    rgb.b(y, x) *= f;
+                    rgb->r(y, x) *= f;
+                    rgb->g(y, x) *= f;
+                    rgb->b(y, x) *= f;
                 }
             }
         }
-        rgb2lab(rgb, *lab, params->icm.workingProfile);
+        //rgb2lab(rgb, *lab, params->icm.workingProfile);
         return;
     }
 BENCHFUN
@@ -420,6 +425,7 @@ BENCHFUN
         }
     }
 
+    lab2rgb(*lab, *rgb);
 }
 
 } // namespace rtengine

@@ -46,30 +46,25 @@ inline float sl(float blend, float x)
 } // namespace
 
 
-void ImProcFunctions::softLight(LabImage *lab)
+void ImProcFunctions::softLight(Imagefloat *rgb)
 {
     const bool sl_enabled = params->softlight.enabled && params->softlight.strength > 0;
     if (!sl_enabled) {
         return;
     }
 
-    Imagefloat working(lab->W, lab->H);
-    lab2rgb(*lab, working, params->icm.workingProfile);
-    
     const float blend = params->softlight.strength / 100.f;
 
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (int y = 0; y < working.getHeight(); ++y) {
-        for (int x = 0; x < working.getWidth(); ++x) {
-            working.r(y, x) = sl(blend, working.r(y, x));
-            working.g(y, x) = sl(blend, working.g(y, x));
-            working.b(y, x) = sl(blend, working.b(y, x));
+    for (int y = 0; y < rgb->getHeight(); ++y) {
+        for (int x = 0; x < rgb->getWidth(); ++x) {
+            rgb->r(y, x) = sl(blend, rgb->r(y, x));
+            rgb->g(y, x) = sl(blend, rgb->g(y, x));
+            rgb->b(y, x) = sl(blend, rgb->b(y, x));
         }
     }
-
-    rgb2lab(working, *lab, params->icm.workingProfile);
 }
 
 } // namespace rtengine
