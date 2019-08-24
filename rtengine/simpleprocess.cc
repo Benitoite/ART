@@ -321,17 +321,12 @@ private:
         ipf.setDCPProfile(dcpProf, as);
         ipf.rgbProc(img);
 
-        // if clut was used and size of clut cache == 1 we free the memory used by the clutstore (default clut cache size = 1 for 32 bit OS)
-        if ( params.filmSimulation.enabled && !params.filmSimulation.clutFilename.empty() && options.clutCacheSize == 1) {
-            CLUTStore::getInstance().clearCache();
-        }
-
         if (pl) {
             pl->setProgress (0.55);
         }
 
-        ipf.sharpening(img, params.sharpening);
-        bool stop = ipf.colorCorrection(img, oX, oY, oW, oH);
+        bool stop = ipf.sharpening(img, params.sharpening);
+        stop = stop || ipf.colorCorrection(img, oX, oY, oW, oH);
         stop = stop || ipf.guidedSmoothing(img, oX, oY, oW, oH);
         // stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
         if (!stop) {

@@ -1835,8 +1835,9 @@ void Color::Lab2Lch(float *a, float *b, float *c, float *h, int w)
         STVFU(h[i], xatan2f(bv, av));
     }
     for (; i < w; ++i) {
-        c[i] = sqrtf(SQR(a[i]) + SQR(b[i])) / 327.68f;
-        h[i] = xatan2f(b[i], a[i]);
+        float ai = a[i], bi = b[i];
+        c[i] = sqrtf(SQR(ai) + SQR(bi)) / 327.68f;
+        h[i] = xatan2f(bi, ai);
     }
 }
 #endif

@@ -591,6 +591,8 @@ void ImProcFunctions::logEncoding(Imagefloat *rgb, LUTu *histToneCurve)
     // Imagefloat working(lab->W, lab->H);
     // lab2rgb(*lab, working, params->icm.workingProfile);
     Imagefloat &working = *rgb;
+    working.assignColorSpace(params->icm.workingProfile);
+    working.setMode(Imagefloat::Mode::RGB, multiThread);
 
     if (params->logenc.enabled) {
         log_encode(&working, params, scale, multiThread);

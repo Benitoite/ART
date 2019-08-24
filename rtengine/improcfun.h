@@ -84,7 +84,7 @@ public:
 
     void labAdjustments(Imagefloat *rgb, LUTu *histCCurve=nullptr, LUTu *histLCurve=nullptr);
     
-    void sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask = false);
+    bool sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask=false);
     
     void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool fullImage);    
     
@@ -133,8 +133,8 @@ public:
 
     Imagefloat *lab2rgbOut(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm);
 
-    void rgb2lab(const Imagefloat &src, LabImage &dst, const Glib::ustring &workingSpace);
-    void rgb2lab(const Imagefloat &src, LabImage &dst) { rgb2lab(src, dst, params->icm.workingProfile); }
+    void rgb2lab(Imagefloat &src, LabImage &dst, const Glib::ustring &workingSpace);
+    void rgb2lab(Imagefloat &src, LabImage &dst) { rgb2lab(src, dst, params->icm.workingProfile); }
     
     void lab2rgb(const LabImage &src, Imagefloat &dst, const Glib::ustring &workingSpace);    
     void lab2rgb(const LabImage &src, Imagefloat &dst) { lab2rgb(src, dst, params->icm.workingProfile); }

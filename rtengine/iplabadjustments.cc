@@ -299,6 +299,10 @@ void complexsgnCurve (bool & autili,  bool & butili, bool & ccutili, bool & cclu
 
 void ImProcFunctions::labAdjustments(Imagefloat *rgb, LUTu *histCCurve, LUTu *histLCurve)
 {
+    if (!params->labCurve.enabled) {
+        return;
+    }
+    
     LabImage lab(rgb->getWidth(), rgb->getHeight());
     rgb2lab(*rgb, lab);
     

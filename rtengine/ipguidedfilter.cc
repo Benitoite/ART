@@ -164,13 +164,13 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_
     }
     
     if (params->smoothing.enabled) {
-        LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-        rgb2lab(*rgb, tmplab);
-        LabImage *lab = &tmplab;
+        // LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+        // rgb2lab(*rgb, tmplab);
+        // LabImage *lab = &tmplab;
         
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H3);
-            fillPipetteLabMasks(lab, editWhatever, id, multiThread);
+            fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
         }
         
         int n = params->smoothing.regions.size();
@@ -179,24 +179,31 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);
-        if (!generateLabMasks(lab, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, nullptr, &mask)) {
-            lab2rgb(*lab, *rgb);
+        if (!generateLabMasks(rgb, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, nullptr, &mask)) {
+            // lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
-        Imagefloat working(lab->W, lab->H);
+        const int W = rgb->getWidth();
+        const int H = rgb->getHeight();
+
+        Imagefloat working(W, H);
+        rgb->normalizeFloatTo1();
+        rgb->assignColorSpace(params->icm.workingProfile);
+        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
         
         for (int i = 0; i < n; ++i) {
-            lab2rgb(*lab, working, params->icm.workingProfile);
-            working.normalizeFloatTo1();
+            rgb->copyTo(&working);
+            // lab2rgb(*lab, working, params->icm.workingProfile);
+            // working.normalizeFloatTo1();
             
             auto &r = params->smoothing.regions[i];
 
-            const int W = working.getWidth();
-            const int H = working.getHeight();
+            // const int W = working.getWidth();
+            // const int H = working.getHeight();
             array2D<float> R(W, H, working.r.ptrs, ARRAY2D_BYREFERENCE);
             array2D<float> G(W, H, working.g.ptrs, ARRAY2D_BYREFERENCE);
             array2D<float> B(W, H, working.b.ptrs, ARRAY2D_BYREFERENCE);
@@ -209,18 +216,22 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
 #endif
-            for (int y = 0; y < lab->H; ++y) {
-                for (int x = 0; x < lab->W; ++x) {
-                    float ll, aa, bb;
-                    Color::rgb2lab(R[y][x] * 65535.f, G[y][x] * 65535.f, B[y][x] * 65535.f, ll, aa, bb, ws);
-                    lab->L[y][x] = intp(blend[y][x], ll, lab->L[y][x]);
-                    lab->a[y][x] = intp(blend[y][x], aa, lab->a[y][x]);
-                    lab->b[y][x] = intp(blend[y][x], bb, lab->b[y][x]);
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    // float ll, aa, bb;
+                    // Color::rgb2lab(R[y][x] * 65535.f, G[y][x] * 65535.f, B[y][x] * 65535.f, ll, aa, bb, ws);
+                    // lab->L[y][x] = intp(blend[y][x], ll, lab->L[y][x]);
+                    // lab->a[y][x] = intp(blend[y][x], aa, lab->a[y][x]);
+                    // lab->b[y][x] = intp(blend[y][x], bb, lab->b[y][x]);
+                    rgb->r(y, x) = intp(blend[y][x], working.r(y, x), rgb->r(y, x));
+                    rgb->g(y, x) = intp(blend[y][x], working.g(y, x), rgb->g(y, x));
+                    rgb->b(y, x) = intp(blend[y][x], working.b(y, x), rgb->b(y, x));
                 }
             }
         }
 
-        lab2rgb(*lab, *rgb);
+        rgb->normalizeFloatTo65535();
+        // lab2rgb(*lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

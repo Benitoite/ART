@@ -151,7 +151,7 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
     }
 }
 
-void deconvsharpening(float** luminance, float ** L, float** tmp, int W, int H, const SharpeningParams &sharpenParam, float contrast, double scale)
+void deconvsharpening(float** luminance, float** tmp, int W, int H, const SharpeningParams &sharpenParam, float contrast, double scale)
 {
     const auto blurradius = sharpenParam.blurradius / scale;
     if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
@@ -172,7 +172,7 @@ BENCHFUN
     // calculate contrast based blend factors to reduce sharpening in regions with low contrast
     JaggedArray<float> blend(W, H);
     //float contrast = sharpenParam.contrast / 100.f;
-    buildBlendMask(L, blend, W, H, contrast, 1.f);
+    buildBlendMask(luminance, blend, W, H, contrast, 1.f);
     JaggedArray<float>* blurbuffer = nullptr;
 
     if (blurradius >= 0.25f) {
@@ -249,69 +249,49 @@ namespace rtengine {
 
 extern const Settings* settings;
 
-void ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
+bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
 {
-    LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-    rgb2lab(*rgb, tmplab);
-    LabImage *lab = &tmplab;
+    // LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+    // rgb2lab(*rgb, tmplab);
+    // LabImage *lab = &tmplab;
 
-    if ((!sharpenParam.enabled) || sharpenParam.amount < 1 || lab->W < 8 || lab->H < 8) {
-        return;
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+
+    if ((!sharpenParam.enabled) || sharpenParam.amount < 1 || W < 8 || H < 8) {
+        return false;
     }
 
-    int W = lab->W, H = lab->H;
+    rgb->assignColorSpace(params->icm.workingProfile);
+    rgb->setMode(Imagefloat::Mode::YUV, multiThread);
+    float **Y = rgb->g.ptrs;
+
     float contrast = pow_F(sharpenParam.contrast / 100.f, 1.2f);
 
     if(showMask) {
         // calculate contrast based blend factors to reduce sharpening in regions with low contrast
         JaggedArray<float> blend(W, H);
-        buildBlendMask(lab->L, blend, W, H, contrast, 1.f);
+        buildBlendMask(Y, blend, W, H, contrast, 1.f);
 #ifdef _OPENMP
         #pragma omp parallel for
 #endif
-
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
-                lab->L[i][j] = blend[i][j] * 32768.f;
+                Y[i][j] = blend[i][j] * 65536.f;
             }
         }
 
-        lab2rgb(*lab, *rgb);
-        return;
+        //lab2rgb(*lab, *rgb);
+        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        return true;
     }
 
     JaggedArray<float> b2(W, H);
 
     if (sharpenParam.method == "rld") {
-        // Imagefloat rgb(W, H);
-        JaggedArray<float> Y(W, H);
-        auto ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-        // lab2rgb(*lab, rgb, params->icm.workingProfile);
-#ifdef _OPENMP
-#       pragma omp parallel for
-#endif
-        for (int y = 0; y < lab->H; ++y) {
-            for (int x = 0; x < lab->W; ++x) {
-                Y[y][x] = Color::rgbLuminance(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws);
-            }
-        }
-        deconvsharpening(Y, lab->L, b2, W, H, sharpenParam, contrast, scale);
-#ifdef _OPENMP
-#       pragma omp parallel for
-#endif
-        for (int y = 0; y < lab->H; ++y) {
-            for (int x = 0; x < lab->W; ++x) {
-                float oY = Color::rgbLuminance(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws);
-                if (oY > 1e-5f) {
-                    float f = Y[y][x] / oY;
-                    rgb->r(y, x) *= f;
-                    rgb->g(y, x) *= f;
-                    rgb->b(y, x) *= f;
-                }
-            }
-        }
-        //rgb2lab(rgb, *lab, params->icm.workingProfile);
-        return;
+        deconvsharpening(Y, b2, W, H, sharpenParam, contrast, scale);
+        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        return false;
     }
 BENCHFUN
 
@@ -329,7 +309,7 @@ BENCHFUN
     // calculate contrast based blend factors to reduce sharpening in regions with low contrast
     JaggedArray<float> blend(W, H);
     //float contrast = sharpenParam.contrast / 100.f;
-    buildBlendMask(lab->L, blend, W, H, contrast);
+    buildBlendMask(Y, blend, W, H, contrast);
 
     JaggedArray<float> blur(W, H);
 
@@ -339,13 +319,13 @@ BENCHFUN
         #pragma omp parallel
 #endif
         {
-            gaussianBlur(lab->L, blur, W, H, blurradius);
+            gaussianBlur(Y, blur, W, H, blurradius);
 #ifdef _OPENMP
             #pragma omp for
 #endif
             for (int i = 0; i < H; ++i) {
                 for (int j = 0; j < W; ++j) {
-                    blur[i][j] = intp(blend[i][j], lab->L[i][j], std::max(blur[i][j], 0.0f));
+                    blur[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
                 }
             }
         }
@@ -358,13 +338,13 @@ BENCHFUN
     {
 
         if (!sharpenParam.edgesonly) {
-            gaussianBlur (lab->L, b2, W, H, sharpenParam.radius / scale);
+            gaussianBlur(Y, b2, W, H, sharpenParam.radius / scale);
         } else {
-            bilateral<float, float> (lab->L, (float**)b3, b2, W, H, sharpenParam.edges_radius / scale, sharpenParam.edges_tolerance, multiThread);
+            bilateral<float, float>(Y, (float**)b3, b2, W, H, sharpenParam.edges_radius / scale, sharpenParam.edges_tolerance, multiThread);
             gaussianBlur (b3, b2, W, H, sharpenParam.radius / scale);
         }
     }
-    float** base = lab->L;
+    float** base = Y;
 
     if (sharpenParam.edgesonly) {
         base = b3;
@@ -383,7 +363,7 @@ BENCHFUN
                                   min(fabsf(diff), upperBound),                   // X axis value = absolute value of the difference, truncated to the max value of this field
                                   sharpenParam.amount * diff * 0.01f        // Y axis max value
                               );
-                lab->L[i][j] = intp(blend[i][j], lab->L[i][j] + delta, lab->L[i][j]);
+                Y[i][j] = intp(blend[i][j], Y[i][j] + delta, Y[i][j]);
             }
     } else {
         if (!sharpenParam.edgesonly) {
@@ -396,12 +376,12 @@ BENCHFUN
 
             for( int i = 0; i < H; i++ )
                 for( int j = 0; j < W; j++ ) {
-                    labCopy[i][j] = lab->L[i][j];
+                    labCopy[i][j] = Y[i][j];
                 }
 
-            sharpenHaloCtrl (lab->L, b2, labCopy, blend, W, H, sharpenParam);
+            sharpenHaloCtrl (Y, b2, labCopy, blend, W, H, sharpenParam);
         } else {
-            sharpenHaloCtrl (lab->L, b2, base, blend, W, H, sharpenParam);
+            sharpenHaloCtrl (Y, b2, base, blend, W, H, sharpenParam);
         }
 
     }
@@ -420,12 +400,14 @@ BENCHFUN
 #endif
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
-                lab->L[i][j] = intp(blend[i][j], lab->L[i][j], std::max(blur[i][j], 0.0f));
+                Y[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
             }
         }
     }
 
-    lab2rgb(*lab, *rgb);
+    //lab2rgb(*lab, *rgb);
+    rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+    return false;
 }
 
 } // namespace rtengine

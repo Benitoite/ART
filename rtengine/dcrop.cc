@@ -332,9 +332,9 @@ void Crop::update(int todo)
         bufs_[0]->copyTo(bufs_[1]);
         
         if (skip == 1) {
-            parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
+            stop = parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
         }
-        stop = parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
+        stop = stop || parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
         stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
         //stop = stop || parent->ipf.contrastByDetailLevels(bufs_[1], offset_x, offset_y, full_width, full_height); 
         // if (!stop) {

@@ -48,7 +48,7 @@ ToneCurve::ToneCurve():
     auto m = ProcEventMapper::getInstance();
     EvHistMatching = m->newEvent(AUTOEXP, "HISTORY_MSG_HISTMATCHING");
     EvHistMatchingBatch = m->newEvent(M_VOID, "HISTORY_MSG_HISTMATCHING");
-    EvSatCurve = m->newEvent(RGBCURVE, "HISTORY_MSG_TONECURVE_SATCURVE");
+    EvSatCurve = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_TONECURVE_SATCURVE");
     EvToolEnabled.set_action(AUTOEXP);
 
     CurveListener::setMulti(true);

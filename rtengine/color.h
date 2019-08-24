@@ -210,6 +210,11 @@ public:
         return r * workingspace[1][0] + g * workingspace[1][1] + b * workingspace[1][2];
     }
 
+    static float rgbLuminance(float r, float g, float b, const float workingspace[3][3])
+    {
+        return r * workingspace[1][0] + g * workingspace[1][1] + b * workingspace[1][2];
+    }
+    
     /**
     * @brief Convert red/green/blue to L*a*b
     * @brief Convert red/green/blue to hue/saturation/luminance
@@ -621,14 +626,16 @@ public:
     static void RGB2Lab(float *X, float *Y, float *Z, float *L, float *a, float *b, const float wp[3][3], int width);
     static void RGB2L(float *X, float *Y, float *Z, float *L, const float wp[3][3], int width);
 
-    static void rgb2lab(float R, float G, float B, float &l, float &a, float &b, const double ws[3][3])
+    template <class T>
+    static void rgb2lab(float R, float G, float B, float &l, float &a, float &b, const T ws[3][3])
     {
         float x, y, z;
         rgbxyz(R, G, B, x, y, z, ws);
         XYZ2Lab(x, y, z, l, a, b);
     }
 
-    static void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const double iws[3][3])
+    template <class T>
+    static void lab2rgb(float l, float a, float b, float &R, float &G, float &B, const T iws[3][3])
     {
         float x, y, z;
         Lab2XYZ(l, a, b, x, y, z);
@@ -759,6 +766,22 @@ public:
     static void XYZ_to_xyY(float X, float Y, float Z, float &x, float &y);
     static void xyY_to_XYZ(float x, float y, float Y, float &X, float &Z);
 
+    template <class T>
+    static void rgb2yuv(float r, float g, float b, float &Y, float &u, float &v, const T workingspace[3][3])
+    {
+        Y = rgbLuminance(r, g, b, workingspace);
+        u = b - Y;
+        v = r - Y;
+    }
+
+    template <class T>
+    static void yuv2rgb(float Y, float u, float v, float &r, float &g, float &b, const T workingspace[3][3])
+    {
+        b = u + Y;
+        r = v + Y;
+        g = (Y - r * float(workingspace[1][0]) - b * float(workingspace[1][2])) / float(workingspace[1][1]);
+    }        
+    
     /**
      * @brief Calculate the effective direction (up or down) to linearly interpolating 2 colors so that it follows the shortest or longest path
      * @param h1 First hue [0 ; 1]

@@ -150,13 +150,11 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb, int offset_x, int offset_y, 
     }
     
     if (params->textureBoost.enabled) {
-        LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-        rgb2lab(*rgb, tmplab);
-        LabImage *lab = &tmplab;
+        rgb->assignColorSpace(params->icm.workingProfile);
         
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H4);
-            fillPipetteLabMasks(lab, editWhatever, id, multiThread);
+            fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
         }
         
         int n = params->textureBoost.regions.size();
@@ -165,31 +163,34 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb, int offset_x, int offset_y, 
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);
-        if (!generateLabMasks(lab, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
-            lab2rgb(*lab, *rgb);
+        if (!generateLabMasks(rgb, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+            // lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
-        array2D<float> L(lab->W, lab->H, lab->L, 0);
-        array2D<float> a(lab->W, lab->H, lab->a, 0);
-        array2D<float> b(lab->W, lab->H, lab->b, 0);
+        LabImage lab(rgb->getWidth(), rgb->getHeight());
+        rgb2lab(*rgb, lab);
+        
+        array2D<float> L(lab.W, lab.H, lab.L, 0);
+        array2D<float> a(lab.W, lab.H, lab.a, 0);
+        array2D<float> b(lab.W, lab.H, lab.b, 0);
 
         for (int i = 0; i < n; ++i) {
             auto &r = params->textureBoost.regions[i];
-            EPD(lab, r, scale, multiThread);
+            EPD(&lab, r, scale, multiThread);
             const auto &blend = mask[i];
 
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
 #endif
-            for (int y = 0; y < lab->H; ++y) {
-                for (int x = 0; x < lab->W; ++x) {
-                    float l = lab->L[y][x];
-                    float aa = lab->a[y][x];
-                    float bb = lab->b[y][x];
-                    lab->L[y][x] = intp(blend[y][x], lab->L[y][x], L[y][x]);
-                    lab->a[y][x] = intp(blend[y][x], lab->a[y][x], a[y][x]);
-                    lab->b[y][x] = intp(blend[y][x], lab->b[y][x], b[y][x]);
+            for (int y = 0; y < lab.H; ++y) {
+                for (int x = 0; x < lab.W; ++x) {
+                    float l = lab.L[y][x];
+                    float aa = lab.a[y][x];
+                    float bb = lab.b[y][x];
+                    lab.L[y][x] = intp(blend[y][x], lab.L[y][x], L[y][x]);
+                    lab.a[y][x] = intp(blend[y][x], lab.a[y][x], a[y][x]);
+                    lab.b[y][x] = intp(blend[y][x], lab.b[y][x], b[y][x]);
                     L[y][x] = l;
                     a[y][x] = aa;
                     b[y][x] = bb;
@@ -197,7 +198,7 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb, int offset_x, int offset_y, 
             }
         }
 
-        lab2rgb(*lab, *rgb);
+        lab2rgb(lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

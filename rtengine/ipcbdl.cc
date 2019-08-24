@@ -38,13 +38,15 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
     }
     
     if (params->dirpyrequalizer.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8) {
-        LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-        rgb2lab(*rgb, tmplab);
-        LabImage *lab = &tmplab;
+        // LabImage tmplab(rgb->getWidth(), rgb->getHeight());
+        // rgb2lab(*rgb, tmplab);
+        // LabImage *lab = &tmplab;
+
+        rgb->assignColorSpace(params->icm.workingProfile);
         
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
-            fillPipetteLabMasks(lab, editWhatever, id, multiThread);
+            fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
         }
         
         int n = params->dirpyrequalizer.levels.size();
@@ -53,12 +55,16 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);
-        if (!generateLabMasks(lab, params->dirpyrequalizer.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
-            lab2rgb(*lab, *rgb);
+        if (!generateLabMasks(rgb, params->dirpyrequalizer.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+            // lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
-        array2D<float> L(lab->W, lab->H, lab->L, 0);
+        rgb->setMode(Imagefloat::Mode::YUV, multiThread);        
+        const int W = rgb->getWidth();
+        const int H = rgb->getHeight();
+        
+        array2D<float> Y(W, H, rgb->g.ptrs, 0);
 
         // double mult[6];
         // const double scale_factor = 1.0;//min(1.5 / scale, 1.0);
@@ -69,22 +75,23 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             //     mult[k] = 1.0 + (l.mult[k] - 1.0) * scale_factor;
             // }
             const double threshold = l.threshold / scale;
-            dirpyr_equalizer(lab->L, L, lab->W, lab->H, lab->a, lab->b, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
+            dirpyr_equalizer(rgb->g.ptrs, Y, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
             const auto &blend = mask[i];
 
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
 #endif
-            for (int y = 0; y < lab->H; ++y) {
-                for (int x = 0; x < lab->W; ++x) {
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
                     // float l = lab->L[y][x];
-                    lab->L[y][x] = intp(blend[y][x], L[y][x], lab->L[y][x]);
+                    rgb->g(y, x) = intp(blend[y][x], Y[y][x], rgb->g(y, x));
                     // L[y][x] = l;
                 }
             }
         }
 
-        lab2rgb(*lab, *rgb);
+        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        // lab2rgb(*lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

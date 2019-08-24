@@ -2130,34 +2130,39 @@ double ImProcFunctions::getAutoDistor  (const Glib::ustring &fname, int thumb_si
     }
 }
 
-void ImProcFunctions::rgb2lab (const Imagefloat &src, LabImage &dst, const Glib::ustring &workingSpace)
+void ImProcFunctions::rgb2lab (Imagefloat &src, LabImage &dst, const Glib::ustring &workingSpace)
 {
-    TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix ( workingSpace );
-    const float wp[3][3] = {
-        {static_cast<float> (wprof[0][0]), static_cast<float> (wprof[0][1]), static_cast<float> (wprof[0][2])},
-        {static_cast<float> (wprof[1][0]), static_cast<float> (wprof[1][1]), static_cast<float> (wprof[1][2])},
-        {static_cast<float> (wprof[2][0]), static_cast<float> (wprof[2][1]), static_cast<float> (wprof[2][2])}
-    };
+    src.assignColorSpace(workingSpace);
+    src.toLab(dst, true);
+//     TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix ( workingSpace );
+//     const float wp[3][3] = {
+//         {static_cast<float> (wprof[0][0]), static_cast<float> (wprof[0][1]), static_cast<float> (wprof[0][2])},
+//         {static_cast<float> (wprof[1][0]), static_cast<float> (wprof[1][1]), static_cast<float> (wprof[1][2])},
+//         {static_cast<float> (wprof[2][0]), static_cast<float> (wprof[2][1]), static_cast<float> (wprof[2][2])}
+//     };
 
-    const int W = src.getWidth();
-    const int H = src.getHeight();
+//     const int W = src.getWidth();
+//     const int H = src.getHeight();
 
-#ifdef _OPENMP
-    #pragma omp parallel for schedule(dynamic,16)
-#endif
+// #ifdef _OPENMP
+//     #pragma omp parallel for schedule(dynamic,16)
+// #endif
 
-    for (int i = 0; i < H; i++) {
-        for (int j = 0; j < W; j++) {
-            float X, Y, Z;
-            Color::rgbxyz (src.r (i, j), src.g (i, j), src.b (i, j), X, Y, Z, wp);
-            //convert Lab
-            Color::XYZ2Lab (X, Y, Z, dst.L[i][j], dst.a[i][j], dst.b[i][j]);
-        }
-    }
+//     for (int i = 0; i < H; i++) {
+//         for (int j = 0; j < W; j++) {
+//             float X, Y, Z;
+//             Color::rgbxyz (src.r (i, j), src.g (i, j), src.b (i, j), X, Y, Z, wp);
+//             //convert Lab
+//             Color::XYZ2Lab (X, Y, Z, dst.L[i][j], dst.a[i][j], dst.b[i][j]);
+//         }
+//     }
 }
 
 void ImProcFunctions::lab2rgb (const LabImage &src, Imagefloat &dst, const Glib::ustring &workingSpace)
 {
+    dst.assignColorSpace(workingSpace);
+    dst.assignMode(Imagefloat::Mode::RGB);
+    
     TMatrix wiprof = ICCStore::getInstance()->workingSpaceInverseMatrix ( workingSpace );
     const float wip[3][3] = {
         {static_cast<float> (wiprof[0][0]), static_cast<float> (wiprof[0][1]), static_cast<float> (wiprof[0][2])},

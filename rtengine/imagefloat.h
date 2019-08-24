@@ -25,6 +25,7 @@
 
 #include "imageio.h"
 #include "rtengine.h"
+#include "labimage.h"
 
 namespace rtengine {
 using namespace procparams;
@@ -122,6 +123,11 @@ public:
     void assignColorSpace(const Glib::ustring &space);
     void setMode(Mode mode, bool multithread);
     void setLogEncoding(int base, bool multithread);
+    void assignMode(Mode mode) { mode_ = mode; }
+    void assignLogEncoding(int base) { base_ = base; }
+    void setNormalizedTo1(bool yes) { norm_1_ = yes; }
+
+    void toLab(LabImage &dst, bool multithread);
 
 private:
     void rgb_to_xyz(bool multithread);
@@ -132,6 +138,9 @@ private:
     void yuv_to_xyz(bool multithread);
     void log_to_lin(int base, bool multithread);
     void lin_to_log(int base, bool multithread);
+    void rgb_to_lab(LabImage &dst, bool multithread);
+    void xyz_to_lab(LabImage &dst, bool multithread);
+    void yuv_to_lab(LabImage &dst, bool multithread);
     
     Glib::ustring color_space_;
     Mode mode_;
