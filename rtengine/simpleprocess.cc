@@ -417,15 +417,14 @@ private:
         {
             // LabImage lab(img->getWidth(), img->getHeight());
             // ipf.rgb2lab(*img, lab);
-            ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
+            readyImg = ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
+            delete img;
+            img = nullptr;
         }
 
         if (settings->verbose) {
             printf ("Output profile_: \"%s\"\n", params.icm.outputProfile.c_str());
         }
-
-        delete img;
-        img = nullptr;
 
         if (bwonly) { //force BW r=g=b
             if (settings->verbose) {
