@@ -40,13 +40,16 @@ Imagefloat::Imagefloat():
 {
 }
 
-Imagefloat::Imagefloat (int w, int h):
+Imagefloat::Imagefloat(int w, int h, const Imagefloat *state_from):
     color_space_("sRGB"),
     mode_(Mode::RGB),
     base_(0),
     norm_1_(false)
 {
-    allocate (w, h);
+    allocate(w, h);
+    if (state_from) {
+        state_from->copyState(this);
+    }
 }
 
 Imagefloat::~Imagefloat ()
@@ -175,10 +178,7 @@ Imagefloat *Imagefloat::copy() const
 void Imagefloat::copyTo(Imagefloat *dst) const
 {
     copyData(dst);
-    dst->color_space_ = color_space_;
-    dst->mode_ = mode_;
-    dst->base_ = base_;
-    dst->norm_1_ = norm_1_;
+    copyState(dst);
 }
 
 
@@ -756,13 +756,14 @@ void Imagefloat::yuv_to_xyz(bool multithread)
 
 void Imagefloat::setLogEncoding(int base, bool multithread)
 {
+    base = std::max(base, 0);
+    
     if (base == base_) {
         return;
     }
 
-    if (base <= 0) { // linear
+    if (base == 0) { // linear
         log_to_lin(base_, multithread);
-        base_ = 0;
     } else {
         if (base_ == 0) {
             lin_to_log(base, multithread);
@@ -771,6 +772,7 @@ void Imagefloat::setLogEncoding(int base, bool multithread)
             lin_to_log(base, multithread);
         }
     }
+    base_ = std::max(base, 0);
 }
 
 

@@ -46,8 +46,10 @@ static inline float Lanc (float x, float a)
     }
 }
 
-void ImProcFunctions::Lanczos (const Imagefloat* src, Imagefloat* dst, float scale)
+void ImProcFunctions::Lanczos(Imagefloat* src, Imagefloat* dst, float scale)
 {
+    src->setMode(Imagefloat::Mode::RGB, multiThread);
+    dst->assignMode(Imagefloat::Mode::RGB);
 
     const float delta = 1.0f / scale;
     const float a = 3.0f;

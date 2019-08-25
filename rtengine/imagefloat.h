@@ -40,7 +40,7 @@ class Imagefloat : public IImagefloat, public ImageIO {
 public:
 
     Imagefloat();
-    Imagefloat(int width, int height);
+    Imagefloat(int width, int height, const Imagefloat *state_from=nullptr);
     ~Imagefloat() override;
 
     Imagefloat* copy() const;
@@ -126,6 +126,14 @@ public:
     void assignMode(Mode mode) { mode_ = mode; }
     void assignLogEncoding(int base) { base_ = base; }
     void setNormalizedTo1(bool yes) { norm_1_ = yes; }
+
+    void copyState(Imagefloat *to) const
+    {
+        to->color_space_ = color_space_;
+        to->mode_ = mode_;
+        to->base_ = base_;
+        to->norm_1_ = norm_1_;
+    }
 
     void toLab(LabImage &dst, bool multithread);
 

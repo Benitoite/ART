@@ -248,7 +248,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
     const int H = rgb->getHeight();
     const int W = rgb->getWidth();
 
-    rgb->assignColorSpace(params->icm.workingProfile);
+    //rgb->assignColorSpace(params->icm.workingProfile);
     rgb->setMode(Imagefloat::Mode::YUV, multiThread);
 
 #ifdef _OPENMP
@@ -333,7 +333,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
     }
 
     // lab2rgb(*lab, *rgb);
-    rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+    //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
 
     return false;
 }

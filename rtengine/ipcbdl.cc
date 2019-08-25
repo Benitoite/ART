@@ -42,7 +42,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
         // rgb2lab(*rgb, tmplab);
         // LabImage *lab = &tmplab;
 
-        rgb->assignColorSpace(params->icm.workingProfile);
+        //rgb->assignColorSpace(params->icm.workingProfile);
         
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
@@ -90,7 +90,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             }
         }
 
-        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
         // lab2rgb(*lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);

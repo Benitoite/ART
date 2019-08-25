@@ -262,7 +262,7 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
         return false;
     }
 
-    rgb->assignColorSpace(params->icm.workingProfile);
+    //rgb->assignColorSpace(params->icm.workingProfile);
     rgb->setMode(Imagefloat::Mode::YUV, multiThread);
     float **Y = rgb->g.ptrs;
 
@@ -282,7 +282,7 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
         }
 
         //lab2rgb(*lab, *rgb);
-        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
         return true;
     }
 
@@ -290,7 +290,7 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
 
     if (sharpenParam.method == "rld") {
         deconvsharpening(Y, b2, W, H, sharpenParam, contrast, scale);
-        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
         return false;
     }
 BENCHFUN
@@ -406,7 +406,7 @@ BENCHFUN
     }
 
     //lab2rgb(*lab, *rgb);
-    rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+    //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
     return false;
 }
 

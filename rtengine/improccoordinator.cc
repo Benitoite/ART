@@ -414,7 +414,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         if (needstransform) {
             assert(oprevi);
             Imagefloat *op = oprevi;
-            oprevi = new Imagefloat(pW, pH);
+            oprevi = new Imagefloat(pW, pH, op);
     
             if (needstransform)
                 ipf.transform(op, oprevi, 0, 0, 0, 0, pW, pH, fw, fh,
@@ -667,9 +667,10 @@ void ImProcCoordinator::setScale(int prevscale)
         pH = nH;
 
         orig_prev = new Imagefloat(pW, pH);
+        orig_prev->assignColorSpace(params.icm.workingProfile);
         oprevi = orig_prev;
         for (int i = 0; i < 3; ++i) {
-            bufs_[i] = new Imagefloat(pW, pH);
+            bufs_[i] = new Imagefloat(pW, pH, orig_prev);
         }
         previmg = new Image8(pW, pH);
         workimg = new Image8(pW, pH);
@@ -919,6 +920,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     ppar.exposure.hrmode = procparams::ExposureParams::HR_OFF;
     ppar.icm.inputProfile = "(none)";
     Imagefloat* im = new Imagefloat(fW, fH);
+    im->assignColorSpace(ppar.icm.workingProfile);
     imgsrc->preprocess(ppar.raw, ppar.lensProf, ppar.coarse);
     double dummy = 0.0;
     imgsrc->demosaic(ppar.raw, false, dummy);
@@ -953,7 +955,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     ImProcFunctions ipf(&ppar, true);
 
     if (ipf.needsTransform()) {
-        Imagefloat* trImg = new Imagefloat(fW, fH);
+        Imagefloat* trImg = new Imagefloat(fW, fH, im);
         ipf.transform(im, trImg, 0, 0, 0, 0, fW, fH, fW, fH,
                       imgsrc->getMetaData(), imgsrc->getRotateDegree(), true);
         delete im;
@@ -961,7 +963,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     }
 
     if (params.crop.enabled) {
-        Imagefloat *tmpim = new Imagefloat(params.crop.w, params.crop.h);
+        Imagefloat *tmpim = new Imagefloat(params.crop.w, params.crop.h, im);
         int cx = params.crop.x;
         int cy = params.crop.y;
         int cw = params.crop.w;
@@ -999,7 +1001,7 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     double tmpScale = ipf.resizeScale(&params, fW, fH, imw, imh);
 
     if (tmpScale != 1.0) {
-        Imagefloat* tempImage = new Imagefloat(imw, imh);
+        Imagefloat* tempImage = new Imagefloat(imw, imh, im);
         ipf.resize(im, tempImage, tmpScale);
         delete im;
         im = tempImage;

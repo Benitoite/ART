@@ -53,6 +53,8 @@ void ImProcFunctions::softLight(Imagefloat *rgb)
         return;
     }
 
+    rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+
     const float blend = params->softlight.strength / 100.f;
 
 #ifdef _OPENMP

@@ -189,7 +189,7 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_
 
         Imagefloat working(W, H);
         rgb->normalizeFloatTo1();
-        rgb->assignColorSpace(params->icm.workingProfile);
+        //rgb->assignColorSpace(params->icm.workingProfile);
         rgb->setMode(Imagefloat::Mode::RGB, multiThread);
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);

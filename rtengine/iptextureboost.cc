@@ -150,7 +150,7 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb, int offset_x, int offset_y, 
     }
     
     if (params->textureBoost.enabled) {
-        rgb->assignColorSpace(params->icm.workingProfile);
+        //rgb->assignColorSpace(params->icm.workingProfile);
         
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H4);

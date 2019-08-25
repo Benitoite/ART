@@ -90,7 +90,7 @@ public:
     
     void resize(Imagefloat* src, Imagefloat* dst, float dScale);
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
-    void Lanczos(const Imagefloat* src, Imagefloat* dst, float scale);
+    void Lanczos(Imagefloat *src, Imagefloat *dst, float scale);
 
     void impulsedenoise(Imagefloat *rgb);   //Emil's impulse denoise
 

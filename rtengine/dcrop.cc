@@ -222,7 +222,7 @@ void Crop::update(int todo)
                 f = parent->drcomp_11_dcrop_cache;
                 need_drcomp = false;
             } else {
-                f = new Imagefloat(fw, fh);
+                f = new Imagefloat(fw, fh, origCrop);
                 drCompCrop.reset(f);
                 PreviewProps pp(0, 0, parent->fw, parent->fh, skip);
                 int tr = getCoarseBitMask(params.coarse);
@@ -289,7 +289,7 @@ void Crop::update(int todo)
     // transform
     if (needstransform) {
         if (!transCrop) {
-            transCrop = new Imagefloat(cropw, croph);
+            transCrop = new Imagefloat(cropw, croph, baseCrop);
         }
 
         if (needstransform)
@@ -590,17 +590,19 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
         }
 
         origCrop->allocate(trafw, trafh);  // Resizing the buffer (optimization)
+        origCrop->assignColorSpace(parent->params.icm.workingProfile);
 
         // if transCrop doesn't exist yet, it'll be created where necessary
         if (transCrop) {
             transCrop->allocate(cropw, croph);
+            origCrop->copyState(transCrop);
         }
 
         for (int i = 0; i < 3; ++i) {
             if (bufs_[i]) {
                 delete bufs_[i];
             }
-            bufs_[i] = new Imagefloat(cropw, croph);
+            bufs_[i] = new Imagefloat(cropw, croph, origCrop);
         }
 
         if (!cropImg) {

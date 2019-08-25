@@ -237,8 +237,9 @@ private:
             ipf.denoiseComputeParams(imgsrc, currWB, dnstore, params.denoise);
         }
         
-        img = new Imagefloat (fw, fh);
-        imgsrc->getImage (currWB, tr, img, pp, params.exposure, params.raw);
+        img = new Imagefloat(fw, fh);
+        imgsrc->getImage(currWB, tr, img, pp, params.exposure, params.raw);
+        img->assignColorSpace(params.icm.workingProfile);
 
         if (pl) {
             pl->setProgress (0.50);
@@ -297,7 +298,7 @@ private:
             if (ipf.needsLuminanceOnly()) {
                 trImg = img;
             } else {
-                trImg = new Imagefloat (fw, fh);
+                trImg = new Imagefloat(fw, fh, img);
             }
             ipf.transform(img, trImg, 0, 0, 0, 0, fw, fh, fw, fh,
                           imgsrc->getMetaData(), imgsrc->getRotateDegree(), true);
@@ -366,7 +367,7 @@ private:
             ch = params.crop.h;
 
             if (labResize) { // crop lab data
-                tmpimg = new Imagefloat(cw, ch);
+                tmpimg = new Imagefloat(cw, ch, img);
 
                 for (int row = 0; row < ch; row++) {
                     for (int col = 0; col < cw; col++) {
@@ -387,7 +388,7 @@ private:
             if ((img->getWidth() != imw || img->getHeight() != imh) &&
                 (params.resize.allowUpscaling || (img->getWidth() >= imw && img->getHeight() >= imh))) {
                 // resize image
-                tmpimg = new Imagefloat(imw, imh);
+                tmpimg = new Imagefloat(imw, imh, img);
                 ipf.Lanczos(img, tmpimg, tmpScale);
                 delete img;
                 img = tmpimg;
@@ -445,7 +446,7 @@ private:
 
         if (tmpScale != 1.0 && params.resize.method == "Nearest" &&
             (params.resize.allowUpscaling || (readyImg->getWidth() >= imw && readyImg->getHeight() >= imh))) { // resize rgb data (gamma applied)
-            Imagefloat* tempImage = new Imagefloat (imw, imh);
+            Imagefloat* tempImage = new Imagefloat(imw, imh, readyImg);
             ipf.resize (readyImg, tempImage, tmpScale);
             delete readyImg;
             readyImg = tempImage;
@@ -532,7 +533,7 @@ private:
             oX = cx * scale_factor;
             oY = cy * scale_factor;
 
-            Imagefloat *cropped = new Imagefloat(cw, ch);
+            Imagefloat *cropped = new Imagefloat(cw, ch, img);
 
             for (int row = 0; row < ch; row++) {
                 for (int col = 0; col < cw; col++) {
@@ -550,7 +551,7 @@ private:
 
         // resize image
         if (params.resize.allowUpscaling || (imw <= fw && imh <= fh)) {
-            Imagefloat *resized = new Imagefloat(imw, imh);
+            Imagefloat *resized = new Imagefloat(imw, imh, img);
             ipf.Lanczos(img, resized, scale_factor);
             delete img;
             img = resized;

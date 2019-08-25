@@ -1124,6 +1124,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
 
     Imagefloat* baseImg = resizeTo<Imagefloat> (rwidth, rheight, interp, thumbImg);
+    baseImg->assignColorSpace(params.icm.workingProfile);
 
     if (params.coarse.rotate) {
         baseImg->rotate (params.coarse.rotate);
@@ -1190,7 +1191,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     
     // perform transform
     if (ipf.needsTransform()) {
-        Imagefloat* trImg = new Imagefloat (fw, fh);
+        Imagefloat* trImg = new Imagefloat(fw, fh, baseImg);
         int origFW;
         int origFH;
         double tscale = 0.0;
