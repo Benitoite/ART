@@ -49,10 +49,6 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
         return false;
     }
 
-    // LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-    // rgb2lab(*rgb, tmplab);
-    // LabImage *lab = &tmplab;
-
     if (editWhatever) {
         LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H1);
         fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
@@ -68,7 +64,6 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
     std::vector<array2D<float>> Lmask(n);
 
     if (!generateLabMasks(rgb, params->colorcorrection.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &Lmask, &abmask)) {
-        // lab2rgb(*lab, *rgb);
         return true; // show mask is active, nothing more to do
     }
     
@@ -97,7 +92,6 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
     }
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    // TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
 
     const auto rgb2yuv =
         [=](float r, float g, float b, float &Y, float &u, float &v) -> void
@@ -115,9 +109,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
         [=](float &Y, float &u, float &v, float slope, float offset, float power, float saturation) -> void
         {
             float rgb[3];
-            // bool conv = false;
             if (slope != 1.f || offset != 0.f || power != 1.f) {
-                // conv = true;
                 yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2]);
                 for (int i = 0; i < 3; ++i) {
                     float v = (rgb[i] / 65535.f) * slope + offset;
@@ -128,15 +120,6 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
                 }
                 rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v);
             }
-            // if (saturation != 1.f && Y > 0.f) {
-            //     if (!conv) {
-            //         yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2]);
-            //     }
-            //     for (int i = 0; i < 3; ++i) {
-            //         rgb[i] = max(Y + saturation * (rgb[i] - Y), 0.f);
-            //     }
-            //     rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v);
-            // }
             if (saturation != 1.f) {
                 u *= saturation;
                 v *= saturation;
@@ -199,56 +182,55 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
 //             }
 //         };
 
-// #ifdef __SSE2__
-//     const auto CDL_v =
-//         [=](vfloat &l, vfloat &a, vfloat &b, float slope, float offset, float power, float saturation) -> void
-//         {
-//             if (slope != 1.f || offset != 0.f || power != 1.f || saturation != 1.f) {
-//                 float ll[4];
-//                 float aa[4];
-//                 float bb[4];
-//                 STVFU(ll[0], l);
-//                 STVFU(aa[0], a);
-//                 STVFU(bb[0], b);
-//                 for (int i = 0; i < 4; ++i) {
-//                     CDL(ll[i], aa[i], bb[i], slope, offset, power, saturation);
-//                 }
-//                 l = LVFU(ll[0]);
-//                 a = LVFU(aa[0]);
-//                 b = LVFU(bb[0]);
-//             }
-//         };
+#ifdef __SSE2__
+    const auto CDL_v =
+        [=](vfloat &Y, vfloat &u, vfloat &v, float slope, float offset, float power, float saturation) -> void
+        {
+            if (slope != 1.f || offset != 0.f || power != 1.f || saturation != 1.f) {
+                float YY[4];
+                float uu[4];
+                float vv[4];
+                STVFU(YY[0], Y);
+                STVFU(uu[0], u);
+                STVFU(vv[0], v);
+                for (int i = 0; i < 4; ++i) {
+                    CDL(YY[i], uu[i], vv[i], slope, offset, power, saturation);
+                }
+                Y = LVFU(YY[0]);
+                u = LVFU(uu[0]);
+                v = LVFU(vv[0]);
+            }
+        };
 
-//     const auto chan_v =
-//         [=](vfloat prev_l, vfloat prev_a, vfloat prev_b, vfloat &l, vfloat &a, vfloat &b, int channel) -> void
-//         {
-//             if (channel >= 0) {
-//                 float ll[4];
-//                 float aa[4];
-//                 float bb[4];
-//                 STVFU(ll[0], l);
-//                 STVFU(aa[0], a);
-//                 STVFU(bb[0], b);
-//                 float prev_ll[4];
-//                 float prev_aa[4];
-//                 float prev_bb[4];
-//                 STVFU(prev_ll[0], prev_l);
-//                 STVFU(prev_aa[0], prev_a);
-//                 STVFU(prev_bb[0], prev_b);
-//                 for (int i = 0; i < 4; ++i) {
-//                     chan(prev_ll[i], prev_aa[i], prev_bb[i], ll[i], aa[i], bb[i], channel);
-//                 }
-//                 l = LVFU(ll[0]);
-//                 a = LVFU(aa[0]);
-//                 b = LVFU(bb[0]);
-//             }
-//         };
-// #endif
+    const auto chan_v =
+        [=](vfloat prev_Y, vfloat prev_u, vfloat prev_v, vfloat &Y, vfloat &u, vfloat &v, int channel) -> void
+        {
+            if (channel >= 0) {
+                float YY[4];
+                float uu[4];
+                float vv[4];
+                STVFU(YY[0], Y);
+                STVFU(uu[0], u);
+                STVFU(vv[0], v);
+                float prev_YY[4];
+                float prev_uu[4];
+                float prev_vv[4];
+                STVFU(prev_YY[0], prev_Y);
+                STVFU(prev_uu[0], prev_u);
+                STVFU(prev_vv[0], prev_v);
+                for (int i = 0; i < 4; ++i) {
+                    chan(prev_YY[i], prev_uu[i], prev_vv[i], YY[i], uu[i], vv[i], channel);
+                }
+                Y = LVFU(YY[0]);
+                u = LVFU(uu[0]);
+                v = LVFU(vv[0]);
+            }
+        };
+#endif
 
     const int H = rgb->getHeight();
     const int W = rgb->getWidth();
 
-    //rgb->assignColorSpace(params->icm.workingProfile);
     rgb->setMode(Imagefloat::Mode::YUV, multiThread);
 
 #ifdef _OPENMP
@@ -260,41 +242,36 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
 #endif
         for (int y = 0; y < H; ++y) {
             int x = 0;
-// #ifdef __SSE2__
-//             for (; x < lab->W - 3; x += 4) {
-//                 vfloat lv = LVFU(lab->L[y][x]);
-//                 vfloat av = LVFU(lab->a[y][x]);
-//                 vfloat bv = LVFU(lab->b[y][x]);
+#ifdef __SSE2__
+            for (; x < W - 3; x += 4) {
+                vfloat Yv = LVFU(rgb->g(y, x));
+                vfloat uv = LVFU(rgb->b(y, x));
+                vfloat vv = LVFU(rgb->r(y, x));
 
-//                 for (int i = 0; i < n; ++i) {
-//                     vfloat blendv = LVFU(abmask[i][y][x]);
-//                     vfloat lblendv = LVFU(Lmask[i][y][x]);
-//                     vfloat l_newv = lv;
-//                     vfloat lfv = vmaxf(lv, ZEROV);
-//                     vfloat a_newv = av + lfv * F2V(abca[i]);
-//                     vfloat b_newv = bv + lfv * F2V(abcb[i]);
-//                     CDL_v(l_newv, a_newv, b_newv, slope[i], offset[i], power[i], rs[i]);
-//                     chan_v(lv, av, bv, l_newv, a_newv, b_newv, channel[i]);
-//                     lv = vintpf(lblendv, l_newv, lv);
-//                     av = vintpf(blendv, a_newv, av);
-//                     bv = vintpf(blendv, b_newv, bv);
-//                 }
-//                 STVFU(lab->L[y][x], lv);
-//                 STVFU(lab->a[y][x], av);
-//                 STVFU(lab->b[y][x], bv);
-//             }
-// #endif
+                for (int i = 0; i < n; ++i) {
+                    vfloat blendv = LVFU(abmask[i][y][x]);
+                    vfloat lblendv = LVFU(Lmask[i][y][x]);
+                    vfloat fv = vmaxf(Yv, ZEROV);
+                    vfloat Y_newv = Yv;
+                    vfloat u_newv = uv - fv * F2V(abcb[i]);
+                    vfloat v_newv = vv + fv * F2V(abca[i]);
+
+                    CDL_v(Y_newv, u_newv, v_newv, slope[i], offset[i], power[i], rs[i]);
+                    chan_v(Yv, uv, vv, Y_newv, u_newv, v_newv, channel[i]);
+                    Yv = vintpf(lblendv, Y_newv, Yv);
+                    uv = vintpf(blendv, u_newv, uv);
+                    vv = vintpf(blendv, v_newv, vv);
+                }
+                STVFU(rgb->g(y, x), Yv);
+                STVFU(rgb->b(y, x), uv);
+                STVFU(rgb->r(y, x), vv);
+            }
+#endif
             for (; x < W; ++x) {
-                // float l = lab->L[y][x];
-                // float a = lab->a[y][x];
-                // float b = lab->b[y][x];
                 float Y = rgb->g(y, x);
-                float v = rgb->r(y, x);
                 float u = rgb->b(y, x);
+                float v = rgb->r(y, x);
 
-                // float Y, u, v;
-                // rgb2yuv(r, g, b, Y, u, v);
-                
                 for (int i = 0; i < n; ++i) {
                     float blend = abmask[i][y][x];
                     float lblend = Lmask[i][y][x];
@@ -304,15 +281,6 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
                     float u_new = u - f * abcb[i];
                     float v_new = v + f * abca[i];
 
-                    // float l_new = l;
-                    // float lf = max(l, 0.f);
-                    // float a_new = a + lf * abca[i];
-                    // float b_new = b + lf * abcb[i];
-                    // CDL(l_new, a_new, b_new, slope[i], offset[i], power[i], rs[i]);
-                    // chan(l, a, b, l_new, a_new, b_new, channel[i]);
-                    // l = intp(lblend, l_new, l);
-                    // a = intp(blend, a_new, a);
-                    // b = intp(blend, b_new, b);
                     CDL(Y_new, u_new, v_new, slope[i], offset[i], power[i], rs[i]);
                     chan(Y, u, v, Y_new, u_new, v_new, channel[i]);
                     Y = intp(lblend, Y_new, Y);
@@ -323,17 +291,9 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
                 rgb->g(y, x) = Y;
                 rgb->b(y, x) = u;
                 rgb->r(y, x) = v;
-
-                //yuv2rgb(Y, u, v, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x));
-                // lab->L[y][x] = l;
-                // lab->a[y][x] = a;
-                // lab->b[y][x] = b;
             }
         }
     }
-
-    // lab2rgb(*lab, *rgb);
-    //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
 
     return false;
 }

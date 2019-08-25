@@ -1731,10 +1731,8 @@ void ImProcFunctions::impulsedenoise(Imagefloat *rgb)
     if (params->impulseDenoise.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
 
     {
-        LabImage lab(rgb->getWidth(), rgb->getHeight());
-        rgb2lab(*rgb, lab);
-        impulse_nr(&lab, (float)params->impulseDenoise.thresh / 20.0 );
-        lab2rgb(lab, *rgb);
+        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+        impulse_nr(rgb, (float)params->impulseDenoise.thresh / 20.0 );
     }
 }
 
@@ -1744,10 +1742,7 @@ void ImProcFunctions::defringe(Imagefloat *rgb)
 
     {
         rgb->setMode(Imagefloat::Mode::LAB, multiThread);
-        // LabImage lab(rgb->getWidth(), rgb->getHeight());
-        // rgb2lab(*rgb, lab);
         PF_correct_RT(rgb, params->defringe.radius, params->defringe.threshold);
-        // lab2rgb(lab, *rgb);
     }
 }
 

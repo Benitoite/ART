@@ -31,14 +31,17 @@ using namespace std;
 
 namespace rtengine {
 
-void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
+void ImProcFunctions::impulse_nr (Imagefloat *lab, double thresh)
 {
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     // impulse noise removal
     // local variables
 
-    int width = lab->W;
-    int height = lab->H;
+    const int width = lab->getWidth();
+    const int height = lab->getHeight();
+    float **lab_L = lab->g.ptrs;
+    float **lab_a = lab->r.ptrs;
+    float **lab_b = lab->b.ptrs;
 
     // buffer for the lowpass image
     // float * lpf[height] ALIGNED16;
@@ -52,7 +55,7 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
         impish[i] = impish[i - 1] + width;
     }
 
-    markImpulse(width, height, lab->L, impish, thresh);
+    markImpulse(width, height, lab_L, impish, thresh);
 
 //     //The cleaning algorithm starts here
 
@@ -60,94 +63,6 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
 //     // modified bilateral filter for lowpass image, omitting input pixel; or Gaussian blur
 
     const float eps = 1.0;
-
-// #ifdef _OPENMP
-//     #pragma omp parallel
-// #endif
-//     {
-//         gaussianBlur (lab->L, lpf, width, height, max(2.0, thresh - 1.0));
-//     }
-
-//     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-//     float impthr = max(1.0, 5.5 - thresh);
-//     float impthrDiv24 = impthr / 24.0f;         //Issue 1671: moved the Division outside the loop, impthr can be optimized out too, but I let in the code at the moment
-
-
-// #ifdef _OPENMP
-//     #pragma omp parallel
-// #endif
-//     {
-//         int i1, j1, j;
-//         float hpfabs, hfnbrave;
-// #ifdef __SSE2__
-//         vfloat hfnbravev, hpfabsv;
-//         vfloat impthrDiv24v = F2V( impthrDiv24 );
-// #endif
-// #ifdef _OPENMP
-//         #pragma omp for
-// #endif
-
-//         for (int i = 0; i < height; i++) {
-//             for (j = 0; j < 2; j++) {
-//                 hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
-
-//                 //block average of high pass data
-//                 for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
-//                     for (j1 = 0; j1 <= j + 2; j1++) {
-//                         hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
-//                     }
-
-//                 impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
-//             }
-
-// #ifdef __SSE2__
-
-//             for (; j < width - 5; j += 4) {
-//                 hfnbravev = ZEROV;
-//                 hpfabsv = vabsf(LVFU(lab->L[i][j]) - LVFU(lpf[i][j]));
-
-//                 //block average of high pass data
-//                 for (i1 = max(0, i - 2); i1 <= min(i + 2, height - 1); i1++ ) {
-//                     for (j1 = j - 2; j1 <= j + 2; j1++) {
-//                         hfnbravev += vabsf(LVFU(lab->L[i1][j1]) - LVFU(lpf[i1][j1]));
-//                     }
-//                 }
-
-//                 int mask = _mm_movemask_ps((hfnbravev - hpfabsv) * impthrDiv24v - hpfabsv);
-//                 impish[i][j] = (mask & 1);
-//                 impish[i][j + 1] = ((mask & 2) >> 1);
-//                 impish[i][j + 2] = ((mask & 4) >> 2);
-//                 impish[i][j + 3] = ((mask & 8) >> 3);
-//             }
-
-// #endif
-
-//             for (; j < width - 2; j++) {
-//                 hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
-
-//                 //block average of high pass data
-//                 for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
-//                     for (j1 = j - 2; j1 <= j + 2; j1++) {
-//                         hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
-//                     }
-
-//                 impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
-//             }
-
-//             for (; j < width; j++) {
-//                 hpfabs = fabs(lab->L[i][j] - lpf[i][j]);
-
-//                 //block average of high pass data
-//                 for (i1 = max(0, i - 2), hfnbrave = 0; i1 <= min(i + 2, height - 1); i1++ )
-//                     for (j1 = j - 2; j1 < width; j1++) {
-//                         hfnbrave += fabs(lab->L[i1][j1] - lpf[i1][j1]);
-//                     }
-
-//                 impish[i][j] = (hpfabs > ((hfnbrave - hpfabs) * impthrDiv24));
-//             }
-//         }
-//     }
 
 //now impulsive values have been identified
 
@@ -182,17 +97,17 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
                             continue;
                         }
 
-                        dirwt = 1 / (SQR(lab->L[i1][j1] - lab->L[i][j]) + eps); //use more sophisticated rangefn???
-                        wtdsum[0] += dirwt * lab->L[i1][j1];
-                        wtdsum[1] += dirwt * lab->a[i1][j1];
-                        wtdsum[2] += dirwt * lab->b[i1][j1];
+                        dirwt = 1 / (SQR(lab_L[i1][j1] - lab_L[i][j]) + eps); //use more sophisticated rangefn???
+                        wtdsum[0] += dirwt * lab_L[i1][j1];
+                        wtdsum[1] += dirwt * lab_a[i1][j1];
+                        wtdsum[2] += dirwt * lab_b[i1][j1];
                         norm += dirwt;
                     }
 
                 if (norm) {
-                    lab->L[i][j] = wtdsum[0] / norm; //low pass filter
-                    lab->a[i][j] = wtdsum[1] / norm; //low pass filter
-                    lab->b[i][j] = wtdsum[2] / norm; //low pass filter
+                    lab_L[i][j] = wtdsum[0] / norm; //low pass filter
+                    lab_a[i][j] = wtdsum[1] / norm; //low pass filter
+                    lab_b[i][j] = wtdsum[2] / norm; //low pass filter
                 }
             }
 
@@ -210,17 +125,17 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
                             continue;
                         }
 
-                        dirwt = 1 / (SQR(lab->L[i1][j1] - lab->L[i][j]) + eps); //use more sophisticated rangefn???
-                        wtdsum[0] += dirwt * lab->L[i1][j1];
-                        wtdsum[1] += dirwt * lab->a[i1][j1];
-                        wtdsum[2] += dirwt * lab->b[i1][j1];
+                        dirwt = 1 / (SQR(lab_L[i1][j1] - lab_L[i][j]) + eps); //use more sophisticated rangefn???
+                        wtdsum[0] += dirwt * lab_L[i1][j1];
+                        wtdsum[1] += dirwt * lab_a[i1][j1];
+                        wtdsum[2] += dirwt * lab_b[i1][j1];
                         norm += dirwt;
                     }
 
                 if (norm) {
-                    lab->L[i][j] = wtdsum[0] / norm; //low pass filter
-                    lab->a[i][j] = wtdsum[1] / norm; //low pass filter
-                    lab->b[i][j] = wtdsum[2] / norm; //low pass filter
+                    lab_L[i][j] = wtdsum[0] / norm; //low pass filter
+                    lab_a[i][j] = wtdsum[1] / norm; //low pass filter
+                    lab_b[i][j] = wtdsum[2] / norm; //low pass filter
                 }
             }
 
@@ -238,17 +153,17 @@ void ImProcFunctions::impulse_nr (LabImage* lab, double thresh)
                             continue;
                         }
 
-                        dirwt = 1 / (SQR(lab->L[i1][j1] - lab->L[i][j]) + eps); //use more sophisticated rangefn???
-                        wtdsum[0] += dirwt * lab->L[i1][j1];
-                        wtdsum[1] += dirwt * lab->a[i1][j1];
-                        wtdsum[2] += dirwt * lab->b[i1][j1];
+                        dirwt = 1 / (SQR(lab_L[i1][j1] - lab_L[i][j]) + eps); //use more sophisticated rangefn???
+                        wtdsum[0] += dirwt * lab_L[i1][j1];
+                        wtdsum[1] += dirwt * lab_a[i1][j1];
+                        wtdsum[2] += dirwt * lab_b[i1][j1];
                         norm += dirwt;
                     }
 
                 if (norm) {
-                    lab->L[i][j] = wtdsum[0] / norm; //low pass filter
-                    lab->a[i][j] = wtdsum[1] / norm; //low pass filter
-                    lab->b[i][j] = wtdsum[2] / norm; //low pass filter
+                    lab_L[i][j] = wtdsum[0] / norm; //low pass filter
+                    lab_a[i][j] = wtdsum[1] / norm; //low pass filter
+                    lab_b[i][j] = wtdsum[2] / norm; //low pass filter
                 }
             }
         }

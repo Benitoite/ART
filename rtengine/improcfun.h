@@ -206,7 +206,7 @@ private:
 
     void luminanceCurve(LabImage* lold, LabImage* lnew, LUTf &curve);
 
-    void impulse_nr(LabImage* lab, double thresh);
+    void impulse_nr(Imagefloat *lab, double thresh);
 
     void dirpyrdenoise(LabImage* src);    //Emil's pyramid denoise
 
