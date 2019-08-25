@@ -415,9 +415,9 @@ private:
 
         Imagefloat* readyImg = nullptr;
         {
-            LabImage lab(img->getWidth(), img->getHeight());
-            ipf.rgb2lab(*img, lab);
-            ipf.lab2rgbOut(&lab, cx, cy, cw, ch, params.icm);
+            // LabImage lab(img->getWidth(), img->getHeight());
+            // ipf.rgb2lab(*img, lab);
+            ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
         }
 
         if (settings->verbose) {

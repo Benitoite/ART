@@ -38,6 +38,8 @@ Imagefloat::Imagefloat():
     base_(0),
     norm_1_(false)
 {
+    ws_[0][0] = RT_INFINITY_F;
+    iws_[0][0] = RT_INFINITY_F;
 }
 
 Imagefloat::Imagefloat(int w, int h, const Imagefloat *state_from):
@@ -47,6 +49,8 @@ Imagefloat::Imagefloat(int w, int h, const Imagefloat *state_from):
     norm_1_(false)
 {
     allocate(w, h);
+    ws_[0][0] = RT_INFINITY_F;
+    iws_[0][0] = RT_INFINITY_F;
     if (state_from) {
         state_from->copyState(this);
     }
@@ -59,7 +63,6 @@ Imagefloat::~Imagefloat ()
 // Call this method to handle floating points input values of different size
 void Imagefloat::setScanline (int row, unsigned char* buffer, int bps, unsigned int numSamples)
 {
-
     if (data == nullptr) {
         return;
     }
@@ -179,6 +182,17 @@ void Imagefloat::copyTo(Imagefloat *dst) const
 {
     copyData(dst);
     copyState(dst);
+}
+
+
+void Imagefloat::copyState(Imagefloat *to) const
+{
+    to->color_space_ = color_space_;
+    to->mode_ = mode_;
+    to->base_ = base_;
+    to->norm_1_ = norm_1_;
+    to->ws_[0][0] = RT_INFINITY_F;
+    to->iws_[0][0] = RT_INFINITY_F;
 }
 
 
@@ -529,7 +543,7 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform)
 }
 
 // Parallelized transformation; create transform with cmsFLAGS_NOCACHE!
-void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const LabImage &labImage, int cx, int cy)
+void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy)
 {
     // LittleCMS cannot parallelize planar Lab float images
     // so build temporary buffers to allow multi processor execution
@@ -550,9 +564,9 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const LabImage &labI
             float *pLab, *pL, *pa, *pb;
 
             pLab= bufferLab.data;
-            pL = labImage.L[y] + cx;
-            pa = labImage.a[y] + cx;
-            pb = labImage.b[y] + cx;
+            pL = labImage->g(y) + cx;
+            pa = labImage->r(y) + cx;
+            pb = labImage->b(y) + cx;
 
             for (int x = 0; x < width; x++) {
                 *(pLab++) = *(pL++)  / 327.68f;
@@ -579,7 +593,26 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const LabImage &labI
 
 void Imagefloat::assignColorSpace(const Glib::ustring &space)
 {
-    color_space_ = space;
+    if (color_space_ != space) {
+        color_space_ = space;
+        ws_[0][0] = RT_INFINITY_F;
+        iws_[0][0] = RT_INFINITY_F;
+    }
+}
+
+
+inline void Imagefloat::get_ws()
+{
+    if (!std::isfinite(ws_[0][0])) {
+        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
+        TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(color_space_);
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                ws_[i][j] = float(ws[i][j]);
+                iws_[i][j] = float(iws[i][j]);
+            }
+        }
+    }
 }
 
 
@@ -596,27 +629,38 @@ void Imagefloat::setMode(Mode mode, bool multithread)
     case Mode::RGB:
         if (mode == Mode::XYZ) {
             rgb_to_xyz(multithread);
-        } else {
-            assert(mode == Mode::YUV);
+        } else if (mode == Mode::YUV) {
             rgb_to_yuv(multithread);
+        } else {
+            rgb_to_lab(multithread);
         }
         break;
     case Mode::XYZ:
         if (mode == Mode::RGB) {
             xyz_to_rgb(multithread);
-        } else {
-            assert(mode == Mode::YUV);
+        } else if (mode == Mode::YUV) {
             xyz_to_yuv(multithread);
+        } else {
+            xyz_to_lab(multithread);
         }
         break;
     case Mode::YUV:
         if (mode == Mode::RGB) {
             yuv_to_rgb(multithread);
-        } else {
-            assert(mode == Mode::XYZ);
+        } else if (mode == Mode::XYZ) {
             yuv_to_xyz(multithread);
+        } else {
+            yuv_to_lab(multithread);
         }
         break;
+    case Mode::LAB:
+        if (mode == Mode::RGB) {
+            lab_to_rgb(multithread);
+        } else if (mode == Mode::XYZ) {
+            lab_to_xyz(multithread);
+        } else {
+            lab_to_yuv(multithread);
+        }
     }
     
     mode_ = mode;
@@ -640,9 +684,7 @@ inline void get_ws(TMatrix ws, float out[3][3])
 
 void Imagefloat::rgb_to_xyz(bool multithread)
 {
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
+    get_ws();
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
@@ -650,7 +692,7 @@ void Imagefloat::rgb_to_xyz(bool multithread)
     for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
         for (int x = 0; x < width; ++x) {
             float X, Y, Z;
-            Color::rgbxyz(r(y, x), g(y, x), b(y, x), X, Y, Z, ws);
+            Color::rgbxyz(r(y, x), g(y, x), b(y, x), X, Y, Z, ws_);
             r(y, x) = X;
             g(y, x) = Y;
             b(y, x) = Z;
@@ -661,16 +703,14 @@ void Imagefloat::rgb_to_xyz(bool multithread)
 
 void Imagefloat::rgb_to_yuv(bool multithread)
 {
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
+    get_ws();
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
         for (int x = 0; x < width; ++x) {
-            Color::rgb2yuv(r(y, x), g(y, x), b(y, x), g(y, x), b(y, x), r(y, x), ws);
+            Color::rgb2yuv(r(y, x), g(y, x), b(y, x), g(y, x), b(y, x), r(y, x), ws_);
         }
     }
 }
@@ -678,9 +718,7 @@ void Imagefloat::rgb_to_yuv(bool multithread)
 
 void Imagefloat::xyz_to_rgb(bool multithread)
 {
-    TMatrix dws = ICCStore::getInstance()->workingSpaceInverseMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
+    get_ws();
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
@@ -688,7 +726,7 @@ void Imagefloat::xyz_to_rgb(bool multithread)
     for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
         for (int x = 0; x < width; ++x) {
             float R, G, B;
-            Color::xyz2rgb(r(y, x), g(y, x), b(y, x), R, G, B, ws);
+            Color::xyz2rgb(r(y, x), g(y, x), b(y, x), R, G, B, iws_);
             r(y, x) = R;
             g(y, x) = G;
             b(y, x) = B;
@@ -699,9 +737,7 @@ void Imagefloat::xyz_to_rgb(bool multithread)
 
 void Imagefloat::xyz_to_yuv(bool multithread)
 {
-    TMatrix dws = ICCStore::getInstance()->workingSpaceInverseMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
+    get_ws();
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
@@ -710,7 +746,7 @@ void Imagefloat::xyz_to_yuv(bool multithread)
         for (int x = 0; x < width; ++x) {
             float R, G, B;
             float Y = g(y, x);
-            Color::xyz2rgb(r(y, x), Y, b(y, x), R, G, B, ws);
+            Color::xyz2rgb(r(y, x), Y, b(y, x), R, G, B, iws_);
             r(y, x) = R - Y;
             b(y, x) = B - Y;
         }
@@ -720,16 +756,14 @@ void Imagefloat::xyz_to_yuv(bool multithread)
 
 void Imagefloat::yuv_to_rgb(bool multithread)
 {
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
+    get_ws();
     
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
         for (int x = 0; x < width; ++x) {
-            Color::yuv2rgb(g(y, x), b(y, x), r(y, x), r(y, x), g(y, x), b(y, x), ws);
+            Color::yuv2rgb(g(y, x), b(y, x), r(y, x), r(y, x), g(y, x), b(y, x), ws_);
         }
     }
 }
@@ -737,9 +771,7 @@ void Imagefloat::yuv_to_rgb(bool multithread)
 
 void Imagefloat::yuv_to_xyz(bool multithread)
 {
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
+    get_ws();
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
@@ -747,8 +779,8 @@ void Imagefloat::yuv_to_xyz(bool multithread)
     for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
         for (int x = 0; x < width; ++x) {
             float R, G, B;
-            Color::yuv2rgb(g(y, x), b(y, x), r(y, x), R, G, B, ws);
-            Color::rgbxyz(R, G, B, r(y, x), g(y, x), b(y, x), ws);
+            Color::yuv2rgb(g(y, x), b(y, x), r(y, x), R, G, B, ws_);
+            Color::rgbxyz(R, G, B, r(y, x), g(y, x), b(y, x), ws_);
         }
     }
 }
@@ -846,71 +878,162 @@ void Imagefloat::lin_to_log(int base, bool multithread)
 
 void Imagefloat::toLab(LabImage &dst, bool multithread)
 {
+    setMode(Mode::LAB, multithread);
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            dst.L[y][x] = g(y, x);
+            dst.a[y][x] = r(y, x);
+            dst.b[y][x] = b(y, x);
+        }
+    }
+}
+
+
+void Imagefloat::rgb_to_lab(bool multithread)
+{
+    get_ws();
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            rgb_to_lab(y, x, g(y, x), r(y, x), b(y, x));
+        }
+    }
+}
+
+
+inline void Imagefloat::rgb_to_lab(int y, int x, float &L, float &a, float &b)
+{
+    float X, Y, Z;
+    Color::rgbxyz(this->r(y, x), this->g(y, x), this->b(y, x), X, Y, Z, ws_);
+    Color::XYZ2Lab(X, Y, Z, L, a, b);
+}
+
+
+void Imagefloat::xyz_to_lab(bool multithread)
+{
+    get_ws();
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            xyz_to_lab(y, x, g(y, x), r(y, x), b(y, x));
+        }
+    }
+}
+
+
+inline void Imagefloat::xyz_to_lab(int y, int x, float &L, float &a, float &b)
+{
+    Color::XYZ2Lab(this->r(y, x), this->g(y, x), this->b(y, x), L, a, b);
+}
+
+
+void Imagefloat::yuv_to_lab(bool multithread)
+{
+    get_ws();
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            yuv_to_lab(y, x, g(y, x), r(y, x), b(y, x));
+        }
+    }
+}
+
+
+inline void Imagefloat::yuv_to_lab(int y, int x, float &L, float &a, float &b)
+{
+    float R, G, B;
+    float X, Y, Z;
+    Color::yuv2rgb(this->g(y, x), this->b(y, x), this->r(y, x), R, G, B, ws_);
+    Color::rgbxyz(R, G, B, X, Y, Z, ws_);
+    Color::XYZ2Lab(X, Y, Z, L, a, b);
+}
+
+
+void Imagefloat::lab_to_rgb(bool multithread)
+{
+    get_ws();
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        float X, Y, Z;
+        for (int x = 0; x < width; ++x) {
+            Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), X, Y, Z);
+            Color::xyz2rgb(X, Y, Z, this->r(y, x), this->g(y, x), this->b(y, x), iws_);
+        }
+    }
+}
+
+
+void Imagefloat::lab_to_xyz(bool multithread)
+{
+    get_ws();
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), this->r(y, x), this->g(y, x), this->b(y, x));
+        }
+    }
+}
+
+
+void Imagefloat::lab_to_yuv(bool multithread)
+{
+    get_ws();
+
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#endif
+    for (int y = 0; y < height; ++y) {
+        float X, Y, Z;
+        float R, G, B;
+        for (int x = 0; x < width; ++x) {
+            Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), X, Y, Z);
+            Color::xyz2rgb(X, Y, Z, R, G, B, iws_);
+            this->g(y, x) = Y;
+            this->b(y, x) = B - Y;
+            this->r(y, x) = R - Y;
+        }
+    }
+}
+
+
+void Imagefloat::getLab(int y, int x, float &L, float &a, float &b)
+{
+    get_ws();
     switch (mode_) {
     case Mode::RGB:
-        rgb_to_lab(dst, multithread);
+        rgb_to_lab(y, x, L, a, b);
         break;
     case Mode::XYZ:
-        xyz_to_lab(dst, multithread);
+        xyz_to_lab(y, x, L, a, b);
         break;
     case Mode::YUV:
-        yuv_to_lab(dst, multithread);
+        yuv_to_lab(y, x, L, a, b);
+        break;
+    default:
+        L = this->g(y, x);
+        a = this->r(y, x);
+        b = this->b(y, x);
         break;
     }
 }
-
-
-void Imagefloat::rgb_to_lab(LabImage &dst, bool multithread)
-{
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
-
-#ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
-#endif
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            float X, Y, Z;
-            Color::rgbxyz(r(i, j), g(i, j), b(i, j), X, Y, Z, ws);
-            Color::XYZ2Lab(X, Y, Z, dst.L[i][j], dst.a[i][j], dst.b[i][j]);
-        }
-    }
-}
-
-
-void Imagefloat::xyz_to_lab(LabImage &dst, bool multithread)
-{
-#ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
-#endif
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            Color::XYZ2Lab(r(i, j), g(i, j), b(i, j), dst.L[i][j], dst.a[i][j], dst.b[i][j]);
-        }
-    }
-}
-
-
-void Imagefloat::yuv_to_lab(LabImage &dst, bool multithread)
-{
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(color_space_);
-    float ws[3][3];
-    get_ws(dws, ws);
-
-#ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
-#endif
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            float X, Y, Z;
-            float R, G, B;
-            Color::yuv2rgb(g(i, j), b(i, j), r(i, j), R, G, B, ws);
-            Color::rgbxyz(R, G, B, X, Y, Z, ws);
-            Color::XYZ2Lab(X, Y, Z, dst.L[i][j], dst.a[i][j], dst.b[i][j]);
-        }
-    }
-}
-
 
 } // namespace rtengine

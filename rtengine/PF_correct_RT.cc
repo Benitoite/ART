@@ -37,11 +37,10 @@
 #include "jaggedarray.h"
 #include "StopWatch.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
 // Defringe in Lab mode
-void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
+void ImProcFunctions::PF_correct_RT(Imagefloat *lab, double radius, int thresh)
 {
     BENCHFUN
     std::unique_ptr<FlatCurve> chCurve;
@@ -49,7 +48,7 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
         chCurve.reset(new FlatCurve(params->defringe.huecurve));
     }
 
-    const int width = lab->W, height = lab->H;
+    const int width = lab->getWidth(), height = lab->getHeight();
 
     // temporary array to store chromaticity
     const std::unique_ptr<float[]> fringe(new float[width * height]);
@@ -63,8 +62,8 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
     #pragma omp parallel
 #endif
     {
-        gaussianBlur(lab->a, tmpa, width, height, radius);
-        gaussianBlur(lab->b, tmpb, width, height, radius);
+        gaussianBlur(lab->r.ptrs, tmpa, width, height, radius);
+        gaussianBlur(lab->b.ptrs, tmpb, width, height, radius);
 
 #ifdef _OPENMP
         #pragma omp for reduction(+:chromave) schedule(dynamic,16)
@@ -78,11 +77,11 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
                 int k = 0;
 
                 for (; k < width - 3; k += 4) {
-                    STVFU(fringe[i * width + k], xatan2f(LVFU(lab->b[i][k]), LVFU(lab->a[i][k])));
+                    STVFU(fringe[i * width + k], xatan2f(LVFU(lab->b(i, k)), LVFU(lab->r(i, k))));
                 }
 
                 for (; k < width; k++) {
-                    fringe[i * width + k] = xatan2f(lab->b[i][k], lab->a[i][k]);
+                    fringe[i * width + k] = xatan2f(lab->b(i, k), lab->r(i, k));
                 }
             }
 
@@ -96,7 +95,7 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
                     const float HH = fringe[i * width + j];
 #else
                     // no precalculated values without SSE => calculate
-                    const float HH = xatan2f(lab->b[i][j], lab->a[i][j]);
+                    const float HH = xatan2f(lab->b(i, j), lab->r(i, j));
 #endif
                     float chparam = chCurve->getVal((Color::huelab_to_huehsv2(HH))) - 0.5f; // get C=f(H)
 
@@ -107,7 +106,7 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
                     chromaChfactor = SQR(1.f + chparam);
                 }
 
-                const float chroma = chromaChfactor * (SQR(lab->a[i][j] - tmpa[i][j]) + SQR(lab->b[i][j] - tmpb[i][j])); // modulate chroma function hue
+                const float chroma = chromaChfactor * (SQR(lab->r(i, j) - tmpa[i][j]) + SQR(lab->b(i, j) - tmpb[i][j])); // modulate chroma function hue
                 chromave += chroma;
                 fringe[i * width + j] = chroma;
             }
@@ -151,13 +150,13 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
                         for (int j1 = 0; j1 < j + halfwin; j1++) {
                             // neighbourhood average of pixels weighted by chrominance
                             const float wt = fringe[i1 * width + j1];
-                            atot += wt * lab->a[i1][j1];
-                            btot += wt * lab->b[i1][j1];
+                            atot += wt * lab->r(i1, j1);
+                            btot += wt * lab->b(i1, j1);
                             norm += wt;
                         }
 
-                    lab->a[i][j] = atot / norm;
-                    lab->b[i][j] = btot / norm;
+                    lab->r(i, j) = atot / norm;
+                    lab->b(i, j) = btot / norm;
                 }
             }
 
@@ -171,13 +170,13 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
                         for (int j1 = j - halfwin + 1; j1 < j + halfwin; j1++) {
                             // neighbourhood average of pixels weighted by chrominance
                             const float wt = fringe[i1 * width + j1];
-                            atot += wt * lab->a[i1][j1];
-                            btot += wt * lab->b[i1][j1];
+                            atot += wt * lab->r(i1, j1);
+                            btot += wt * lab->b(i1, j1);
                             norm += wt;
                         }
 
-                    lab->a[i][j] = atot / norm;
-                    lab->b[i][j] = btot / norm;
+                    lab->r(i, j) = atot / norm;
+                    lab->b(i, j) = btot / norm;
                 }
             }
 
@@ -191,348 +190,17 @@ void ImProcFunctions::PF_correct_RT(LabImage * lab, double radius, int thresh)
                         for (int j1 = j - halfwin + 1; j1 < width; j1++) {
                             // neighbourhood average of pixels weighted by chrominance
                             const float wt = fringe[i1 * width + j1];
-                            atot += wt * lab->a[i1][j1];
-                            btot += wt * lab->b[i1][j1];
+                            atot += wt * lab->r(i1, j1);
+                            btot += wt * lab->b(i1, j1);
                             norm += wt;
                         }
 
-                    lab->a[i][j] = atot / norm;
-                    lab->b[i][j] = btot / norm;
+                    lab->r(i, j) = atot / norm;
+                    lab->b(i, j) = btot / norm;
                 }
             }
         } // end of ab channel averaging
     }
 }
 
-// CbDL reduce artifacts
-void ImProcFunctions::BadpixelsLab(LabImage * lab, double radius, int thresh, float chrom)
-{
-    BENCHFUN
-
-    if (radius < 0.25) { // for gauss sigma less than 0.25 gaussianblur() just calls memcpy => nothing to do here
-        return;
-    }
-
-    const int halfwin = std::ceil(2 * radius) + 1;
-
-    const int width = lab->W, height = lab->H;
-
-    constexpr float eps = 1.f;
-
-    JaggedArray<float> tmL(width, height);
-
-    const std::unique_ptr<float[]> badpix(new float[width * height]);
-
-    if (radius >= 0.5) { // for gauss sigma less than 0.25 gaussianblur() just calls memcpy => nothing to do here
-        //luma badpixels
-        // for bad pixels in L channel we need 0 / != 0 information. Use 1 byte per pixel instead of 4 to reduce memory pressure
-        uint8_t *badpixb = reinterpret_cast<uint8_t*>(badpix.get());
-        constexpr float sh_thr = 4.5f; // low value for luma L to avoid artifacts
-        constexpr float shthr = sh_thr / 24.0f; // divide by 24 because we are using a 5x5 grid and centre point is excluded from summation
-
-#ifdef _OPENMP
-        #pragma omp parallel
-#endif
-        {
-            // blur L channel
-            gaussianBlur(lab->L, tmL, width, height, radius / 2.0); // low value to avoid artifacts
-
-#ifdef __SSE2__
-            const vfloat shthrv = F2V(shthr);
-#endif
-#ifdef _OPENMP
-            #pragma omp for
-#endif
-
-            for (int i = 0; i < height; i++) {
-                int j = 0;
-                for (; j < 2; j++) {
-                    const float shfabs = std::fabs(lab->L[i][j] - tmL[i][j]);
-                    float shmed = 0.f;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = 0; j1 <= j + 2; j1++) {
-                            shmed += std::fabs(lab->L[i1][j1] - tmL[i1][j1]);
-                        }
-                    }
-                    badpixb[i * width + j] = shfabs > ((shmed - shfabs) * shthr);
-                }
-
-#ifdef __SSE2__
-
-                for (; j < width - 5; j += 4) {
-                    const vfloat shfabsv = vabsf(LVFU(lab->L[i][j]) - LVFU(tmL[i][j]));
-                    vfloat shmedv = ZEROV;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = j - 2; j1 <= j + 2; j1++) {
-                            shmedv += vabsf(LVFU(lab->L[i1][j1]) - LVFU(tmL[i1][j1]));
-                        }
-                    }
-                    uint8_t mask = _mm_movemask_ps((vfloat)vmaskf_gt(shfabsv, (shmedv - shfabsv) * shthrv));
-                    badpixb[i * width + j] = mask & 1;
-                    badpixb[i * width + j + 1] = mask & 2;
-                    badpixb[i * width + j + 2] = mask & 4;
-                    badpixb[i * width + j + 3] = mask & 8;
-                }
-#endif
-                for (; j < width - 2; j++) {
-                    const float shfabs = std::fabs(lab->L[i][j] - tmL[i][j]);
-                    float shmed = 0.f;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = j - 2; j1 <= j + 2; j1++) {
-                            shmed += std::fabs(lab->L[i1][j1] - tmL[i1][j1]);
-                        }
-                    }
-                    badpixb[i * width + j] = shfabs > ((shmed - shfabs) * shthr);
-                }
-
-                for (; j < width; j++) {
-                    const float shfabs = std::fabs(lab->L[i][j] - tmL[i][j]);
-                    float shmed = 0.f;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = j - 2; j1 < width; j1++) {
-                            shmed += std::fabs(lab->L[i1][j1] - tmL[i1][j1]);
-                        }
-                    }
-                    badpixb[i * width + j] = shfabs > ((shmed - shfabs) * shthr);
-                }
-            }
-        }
-
-#ifdef _OPENMP
-        #pragma omp for schedule(dynamic,16)
-#endif
-
-        for (int i = 0; i < height; i++) {
-            int j = 0;
-            for (; j < 2; j++) {
-                if (badpixb[i * width + j]) {
-                    float norm = 0.f, shsum = 0.f, sum = 0.f, tot = 0.f;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = 0; j1 <= j + 2; j1++) {
-                            if (!badpixb[i1 * width + j1]) {
-                                sum += lab->L[i1][j1];
-                                tot += 1.f;
-                                const float dirsh = 1.f / (SQR(lab->L[i1][j1] - lab->L[i][j]) + eps);
-                                shsum += dirsh * lab->L[i1][j1];
-                                norm += dirsh;
-                            }
-                        }
-                    }
-                    if (norm > 0.f) {
-                        lab->L[i][j] = shsum / norm;
-                    } else if (tot > 0.f) {
-                        lab->L[i][j] = sum / tot;
-                    }
-                }
-            }
-
-            for (; j < width - 2; j++) {
-                if (badpixb[i * width + j]) {
-                    float norm = 0.f, shsum = 0.f, sum = 0.f, tot = 0.f;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = j - 2; j1 <= j + 2; j1++) {
-                            if (!badpixb[i1 * width + j1]) {
-                                sum += lab->L[i1][j1];
-                                tot += 1.f;
-                                const float dirsh = 1.f / (SQR(lab->L[i1][j1] - lab->L[i][j]) + eps);
-                                shsum += dirsh * lab->L[i1][j1];
-                                norm += dirsh;
-                            }
-                        }
-                    }
-                    if (norm > 0.f) {
-                        lab->L[i][j] = shsum / norm;
-                    } else if (tot > 0.f) {
-                        lab->L[i][j] = sum / tot;
-                    }
-                }
-            }
-
-            for (; j < width; j++) {
-                if (badpixb[i * width + j]) {
-                    float norm = 0.f, shsum = 0.f, sum = 0.f, tot = 0.f;
-
-                    for (int i1 = std::max(0, i - 2); i1 <= std::min(i + 2, height - 1); i1++) {
-                        for (int j1 = j - 2; j1 < width; j1++) {
-                            if (!badpixb[i1 * width + j1]) {
-                                sum += lab->L[i1][j1];
-                                tot += 1.f;
-                                const float dirsh = 1.f / (SQR(lab->L[i1][j1] - lab->L[i][j]) + eps);
-                                shsum += dirsh * lab->L[i1][j1];
-                                norm += dirsh;
-                            }
-                        }
-                    }
-                    if (norm > 0.f) {
-                        lab->L[i][j] = shsum / norm;
-                    } else if (tot > 0.f) {
-                        lab->L[i][j] = sum / tot;
-                    }
-                }
-            }
-        }
-    } // end luma badpixels
-
-    float** const tmaa = tmL; // reuse tmL buffer
-    JaggedArray<float> tmbb(width, height);
-
-#ifdef _OPENMP
-    #pragma omp parallel
-#endif
-    {
-        // blur chroma a and b
-        gaussianBlur(lab->a, tmaa, width, height, radius);
-        gaussianBlur(lab->b, tmbb, width, height, radius);
-    }
-
-    // begin chroma badpixels
-    double chrommed = 0.0; // use double precision for large summations
-
-#ifdef _OPENMP
-    #pragma omp parallel for reduction(+:chrommed)
-#endif
-
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            const float chroma = SQR(lab->a[i][j] - tmaa[i][j]) + SQR(lab->b[i][j] - tmbb[i][j]);
-            chrommed += chroma;
-            badpix[i * width + j] = chroma;
-        }
-    }
-
-    chrommed /= height * width;
-
-    if (chrommed > 0.0) {
-    // now as chrommed is calculated, we postprocess badpix to reduce the number of divisions in future
-
-#ifdef _OPENMP
-        #pragma omp parallel
-#endif
-        {
-#ifdef __SSE2__
-            const vfloat chrommedv = F2V(chrommed);
-            const vfloat onev = F2V(1.f);
-#endif
-#ifdef _OPENMP
-            #pragma omp for
-#endif
-
-            for (int i = 0; i < height; i++) {
-                int j = 0;
-#ifdef __SSE2__
-                for (; j < width - 3; j += 4) {
-                    STVFU(badpix[i * width + j], onev / (LVFU(badpix[i * width + j]) + chrommedv));
-                }
-#endif
-                for (; j < width; j++) {
-                    badpix[i * width + j] = 1.f / (badpix[i * width + j] + chrommed);
-                }
-            }
-        }
-
-        const float threshfactor = 1.f / ((thresh * chrommed) / 33.f + chrommed);
-
-        chrom *= 327.68f;
-        chrom *= chrom;
-
-#ifdef _OPENMP
-        #pragma omp parallel for schedule(dynamic,16)
-#endif
-
-        for (int i = 0; i < height; i++) {
-            int j = 0;
-            for (; j < halfwin; j++) {
-                if (badpix[i * width + j] < threshfactor) {
-                    float atot = 0.f, btot = 0.f, norm = 0.f;
-
-                    for (int i1 = std::max(0, i - halfwin + 1); i1 < std::min(height, i + halfwin); i1++) {
-                        for (int j1 = 0; j1 < j + halfwin; j1++) {
-                            const float wt = badpix[i1 * width + j1];
-                            atot += wt * lab->a[i1][j1];
-                            btot += wt * lab->b[i1][j1];
-                            norm += wt;
-                        }
-                    }
-                    if (SQR(atot) + SQR(btot) < chrom * SQR(norm)) {
-                        lab->a[i][j] = atot / norm;
-                        lab->b[i][j] = btot / norm;
-                    }
-                }
-            }
-
-#ifdef __SSE2__
-            const vfloat chromv = F2V(chrom);
-            const vfloat threshfactorv = F2V(threshfactor);
-            for (; j < width - halfwin - 3; j += 4) {
-                vmask selMask = vmaskf_lt(LVFU(badpix[i * width + j]), threshfactorv);
-                if (_mm_movemask_ps(reinterpret_cast<vfloat>(selMask))) {
-                    vfloat atotv = ZEROV, btotv = ZEROV, normv = ZEROV;
-
-                    for (int i1 = std::max(0, i - halfwin + 1); i1 < std::min(height, i + halfwin); i1++) {
-                        for (int j1 = j - halfwin + 1; j1 < j + halfwin; j1++) {
-                            const vfloat wtv = LVFU(badpix[i1 * width + j1]);
-                            atotv += wtv * LVFU(lab->a[i1][j1]);
-                            btotv += wtv * LVFU(lab->b[i1][j1]);
-                            normv += wtv;
-                        }
-                    }
-                    selMask = vandm(selMask, vmaskf_lt(SQRV(atotv) + SQR(btotv), chromv * SQRV(normv)));
-                    if (_mm_movemask_ps(reinterpret_cast<vfloat>(selMask))) {
-                        const vfloat aOrig = LVFU(lab->a[i][j]);
-                        const vfloat bOrig = LVFU(lab->b[i][j]);
-                        STVFU(lab->a[i][j], vself(selMask, atotv / normv, aOrig));
-                        STVFU(lab->b[i][j], vself(selMask, btotv / normv, bOrig));
-                    }
-                }
-            }
-#endif
-            for (; j < width - halfwin; j++) {
-
-                if (badpix[i * width + j] < threshfactor) {
-                    float atot = 0.f, btot = 0.f, norm = 0.f;
-
-                    for (int i1 = std::max(0, i - halfwin + 1); i1 < std::min(height, i + halfwin); i1++) {
-                        for (int j1 = j - halfwin + 1; j1 < j + halfwin; j1++) {
-                            const float wt = badpix[i1 * width + j1];
-                            atot += wt * lab->a[i1][j1];
-                            btot += wt * lab->b[i1][j1];
-                            norm += wt;
-                        }
-                    }
-                    if (SQR(atot) + SQR(btot) < chrom * SQR(norm)) {
-                        lab->a[i][j] = atot / norm;
-                        lab->b[i][j] = btot / norm;
-                    }
-                }
-            }
-
-            for (; j < width; j++) {
-
-                if (badpix[i * width + j] < threshfactor) {
-                    float atot = 0.f, btot = 0.f, norm = 0.f;
-
-                    for (int i1 = std::max(0, i - halfwin + 1); i1 < std::min(height, i + halfwin); i1++) {
-                        for (int j1 = j - halfwin + 1; j1 < width; j1++) {
-                            const float wt = badpix[i1 * width + j1];
-                            atot += wt * lab->a[i1][j1];
-                            btot += wt * lab->b[i1][j1];
-                            norm += wt;
-                        }
-                    }
-                    if (SQR(atot) + SQR(btot) < chrom * SQR(norm)) {
-                        lab->a[i][j] = atot / norm;
-                        lab->b[i][j] = btot / norm;
-                    }
-                }
-            }
-        }
-    }
-}
-
-}
+} // namespace rtengine

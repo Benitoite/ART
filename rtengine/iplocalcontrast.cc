@@ -37,33 +37,34 @@ namespace rtengine {
 
 namespace {
 
-void local_contrast_usm(LabImage *lab, const ProcParams *params, double scale, bool multiThread)
+void local_contrast_usm(Imagefloat *rgb, const ProcParams *params, double scale, bool multiThread)
 {
-    const int width = lab->W;
-    const int height = lab->H;
+    const int width = rgb->getWidth();
+    const int height = rgb->getHeight();
     const float a = params->localContrast.amount;
     const float dark = params->localContrast.darkness;
     const float light = params->localContrast.lightness;
     array2D<float> buf(width, height);
     const float sigma = params->localContrast.radius / scale;
+    float **L = rgb->g.ptrs;
 
 #ifdef _OPENMP
     #pragma omp parallel if(multiThread)
 #endif
-    gaussianBlur(lab->L, buf, width, height, sigma);
+    gaussianBlur(L, buf, width, height, sigma);
 
 #ifdef _OPENMP
     #pragma omp parallel for if(multiThread)
 #endif
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            float bufval = (lab->L[y][x] - buf[y][x]) * a;
+            float bufval = (L[y][x] - buf[y][x]) * a;
 
             if (dark != 1 || light != 1) {
                 bufval *= (bufval > 0.f) ? light : dark;
             }
 
-            lab->L[y][x] = std::max(0.0001f, lab->L[y][x] + bufval);
+            L[y][x] = std::max(0.0001f, L[y][x] + bufval);
         }
     }
 }
@@ -224,16 +225,20 @@ void evaluate_params(wavelet_decomposition &wd, float *mean, float *meanN, float
 }
 
 
-void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double scale, bool multiThread)
+void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double scale, bool multiThread)
 {
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+
     int wavelet_level = 7;
-    int dim = min(lab->W, lab->H);
+    int dim = min(W, H);
     while ((1 << wavelet_level) >= dim && wavelet_level > 1) {
         --wavelet_level;
     }
     int skip = scale;
 //    int skip = min(lab->W-1 , lab->H-1, int(scale));
-    wavelet_decomposition wd(lab->data, lab->W, lab->H, wavelet_level, 1, skip);
+    array2D<float> Y(W, H, rgb->g.ptrs);
+    wavelet_decomposition wd(static_cast<float *>(Y), W, H, wavelet_level, 1, skip);
 
     if (wd.memoryAllocationFailed) {
         return;
@@ -385,7 +390,16 @@ void local_contrast_wavelets(LabImage *lab, const ProcParams *params, double sca
         }
     }
 
-    wd.reconstruct(lab->data, 1.f);
+    wd.reconstruct(static_cast<float *>(Y), 1.f);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            rgb->g(y, x) = Y[y][x];
+        }
+    }
 }
 
 } // namespace
@@ -396,16 +410,13 @@ void ImProcFunctions::localContrast(Imagefloat *rgb)
         return;
     }
 
-    LabImage lab(rgb->getWidth(), rgb->getHeight());
-    rgb2lab(*rgb, lab);
+    rgb->setMode(Imagefloat::Mode::LAB, multiThread);
 
     if (params->localContrast.mode == LocalContrastParams::USM) {
-        local_contrast_usm(&lab, params, scale, multiThread);
+        local_contrast_usm(rgb, params, scale, multiThread);
     } else {
-        local_contrast_wavelets(&lab, params, scale, multiThread);
+        local_contrast_wavelets(rgb, params, scale, multiThread);
     }
-
-    lab2rgb(lab, *rgb);
 }
 
 } // namespace rtengine

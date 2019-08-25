@@ -182,7 +182,7 @@ protected:
 
     void progress (Glib::ustring str, int pr);
     void reallocAll ();
-    void updateLRGBHistograms(LabImage *lab);
+    void updateLRGBHistograms();
     void setScale (int prevscale);
     void updatePreviewImage (int todo, bool panningRelatedChange);
 

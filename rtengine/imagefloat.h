@@ -106,12 +106,13 @@ public:
     void normalizeFloatTo65535();
     void calcCroppedHistogram(const ProcParams &params, float scale, LUTu & hist);
     void ExecCMSTransform(cmsHTRANSFORM hTransform);
-    void ExecCMSTransform(cmsHTRANSFORM hTransform, const LabImage &labImage, int cx, int cy);
+    void ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy);
 
     enum class Mode {
-        RGB,
-        XYZ,
-        YUV
+        RGB, // r = red, g = green, b = blue
+        XYZ, // r = X, g = Y, b = Z
+        YUV, // g = Y, b = U, r = V
+        LAB  // g = L, r = A, b = B
     };
 
     Mode mode() const { return mode_; }
@@ -127,33 +128,37 @@ public:
     void assignLogEncoding(int base) { base_ = base; }
     void setNormalizedTo1(bool yes) { norm_1_ = yes; }
 
-    void copyState(Imagefloat *to) const
-    {
-        to->color_space_ = color_space_;
-        to->mode_ = mode_;
-        to->base_ = base_;
-        to->norm_1_ = norm_1_;
-    }
+    void copyState(Imagefloat *to) const;
 
     void toLab(LabImage &dst, bool multithread);
+    void getLab(int y, int x, float &L, float &a, float &b);
 
 private:
     void rgb_to_xyz(bool multithread);
     void rgb_to_yuv(bool multithread);
+    void rgb_to_lab(bool multithread);
     void xyz_to_rgb(bool multithread);
     void xyz_to_yuv(bool multithread);
+    void xyz_to_lab(bool multithread);
     void yuv_to_rgb(bool multithread);
     void yuv_to_xyz(bool multithread);
+    void yuv_to_lab(bool multithread);
+    void lab_to_rgb(bool multithread);
+    void lab_to_xyz(bool multithread);
+    void lab_to_yuv(bool multithread);
     void log_to_lin(int base, bool multithread);
     void lin_to_log(int base, bool multithread);
-    void rgb_to_lab(LabImage &dst, bool multithread);
-    void xyz_to_lab(LabImage &dst, bool multithread);
-    void yuv_to_lab(LabImage &dst, bool multithread);
+    void rgb_to_lab(int y, int x, float &L, float &a, float &b);
+    void xyz_to_lab(int y, int x, float &L, float &a, float &b);
+    void yuv_to_lab(int y, int x, float &L, float &a, float &b);
+    void get_ws();
     
     Glib::ustring color_space_;
     Mode mode_;
     int32_t base_ : 31;
     bool norm_1_ : 1;
+    float ws_[3][3];
+    float iws_[3][3];
 };
 
 } // namespace rtengine

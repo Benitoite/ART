@@ -42,7 +42,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
         // rgb2lab(*rgb, tmplab);
         // LabImage *lab = &tmplab;
 
-        //rgb->assignColorSpace(params->icm.workingProfile);
+        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
         
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
@@ -60,11 +60,10 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             return true; // show mask is active, nothing more to do
         }
 
-        rgb->setMode(Imagefloat::Mode::YUV, multiThread);        
         const int W = rgb->getWidth();
         const int H = rgb->getHeight();
         
-        array2D<float> Y(W, H, rgb->g.ptrs, 0);
+        array2D<float> L(W, H, rgb->g.ptrs, 0);
 
         // double mult[6];
         // const double scale_factor = 1.0;//min(1.5 / scale, 1.0);
@@ -75,7 +74,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             //     mult[k] = 1.0 + (l.mult[k] - 1.0) * scale_factor;
             // }
             const double threshold = l.threshold / scale;
-            dirpyr_equalizer(rgb->g.ptrs, Y, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
+            dirpyr_equalizer(rgb->g.ptrs, L, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
             const auto &blend = mask[i];
 
 #ifdef _OPENMP
@@ -84,7 +83,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
                     // float l = lab->L[y][x];
-                    rgb->g(y, x) = intp(blend[y][x], Y[y][x], rgb->g(y, x));
+                    rgb->g(y, x) = intp(blend[y][x], L[y][x], rgb->g(y, x));
                     // L[y][x] = l;
                 }
             }

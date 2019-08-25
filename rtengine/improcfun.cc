@@ -1743,20 +1743,13 @@ void ImProcFunctions::defringe(Imagefloat *rgb)
     if (params->defringe.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
 
     {
-        LabImage lab(rgb->getWidth(), rgb->getHeight());
-        rgb2lab(*rgb, lab);
-        PF_correct_RT(&lab, params->defringe.radius, params->defringe.threshold);
-        lab2rgb(lab, *rgb);
+        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+        // LabImage lab(rgb->getWidth(), rgb->getHeight());
+        // rgb2lab(*rgb, lab);
+        PF_correct_RT(rgb, params->defringe.radius, params->defringe.threshold);
+        // lab2rgb(lab, *rgb);
     }
 }
-
-void ImProcFunctions::badpixlab (LabImage* lab, double rad, int thr, float chrom)
-{
-    if (lab->W >= 8 && lab->H >= 8) {
-        BadpixelsLab (lab, rad, thr, chrom);
-    }
-}
-
 
 void ImProcFunctions::getAutoExp  (const LUTu &histogram, int histcompr, double clip,
                                    double& expcomp, int& bright, int& contr, int& black, int& hlcompr, int& hlcomprthresh)

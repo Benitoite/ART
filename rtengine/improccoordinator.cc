@@ -388,7 +388,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
             ipf.firstAnalysis(orig_prev, params, vhist16);
         }
-    
+
+        orig_prev->assignColorSpace(params.icm.workingProfile);
         readyphase++;
     
         if ((todo & M_HDR) && (params.fattal.enabled || params.dehaze.enabled)) {
@@ -420,7 +421,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.transform(op, oprevi, 0, 0, 0, 0, pW, pH, fw, fh,
                               imgsrc->getMetaData(), imgsrc->getRotateDegree(), false);
             else {
-                op->copyData(oprevi);
+                op->copyTo(oprevi);
             }
         }
     
@@ -553,19 +554,19 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
 
     if (panningRelatedChange || (todo & M_MONITOR)) {
         progress("Conversion to RGB...", 100 * readyphase / numofphases);
-        LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
-        ipf.rgb2lab(*bufs_[2], lab);
+        // LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
+        // ipf.rgb2lab(*bufs_[2], lab);
 
         if ((todo != CROP && todo != MINUPDATE) || (todo & M_MONITOR)) {
             MyMutex::MyLock prevImgLock(previmg->getMutex());
 
             try {
                 // Computing the preview image, i.e. converting from WCS->Monitor color space (soft-proofing disabled) or WCS->Printer profile->Monitor color space (soft-proofing enabled)
-                ipf.lab2monitorRgb(&lab, previmg);
+                ipf.lab2monitorRgb(bufs_[2], previmg);
 
                 // Computing the internal image for analysis, i.e. conversion from WCS->Output profile
                 delete workimg;
-                workimg = ipf.lab2rgb(&lab, 0, 0, pW, pH, params.icm);
+                workimg = ipf.lab2rgb(bufs_[2], 0, 0, pW, pH, params.icm);
             } catch (char * str) {
                 progress("Error converting file...", 0);
                 return;
@@ -589,7 +590,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         readyphase++;
 
         if (hListener) {
-            updateLRGBHistograms(&lab);
+            updateLRGBHistograms();
             hListener->histogramChanged(histRed, histGreen, histBlue, histLuma, histToneCurve, histLCurve, histCCurve, /*histCLurve, histLLCurve,*/ histLCAM, histCCAM, histRedRaw, histGreenRaw, histBlueRaw, histChroma, histLRETI);
         }
     }
@@ -667,10 +668,9 @@ void ImProcCoordinator::setScale(int prevscale)
         pH = nH;
 
         orig_prev = new Imagefloat(pW, pH);
-        orig_prev->assignColorSpace(params.icm.workingProfile);
         oprevi = orig_prev;
         for (int i = 0; i < 3; ++i) {
-            bufs_[i] = new Imagefloat(pW, pH, orig_prev);
+            bufs_[i] = new Imagefloat(pW, pH);
         }
         previmg = new Image8(pW, pH);
         workimg = new Image8(pW, pH);
@@ -683,6 +683,14 @@ void ImProcCoordinator::setScale(int prevscale)
     fullw = fw;
     fullh = fh;
 
+    orig_prev->assignColorSpace(params.icm.workingProfile);
+    if (oprevi && oprevi != orig_prev) {
+        oprevi->assignColorSpace(params.icm.workingProfile);
+    }
+    for (int i = 0; i < 3; ++i) {
+        bufs_[i]->assignColorSpace(params.icm.workingProfile);
+    }
+    
     if (!sizeListeners.empty())
         for (size_t i = 0; i < sizeListeners.size(); i++) {
             sizeListeners[i]->sizeChanged(fullw, fullh, fw, fh);
@@ -690,7 +698,7 @@ void ImProcCoordinator::setScale(int prevscale)
 }
 
 
-void ImProcCoordinator::updateLRGBHistograms(LabImage *lab)
+void ImProcCoordinator::updateLRGBHistograms()
 {
 
     int x1, y1, x2, y2;
@@ -704,26 +712,30 @@ void ImProcCoordinator::updateLRGBHistograms(LabImage *lab)
         #pragma omp section
 #endif
         {
+            histLuma.clear();
             histChroma.clear();
 
             for (int i = y1; i < y2; i++)
                 for (int j = x1; j < x2; j++)
                 {
-                    histChroma[(int)(sqrtf(SQR(lab->a[i][j]) + SQR(lab->b[i][j])) / 188.f)]++;      //188 = 48000/256
+                    float L, a, b;
+                    bufs_[2]->getLab(i, j, L, a, b);
+                    histChroma[(int)(sqrtf(SQR(a) + SQR(b)) / 188.f)]++;      //188 = 48000/256
+                    histLuma[(int)(L / 128.f)]++;
                 }
         }
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-        {
-            histLuma.clear();
+// #ifdef _OPENMP
+//         #pragma omp section
+// #endif
+//         {
+//             histLuma.clear();
 
-            for (int i = y1; i < y2; i++)
-                for (int j = x1; j < x2; j++)
-                {
-                    histLuma[(int)(lab->L[i][j] / 128.f)]++;
-                }
-        }
+//             for (int i = y1; i < y2; i++)
+//                 for (int j = x1; j < x2; j++)
+//                 {
+//                     histLuma[(int)(lab->L[i][j] / 128.f)]++;
+//                 }
+//         }
 #ifdef _OPENMP
         #pragma omp section
 #endif

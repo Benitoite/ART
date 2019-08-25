@@ -127,11 +127,11 @@ public:
     //----------------------------------------------------------------------
     // Lab/RGB conversion
     //----------------------------------------------------------------------
-    void lab2monitorRgb(LabImage* lab, Image8* image);
+    void lab2monitorRgb(Imagefloat *img, Image8* image);
     
-    Image8 *lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm, bool consider_histogram_settings = true);
+    Image8 *lab2rgb(Imagefloat *img, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm, bool consider_histogram_settings = true);
 
-    Imagefloat *lab2rgbOut(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm);
+    Imagefloat *lab2rgbOut(Imagefloat *img, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm);
 
     void rgb2lab(Imagefloat &src, LabImage &dst, const Glib::ustring &workingSpace);
     void rgb2lab(Imagefloat &src, LabImage &dst) { rgb2lab(src, dst, params->icm.workingProfile); }
@@ -248,10 +248,8 @@ private:
     void dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scale);    //Emil's directional pyramid wavelet
     void dirpyr_channel(float ** data_fine, float ** data_coarse, int width, int height, int level, int scale);
     void idirpyr_eq_channel(float ** data_coarse, float ** data_fine, float ** buffer, int width, int height, int level, float multi[6], const double dirpyrThreshold, float ** l_a_h, float ** l_b_c, const double skinprot, float b_l, float t_l, float t_r);
-    void badpixlab(LabImage* lab, double rad, int thr, float chrom);
 
-    void PF_correct_RT(LabImage * lab, double radius, int thresh);
-    void BadpixelsLab(LabImage * lab, double radius, int thresh, float chrom);
+    void PF_correct_RT(Imagefloat *lab, double radius, int thresh);
 
     void calcVignettingParams(int oW, int oH, const VignettingParams& vignetting, double &w2, double &h2, double& maxRadius, double &v, double &b, double &mul);
 

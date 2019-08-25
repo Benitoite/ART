@@ -371,15 +371,15 @@ void Crop::update(int todo)
     PipetteBuffer::setReady();
 
     // Computing the preview image, i.e. converting from lab->Monitor color space (soft-proofing disabled) or lab->Output profile->Monitor color space (soft-proofing enabled)
-    LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
-    parent->ipf.rgb2lab(*bufs_[2], lab);
-    parent->ipf.lab2monitorRgb(&lab, cropImg);
+    // LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
+    // parent->ipf.rgb2lab(*bufs_[2], lab);
+    parent->ipf.lab2monitorRgb(bufs_[2], cropImg);
 
     if (cropImageListener) {
         // Computing the internal image for analysis, i.e. conversion from lab->Output profile (rtSettings.HistogramWorking disabled) or lab->WCS (rtSettings.HistogramWorking enabled)
 
         // internal image in output color space for analysis
-        Image8 *cropImgtrue = parent->ipf.lab2rgb(&lab, 0, 0, cropw, croph, params.icm);
+        Image8 *cropImgtrue = parent->ipf.lab2rgb(bufs_[2], 0, 0, cropw, croph, params.icm);
 
         int finalW = rqcropw;
 
@@ -590,19 +590,17 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
         }
 
         origCrop->allocate(trafw, trafh);  // Resizing the buffer (optimization)
-        origCrop->assignColorSpace(parent->params.icm.workingProfile);
 
         // if transCrop doesn't exist yet, it'll be created where necessary
         if (transCrop) {
             transCrop->allocate(cropw, croph);
-            origCrop->copyState(transCrop);
         }
 
         for (int i = 0; i < 3; ++i) {
             if (bufs_[i]) {
                 delete bufs_[i];
             }
-            bufs_[i] = new Imagefloat(cropw, croph, origCrop);
+            bufs_[i] = new Imagefloat(cropw, croph);
         }
 
         if (!cropImg) {
@@ -622,6 +620,14 @@ bool Crop::setCropSizes(int rcx, int rcy, int rcw, int rch, int skip, bool inter
         changed = true;
     }
 
+    origCrop->assignColorSpace(parent->params.icm.workingProfile);
+    if (transCrop) {
+        transCrop->assignColorSpace(parent->params.icm.workingProfile);
+    }
+    for (int i = 0; i < 3; ++i) {
+        bufs_[i]->assignColorSpace(parent->params.icm.workingProfile);
+    }
+    
     cropx = bx1;
     cropy = by1;
 

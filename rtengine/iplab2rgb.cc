@@ -48,18 +48,18 @@ inline void copyAndClampLine(const float *src, unsigned char *dst, const int W)
 }
 
 
-inline void copyAndClamp(const LabImage *src, unsigned char *dst, const double rgb_xyz[3][3], bool multiThread)
+inline void copyAndClamp(const Imagefloat *src, unsigned char *dst, const double rgb_xyz[3][3], bool multiThread)
 {
-    int W = src->W;
-    int H = src->H;
+    const int W = src->getWidth();
+    const int H = src->getHeight();
 
 #ifdef _OPENMP
         #pragma omp parallel for schedule(dynamic,16) if (multiThread)
 #endif
     for (int i = 0; i < H; ++i) {
-        float* rL = src->L[i];
-        float* ra = src->a[i];
-        float* rb = src->b[i];
+        float* rL = src->g.ptrs[i];
+        float* ra = src->r.ptrs[i];
+        float* rb = src->b.ptrs[i];
         int ix = i * 3 * W;
 
         float R, G, B;
@@ -84,28 +84,30 @@ inline void copyAndClamp(const LabImage *src, unsigned char *dst, const double r
 //
 // If monitorTransform, divide by 327.68 then apply monitorTransform (which can integrate soft-proofing)
 // otherwise divide by 327.68, convert to xyz and apply the sRGB transform, before converting with gamma2curve
-void ImProcFunctions::lab2monitorRgb(LabImage* lab, Image8* image)
+void ImProcFunctions::lab2monitorRgb(Imagefloat *img, Image8* image)
 {
+    img->setMode(Imagefloat::Mode::LAB, multiThread);
+    
     if (monitorTransform) {
 
-        int W = lab->W;
-        int H = lab->H;
+        const int W = img->getWidth();
+        const int H = img->getHeight();
         unsigned char * data = image->data;
 
         // cmsDoTransform is relatively expensive
 #ifdef _OPENMP
-        #pragma omp parallel firstprivate(lab, data, W, H)
+        #pragma omp parallel firstprivate(img, data, W, H)
 #endif
         {
-            AlignedBuffer<float> pBuf(3 * lab->W);
-            AlignedBuffer<float> mBuf(3 * lab->W);
+            AlignedBuffer<float> pBuf(3 * W);
+            AlignedBuffer<float> mBuf(3 * W);
 
             AlignedBuffer<float> gwBuf1;
             AlignedBuffer<float> gwBuf2;
 
             if (gamutWarning) {
-                gwBuf1.resize(3 * lab->W);
-                gwBuf2.resize(3 * lab->W);
+                gwBuf1.resize(3 * W);
+                gwBuf2.resize(3 * W);
             }
 
             float *buffer = pBuf.data;
@@ -120,9 +122,9 @@ void ImProcFunctions::lab2monitorRgb(LabImage* lab, Image8* image)
                 const int ix = i * 3 * W;
                 int iy = 0;
 
-                float* rL = lab->L[i];
-                float* ra = lab->a[i];
-                float* rb = lab->b[i];
+                float* rL = img->g(i);
+                float* ra = img->r(i);
+                float* rb = img->b(i);
 
                 for (int j = 0; j < W; j++) {
                     buffer[iy++] = rL[j] / 327.68f;
@@ -139,7 +141,7 @@ void ImProcFunctions::lab2monitorRgb(LabImage* lab, Image8* image)
             }
         } // End of parallelization
     } else {
-        copyAndClamp(lab, image->data, sRGB_xyz, multiThread);
+        copyAndClamp(img, image->data, sRGB_xyz, multiThread);
     }
 }
 
@@ -152,8 +154,9 @@ void ImProcFunctions::lab2monitorRgb(LabImage* lab, Image8* image)
 //
 // If output profile used, divide by 327.68 then apply the "profile" profile (eventually with a standard gamma)
 // otherwise divide by 327.68, convert to xyz and apply the RGB transform, before converting with gamma2curve
-Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm, bool consider_histogram_settings)
+Image8* ImProcFunctions::lab2rgb(Imagefloat *img, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm, bool consider_histogram_settings)
 {
+    img->setMode(Imagefloat::Mode::LAB, multiThread);
     //gamutmap(lab);
 
     if (cx < 0) {
@@ -164,12 +167,15 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
         cy = 0;
     }
 
-    if (cx + cw > lab->W) {
-        cw = lab->W - cx;
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+
+    if (cx + cw > W) {
+        cw = W - cx;
     }
 
-    if (cy + ch > lab->H) {
-        ch = lab->H - cy;
+    if (cy + ch > H) {
+        ch = H - cy;
     }
 
     Image8* image = new Image8(cw, ch);
@@ -194,11 +200,6 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
 
     if (oprof) {
         cmsHPROFILE oprofG = oprof;
-
-        // if (standard_gamma) {
-        //     oprofG = ICCStore::makeStdGammaProfile(oprof);
-        // }
-
         cmsUInt32Number flags = cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE;
 
         if (icm.outputBPC) {
@@ -225,15 +226,15 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
             int condition = cy + ch;
 
 #ifdef _OPENMP
-            #pragma omp for firstprivate(lab) schedule(dynamic,16)
+#           pragma omp for firstprivate(img) schedule(dynamic,16)
 #endif
 
             for (int i = cy; i < condition; i++) {
                 const int ix = i * 3 * cw;
                 int iy = 0;
-                float* rL = lab->L[i];
-                float* ra = lab->a[i];
-                float* rb = lab->b[i];
+                float* rL = img->g(i);
+                float* ra = img->r(i);
+                float* rb = img->b(i);
 
                 for (int j = cx; j < cx + cw; j++) {
                     buffer[iy++] = rL[j] / 327.68f;
@@ -253,7 +254,7 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
         }
     } else {
         const auto xyz_rgb = ICCStore::getInstance()->workingSpaceInverseMatrix(profile);
-        copyAndClamp(lab, image->data, xyz_rgb, multiThread);
+        copyAndClamp(img, image->data, xyz_rgb, multiThread);
     }
 
     return image;
@@ -275,9 +276,12 @@ Image8* ImProcFunctions::lab2rgb(LabImage* lab, int cx, int cy, int cw, int ch, 
  * If a custom gamma profile can be created, divide by 327.68, convert to xyz and apply the custom gamma transform
  * otherwise divide by 327.68, convert to xyz and apply the sRGB transform, before converting with gamma2curve
  */
-Imagefloat* ImProcFunctions::lab2rgbOut(LabImage* lab, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm)
+Imagefloat* ImProcFunctions::lab2rgbOut(Imagefloat *img, int cx, int cy, int cw, int ch, const procparams::ColorManagementParams &icm)
 {
-
+    img->setMode(Imagefloat::Mode::LAB, multiThread);
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+    
     if (cx < 0) {
         cx = 0;
     }
@@ -286,12 +290,12 @@ Imagefloat* ImProcFunctions::lab2rgbOut(LabImage* lab, int cx, int cy, int cw, i
         cy = 0;
     }
 
-    if (cx + cw > lab->W) {
-        cw = lab->W - cx;
+    if (cx + cw > W) {
+        cw = W - cx;
     }
 
-    if (cy + ch > lab->H) {
-        ch = lab->H - cy;
+    if (cy + ch > H) {
+        ch = H - cy;
     }
 
     Imagefloat* image = new Imagefloat(cw, ch);
@@ -309,7 +313,7 @@ Imagefloat* ImProcFunctions::lab2rgbOut(LabImage* lab, int cx, int cy, int cw, i
         cmsHTRANSFORM hTransform = cmsCreateTransform(iprof, TYPE_Lab_FLT, oprof, TYPE_RGB_FLT, icm.outputIntent, flags);
         lcmsMutex->unlock();
 
-        image->ExecCMSTransform(hTransform, *lab, cx, cy);
+        image->ExecCMSTransform(hTransform, img, cx, cy);
         cmsDeleteTransform(hTransform);
         image->normalizeFloatTo65535();
     } else {
@@ -320,9 +324,9 @@ Imagefloat* ImProcFunctions::lab2rgbOut(LabImage* lab, int cx, int cy, int cw, i
 
         for (int i = cy; i < cy + ch; i++) {
             float R, G, B;
-            float* rL = lab->L[i];
-            float* ra = lab->a[i];
-            float* rb = lab->b[i];
+            float* rL = img->g(i);
+            float* ra = img->r(i);
+            float* rb = img->b(i);
 
             for (int j = cx; j < cx + cw; j++) {
 

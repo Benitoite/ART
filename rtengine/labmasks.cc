@@ -192,6 +192,11 @@ void rgb2lab(Imagefloat::Mode mode, float R, float G, float B, float &L, float &
     case Imagefloat::Mode::XYZ:
         Color::XYZ2Lab(R, G, B, L, a, b);
         return;
+    case Imagefloat::Mode::LAB:
+        L = G;
+        a = R;
+        b = B;
+        return;
     }
 }
 
