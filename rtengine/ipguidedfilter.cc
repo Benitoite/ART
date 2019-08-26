@@ -43,20 +43,22 @@ enum class Channel {
 
 void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, const TMatrix &iws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
 {
-    const auto rgb2xyY =
-        [&](float r, float g, float b, float &x, float &y, float &Y) -> void
+    const auto rgb2yuv =
+        [&](float R, float G, float B, float &Y, float &u, float &v) -> void
         {
-            float X, Z;
-            Color::rgbxyz(r, g, b, X, Y, Z, ws);
-            Color::XYZ_to_xyY(X, Y, Z, x, y);
+            Color::rgb2yuv(R, G, B, Y, u, v, ws);
+            if (Y > 0.f) {
+                u /= Y;
+                v /= Y;
+            } else {
+                u = v = 0.f;
+            }
         };
 
-    const auto xyY2rgb =
-        [&](float x, float y, float Y, float &r, float &g, float &b) -> void
+    const auto yuv2rgb =
+        [&](float Y, float u, float v, float &R, float &G, float &B) -> void
         {
-            float X, Z;
-            Color::xyY_to_XYZ(x, y, Y, X, Z);
-            Color::xyz2rgb(X, Y, Z, r, g, b, iws);
+            Color::yuv2rgb(Y, u * Y, v * Y, R, G, B, ws);
         };
         
     if (radius > 0 && strength > 0) {
@@ -103,20 +105,20 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                     // G[y][x] = oY + gg;
                     // B[y][x] = oY + bb;
 
-                    float ix, iy, iY;
-                    float ox, oy, oY;
-                    rgb2xyY(ir, ig, ib, ix, iy, iY);
-                    rgb2xyY(rr, gg, bb, ox, oy, oY);
+                    float iY, iu, iv;
+                    float oY, ou, ov;
+                    rgb2yuv(ir, ig, ib, iY, iu, iv);
+                    rgb2yuv(rr, gg, bb, oY, ou, ov);
                     if (luminance) {
                         oY = intp(bf, oY, iY);
-                        ox = ix;
-                        oy = iy;
+                        ou = iu;
+                        ov = iv;
                     } else {
-                        ox = intp(bf, ox, ix);
-                        oy = intp(bf, oy, iy);
+                        ou = intp(bf, ou, iu);
+                        ov = intp(bf, ov, iv);
                         oY = iY;
                     }
-                    xyY2rgb(ox, oy, oY, R[y][x], G[y][x], B[y][x]);
+                    yuv2rgb(oY, ou, ov, R[y][x], G[y][x], B[y][x]);
                 }
             }
         }
@@ -188,9 +190,9 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_
         const int H = rgb->getHeight();
 
         Imagefloat working(W, H);
+        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
         rgb->normalizeFloatTo1();
         //rgb->assignColorSpace(params->icm.workingProfile);
-        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);

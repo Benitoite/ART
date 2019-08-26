@@ -111,7 +111,7 @@ public:
     enum class Mode {
         RGB, // r = red, g = green, b = blue
         XYZ, // r = X, g = Y, b = Z
-        YUV, // g = Y, b = U, r = V
+        YUV, // g = Y, b = U, r = V; NOTE: U and V are not normalized wrt Y
         LAB  // g = L, r = A, b = B
     };
 
