@@ -762,10 +762,6 @@ public:
     }
 #endif
 
-    // input and output in [0,1] (without clipping)
-    static void XYZ_to_xyY(float X, float Y, float Z, float &x, float &y);
-    static void xyY_to_XYZ(float x, float y, float Y, float &X, float &Z);
-
     template <class T>
     static void rgb2yuv(float r, float g, float b, float &Y, float &u, float &v, const T workingspace[3][3])
     {
