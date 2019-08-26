@@ -37,6 +37,7 @@
 */
 
 #include "labgrid.h"
+#include "../rtengine/iccstore.h"
 
 using rtengine::Color;
 
@@ -206,24 +207,29 @@ bool LabGridArea::on_draw(const ::Cairo::RefPtr<Cairo::Context> &crf)
         cr->translate(0, height);
         cr->scale(1., -1.);
         const int cells = 8;
-        float step = 12000.f / float(cells/2);
+        //float step = 12000.f / float(cells/2);
+        float step = 1.f / float(cells/2);
         double cellW = double(width) / double(cells);
         double cellH = double(height) / double(cells);
         double cellYMin = 0.;
         double cellYMax = std::floor(cellH);
+        const float Y = 0.5f;
+        auto ws = rtengine::ICCStore::getInstance()->workingSpaceMatrix("sRGB");
         for (int j = 0; j < cells; j++) {
             double cellXMin = 0.;
             double cellXMax = std::floor(cellW);
             for (int i = 0; i < cells; i++) {
                 float R, G, B;
-                float x, y, z;
+                // float x, y, z;
                 int ii = i - cells/2;
                 int jj = j - cells/2;
-                float a = step * (ii + 0.5);
-                float b = step * (jj + 0.5);
-                Color::Lab2XYZ(25000.f, a, b, x, y, z);
-                Color::xyz2srgb(x, y, z, R, G, B);
-                cr->set_source_rgb(R / 65535.f, G / 65535.f, B / 65535.f);
+                float v = step * (ii + 0.5);
+                float u = -step * (jj + 0.5);
+                Color::yuv2rgb(Y, Y * u, Y * v, R, G, B, ws);
+                // Color::Lab2XYZ(23000.f, a, b, x, y, z);
+                // Color::xyz2srgb(x, y, z, R, G, B);
+                //cr->set_source_rgb(R / 65535.f, G / 65535.f, B / 65535.f);
+                cr->set_source_rgb(R, G, B);
                 cr->rectangle(
                         cellXMin,
                         cellYMin,
