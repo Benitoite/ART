@@ -315,7 +315,6 @@ Imagefloat* ImProcFunctions::lab2rgbOut(Imagefloat *img, int cx, int cy, int cw,
 
         image->ExecCMSTransform(hTransform, img, cx, cy);
         cmsDeleteTransform(hTransform);
-        image->normalizeFloatTo65535();
     } else {
         
 #ifdef _OPENMP

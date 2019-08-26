@@ -413,18 +413,14 @@ private:
         constexpr bool useLCMS = false;
         bool bwonly = params.blackwhite.enabled;
 
-        Imagefloat* readyImg = nullptr;
-        {
-            // LabImage lab(img->getWidth(), img->getHeight());
-            // ipf.rgb2lab(*img, lab);
-            readyImg = ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
-            delete img;
-            img = nullptr;
-        }
+        Imagefloat* readyImg = ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
 
         if (settings->verbose) {
             printf ("Output profile_: \"%s\"\n", params.icm.outputProfile.c_str());
         }
+
+        delete img;
+        img = nullptr;
 
         if (bwonly) { //force BW r=g=b
             if (settings->verbose) {

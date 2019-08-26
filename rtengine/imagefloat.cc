@@ -545,6 +545,10 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform)
 // Parallelized transformation; create transform with cmsFLAGS_NOCACHE!
 void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy)
 {
+    mode_ = Mode::RGB;
+    norm_1_ = false;
+    base_ = 0;
+    
     // LittleCMS cannot parallelize planar Lab float images
     // so build temporary buffers to allow multi processor execution
 #ifdef _OPENMP
@@ -582,9 +586,9 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *la
             pB = b(y - cy);
 
             for (int x = 0; x < width; x++) {
-                *(pR++) = *(pRGB++);
-                *(pG++) = *(pRGB++);
-                *(pB++) = *(pRGB++);
+                *(pR++) = *(pRGB++) * 65535.f;
+                *(pG++) = *(pRGB++) * 65535.f;
+                *(pB++) = *(pRGB++) * 65535.f;
             }
         } // End of parallelization
     }
