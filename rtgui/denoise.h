@@ -72,7 +72,7 @@ private:
     rtengine::ProcEvent EvGuidedChromaRadius;
     rtengine::ProcEvent EvGuidedChromaStrength;
     rtengine::ProcEvent EvChrominanceAutoFactor;
-    rtengine::ProcEvent EvLuminanceIterations;
+    rtengine::ProcEvent EvLuminanceDetailThreshold;
     rtengine::ProcEvent EvLuminanceCurve;
 
     MyComboBoxText *colorSpace;
@@ -80,7 +80,7 @@ private:
     Adjuster *gamma;
     Adjuster *luminance;
     Adjuster *luminanceDetail;
-    Adjuster *luminanceIterations;
+    Adjuster *luminanceDetailThreshold;
     MyComboBoxText *chrominanceMethod;
     Adjuster *chrominanceAutoFactor;
     Adjuster *chrominance;

@@ -54,7 +54,7 @@ Denoise::Denoise():
     EvGuidedChromaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS");
     EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
     EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
-    EvLuminanceIterations = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_ITERATIONS");
+    EvLuminanceDetailThreshold = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD");
     EvLuminanceCurve = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_CURVE");
 
     Gtk::Frame *lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
@@ -91,7 +91,7 @@ Denoise::Denoise():
 
     luminance = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING"), 0, 100, 0.01, 0));
     luminanceDetail = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL"), 0, 100, 0.01, 50));
-    luminanceIterations = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_ITERATIONS"), 1, 3, 1, 1));
+    luminanceDetailThreshold = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD"), 0, 100, 1, 0));
 
     cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_DIRPYRDENOISE_LUMINANCE_CURVE"), 0.7));
     cg->setCurveListener(this);
@@ -103,7 +103,7 @@ Denoise::Denoise():
 
     lumaVBox->pack_start(*luminance);
     lumaVBox->pack_start(*luminanceDetail);
-    lumaVBox->pack_start(*luminanceIterations);
+    lumaVBox->pack_start(*luminanceDetailThreshold);
     lumaVBox->pack_start(*cg);
     lumaFrame->add(*lumaVBox);
     pack_start(*lumaFrame);
@@ -141,7 +141,7 @@ Denoise::Denoise():
 
     luminance->setAdjusterListener(this);
     luminanceDetail->setAdjusterListener(this);
-    luminanceIterations->setAdjusterListener(this);
+    luminanceDetailThreshold->setAdjusterListener(this);
     chrominanceAutoFactor->setAdjusterListener(this);
     chrominance->setAdjusterListener(this);
     chrominanceRedGreen->setAdjusterListener(this);
@@ -316,7 +316,7 @@ void Denoise::read(const ProcParams *pp)
     gamma->setValue(pp->denoise.gamma);
     luminance->setValue(pp->denoise.luminance);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
-    luminanceIterations->setValue(pp->denoise.luminanceIterations);
+    luminanceDetailThreshold->setValue(pp->denoise.luminanceDetailThreshold);
     luminanceCurve->setCurve(default_luminance_curve);
     luminanceCurve->setCurve(pp->denoise.luminanceCurve);
 
@@ -356,7 +356,7 @@ void Denoise::write(ProcParams *pp)
     pp->denoise.gamma = gamma->getValue();
     pp->denoise.luminance = luminance->getValue();
     pp->denoise.luminanceDetail = luminanceDetail->getValue();
-    pp->denoise.luminanceIterations = luminanceIterations->getValue();
+    pp->denoise.luminanceDetailThreshold = luminanceDetailThreshold->getValue();
     pp->denoise.luminanceCurve = luminanceCurve->getCurve();
     if (chrominanceMethod->get_active_row_number() < 2) {
         pp->denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(chrominanceMethod->get_active_row_number());
@@ -439,7 +439,7 @@ void Denoise::setDefaults(const ProcParams *defParams)
 {
     luminance->setDefault(defParams->denoise.luminance);
     luminanceDetail->setDefault(defParams->denoise.luminanceDetail);
-    luminanceIterations->setDefault(defParams->denoise.luminanceIterations);
+    luminanceDetailThreshold->setDefault(defParams->denoise.luminanceDetailThreshold);
     chrominance->setDefault(defParams->denoise.chrominance);
     chrominanceAutoFactor->setDefault(defParams->denoise.chrominanceAutoFactor);
     chrominanceRedGreen->setDefault(defParams->denoise.chrominanceRedGreen);
@@ -462,8 +462,8 @@ void Denoise::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDPDNLdetail, costr);
         } else if (a == luminance) {
             listener->panelChanged(EvDPDNLuma, costr);
-        } else if (a == luminanceIterations) {
-            listener->panelChanged(EvLuminanceIterations, costr);
+        } else if (a == luminanceDetailThreshold) {
+            listener->panelChanged(EvLuminanceDetailThreshold, costr);
         } else if (a == chrominance) {
             listener->panelChanged(EvDPDNChroma, costr);
         } else if (a == chrominanceRedGreen) {
@@ -523,7 +523,7 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
 {
     luminance->trimValue(pp->denoise.luminance);
     luminanceDetail->trimValue(pp->denoise.luminanceDetail);
-    luminanceIterations->trimValue(pp->denoise.luminanceIterations);
+    luminanceDetailThreshold->trimValue(pp->denoise.luminanceDetailThreshold);
     chrominance->trimValue(pp->denoise.chrominance);
     chrominanceAutoFactor->trimValue(pp->denoise.chrominanceAutoFactor);
     chrominanceRedGreen->trimValue(pp->denoise.chrominanceRedGreen);

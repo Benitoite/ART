@@ -619,7 +619,7 @@ struct DenoiseParams {
 
     double luminance;
     double luminanceDetail;
-    int luminanceIterations;
+    int luminanceDetailThreshold;
     std::vector<double> luminanceCurve;
 
     ChrominanceMethod chrominanceMethod;

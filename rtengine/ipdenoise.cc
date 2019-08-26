@@ -19,6 +19,8 @@
 #include "improcfun.h"
 #include "imagesource.h"
 #include "mytime.h"
+#include "rt_algo.h"
+#include "guidedfilter.h"
 
 namespace rtengine {
 
@@ -338,10 +340,13 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
     NoiseCurve noiseLCurve;
     NoiseCurve noiseCCurve;
 
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+
     Imagefloat *calclum = nullptr;
     {
-        const int fw = img->getWidth();
-        const int fh = img->getHeight();
+        const int fw = W;
+        const int fh = H;
         // we only need image reduced to 1/4 here
         calclum = new Imagefloat((fw + 1) / 2, (fh + 1) / 2); //for luminance denoise curve
 #ifdef _OPENMP
@@ -364,32 +369,20 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
     adjust_params(denoiseParams, scale);
 
     array2D<float> Y;
-    FlatCurve lcurve(dnparams.luminanceCurve);
+    FlatCurve lcurve(denoiseParams.luminanceCurve);
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     if (!lcurve.isIdentity()) {
-        Y(img->getWidth(), img->getHeight());
+        Y(W, H);
 #ifdef _OPENMP
 #       pragma omp parallel for if (multiThread)
 #endif
-        for (int y = 0; y < Y.height(); ++y) {
-            for (int x = 0; x < Y.width(); ++x) {
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
                 Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
             }
         }
     }
 
-    // only iterated luminance
-    for (int i = 1; i < dnparams.luminanceIterations; ++i) {
-        DenoiseParams dp = dnparams;
-        dp.chrominanceMethod = DenoiseParams::ChrominanceMethod::MANUAL;
-        dp.chrominance = 0;
-        dp.chrominanceRedGreen = 0;
-        dp.chrominanceBlueYellow = 0;
-        dp.smoothingEnabled = false;
-
-        RGB_denoise(0, img, img, nullptr, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), dp, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
-    }
-        
     noiseCCurve.Set({
         FCT_MinMaxCPoints,
         0.05,
@@ -402,7 +395,79 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
         0.35
         });
 
+    array2D<float> Yd;
+    array2D<float> mask;
+    const int detail_thresh = denoiseParams.luminanceDetailThreshold;
+    if (detail_thresh > 0 && denoiseParams.luminanceDetail > 0) {
+        Imagefloat *tmp = new Imagefloat(W, H);
+
+        DenoiseParams dp = denoiseParams;
+        dp.luminanceDetail = 0;
+        // dp.chrominanceMethod = DenoiseParams::ChrominanceMethod::MANUAL;
+        // dp.chrominance = 0;
+        // dp.chrominanceRedGreen = 0;
+        // dp.chrominanceBlueYellow = 0;
+        dp.smoothingEnabled = false;
+
+        RGB_denoise(0, img, tmp, calclum ? calclum->copy() : nullptr, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), dp, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
+
+        Yd(W, H);
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                Yd[y][x] = Color::rgbLuminance(tmp->r(y, x), tmp->g(y, x), tmp->b(y, x), ws);
+            }
+        }
+
+        delete tmp;
+        
+        mask(W, H);
+        float thr = pow_F(float(detail_thresh)/100.f, 1.2f);
+        buildBlendMask(Yd, mask, W, H, thr);
+        int r = denoiseParams.luminance / (10.f * scale);
+        if (r > 0) {
+            guidedFilter(mask, mask, mask, r, 0.01f, multiThread);
+        }
+
+//         if (scale == 1.f) {
+//             Imagefloat m(W, H);
+// #ifdef _OPENMP
+// #           pragma omp parallel for if (multiThread)
+// #endif
+//             for (int y = 0; y < H; ++y) {
+//                 for (int x = 0; x < W; ++x) {
+//                     m.r(y, x) = m.g(y, x) = m.b(y, x) = mask[y][x] * 65535.f;
+//                 }
+//             }
+//             m.saveAsTIFF("/tmp/mask.tif", 16);
+//         }
+    }
+
     RGB_denoise(0, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
+
+    if (detail_thresh > 0) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float iY = Yd[y][x];
+                float oY = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
+                if (oY > 1e-5f) {
+                    float blend = mask[y][x];
+                    iY = intp(blend, oY, iY);
+                    float f = iY / oY;
+                    img->r(y, x) *= f;
+                    img->g(y, x) *= f;
+                    img->b(y, x) *= f;
+                }
+            }
+        }
+        Yd.free();
+        mask.free();
+    }
 
     if (!lcurve.isIdentity()) {
         LUTf curve(65536, LUT_CLIP_ABOVE|LUT_CLIP_BELOW);
