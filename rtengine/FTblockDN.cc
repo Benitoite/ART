@@ -544,17 +544,25 @@ BENCHFUN
     const float noisevarL = (useNoiseLCurve && (denoiseMethodRgb || !isRAW)) ? static_cast<float>(SQR(((noiseluma + 1.0) / 125.0) * (10. + (noiseluma + 1.0) / 25.0))) : static_cast<float>(SQR((noiseluma / 125.0) * (1.0 + noiseluma / 25.0)));
     const bool denoiseLuminance = (noisevarL > 0.00001f);
 
+    TMatrix wprofi = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+
+    const float wpi[3][3] = {
+        {static_cast<float>(wprofi[0][0]), static_cast<float>(wprofi[0][1]), static_cast<float>(wprofi[0][2])},
+        {static_cast<float>(wprofi[1][0]), static_cast<float>(wprofi[1][1]), static_cast<float>(wprofi[1][2])},
+        {static_cast<float>(wprofi[2][0]), static_cast<float>(wprofi[2][1]), static_cast<float>(wprofi[2][2])}
+    };
+    
     //printf("NL=%f \n",noisevarL);
     if (useNoiseLCurve || useNoiseCCurve) {
         int hei = calclum->getHeight();
         int wid = calclum->getWidth();
-        TMatrix wprofi = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+        // TMatrix wprofi = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
-        const float wpi[3][3] = {
-            {static_cast<float>(wprofi[0][0]), static_cast<float>(wprofi[0][1]), static_cast<float>(wprofi[0][2])},
-            {static_cast<float>(wprofi[1][0]), static_cast<float>(wprofi[1][1]), static_cast<float>(wprofi[1][2])},
-            {static_cast<float>(wprofi[2][0]), static_cast<float>(wprofi[2][1]), static_cast<float>(wprofi[2][2])}
-        };
+        // const float wpi[3][3] = {
+        //     {static_cast<float>(wprofi[0][0]), static_cast<float>(wprofi[0][1]), static_cast<float>(wprofi[0][2])},
+        //     {static_cast<float>(wprofi[1][0]), static_cast<float>(wprofi[1][1]), static_cast<float>(wprofi[1][2])},
+        //     {static_cast<float>(wprofi[2][0]), static_cast<float>(wprofi[2][1]), static_cast<float>(wprofi[2][2])}
+        // };
         lumcalcBuffer = new float[hei * wid];
         lumcalc = new float*[(hei)];
 
@@ -990,9 +998,14 @@ BENCHFUN
                                         Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 32768.f);
                                         Z = Z < 65535.f ? gamcurve[Z] : (Color::gammaf(Z / 65535.f, gam, gamthresh, gamslope) * 32768.f);
                                         //end chroma
-                                        labdn->L[i1][j1] = Y;
-                                        labdn->a[i1][j1] = (X - Y);
-                                        labdn->b[i1][j1] = (Y - Z);
+                                        // labdn->L[i1][j1] = Y;
+                                        // labdn->a[i1][j1] = (X - Y);
+                                        // labdn->b[i1][j1] = (Y - Z);
+                                        float l, u, v;
+                                        Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
+                                        labdn->L[i1][j1] = l;
+                                        labdn->a[i1][j1] = v;
+                                        labdn->b[i1][j1] = -u;
 
                                         if (((i1 | j1) & 1) == 0) {
                                             if (numTries == 1) {
@@ -1690,9 +1703,11 @@ BENCHFUN
                                                 labdn->b[i1][j1] *= 1.f + qhighFactor * realblue / 100.f;
                                             }
 
-                                            float Y = labdn->L[i1][j1];
-                                            float X = (labdn->a[i1][j1]) + Y;
-                                            float Z = Y - (labdn->b[i1][j1]);
+                                            // float Y = labdn->L[i1][j1];
+                                            // float X = (labdn->a[i1][j1]) + Y;
+                                            // float Z = Y - (labdn->b[i1][j1]);
+                                            float X, Y, Z;
+                                            Color::yuv2rgb(labdn->L[i1][j1], -labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
 
 
                                             X = X < 32768.f ? igamcurve[X] : (Color::gammaf(X / 32768.f, igam, igamthresh, igamslope) * 65535.f);
@@ -3499,8 +3514,12 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
                             Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 32768.f);
                             Z = Z < 65535.f ? gamcurve[Z] : (Color::gammaf(Z / 65535.f, gam, gamthresh, gamslope) * 32768.f);
 
-                            labdn->a[i1][j1] = (X - Y);
-                            labdn->b[i1][j1] = (Y - Z);
+                            // labdn->a[i1][j1] = (X - Y);
+                            // labdn->b[i1][j1] = (Y - Z);
+                            float l, u, v;
+                            Color::rgb2yuv(X, Y, Z, l, u, v, wp);
+                            labdn->a[i1][j1] = v;
+                            labdn->b[i1][j1] = -u;
                         }
                     }
                 }
