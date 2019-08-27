@@ -586,8 +586,8 @@ void Options::setDefaults()
     // #4327 - Noise Reduction settings removed from Preferences
     rtSettings.nrauto = 10; // between 2 and 20
     rtSettings.nrautomax = 40; // between 5 and 100
-    rtSettings.nrhigh = 0.45; // between 0.1 and 0.9
-    rtSettings.nrwavlevel = 1; // integer between 0 and 2
+    rtSettings.nrhigh = 0.9;//0.45; // between 0.1 and 0.9
+    rtSettings.nrwavlevel = 2;//1; // integer between 0 and 2
     rtSettings.leveldnv = 2;
     rtSettings.leveldnti = 0;
     rtSettings.leveldnaut = 0;
