@@ -39,6 +39,8 @@
 #include "median.h"
 #include "iccstore.h"
 #include "imagesource.h"
+#include "rt_algo.h"
+#include "guidedfilter.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -1458,6 +1460,19 @@ BENCHFUN
                                 }
                                 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+                                const int detail_thresh = dnparams.luminanceDetailThreshold;
+                                array2D<float> mask;
+                                if (detail_thresh > 0 && dnparams.luminanceDetailThreshold > 0) {
+                                    mask(width, height);
+                                    //float thr = pow_F(float(detail_thresh)/100.f, 1.2f);
+                                    float thr = float(detail_thresh)/100.f;
+                                    buildBlendMask(labdn->L, mask, width, height, thr);
+                                    int r = dnparams.luminance / (10.f * scale);
+                                    if (r > 0) {
+                                        guidedFilter(mask, mask, mask, r, 0.01f, multiThread);
+                                    }
+                                }
+
 #ifdef _OPENMP
                                 #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
 #endif
@@ -1465,9 +1480,16 @@ BENCHFUN
                                 for (int i = 0; i < height; ++i) {
                                     for (int j = 0; j < width; ++j) {
                                         //may want to include masking threshold for large hipass data to preserve edges/detail
-                                        labdn->L[i][j] += Ldetail[i][j] / totwt[i][j]; //note that labdn initially stores the denoised hipass data
+                                        float d = Ldetail[i][j] / totwt[i][j];
+                                        if (detail_thresh > 0) {
+                                            d *= mask[i][j];
+                                        }
+                                        //labdn->L[i][j] += Ldetail[i][j] / totwt[i][j]; //note that labdn initially stores the denoised hipass data
+                                        labdn->L[i][j] += d;
                                     }
                                 }
+
+                                mask.free();
                             }
 
                             if ((metchoice == 1 || metchoice == 2 || metchoice == 3 || metchoice == 4) && medianEnabled) {
