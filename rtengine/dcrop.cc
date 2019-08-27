@@ -333,14 +333,14 @@ void Crop::update(int todo)
         
         if (skip == 1) {
             stop = parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
+            if (!stop) {
+                parent->ipf.impulsedenoise(bufs_[1]);
+                parent->ipf.defringe(bufs_[1]);
+            }
         }
+        
         stop = stop || parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
         stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
-        //stop = stop || parent->ipf.contrastByDetailLevels(bufs_[1], offset_x, offset_y, full_width, full_height); 
-        // if (!stop) {
-        //     parent->ipf.logEncoding(bufs_[1]);
-        //     parent->ipf.labAdjustments(bufs_[1]);
-        // }
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
@@ -352,11 +352,11 @@ void Crop::update(int todo)
         }
 
         stop = stop || parent->ipf.textureBoost(bufs_[2], offset_x, offset_y, full_width, full_height);
-        if (skip == 1 && !stop) {
-            parent->ipf.impulsedenoise(bufs_[2]);
-            parent->ipf.defringe(bufs_[2]);
-            //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
-        }
+        // if (skip == 1 && !stop) {
+        //     parent->ipf.impulsedenoise(bufs_[2]);
+        //     parent->ipf.defringe(bufs_[2]);
+        //     //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
+        // }
 
         stop = stop || parent->ipf.contrastByDetailLevels(bufs_[2], offset_x, offset_y, full_width, full_height); 
 

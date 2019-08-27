@@ -156,13 +156,13 @@ private:
 DirPyrEqualizer::DirPyrEqualizer(): FoldableToolPanel(this, "dirpyrequalizer", M("TP_DIRPYREQUALIZER_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvList = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_LIST");
-    EvHueMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_HUEMASK");
-    EvChromaticityMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_CHROMATICITYMASK");
-    EvLightnessMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_LIGHTNESSMASK");
-    EvMaskBlur = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_MASKBLUR");
-    EvShowMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_SHOWMASK");
-    EvAreaMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_CBDL_AREAMASK");
+    EvList = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_LIST");
+    EvHueMask = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_HUEMASK");
+    EvChromaticityMask = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_MASKBLUR");
+    EvShowMask = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_SHOWMASK");
+    EvAreaMask = m->newEvent(DISPLAY, "HISTORY_MSG_CBDL_AREAMASK");
     
     box = Gtk::manage(new Gtk::VBox());
 

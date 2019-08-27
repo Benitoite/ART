@@ -77,7 +77,7 @@ void ImProcFunctions :: dirpyr_equalizer(float ** src, float ** dst, int srcwidt
     if (lastlevel == 0) {
         if (src != dst) {
 #ifdef _OPENMP
-#           pragma omp parallel for
+#           pragma omp parallel for if (multiThread)
 #endif
             for (int i = 0; i < srcheight; i++) {
                 memcpy(dst[i], src[i], sizeof(float) * srcwidth);

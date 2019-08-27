@@ -498,7 +498,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             bufs_[0]->copyTo(bufs_[1]);
             stop = ipf.colorCorrection(bufs_[1]);
             stop = stop || ipf.guidedSmoothing(bufs_[1]);
-            //stop = stop || ipf.contrastByDetailLevels(bufs_[1]);
 
             // if (!stop) {
             //     ipf.logEncoding(bufs_[1], &histToneCurve);
@@ -522,12 +521,12 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.labAdjustments(bufs_[2], &histCCurve, &histLCurve);
             }
             
-            stop = stop || ipf.textureBoost(bufs_[2]);
     
             // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
-            readyphase++;
     
 
+            stop = stop || ipf.textureBoost(bufs_[2]);
+            readyphase++;
             stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
             readyphase++;
 

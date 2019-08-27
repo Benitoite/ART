@@ -327,21 +327,26 @@ private:
         }
 
         bool stop = ipf.sharpening(img, params.sharpening);
+        if (!stop) {
+            ipf.impulsedenoise(img);
+            ipf.defringe(img);
+            //ipf.sharpening(img, params.sharpening);
+        }
         stop = stop || ipf.colorCorrection(img, oX, oY, oW, oH);
         stop = stop || ipf.guidedSmoothing(img, oX, oY, oW, oH);
-        // stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
+
         if (!stop) {
             ipf.logEncoding(img);
             ipf.labAdjustments(img);
         }
 
         stop = stop || ipf.textureBoost(img, oX, oY, oW, oH);
-        if (!stop) {
-            ipf.impulsedenoise(img);
-            ipf.defringe(img);
-            //ipf.sharpening(img, params.sharpening);
-        }
         stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
+        // if (!stop) {
+        //     ipf.impulsedenoise(img);
+        //     ipf.defringe(img);
+        //     //ipf.sharpening(img, params.sharpening);
+        // }
         if (!stop) {
             ipf.softLight(img);
             ipf.localContrast(img);

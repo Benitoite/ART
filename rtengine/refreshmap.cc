@@ -113,14 +113,14 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     TRANSFORM,        // EvPerspCorr
     DARKFRAME,        // EvLCPFile
     RGBCURVE,         // EvRGBrCurveLumamode
-    IMPULSEDENOISE,   // EvIDNEnabled,
-    IMPULSEDENOISE,   // EvIDNThresh,
+    DETAIL,   // EvIDNEnabled,
+    DETAIL,   // EvIDNThresh,
     ALLNORAW,         // EvDPDNEnabled,
     ALLNORAW,         // EvDPDNLuma,
     ALLNORAW,         // EvDPDNChroma,
     ALLNORAW,         // EvDPDNGamma,
-    ALLNORAW,         // EvDirPyrEqualizer,
-    ALLNORAW,         // EvDirPyrEqlEnabled,
+    DISPLAY,         // EvDirPyrEqualizer,
+    DISPLAY,         // EvDirPyrEqlEnabled,
     LUMINANCECURVE,   // EvLSaturation,
     LUMINANCECURVE,   // EvLaCurve,
     LUMINANCECURVE,   // EvLbCurve,
@@ -131,9 +131,9 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     RGBCURVE,         // EvHSVEqualizerS,
     RGBCURVE,         // EvHSVEqualizerV,
     RGBCURVE,         // EvHSVEqEnabled,
-    DEFRINGE,         // EvDefringeEnabled,
-    DEFRINGE,         // EvDefringeRadius,
-    DEFRINGE,         // EvDefringeThreshold,
+    DETAIL,         // EvDefringeEnabled,
+    DETAIL,         // EvDefringeRadius,
+    DETAIL,         // EvDefringeThreshold,
     RGBCURVE,         // EvHLComprThreshold,
     RESIZE,           // EvResizeBoundingBox
     RESIZE,           // EvResizeAppliesTo
@@ -184,11 +184,11 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     RGBCURVE,         // EvVibranceAvoidColorShift
     RGBCURVE,         // EvVibrancePastSatTog
     RGBCURVE,         // EvVibrancePastSatThreshold
-    DIRPYREQUALIZER,  // EvEPDStrength
-    DIRPYREQUALIZER,  // EvEPDEdgeStopping
-    DIRPYREQUALIZER,  // EvEPDScale
-    DIRPYREQUALIZER,  // EvEPDReweightingIterates
-    DIRPYREQUALIZER,  // EvEPDEnabled
+    DISPLAY,  // EvEPDStrength
+    DISPLAY,  // EvEPDEdgeStopping
+    DISPLAY,  // EvEPDScale
+    DISPLAY,  // EvEPDReweightingIterates
+    DISPLAY,  // EvEPDEnabled
     RGBCURVE,         // EvRGBrCurve
     RGBCURVE,         // EvRGBgCurve
     RGBCURVE,         // EvRGBbCurve
@@ -275,7 +275,7 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     LUMINANCECURVE,   // EvLCLCurve
     LUMINANCECURVE,   // EvLLHCurve
     LUMINANCECURVE,   // EvLHHCurve
-    ALLNORAW,         // EvDirPyrEqualizerThreshold
+    DISPLAY,         // EvDirPyrEqualizerThreshold
     ALLNORAW,         // EvDPDNenhance
     RGBCURVE,         // EvBWMethodalg
     ALLNORAW,         // EvDirPyrEqualizerSkin
@@ -386,7 +386,7 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     DIRPYREQUALIZER,  // EvWavlinkedg
     DIRPYREQUALIZER,  // EvWavCHCurve
     DARKFRAME,        // EvPreProcessHotDeadThresh
-    SHARPENING,       // EvEPDgamma
+    DISPLAY,       // EvEPDgamma
     DIRPYREQUALIZER,  // EvWavtmr
     DIRPYREQUALIZER,  // EvWavTMmet
     DIRPYREQUALIZER,  // EvWavtmrs

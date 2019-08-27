@@ -28,7 +28,7 @@ using namespace rtengine::procparams;
 LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_LOCALCONTRAST_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
-    auto EVENT = SHARPENING;
+    auto EVENT = DISPLAY;
     EvLocalContrastEnabled = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_ENABLED");
     EvLocalContrastMode = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_MODE");
     EvLocalContrastRadius = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_RADIUS");

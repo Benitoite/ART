@@ -149,13 +149,13 @@ private:
 TextureBoost::TextureBoost () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvList = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_LIST");
-    EvHueMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_HUEMASK");
-    EvChromaticityMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_CHROMATICITYMASK");
-    EvLightnessMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_LIGHTNESSMASK");
-    EvMaskBlur = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_MASKBLUR");
-    EvShowMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_SHOWMASK");
-    EvAreaMask = m->newEvent(DIRPYREQUALIZER, "HISTORY_MSG_EPD_AREAMASK");
+    EvList = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_LIST");
+    EvHueMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_HUEMASK");
+    EvChromaticityMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_MASKBLUR");
+    EvShowMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_SHOWMASK");
+    EvAreaMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_AREAMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
     edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));

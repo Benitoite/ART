@@ -1249,12 +1249,13 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     ipf.rgbProc(baseImg);
     bool stop = ipf.colorCorrection(baseImg);
     stop = stop || ipf.guidedSmoothing(baseImg);
+    stop = stop || ipf.textureBoost(baseImg);
     if (!stop) {
         ipf.logEncoding(baseImg);
         ipf.labAdjustments(baseImg);
     }
 
-    stop = stop || ipf.textureBoost(baseImg);
+//    stop = stop || ipf.textureBoost(baseImg);
     if (!stop) {
         ipf.softLight(baseImg);
         ipf.localContrast(baseImg);

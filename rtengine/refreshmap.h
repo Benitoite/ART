@@ -77,6 +77,10 @@
 #define MONITORTRANSFORM  M_MONITOR
 #define OUTPUTPROFILE     M_MONITOR
 
+#define SCENE RGBCURVE
+#define DETAIL SHARPENING
+#define DISPLAY (M_LUMINANCE|M_COLOR)
+
 extern int refreshmap[];
 
 namespace rtengine {
