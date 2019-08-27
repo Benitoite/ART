@@ -41,6 +41,7 @@
 #include "imagesource.h"
 #include "rt_algo.h"
 #include "guidedfilter.h"
+#include "gauss.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -1480,9 +1481,12 @@ BENCHFUN
                                     //float thr = pow_F(float(detail_thresh)/100.f, 1.2f);
                                     float thr = float(detail_thresh)/100.f;
                                     buildBlendMask(labdn->L, mask, width, height, thr);
-                                    int r = dnparams.luminance / (10.f * scale);
+                                    float r = 20.f / scale; //dnparams.luminance / (10.f * scale);
                                     if (r > 0) {
-                                        guidedFilter(mask, mask, mask, r, 0.01f, multiThread);
+                                        //guidedFilter(mask, mask, mask, r, 0.01f, multiThread);
+                                        float **m = mask;
+                                        //boxblur(m, m, r, r, width, height);
+                                        gaussianBlur(m, m, width, height, r);
                                     }
                                 }
 
