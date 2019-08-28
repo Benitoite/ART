@@ -20,6 +20,9 @@
 #include "imagesource.h"
 #include "mytime.h"
 #include "rt_algo.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace rtengine {
 
@@ -440,7 +443,68 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
         }
     }
 
-    denoiseGuidedSmoothing(img);
+    if (denoiseParams.smoothingEnabled) {
+        if (denoiseParams.smoothingMethod == DenoiseParams::SmoothingMethod::MEDIAN) {
+            Median median_type[3];
+            int median_iterations[3];
+            for (int i = 0; i < 3; ++i) {
+                median_type[i] = Median(int(denoiseParams.medianType));
+                median_iterations[i] = denoiseParams.medianIterations;
+            }
+            if (denoiseParams.medianMethod != DenoiseParams::MedianMethod::RGB) {
+                if (denoiseParams.colorSpace == DenoiseParams::ColorSpace::LAB) {
+                    img->setMode(Imagefloat::Mode::LAB, multiThread);
+                } else {
+                    img->setMode(Imagefloat::Mode::YUV, multiThread);
+                }
+                switch (denoiseParams.medianMethod) {
+                case DenoiseParams::MedianMethod::LUMINANCE:
+                    median_iterations[1] = median_iterations[2] = 0;
+                    break;
+                case DenoiseParams::MedianMethod::CHROMINANCE:
+                    median_iterations[0] = 0;
+                    break;
+                case DenoiseParams::MedianMethod::LAB_WEIGHTED:
+                    switch (median_type[0]) {
+                    case Median::TYPE_3X3_SOFT:
+                        break;
+                    case Median::TYPE_3X3_STRONG:
+                    case Median::TYPE_5X5_SOFT:
+                        median_type[0] = Median::TYPE_3X3_SOFT;
+                        break;
+                    case Median::TYPE_5X5_STRONG:
+                    case Median::TYPE_7X7:
+                        median_type[0] = Median::TYPE_3X3_STRONG;
+                        break;
+                    case Median::TYPE_9X9:
+                        median_type[0] = Median::TYPE_5X5_SOFT;
+                        break;
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+            int num_threads = 1;
+#ifdef _OPENMP
+            if (multiThread) {
+                num_threads = omp_get_max_threads();
+            }
+#endif
+            float **buf = Y;
+            Y(W, H);
+            float **channels[3] = { img->g.ptrs, img->r.ptrs, img->b.ptrs };
+            for (int c = 0; c < 3; ++c) {
+                if (median_iterations[c] > 0) {
+                    Median_Denoise(channels[c], channels[c], W, H, median_type[c], median_iterations[c], num_threads, buf);
+                }
+            }
+            img->setMode(Imagefloat::Mode::RGB, multiThread);
+        } else {
+            Y.free();
+            denoiseGuidedSmoothing(img);
+        }
+    }
 }
 
 
