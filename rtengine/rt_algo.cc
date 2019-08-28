@@ -570,5 +570,5 @@ void markImpulse(int width, int height, float **const src, char **impulse, float
 
     delete [] lpf[0];
 }
- 
+
 } // namespace rtengine

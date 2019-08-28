@@ -1476,10 +1476,10 @@ BENCHFUN
 
                                 const int detail_thresh = dnparams.luminanceDetailThreshold;
                                 array2D<float> mask;
-                                if (detail_thresh > 0 && dnparams.luminanceDetailThreshold > 0) {
+                                if (detail_thresh > 0) {// && dnparams.luminanceDetailThreshold > 0) {
                                     mask(width, height);
-                                    //float thr = pow_F(float(detail_thresh)/100.f, 1.2f);
-                                    float thr = float(detail_thresh)/100.f;
+                                    // float thr = pow_F(float(detail_thresh)/100.f, 1.2f);
+                                    float thr = log2lin(float(detail_thresh)/200.f, 100.f); // / 2.f;
                                     buildBlendMask(labdn->L, mask, width, height, thr);
                                     float r = 20.f / scale; //dnparams.luminance / (10.f * scale);
                                     if (r > 0) {

@@ -30,4 +30,9 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
 
 void markImpulse(int W, int H, float **const src, char **impulse, float thresh);
 
+// implemented in tmo_fattal02
+void buildGradientsMask(int W, int H, float **luminance, float **out, 
+                        float amount, int nlevels, int detail_level,
+                        float alfa, float beta, bool multithread);
+
 } // namespace rtengine
