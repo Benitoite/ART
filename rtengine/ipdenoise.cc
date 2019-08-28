@@ -20,7 +20,6 @@
 #include "imagesource.h"
 #include "mytime.h"
 #include "rt_algo.h"
-#include "guidedfilter.h"
 
 namespace rtengine {
 
@@ -369,11 +368,10 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
     adjust_params(denoiseParams, scale);
 
     array2D<float> Y;
-    FlatCurve lcurve(denoiseParams.luminanceCurve);
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     auto detail = denoiseParams.luminanceDetail;
     denoiseParams.luminanceDetail = 0;
-    if (!lcurve.isIdentity() || detail > 0) {
+    if (detail > 0) {
         Y(W, H);
 #ifdef _OPENMP
 #       pragma omp parallel for if (multiThread)
@@ -442,39 +440,6 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
         }
     }
 
-    if (!lcurve.isIdentity()) {
-        LUTf curve(65536, LUT_CLIP_ABOVE|LUT_CLIP_BELOW);
-        const bool raw = imgsrc->isRAW();
-        const float gamma = denoiseParams.gamma;
-        int m = 65535.0 / scale;
-        for (int i = 0; i <= m; ++i) {
-            double x = double(i) / double(m);
-            if (raw) {
-                x = Color::gammanf(x, gamma);
-            }
-            curve[i] = lcurve.getVal(x);
-        }
-
-#ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
-#endif
-        for (int y = 0; y < Y.height(); ++y) {
-            for (int x = 0; x < Y.width(); ++x) {
-                float iY = Y[y][x];
-                float oY = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
-                if (oY > 1e-5f) {
-                    float blend = curve[iY];
-                    iY = intp(blend, oY, iY);
-                    float f = iY / oY;
-                    img->r(y, x) *= f;
-                    img->g(y, x) *= f;
-                    img->b(y, x) *= f;
-                }
-            }
-        }
-        Y.free();
-    }
-    
     denoiseGuidedSmoothing(img);
 }
 

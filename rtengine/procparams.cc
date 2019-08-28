@@ -1029,7 +1029,6 @@ DenoiseParams::DenoiseParams() :
     luminance(0),
     luminanceDetail(0),
     luminanceDetailThreshold(0),
-    luminanceCurve{FCT_Linear},
     chrominanceMethod(ChrominanceMethod::AUTOMATIC),
     chrominanceAutoFactor(1),
     chrominance(15),
@@ -1058,7 +1057,6 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && luminance == other.luminance
         && luminanceDetail == other.luminanceDetail
         && luminanceDetailThreshold == other.luminanceDetailThreshold
-        && luminanceCurve == other.luminanceCurve
         && chrominanceMethod == other.chrominanceMethod
         && chrominanceAutoFactor == other.chrominanceAutoFactor
         && chrominance == other.chrominance
@@ -2563,7 +2561,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Denoise", "Luminance", denoise.luminance, keyFile);
             saveToKeyfile("Denoise", "LuminanceDetail", denoise.luminanceDetail, keyFile);
             saveToKeyfile("Denoise", "LuminanceDetailThreshold", denoise.luminanceDetailThreshold, keyFile);
-            saveToKeyfile("Denoise", "LuminanceCurve", denoise.luminanceCurve, keyFile);
             saveToKeyfile("Denoise", "ChrominanceMethod", int(denoise.chrominanceMethod), keyFile);
             saveToKeyfile("Denoise", "ChrominanceAutoFactor", denoise.chrominanceAutoFactor, keyFile);
             saveToKeyfile("Denoise", "Chrominance", denoise.chrominance, keyFile);
@@ -3423,7 +3420,6 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "Denoise", "Luminance", denoise.luminance);
                 assignFromKeyfile(keyFile, "Denoise", "LuminanceDetail", denoise.luminanceDetail);
                 assignFromKeyfile(keyFile, "Denoise", "LuminanceDetailThreshold", denoise.luminanceDetailThreshold);
-                assignFromKeyfile(keyFile, "Denoise", "LuminanceCurve", denoise.luminanceCurve);
                 if (assignFromKeyfile(keyFile, "Denoise", "ChrominanceMethod", val)) {
                     denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(val);
                 }

@@ -27,23 +27,6 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 extern Options options;
 
-namespace {
-
-const std::vector<double> default_luminance_curve{
-    FCT_MinMaxCPoints,
-    0.,
-    1.,
-    0.35,
-    0.35,
-    1.,
-    1.,
-    0.35,
-    0.35
-};
-
-} // namespace
-
-
 Denoise::Denoise():
     FoldableToolPanel(this, "dirpyrdenoise", M("TP_DIRPYRDENOISE_LABEL"), true, true)
 {
@@ -55,7 +38,6 @@ Denoise::Denoise():
     EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
     EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
     EvLuminanceDetailThreshold = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD");
-    EvLuminanceCurve = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_CURVE");
 
     Gtk::Frame *lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
     lumaFrame->set_label_align(0.025, 0.5);
@@ -93,18 +75,9 @@ Denoise::Denoise():
     luminanceDetail = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL"), 0, 100, 0.01, 50));
     luminanceDetailThreshold = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD"), 0, 100, 1, 0));
 
-    cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_DIRPYRDENOISE_LUMINANCE_CURVE"), 0.7));
-    cg->setCurveListener(this);
-    luminanceCurve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, false));
-    luminanceCurve->setIdentityValue(1.);
-    luminanceCurve->setResetCurve(FlatCurveType(default_luminance_curve[0]), default_luminance_curve);
-    cg->curveListComplete();
-    cg->show();
-
     lumaVBox->pack_start(*luminance);
     lumaVBox->pack_start(*luminanceDetail);
     lumaVBox->pack_start(*luminanceDetailThreshold);
-    lumaVBox->pack_start(*cg);
     lumaFrame->add(*lumaVBox);
     pack_start(*lumaFrame);
 
@@ -147,16 +120,6 @@ Denoise::Denoise():
     chrominanceRedGreen->setAdjusterListener(this);
     chrominanceBlueYellow->setAdjusterListener(this);
 
-    // chrominanceEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastDenoiseCurvesDir, M("TP_DIRPYRDENOISE_CHROMINANCE_CURVE"), 0.7));
-    // chrominanceEditorGroup->setCurveListener (this);
-    // defaultCurve = rtengine::DenoiseParams().chrominanceCurve;
-    // chrominanceCurve = static_cast<FlatCurveEditor*>(chrominanceEditorGroup->addCurve(CT_Flat, "", nullptr, false, false));
-    // chrominanceCurve->setIdentityValue(0.);
-    // chrominanceCurve->setResetCurve(FlatCurveType(defaultCurve.at(0)), defaultCurve);
-    // chrominanceCurve->setTooltip(M("TP_DIRPYRDENOISE_CHROMINANCE_CURVE_TOOLTIP"));
-    // chrominanceCurve->setBottomBarColorProvider(this, 2);
-    // chrominanceEditorGroup->curveListComplete();
-    // chromaVBox->pack_start(*chrominanceEditorGroup, Gtk::PACK_SHRINK, 4);
     chromaFrame->add(*chromaVBox);
     pack_start(*chromaFrame);
 
@@ -317,8 +280,6 @@ void Denoise::read(const ProcParams *pp)
     luminance->setValue(pp->denoise.luminance);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
     luminanceDetailThreshold->setValue(pp->denoise.luminanceDetailThreshold);
-    luminanceCurve->setCurve(default_luminance_curve);
-    luminanceCurve->setCurve(pp->denoise.luminanceCurve);
 
     chrominanceMethod->set_active(int(pp->denoise.chrominanceMethod));
     chrominanceMethodChanged();
@@ -357,7 +318,6 @@ void Denoise::write(ProcParams *pp)
     pp->denoise.luminance = luminance->getValue();
     pp->denoise.luminanceDetail = luminanceDetail->getValue();
     pp->denoise.luminanceDetailThreshold = luminanceDetailThreshold->getValue();
-    pp->denoise.luminanceCurve = luminanceCurve->getCurve();
     if (chrominanceMethod->get_active_row_number() < 2) {
         pp->denoise.chrominanceMethod = static_cast<DenoiseParams::ChrominanceMethod>(chrominanceMethod->get_active_row_number());
     }
@@ -549,18 +509,4 @@ void Denoise::smoothingMethodChanged()
     if (listener) {
         listener->panelChanged(EvSmoothingMethod, M("GENERAL_CHANGED"));
     }
-}
-
-
-void Denoise::curveChanged()
-{
-    if (listener) {
-        listener->panelChanged(EvLuminanceCurve, M("HISTORY_CUSTOMCURVE"));
-    }
-}
-
-
-void Denoise::autoOpenCurve()
-{
-    luminanceCurve->openIfNonlinear();
 }

@@ -22,8 +22,6 @@
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
-#include "curveeditor.h"
-#include "curveeditorgroup.h"
 #include "colorprovider.h"
 #include "guiutils.h"
 #include "options.h"
@@ -32,8 +30,7 @@ class Denoise:
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
-    public rtengine::AutoChromaListener,
-    public CurveListener
+    public rtengine::AutoChromaListener
 {
 public:
     Denoise();
@@ -54,9 +51,6 @@ public:
 
     void trimValues(rtengine::procparams::ProcParams* pp) override;
 
-    void curveChanged() override;
-    void autoOpenCurve() override;
-
 private:
     void colorSpaceChanged();
     void aggressiveChanged();
@@ -73,7 +67,6 @@ private:
     rtengine::ProcEvent EvGuidedChromaStrength;
     rtengine::ProcEvent EvChrominanceAutoFactor;
     rtengine::ProcEvent EvLuminanceDetailThreshold;
-    rtengine::ProcEvent EvLuminanceCurve;
 
     MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
@@ -97,8 +90,6 @@ private:
     Adjuster *guidedLumaStrength;
     Adjuster *guidedChromaRadius;
     Adjuster *guidedChromaStrength;
-    CurveEditorGroup *cg;
-    FlatCurveEditor *luminanceCurve;
 
     IdleRegister idle_register;
 };
