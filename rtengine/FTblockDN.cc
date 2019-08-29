@@ -1451,17 +1451,23 @@ BENCHFUN
 
                                 const int detail_thresh = dnparams.luminanceDetailThreshold;
                                 array2D<float> mask;
-                                if (detail_thresh > 0) {// && dnparams.luminanceDetailThreshold > 0) {
+                                if (detail_thresh > 0) {
                                     mask(width, height);
-                                    // float thr = pow_F(float(detail_thresh)/100.f, 1.2f);
-                                    float thr = log2lin(float(detail_thresh)/200.f, 100.f); // / 2.f;
+                                    float thr = log2lin(float(detail_thresh)/200.f, 100.f);
                                     buildBlendMask(labdn->L, mask, width, height, thr);
-                                    float r = 20.f / scale; //dnparams.luminance / (10.f * scale);
+                                    float r = 20.f / scale;
                                     if (r > 0) {
-                                        //guidedFilter(mask, mask, mask, r, 0.01f, multiThread);
                                         float **m = mask;
-                                        //boxblur(m, m, r, r, width, height);
                                         gaussianBlur(m, m, width, height, r);
+                                    }
+                                    array2D<float> m2(width, height);
+                                    const float alfa = 0.856f;
+                                    const float beta = 1.f + std::sqrt(log2lin(thr, 100.f));
+                                    buildGradientsMask(width, height, labdn->L, m2, params_Ldetail/100.f, 7, 3, alfa, beta, multiThread);
+                                    for (int i = 0; i < height; ++i) {
+                                        for (int j = 0; j < width; ++j) {
+                                            mask[i][j] *= m2[i][j];
+                                        }
                                     }
                                 }
 

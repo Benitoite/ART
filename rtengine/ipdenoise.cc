@@ -370,22 +370,6 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
 
     adjust_params(denoiseParams, scale);
 
-    array2D<float> Y;
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    auto detail = denoiseParams.luminanceDetail;
-    denoiseParams.luminanceDetail = 0;
-    if (detail > 0) {
-        Y(W, H);
-#ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                Y[y][x] = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
-            }
-        }
-    }
-
     noiseCCurve.Set({
         FCT_MinMaxCPoints,
         0.05,
@@ -399,49 +383,6 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
         });
 
     RGB_denoise(0, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
-
-    if (detail > 0) {
-        array2D<float> mask(W, H);
-        constexpr int nlevels = 7;
-        constexpr int detail_level = 3;
-#if 0
-        constexpr float beta = 1.2f;
-        float alfa = 1.f;
-        // float t = float(denoiseParams.luminanceDetailThreshold)/100.f;
-        // float threshold = log2lin(t, 100.f) * 100 - 20;
-        float threshold = denoiseParams.luminanceDetailThreshold - 20;
-        if (threshold < 0) {
-            alfa += (threshold * 0.9f) / 100.f;
-        } else if (threshold > 0) {
-            alfa += threshold / 100.f;
-        }
-        //const float beta = std::min(1.f + 0.5f * std::pow(t, 0.4f), 1.2f);
-#else
-        const float alfa = 0.856f;
-        const float t = denoiseParams.luminanceDetailThreshold / 200.f;
-        float beta = 1.f + std::sqrt(log2lin(t, 100.f));
-#endif
-        std::cout << "GRADIENT MASK: alfa = " << alfa << ", beta = " << beta << std::endl;
-        buildGradientsMask(W, H, Y, mask, float(detail)/100.f, nlevels, detail_level, alfa, beta, multiThread);
-
-#ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
-#endif
-        for (int y = 0; y < Y.height(); ++y) {
-            for (int x = 0; x < Y.width(); ++x) {
-                float iY = Y[y][x];
-                float oY = Color::rgbLuminance(img->r(y, x), img->g(y, x), img->b(y, x), ws);
-                if (oY > 1e-5f) {
-                    float blend = mask[y][x];
-                    iY = intp(blend, iY, oY);
-                    float f = iY / oY;
-                    img->r(y, x) *= f;
-                    img->g(y, x) *= f;
-                    img->b(y, x) *= f;
-                }
-            }
-        }
-    }
 
     if (denoiseParams.smoothingEnabled) {
         if (denoiseParams.smoothingMethod == DenoiseParams::SmoothingMethod::MEDIAN) {
@@ -491,8 +432,7 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
                 num_threads = omp_get_max_threads();
             }
 #endif
-            float **buf = Y;
-            Y(W, H);
+            array2D<float> buf(W, H);
             float **channels[3] = { img->g.ptrs, img->r.ptrs, img->b.ptrs };
             for (int c = 0; c < 3; ++c) {
                 if (median_iterations[c] > 0) {
@@ -501,7 +441,6 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
             }
             img->setMode(Imagefloat::Mode::RGB, multiThread);
         } else {
-            Y.free();
             denoiseGuidedSmoothing(img);
         }
     }
