@@ -238,15 +238,27 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     vb->set_spacing(2);
     vb->pack_start(*hb);
 
-    areaMaskMode = Gtk::manage(new MyComboBoxText());
-    areaMaskMode->append(M("TP_LABMASKS_AREA_SHAPE_MODE_ADD"));
-    areaMaskMode->append(M("TP_LABMASKS_AREA_SHAPE_MODE_SUBTRACT"));
-    areaMaskMode->append(M("TP_LABMASKS_AREA_SHAPE_MODE_INTERSECT"));
     hb = Gtk::manage(new Gtk::HBox());
     hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_LABMASKS_AREA_SHAPE_MODE") + ":")), Gtk::PACK_SHRINK, 4);
-    hb->pack_start(*areaMaskMode);
+    hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_EXPAND_WIDGET);
+    const char *img[3] = {
+        "area-shape-add.png",
+        "area-shape-subtract.png",
+        "area-shape-intersect.png"
+    };
+    const char *tips[3] = {
+        "TP_LABMASKS_AREA_SHAPE_MODE_ADD",
+        "TP_LABMASKS_AREA_SHAPE_MODE_SUBTRACT",
+        "TP_LABMASKS_AREA_SHAPE_MODE_INTERSECT"
+    };
+    for (int i = 0; i < 3; ++i) {
+        areaMaskMode[i] = Gtk::manage(new Gtk::ToggleButton());
+        areaMaskMode[i]->add(*Gtk::manage(new RTImage(img[i])));
+        areaMaskMode[i]->set_tooltip_text(M(tips[i]));
+        areaMaskModeConn[i] = areaMaskMode[i]->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &LabMasksPanel::onAreaShapeModeChanged), i));
+        add_button(areaMaskMode[i], hb, 24);
+    }
     vb->pack_start(*hb);
-    areaMaskMode->signal_changed().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaShapeModeChanged));
     
     areaMaskX = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_X"), -100, 100, 0.1, 0));
     add_adjuster(areaMaskX, vb);
@@ -347,7 +359,7 @@ void LabMasksPanel::maskGet(int idx)
         a.height = areaMaskHeight->getValue();
         a.angle = areaMaskAngle->getValue();
         a.roundness = areaMaskRoundness->getValue();
-        a.mode = Shape::Mode(areaMaskMode->get_active_row_number());
+        a.mode = Shape::Mode(getAreaShapeMode());
     }
 }
 
@@ -527,7 +539,8 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
             areaMaskHeight->setValue(a.height);
             areaMaskAngle->setValue(a.angle);
             areaMaskRoundness->setValue(a.roundness);
-            areaMaskMode->set_active(int(a.mode));
+            //areaMaskMode->set_active(int(a.mode));
+            toggleAreaShapeMode(int(a.mode));
         }
         populateShapeList(idx, area_shape_index_);
         updateAreaMask(false);
@@ -841,7 +854,8 @@ void LabMasksPanel::onAreaShapeSelectionChanged()
         s.height = height_;
         s.angle = angle_;
         s.roundness = areaMaskRoundness->getValue();
-        s.mode = Shape::Mode(areaMaskMode->get_active_row_number());
+        //s.mode = Shape::Mode(areaMaskMode->get_active_row_number());
+        s.mode = Shape::Mode(getAreaShapeMode());
 
         auto sel = areaMaskShapes->get_selected();
         unsigned int newidx = sel.empty() ? area_shape_index_ : sel[0];
@@ -913,8 +927,34 @@ void LabMasksPanel::onAreaShapeRemovePressed()
 }
 
 
-void LabMasksPanel::onAreaShapeModeChanged()
+void LabMasksPanel::toggleAreaShapeMode(int i)
 {
+    for (int j = 0; j < 3; ++j) {
+        ConnectionBlocker blocker(areaMaskModeConn[j]);
+        areaMaskMode[j]->set_active(i == j);
+    }
+}
+
+
+int LabMasksPanel::getAreaShapeMode()
+{
+    for (int j = 0; j < 3; ++j) {
+        if (areaMaskMode[j]->get_active()) {
+            return j;
+        }
+    }
+    return 0;
+}
+
+
+void LabMasksPanel::onAreaShapeModeChanged(int i)
+{
+    if (!areaMaskMode[i]->get_active()) {
+        ConnectionBlocker blocker(areaMaskModeConn[i]);
+        areaMaskMode[i]->set_active(true);
+        return;
+    }
+    toggleAreaShapeMode(i);
     onAreaShapeSelectionChanged();
     populateShapeList(selected_, area_shape_index_);
     auto l = getListener();
@@ -987,7 +1027,8 @@ void LabMasksPanel::onAreaMaskPastePressed()
             areaMaskFeather->setValue(a.feather);
             areaMaskContrast->setCurve(a.contrast);
             areaMaskRoundness->setValue(s.roundness);
-            areaMaskMode->set_active(int(s.mode));
+            //areaMaskMode->set_active(int(s.mode));
+            toggleAreaShapeMode(int(s.mode));
             areaMaskInverted->set_active(a.inverted);
         }
         populateShapeList(selected_, area_shape_index_);
@@ -1013,7 +1054,8 @@ void LabMasksPanel::areaShapeSelect(int sel, bool update_list)
     updateGeometry();
     updateAreaMask(true);
     areaMaskRoundness->setValue(ns.roundness);
-    areaMaskMode->set_active(int(ns.mode));
+    //areaMaskMode->set_active(int(ns.mode));
+    toggleAreaShapeMode(int(ns.mode));
     if (areaMaskToggle->get_active()) {
         areaMaskToggle->set_active(false);
         areaMaskToggle->set_active(true);
