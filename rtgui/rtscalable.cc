@@ -168,7 +168,27 @@ Cairo::RefPtr<Cairo::ImageSurface> RTScalable::loadImage(const Glib::ustring &fn
     Glib::ustring imagesCacheFolderDPI = Glib::build_filename (imagesCacheFolder, Glib::ustring::compose("%1", (int)dpi));
     auto path = Glib::build_filename(imagesCacheFolderDPI, fname);
 
-    if (Glib::file_test(path.c_str(), Glib::FILE_TEST_EXISTS)) {
+    std::string svgFile;
+    Glib::ustring iconNameSVG;
+    if (fname.find(".png") != Glib::ustring::npos) {
+        iconNameSVG = fname.substr(0, fname.length() - 3) + Glib::ustring("svg");
+    }
+
+    bool png_is_good = true;
+    if (!Glib::file_test(path.c_str(), Glib::FILE_TEST_EXISTS)) {
+        png_is_good = false;
+    } else {
+        auto svgpath = Glib::build_filename(imagesFolder, iconNameSVG);
+        if (Glib::file_test(svgpath.c_str(), Glib::FILE_TEST_EXISTS)) {
+            auto pnginfo = Gio::File::create_for_path(path)->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED);
+            auto svginfo = Gio::File::create_for_path(svgpath)->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED);
+            if (pnginfo->modification_time() < svginfo->modification_time()) {
+                png_is_good = false;
+            }
+        }
+    }
+    
+    if (png_is_good) {
         return Cairo::ImageSurface::create_from_png(path);
     } else {
 
@@ -195,11 +215,11 @@ Cairo::RefPtr<Cairo::ImageSurface> RTScalable::loadImage(const Glib::ustring &fn
 
     // -------------------- Loading the SVG file --------------------
 
-    std::string svgFile;
-    Glib::ustring iconNameSVG;
-    if (fname.find(".png") != Glib::ustring::npos) {
-        iconNameSVG = fname.substr(0, fname.length() - 3) + Glib::ustring("svg");
-    }
+    // std::string svgFile;
+    // Glib::ustring iconNameSVG;
+    // if (fname.find(".png") != Glib::ustring::npos) {
+    //     iconNameSVG = fname.substr(0, fname.length() - 3) + Glib::ustring("svg");
+    // }
     try {
         path = Glib::build_filename (imagesFolder, iconNameSVG);
         //printf("Trying to get content of %s\n", path.c_str());
