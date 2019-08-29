@@ -108,6 +108,7 @@ private:
     void onAreaShapeRemovePressed();
     void onAreaMaskCopyPressed();
     void onAreaMaskPastePressed();
+    void onAreaShapeModeChanged();
     
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
@@ -158,6 +159,7 @@ private:
     Gtk::CheckButton *areaMaskInverted;
     Adjuster *areaMaskFeather;
     DiagonalCurveEditor *areaMaskContrast;
+    MyComboBoxText *areaMaskMode;
     Adjuster *areaMaskX;
     Adjuster *areaMaskY;
     Adjuster *areaMaskWidth;

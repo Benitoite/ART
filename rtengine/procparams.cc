@@ -428,7 +428,8 @@ AreaMask::Shape::Shape():
     width(100),
     height(100),
     angle(0),
-    roundness(0)
+    roundness(0),
+    mode(ADD)
 {
 }
 
@@ -441,7 +442,8 @@ bool AreaMask::Shape::operator==(const Shape &other) const
         && width == other.width
         && height == other.height
         && angle == other.angle
-        && roundness == other.roundness;
+        && roundness == other.roundness
+        && mode == other.mode;
 }
 
 
@@ -539,6 +541,35 @@ bool LabCorrectionMask::operator!=(const LabCorrectionMask &other) const
 }
 
 
+namespace {
+
+AreaMask::Shape::Mode str2mode(const Glib::ustring &mode)
+{
+    if (mode == "subtract") {
+        return AreaMask::Shape::SUBTRACT;
+    } else if (mode == "intersect") {
+        return AreaMask::Shape::INTERSECT;
+    } else {
+        return AreaMask::Shape::ADD;
+    }
+}
+
+
+Glib::ustring mode2str(AreaMask::Shape::Mode mode)
+{
+    switch (mode) {
+    case AreaMask::Shape::ADD: return "add";
+    case AreaMask::Shape::SUBTRACT: return "subtract";
+    case AreaMask::Shape::INTERSECT: return "intersect";
+    default:
+        assert(false);
+        return "";
+    }
+}
+
+} // namespace
+
+
 bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
 {
     bool ret = false;
@@ -564,6 +595,11 @@ bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_
         found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Height" + suffix, a.height);
         found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, a.angle);
         found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness);
+        Glib::ustring mode;
+        if (assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode)) {
+            found = true;
+            a.mode = str2mode(mode);
+        }
         if (found) {
             s.emplace_back(a);
             ret = true;
@@ -597,6 +633,7 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
         putToKeyfile(group_name, prefix + "AreaMask" + n + "Height" + suffix, a.height, keyfile);
         putToKeyfile(group_name, prefix + "AreaMask" + n + "Angle" + suffix, a.angle, keyfile);
         putToKeyfile(group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode2str(a.mode), keyfile);
     }
 }
 

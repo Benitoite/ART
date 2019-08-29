@@ -84,6 +84,7 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
     array2D<float> guide(mask.width(), mask.height(), mask, 0);
     float *maskdata = mask;
     std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
+    array2D<float> intersect;
 
     float min_feather = RT_INFINITY;
 
@@ -113,6 +114,14 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
                 return ret;
             };
 
+        float **marr = mask;
+        if (area.mode == AreaMask::Shape::INTERSECT) {
+            intersect(mask.width(), mask.height());
+            marr = intersect;
+            float *p = intersect;
+            std::fill(p, p + (mask.width() * mask.height()), bgcolor);
+        }
+
         // draw the (bounded) ellipse
         for (int x = 0, n = int(a_min); x < n; ++x) {
             int yy = r * std::sqrt(a*a - float(x*x));
@@ -123,9 +132,30 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
                     for (int i = -1; i < 2; ++i) {
                         for (int j = -1; j < 2; ++j) {
                             if (inside(point.x+i, point.y+j)) {
-                                mask[point.y+j][point.x+i] = fgcolor;
+                                switch (area.mode) {
+                                case AreaMask::Shape::ADD:
+                                case AreaMask::Shape::INTERSECT:
+                                    marr[point.y+j][point.x+i] = fgcolor;
+                                    break;
+                                case AreaMask::Shape::SUBTRACT:
+                                    marr[point.y+j][point.x+i] = bgcolor;
+                                    break;
+                                }
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        if (area.mode == AreaMask::Shape::INTERSECT) {
+#ifdef _OPENMP
+#           pragma omp parallel for if (multithread)
+#endif
+            for (int y = 0; y < mask.height(); ++y) {
+                for (int x = 0; x < mask.width(); ++x) {
+                    if (mask[y][x] == fgcolor && intersect[y][x] != fgcolor) {
+                        mask[y][x] = bgcolor;
                     }
                 }
             }
@@ -140,18 +170,6 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
         [&curve](float x) -> float
         {
             return curve.getVal(x);
-            // if (c <= 0) {
-            //     return x;
-            // }
-            // constexpr float s = 1.f;
-            // constexpr float a = 0.5f;
-            // float y = 0.f;
-            // if (x <= 0.5f) {
-            //     y = a * std::pow(x/a, c);
-            // } else {
-            //     y = 1.f - (1-a) * std::pow((1 - x) / (1 - a), c);
-            // }
-            // return s*y + (1.f-s)*x;
         };
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
