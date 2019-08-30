@@ -141,6 +141,7 @@ set(RTENGINESOURCEFILES
     metadata.cc
     iplabadjustments.cc
     perspectivecorrection.cc
+    iphsl.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)

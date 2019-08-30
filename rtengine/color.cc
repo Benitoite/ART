@@ -7023,4 +7023,19 @@ void Color::filmlike_clip(float *r, float *g, float *b)
     }
 }
 
+
+void Color::yuv2hsl(float u, float v, float &h, float &s)
+{
+    s = std::sqrt(SQR(u) + SQR(v));
+    h = xatan2f(-u, v);
+}
+
+
+void Color::hsl2yuv(float h, float s, float &u, float &v)
+{
+    float2 sincosval = xsincosf(h);
+    u = -(s * sincosval.x);
+    v = s * sincosval.y;
+}
+
 } // namespace rtengine

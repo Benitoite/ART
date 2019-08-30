@@ -122,6 +122,7 @@ public:
     bool contrastByDetailLevels(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void filmGrain(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     bool guidedSmoothing(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    void hslEqualizer(Imagefloat *rgb);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------

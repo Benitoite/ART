@@ -66,6 +66,7 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 2},
         {"PARTIALPASTE_ICMSETTINGS", &pedited.icm, 2},
         {"PARTIALPASTE_CHANNELMIXER", &pedited.chmixer, 2},
+        {"PARTIALPASTE_HSLEQUALIZER", &pedited.hsl, 2},
         {"PARTIALPASTE_FILMSIMULATION", &pedited.filmSimulation, 2},
         {"PARTIALPASTE_SOFTLIGHT", &pedited.softlight, 2},
         {"PARTIALPASTE_RGBCURVES", &pedited.rgbCurves, 2},

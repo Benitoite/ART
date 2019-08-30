@@ -776,7 +776,10 @@ public:
         b = u + Y;
         r = v + Y;
         g = (Y - r * float(workingspace[1][0]) - b * float(workingspace[1][2])) / float(workingspace[1][1]);
-    }        
+    }
+
+    static void yuv2hsl(float u, float v, float &h, float &s);
+    static void hsl2yuv(float h, float s, float &u, float &v);
     
     /**
      * @brief Calculate the effective direction (up or down) to linearly interpolating 2 colors so that it follows the shortest or longest path

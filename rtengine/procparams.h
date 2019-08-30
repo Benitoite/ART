@@ -942,6 +942,19 @@ struct BlackWhiteParams {
     bool operator !=(const BlackWhiteParams& other) const;
 };
 
+struct HSLEqualizerParams {
+    bool enabled;
+    std::vector<double> hCurve;
+    std::vector<double> sCurve;
+    std::vector<double> lCurve;
+    int smoothing;
+
+    HSLEqualizerParams();
+
+    bool operator==(const HSLEqualizerParams &other) const;
+    bool operator!=(const HSLEqualizerParams &other) const;
+};
+
 /**
   * Parameters of the c/a correction
   */
@@ -1378,6 +1391,7 @@ public:
     VignettingParams        vignetting;      ///< Lens vignetting correction parameters
     ChannelMixerParams      chmixer;         ///< Channel mixer parameters
     BlackWhiteParams        blackwhite;      ///< Black&  White parameters
+    HSLEqualizerParams      hsl;
     ResizeParams            resize;          ///< Resize parameters
     ColorManagementParams   icm;             ///< profiles/color spaces used during the image processing
     RAWParams               raw;             ///< RAW parameters before demosaicing

@@ -1137,6 +1137,8 @@ void ImProcFunctions::rgbProc(Imagefloat *working)
     if (tmpImage) {
         delete tmpImage;
     }
+
+    hslEqualizer(working);
 }
 
 /**

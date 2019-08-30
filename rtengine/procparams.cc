@@ -1633,6 +1633,33 @@ bool BlackWhiteParams::operator !=(const BlackWhiteParams& other) const
     return !(*this == other);
 }
 
+
+HSLEqualizerParams::HSLEqualizerParams():
+    enabled(false),
+    hCurve{FCT_Linear},
+    sCurve{FCT_Linear},
+    lCurve{FCT_Linear},
+    smoothing(0)
+{
+}
+
+
+bool HSLEqualizerParams::operator==(const HSLEqualizerParams &other) const
+{
+    return enabled == other.enabled
+        && hCurve == other.hCurve
+        && sCurve == other.sCurve
+        && lCurve == other.lCurve
+        && smoothing == other.smoothing;
+}
+
+
+bool HSLEqualizerParams::operator!=(const HSLEqualizerParams &other) const
+{
+    return !(*this == other);
+}
+
+
 CACorrParams::CACorrParams() :
     enabled(false),
     red(0.0),
@@ -2335,6 +2362,8 @@ void ProcParams::setDefaults()
 
     blackwhite = BlackWhiteParams();
 
+    hsl = HSLEqualizerParams();
+
     cacorrection = CACorrParams();
 
     resize = ResizeParams();
@@ -2513,6 +2542,15 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Black & White", "GammaGreen", blackwhite.gammaGreen, keyFile);
             saveToKeyfile("Black & White", "GammaBlue", blackwhite.gammaBlue, keyFile);
             saveToKeyfile("Black & White", "LuminanceCurve", blackwhite.luminanceCurve, keyFile);
+        }
+
+// HSL equalizer
+        if (RELEVANT_(hsl)) {
+            saveToKeyfile("HSL Equalizer", "Enabled", hsl.enabled, keyFile);
+            saveToKeyfile("HSL Equalizer", "HCurve", hsl.hCurve, keyFile);
+            saveToKeyfile("HSL Equalizer", "SCurve", hsl.sCurve, keyFile);
+            saveToKeyfile("HSL Equalizer", "LCurve", hsl.lCurve, keyFile);
+            saveToKeyfile("HSL Equalizer", "Smoothing", hsl.smoothing, keyFile);
         }
 
 // Luma curve
@@ -3269,6 +3307,14 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Black & White", "LuminanceCurve", blackwhite.luminanceCurve);
         }
 
+        if (keyFile.has_group("HSL Equalizer") && RELEVANT_(hsl)) {
+            assignFromKeyfile(keyFile, "HSL Equalizer", "Enabled", hsl.enabled);
+            assignFromKeyfile(keyFile, "HSL Equalizer", "HCurve", hsl.hCurve);
+            assignFromKeyfile(keyFile, "HSL Equalizer", "SCurve", hsl.sCurve);
+            assignFromKeyfile(keyFile, "HSL Equalizer", "LCurve", hsl.lCurve);
+            assignFromKeyfile(keyFile, "HSL Equalizer", "Smoothing", hsl.smoothing);
+        }
+        
         if (keyFile.has_group("Local Contrast") && RELEVANT_(localContrast)) {
             assignFromKeyfile(keyFile, "Local Contrast", "Enabled", localContrast.enabled);
             int m = static_cast<int>(LocalContrastParams::USM);
@@ -4322,6 +4368,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && vignetting == other.vignetting
         && chmixer == other.chmixer
         && blackwhite == other.blackwhite
+        && hsl == other.hsl
         && resize == other.resize
         && raw == other.raw
         && icm == other.icm

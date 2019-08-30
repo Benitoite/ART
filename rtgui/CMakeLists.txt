@@ -160,6 +160,7 @@ set(NONCLISOURCEFILES
     fastexport.cc
     exposure.cc
     brightcontrsat.cc
+    hslequalizer.cc
     )
 
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")

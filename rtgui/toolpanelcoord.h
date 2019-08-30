@@ -81,6 +81,7 @@
 #include "logencoding.h"
 #include "smoothing.h"
 #include "colorcorrection.h"
+#include "hslequalizer.h"
 #include "guiutils.h"
 
 class ImageEditorCoordinator;
@@ -113,6 +114,7 @@ protected:
     CACorrection* cacorrection;
     ChMixer* chmixer;
     BlackWhite* blackwhite;
+    HSLEqualizer *hsl;
     Resize* resize;
     PrSharpening* prsharpening;
     ICMPanel* icm;

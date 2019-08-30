@@ -59,6 +59,7 @@ public:
     bool vignetting;
     bool chmixer;
     bool blackwhite;
+    bool hsl;
     bool resize;
     bool icm;
 

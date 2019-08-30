@@ -61,6 +61,7 @@ void ParamsEdited::set(bool v)
     vignetting = v;
     chmixer = v;
     blackwhite = v;
+    hsl = v;
     resize = v;
     icm = v;
     demosaic = v;

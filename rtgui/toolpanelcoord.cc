@@ -68,6 +68,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     cacorrection        = Gtk::manage (new CACorrection ());
     chmixer             = Gtk::manage (new ChMixer ());
     blackwhite          = Gtk::manage (new BlackWhite ());
+    hsl = Gtk::manage (new HSLEqualizer());
     resize              = Gtk::manage (new Resize ());
     prsharpening        = Gtk::manage (new PrSharpening());
     crop                = Gtk::manage (new Crop ());
@@ -110,6 +111,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (exposurePanel, brightContrSat);
     addfavoritePanel (exposurePanel, toneCurve);
     addfavoritePanel (colorPanel, chmixer);
+    addfavoritePanel(colorPanel, hsl);
     //addfavoritePanel (colorPanel, blackwhite);
     addfavoritePanel (exposurePanel, logenc);
     addfavoritePanel (exposurePanel, shadowshighlights);
