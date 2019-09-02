@@ -27,6 +27,23 @@ using namespace rtengine::procparams;
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+namespace {
+
+void hsv2rgb01(float h, float s, float v, float &r, float &g, float &b)
+{
+    // try to get a better visual match -- this is empirical and to be confirmed
+    h -= 1.f/20.f;
+    if (h > 1.f) {
+        h -= 1.f;
+    } else if (h < 0.f) {
+        h += 1.f;
+    }
+
+    Color::hsv2rgb01(h, s, v, r, g, b);
+}
+
+} // namespace
+
 HSLEqualizer::HSLEqualizer():
     FoldableToolPanel(this, "hslequalizer", M("TP_HSVEQUALIZER_LABEL"), false, true)
 {
@@ -37,7 +54,7 @@ HSLEqualizer::HSLEqualizer():
     for (int i = 0; i < 7; i++) {
         float R, G, B;
         float x = float(i) * (1.0f / 6.0);
-        Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
+        hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
         bottomMilestones.push_back(GradientMilestone(double(x), double(R), double(G), double(B)));
     }
     
@@ -171,11 +188,11 @@ void HSLEqualizer::colorForValue(double valX, double valY, enum ColorCaller::Ele
         } else if (h < 0.0f) {
             h += 1.0f;
         }
-        Color::hsv2rgb01(h, 0.5f, 0.5f, R, G, B);
+        hsv2rgb01(h, 0.5f, 0.5f, R, G, B);
     } else if (callerId == 2) { // Saturation = f(Hue)
-        Color::hsv2rgb01(valX, valY, 0.5f, R, G, B);
+        hsv2rgb01(valX, valY, 0.5f, R, G, B);
     } else if (callerId == 3) { // Value = f(Hue)
-        Color::hsv2rgb01(valX, 0.5f, 0.5f + (valY - 0.5f) * 0.2, R, G, B);
+        hsv2rgb01(valX, 0.5f, 0.5f + (valY - 0.5f) * 0.2, R, G, B);
     }    
     caller->ccRed = R;
     caller->ccGreen = G;
