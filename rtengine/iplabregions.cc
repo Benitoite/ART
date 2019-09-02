@@ -253,7 +253,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
                     vfloat lblendv = LVFU(Lmask[i][y][x]);
                     vfloat fv = vmaxf(Yv, ZEROV);
                     vfloat Y_newv = Yv;
-                    vfloat u_newv = uv - fv * F2V(abcb[i]);
+                    vfloat u_newv = uv + fv * F2V(abcb[i]);
                     vfloat v_newv = vv + fv * F2V(abca[i]);
 
                     CDL_v(Y_newv, u_newv, v_newv, slope[i], offset[i], power[i], rs[i]);
@@ -278,7 +278,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_
 
                     float f = max(Y, 0.f);
                     float Y_new = Y;
-                    float u_new = u - f * abcb[i];
+                    float u_new = u + f * abcb[i];
                     float v_new = v + f * abca[i];
 
                     CDL(Y_new, u_new, v_new, slope[i], offset[i], power[i], rs[i]);

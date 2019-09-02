@@ -224,7 +224,7 @@ bool LabGridArea::on_draw(const ::Cairo::RefPtr<Cairo::Context> &crf)
                 int ii = i - cells/2;
                 int jj = j - cells/2;
                 float v = step * (ii + 0.5);
-                float u = -step * (jj + 0.5);
+                float u = step * (jj + 0.5);
                 Color::yuv2rgb(Y, Y * u, Y * v, R, G, B, ws);
                 // Color::Lab2XYZ(23000.f, a, b, x, y, z);
                 // Color::xyz2srgb(x, y, z, R, G, B);

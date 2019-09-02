@@ -752,7 +752,7 @@ void Imagefloat::xyz_to_yuv(bool multithread)
             float Y = g(y, x);
             Color::xyz2rgb(r(y, x), Y, b(y, x), R, G, B, iws_);
             r(y, x) = R - Y;
-            b(y, x) = B - Y;
+            b(y, x) = Y - B;
         }
     }
 }
@@ -1012,7 +1012,7 @@ void Imagefloat::lab_to_yuv(bool multithread)
             Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), X, Y, Z);
             Color::xyz2rgb(X, Y, Z, R, G, B, iws_);
             this->g(y, x) = Y;
-            this->b(y, x) = B - Y;
+            this->b(y, x) = Y - B;
             this->r(y, x) = R - Y;
         }
     }

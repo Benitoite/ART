@@ -766,14 +766,14 @@ public:
     static void rgb2yuv(float r, float g, float b, float &Y, float &u, float &v, const T workingspace[3][3])
     {
         Y = rgbLuminance(r, g, b, workingspace);
-        u = b - Y;
+        u = Y - b;
         v = r - Y;
     }
 
     template <class T>
     static void yuv2rgb(float Y, float u, float v, float &r, float &g, float &b, const T workingspace[3][3])
     {
-        b = u + Y;
+        b = Y - u;
         r = v + Y;
         g = (Y - r * float(workingspace[1][0]) - b * float(workingspace[1][2])) / float(workingspace[1][1]);
     }

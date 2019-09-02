@@ -981,7 +981,7 @@ BENCHFUN
                                         Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
                                         labdn->L[i1][j1] = l;
                                         labdn->a[i1][j1] = v;
-                                        labdn->b[i1][j1] = -u;
+                                        labdn->b[i1][j1] = u;
 
                                         if (((i1 | j1) & 1) == 0) {
                                             if (numTries == 1) {
@@ -1612,7 +1612,7 @@ BENCHFUN
                                             // float X = (labdn->a[i1][j1]) + Y;
                                             // float Z = Y - (labdn->b[i1][j1]);
                                             float X, Y, Z;
-                                            Color::yuv2rgb(labdn->L[i1][j1], -labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
+                                            Color::yuv2rgb(labdn->L[i1][j1], labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
 
 
                                             X = X < 32768.f ? igamcurve[X] : (Color::gammaf(X / 32768.f, igam, igamthresh, igamslope) * 65535.f);
@@ -3177,7 +3177,7 @@ void ImProcFunctions::RGB_denoise_info(Imagefloat * src, Imagefloat * provicalc,
                             float l, u, v;
                             Color::rgb2yuv(X, Y, Z, l, u, v, wp);
                             labdn->a[i1][j1] = v;
-                            labdn->b[i1][j1] = -u;
+                            labdn->b[i1][j1] = u;
                         }
                     }
                 }
