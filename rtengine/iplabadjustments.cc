@@ -424,13 +424,6 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
             // fill pipette buffer with zeros to avoid crashes
             editWhatever->fill(0.f);
         }
-        if (params->blackwhite.enabled) {
-            for (int i = 0; i < lnew->H; ++i) {
-                for (int j = 0; j < lnew->W; ++j) {
-                    lnew->a[i][j] = lnew->b[i][j] = 0.f;
-                }
-            }
-        }
         return;
     }
 
@@ -525,11 +518,11 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
     const bool highlight = params->exposure.enabled && params->exposure.hrmode != procparams::ExposureParams::HR_OFF;
     const int chromaticity = params->labCurve.chromaticity;
     const float chromapro = (chromaticity + 100.0f) / 100.0f;
-    const bool bwonly = params->blackwhite.enabled;
-    bool bwq = false;
+    //const bool bwonly = params->blackwhite.enabled;
+    //bool bwq = false;
 //  if(params->ppVersion > 300  && params->labCurve.chromaticity == - 100) bwq = true;
     // const bool bwToning = params->labCurve.chromaticity == - 100  /*|| params->blackwhite.method=="Ch" || params->blackwhite.enabled */ || bwonly;
-    const bool bwToning = bwq  /*|| params->blackwhite.method=="Ch" || params->blackwhite.enabled */ || bwonly;
+    const bool bwToning = false; //bwq  /*|| params->blackwhite.method=="Ch" || params->blackwhite.enabled */ || bwonly;
     //if(chromaticity==-100) chromaticity==-99;
     const bool LCredsk = params->labCurve.lcredsk;
     const bool ccut = ccutili;

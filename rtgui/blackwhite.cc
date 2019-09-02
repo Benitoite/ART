@@ -30,8 +30,6 @@ using namespace rtengine::procparams;
 
 BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LABEL"), false, true)
 {
-    CurveListener::setMulti(true);
-
     nextredbw = 0.3333;
     nextgreenbw = 0.3333;
     nextbluebw = 0.3333;
@@ -44,40 +42,12 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
     metHBox->pack_start (*metLabel, Gtk::PACK_SHRINK);
     method = Gtk::manage (new MyComboBoxText ());
     method->append (M("TP_BWMIX_MET_DESAT"));
-    method->append (M("TP_BWMIX_MET_LUMEQUAL"));
     method->append (M("TP_BWMIX_MET_CHANMIX"));
 
     method->set_active (0);
     metHBox->pack_start (*method);
     pack_start (*metHBox);
     methodconn = method->signal_changed().connect ( sigc::mem_fun(*this, &BlackWhite::methodChanged) );
-
-
-    //----------- Luminance equalizer ------------------------------
-
-    luminanceSep = Gtk::manage (new  Gtk::HSeparator());
-    pack_start (*luminanceSep);
-
-    std::vector<GradientMilestone> bottomMilestones;
-    float R, G, B;
-
-    // -0.1 rad < Hue < 1.6 rad
-    for (int i = 0; i < 7; i++) {
-        float x = float(i) * (1.0f / 6.0);
-        Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
-        bottomMilestones.push_back( GradientMilestone(double(x), double(R), double(G), double(B)) );
-    }
-
-    luminanceCEG = new CurveEditorGroup (options.lastBWCurvesDir, M("TP_BWMIX_CHANNEL"));
-    luminanceCEG->setCurveListener (this);
-    luminanceCurve = static_cast<FlatCurveEditor*>(luminanceCEG->addCurve(CT_Flat, M("TP_BWMIX_VAL")));
-    luminanceCurve->setEditID(EUID_BlackWhiteLuminance, BT_SINGLEPLANE_FLOAT);
-    luminanceCurve->setBottomBarBgGradient(bottomMilestones);
-    luminanceCurve->setCurveColorProvider(this, 3);
-    luminanceCurve->setTooltip(M("TP_BWMIX_CURVEEDITOR_LH_TOOLTIP"));
-
-    luminanceCEG->curveListComplete();
-    pack_start (*luminanceCEG, Gtk::PACK_SHRINK, 4);
 
     //----------- Auto and Reset buttons ------------------------------
 
@@ -87,20 +57,10 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
     mixerVBox = Gtk::manage (new Gtk::VBox ());
     mixerVBox->set_spacing(4);
 
-    // autoHBox = Gtk::manage (new Gtk::HBox ());
-
-    // autoch = Gtk::manage (new Gtk::ToggleButton (M("TP_BWMIX_AUTOCH")));
-    // autoconn = autoch->signal_toggled().connect( sigc::mem_fun(*this, &BlackWhite::autoch_toggled) );
-
     neutral = Gtk::manage (new Gtk::Button (M("TP_BWMIX_NEUTRAL")));
     neutralconn = neutral->signal_pressed().connect( sigc::mem_fun(*this, &BlackWhite::neutral_pressed) );
     neutral->show();
     mixerVBox->pack_start(*neutral);
-
-    // autoHBox->pack_start (*autoch);
-    // autoHBox->pack_end (*neutral);
-    // autoHBox->pack_end (*Gtk::manage (new Gtk::Label (" "))); //spacer
-    // mixerVBox->pack_start (*autoHBox);
 
     //----------- Presets combobox ------------------------------
 
@@ -125,8 +85,6 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
     setting->append (M("TP_BWMIX_SET_ORTHOCHRO"));
     setting->append (M("TP_BWMIX_SET_RGBABS"));
     setting->append (M("TP_BWMIX_SET_RGBREL"));
-    // setting->append (M("TP_BWMIX_SET_ROYGCBPMABS"));
-    // setting->append (M("TP_BWMIX_SET_ROYGCBPMREL"));
     setting->append (M("TP_BWMIX_SET_INFRARED"));
 
     setting->set_active (11);
@@ -247,8 +205,6 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
 BlackWhite::~BlackWhite ()
 {
     idle_register.destroy();
-
-    delete luminanceCEG;
 }
 
 
@@ -257,7 +213,6 @@ void BlackWhite::read(const ProcParams* pp)
 
     disableListener ();
     methodconn.block(true);
-    //autoconn.block (true);
     filterconn.block(true);
     settingconn.block(true);
     enaccconn.block (true);
@@ -334,12 +289,10 @@ void BlackWhite::read(const ProcParams* pp)
     gammaRed->setValue (pp->blackwhite.gammaRed);
     gammaGreen->setValue (pp->blackwhite.gammaGreen);
     gammaBlue->setValue (pp->blackwhite.gammaBlue);
-    luminanceCurve->setCurve (pp->blackwhite.luminanceCurve);
 
     methodconn.block(false);
     filterconn.block(false);
     settingconn.block(false);
-    //autoconn.block (false);
     enaccconn.block (false);
 
     updateRGBLabel();
@@ -350,7 +303,6 @@ void BlackWhite::read(const ProcParams* pp)
 void BlackWhite::write (ProcParams* pp)
 {
     pp->blackwhite.enabled = getEnabled();
-    pp->blackwhite.luminanceCurve = luminanceCurve->getCurve ();
     pp->blackwhite.mixerRed = mixerRed->getValue ();
     pp->blackwhite.mixerGreen = mixerGreen->getValue ();
     pp->blackwhite.mixerBlue = mixerBlue->getValue ();
@@ -368,45 +320,6 @@ void BlackWhite::write (ProcParams* pp)
 
     pp->blackwhite.setting = getSettingString();
     pp->blackwhite.filter = getFilterString();
-}
-
-
-void BlackWhite::colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller)
-{
-
-    float r, g, b;
-
-    if (elemType == ColorCaller::CCET_VERTICAL_BAR) {
-        valY = 0.5f;
-    }
-
-    if (callerId == 1) {        // Hue = f(Hue)
-
-        float h = float((valY - 0.5) * 2. + valX);
-
-        if (h > 1.0f) {
-            h -= 1.0f;
-        } else if (h < 0.0f) {
-            h += 1.0f;
-        }
-
-        Color::hsv2rgb01(h, 0.5f, 0.5f, r, g, b);
-        caller->ccRed = double(r);
-        caller->ccGreen = double(g);
-        caller->ccBlue = double(b);
-    } else if (callerId == 2) { // Saturation = f(Hue)
-        Color::hsv2rgb01(float(valX), float(valY), 0.5f, r, g, b);
-        caller->ccRed = double(r);
-        caller->ccGreen = double(g);
-        caller->ccBlue = double(b);
-    } else if (callerId == 3) { // Value = f(Hue)
-        Color::hsv2rgb01(float(valX), 0.5f, float(valY), r, g, b);
-        caller->ccRed = double(r);
-        caller->ccGreen = double(g);
-        caller->ccBlue = double(b);
-    } else {
-        printf("Error: no curve displayed!\n");
-    }
 }
 
 
@@ -449,9 +362,8 @@ void BlackWhite::filterChanged ()
 
 void BlackWhite::methodChanged ()
 {
-    if(method->get_active_row_number() == 2) {
+    if(method->get_active_row_number() == 1) {
         // Channel Mixer
-        hideLuminance();
 
         if(setting->get_active_row_number() == 10 || setting->get_active_row_number() == 11) {
             showMixer(3);
@@ -465,13 +377,8 @@ void BlackWhite::methodChanged ()
         if (wasEnabled) {
             enableListener();
         }
-    } else if(method->get_active_row_number() == 1) {
-        // Luminance Equalizer
-        showLuminance();
-        hideMixer();
     } else if(method->get_active_row_number() == 0) {
         // Desaturation
-        hideLuminance();
         hideMixer();
     }
 
@@ -598,15 +505,6 @@ void BlackWhite::updateRGBLabel ()
 }
 
 
-void BlackWhite::autoOpenCurve ()
-{
-    luminanceCurve->openIfNonlinear();
-}
-void BlackWhite::setEditProvider (EditDataProvider *provider)
-{
-    luminanceCurve->setEditProvider(provider);
-}
-
 void BlackWhite::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
@@ -616,18 +514,6 @@ void BlackWhite::trimValues (rtengine::procparams::ProcParams* pp)
     gammaRed->trimValue (pp->blackwhite.gammaRed);
     gammaGreen->trimValue (pp->blackwhite.gammaGreen);
     gammaBlue->trimValue (pp->blackwhite.gammaBlue);
-}
-
-void BlackWhite::showLuminance()
-{
-    luminanceCEG->show();
-    luminanceSep->show();
-}
-
-void BlackWhite::hideLuminance()
-{
-    luminanceCEG->hide();
-    luminanceSep->hide();
 }
 
 void BlackWhite::showFilter()

@@ -36,10 +36,6 @@ protected:
     DiagonalCurveEditor* Gshape;
     DiagonalCurveEditor* Bshape;
 
-    Gtk::CheckButton* lumamode;
-    bool lastLumamode;
-    sigc::connection lumamodeConn;
-
 public:
 
     RGBCurves();
@@ -63,7 +59,6 @@ public:
         const LUTu& histLuma,
         const LUTu& histLRETI
     );
-    void lumamodeChanged  ();
     void enabledChanged() override;
 };
 

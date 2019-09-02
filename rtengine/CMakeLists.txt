@@ -142,6 +142,10 @@ set(RTENGINESOURCEFILES
     iplabadjustments.cc
     perspectivecorrection.cc
     iphsl.cc
+    ipchmixer.cc
+    ipexposure.cc
+    iprgbcurves.cc
+    ipbw.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)

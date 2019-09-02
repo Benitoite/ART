@@ -466,7 +466,6 @@ struct LocalContrastParams {
   */
 struct RGBCurvesParams {
     bool enabled;
-    bool lumamode;
     std::vector<double>   rcurve;
     std::vector<double>   gcurve;
     std::vector<double>   bcurve;
@@ -926,7 +925,6 @@ struct BlackWhiteParams {
     bool enabled;
     Glib::ustring method;
 
-    std::vector<double> luminanceCurve;
     Glib::ustring filter;
     Glib::ustring setting;
     int mixerRed;

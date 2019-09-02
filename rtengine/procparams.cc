@@ -804,7 +804,6 @@ bool LCurveParams::operator !=(const LCurveParams& other) const
 
 RGBCurvesParams::RGBCurvesParams() :
     enabled(false),
-    lumamode(false),
     rcurve{
         DCT_Linear
     },
@@ -821,7 +820,6 @@ bool RGBCurvesParams::operator ==(const RGBCurvesParams& other) const
 {
     return
         enabled == other.enabled
-        && lumamode == other.lumamode
         && rcurve == other.rcurve
         && gcurve == other.gcurve
         && bcurve == other.bcurve;
@@ -1598,9 +1596,6 @@ bool ChannelMixerParams::operator !=(const ChannelMixerParams& other) const
 BlackWhiteParams::BlackWhiteParams() :
     enabled(false),
     method("Desaturation"),
-    luminanceCurve{
-        FCT_Linear
-    },
     filter("None"),
     setting("RGB-Rel"),
     mixerRed(33),
@@ -1617,7 +1612,6 @@ bool BlackWhiteParams::operator ==(const BlackWhiteParams& other) const
     return
         enabled == other.enabled
         && method == other.method
-        && luminanceCurve == other.luminanceCurve
         && filter == other.filter
         && setting == other.setting
         && mixerRed == other.mixerRed
@@ -2541,7 +2535,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Black & White", "GammaRed", blackwhite.gammaRed, keyFile);
             saveToKeyfile("Black & White", "GammaGreen", blackwhite.gammaGreen, keyFile);
             saveToKeyfile("Black & White", "GammaBlue", blackwhite.gammaBlue, keyFile);
-            saveToKeyfile("Black & White", "LuminanceCurve", blackwhite.luminanceCurve, keyFile);
         }
 
 // HSL equalizer
@@ -2890,7 +2883,6 @@ int ProcParams::save(bool save_general,
 // RGB curves        
         if (RELEVANT_(rgbCurves)) {
             saveToKeyfile("RGB Curves", "Enabled", rgbCurves.enabled, keyFile);
-            saveToKeyfile("RGB Curves", "LumaMode", rgbCurves.lumamode, keyFile);
             saveToKeyfile("RGB Curves", "rCurve", rgbCurves.rcurve, keyFile);
             saveToKeyfile("RGB Curves", "gCurve", rgbCurves.gcurve, keyFile);
             saveToKeyfile("RGB Curves", "bCurve", rgbCurves.bcurve, keyFile);
@@ -3304,7 +3296,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Black & White", "GammaBlue", blackwhite.gammaBlue);
             assignFromKeyfile(keyFile, "Black & White", "Filter", blackwhite.filter);
             assignFromKeyfile(keyFile, "Black & White", "Setting", blackwhite.setting);
-            assignFromKeyfile(keyFile, "Black & White", "LuminanceCurve", blackwhite.luminanceCurve);
         }
 
         if (keyFile.has_group("HSL Equalizer") && RELEVANT_(hsl)) {
@@ -3947,7 +3938,6 @@ int ProcParams::load(bool load_general,
                 rgbCurves.enabled = true;
             }
 
-            assignFromKeyfile(keyFile, "RGB Curves", "LumaMode", rgbCurves.lumamode);
             assignFromKeyfile(keyFile, "RGB Curves", "rCurve", rgbCurves.rcurve);
             assignFromKeyfile(keyFile, "RGB Curves", "gCurve", rgbCurves.gcurve);
             assignFromKeyfile(keyFile, "RGB Curves", "bCurve", rgbCurves.bcurve);

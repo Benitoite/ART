@@ -23,19 +23,6 @@ using namespace rtengine::procparams;
 
 RGBCurves::RGBCurves () : FoldableToolPanel(this, "rgbcurves", M("TP_RGBCURVES_LABEL"), false, true)
 {
-
-    lumamode = Gtk::manage (new Gtk::CheckButton (M("TP_RGBCURVES_LUMAMODE")));
-    lumamode->set_tooltip_markup (M("TP_RGBCURVES_LUMAMODE_TOOLTIP"));
-    lumamode->set_active (false);
-    lumamode->show ();
-    pack_start (*lumamode);
-
-    Gtk::HSeparator *hsep1 = Gtk::manage (new  Gtk::HSeparator());
-    hsep1->show ();
-    pack_start (*hsep1);
-
-    lumamodeConn = lumamode->signal_toggled().connect( sigc::mem_fun(*this, &RGBCurves::lumamodeChanged) );
-
     std::vector<GradientMilestone> milestones;
 
     curveEditorG = new CurveEditorGroup (options.lastRgbCurvesDir, M("TP_RGBCURVES_CHANNEL"));
@@ -78,12 +65,6 @@ void RGBCurves::read(const ProcParams* pp)
 {
     disableListener ();
 
-    lumamodeConn.block (true);
-    lumamode->set_active (pp->rgbCurves.lumamode);
-    lumamodeConn.block (false);
-
-    lastLumamode = pp->rgbCurves.lumamode;
-
     Rshape->setCurve         (pp->rgbCurves.rcurve);
     Gshape->setCurve         (pp->rgbCurves.gcurve);
     Bshape->setCurve         (pp->rgbCurves.bcurve);
@@ -120,7 +101,6 @@ void RGBCurves::write(ProcParams* pp)
     pp->rgbCurves.rcurve         = Rshape->getCurve ();
     pp->rgbCurves.gcurve         = Gshape->getCurve ();
     pp->rgbCurves.bcurve         = Bshape->getCurve ();
-    pp->rgbCurves.lumamode       = lumamode->get_active();
 }
 
 
@@ -144,17 +124,6 @@ void RGBCurves::curveChanged (CurveEditor* ce)
 
         if (ce == Bshape) {
             listener->panelChanged (EvRGBbCurve, M("HISTORY_CUSTOMCURVE"));
-        }
-    }
-}
-
-void RGBCurves::lumamodeChanged ()
-{
-    if (listener && getEnabled()) {
-        if (lumamode->get_active ()) {
-            listener->panelChanged (EvRGBrCurveLumamode, M("GENERAL_ENABLED"));
-        } else {
-            listener->panelChanged (EvRGBrCurveLumamode, M("GENERAL_DISABLED"));
         }
     }
 }

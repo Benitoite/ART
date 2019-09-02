@@ -33,7 +33,6 @@ class BlackWhite final :
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
-    public CurveListener,
     public ColorProvider
 {
 public:
@@ -44,9 +43,6 @@ public:
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void autoOpenCurve   () override;
-    void setEditProvider (EditDataProvider *provider) override;
-
     void neutral_pressed ();
 
     void updateRGBLabel      ();
@@ -57,14 +53,11 @@ public:
     void methodChanged       ();
     void filterChanged       ();
     void settingChanged      ();
-    void colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
 
     Glib::ustring getSettingString ();
     Glib::ustring getFilterString  ();
 
 private:
-    void showLuminance();
-    void hideLuminance();
     void showFilter();
     void hideFilter();
     void showMixer(int nChannels, bool RGBIsSensitive = true);
@@ -72,9 +65,6 @@ private:
     void showGamma();
     void hideGamma();
 
-    FlatCurveEditor*     luminanceCurve;
-    Gtk::HSeparator*     luminanceSep;
-    CurveEditorGroup*    luminanceCEG;
     Gtk::Button*         neutral;
     Gtk::Label*          RGBLabels;
 

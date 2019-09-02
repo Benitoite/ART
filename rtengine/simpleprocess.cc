@@ -381,7 +381,7 @@ private:
             }
         }
 
-        bool bwonly = params.blackwhite.enabled;
+        // bool bwonly = params.blackwhite.enabled;
 
         Imagefloat* readyImg = ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
 
@@ -392,18 +392,18 @@ private:
         delete img;
         img = nullptr;
 
-        if (bwonly) { //force BW r=g=b
-            if (settings->verbose) {
-                printf ("Force BW\n");
-            }
+        // if (bwonly) { //force BW r=g=b
+        //     if (settings->verbose) {
+        //         printf ("Force BW\n");
+        //     }
 
-            for (int ccw = 0; ccw < cw; ccw++) {
-                for (int cch = 0; cch < ch; cch++) {
-                    readyImg->r (cch, ccw) = readyImg->g (cch, ccw);
-                    readyImg->b (cch, ccw) = readyImg->g (cch, ccw);
-                }
-            }
-        }
+        //     for (int ccw = 0; ccw < cw; ccw++) {
+        //         for (int cch = 0; cch < ch; cch++) {
+        //             readyImg->r (cch, ccw) = readyImg->g (cch, ccw);
+        //             readyImg->b (cch, ccw) = readyImg->g (cch, ccw);
+        //         }
+        //     }
+        // }
 
         if (pl) {
             pl->setProgress (0.70);
