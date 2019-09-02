@@ -105,37 +105,6 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
         }
     }
 
-    if (!hcurve.isIdentity()) {
-#ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                float h = img->r(y, x);
-                float f = hcurve.getVal(hue01(h));
-                mask[y][x] = f;
-            }
-        }
-
-        const int radius = 4 / scale * smooth + 0.5;
-        constexpr float eps = 0.001;
-        if (radius > 0) {
-            guidedFilter(Y, mask, mask, radius, eps, multiThread);
-        }
-
-#ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                float h = img->r(y, x);
-                float f = tolin(mask[y][x], 32.f) * RT_PI_F;
-                h += f;
-                img->r(y, x) = h;
-            }
-        }
-    }
-
     if (!scurve.isIdentity()) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multiThread)
@@ -190,6 +159,37 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
             for (int x = 0; x < W; ++x) {
                 float f = 1.f + tolin(mask[y][x], 10.f);
                 img->g(y, x) *= f;
+            }
+        }
+    }
+
+    if (!hcurve.isIdentity()) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float h = img->r(y, x);
+                float f = hcurve.getVal(hue01(h));
+                mask[y][x] = f;
+            }
+        }
+
+        const int radius = 4 / scale * smooth + 0.5;
+        constexpr float eps = 0.001;
+        if (radius > 0) {
+            guidedFilter(Y, mask, mask, radius, eps, multiThread);
+        }
+
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float h = img->r(y, x);
+                float f = tolin(mask[y][x], 32.f) * RT_PI_F;
+                h += f;
+                img->r(y, x) = h;
             }
         }
     }
