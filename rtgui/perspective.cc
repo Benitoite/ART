@@ -53,7 +53,7 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     shear = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_SHEAR"), -50, 50, 0.1, 0, ipersSL, ipersSR));
     flength = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_FLENGTH"), 1, 1200, 0.1, 28));
     cropfactor = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_CROPFACTOR"), 0.1, 10, 0.01, 1));
-    aspect = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_ASPECT"), -0.5, 2, 0.001, 1, iaspectL, iaspectR));
+    aspect = Gtk::manage(new Adjuster(M("TP_PERSPECTIVE_ASPECT"), 0.5, 2, 0.001, 1, iaspectL, iaspectR));
     angle->setAdjusterListener(this);
     shear->setAdjusterListener(this);
     flength->setAdjusterListener(this);
@@ -72,7 +72,7 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     vert->setLogScale(2, 0);
     flength->setLogScale(100, 1);
     cropfactor->setLogScale(2, 1);
-    aspect->setLogScale(10, 1, true);
+    aspect->setLogScale(100, 1, true);
 
     auto_horiz = Gtk::manage(new Gtk::Button());
     auto_horiz->add(*Gtk::manage(new RTImage("perspective-horizontal-left.png")));
