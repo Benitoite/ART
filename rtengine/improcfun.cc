@@ -217,12 +217,32 @@ void proPhotoBlue(float *rtemp, float *gtemp, float *btemp, int istart, int tH, 
 
 } // namespace
 
-namespace rtengine
-{
+namespace rtengine {
 
 using namespace procparams;
 
 extern const Settings* settings;
+
+ImProcFunctions::ImProcFunctions(const ProcParams* iparams, bool imultiThread):
+    monitorTransform(nullptr),
+    params(iparams),
+    scale(1),
+    multiThread(imultiThread),
+    dcpProf(nullptr),
+    dcpApplyState(nullptr),
+    pipetteBuffer(nullptr),
+    lumimul{},
+    offset_x(0),
+    offset_y(0),
+    full_width(-1),
+    full_height(-1),
+    hist_tonecurve(nullptr),
+    hist_ccurve(nullptr),
+    hist_lcurve(nullptr),
+    show_sharpening_mask(false)
+{
+}
+
 
 ImProcFunctions::~ImProcFunctions ()
 {
@@ -2183,4 +2203,68 @@ void ImProcFunctions::lab2rgb (const LabImage &src, Imagefloat &dst, const Glib:
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+void ImProcFunctions::setViewport(int ox, int oy, int fw, int fh)
+{
+    offset_x = ox;
+    offset_y = oy;
+    full_width = fw;
+    full_height = fh;
 }
+
+
+void ImProcFunctions::setOutputHistograms(LUTu *histToneCurve, LUTu *histCCurve, LUTu *histLCurve)
+{
+    hist_tonecurve = histToneCurve;
+    hist_ccurve = histCCurve;
+    hist_lcurve = histLCurve;
+}
+
+
+void ImProcFunctions::setShowSharpeningMask(bool yes)
+{
+    show_sharpening_mask = yes;
+}
+
+
+bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
+{
+    bool stop = false;
+    switch (stage) {
+    case Stage::STAGE_0:
+        dehaze(img);
+        dynamicRangeCompression(img);
+        break;
+    case Stage::STAGE_1:
+        rgbProc(img);
+        break;
+    case Stage::STAGE_2:
+        if (pipeline == Pipeline::OUTPUT ||
+            (pipeline == Pipeline::PREVIEW && scale == 1)) {
+            stop = sharpening(img, params->sharpening, show_sharpening_mask);
+            if (!stop) {
+                impulsedenoise(img);
+                defringe(img);
+            }
+        }
+        stop = stop || colorCorrection(img, offset_x, offset_y, full_width, full_height);
+        stop = stop || guidedSmoothing(img, offset_x, offset_y, full_width, full_height);
+        break;
+    case Stage::STAGE_3:
+        logEncoding(img, hist_tonecurve);
+        labAdjustments(img, hist_ccurve, hist_lcurve);
+        stop = stop || textureBoost(img, offset_x, offset_y, full_width, full_height);
+        if (pipeline != Pipeline::THUMBNAIL) {
+            stop = stop || contrastByDetailLevels(img, offset_x, offset_y, full_width, full_height);
+        }
+        if (!stop) {
+            softLight(img);
+            localContrast(img);
+            filmGrain(img, offset_x, offset_y, full_width, full_height);
+        }
+        break;
+    }
+    return stop;
+}
+
+} // namespace rtengine

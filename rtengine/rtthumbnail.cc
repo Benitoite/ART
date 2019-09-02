@@ -1186,8 +1186,9 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     ipf.firstAnalysis (baseImg, params, hist16);
 
-    ipf.dehaze(baseImg);
-    ipf.dynamicRangeCompression(baseImg);
+    // ipf.dehaze(baseImg);
+    // ipf.dynamicRangeCompression(baseImg);
+    bool stop = ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_0, baseImg);
     
     // perform transform
     if (ipf.needsTransform()) {
@@ -1245,21 +1246,24 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     }
     ipf.setDCPProfile(dcpProf, as);
 
-    LUTu histToneCurve;
-    ipf.rgbProc(baseImg);
-    bool stop = ipf.colorCorrection(baseImg);
-    stop = stop || ipf.guidedSmoothing(baseImg);
-    stop = stop || ipf.textureBoost(baseImg);
-    if (!stop) {
-        ipf.logEncoding(baseImg);
-        ipf.labAdjustments(baseImg);
-    }
+    stop = stop || ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_1, baseImg);
+    stop = stop || ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_2, baseImg);
+    stop = stop || ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_3, baseImg);
+    
+    // LUTu histToneCurve;
+    // ipf.rgbProc(baseImg);
+    // bool stop = ipf.colorCorrection(baseImg);
+    // stop = stop || ipf.guidedSmoothing(baseImg);
+    // if (!stop) {
+    //     ipf.logEncoding(baseImg);
+    //     ipf.labAdjustments(baseImg);
+    // }
 
-//    stop = stop || ipf.textureBoost(baseImg);
-    if (!stop) {
-        ipf.softLight(baseImg);
-        ipf.localContrast(baseImg);
-    }
+    // stop = stop || ipf.textureBoost(baseImg);
+    // if (!stop) {
+    //     ipf.softLight(baseImg);
+    //     ipf.localContrast(baseImg);
+    // }
 
     // obtain final image
     Image8 *readyImg = nullptr;

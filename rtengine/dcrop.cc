@@ -164,6 +164,9 @@ void Crop::update(int todo)
     // Tells to the ImProcFunctions' tool what is the preview scale, which may lead to some simplifications
     parent->ipf.setScale(skip);
     parent->ipf.setPipetteBuffer(this);
+    parent->ipf.setViewport(0, 0, -1, -1);
+    parent->ipf.setOutputHistograms(nullptr, nullptr, nullptr);
+    parent->ipf.setShowSharpeningMask(parent->sharpMask);
 
     Imagefloat* baseCrop = origCrop;
 
@@ -205,6 +208,7 @@ void Crop::update(int todo)
     createBuffer(cropw, croph);
 
     std::unique_ptr<Imagefloat> drCompCrop;
+    bool stop = false;
 
     if ((todo & M_HDR) && (params.fattal.enabled || params.dehaze.enabled)) {
         Imagefloat *f = origCrop;
@@ -255,8 +259,9 @@ void Crop::update(int todo)
         }
 
         if (need_drcomp) {
-            parent->ipf.dehaze(f);
-            parent->ipf.dynamicRangeCompression(f);
+            // parent->ipf.dehaze(f);
+            // parent->ipf.dynamicRangeCompression(f);
+            stop = parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_0, f);
         }
 
         // crop back to the size expected by the rest of the pipeline
@@ -311,60 +316,64 @@ void Crop::update(int todo)
         transCrop = nullptr;
     }
 
+    int offset_x = cropx / skip;
+    int offset_y = cropy / skip;
+    int full_width = parent->getFullWidth() / skip;
+    int full_height = parent->getFullHeight() / skip;
+    parent->ipf.setViewport(offset_x, offset_y, full_width, full_height);
+
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
         workingCrop->copyTo(bufs_[0]);
-        parent->ipf.rgbProc(bufs_[0]);
+        //parent->ipf.rgbProc(bufs_[0]);
+        stop = stop || parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_1, bufs_[0]);
         
         if (workingCrop != baseCrop) {
             delete workingCrop;
         }
     }
 
-    int offset_x = cropx / skip;
-    int offset_y = cropy / skip;
-    int full_width = parent->getFullWidth() / skip;
-    int full_height = parent->getFullHeight() / skip;
-
-    bool stop = false;
+    //bool stop = false;
     // apply luminance operations
     if (todo & M_LUMACURVE) {
         bufs_[0]->copyTo(bufs_[1]);
         
-        if (skip == 1) {
-            stop = parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
-            if (!stop) {
-                parent->ipf.impulsedenoise(bufs_[1]);
-                parent->ipf.defringe(bufs_[1]);
-            }
-        }
+        stop = stop || parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_2, bufs_[1]);
+        // if (skip == 1) {
+        //     stop = parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
+        //     if (!stop) {
+        //         parent->ipf.impulsedenoise(bufs_[1]);
+        //         parent->ipf.defringe(bufs_[1]);
+        //     }
+        // }
         
-        stop = stop || parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
-        stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
+        // stop = stop || parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
+        // stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
         bufs_[1]->copyTo(bufs_[2]);
 
-        if (!stop) {
-            parent->ipf.logEncoding(bufs_[2]);
-            parent->ipf.labAdjustments(bufs_[2]);
-        }
-
-        stop = stop || parent->ipf.textureBoost(bufs_[2], offset_x, offset_y, full_width, full_height);
-        // if (skip == 1 && !stop) {
-        //     parent->ipf.impulsedenoise(bufs_[2]);
-        //     parent->ipf.defringe(bufs_[2]);
-        //     //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
+        stop = stop || parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_3, bufs_[2]);
+        // if (!stop) {
+        //     parent->ipf.logEncoding(bufs_[2]);
+        //     parent->ipf.labAdjustments(bufs_[2]);
         // }
 
-        stop = stop || parent->ipf.contrastByDetailLevels(bufs_[2], offset_x, offset_y, full_width, full_height); 
+        // stop = stop || parent->ipf.textureBoost(bufs_[2], offset_x, offset_y, full_width, full_height);
+        // // if (skip == 1 && !stop) {
+        // //     parent->ipf.impulsedenoise(bufs_[2]);
+        // //     parent->ipf.defringe(bufs_[2]);
+        // //     //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
+        // // }
 
-        if (!stop) {
-            parent->ipf.softLight(bufs_[2]);
-            parent->ipf.localContrast(bufs_[2]);
-            parent->ipf.filmGrain(bufs_[2], cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
-        }
+        // stop = stop || parent->ipf.contrastByDetailLevels(bufs_[2], offset_x, offset_y, full_width, full_height); 
+
+        // if (!stop) {
+        //     parent->ipf.softLight(bufs_[2]);
+        //     parent->ipf.localContrast(bufs_[2]);
+        //     parent->ipf.filmGrain(bufs_[2], cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
+        // }
     }
 
     // all pipette buffer processing should be finished now

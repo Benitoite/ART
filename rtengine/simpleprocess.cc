@@ -61,7 +61,8 @@ public:
         tilesize(0),
         overlap(0),
         dnstore(),
-        pipeline_scale(1.0)
+        pipeline_scale(1.0),
+        stop(false)
     {
     }
 
@@ -106,9 +107,9 @@ private:
             return nullptr;
         }
 
-        stage_transform();
         stage_early_resize();
         stage_denoise();
+        stage_transform();
         return stage_finish(true);
     }
 
@@ -191,7 +192,7 @@ private:
             scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
             adjust_procparams(scale_factor);
         }
-        
+        ipf.setViewport(oX, oY, oW, oH);
 
         imgsrc->setCurrentFrame (params.raw.bayersensor.imageNum);
         imgsrc->preprocess ( params.raw, params.lensProf, params.coarse, params.denoise.enabled);
@@ -289,8 +290,9 @@ private:
         LUTu hist16(65536);
         ipf.firstAnalysis(img, params, hist16);
 
-        ipf.dehaze(img);
-        ipf.dynamicRangeCompression(img);
+        stop = ipf.process(ImProcFunctions::Pipeline::OUTPUT, ImProcFunctions::Stage::STAGE_0, img);
+        // ipf.dehaze(img);
+        // ipf.dynamicRangeCompression(img);
 
         // perform transform (excepted resizing)
         if (ipf.needsTransform()) {
@@ -320,38 +322,42 @@ private:
         LUTu histToneCurve;
 
         ipf.setDCPProfile(dcpProf, as);
-        ipf.rgbProc(img);
+        //ipf.rgbProc(img);
+        stop = stop || ipf.process(ImProcFunctions::Pipeline::OUTPUT, ImProcFunctions::Stage::STAGE_1, img);
 
         if (pl) {
             pl->setProgress (0.55);
         }
 
-        bool stop = ipf.sharpening(img, params.sharpening);
-        if (!stop) {
-            ipf.impulsedenoise(img);
-            ipf.defringe(img);
-            //ipf.sharpening(img, params.sharpening);
-        }
-        stop = stop || ipf.colorCorrection(img, oX, oY, oW, oH);
-        stop = stop || ipf.guidedSmoothing(img, oX, oY, oW, oH);
-
-        if (!stop) {
-            ipf.logEncoding(img);
-            ipf.labAdjustments(img);
-        }
-
-        stop = stop || ipf.textureBoost(img, oX, oY, oW, oH);
-        stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
+        stop = stop || ipf.process(ImProcFunctions::Pipeline::OUTPUT, ImProcFunctions::Stage::STAGE_2, img);
+        stop = stop || ipf.process(ImProcFunctions::Pipeline::OUTPUT, ImProcFunctions::Stage::STAGE_3, img);
+        
+        // bool stop = ipf.sharpening(img, params.sharpening);
         // if (!stop) {
         //     ipf.impulsedenoise(img);
         //     ipf.defringe(img);
         //     //ipf.sharpening(img, params.sharpening);
         // }
-        if (!stop) {
-            ipf.softLight(img);
-            ipf.localContrast(img);
-            ipf.filmGrain(img);
-        }
+        // stop = stop || ipf.colorCorrection(img, oX, oY, oW, oH);
+        // stop = stop || ipf.guidedSmoothing(img, oX, oY, oW, oH);
+
+        // if (!stop) {
+        //     ipf.logEncoding(img);
+        //     ipf.labAdjustments(img);
+        // }
+
+        // stop = stop || ipf.textureBoost(img, oX, oY, oW, oH);
+        // stop = stop || ipf.contrastByDetailLevels(img, oX, oY, oW, oH);
+        // // if (!stop) {
+        // //     ipf.impulsedenoise(img);
+        // //     ipf.defringe(img);
+        // //     //ipf.sharpening(img, params.sharpening);
+        // // }
+        // if (!stop) {
+        //     ipf.softLight(img);
+        //     ipf.localContrast(img);
+        //     ipf.filmGrain(img);
+        // }
 
         if (pl) {
             pl->setProgress (0.60);
@@ -365,7 +371,7 @@ private:
         // crop and convert to rgb16
         int cx = 0, cy = 0, cw = img->getWidth(), ch = img->getHeight();
 
-        if (params.crop.enabled && !is_fast) {
+        if (params.crop.enabled) {// && !is_fast) {
             cx = params.crop.x;
             cy = params.crop.y;
             cw = params.crop.w;
@@ -525,26 +531,32 @@ private:
             return;
         }
 
+        imw = fw * scale_factor + 0.5;
+        imh = fh * scale_factor + 0.5;
+
         if (params.crop.enabled) {
             int cx = params.crop.x;
             int cy = params.crop.y;
             int cw = params.crop.w;
             int ch = params.crop.h;
-            oX = cx * scale_factor;
-            oY = cy * scale_factor;
 
-            Imagefloat *cropped = new Imagefloat(cw, ch, img);
+            params.crop.x = cx * scale_factor + 0.5;
+            params.crop.y = cy * scale_factor + 0.5;
+            params.crop.w = cw * scale_factor + 0.5;
+            params.crop.h = ch * scale_factor + 0.5;
 
-            for (int row = 0; row < ch; row++) {
-                for (int col = 0; col < cw; col++) {
-                    cropped->r(row, col) = img->r(row + cy, col + cx);
-                    cropped->g(row, col) = img->g(row + cy, col + cx);
-                    cropped->b(row, col) = img->b(row + cy, col + cx);
-                }
-            }
+            // Imagefloat *cropped = new Imagefloat(cw, ch, img);
 
-            delete img;
-            img = cropped;
+            // for (int row = 0; row < ch; row++) {
+            //     for (int col = 0; col < cw; col++) {
+            //         cropped->r(row, col) = img->r(row + cy, col + cx);
+            //         cropped->g(row, col) = img->g(row + cy, col + cx);
+            //         cropped->b(row, col) = img->b(row + cy, col + cx);
+            //     }
+            // }
+
+            // delete img;
+            // img = cropped;
         }
 
         assert (params.resize.enabled);
@@ -558,10 +570,10 @@ private:
         }
 
         params.resize.enabled = false;
-        params.crop.enabled = false;
+        // params.crop.enabled = false;
 
-        oW *= scale_factor;
-        oH *= scale_factor;
+        oW = oW * scale_factor + 0.5;
+        oH = oH * scale_factor + 0.5;
 
         fw = imw;
         fh = imh;
@@ -614,6 +626,7 @@ private:
     Imagefloat *img;
 
     double pipeline_scale;
+    bool stop;
 };
 
 } // namespace

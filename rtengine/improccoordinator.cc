@@ -167,6 +167,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
 
     DCPProfile *dcpProf = imgsrc->getDCP(params.icm, dcpApplyState);
     ipf.setDCPProfile(dcpProf, dcpApplyState);
+    ipf.setViewport(0, 0, -1, -1);
+    ipf.setOutputHistograms(&histToneCurve, &histCCurve, &histLCurve);
 
     bwAutoR = bwAutoG = bwAutoB = -9000.f;
 
@@ -192,7 +194,8 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     }
 
     ipf.setPipetteBuffer(nullptr);
-    
+    bool stop = false;
+                    
     if (((todo & ALL) == ALL) || (todo & M_MONITOR) || panningRelatedChange || (highDetailNeeded && options.prevdemo != PD_Sidecar)) {
         bwAutoR = bwAutoG = bwAutoB = -9000.f;
     
@@ -398,8 +401,9 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 drcomp_11_dcrop_cache = nullptr;
             }
     
-            ipf.dehaze(orig_prev);
-            ipf.dynamicRangeCompression(orig_prev);
+            // ipf.dehaze(orig_prev);
+            // ipf.dynamicRangeCompression(orig_prev);
+            stop = ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_0, orig_prev);
     
             if (oprevi != orig_prev) {
                 delete oprevi;
@@ -429,6 +433,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         progress("Preparing shadow/highlight map...", 100 * readyphase / numofphases);
     
         readyphase++;
+        // bool stop = false;
     
         if (todo & M_AUTOEXP) {
             if (params.exposure.enabled && params.exposure.autoexp) {
@@ -483,7 +488,9 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
                 oprevi->copyTo(bufs_[0]);
-                ipf.rgbProc(bufs_[0]);
+                //ipf.rgbProc(bufs_[0]);
+                stop = stop || ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_1, bufs_[0]);
+                
             }
     
             // compute L channel histogram
@@ -492,12 +499,13 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
     
         readyphase++;
-        bool stop = false;
+//        bool stop = false;
     
         if (todo & M_LUMACURVE) {
             bufs_[0]->copyTo(bufs_[1]);
-            stop = ipf.colorCorrection(bufs_[1]);
-            stop = stop || ipf.guidedSmoothing(bufs_[1]);
+            stop = stop || ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_2, bufs_[1]);
+            // stop = ipf.colorCorrection(bufs_[1]);
+            // stop = stop || ipf.guidedSmoothing(bufs_[1]);
 
             // if (!stop) {
             //     ipf.logEncoding(bufs_[1], &histToneCurve);
@@ -511,29 +519,30 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
             bufs_[1]->copyTo(bufs_[2]);
-
-            if (!stop) {
-                ipf.logEncoding(bufs_[2], &histToneCurve);
+            stop = stop || ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_3, bufs_[2]);
             
-                progress("Applying Color Boost...", 100 * readyphase / numofphases);
-                histCCurve.clear();
-                histLCurve.clear();
-                ipf.labAdjustments(bufs_[2], &histCCurve, &histLCurve);
-            }
+            // if (!stop) {
+            //     ipf.logEncoding(bufs_[2], &histToneCurve);
+            
+            //     progress("Applying Color Boost...", 100 * readyphase / numofphases);
+            //     histCCurve.clear();
+            //     histLCurve.clear();
+            //     ipf.labAdjustments(bufs_[2], &histCCurve, &histLCurve);
+            // }
             
     
-            // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
+            // // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
     
 
-            stop = stop || ipf.textureBoost(bufs_[2]);
-            readyphase++;
-            stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
-            readyphase++;
+            // stop = stop || ipf.textureBoost(bufs_[2]);
+            // readyphase++;
+            // stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
+            // readyphase++;
 
-            if (!stop) {
-                ipf.softLight(bufs_[2]);
-                ipf.localContrast(bufs_[2]);
-            }
+            // if (!stop) {
+            //     ipf.softLight(bufs_[2]);
+            //     ipf.localContrast(bufs_[2]);
+            // }
         }
     
         // Update the monitor color transform if necessary

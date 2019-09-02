@@ -338,6 +338,10 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
 
 void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imagefloat *img, const DenoiseInfoStore &store, const procparams::DenoiseParams &dnparams)
 {
+    if (!dnparams.enabled) {
+        return;
+    }
+    
     procparams::DenoiseParams denoiseParams = dnparams;
     NoiseCurve noiseLCurve;
     NoiseCurve noiseCCurve;

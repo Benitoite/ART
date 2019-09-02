@@ -55,8 +55,7 @@ public:
     //----------------------------------------------------------------------
     // constructor/destructor and initialization/state manipulation
     //----------------------------------------------------------------------
-    ImProcFunctions(const ProcParams* iparams, bool imultiThread = true)
-        : monitorTransform(nullptr), params(iparams), scale(1), multiThread(imultiThread), dcpProf(nullptr), dcpApplyState(nullptr), pipetteBuffer(nullptr), lumimul{} {}
+    ImProcFunctions(const ProcParams* iparams, bool imultiThread=true);
     ~ImProcFunctions();
     
     void setScale(double iscale);
@@ -123,6 +122,24 @@ public:
     void filmGrain(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     bool guidedSmoothing(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void hslEqualizer(Imagefloat *rgb);
+
+    enum class Stage {
+        STAGE_0,
+        STAGE_1,
+        STAGE_2,
+        STAGE_3
+    };
+    enum class Pipeline {
+        THUMBNAIL,
+        NAVIGATOR,
+        PREVIEW,
+        OUTPUT
+    };
+    bool process(Pipeline pipeline, Stage stage, Imagefloat *img);
+
+    void setViewport(int ox, int oy, int fw, int fh);
+    void setOutputHistograms(LUTu *histToneCurve, LUTu *histCCurve, LUTu *histLCurve);
+    void setShowSharpeningMask(bool yes);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
@@ -186,6 +203,17 @@ private:
     PipetteBuffer *pipetteBuffer;
 
     double lumimul[3];
+
+    int offset_x;
+    int offset_y;
+    int full_width;
+    int full_height;
+
+    LUTu *hist_tonecurve;
+    LUTu *hist_ccurve;
+    LUTu *hist_lcurve;
+
+    bool show_sharpening_mask;
     
 private:
     void RGB_denoise(int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DenoiseParams & dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi);
