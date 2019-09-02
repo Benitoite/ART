@@ -861,8 +861,16 @@ void Color::hsv2rgb (float h, float s, float v, float &r, float &g, float &b)
 
 // Function copied for speed concerns
 // Not exactly the same as above ; this one return a result in the [0.0 ; 1.0] range
-void Color::hsv2rgb01 (float h, float s, float v, float &r, float &g, float &b)
+void Color::hsv2rgb01(float h, float s, float v, float &r, float &g, float &b)
 {
+    // try to get a better visual match -- this is empirical and to be confirmed
+    h -= 1.f/20.f;
+    if (h > 1.f) {
+        h -= 1.f;
+    } else if (h < 0.f) {
+        h += 1.f;
+    }
+    
     float h1 = h * 6; // sector 0 to 5
     int i = int(h1);
     float f = h1 - i; // fractional part of h
