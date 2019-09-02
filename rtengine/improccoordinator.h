@@ -87,66 +87,12 @@ protected:
 
     // Precomputed values used by DetailedCrop ----------------------------------------------
 
-    float bwAutoR, bwAutoG, bwAutoB;
-    float CAMMean;
-    LUTf hltonecurve;
-    LUTf shtonecurve;
-    LUTf tonecurve;
-
-    LUTf lumacurve;
-    LUTf chroma_acurve;
-    LUTf chroma_bcurve;
-    LUTf satcurve;
-    LUTf lhskcurve;
-    LUTf clcurve;
-//    multi_array2D<float, 3> conversionBuffer;
-    multi_array2D<float, 4> conversionBuffer;
-    LUTf wavclCurve;
-    LUTf clToningcurve;
-    LUTf cl2Toningcurve;
-    LUTf Noisecurve;
-    LUTf NoiseCCcurve;
-
-    LUTu vhist16, vhist16bw;
-    LUTu lhist16CAM;
-    LUTu lhist16CCAM;
-    LUTu lhist16RETI;
-    LUTu lhist16CLlad, lhist16LClad;
+    LUTu vhist16;
     LUTu histRed, histRedRaw;
     LUTu histGreen, histGreenRaw;
     LUTu histBlue, histBlueRaw;
-    LUTu histLuma, histToneCurve, histToneCurveBW, histLCurve, histCCurve;
-    LUTu histLLCurve, histLCAM, histCCAM, histClad, bcabhist, histChroma, histLRETI;
-
-    LUTf CAMBrightCurveJ, CAMBrightCurveQ;
-
-    LUTf rCurve;
-    LUTf gCurve;
-    LUTf bCurve;
-    ToneCurve customToneCurve1;
-    ToneCurve customToneCurve2;
-    ColorGradientCurve ctColorCurve;
-    OpacityCurve ctOpacityCurve;
-    NoiseCurve noiseLCurve;
-    NoiseCurve noiseCCurve;
-    WavCurve wavCLVCurve;
-    WavOpacityCurveRG waOpacityCurveRG;
-    WavOpacityCurveBY waOpacityCurveBY;
-    WavOpacityCurveW waOpacityCurveW;
-    WavOpacityCurveWL waOpacityCurveWL;
-    RetinextransmissionCurve dehatransmissionCurve;
-    RetinexgaintransmissionCurve dehagaintransmissionCurve;
-
-    ColorAppearance customColCurve1;
-    ColorAppearance customColCurve2;
-    ColorAppearance customColCurve3;
-    ToneCurve beforeToneCurveBW;
-    ToneCurve afterToneCurveBW;
-
-    LUTu rcurvehist, rcurvehistCropped, rbeforehist;
-    LUTu gcurvehist, gcurvehistCropped, gbeforehist;
-    LUTu bcurvehist, bcurvehistCropped, bbeforehist;
-
+    LUTu histLuma, histToneCurve, histLCurve, histCCurve;
+    LUTu histLLCurve, histLCAM, histCCAM, histChroma, histLRETI;
     // ------------------------------------------------------------------------------------
 
     int fw, fh, tr, fullw, fullh;
@@ -204,18 +150,8 @@ protected:
     bool updaterRunning;
     ProcParams nextParams;
     bool destroying;
-    bool utili;
-    bool autili;
-    bool butili;
-    bool ccutili;
-    bool cclutili;
-    bool clcutili;
-    bool opautili;
-    bool wavcontlutili;
     void startProcessing ();
     void process ();
-    float colourToningSatLimit;
-    float colourToningSatLimitOpacity;
     bool highQualityComputed;
     cmsHTRANSFORM customTransformIn;
     cmsHTRANSFORM customTransformOut;

@@ -1186,8 +1186,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
     ipf.firstAnalysis (baseImg, params, hist16);
 
-    // ipf.dehaze(baseImg);
-    // ipf.dynamicRangeCompression(baseImg);
     bool stop = ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_0, baseImg);
     
     // perform transform
@@ -1201,37 +1199,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         delete baseImg;
         baseImg = trImg;
     }
-
-    // RGB processing
-    // double  expcomp = params.toneCurve.expcomp;
-    // int bright = params.toneCurve.brightness;
-    // int contr = params.toneCurve.contrast;
-    // int black = params.toneCurve.black;
-    // int hlcompr = params.toneCurve.hlcompr;
-    // int hlcomprthresh = params.toneCurve.hlcomprthresh;
-
-    // if (params.toneCurve.autoexp) {
-    //     if (aeValid) {
-    //         expcomp = aeExposureCompensation;
-    //         bright = aeLightness;
-    //         contr = aeContrast;
-    //         black = aeBlack;
-    //         hlcompr = aeHighlightCompression;
-    //         hlcomprthresh = aeHighlightCompressionThreshold;
-    //     } else if (aeHistogram) {
-    //         ipf.getAutoExp (aeHistogram, aeHistCompression, 0.02, expcomp, bright, contr, black, hlcompr, hlcomprthresh);
-    //     }
-    // }
-
-    LUTf curve1 (65536);
-    LUTf curve2 (65536);
-    LUTf satcurve (65536);
-    LUTf lhskcurve (65536);
-    LUTf lumacurve (32770, 0); // lumacurve[32768] and lumacurve[32769] will be set to 32768 and 32769 later to allow linear interpolation
-    LUTf clcurve (65536);
-    LUTf clToningcurve;
-    LUTf cl2Toningcurve;
-    LUTu dummy;
 
     DCPProfile *dcpProf = nullptr;
     DCPProfile::ApplyState as;
@@ -1250,21 +1217,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     stop = stop || ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_2, baseImg);
     stop = stop || ipf.process(ImProcFunctions::Pipeline::THUMBNAIL, ImProcFunctions::Stage::STAGE_3, baseImg);
     
-    // LUTu histToneCurve;
-    // ipf.rgbProc(baseImg);
-    // bool stop = ipf.colorCorrection(baseImg);
-    // stop = stop || ipf.guidedSmoothing(baseImg);
-    // if (!stop) {
-    //     ipf.logEncoding(baseImg);
-    //     ipf.labAdjustments(baseImg);
-    // }
-
-    // stop = stop || ipf.textureBoost(baseImg);
-    // if (!stop) {
-    //     ipf.softLight(baseImg);
-    //     ipf.localContrast(baseImg);
-    // }
-
     // obtain final image
     Image8 *readyImg = nullptr;
     if (forMonitor) {
@@ -1283,20 +1235,6 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     }
 
     myscale = 1.0 / myscale;
-    /*    // apply crop
-        if (params.crop.enabled) {
-            int ix = 0;
-            for (int i=0; i<fh; i++)
-                for (int j=0; j<fw; j++)
-                    if (i<params.crop.y/myscale || i>(params.crop.y+params.crop.h)/myscale || j<params.crop.x/myscale || j>(params.crop.x+params.crop.w)/myscale) {
-                        readyImg->data[ix++] /= 3;
-                        readyImg->data[ix++] /= 3;
-                        readyImg->data[ix++] /= 3;
-                    }
-                    else
-                        ix += 3;
-        }*/
-
     return readyImg;
 }
 

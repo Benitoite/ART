@@ -259,8 +259,6 @@ void Crop::update(int todo)
         }
 
         if (need_drcomp) {
-            // parent->ipf.dehaze(f);
-            // parent->ipf.dynamicRangeCompression(f);
             stop = parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_0, f);
         }
 
@@ -325,7 +323,6 @@ void Crop::update(int todo)
     if (todo & M_RGBCURVE) {
         Imagefloat *workingCrop = baseCrop;
         workingCrop->copyTo(bufs_[0]);
-        //parent->ipf.rgbProc(bufs_[0]);
         stop = stop || parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_1, bufs_[0]);
         
         if (workingCrop != baseCrop) {
@@ -333,55 +330,22 @@ void Crop::update(int todo)
         }
     }
 
-    //bool stop = false;
-    // apply luminance operations
     if (todo & M_LUMACURVE) {
         bufs_[0]->copyTo(bufs_[1]);
         
         stop = stop || parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_2, bufs_[1]);
-        // if (skip == 1) {
-        //     stop = parent->ipf.sharpening(bufs_[1], params.sharpening, parent->sharpMask);
-        //     if (!stop) {
-        //         parent->ipf.impulsedenoise(bufs_[1]);
-        //         parent->ipf.defringe(bufs_[1]);
-        //     }
-        // }
-        
-        // stop = stop || parent->ipf.colorCorrection(bufs_[1], offset_x, offset_y, full_width, full_height);
-        // stop = stop || parent->ipf.guidedSmoothing(bufs_[1], offset_x, offset_y, full_width, full_height);
     }
     
     if (todo & (M_LUMINANCE | M_COLOR)) {
         bufs_[1]->copyTo(bufs_[2]);
 
         stop = stop || parent->ipf.process(ImProcFunctions::Pipeline::PREVIEW, ImProcFunctions::Stage::STAGE_3, bufs_[2]);
-        // if (!stop) {
-        //     parent->ipf.logEncoding(bufs_[2]);
-        //     parent->ipf.labAdjustments(bufs_[2]);
-        // }
-
-        // stop = stop || parent->ipf.textureBoost(bufs_[2], offset_x, offset_y, full_width, full_height);
-        // // if (skip == 1 && !stop) {
-        // //     parent->ipf.impulsedenoise(bufs_[2]);
-        // //     parent->ipf.defringe(bufs_[2]);
-        // //     //parent->ipf.sharpening (labnCrop, params.sharpening, parent->sharpMask);
-        // // }
-
-        // stop = stop || parent->ipf.contrastByDetailLevels(bufs_[2], offset_x, offset_y, full_width, full_height); 
-
-        // if (!stop) {
-        //     parent->ipf.softLight(bufs_[2]);
-        //     parent->ipf.localContrast(bufs_[2]);
-        //     parent->ipf.filmGrain(bufs_[2], cropx / skip, cropy / skip, parent->getFullWidth() / skip, parent->getFullHeight() / skip);
-        // }
     }
 
     // all pipette buffer processing should be finished now
     PipetteBuffer::setReady();
 
     // Computing the preview image, i.e. converting from lab->Monitor color space (soft-proofing disabled) or lab->Output profile->Monitor color space (soft-proofing enabled)
-    // LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
-    // parent->ipf.rgb2lab(*bufs_[2], lab);
     parent->ipf.lab2monitorRgb(bufs_[2], cropImg);
 
     if (cropImageListener) {
@@ -437,15 +401,6 @@ void Crop::freeAll()
                 bufs_[i-1] = nullptr;
             }
         }
-        // if (laboCrop) {
-        //     delete    laboCrop;
-        //     laboCrop = nullptr;
-        // }
-
-        // if (labnCrop) {
-        //     delete    labnCrop;
-        //     labnCrop = nullptr;
-        // }
 
         if (cropImg) {
             delete    cropImg;

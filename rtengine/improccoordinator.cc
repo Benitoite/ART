@@ -38,67 +38,70 @@ namespace rtengine
 
 extern const Settings* settings;
 
-ImProcCoordinator::ImProcCoordinator()
-    : orig_prev(nullptr), oprevi(nullptr),
-      //oprevl(nullptr), nprevl(nullptr),
-      drcomp_11_dcrop_cache(nullptr), previmg(nullptr), workimg(nullptr),
-      imgsrc (nullptr), lastAwbEqual (0.), lastAwbTempBias (0.0), ipf (&params, true), monitorIntent (RI_RELATIVE),
-      softProof(false), gamutCheck(false), sharpMask(false), scale(10), highDetailPreprocessComputed(false), highDetailRawComputed(false),
-      allocated(false), bwAutoR(-9000.f), bwAutoG(-9000.f), bwAutoB(-9000.f), CAMMean(NAN),
+ImProcCoordinator::ImProcCoordinator():
+    orig_prev(nullptr),
+    oprevi(nullptr),
+    drcomp_11_dcrop_cache(nullptr),
+    previmg(nullptr),
+    workimg(nullptr),
+    imgsrc(nullptr),
+    lastAwbEqual(0.),
+    lastAwbTempBias(0.0),
+    ipf(&params, true),
+    monitorIntent(RI_RELATIVE),
+    softProof(false),
+    gamutCheck(false),
+    sharpMask(false),
+    scale(10),
+    highDetailPreprocessComputed(false),
+    highDetailRawComputed(false),
+    allocated(false), 
 
-      hltonecurve(65536),
-      shtonecurve(65536),
-      tonecurve(65536, 0),  //,1);
-      lumacurve(32770, 0),  // lumacurve[32768] and lumacurve[32769] will be set to 32768 and 32769 later to allow linear interpolation
-      chroma_acurve(65536, 0),
-      chroma_bcurve(65536, 0),
-      satcurve(65536, 0),
-      lhskcurve(65536, 0),
-      clcurve(65536, 0),
-      conversionBuffer(1, 1),
-      wavclCurve(65536, 0),
-      clToningcurve(65536, 0),
-      cl2Toningcurve(65536, 0),
-      Noisecurve(65536, 0),
-      NoiseCCcurve(65536, 0),
-      vhist16(65536), vhist16bw(65536),
-      lhist16CAM(65536),
-      lhist16CCAM(65536),
-      lhist16RETI(),
-      lhist16LClad(65536),
-      histRed(256), histRedRaw(256),
-      histGreen(256), histGreenRaw(256),
-      histBlue(256), histBlueRaw(256),
-      histLuma(256),
-      histToneCurve(256),
-      histToneCurveBW(256),
-      histLCurve(256),
-      histCCurve(256),
-      histLLCurve(256),
-
-      histLCAM(256),
-      histCCAM(256),
-      histClad(256),
-      bcabhist(256),
-      histChroma(256),
-
-      histLRETI(256),
-
-      CAMBrightCurveJ(), CAMBrightCurveQ(),
-
-      rCurve(),
-      gCurve(),
-      bCurve(),
-      ctColorCurve(),
-      rcurvehist(256), rcurvehistCropped(256), rbeforehist(256),
-      gcurvehist(256), gcurvehistCropped(256), gbeforehist(256),
-      bcurvehist(256), bcurvehistCropped(256), bbeforehist(256),
-      fw(0), fh(0), tr(0),
-      fullw(1), fullh(1),
-      pW(-1), pH(-1),
-      plistener(nullptr), imageListener(nullptr), aeListener(nullptr), acListener(nullptr), abwListener(nullptr), awbListener(nullptr), flatFieldAutoClipListener(nullptr), bayerAutoContrastListener(nullptr), xtransAutoContrastListener(nullptr), frameCountListener(nullptr), imageTypeListener(nullptr), actListener(nullptr), adnListener(nullptr), awavListener(nullptr), dehaListener(nullptr), hListener(nullptr), autoLogListener(nullptr),
-      resultValid(false), lastOutputProfile("BADFOOD"), lastOutputIntent(RI__COUNT), lastOutputBPC(false), thread(nullptr), changeSinceLast(0), updaterRunning(false), destroying(false), utili(false), autili(false),
-      butili(false), ccutili(false), cclutili(false), clcutili(false), opautili(false), wavcontlutili(false), colourToningSatLimit(0.f), colourToningSatLimitOpacity(0.f), highQualityComputed(false), customTransformIn(nullptr), customTransformOut(nullptr)
+    vhist16(65536),
+    histRed(256), histRedRaw(256),
+    histGreen(256), histGreenRaw(256),
+    histBlue(256), histBlueRaw(256),
+    histLuma(256),
+    histToneCurve(256),
+    histLCurve(256),
+    histCCurve(256),
+    histLLCurve(256),
+    histLCAM(256),
+    histCCAM(256),
+    histChroma(256),
+    histLRETI(256),
+    
+    fw(0), fh(0), tr(0),
+    fullw(1), fullh(1),
+    pW(-1), pH(-1),
+    plistener(nullptr),
+    imageListener(nullptr),
+    aeListener(nullptr),
+    acListener(nullptr),
+    abwListener(nullptr),
+    awbListener(nullptr),
+    flatFieldAutoClipListener(nullptr),
+    bayerAutoContrastListener(nullptr),
+    xtransAutoContrastListener(nullptr),
+    frameCountListener(nullptr),
+    imageTypeListener(nullptr),
+    actListener(nullptr),
+    adnListener(nullptr),
+    awavListener(nullptr),
+    dehaListener(nullptr),
+    hListener(nullptr),
+    autoLogListener(nullptr),
+    resultValid(false),
+    lastOutputProfile("BADFOOD"),
+    lastOutputIntent(RI__COUNT),
+    lastOutputBPC(false),
+    thread(nullptr),
+    changeSinceLast(0),
+    updaterRunning(false),
+    destroying(false),
+    highQualityComputed(false),
+    customTransformIn(nullptr),
+    customTransformOut(nullptr)
 {
     for (int i = 0; i < 3; ++i) {
         bufs_[i] = nullptr;
@@ -170,8 +173,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     ipf.setViewport(0, 0, -1, -1);
     ipf.setOutputHistograms(&histToneCurve, &histCCurve, &histLCurve);
 
-    bwAutoR = bwAutoG = bwAutoB = -9000.f;
-
     if (todo == CROP && ipf.needsPCVignetting()) {
         todo |= TRANSFORM;    // Change about Crop does affect TRANSFORM
     }
@@ -197,16 +198,11 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     bool stop = false;
                     
     if (((todo & ALL) == ALL) || (todo & M_MONITOR) || panningRelatedChange || (highDetailNeeded && options.prevdemo != PD_Sidecar)) {
-        bwAutoR = bwAutoG = bwAutoB = -9000.f;
-    
         if (todo == CROP && ipf.needsPCVignetting()) {
             todo |= TRANSFORM;    // Change about Crop does affect TRANSFORM
         }
     
         RAWParams rp = params.raw;
-        ColorManagementParams cmp = params.icm;
-        LCurveParams  lcur = params.labCurve;
-    
         if (!highDetailNeeded) {
             // if below 100% magnification, take a fast path
             if (rp.bayersensor.method != RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::NONE) && rp.bayersensor.method != RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::MONO)) {
@@ -334,9 +330,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                         lastAwbTempBias = 0.0;
                         autoWB.useDefaults(params.wb.equal);
                     }
-    
-                    //double rr,gg,bb;
-                    //autoWB.getMultipliers(rr,gg,bb);
                 }
     
                 currWB = autoWB;
@@ -351,30 +344,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 awbListener->WBChanged(params.wb.temperature, params.wb.green);
             }
     
-            /*
-                    GammaValues g_a;
-                    double pwr = 1.0 / params.icm.gampos;
-                    double ts = params.icm.slpos;
-    
-    
-                    int mode = 0;
-                    Color::calcGamma(pwr, ts, mode, g_a); // call to calcGamma with selected gamma and slope
-                        printf("ga[0]=%f ga[1]=%f ga[2]=%f ga[3]=%f ga[4]=%f\n", g_a[0],g_a[1],g_a[2],g_a[3],g_a[4]);
-    
-                        Glib::ustring datal;
-                        datal = "lutsrgb.txt";
-                                ofstream fou(datal, ios::out | ios::trunc);
-    
-                    for(int i=0; i < 212; i++) {
-                        //printf("igamma2=%i\n", (int) 65535.f*Color::igamma2(i/212.0));
-                                float gam = Color::igamma2(i/211.0);
-                                int lutga = nearbyint(65535.f* gam);
-                              //  fou << 65535*(int)Color::igamma2(i/212.0) << endl;
-                                fou << i << " " << lutga << endl;
-    
-                    }
-                            fou.close();
-            */
             int tr = getCoarseBitMask(params.coarse);
     
             imgsrc->getFullSize(fw, fh, tr);
@@ -401,8 +370,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 drcomp_11_dcrop_cache = nullptr;
             }
     
-            // ipf.dehaze(orig_prev);
-            // ipf.dynamicRangeCompression(orig_prev);
             stop = ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_0, orig_prev);
     
             if (oprevi != orig_prev) {
@@ -433,7 +400,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         progress("Preparing shadow/highlight map...", 100 * readyphase / numofphases);
     
         readyphase++;
-        // bool stop = false;
     
         if (todo & M_AUTOEXP) {
             if (params.exposure.enabled && params.exposure.autoexp) {
@@ -453,17 +419,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 if (!params.toneCurve.fromHistMatching) {
                     imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);
                 }
-    
-                // if (params.toneCurve.autoexp) {
-                //     params.toneCurve.expcomp = 0.0;
-                // }
-    
-                // params.toneCurve.autoexp = false;
-                // params.toneCurve.curveMode = ToneCurveParams::TcMode::FILMLIKE;
-                // params.toneCurve.curve2 = { 0 };
-                // params.toneCurve.brightness = 0;
-                // params.toneCurve.contrast = 0;
-                // params.toneCurve.black = 0;
                 params.toneCurve.fromHistMatching = true;
     
                 if (aeListener) {
@@ -482,13 +437,10 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         progress("Exposure curve & CIELAB conversion...", 100 * readyphase / numofphases);
     
         if ((todo & M_RGBCURVE) || (todo & M_CROP)) {
-            opautili = false;
-    
             // if it's just crop we just need the histogram, no image updates
             if (todo & M_RGBCURVE) {
                 //initialize rrm bbm ggm different from zero to avoid black screen in some cases
                 oprevi->copyTo(bufs_[0]);
-                //ipf.rgbProc(bufs_[0]);
                 stop = stop || ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_1, bufs_[0]);
                 
             }
@@ -499,50 +451,15 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
     
         readyphase++;
-//        bool stop = false;
     
         if (todo & M_LUMACURVE) {
             bufs_[0]->copyTo(bufs_[1]);
             stop = stop || ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_2, bufs_[1]);
-            // stop = ipf.colorCorrection(bufs_[1]);
-            // stop = stop || ipf.guidedSmoothing(bufs_[1]);
-
-            // if (!stop) {
-            //     ipf.logEncoding(bufs_[1], &histToneCurve);
-            
-            //     progress("Applying Color Boost...", 100 * readyphase / numofphases);
-            //     histCCurve.clear();
-            //     histLCurve.clear();
-            //     ipf.labAdjustments(bufs_[1], &histCCurve, &histLCurve);
-            // }
         }
 
         if (todo & (M_LUMINANCE | M_COLOR)) {
             bufs_[1]->copyTo(bufs_[2]);
             stop = stop || ipf.process(ImProcFunctions::Pipeline::NAVIGATOR, ImProcFunctions::Stage::STAGE_3, bufs_[2]);
-            
-            // if (!stop) {
-            //     ipf.logEncoding(bufs_[2], &histToneCurve);
-            
-            //     progress("Applying Color Boost...", 100 * readyphase / numofphases);
-            //     histCCurve.clear();
-            //     histLCurve.clear();
-            //     ipf.labAdjustments(bufs_[2], &histCCurve, &histLCurve);
-            // }
-            
-    
-            // // for all treatments Defringe, Sharpening, Contrast detail , Microcontrast they are activated if "CIECAM" function are disabled
-    
-
-            // stop = stop || ipf.textureBoost(bufs_[2]);
-            // readyphase++;
-            // stop = stop || ipf.contrastByDetailLevels(bufs_[2]);
-            // readyphase++;
-
-            // if (!stop) {
-            //     ipf.softLight(bufs_[2]);
-            //     ipf.localContrast(bufs_[2]);
-            // }
         }
     
         // Update the monitor color transform if necessary
@@ -562,8 +479,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
 
     if (panningRelatedChange || (todo & M_MONITOR)) {
         progress("Conversion to RGB...", 100 * readyphase / numofphases);
-        // LabImage lab(bufs_[2]->getWidth(), bufs_[2]->getHeight());
-        // ipf.rgb2lab(*bufs_[2], lab);
 
         if ((todo != CROP && todo != MINUPDATE) || (todo & M_MONITOR)) {
             MyMutex::MyLock prevImgLock(previmg->getMutex());
@@ -628,10 +543,6 @@ void ImProcCoordinator::freeAll()
                 bufs_[i-1] = nullptr;
             }
         }
-        // delete oprevl;
-        // oprevl    = nullptr;
-        // delete nprevl;
-        // nprevl    = nullptr;
 
         if (imageListener) {
             imageListener->delImage(previmg);
