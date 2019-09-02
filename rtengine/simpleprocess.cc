@@ -52,10 +52,6 @@ public:
         imgsrc(nullptr),
         fw(0),
         fh(0),
-        oX(0),
-        oY(0),
-        oW(0),
-        oH(0),
         tr(0),
         pp(0, 0, 0, 0, 0),
         tilesize(0),
@@ -149,8 +145,6 @@ private:
             imgsrc->setBorder(params.raw.xtranssensor.border);
         }
         imgsrc->getFullSize (fw, fh, tr);
-        oW = fw;
-        oH = fh;
 
         // check the crop params
         if (params.crop.x > fw || params.crop.y > fh) {
@@ -186,10 +180,9 @@ private:
         double scale_factor = 1.0;
         if (is_fast) {
             int imw, imh;
-            scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
+            scale_factor = ipf.resizeScale(&params, fw, fh, imw, imh);
             adjust_procparams(scale_factor);
         }
-        ipf.setViewport(oX, oY, oW, oH);
 
         imgsrc->setCurrentFrame (params.raw.bayersensor.imageNum);
         imgsrc->preprocess ( params.raw, params.lensProf, params.coarse, params.denoise.enabled);
@@ -311,10 +304,33 @@ private:
         procparams::ProcParams& params = job->pparams;
         ImProcFunctions &ipf = * (ipf_p.get());
 
+        int cx = 0, cy = 0, cw = img->getWidth(), ch = img->getHeight();
+        if (params.crop.enabled) {
+            cx = params.crop.x;
+            cy = params.crop.y;
+            cw = params.crop.w;
+            ch = params.crop.h;
+
+            ipf.setViewport(cx, cy, img->getWidth(), img->getHeight());
+
+            Imagefloat *tmpimg = new Imagefloat(cw, ch, img);
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int row = 0; row < ch; row++) {
+                for (int col = 0; col < cw; col++) {
+                    tmpimg->r(row, col) = img->r(row + cy, col + cx);
+                    tmpimg->g(row, col) = img->g(row + cy, col + cx);
+                    tmpimg->b(row, col) = img->b(row + cy, col + cx);
+                }
+            }
+
+            delete img;
+            img = tmpimg;
+        }
+
         DCPProfile::ApplyState as;
         DCPProfile *dcpProf = imgsrc->getDCP (params.icm, as);
-
-        LUTu histToneCurve;
 
         ipf.setDCPProfile(dcpProf, as);
         stop = stop || ipf.process(ImProcFunctions::Pipeline::OUTPUT, ImProcFunctions::Stage::STAGE_1, img);
@@ -330,60 +346,27 @@ private:
             pl->setProgress (0.60);
         }
 
-        int imw, imh;
-        double tmpScale = ipf.resizeScale(&params, fw, fh, imw, imh);
-        bool labResize = params.resize.enabled && params.resize.method != "Nearest" && (tmpScale != 1.0 || params.prsharpening.enabled);
-        Imagefloat *tmpimg;
-
-        // crop and convert to rgb16
-        int cx = 0, cy = 0, cw = img->getWidth(), ch = img->getHeight();
-
-        if (params.crop.enabled) {// && !is_fast) {
-            cx = params.crop.x;
-            cy = params.crop.y;
-            cw = params.crop.w;
-            ch = params.crop.h;
-
-            if (labResize) { // crop lab data
-                tmpimg = new Imagefloat(cw, ch, img);
-
-                for (int row = 0; row < ch; row++) {
-                    for (int col = 0; col < cw; col++) {
-                        tmpimg->r(row, col) = img->r(row + cy, col + cx);
-                        tmpimg->g(row, col) = img->g(row + cy, col + cx);
-                        tmpimg->b(row, col) = img->b(row + cy, col + cx);
+        if (params.resize.enabled) {
+            if (!is_fast) {
+                int imw, imh;
+                double scale = ipf.resizeScale(&params, fw, fh, imw, imh);
+                if (scale < 1.0 || (scale > 1.0 && params.resize.allowUpscaling)) {
+                    Imagefloat *resized = new Imagefloat(imw, imh, img);
+                    if (params.resize.method == "Nearest") {
+                        ipf.resize(img, resized, scale);
+                    } else {
+                        ipf.Lanczos(img, resized, scale);
                     }
+                    delete img;
+                    img = resized;
                 }
-
-                delete img;
-                img = tmpimg;
-                cx = 0;
-                cy = 0;
             }
-        }
-
-        if (labResize && !is_fast) { // resize lab data
-            if ((img->getWidth() != imw || img->getHeight() != imh) &&
-                (params.resize.allowUpscaling || (img->getWidth() >= imw && img->getHeight() >= imh))) {
-                // resize image
-                tmpimg = new Imagefloat(imw, imh, img);
-                ipf.Lanczos(img, tmpimg, tmpScale);
-                delete img;
-                img = tmpimg;
-            }
-            cw = img->getWidth();
-            ch = img->getHeight();
-        }
-
-        if (labResize || is_fast) {
             if (params.prsharpening.enabled) {
                 ipf.sharpening(img, params.prsharpening);
             }
         }
 
-        // bool bwonly = params.blackwhite.enabled;
-
-        Imagefloat* readyImg = ipf.lab2rgbOut(img, cx, cy, cw, ch, params.icm);
+        Imagefloat *readyImg = ipf.lab2rgbOut(img, 0, 0, img->getWidth(), img->getHeight(), params.icm);
 
         if (settings->verbose) {
             printf ("Output profile_: \"%s\"\n", params.icm.outputProfile.c_str());
@@ -392,29 +375,8 @@ private:
         delete img;
         img = nullptr;
 
-        // if (bwonly) { //force BW r=g=b
-        //     if (settings->verbose) {
-        //         printf ("Force BW\n");
-        //     }
-
-        //     for (int ccw = 0; ccw < cw; ccw++) {
-        //         for (int cch = 0; cch < ch; cch++) {
-        //             readyImg->r (cch, ccw) = readyImg->g (cch, ccw);
-        //             readyImg->b (cch, ccw) = readyImg->g (cch, ccw);
-        //         }
-        //     }
-        // }
-
         if (pl) {
             pl->setProgress (0.70);
-        }
-
-        if (tmpScale != 1.0 && params.resize.method == "Nearest" &&
-            (params.resize.allowUpscaling || (readyImg->getWidth() >= imw && readyImg->getHeight() >= imh))) { // resize rgb data (gamma applied)
-            Imagefloat* tempImage = new Imagefloat(imw, imh, readyImg);
-            ipf.resize (readyImg, tempImage, tmpScale);
-            delete readyImg;
-            readyImg = tempImage;
         }
 
         Exiv2Metadata info(imgsrc->getFileName());
@@ -434,8 +396,6 @@ private:
 
 
         // Setting the output curve to readyImg
-        // use the selected output profile if present, otherwise use LCMS2 profile generate by lab2rgb16 w/ gamma
-
         if (params.icm.outputProfile != "" && params.icm.outputProfile != ColorManagementParams::NoICMString) {
 
             cmsHPROFILE jprof = ICCStore::getInstance()->getProfile (params.icm.outputProfile); //get outProfile
@@ -495,19 +455,6 @@ private:
             params.crop.y = cy * scale_factor + 0.5;
             params.crop.w = cw * scale_factor + 0.5;
             params.crop.h = ch * scale_factor + 0.5;
-
-            // Imagefloat *cropped = new Imagefloat(cw, ch, img);
-
-            // for (int row = 0; row < ch; row++) {
-            //     for (int col = 0; col < cw; col++) {
-            //         cropped->r(row, col) = img->r(row + cy, col + cx);
-            //         cropped->g(row, col) = img->g(row + cy, col + cx);
-            //         cropped->b(row, col) = img->b(row + cy, col + cx);
-            //     }
-            // }
-
-            // delete img;
-            // img = cropped;
         }
 
         assert (params.resize.enabled);
@@ -521,16 +468,12 @@ private:
         }
 
         params.resize.enabled = false;
-        // params.crop.enabled = false;
-
-        oW = oW * scale_factor + 0.5;
-        oH = oH * scale_factor + 0.5;
 
         fw = imw;
         fh = imh;
     }
 
-    void adjust_procparams (double scale_factor)
+    void adjust_procparams(double scale_factor)
     {
         procparams::ProcParams &params = job->pparams;
         procparams::ProcParams defaultparams;
@@ -560,10 +503,6 @@ private:
     ImageSource *imgsrc;
     int fw;
     int fh;
-    int oX; // parameters for the area masks 
-    int oY; // in colorCorrection
-    int oW; //
-    int oH; //
 
     int tr;
     PreviewProps pp;
