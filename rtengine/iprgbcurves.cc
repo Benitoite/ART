@@ -81,9 +81,15 @@ void ImProcFunctions::rgbCurves(Imagefloat *img)
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                img->r(y, x) = rCurve[img->r(y, x)];
-                img->g(y, x) = gCurve[img->r(y, x)];
-                img->b(y, x) = bCurve[img->r(y, x)];
+                if (rCurve) {
+                    img->r(y, x) = rCurve[img->r(y, x)];
+                }
+                if (gCurve) {
+                    img->g(y, x) = gCurve[img->g(y, x)];
+                }
+                if (bCurve) {
+                    img->b(y, x) = bCurve[img->b(y, x)];
+                }
             }
         }
     }
