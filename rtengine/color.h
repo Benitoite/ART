@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -205,15 +206,18 @@ public:
         return r * 0.2126729 + g * 0.7151521 + b * 0.0721750;
     }
 
-    static float rgbLuminance(float r, float g, float b, const double workingspace[3][3])
+    template <class T>
+    static float rgbLuminance(float r, float g, float b, const T workingspace[3][3])
     {
         return r * workingspace[1][0] + g * workingspace[1][1] + b * workingspace[1][2];
     }
 
-    static float rgbLuminance(float r, float g, float b, const float workingspace[3][3])
+#ifdef __SSE2__
+    static vfloat rgbLuminance(vfloat r, vfloat g, vfloat b, const vfloat workingspace[3][3])
     {
         return r * workingspace[1][0] + g * workingspace[1][1] + b * workingspace[1][2];
     }
+#endif
     
     /**
     * @brief Convert red/green/blue to L*a*b
@@ -775,8 +779,24 @@ public:
     {
         b = Y - u;
         r = v + Y;
-        g = (Y - r * float(workingspace[1][0]) - b * float(workingspace[1][2])) / float(workingspace[1][1]);
+        g = (Y - r * workingspace[1][0] - b * workingspace[1][2]) / workingspace[1][1];
     }
+
+#ifdef __SSE2__
+    static void rgb2yuv(vfloat r, vfloat g, vfloat b, vfloat &Y, vfloat &u, vfloat &v, const vfloat workingspace[3][3])
+    {
+        Y = rgbLuminance(r, g, b, workingspace);
+        u = Y - b;
+        v = r - Y;
+    }
+
+    static void yuv2rgb(vfloat Y, vfloat u, vfloat v, vfloat &r, vfloat &g, vfloat &b, const vfloat workingspace[3][3])
+    {
+        b = Y - u;
+        r = v + Y;
+        g = (Y - r * workingspace[1][0] - b * workingspace[1][2]) / workingspace[1][1];
+    }
+#endif
 
     static void yuv2hsl(float u, float v, float &h, float &s);
     static void hsl2yuv(float h, float s, float &u, float &v);

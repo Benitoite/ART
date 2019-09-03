@@ -152,6 +152,10 @@ private:
     bool norm_1_ : 1;
     float ws_[3][3];
     float iws_[3][3];
+#ifdef __SSE2__
+    vfloat vws_[3][3];
+    vfloat viws_[3][3];
+#endif
 };
 
 } // namespace rtengine

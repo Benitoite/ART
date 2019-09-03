@@ -612,6 +612,14 @@ inline void Imagefloat::get_ws()
                 iws_[i][j] = float(iws[i][j]);
             }
         }
+#ifdef __SSE2__
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                vws_[i][j] = F2V(float(ws[i][j]));
+                viws_[i][j] = F2V(float(iws[i][j]));
+            }
+        }
+#endif
     }
 }
 
@@ -685,8 +693,21 @@ void Imagefloat::rgb_to_xyz(bool multithread)
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
-    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
-        for (int x = 0; x < width; ++x) {
+    for (int y = 0; y < height; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Xv, Yv, Zv;
+        for (; x < width-3; x += 4) {
+            vfloat rv = LVFU(r(y, x));
+            vfloat gv = LVFU(g(y, x));
+            vfloat bv = LVFU(b(y, x));
+            Color::rgbxyz(rv, gv, bv, Xv, Yv, Zv, vws_);
+            STVFU(r(y, x), Xv);
+            STVFU(g(y, x), Yv);
+            STVFU(b(y, x), Zv);
+        }
+#endif
+        for (; x < width; ++x) {
             float X, Y, Z;
             Color::rgbxyz(r(y, x), g(y, x), b(y, x), X, Y, Z, ws_);
             r(y, x) = X;
@@ -704,8 +725,21 @@ void Imagefloat::rgb_to_yuv(bool multithread)
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
-    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
-        for (int x = 0; x < width; ++x) {
+    for (int y = 0; y < height; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Yv, uv, vv;
+        for (; x < width-3; x += 4) {
+            vfloat rv = LVFU(r(y, x));
+            vfloat gv = LVFU(g(y, x));
+            vfloat bv = LVFU(b(y, x));
+            Color::rgb2yuv(rv, gv, bv, Yv, uv, vv, vws_);
+            STVFU(g(y, x), Yv);
+            STVFU(b(y, x), uv);
+            STVFU(r(y, x), vv);
+        }
+#endif
+        for (; x < width; ++x) {
             Color::rgb2yuv(r(y, x), g(y, x), b(y, x), g(y, x), b(y, x), r(y, x), ws_);
         }
     }
@@ -719,8 +753,21 @@ void Imagefloat::xyz_to_rgb(bool multithread)
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
-    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
-        for (int x = 0; x < width; ++x) {
+    for (int y = 0; y < height; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Rv, Gv, Bv;
+        for (; x < width-3; x += 4) {
+            vfloat xv = LVFU(r(y, x));
+            vfloat yv = LVFU(g(y, x));
+            vfloat zv = LVFU(b(y, x));
+            Color::xyz2rgb(xv, yv, zv, Rv, Gv, Bv, viws_);
+            STVFU(r(y, x), Rv);
+            STVFU(g(y, x), Gv);
+            STVFU(b(y, x), Bv);
+        }
+#endif
+        for (; x < width; ++x) {
             float R, G, B;
             Color::xyz2rgb(r(y, x), g(y, x), b(y, x), R, G, B, iws_);
             r(y, x) = R;
@@ -757,8 +804,21 @@ void Imagefloat::yuv_to_rgb(bool multithread)
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
 #endif
-    for (int y = 0; y < height; ++y) { // TODO - SSE2 optimization
-        for (int x = 0; x < width; ++x) {
+    for (int y = 0; y < height; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Rv, Gv, Bv;
+        for (; x < width-3; x += 4) {
+            vfloat Yv = LVFU(g(y, x));
+            vfloat uv = LVFU(b(y, x));
+            vfloat vv = LVFU(r(y, x));
+            Color::yuv2rgb(Yv, uv, vv, Rv, Gv, Bv, vws_);
+            STVFU(r(y, x), Rv);
+            STVFU(g(y, x), Gv);
+            STVFU(b(y, x), Bv);
+        }
+#endif
+        for (; x < width; ++x) {
             Color::yuv2rgb(g(y, x), b(y, x), r(y, x), r(y, x), g(y, x), b(y, x), ws_);
         }
     }
