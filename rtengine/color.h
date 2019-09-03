@@ -627,6 +627,9 @@ public:
     * @param b channel [-42000 ; +42000] ; can be more than 42000 (return value)
     */
     static void XYZ2Lab(float x, float y, float z, float &L, float &a, float &b);
+#ifdef __SSE2__
+    static void XYZ2Lab(vfloat x, vfloat y, vfloat z, vfloat &L, vfloat &a, vfloat &b);
+#endif
     static void RGB2Lab(float *X, float *Y, float *Z, float *L, float *a, float *b, const float wp[3][3], int width);
     static void RGB2L(float *X, float *Y, float *Z, float *L, const float wp[3][3], int width);
 
@@ -645,6 +648,22 @@ public:
         Lab2XYZ(l, a, b, x, y, z);
         xyz2rgb(x, y, z, R, G, B, iws);
     }
+
+#ifdef __SSE2__
+    static void rgb2lab(vfloat R, vfloat G, vfloat B, vfloat &l, vfloat &a, vfloat &b, const vfloat ws[3][3])
+    {
+        vfloat x, y, z;
+        rgbxyz(R, G, B, x, y, z, ws);
+        XYZ2Lab(x, y, z, l, a, b);
+    }
+
+    static void lab2rgb(vfloat l, vfloat a, vfloat b, vfloat &R, vfloat &G, vfloat &B, const vfloat iws[3][3])
+    {
+        vfloat x, y, z;
+        Lab2XYZ(l, a, b, x, y, z);
+        xyz2rgb(x, y, z, R, G, B, iws);
+    }
+#endif
     
 
     /**

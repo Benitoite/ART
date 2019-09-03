@@ -847,7 +847,7 @@ void Imagefloat::toLab(LabImage &dst, bool multithread)
     setMode(Mode::LAB, multithread);
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -864,10 +864,24 @@ void Imagefloat::rgb_to_lab(bool multithread)
     get_ws();
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Rv, Gv, Bv;
+        vfloat Lv, av, bv;
+        for (; x < width-3; x += 4) {
+            Rv = LVFU(r(y, x));
+            Gv = LVFU(g(y, x));
+            Bv = LVFU(b(y, x));
+            Color::rgb2lab(Rv, Gv, Bv, Lv, av, bv, vws_);
+            STVFU(g(y, x), Lv);
+            STVFU(r(y, x), av);
+            STVFU(b(y, x), bv);
+        }
+#endif
+        for (; x < width; ++x) {
             rgb_to_lab(y, x, g(y, x), r(y, x), b(y, x));
         }
     }
@@ -887,7 +901,7 @@ void Imagefloat::xyz_to_lab(bool multithread)
     get_ws();
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -908,10 +922,27 @@ void Imagefloat::yuv_to_lab(bool multithread)
     get_ws();
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Rv, Gv, Bv;
+        vfloat Xv, Yv, Zv;
+        vfloat Lv, av, bv;
+        for (; x < width-3; x += 4) {
+            Rv = LVFU(r(y, x));
+            Gv = LVFU(g(y, x));
+            Bv = LVFU(b(y, x));
+            Color::yuv2rgb(Gv, Bv, Rv, Rv, Gv, Bv, vws_);
+            Color::rgbxyz(Rv, Gv, Bv, Xv, Yv, Zv, vws_);
+            Color::XYZ2Lab(Xv, Yv, Zv, Lv, av, bv);
+            STVFU(g(y, x), Lv);
+            STVFU(r(y, x), av);
+            STVFU(b(y, x), bv);
+        }
+#endif
+        for (; x < width; ++x) {
             yuv_to_lab(y, x, g(y, x), r(y, x), b(y, x));
         }
     }
@@ -933,13 +964,28 @@ void Imagefloat::lab_to_rgb(bool multithread)
     get_ws();
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
-        float X, Y, Z;
-        for (int x = 0; x < width; ++x) {
-            Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), X, Y, Z);
-            Color::xyz2rgb(X, Y, Z, this->r(y, x), this->g(y, x), this->b(y, x), iws_);
+        // float X, Y, Z;
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Lv, av, bv;
+        vfloat Rv, Gv, Bv;
+        for (; x < width-3; x += 4) {
+            Lv = LVFU(g(y, x));
+            av = LVFU(r(y, x));
+            bv = LVFU(b(y, x));
+            Color::lab2rgb(Lv, av, bv, Rv, Gv, Bv, viws_);
+            STVFU(r(y, x), Rv);
+            STVFU(g(y, x), Gv);
+            STVFU(b(y, x), Bv);
+        }
+#endif
+        for (; x < width; ++x) {
+            Color::lab2rgb(this->g(y, x), this->r(y, x), this->b(y, x), this->r(y, x), this->g(y, x), this->b(y, x), iws_);
+            // Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), X, Y, Z);
+            // Color::xyz2rgb(X, Y, Z, this->r(y, x), this->g(y, x), this->b(y, x), iws_);
         }
     }
 }
@@ -950,7 +996,7 @@ void Imagefloat::lab_to_xyz(bool multithread)
     get_ws();
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -965,12 +1011,28 @@ void Imagefloat::lab_to_yuv(bool multithread)
     get_ws();
 
 #ifdef _OPENMP
-#   pragma omp parallel for schedule(dynamic,16) if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
     for (int y = 0; y < height; ++y) {
         float X, Y, Z;
         float R, G, B;
-        for (int x = 0; x < width; ++x) {
+        int x = 0;
+#ifdef __SSE2__
+        vfloat Lv, av, bv;
+        vfloat Rv, Gv, Bv;
+        vfloat Xv, Yv, Zv;
+        for (; x < width-3; x += 4) {
+            Lv = LVFU(g(y, x));
+            av = LVFU(r(y, x));
+            bv = LVFU(b(y, x));
+            Color::Lab2XYZ(Lv, av, bv, Xv, Yv, Zv);
+            Color::xyz2rgb(Xv, Yv, Zv, Rv, Gv, Bv, viws_);
+            STVFU(g(y, x), Yv);
+            STVFU(b(y, x), Yv - Bv);
+            STVFU(r(y, x), Rv - Yv);
+        }
+#endif
+        for (; x < width; ++x) {
             Color::Lab2XYZ(this->g(y, x), this->r(y, x), this->b(y, x), X, Y, Z);
             Color::xyz2rgb(X, Y, Z, R, G, B, iws_);
             this->g(y, x) = Y;

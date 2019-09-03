@@ -1789,6 +1789,47 @@ void Color::XYZ2Lab(float X, float Y, float Z, float &L, float &a, float &b)
     b = (200.0f * (fy - fz) );
 }
 
+
+#ifdef __SSE2__
+void Color::XYZ2Lab(vfloat X, vfloat Y, vfloat Z, vfloat &L, vfloat &a, vfloat &b)
+{
+    vfloat minvalfv = F2V(0.f);
+    vfloat maxvalfv = F2V(MAXVALF);
+    vfloat c500v = F2V(500.f);
+    vfloat c200v = F2V(200.f);
+
+    X = X / F2V(D50x);
+    Z = Z / F2V(D50z);
+
+    vmask maxMask = vmaskf_gt(vmaxf(X, vmaxf(Y, Z)), maxvalfv);
+    vmask minMask = vmaskf_lt(vminf(X, vminf(Y, Z)), minvalfv);
+    if (_mm_movemask_ps((vfloat)maxMask) || _mm_movemask_ps((vfloat)minMask)) {
+        // take slower code path for all 4 pixels if one of the values is
+        // > MAXVALF. Still faster than non SSE2 version
+        for(int k = 0; k < 4; ++k) {
+            float x = X[k];
+            float y = Y[k];
+            float z = Z[k];
+            float fx = computeXYZ2Lab(x);
+            float fy = computeXYZ2Lab(y);
+            float fz = computeXYZ2Lab(z);
+
+            L[k] = computeXYZ2LabY(y);
+            a[k] = (500.f * (fx - fy) );
+            b[k] = (200.f * (fy - fz) );
+        }
+    } else {
+        const vfloat fx = cachef[X];
+        const vfloat fy = cachef[Y];
+        const vfloat fz = cachef[Z];
+        
+        L = cachefy[Y];
+        a = c500v * (fx - fy);
+        b = c200v * (fy - fz);
+    }
+}
+#endif
+
 void Color::Lab2Yuv(float L, float a, float b, float &Y, float &u, float &v)
 {
     float fy = (c1By116 * L / 327.68) + c16By116; // (L+16)/116
