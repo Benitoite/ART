@@ -17,6 +17,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with ART.  If not, see <http://www.gnu.org/licenses/>.
  */
+// extracted and datapted from ImProcFunctions::rgbProc (improcfun.cc) of
+// RawTherapee
 
 #include "improcfun.h"
 
