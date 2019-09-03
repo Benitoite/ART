@@ -145,7 +145,7 @@ void BatchQueueEntry::removeButtonSet ()
     buttonSet = nullptr;
 }
 
-std::vector<Glib::RefPtr<Gdk::Pixbuf> > BatchQueueEntry::getIconsOnImageArea ()
+std::vector<Glib::RefPtr<Gdk::Pixbuf>> BatchQueueEntry::getIconsOnImageArea ()
 {
 
     std::vector<Glib::RefPtr<Gdk::Pixbuf> > ret;
@@ -157,7 +157,7 @@ std::vector<Glib::RefPtr<Gdk::Pixbuf> > BatchQueueEntry::getIconsOnImageArea ()
     return ret;
 }
 
-void BatchQueueEntry::getIconSize (int& w, int& h)
+void BatchQueueEntry::getIconSize (int& w, int& h) const
 {
 
     w = savedAsIcon->get_width ();
@@ -165,7 +165,7 @@ void BatchQueueEntry::getIconSize (int& w, int& h)
 }
 
 
-Glib::ustring BatchQueueEntry::getToolTip (int x, int y)
+Glib::ustring BatchQueueEntry::getToolTip (int x, int y) const
 {
     // get the parent class' tooltip first
     Glib::ustring tooltip = ThumbBrowserEntryBase::getToolTip(x, y);
