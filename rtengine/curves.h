@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -47,7 +48,6 @@ namespace rtengine
 {
 
 class ToneCurve;
-class ColorAppearance;
 
 inline void setUnlessOOG(float &r, float &g, float &b, const float &rr, const float &gg, const float &bb)
 {
@@ -286,8 +286,6 @@ public:
     }
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    static inline double centercontrast   (double x, double b, double m);
-
     // standard srgb gamma and its inverse
     static inline double gamma2            (double x)
     {
@@ -361,25 +359,7 @@ public:
                               LUTu & histogram, LUTf & hlCurve, LUTf & shCurve, LUTf & outCurve, LUTu & outBeforeCCurveHistogram, ToneCurve & outToneCurve, ToneCurve & outToneCurve2,
 
                               int skip = 1);
-    static void curveBW (const std::vector<double>& curvePointsbw, const std::vector<double>& curvePointsbw2, const LUTu & histogrambw, LUTu & outBeforeCCurveHistogrambw,
-                         ToneCurve & customToneCurvebw1, ToneCurve & customToneCurvebw2, int skip);
 
-    static void curveWavContL ( bool & wavcontlutili, const std::vector<double>& wavclcurvePoints, LUTf & wavclCurve,/* LUTu & histogramwavcl, LUTu & outBeforeWavCLurveHistogram,*/int skip);
-    static void curveDehaContL ( bool & dehacontlutili, const std::vector<double>& dehaclcurvePoints, LUTf & dehaclCurve, int skip, const LUTu & histogram, LUTu & outBeforeCurveHistogram);
-    static void mapcurve ( bool & mapcontlutili, const std::vector<double>& mapcurvePoints, LUTf & mapcurve, int skip, const LUTu & histogram, LUTu & outBeforeCurveHistogram);
-
-    static void curveToning ( const std::vector<double>& curvePoints, LUTf & ToningCurve, int skip);
-
-    static void curveLightBrightColor (
-        const std::vector<double>& curvePoints,
-        const std::vector<double>& curvePoints2,
-        const std::vector<double>& curvePoints3,
-        const LUTu & histogram, LUTu & outBeforeCCurveHistogram,
-        const LUTu & histogramC, LUTu & outBeforeCCurveHistogramC,
-        ColorAppearance & outColCurve1,
-        ColorAppearance & outColCurve2,
-        ColorAppearance & outColCurve3,
-        int skip = 1);
     static void RGBCurve (const std::vector<double>& curvePoints, LUTf & outCurve, int skip);
 
     static void fillCurveArray(DiagonalCurve* diagCurve, LUTf &outCurve, int skip, bool needed);
@@ -503,55 +483,6 @@ public:
     };
 };
 
-class RetinextransmissionCurve
-{
-private:
-    LUTf luttransmission;  // 0xffff range
-    void Set(const Curve &pCurve);
-
-public:
-    virtual ~RetinextransmissionCurve() {};
-    RetinextransmissionCurve();
-
-    void Reset();
-    void Set(const Curve *pCurve);
-    void Set(const std::vector<double> &curvePoints);
-    float operator[](float index) const
-    {
-        return luttransmission[index];
-    }
-
-    operator bool (void) const
-    {
-        return luttransmission;
-    }
-};
-
-class RetinexgaintransmissionCurve
-{
-private:
-    LUTf lutgaintransmission;  // 0xffff range
-    void Set(const Curve &pCurve);
-
-public:
-    virtual ~RetinexgaintransmissionCurve() {};
-    RetinexgaintransmissionCurve();
-
-    void Reset();
-    void Set(const Curve *pCurve);
-    void Set(const std::vector<double> &curvePoints);
-    float operator[](float index) const
-    {
-        return lutgaintransmission[index];
-    }
-
-    operator bool (void) const
-    {
-        return lutgaintransmission;
-    }
-};
-
-
 
 class ToneCurve
 {
@@ -565,36 +496,6 @@ public:
     operator bool (void) const
     {
         return lutToneCurve;
-    }
-};
-
-class OpacityCurve
-{
-public:
-    LUTf lutOpacityCurve;  // 0xffff range
-
-    virtual ~OpacityCurve() {};
-
-    void Reset();
-    void Set(const Curve *pCurve);
-    void Set(const std::vector<double> &curvePoints, bool &opautili);
-
-    // TODO: transfer this method to the Color class...
-    float blend (float x, float lower, float upper) const
-    {
-        return (upper - lower) * lutOpacityCurve[x * 500.f] + lower;
-    }
-    void blend3f (float x, float lower1, float upper1, float &result1, float lower2, float upper2, float &result2, float lower3, float upper3, float &result3) const
-    {
-        float opacity = lutOpacityCurve[x * 500.f];
-        result1 = (upper1 - lower1) * opacity + lower1;
-        result2 = (upper2 - lower2) * opacity + lower2;
-        result3 = (upper3 - lower3) * opacity + lower3;
-    }
-
-    operator bool (void) const
-    {
-        return lutOpacityCurve;
     }
 };
 
@@ -626,99 +527,6 @@ public:
     }
 };
 
-class WavOpacityCurveRG
-{
-private:
-    LUTf lutOpacityCurveRG;  // 0xffff range
-    void Set(const Curve &pCurve);
-public:
-    virtual ~WavOpacityCurveRG() {};
-    WavOpacityCurveRG();
-
-    void Reset();
-    //  void Set(const std::vector<double> &curvePoints, bool &opautili);
-    void Set(const std::vector<double> &curvePoints);
-    float operator[](float index) const
-    {
-        return lutOpacityCurveRG[index];
-    }
-
-    operator bool (void) const
-    {
-        return lutOpacityCurveRG;
-    }
-};
-class WavOpacityCurveBY
-{
-private:
-    LUTf lutOpacityCurveBY;  // 0xffff range
-    void Set(const Curve &pCurve);
-
-public:
-    virtual ~WavOpacityCurveBY() {};
-    WavOpacityCurveBY();
-
-    void Reset();
-    void Set(const Curve *pCurve);
-    void Set(const std::vector<double> &curvePoints);
-    float operator[](float index) const
-    {
-        return lutOpacityCurveBY[index];
-    }
-
-    operator bool (void) const
-    {
-        return lutOpacityCurveBY;
-    }
-};
-class WavOpacityCurveW
-{
-private:
-    LUTf lutOpacityCurveW;  // 0xffff range
-    void Set(const Curve &pCurve);
-
-public:
-    virtual ~WavOpacityCurveW() {};
-    WavOpacityCurveW();
-
-    void Reset();
-    void Set(const Curve *pCurve);
-    void Set(const std::vector<double> &curvePoints);
-    float operator[](float index) const
-    {
-        return lutOpacityCurveW[index];
-    }
-
-    operator bool (void) const
-    {
-        return lutOpacityCurveW;
-    }
-};
-
-class WavOpacityCurveWL
-{
-private:
-    LUTf lutOpacityCurveWL;  // 0xffff range
-    void Set(const Curve &pCurve);
-
-public:
-    virtual ~WavOpacityCurveWL() {};
-    WavOpacityCurveWL();
-
-    void Reset();
-    void Set(const Curve *pCurve);
-    void Set(const std::vector<double> &curvePoints);
-    float operator[](float index) const
-    {
-        return lutOpacityCurveWL[index];
-    }
-
-    operator bool (void) const
-    {
-        return lutOpacityCurveWL;
-    }
-};
-
 class NoiseCurve
 {
 private:
@@ -745,126 +553,6 @@ public:
         return lutNoiseCurve;
     }
 };
-
-class ColorGradientCurve
-{
-public:
-    LUTf   lut1;    // [0.;1.] range (float values)
-    LUTf   lut2;  // [0.;1.] range (float values)
-    LUTf   lut3;   // [0.;1.] range (float values)
-    double low;
-    double high;
-
-    virtual ~ColorGradientCurve() {};
-
-    void Reset();
-    void SetXYZ(const Curve *pCurve, const double xyz_rgb[3][3], float satur, float lumin);
-    void SetXYZ(const std::vector<double> &curvePoints, const double xyz_rgb[3][3], float satur, float lumin);
-    void SetRGB(const Curve *pCurve);
-    void SetRGB(const std::vector<double> &curvePoints);
-
-    /**
-    * @brief Get the value of Red, Green and Blue corresponding to the requested index
-    * @param index value in the [0 ; 1] range
-    * @param r corresponding red value [0 ; 65535] (return value)
-    * @param g corresponding green value [0 ; 65535] (return value)
-    * @param b corresponding blue value [0 ; 65535] (return value)
-    */
-    void getVal(float index, float &r, float &g, float &b) const;
-    operator bool (void) const
-    {
-        return lut1 && lut2 && lut3;
-    }
-};
-
-class ColorAppearance
-{
-public:
-    LUTf lutColCurve;  // 0xffff range
-
-    virtual ~ColorAppearance() {};
-
-    void Reset();
-    void Set(const Curve &pCurve);
-    operator bool (void) const
-    {
-        return lutColCurve;
-    }
-};
-
-class Lightcurve : public ColorAppearance
-{
-public:
-    void Apply(float& Li) const;
-};
-
-//lightness curve
-inline void Lightcurve::Apply (float& Li) const
-{
-
-    assert (lutColCurve);
-
-    curves::setLutVal(lutColCurve, Li);
-}
-
-class Brightcurve : public ColorAppearance
-{
-public:
-    void Apply(float& Br) const;
-};
-
-//brightness curve
-inline void Brightcurve::Apply (float& Br) const
-{
-
-    assert (lutColCurve);
-
-    curves::setLutVal(lutColCurve, Br);
-}
-
-class Chromacurve : public ColorAppearance
-{
-public:
-    void Apply(float& Cr) const;
-};
-
-//Chroma curve
-inline void Chromacurve::Apply (float& Cr) const
-{
-
-    assert (lutColCurve);
-
-    curves::setLutVal(lutColCurve, Cr);
-}
-class Saturcurve : public ColorAppearance
-{
-public:
-    void Apply(float& Sa) const;
-};
-
-//Saturation curve
-inline void Saturcurve::Apply (float& Sa) const
-{
-
-    assert (lutColCurve);
-
-    curves::setLutVal(lutColCurve, Sa);
-}
-
-class Colorfcurve : public ColorAppearance
-{
-public:
-    void Apply(float& Cf) const;
-};
-
-//Colorfullness curve
-inline void Colorfcurve::Apply (float& Cf) const
-{
-
-    assert (lutColCurve);
-
-    curves::setLutVal(lutColCurve, Cf);
-}
 
 
 class StandardToneCurve : public ToneCurve

@@ -34,8 +34,7 @@ namespace rtengine {
 
 Imagefloat::Imagefloat():
     color_space_("sRGB"),
-    mode_(Mode::RGB),
-    base_(0),
+    mode_(uint32_t(Mode::RGB)),
     norm_1_(false)
 {
     ws_[0][0] = RT_INFINITY_F;
@@ -44,8 +43,7 @@ Imagefloat::Imagefloat():
 
 Imagefloat::Imagefloat(int w, int h, const Imagefloat *state_from):
     color_space_("sRGB"),
-    mode_(Mode::RGB),
-    base_(0),
+    mode_(uint32_t(Mode::RGB)),
     norm_1_(false)
 {
     allocate(w, h);
@@ -189,7 +187,6 @@ void Imagefloat::copyState(Imagefloat *to) const
 {
     to->color_space_ = color_space_;
     to->mode_ = mode_;
-    to->base_ = base_;
     to->norm_1_ = norm_1_;
     to->ws_[0][0] = RT_INFINITY_F;
     to->iws_[0][0] = RT_INFINITY_F;
@@ -545,9 +542,8 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform)
 // Parallelized transformation; create transform with cmsFLAGS_NOCACHE!
 void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy)
 {
-    mode_ = Mode::RGB;
+    mode_ = uint32_t(Mode::RGB);
     norm_1_ = false;
-    base_ = 0;
     
     // LittleCMS cannot parallelize planar Lab float images
     // so build temporary buffers to allow multi processor execution
@@ -622,14 +618,11 @@ inline void Imagefloat::get_ws()
 
 void Imagefloat::setMode(Mode mode, bool multithread)
 {
-    if (mode == mode_) {
+    if (mode == this->mode()) {
         return;
     }
 
-    int b = logBase();
-    setLogEncoding(0, multithread);
-
-    switch (mode_) {
+    switch (this->mode()) {
     case Mode::RGB:
         if (mode == Mode::XYZ) {
             rgb_to_xyz(multithread);
@@ -667,8 +660,7 @@ void Imagefloat::setMode(Mode mode, bool multithread)
         }
     }
     
-    mode_ = mode;
-    setLogEncoding(b, multithread);
+    mode_ = uint32_t(mode);
 }
 
 
@@ -785,96 +777,6 @@ void Imagefloat::yuv_to_xyz(bool multithread)
             float R, G, B;
             Color::yuv2rgb(g(y, x), b(y, x), r(y, x), R, G, B, ws_);
             Color::rgbxyz(R, G, B, r(y, x), g(y, x), b(y, x), ws_);
-        }
-    }
-}
-
-
-void Imagefloat::setLogEncoding(int base, bool multithread)
-{
-    base = std::max(base, 0);
-    
-    if (base == base_) {
-        return;
-    }
-
-    if (base == 0) { // linear
-        log_to_lin(base_, multithread);
-    } else {
-        if (base_ == 0) {
-            lin_to_log(base, multithread);
-        } else {
-            log_to_lin(base_, multithread);
-            lin_to_log(base, multithread);
-        }
-    }
-    base_ = std::max(base, 0);
-}
-
-
-void Imagefloat::log_to_lin(int base, bool multithread)
-{
-    const auto conv = 
-        [base,this](float x) -> float
-        {
-            if (!this->norm_1_) {
-                x /= 65535.f;
-            }
-            if (base == 1) {
-                x = xexpf(x);
-            } else {
-                x = xlog2lin(x, base);
-            }
-            if (!this->norm_1_) {
-                x *= 65535.f;
-            }
-            return x;
-        };
-    
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            g(y, x) = conv(g(y, x));
-            if (mode_ == Mode::RGB) {
-                r(y, x) = conv(r(y, x));
-                b(y, x) = conv(b(y, x));
-            }
-        }
-    }
-}
-
-
-void Imagefloat::lin_to_log(int base, bool multithread)
-{
-    const auto conv =
-        [base,this](float x) -> float
-        {
-            if (!this->norm_1_) {
-                x /= 65535.f;
-            }
-            if (base == 1) {
-                x = xlogf(max(x, 1e-5f));
-            } else {
-                x = xlin2log(max(x, 1e-5f), base);
-            }
-            if (!this->norm_1_) {
-                x *= 65535.f;
-            }
-            return x;
-        };
-    
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            g(y, x) = conv(g(y, x));
-            if (mode_ == Mode::RGB) {
-                r(y, x) = conv(r(y, x));
-                b(y, x) = conv(b(y, x));
-            }
         }
     }
 }
@@ -1022,7 +924,7 @@ void Imagefloat::lab_to_yuv(bool multithread)
 void Imagefloat::getLab(int y, int x, float &L, float &a, float &b)
 {
     get_ws();
-    switch (mode_) {
+    switch (mode()) {
     case Mode::RGB:
         rgb_to_lab(y, x, L, a, b);
         break;

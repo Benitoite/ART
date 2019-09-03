@@ -28,7 +28,6 @@
 #include "coord2d.h"
 #include "color.h"
 #include "labimage.h"
-#include "cieimage.h"
 #include "LUT.h"
 #include "lcp.h"
 #include "dcp.h"
@@ -79,22 +78,13 @@ public:
     //----------------------------------------------------------------------
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
-    void rgbProc(Imagefloat *working);
-
     void labAdjustments(Imagefloat *rgb, LUTu *histCCurve=nullptr, LUTu *histLCurve=nullptr);
-    
     bool sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask=false);
-    
     void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool fullImage);    
-    
     void resize(Imagefloat* src, Imagefloat* dst, float dScale);
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
     void Lanczos(Imagefloat *src, Imagefloat *dst, float scale);
-
     void impulsedenoise(Imagefloat *rgb);   //Emil's impulse denoise
-
-//    void dirpyrequalizer(LabImage* lab, int scale);  //Emil's wavelet
-//    void EPDToneMap(LabImage *lab, unsigned int Iterates = 0, int skip = 1);
     bool textureBoost(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
 
     struct DenoiseInfoStore {
@@ -112,12 +102,11 @@ public:
     void dehaze(Imagefloat *rgb);
     void dynamicRangeCompression(Imagefloat *rgb);
     void localContrast(Imagefloat *rgb);
-    //void shadowsHighlights(LabImage *lab);
     void shadowsHighlights(Imagefloat *rgb);
     void toneEqualizer(Imagefloat *rgb);
     void softLight(Imagefloat *rgb);
     bool colorCorrection(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    void logEncoding(Imagefloat *rgb, LUTu *histToneCurve=nullptr);
+    void logEncoding(Imagefloat *rgb);
     bool contrastByDetailLevels(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     void filmGrain(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
     bool guidedSmoothing(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
@@ -126,6 +115,9 @@ public:
     void exposure(Imagefloat *rgb);
     void rgbCurves(Imagefloat *rgb);
     void blackAndWhite(Imagefloat *rgb);
+    void toneCurve(Imagefloat *img, LUTu *histToneCurve=nullptr);
+    void brightnessContrastSaturation(Imagefloat *img);
+    void filmSimulation(Imagefloat *img);
 
     enum class Stage {
         STAGE_0,

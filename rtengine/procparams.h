@@ -34,17 +34,6 @@ class ParamsEdited;
 
 namespace rtengine {
 
-class ColorGradientCurve;
-class NoiseCurve;
-class OpacityCurve;
-class RetinexgaintransmissionCurve;
-class RetinextransmissionCurve;
-class WavCurve;
-class WavOpacityCurveBY;
-class WavOpacityCurveRG;
-class WavOpacityCurveW;
-class WavOpacityCurveWL;
-
 enum RenderingIntent {
     RI_PERCEPTUAL = INTENT_PERCEPTUAL,
     RI_RELATIVE = INTENT_RELATIVE_COLORIMETRIC,

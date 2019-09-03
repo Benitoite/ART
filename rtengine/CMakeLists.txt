@@ -41,7 +41,6 @@ set(RTENGINESOURCEFILES
     camconst.cc
     cfa_linedn_RT.cc
     ciecam02.cc
-    cieimage.cc
     clutstore.cc
     color.cc
     colortemp.cc
@@ -146,6 +145,9 @@ set(RTENGINESOURCEFILES
     ipexposure.cc
     iprgbcurves.cc
     ipbw.cc
+    ipbrightcontrsat.cc
+    ipfilmsim.cc
+    iptonecurve.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)

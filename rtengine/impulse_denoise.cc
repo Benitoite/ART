@@ -21,7 +21,6 @@
 #include "rt_math.h"
 #include "labimage.h"
 #include "improcfun.h"
-#include "cieimage.h"
 #include "sleef.c"
 #include "opthelper.h"
 #include "gauss.h"

@@ -71,6 +71,62 @@ void local_contrast_usm(Imagefloat *rgb, const ProcParams *params, double scale,
 
 //-----------------------------------------------------------------------------
 
+class WavOpacityCurveWL {
+private:
+    LUTf lutOpacityCurveWL;  // 0xffff range
+    void Set(const Curve &pCurve);
+
+public:
+    virtual ~WavOpacityCurveWL() {};
+    WavOpacityCurveWL();
+
+    void Reset();
+    void Set(const Curve *pCurve);
+    void Set(const std::vector<double> &curvePoints);
+    float operator[](float index) const
+    {
+        return lutOpacityCurveWL[index];
+    }
+
+    operator bool (void) const
+    {
+        return lutOpacityCurveWL;
+    }
+};
+
+WavOpacityCurveWL::WavOpacityCurveWL() {}
+
+void WavOpacityCurveWL::Reset()
+{
+    lutOpacityCurveWL.reset();
+}
+
+void WavOpacityCurveWL::Set(const Curve &pCurve)
+{
+    if (pCurve.isIdentity()) {
+        lutOpacityCurveWL.reset(); // raise this value if the quality suffers from this number of samples
+        return;
+    }
+
+    lutOpacityCurveWL(501); // raise this value if the quality suffers from this number of samples
+
+    for (int i = 0; i < 501; i++) {
+        lutOpacityCurveWL[i] = pCurve.getVal(double(i) / 500.);
+    }
+}
+
+void WavOpacityCurveWL::Set(const std::vector<double> &curvePoints)
+{
+    if (!curvePoints.empty() && curvePoints[0] > FCT_Linear && curvePoints[0] < FCT_Unchanged) {
+        FlatCurve tcurve(curvePoints, false, CURVES_MIN_POLY_POINTS / 2);
+        tcurve.setIdentityValue(0.);
+        Set(tcurve);
+    } else {
+        Reset();
+    }
+}
+
+
 void eval_avg(float *RESTRICT DataList, int datalen, float &averagePlus, float &averageNeg, float &max, float &min, bool multiThread)
 {
     //find absolute mean

@@ -27,123 +27,15 @@
 #include "imagesource.h"
 #include "rt_algo.h"
 #include "curves.h"
-#include "clutstore.h"
 #include "guidedfilter.h"
 
 namespace rtengine {
 
+extern float apply_vibrance(float x, float vib);
+
 extern const Settings *settings;
 
 namespace {
-
-template <class Curve>
-inline void apply_batch(const Curve &c, Imagefloat *rgb, int W, int H, bool multithread)
-{
-#ifdef _OPENMP
-    #pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        c.BatchApply(0, W, rgb->r.ptrs[y], rgb->g.ptrs[y], rgb->b.ptrs[y]);
-    }
-}
-
-
-template <class Curve>
-inline void apply(const Curve &c, Imagefloat *rgb, int W, int H, bool multithread)
-{
-#ifdef _OPENMP
-    #pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            c.Apply(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x));
-        }
-    }
-}
-
-
-void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curveMode, const Glib::ustring &working_profile, bool multithread)
-{
-    const int W = rgb->getWidth();
-    const int H = rgb->getHeight();
-    
-    if (curveMode == ToneCurveParams::TcMode::PERCEPTUAL) {
-        const PerceptualToneCurve &c = static_cast<const PerceptualToneCurve&>(tc);
-        PerceptualToneCurveState state;
-        c.initApplyState(state, working_profile);
-
-#ifdef _OPENMP
-        #pragma omp parallel for if (multithread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            c.BatchApply(0, W, rgb->r.ptrs[y], rgb->g.ptrs[y], rgb->b.ptrs[y], state);
-        }
-    } else if (curveMode == ToneCurveParams::TcMode::STD) {
-        const StandardToneCurve &c = static_cast<const StandardToneCurve &>(tc);
-        apply_batch(c, rgb, W, H, multithread);
-    } else if (curveMode == ToneCurveParams::TcMode::WEIGHTEDSTD) {
-        const WeightedStdToneCurve &c = static_cast<const WeightedStdToneCurve &>(tc);
-        apply_batch(c, rgb, W, H, multithread);
-    } else if (curveMode == ToneCurveParams::TcMode::FILMLIKE) {
-        const AdobeToneCurve &c = static_cast<const AdobeToneCurve &>(tc);
-        apply(c, rgb, W, H, multithread);
-    } else if (curveMode == ToneCurveParams::TcMode::SATANDVALBLENDING) {
-        const SatAndValueBlendingToneCurve &c = static_cast<const SatAndValueBlendingToneCurve &>(tc);
-        apply(c, rgb, W, H, multithread);
-    } else if (curveMode == ToneCurveParams::TcMode::LUMINANCE) {
-        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
-        const LuminanceToneCurve &c = static_cast<const LuminanceToneCurve &>(tc);
-//        apply(c, rgb, W, H, multithread);
-#ifdef _OPENMP
-#       pragma omp parallel for if (multithread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                c.Apply(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), ws);
-            }
-        }
-    }
-}
-
-
-inline float apply_vibrance(float x, float vib)
-{
-    static const float noise = pow_F(2.f, -16.f);
-    float ax = std::abs(x / 65535.f);
-    if (ax > noise) {
-        return SGN(x) * pow_F(ax, vib) * 65535.f;
-    } else {
-        return x;
-    }
-}
-
-
-void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const Glib::ustring &working_profile, bool multithread)
-{
-    LUTf sat(65536, LUT_CLIP_BELOW);
-    sat[0] = curve.getVal(0) * 2.f;
-    for (int i = 1; i < 65536; ++i) {
-        float v = curve.getVal(pow_F(i / 65535.f, 1.f/2.2f));
-        sat[i] = v * 2.f;
-    }
-
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < rgb->getHeight(); ++y) {
-        for (int x = 0; x < rgb->getWidth(); ++x) {
-            float r = rgb->r(y, x), g = rgb->g(y, x), b = rgb->b(y, x);
-            float Y = Color::rgbLuminance(r, g, b, ws);
-            float s = sat[Y];//sat[pow_F(max(Y, 1e-5f)/65535.f, 1.f/2.2f) * 65535.f];
-            rgb->r(y, x) = Y + s * (r - Y);
-            rgb->g(y, x) = Y + s * (g - Y);
-            rgb->b(y, x) = Y + s * (b - Y);
-        }
-    }
-}
-
 
 float find_gray(float source_gray, float target_gray)
 {
@@ -383,132 +275,6 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     }
 }
 
-
-void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustring &profile, bool multithread)
-{
-    hist.clear();
-    const int compression = log2(65536 / hist.getSize());
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < img->getHeight(); ++y) {
-        for (int x = 0; x < img->getWidth(); ++x) {
-            float r = CLIP(img->r(y, x));
-            float g = CLIP(img->g(y, x));
-            float b = CLIP(img->b(y, x));
-
-            int y = CLIP<int>(Color::gamma2curve[max(r, g, b)]);
-            hist[y >> compression]++;
-        }
-    }
-}
-
-
-void brightness_contrast_saturation(Imagefloat *rgb, const ProcParams *params, float scale, bool multithread)
-{
-    LUTf curve(65536);
-    int bright = params->brightContrSat.enabled ? params->brightContrSat.brightness : 0;
-    int contr = params->brightContrSat.enabled ? params->brightContrSat.contrast : 0;
-    if (bright || contr) {
-        LUTf curve1(65536);
-        LUTf curve2(65536);
-        LUTu dummy;
-        LUTu hist16(65536);
-        ToneCurve customToneCurve1, customToneCurve2;
-
-        if (contr) {
-            ImProcFunctions ipf(params, multithread);
-            ipf.firstAnalysis(rgb, *params, hist16);
-        }
-        CurveFactory::complexCurve(0, 0, 0, 0, 0, bright, contr,
-                                   { DCT_Linear }, { DCT_Linear },
-                                   hist16, curve1, curve2, curve, dummy,
-                                   customToneCurve1, customToneCurve2, max(scale, 1.f));
-    }
-
-    const int W = rgb->getWidth();
-    const int H = rgb->getHeight();
-
-    if (!params->exposure.enabled || params->exposure.clampOOG) {
-#ifdef _OPENMP
-#       pragma omp parallel for if (multithread)
-#endif
-        for (int i = 0; i < H; ++i) {
-            for (int j = 0; j < W; ++j) {
-                float &r = rgb->r(i, j);
-                float &g = rgb->g(i, j);
-                float &b = rgb->b(i, j);
-                if (OOG(r) || OOG(g) || OOG(b)) {
-                    Color::filmlike_clip(&r, &g, &b);
-                }
-            }
-        }
-    }
-
-    if (bright || contr) {
-#ifdef _OPENMP
-#       pragma omp parallel for if (multithread)
-#endif
-        for (int i = 0; i < H; ++i) {
-            int j = 0;
-#ifdef __SSE2__
-            vfloat tmpr;
-            vfloat tmpg;
-            vfloat tmpb;
-            for (; j < W - 3; j += 4) {
-                //brightness/contrast
-                STVF(tmpr[0], curve(LVF(rgb->r(i, j))));
-                STVF(tmpg[0], curve(LVF(rgb->g(i, j))));
-                STVF(tmpb[0], curve(LVF(rgb->b(i, j))));
-                for (int k = 0; k < 4; ++k) {
-                    setUnlessOOG(rgb->r(i, j+k), rgb->g(i, j+k), rgb->b(i, j+k), tmpr[k], tmpg[k], tmpb[k]);
-                }
-            }
-#endif
-            for (; j < W; ++j) {
-                //brightness/contrast
-                setUnlessOOG(rgb->r(i, j), rgb->g(i, j), rgb->b(i, j), curve[rgb->r(i, j)], curve[rgb->g(i, j)], curve[rgb->b(i, j)]);
-            }
-        }
-    }
-
-    if (params->brightContrSat.enabled &&
-        (params->brightContrSat.saturation || params->brightContrSat.vibrance)) {
-        const float saturation = 1.f + params->brightContrSat.saturation / 100.f;
-        const float vibrance = 1.f - params->brightContrSat.vibrance / 1000.f;
-        TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-        const float noise = pow_F(2.f, -16.f);
-        const bool vib = params->brightContrSat.vibrance;
-        
-#ifdef _OPENMP
-#       pragma omp parallel for if (multithread)
-#endif
-        for (int i = 0; i < H; ++i) {
-            for (int j = 0; j < W; ++j) {
-                float &r = rgb->r(i, j);
-                float &g = rgb->g(i, j);
-                float &b = rgb->b(i, j);
-                float l = Color::rgbLuminance(r, g, b, ws);
-                float rl = r - l;
-                float gl = g - l;
-                float bl = b - l;
-                if (vib) {
-                    rl = apply_vibrance(rl, vibrance);
-                    gl = apply_vibrance(gl, vibrance);
-                    bl = apply_vibrance(bl, vibrance);
-                    assert(rl == rl);
-                    assert(gl == gl);
-                    assert(bl == bl);
-                }
-                r = max(l + saturation * rl, noise);
-                g = max(l + saturation * gl, noise);
-                b = max(l + saturation * bl, noise);
-            }
-        }
-    }
-}
-
 } // namespace
 
 
@@ -586,82 +352,12 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
 }
 
 
-void ImProcFunctions::logEncoding(Imagefloat *rgb, LUTu *histToneCurve)
+void ImProcFunctions::logEncoding(Imagefloat *rgb)
 {
-    // Imagefloat working(lab->W, lab->H);
-    // lab2rgb(*lab, working, params->icm.workingProfile);
-    Imagefloat &working = *rgb;
-    //working.assignColorSpace(params->icm.workingProfile);
-    working.setMode(Imagefloat::Mode::RGB, multiThread);
-
     if (params->logenc.enabled) {
-        log_encode(&working, params, scale, multiThread);
-    } else {
-        brightness_contrast_saturation(&working, params, scale, multiThread);
+        rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+        log_encode(rgb, params, scale, multiThread);
     }
-
-    if (dcpProf && dcpApplyState) {
-        for (int y = 0; y < working.getHeight(); ++y) {
-            float *r = working.r.ptrs[y];
-            float *g = working.g.ptrs[y];
-            float *b = working.b.ptrs[y];
-            dcpProf->step2ApplyTile(r, g, b, working.getWidth(), 1, 1, *dcpApplyState);
-        }
-    }
-
-//    shadowsHighlights(&working);
-    
-    HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
-    if (params->filmSimulation.enabled) {
-        constexpr int TS = 112;
-        hald_clut.init(float(params->filmSimulation.strength)/100.f, TS);
-
-        if (hald_clut) {
-#ifdef _OPENMP
-            #pragma omp parallel for if (multiThread)
-#endif
-            for (int y = 0; y < working.getHeight(); ++y) {
-                for (int jj = 0; jj < working.getWidth(); jj += TS) {
-                    int jstart = jj;
-                    float *r = working.r.ptrs[y]+jstart;
-                    float *g = working.g.ptrs[y]+jstart;
-                    float *b = working.b.ptrs[y]+jstart;
-                    int tW = min(jj + TS, working.getWidth());
-                    hald_clut(r, g, b, 0, jstart, tW, 1);
-                }
-            }
-        }
-    }
-
-    if (histToneCurve && *histToneCurve) {
-        update_tone_curve_histogram(&working, *histToneCurve, params->icm.workingProfile, multiThread);
-    }
-
-    if (params->toneCurve.enabled) {
-        ToneCurve tc;
-        const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
-
-        if (!tcurve1.isIdentity()) {
-            tc.Set(tcurve1, Color::sRGBGammaCurve);
-            apply_tc(&working, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
-        }
-
-        const DiagonalCurve tcurve2(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
-
-        if (!tcurve2.isIdentity()) {
-            tc.Set(tcurve2, Color::sRGBGammaCurve);
-            apply_tc(&working, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
-        }
-
-        const FlatCurve satcurve(params->toneCurve.saturation, false, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
-        if (!satcurve.isIdentity()) {
-            apply_satcurve(&working, satcurve, params->icm.workingProfile, multiThread);
-        }
-    }
-
-    shadowsHighlights(&working);
-
-    // rgb2lab(working, *lab, params->icm.workingProfile);
 }
 
 

@@ -109,23 +109,19 @@ public:
     void ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy);
 
     enum class Mode {
-        RGB, // r = red, g = green, b = blue
+        RGB = 0, // r = red, g = green, b = blue
         XYZ, // r = X, g = Y, b = Z
         YUV, // g = Y, b = U, r = V; NOTE: U and V are not normalized wrt Y
         LAB  // g = L, r = A, b = B
     };
 
-    Mode mode() const { return mode_; }
+    Mode mode() const { return Mode(mode_); }
     const Glib::ustring colorSpace() const { return color_space_; }
-    bool isLog() const { return base_ > 0; }
-    int logBase() const { return base_; }
     bool isNormalizedTo1() const { return norm_1_; }
 
     void assignColorSpace(const Glib::ustring &space);
     void setMode(Mode mode, bool multithread);
-    void setLogEncoding(int base, bool multithread);
-    void assignMode(Mode mode) { mode_ = mode; }
-    void assignLogEncoding(int base) { base_ = base; }
+    void assignMode(Mode mode) { mode_ = uint32_t(mode); }
     void setNormalizedTo1(bool yes) { norm_1_ = yes; }
 
     void copyState(Imagefloat *to) const;
@@ -146,16 +142,13 @@ private:
     void lab_to_rgb(bool multithread);
     void lab_to_xyz(bool multithread);
     void lab_to_yuv(bool multithread);
-    void log_to_lin(int base, bool multithread);
-    void lin_to_log(int base, bool multithread);
     void rgb_to_lab(int y, int x, float &L, float &a, float &b);
     void xyz_to_lab(int y, int x, float &L, float &a, float &b);
     void yuv_to_lab(int y, int x, float &L, float &a, float &b);
     void get_ws();
     
     Glib::ustring color_space_;
-    Mode mode_;
-    int32_t base_ : 31;
+    uint32_t mode_ : 31;
     bool norm_1_ : 1;
     float ws_[3][3];
     float iws_[3][3];
