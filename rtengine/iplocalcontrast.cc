@@ -292,8 +292,9 @@ void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double s
         --wavelet_level;
     }
     int skip = scale;
-    float *Y = rgb->g(0);
-    wavelet_decomposition wd(Y, W, H, wavelet_level, 1, skip);
+//    int skip = min(lab->W-1 , lab->H-1, int(scale));
+    array2D<float> Y(W, H, rgb->g.ptrs);
+    wavelet_decomposition wd(static_cast<float *>(Y), W, H, wavelet_level, 1, skip);
 
     if (wd.memoryAllocationFailed) {
         return;
@@ -445,7 +446,16 @@ void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double s
         }
     }
 
-    wd.reconstruct(Y, 1.f);
+    wd.reconstruct(static_cast<float *>(Y), 1.f);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            rgb->g(y, x) = Y[y][x];
+        }
+    }
 }
 
 } // namespace
