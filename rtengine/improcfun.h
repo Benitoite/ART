@@ -24,7 +24,6 @@
 #include "image16.h"
 #include "image8.h"
 #include "procparams.h"
-#include "shmap.h"
 #include "coord2d.h"
 #include "color.h"
 #include "labimage.h"

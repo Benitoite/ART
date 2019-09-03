@@ -109,7 +109,6 @@ set(RTENGINESOURCEFILES
     refreshmap.cc
     rt_algo.cc
     rtthumbnail.cc
-    shmap.cc
     simpleprocess.cc
     slicer.cc
     stdimagesource.cc
