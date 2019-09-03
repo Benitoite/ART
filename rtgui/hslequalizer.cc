@@ -32,7 +32,7 @@ namespace {
 void hsv2rgb01(float h, float s, float v, float &r, float &g, float &b)
 {
     // try to get a better visual match -- this is empirical and to be confirmed
-    h -= 1.f/20.f;
+    h -= 1.f/19.f;
     if (h > 1.f) {
         h -= 1.f;
     } else if (h < 0.f) {
