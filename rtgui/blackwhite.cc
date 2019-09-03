@@ -249,11 +249,9 @@ void BlackWhite::read(const ProcParams* pp)
 
 
     if (pp->blackwhite.method == "Desaturation") {
-        method->set_active (0);
-    } else if (pp->blackwhite.method == "LumEqualizer") {
-        method->set_active (1);
+        method->set_active(0);
     } else if (pp->blackwhite.method == "ChannelMixer") {
-        method->set_active (2);
+        method->set_active(1);
     }
 
     methodChanged();
@@ -313,8 +311,6 @@ void BlackWhite::write (ProcParams* pp)
     if (method->get_active_row_number() == 0) {
         pp->blackwhite.method = "Desaturation";
     } else if (method->get_active_row_number() == 1) {
-        pp->blackwhite.method = "LumEqualizer";
-    } else if (method->get_active_row_number() == 2) {
         pp->blackwhite.method = "ChannelMixer";
     }
 

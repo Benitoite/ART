@@ -78,11 +78,11 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
                 float r = img->r(y, x);
                 float g = img->g(y, x);
                 float b = img->b(y, x);
-                float Y = Color::rgbLuminance(r, g, b);
-                r = g = b = Y;
                 if (hasgammabw) {
                     Color::trcGammaBW(r, g, b, gammabwr, gammabwg, gammabwb);
                 }
+                float Y = Color::rgbLuminance(r, g, b);
+                r = g = b = Y;
                 img->r(y, x) = r;
                 img->g(y, x) = g;
                 img->b(y, x) = b;
@@ -98,21 +98,19 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
 #       pragma omp parallel for if (multiThread)
 #endif
         for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                img->r(y, x) = img->g(y, x) = img->b(y, x) = ((bwr * img->r(y, x) + bwg * img->g(y, x) + bwb * img->b(y, x)) * kcorec);
-
-#ifndef __SSE2__
-                if (hasgammabw) {
-                    Color::trcGammaBW(img->r(y, x), img->g(y, x), img->b(y, x), gammabwr, gammabwg, gammabwb);
-                }
-#endif
-            }
-
 #ifdef __SSE2__
             if (hasgammabw) {
                 Color::trcGammaBWRow(img->r(y), img->g(y), img->b(y), W, gammabwr, gammabwg, gammabwb);
             }
 #endif
+            for (int x = 0; x < W; ++x) {
+#ifndef __SSE2__
+                if (hasgammabw) {
+                    Color::trcGammaBW(img->r(y, x), img->g(y, x), img->b(y, x), gammabwr, gammabwg, gammabwb);
+                }
+#endif
+                img->r(y, x) = img->g(y, x) = img->b(y, x) = ((bwr * img->r(y, x) + bwg * img->g(y, x) + bwb * img->b(y, x)) * kcorec);
+            }
         }
     }
 }
