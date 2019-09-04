@@ -294,83 +294,12 @@ void complexsgnCurve (bool & autili,  bool & butili, bool & ccutili, bool & cclu
     CurveFactory::fillCurveArray(dCurve.get(), lhskCurve, skip, cclutili);
 }
 
-} // namespace
 
-
-void ImProcFunctions::labAdjustments(Imagefloat *rgb, LUTu *histCCurve, LUTu *histLCurve)
+void chromiLuminanceCurve(const ImProcData &im, Imagefloat *lold, Imagefloat *lnew, LUTf & acurve, LUTf & bcurve, LUTf & satcurve, LUTf & lhskcurve, LUTf & clcurve, LUTf & curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu *histCCurve, LUTu *histLCurve, PipetteBuffer *pipetteBuffer)
 {
-    if (!params->labCurve.enabled) {
-        return;
-    }
+    const auto params = im.params;
+    const auto multiThread = im.multiThread;
     
-    LabImage lab(rgb->getWidth(), rgb->getHeight());
-    rgb2lab(*rgb, lab);
-    
-    LUTu dummy;
-    LUTu hist16;
-    LUTf lumacurve;
-    LUTf clcurve;
-    LUTf satcurve;
-    LUTf lhskcurve;
-    LUTf curve1;
-    LUTf curve2;
-
-    hist16(65536);
-    lumacurve(32770, 0); // lumacurve[32768] and lumacurve[32769] will be set to 32768 and 32769 later to allow linear interpolation
-    clcurve(65536, 0);
-    satcurve(65536, 0);
-    lhskcurve(65536, 0);
-    curve1(65536);
-    curve2(65536);
-
-    if (params->labCurve.contrast != 0) { //only use hist16 for contrast
-        hist16.clear();
-        int fh = lab.H;
-        int fw = lab.W;
-        
-#ifdef _OPENMP
-#       pragma omp parallel if (multiThread)
-#endif
-        {
-            LUTu hist16thr (hist16.getSize());  // one temporary lookup table per thread
-            hist16thr.clear();
-#ifdef _OPENMP
-#           pragma omp for schedule(static) nowait
-#endif
-            for (int i = 0; i < fh; i++) {
-                for (int j = 0; j < fw; j++) {
-                    hist16thr[(int)((lab.L[i][j]))]++;
-                }
-            }
-            
-#ifdef _OPENMP
-#           pragma omp critical
-#endif
-            {
-                hist16 += hist16thr;
-            }
-        }
-    }  
-
-    bool utili;
-    complexLCurve(params->labCurve.brightness, params->labCurve.contrast, params->labCurve.lcurve, hist16, lumacurve, dummy, scale == 1 ? 1 : 16, utili);
-
-    bool clcutili;
-    curveCL(clcutili, params->labCurve.clcurve, clcurve, scale == 1 ? 1 : 16);
-
-    bool autili, butili;
-    bool ccutili, cclutili;
-    complexsgnCurve(autili, butili, ccutili, cclutili, params->labCurve.acurve, params->labCurve.bcurve, params->labCurve.cccurve,
-                                  params->labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, scale == 1 ? 1 : 16);
-
-    chromiLuminanceCurve(&lab, &lab, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve);
-
-    lab2rgb(lab, *rgb);
-}
-
-
-void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf & acurve, LUTf & bcurve, LUTf & satcurve, LUTf & lhskcurve, LUTf & clcurve, LUTf & curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu *histCCurve, LUTu *histLCurve)
-{
     const auto get_hue_val =
         [](FlatCurve *c, float x) -> float
         {
@@ -392,8 +321,14 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
             return yy;
         };
 
-    int W = lold->W;
-    int H = lold->H;
+    const int W = lold->getWidth();
+    const int H = lold->getHeight();
+    float **lold_L = lold->g.ptrs;
+    float **lold_a = lold->r.ptrs;
+    float **lold_b = lold->b.ptrs;
+    float **lnew_L = lnew->g.ptrs;
+    float **lnew_a = lnew->r.ptrs;
+    float **lnew_b = lnew->b.ptrs;
 
     PlanarWhateverData<float>* editWhatever = nullptr;
     EditUniqueID editID = EUID_None;
@@ -612,7 +547,7 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                 bool hrenabled = params->exposure.enabled && params->exposure.hrmode != procparams::ExposureParams::HR_OFF;
                 // only if user activate Lab adjustments
                 if (autili || butili || ccutili ||  cclutili || chutili || lhutili || hhutili || clcutili || utili || chromaticity) {
-                    Color::LabGamutMunsell (lold->L[i], lold->a[i], lold->b[i], W, /*corMunsell*/true, /*lumaMuns*/false, hrenabled, /*gamut*/true, wip);
+                    Color::LabGamutMunsell (lold_L[i], lold_a[i], lold_b[i], W, /*corMunsell*/true, /*lumaMuns*/false, hrenabled, /*gamut*/true, wip);
                 }
             }
 
@@ -625,22 +560,22 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                 int k;
 
                 for (k = 0; k < W - 3; k += 4) {
-                    av = LVFU (lold->a[i][k]);
-                    bv = LVFU (lold->b[i][k]);
+                    av = LVFU (lold_a[i][k]);
+                    bv = LVFU (lold_b[i][k]);
                     STVF (HHBuffer[k], xatan2f (bv, av));
                     STVF (CCBuffer[k], vsqrtf (SQRV (av) + SQRV (bv)) / c327d68v);
                 }
 
                 for (; k < W; k++) {
-                    HHBuffer[k] = xatan2f (lold->b[i][k], lold->a[i][k]);
-                    CCBuffer[k] = sqrt (SQR (lold->a[i][k]) + SQR (lold->b[i][k])) / 327.68f;
+                    HHBuffer[k] = xatan2f (lold_b[i][k], lold_a[i][k]);
+                    CCBuffer[k] = sqrt (SQR (lold_a[i][k]) + SQR (lold_b[i][k])) / 327.68f;
                 }
             }
 
 #endif // __SSE2__
 
             for (int j = 0; j < W; j++) {
-                const float Lin = lold->L[i][j];
+                const float Lin = lold_L[i][j];
                 float LL = Lin / 327.68f;
                 float CC;
                 float HH;
@@ -655,8 +590,8 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                     HH = HHBuffer[j];
                     CC = CCBuffer[j];
 #else
-                    HH = xatan2f (lold->b[i][j], lold->a[i][j]);
-                    CC = sqrt (SQR (lold->a[i][j]) + SQR (lold->b[i][j])) / 327.68f;
+                    HH = xatan2f (lold_b[i][j], lold_a[i][j]);
+                    CC = sqrt (SQR (lold_a[i][j]) + SQR (lold_b[i][j])) / 327.68f;
 #endif
 
                     // According to mathematical laws we can get the sin and cos of HH by simple operations
@@ -664,8 +599,8 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                         sincosval.y = 1.0f;
                         sincosval.x = 0.0f;
                     } else {
-                        sincosval.y = lold->a[i][j] / (CC * 327.68f);
-                        sincosval.x = lold->b[i][j] / (CC * 327.68f);
+                        sincosval.y = lold_a[i][j] / (CC * 327.68f);
+                        sincosval.x = lold_b[i][j] / (CC * 327.68f);
                     }
 
                     Chprov = CC;
@@ -677,29 +612,29 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                     editWhatever->v (i, j) = LIM01<float> (Lin / 32768.0f);  // Lab L pipette
                 }
 
-                lnew->L[i][j] = curve[Lin];
+                lnew_L[i][j] = curve[Lin];
 
-                float Lprov1 = (lnew->L[i][j]) / 327.68f;
+                float Lprov1 = (lnew_L[i][j]) / 327.68f;
 
                 if (editPipette) {
                     if (editID == EUID_Lab_aCurve) { // Lab a pipette
-                        float chromapipa = lold->a[i][j] + (32768.f * 1.28f);
+                        float chromapipa = lold_a[i][j] + (32768.f * 1.28f);
                         editWhatever->v (i, j) = LIM01<float> ((chromapipa) / (65536.f * 1.28f));
                     } else if (editID == EUID_Lab_bCurve) { //Lab b pipette
-                        float chromapipb = lold->b[i][j] + (32768.f * 1.28f);
+                        float chromapipb = lold_b[i][j] + (32768.f * 1.28f);
                         editWhatever->v (i, j) = LIM01<float> ((chromapipb) / (65536.f * 1.28f));
                     }
                 }
 
                 float atmp, btmp;
 
-                atmp = lold->a[i][j];
+                atmp = lold_a[i][j];
 
                 if (autili) {
                     atmp = acurve[atmp + 32768.0f] - 32768.0f;    // curves Lab a
                 }
 
-                btmp = lold->b[i][j];
+                btmp = lold_b[i][j];
 
                 if (butili) {
                     btmp = bcurve[btmp + 32768.0f] - 32768.0f;    // curves Lab b
@@ -1047,8 +982,8 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                 // labCurve.bwtoning option allows to decouple modulation of a & b curves by saturation
                 // with bwtoning enabled the net effect of a & b curves is visible
                 if (bwToning) {
-                    atmp -= lold->a[i][j];
-                    btmp -= lold->b[i][j];
+                    atmp -= lold_a[i][j];
+                    btmp -= lold_b[i][j];
                 }
 
                 if (avoidColorShift) {
@@ -1065,25 +1000,25 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                         //gamut control : Lab values are in gamut
                         Color::gamutLchonly (HH, sincosval, Lprov1, Chprov1, R, G, B, wip, highlight, 0.15f, 0.96f);
 #endif
-                        lnew->L[i][j] = Lprov1 * 327.68f;
+                        lnew_L[i][j] = Lprov1 * 327.68f;
 //                  float2 sincosval = xsincosf(HH);
-                        lnew->a[i][j] = 327.68f * Chprov1 * sincosval.y;
-                        lnew->b[i][j] = 327.68f * Chprov1 * sincosval.x;
+                        lnew_a[i][j] = 327.68f * Chprov1 * sincosval.y;
+                        lnew_b[i][j] = 327.68f * Chprov1 * sincosval.x;
                     } else {
                         //use gamutbdy
                         //Luv limiter
                         float Y, u, v;
-                        Color::Lab2Yuv (lnew->L[i][j], atmp, btmp, Y, u, v);
+                        Color::Lab2Yuv (lnew_L[i][j], atmp, btmp, Y, u, v);
                         //Yuv2Lab includes gamut restriction map
-                        Color::Yuv2Lab (Y, u, v, lnew->L[i][j], lnew->a[i][j], lnew->b[i][j], wp);
+                        Color::Yuv2Lab (Y, u, v, lnew_L[i][j], lnew_a[i][j], lnew_b[i][j], wp);
                     }
 
                     if (utili || autili || butili || ccut || clut || cclutili || chutili || lhutili || hhutili || clcutili || chromaticity) {
                         float correctionHue = 0.f; // Munsell's correction
                         float correctlum = 0.f;
 
-                        Lprov1 = lnew->L[i][j] / 327.68f;
-                        Chprov = sqrt (SQR (lnew->a[i][j]) + SQR (lnew->b[i][j])) / 327.68f;
+                        Lprov1 = lnew_L[i][j] / 327.68f;
+                        Chprov = sqrt (SQR (lnew_a[i][j]) + SQR (lnew_b[i][j])) / 327.68f;
 
 #ifdef _DEBUG
                         Color::AllMunsellLch (/*lumaMuns*/true, Lprov1, LL, HH, Chprov, memChprov, correctionHue, correctlum, MunsDebugInfo);
@@ -1105,21 +1040,21 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
                             sincosval = xsincosf (HH + correctionHue);
                         }
 
-                        lnew->a[i][j] = 327.68f * Chprov * sincosval.y; // apply Munsell
-                        lnew->b[i][j] = 327.68f * Chprov * sincosval.x;
+                        lnew_a[i][j] = 327.68f * Chprov * sincosval.y; // apply Munsell
+                        lnew_b[i][j] = 327.68f * Chprov * sincosval.x;
                     }
                 } else {
 //              if(Lprov1 > maxlp) maxlp=Lprov1;
 //              if(Lprov1 < minlp) minlp=Lprov1;
                     if (!bwToning) {
-                        lnew->L[i][j] = Lprov1 * 327.68f;
+                        lnew_L[i][j] = Lprov1 * 327.68f;
 //                  float2 sincosval = xsincosf(HH);
-                        lnew->a[i][j] = 327.68f * Chprov1 * sincosval.y;
-                        lnew->b[i][j] = 327.68f * Chprov1 * sincosval.x;
+                        lnew_a[i][j] = 327.68f * Chprov1 * sincosval.y;
+                        lnew_b[i][j] = 327.68f * Chprov1 * sincosval.x;
                     } else {
                         //Luv limiter only
-                        lnew->a[i][j] = atmp;
-                        lnew->b[i][j] = btmp;
+                        lnew_a[i][j] = atmp;
+                        lnew_b[i][j] = btmp;
                     }
                 }
             }
@@ -1152,6 +1087,78 @@ void ImProcFunctions::chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf 
 
     //  t2e.set();
     //  printf("Chromil took %d nsec\n",t2e.etime(t1e));
+}
+
+} // namespace
+
+
+void ImProcFunctions::labAdjustments(Imagefloat *rgb, LUTu *histCCurve, LUTu *histLCurve)
+{
+    if (!params->labCurve.enabled) {
+        return;
+    }
+
+    rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+    
+    LUTu dummy;
+    LUTu hist16;
+    LUTf lumacurve;
+    LUTf clcurve;
+    LUTf satcurve;
+    LUTf lhskcurve;
+    LUTf curve1;
+    LUTf curve2;
+
+    hist16(65536);
+    lumacurve(32770, 0); // lumacurve[32768] and lumacurve[32769] will be set to 32768 and 32769 later to allow linear interpolation
+    clcurve(65536, 0);
+    satcurve(65536, 0);
+    lhskcurve(65536, 0);
+    curve1(65536);
+    curve2(65536);
+
+    if (params->labCurve.contrast != 0) { //only use hist16 for contrast
+        hist16.clear();
+        int fh = rgb->getHeight();
+        int fw = rgb->getWidth();
+        float **lab_L = rgb->g.ptrs;
+        
+#ifdef _OPENMP
+#       pragma omp parallel if (multiThread)
+#endif
+        {
+            LUTu hist16thr (hist16.getSize());  // one temporary lookup table per thread
+            hist16thr.clear();
+#ifdef _OPENMP
+#           pragma omp for schedule(static) nowait
+#endif
+            for (int i = 0; i < fh; i++) {
+                for (int j = 0; j < fw; j++) {
+                    hist16thr[(int)((lab_L[i][j]))]++;
+                }
+            }
+            
+#ifdef _OPENMP
+#           pragma omp critical
+#endif
+            {
+                hist16 += hist16thr;
+            }
+        }
+    }  
+
+    bool utili;
+    complexLCurve(params->labCurve.brightness, params->labCurve.contrast, params->labCurve.lcurve, hist16, lumacurve, dummy, scale == 1 ? 1 : 16, utili);
+
+    bool clcutili;
+    curveCL(clcutili, params->labCurve.clcurve, clcurve, scale == 1 ? 1 : 16);
+
+    bool autili, butili;
+    bool ccutili, cclutili;
+    complexsgnCurve(autili, butili, ccutili, cclutili, params->labCurve.acurve, params->labCurve.bcurve, params->labCurve.cccurve,
+                                  params->labCurve.lccurve, curve1, curve2, satcurve, lhskcurve, scale == 1 ? 1 : 16);
+
+    chromiLuminanceCurve(ImProcData(params, scale, multiThread), rgb, rgb, curve1, curve2, satcurve, lhskcurve, clcurve, lumacurve, utili, autili, butili, ccutili, cclutili, clcutili, histCCurve, histLCurve, pipetteBuffer);
 }
 
 } // namespace rtengine

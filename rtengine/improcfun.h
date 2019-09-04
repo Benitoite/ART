@@ -216,8 +216,6 @@ private:
 private:
     void impulse_nr(Imagefloat *lab, double thresh);
 
-    void chromiLuminanceCurve(LabImage* lold, LabImage* lnew, LUTf &acurve, LUTf &bcurve, LUTf & satcurve, LUTf & satclcurve, LUTf &clcurve, LUTf &curve, bool utili, bool autili, bool butili, bool ccutili, bool cclutili, bool clcutili, LUTu *histCCurve, LUTu *histLurve);
-    
     // pyramid wavelet
     void dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scale);    //Emil's directional pyramid wavelet
     void dirpyr_channel(float ** data_fine, float ** data_coarse, int width, int height, int level, int scale);
