@@ -27,6 +27,15 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
+namespace rtengine {
+
+extern void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &filter, const Glib::ustring &algo,
+                                    float &filcor, float &mixerRed, float &mixerGreen,
+                                    float &mixerBlue, 
+                                    float &kcorec, double &rrm, double &ggm, double &bbm);
+
+} // namespace rtengine
+
 
 BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LABEL"), false, true)
 {
@@ -34,26 +43,7 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
     nextgreenbw = 0.3333;
     nextbluebw = 0.3333;
 
-    //----------- Method combobox ------------------------------
-
-    Gtk::HBox* metHBox = Gtk::manage (new Gtk::HBox ());
-    metHBox->set_spacing (2);
-    Gtk::Label* metLabel = Gtk::manage (new Gtk::Label (M("TP_BWMIX_MET") + ":"));
-    metHBox->pack_start (*metLabel, Gtk::PACK_SHRINK);
-    method = Gtk::manage (new MyComboBoxText ());
-    method->append (M("TP_BWMIX_MET_DESAT"));
-    method->append (M("TP_BWMIX_MET_CHANMIX"));
-
-    method->set_active (0);
-    metHBox->pack_start (*method);
-    pack_start (*metHBox);
-    methodconn = method->signal_changed().connect ( sigc::mem_fun(*this, &BlackWhite::methodChanged) );
-
     //----------- Auto and Reset buttons ------------------------------
-
-    mixerFrame = Gtk::manage (new Gtk::Frame (M("TP_BWMIX_MET_CHANMIX")));
-    pack_start (*mixerFrame, Gtk::PACK_SHRINK, 0);
-
     mixerVBox = Gtk::manage (new Gtk::VBox ());
     mixerVBox->set_spacing(4);
 
@@ -160,7 +150,7 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
     mixerBlue->show();
     mixerVBox->pack_start( *mixerBlue, Gtk::PACK_SHRINK, 0);
 
-    mixerFrame->add(*mixerVBox);
+    pack_start(*mixerVBox, Gtk::PACK_SHRINK, 0);
 
     //----------- Gamma sliders ------------------------------
 
@@ -197,7 +187,6 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
     show_all();
 
     disableListener();
-    methodChanged();
     enableListener();
 }
 
@@ -212,7 +201,6 @@ void BlackWhite::read(const ProcParams* pp)
 {
 
     disableListener ();
-    methodconn.block(true);
     filterconn.block(true);
     settingconn.block(true);
     enaccconn.block (true);
@@ -248,15 +236,6 @@ void BlackWhite::read(const ProcParams* pp)
     settingChanged();
 
 
-    if (pp->blackwhite.method == "Desaturation") {
-        method->set_active(0);
-    } else if (pp->blackwhite.method == "ChannelMixer") {
-        method->set_active(1);
-    }
-
-    methodChanged();
-
-
     if (pp->blackwhite.filter == "None") {
         filter->set_active (0);
     } else if (pp->blackwhite.filter == "Red") {
@@ -288,7 +267,6 @@ void BlackWhite::read(const ProcParams* pp)
     gammaGreen->setValue (pp->blackwhite.gammaGreen);
     gammaBlue->setValue (pp->blackwhite.gammaBlue);
 
-    methodconn.block(false);
     filterconn.block(false);
     settingconn.block(false);
     enaccconn.block (false);
@@ -307,13 +285,6 @@ void BlackWhite::write (ProcParams* pp)
     pp->blackwhite.gammaRed = gammaRed->getValue ();
     pp->blackwhite.gammaGreen = gammaGreen->getValue ();
     pp->blackwhite.gammaBlue = gammaBlue->getValue ();
-
-    if (method->get_active_row_number() == 0) {
-        pp->blackwhite.method = "Desaturation";
-    } else if (method->get_active_row_number() == 1) {
-        pp->blackwhite.method = "ChannelMixer";
-    }
-
     pp->blackwhite.setting = getSettingString();
     pp->blackwhite.filter = getFilterString();
 }
@@ -324,16 +295,16 @@ void BlackWhite::settingChanged ()
 
     if ( setting->get_active_row_number() == 10 || setting->get_active_row_number() == 11 ) {
         // RGB Channel Mixer
-        showMixer(3);
+        showMixer();
         showFilter();
     } else if ( setting->get_active_row_number() == 12 ) {
         // Infrared
         filter->set_active (0);
-        showMixer(3, false);
+        showMixer(false);
         hideFilter();
     } else {
         // RGB Presets
-        showMixer(3, false);
+        showMixer(false);
         showFilter();
     }
 
@@ -356,32 +327,6 @@ void BlackWhite::filterChanged ()
     }
 }
 
-void BlackWhite::methodChanged ()
-{
-    if(method->get_active_row_number() == 1) {
-        // Channel Mixer
-
-        if(setting->get_active_row_number() == 10 || setting->get_active_row_number() == 11) {
-            showMixer(3);
-        } else {
-            showMixer(3, false);
-        }
-
-        bool wasEnabled = disableListener();
-        settingChanged();
-
-        if (wasEnabled) {
-            enableListener();
-        }
-    } else if(method->get_active_row_number() == 0) {
-        // Desaturation
-        hideMixer();
-    }
-
-    if (listener && getEnabled()) {
-        listener->panelChanged (EvBWmethod, method->get_active_text ());
-    }
-}
 
 void BlackWhite::enabledChanged ()
 {
@@ -476,7 +421,7 @@ void BlackWhite::updateRGBLabel ()
     double mixR, mixG, mixB;
     float filcor;
     Glib::ustring sSetting = getSettingString();
-    Color::computeBWMixerConstants(sSetting, getFilterString(), "", filcor, r, g, b, kcorrec, mixR, mixG, mixB);
+    rtengine::computeBWMixerConstants(sSetting, getFilterString(), "", filcor, r, g, b, kcorrec, mixR, mixG, mixB);
 
     if( filcor != 1.f) {
         r = kcorrec * r / (r + g + b);
@@ -524,32 +469,13 @@ void BlackWhite::hideFilter()
     filterSep->hide();
 }
 
-void BlackWhite::showMixer(int nChannels, bool RGBIsSensitive)
+void BlackWhite::showMixer(bool RGBIsSensitive)
 {
     RGBLabels->show();
 
-    if (nChannels == 3) {
-        mixerRed->show();
-        mixerRed->set_sensitive (RGBIsSensitive);
-        mixerGreen->show();
-        mixerGreen->set_sensitive (RGBIsSensitive);
-        mixerBlue->show();
-        mixerBlue->set_sensitive (RGBIsSensitive);
-    } else {
-        mixerRed->show();
-        mixerRed->set_sensitive (true);
-        mixerGreen->show();
-        mixerGreen->set_sensitive (true);
-        mixerBlue->show();
-        mixerBlue->set_sensitive (true);
-    }
-
-    mixerFrame->show();
-}
-
-void BlackWhite::hideMixer()
-{
-    mixerFrame->hide();
+    mixerRed->set_sensitive (RGBIsSensitive);
+    mixerGreen->set_sensitive (RGBIsSensitive);
+    mixerBlue->set_sensitive (RGBIsSensitive);
 }
 
 void BlackWhite::showGamma()

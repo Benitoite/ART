@@ -112,7 +112,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (exposurePanel, toneCurve);
     addfavoritePanel (colorPanel, chmixer);
     addfavoritePanel(colorPanel, hsl);
-    //addfavoritePanel (colorPanel, blackwhite);
+    addfavoritePanel (colorPanel, blackwhite);
     addfavoritePanel (exposurePanel, logenc);
     addfavoritePanel (exposurePanel, shadowshighlights);
     addfavoritePanel (detailsPanel, sharpening);
@@ -127,7 +127,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel (exposurePanel, pcvignette);
     addfavoritePanel (exposurePanel, gradient);
     //addfavoritePanel (exposurePanel, lcurve);
-    addfavoritePanel(exposurePanel, blackwhite);
     addfavoritePanel (detailsPanel, impulsedenoise);
     addfavoritePanel (detailsPanel, denoise);
     addfavoritePanel (detailsPanel, defringe);

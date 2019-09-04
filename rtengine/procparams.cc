@@ -1595,7 +1595,6 @@ bool ChannelMixerParams::operator !=(const ChannelMixerParams& other) const
 
 BlackWhiteParams::BlackWhiteParams() :
     enabled(false),
-    method("Desaturation"),
     filter("None"),
     setting("RGB-Rel"),
     mixerRed(33),
@@ -1611,7 +1610,6 @@ bool BlackWhiteParams::operator ==(const BlackWhiteParams& other) const
 {
     return
         enabled == other.enabled
-        && method == other.method
         && filter == other.filter
         && setting == other.setting
         && mixerRed == other.mixerRed
@@ -2526,7 +2524,6 @@ int ProcParams::save(bool save_general,
 // Black & White
         if (RELEVANT_(blackwhite)) {
             saveToKeyfile("Black & White", "Enabled", blackwhite.enabled, keyFile);
-            saveToKeyfile("Black & White", "Method", blackwhite.method, keyFile);
             saveToKeyfile("Black & White", "Setting", blackwhite.setting, keyFile);
             saveToKeyfile("Black & White", "Filter", blackwhite.filter, keyFile);
             saveToKeyfile("Black & White", "MixerRed", blackwhite.mixerRed, keyFile);
@@ -3287,7 +3284,6 @@ int ProcParams::load(bool load_general,
 
         if (keyFile.has_group("Black & White") && RELEVANT_(blackwhite)) {
             assignFromKeyfile(keyFile, "Black & White", "Enabled", blackwhite.enabled);
-            assignFromKeyfile(keyFile, "Black & White", "Method", blackwhite.method);
             assignFromKeyfile(keyFile, "Black & White", "MixerRed", blackwhite.mixerRed);
             assignFromKeyfile(keyFile, "Black & White", "MixerGreen", blackwhite.mixerGreen);
             assignFromKeyfile(keyFile, "Black & White", "MixerBlue", blackwhite.mixerBlue);

@@ -912,7 +912,6 @@ struct ChannelMixerParams {
 
 struct BlackWhiteParams {
     bool enabled;
-    Glib::ustring method;
 
     Glib::ustring filter;
     Glib::ustring setting;

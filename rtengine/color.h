@@ -1120,45 +1120,6 @@ public:
     */
     static void calcGamma (double pwr, double ts, int mode, GammaValues &gamma);
 
-
-    /**
-    * @brief Used by Black and White to correct gamma for each channel red, green and blue channel
-    * @param r red channel input and output value [0 ; 65535]
-    * @param g green channel input and output value [0 ; 65535]
-    * @param b blue channel input and output value [0 ; 65535]
-    * @param gammabwr gamma value for red channel [>0]
-    * @param gammabwg gamma value for red channel [>0]
-    * @param gammabwb gamma value for red channel [>0]
-    */
-    static void trcGammaBW (float &r, float &g, float &b, float gammabwr, float gammabwg, float gammabwb);
-#ifdef __SSE2__
-    static void trcGammaBWRow (float *r, float *g, float *b, int width, float gammabwr, float gammabwg, float gammabwb);
-#endif
-
-
-    /** @brief Compute the B&W constants for the Black and White processing and its GUI
-    * @param setting main mode
-    * @param filter string of the filter effect to use
-    * @param algo choice between linear and special for OYCPM colors
-    * @param mixerRed red channel value of the channel mixer [-100 ; +200]
-    * @param mixerGreen green channel value of the channel mixer [-100 ; +200]
-    * @param mixerBlue blue channel value of the channel mixer [-100 ; +200]
-    * @param mixerOrange orange channel value of the channel mixer [-100 ; +200]
-    * @param mixerYellow yellow channel value of the channel mixer [-100 ; +200]
-    * @param mixerCyan cyan channel value of the channel mixer [-100 ; +200]
-    * @param mixerPurple purple channel value of the channel mixer [-100 ; +200]
-    * @param mixerMagenta magenta channel value of the channel mixer [-100 ; +200]
-    * @param autoc automatic mode of the channel mixer
-    * @param complement adjust complementary channel
-    * @param kcorec in absolute mode, value to correct the mixer [1 ; 3], usually near 1 (return value)
-    * @param rrm red channel of the mixer (return value)
-    * @param ggm green channel of the mixer (return value)
-    * @param bbm blue channel of the mixer (return value)
-    */
-    static void computeBWMixerConstants (const Glib::ustring &setting, const Glib::ustring &filter, const Glib::ustring &algo, float &filcor, float &mixerRed, float &mixerGreen,
-                                         float &mixerBlue, float &kcorec, double &rrm, double &ggm, double &bbm);
-
-
     // standard srgb gamma and its inverse
 
     /**

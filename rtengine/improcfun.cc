@@ -336,6 +336,24 @@ void proPhotoBlue(Imagefloat *rgb, bool multiThread)
     }
 }
 
+
+void dcpProfile(Imagefloat *img, DCPProfile *dcp, const DCPProfile::ApplyState *as, bool multithread)
+{
+    if (dcp && as) {
+        const int H = img->getHeight();
+        const int W = img->getWidth();
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            float *r = img->r(y);
+            float *g = img->g(y);
+            float *b = img->b(y);
+            dcp->step2ApplyTile(r, g, b, W, 1, 1, *as);
+        }
+    }
+}
+
 } // namespace
 
 
@@ -836,7 +854,6 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         if (params->icm.workingProfile == "ProPhoto") {
             proPhotoBlue(img, multiThread);
         }
-        blackAndWhite(img);
         break;
     case Stage::STAGE_2:
         if (pipeline == Pipeline::OUTPUT ||
@@ -853,22 +870,11 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
     case Stage::STAGE_3:
         logEncoding(img);
         brightnessContrastSaturation(img);
-        if (dcpProf && dcpApplyState) {
-            const int H = img->getHeight();
-            const int W = img->getWidth();
-#ifdef _OPENMP
-#           pragma omp parallel for if (multiThread)
-#endif
-            for (int y = 0; y < H; ++y) {
-                float *r = img->r(y);
-                float *g = img->g(y);
-                float *b = img->b(y);
-                dcpProf->step2ApplyTile(r, g, b, W, 1, 1, *dcpApplyState);
-            }
-        }
+        dcpProfile(img, dcpProf, dcpApplyState, multiThread);
         filmSimulation(img);
         toneCurve(img, hist_tonecurve);
         shadowsHighlights(img);
+        blackAndWhite(img);
         labAdjustments(img, hist_ccurve, hist_lcurve);
         stop = stop || textureBoost(img, offset_x, offset_y, full_width, full_height);
         if (pipeline != Pipeline::THUMBNAIL) {

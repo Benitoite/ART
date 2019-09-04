@@ -50,7 +50,6 @@ public:
     void adjusterAutoToggled (Adjuster* a, bool newval) override;
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
     void enabledChanged      () override;
-    void methodChanged       ();
     void filterChanged       ();
     void settingChanged      ();
 
@@ -60,8 +59,7 @@ public:
 private:
     void showFilter();
     void hideFilter();
-    void showMixer(int nChannels, bool RGBIsSensitive = true);
-    void hideMixer();
+    void showMixer(bool RGBIsSensitive = true);
     void showGamma();
     void hideGamma();
 
@@ -74,8 +72,6 @@ private:
     Adjuster *gammaRed;
     Adjuster *gammaGreen;
     Adjuster *gammaBlue;
-    MyComboBoxText*   method;
-    sigc::connection  methodconn;
     Gtk::HBox*        filterHBox;
     Gtk::HSeparator*  filterSep, *filterSep2;
     MyComboBoxText*   filter;
@@ -83,7 +79,6 @@ private:
     Gtk::HBox*        settingHBox;
     MyComboBoxText*   setting;
     sigc::connection  settingconn;
-    Gtk::Frame* mixerFrame;
     Gtk::VBox * mixerVBox;
     Gtk::Frame* gammaFrame;
 

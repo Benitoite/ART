@@ -53,7 +53,6 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_TM_FATTAL", &pedited.fattal, 0},
         {"PARTIALPASTE_PCVIGNETTE", &pedited.pcvignette, 0},
         {"PARTIALPASTE_GRADIENT", &pedited.gradient, 0},
-        {"PARTIALPASTE_CHANNELMIXERBW", &pedited.blackwhite, 0},
 
         {"PARTIALPASTE_SHARPENING", &pedited.sharpening, 1},
         {"PARTIALPASTE_LOCALCONTRAST", &pedited.localContrast, 1},
@@ -66,6 +65,7 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 2},
         {"PARTIALPASTE_ICMSETTINGS", &pedited.icm, 2},
         {"PARTIALPASTE_CHANNELMIXER", &pedited.chmixer, 2},
+        {"PARTIALPASTE_CHANNELMIXERBW", &pedited.blackwhite, 2},
         {"PARTIALPASTE_HSLEQUALIZER", &pedited.hsl, 2},
         {"PARTIALPASTE_FILMSIMULATION", &pedited.filmSimulation, 2},
         {"PARTIALPASTE_SOFTLIGHT", &pedited.softlight, 2},
