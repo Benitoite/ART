@@ -32,9 +32,19 @@ void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb);
 
 void RGB_denoise(ImProcData &im, int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DenoiseParams & dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi);
 
-void Median_Denoise(float **src, float **dst, float upperBound, int width, int height, ImProcFunctions::Median medianType, int iterations, int numThreads, float **buffer = nullptr);
 
-void Median_Denoise(float **src, float **dst, int width, int height, ImProcFunctions::Median medianType, int iterations, int numThreads, float **buffer = nullptr);
+enum class Median {
+    TYPE_3X3_SOFT,
+    TYPE_3X3_STRONG,
+    TYPE_5X5_SOFT,
+    TYPE_5X5_STRONG,
+    TYPE_7X7,
+    TYPE_9X9
+};
+
+void Median_Denoise(float **src, float **dst, float upperBound, int width, int height, Median medianType, int iterations, int numThreads, float **buffer = nullptr);
+
+void Median_Denoise(float **src, float **dst, int width, int height, Median medianType, int iterations, int numThreads, float **buffer = nullptr);
 
 void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
         wavelet_decomposition &WaveletCoeffs_b, float **noisevarlum, float **noisevarchrom, float **noisevarhue, float &chaut, int &Nb, float &redaut, float &blueaut, float &maxredaut, float &maxblueaut, float &minredaut, float &minblueaut, int schoice,

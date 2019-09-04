@@ -140,7 +140,7 @@ void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &
 } // namespace
 
 
-bool ImProcFunctions::textureBoost(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::textureBoost(Imagefloat *rgb)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;

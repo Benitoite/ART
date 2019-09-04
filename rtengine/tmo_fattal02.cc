@@ -1103,16 +1103,16 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
         int num_threads = 1;
 #endif
         float r = float (std::max (w, h)) / float (RT_dimension_cap);
-        ImProcFunctions::Median med;
+        denoise::Median med;
 
         if (r >= 3) {
-            med = ImProcFunctions::Median::TYPE_7X7;
+            med = denoise::Median::TYPE_7X7;
         } else if (r >= 2) {
-            med = ImProcFunctions::Median::TYPE_5X5_STRONG;
+            med = denoise::Median::TYPE_5X5_STRONG;
         } else if (r >= 1) {
-            med = ImProcFunctions::Median::TYPE_5X5_SOFT;
+            med = denoise::Median::TYPE_5X5_SOFT;
         } else {
-            med = ImProcFunctions::Median::TYPE_3X3_STRONG;
+            med = denoise::Median::TYPE_3X3_STRONG;
         }
 
         denoise::Median_Denoise(Yr, Yr, luminance_noise_floor, w, h, med, 1, num_threads, L);

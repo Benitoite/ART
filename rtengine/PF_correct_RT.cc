@@ -39,8 +39,9 @@
 
 namespace rtengine {
 
+namespace {
 // Defringe in Lab mode
-void ImProcFunctions::PF_correct_RT(Imagefloat *lab, double radius, int thresh)
+void PF_correct_RT(const rtengine::ProcParams *params, Imagefloat *lab, double radius, int thresh, bool multiThread)
 {
     BENCHFUN
     std::unique_ptr<FlatCurve> chCurve;
@@ -200,6 +201,19 @@ void ImProcFunctions::PF_correct_RT(Imagefloat *lab, double radius, int thresh)
                 }
             }
         } // end of ab channel averaging
+    }
+}
+
+} // namespace
+
+
+void ImProcFunctions::defringe(Imagefloat *rgb)
+{
+    if (params->defringe.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
+
+    {
+        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+        PF_correct_RT(params, rgb, params->defringe.radius / scale, params->defringe.threshold, multiThread);
     }
 }
 

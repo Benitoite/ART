@@ -535,7 +535,9 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
 
 
 // helper function
-void ImProcFunctions::calcVignettingParams (int oW, int oH, const VignettingParams& vignetting, double &w2, double &h2, double& maxRadius, double &v, double &b, double &mul)
+namespace {
+
+void calcVignettingParams (int oW, int oH, const VignettingParams& vignetting, double &w2, double &h2, double& maxRadius, double &v, double &b, double &mul)
 {
     // vignette center is a point with coordinates between -1 and +1
     double x = vignetting.centerX / 100.0;
@@ -554,6 +556,7 @@ void ImProcFunctions::calcVignettingParams (int oW, int oH, const VignettingPara
     mul = (1.0 - v) / tanh (b);
 }
 
+
 struct grad_params {
     bool angle_is_zero, transpose, bright_top;
     float ta, yc, xc;
@@ -562,7 +565,8 @@ struct grad_params {
     float top_edge_0;
     int h;
 };
-static void calcGradientParams (int oW, int oH, const GradientParams& gradient, struct grad_params& gp)
+
+void calcGradientParams (int oW, int oH, const GradientParams& gradient, struct grad_params& gp)
 {
     int w = oW;
     int h = oH;
@@ -645,7 +649,8 @@ static void calcGradientParams (int oW, int oH, const GradientParams& gradient, 
     }
 }
 
-static float calcGradientFactor (const struct grad_params& gp, int x, int y)
+
+float calcGradientFactor (const struct grad_params& gp, int x, int y)
 {
     if (gp.angle_is_zero) {
         int gy = gp.transpose ? x : y;
@@ -698,6 +703,7 @@ static float calcGradientFactor (const struct grad_params& gp, int x, int y)
     }
 }
 
+
 struct pcv_params {
     float oe_a, oe_b, oe1_a, oe1_b, oe2_a, oe2_b;
     float ie_mul, ie1_mul, ie2_mul;
@@ -708,7 +714,9 @@ struct pcv_params {
     float scale;
     float fadeout_mul;
 };
-static void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParams& pcvignette, const CropParams &crop, struct pcv_params& pcv)
+
+
+void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParams& pcvignette, const CropParams &crop, struct pcv_params& pcv)
 {
 
     // ellipse formula: (x/a)^2 + (y/b)^2 = 1
@@ -771,7 +779,8 @@ static void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignet
     }
 }
 
-static float calcPCVignetteFactor (const struct pcv_params& pcv, int x, int y)
+
+float calcPCVignetteFactor (const struct pcv_params& pcv, int x, int y)
 {
 
     float fo = 1.f;
@@ -857,6 +866,8 @@ static float calcPCVignetteFactor (const struct pcv_params& pcv, int x, int y)
 
     return val;
 }
+
+} // namespace
 
 void ImProcFunctions::transformLuminanceOnly (Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH)
 {

@@ -62,9 +62,9 @@ ImProcFunctions::ImProcFunctions(const ProcParams* iparams, bool imultiThread):
     offset_y(0),
     full_width(-1),
     full_height(-1),
-    hist_tonecurve(nullptr),
-    hist_ccurve(nullptr),
-    hist_lcurve(nullptr),
+    histToneCurve(nullptr),
+    histCCurve(nullptr),
+    histLCurve(nullptr),
     show_sharpening_mask(false)
 {
 }
@@ -356,27 +356,6 @@ void dcpProfile(Imagefloat *img, DCPProfile *dcp, const DCPProfile::ApplyState *
 
 } // namespace
 
-
-void ImProcFunctions::impulsedenoise(Imagefloat *rgb)
-{
-
-    if (params->impulseDenoise.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
-
-    {
-        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
-        impulse_nr(rgb, (float)params->impulseDenoise.thresh / 20.0 );
-    }
-}
-
-void ImProcFunctions::defringe(Imagefloat *rgb)
-{
-    if (params->defringe.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
-
-    {
-        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
-        PF_correct_RT(rgb, params->defringe.radius, params->defringe.threshold);
-    }
-}
 
 void ImProcFunctions::getAutoExp  (const LUTu &histogram, int histcompr, double clip,
                                    double& expcomp, int& bright, int& contr, int& black, int& hlcompr, int& hlcomprthresh)
@@ -825,9 +804,9 @@ void ImProcFunctions::setViewport(int ox, int oy, int fw, int fh)
 
 void ImProcFunctions::setOutputHistograms(LUTu *histToneCurve, LUTu *histCCurve, LUTu *histLCurve)
 {
-    hist_tonecurve = histToneCurve;
-    hist_ccurve = histCCurve;
-    hist_lcurve = histLCurve;
+    this->histToneCurve = histToneCurve;
+    this->histCCurve = histCCurve;
+    this->histLCurve = histLCurve;
 }
 
 
@@ -864,26 +843,26 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
                 defringe(img);
             }
         }
-        stop = stop || colorCorrection(img, offset_x, offset_y, full_width, full_height);
-        stop = stop || guidedSmoothing(img, offset_x, offset_y, full_width, full_height);
+        stop = stop || colorCorrection(img);
+        stop = stop || guidedSmoothing(img);
         break;
     case Stage::STAGE_3:
         logEncoding(img);
         brightnessContrastSaturation(img);
         dcpProfile(img, dcpProf, dcpApplyState, multiThread);
         filmSimulation(img);
-        toneCurve(img, hist_tonecurve);
+        toneCurve(img);
         shadowsHighlights(img);
         blackAndWhite(img);
-        labAdjustments(img, hist_ccurve, hist_lcurve);
-        stop = stop || textureBoost(img, offset_x, offset_y, full_width, full_height);
+        labAdjustments(img);
+        stop = stop || textureBoost(img);
         if (pipeline != Pipeline::THUMBNAIL) {
-            stop = stop || contrastByDetailLevels(img, offset_x, offset_y, full_width, full_height);
+            stop = stop || contrastByDetailLevels(img);
         }
         if (!stop) {
             softLight(img);
             localContrast(img);
-            filmGrain(img, offset_x, offset_y, full_width, full_height);
+            filmGrain(img);
         }
         break;
     }

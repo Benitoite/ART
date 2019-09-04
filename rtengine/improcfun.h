@@ -51,15 +51,6 @@ struct ImProcData {
 
 class ImProcFunctions {
 public:
-    enum class Median {
-        TYPE_3X3_SOFT,
-        TYPE_3X3_STRONG,
-        TYPE_5X5_SOFT,
-        TYPE_5X5_STRONG,
-        TYPE_7X7,
-        TYPE_9X9
-    };
-
     //----------------------------------------------------------------------
     // constructor/destructor and initialization/state manipulation
     //----------------------------------------------------------------------
@@ -87,14 +78,14 @@ public:
     //----------------------------------------------------------------------
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
-    void labAdjustments(Imagefloat *rgb, LUTu *histCCurve=nullptr, LUTu *histLCurve=nullptr);
+    void labAdjustments(Imagefloat *rgb);
     bool sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask=false);
     void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool fullImage);    
     void resize(Imagefloat* src, Imagefloat* dst, float dScale);
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
     void Lanczos(Imagefloat *src, Imagefloat *dst, float scale);
     void impulsedenoise(Imagefloat *rgb);   //Emil's impulse denoise
-    bool textureBoost(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool textureBoost(Imagefloat *rgb);
 
     struct DenoiseInfoStore {
         DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {}
@@ -114,17 +105,17 @@ public:
     void shadowsHighlights(Imagefloat *rgb);
     void toneEqualizer(Imagefloat *rgb);
     void softLight(Imagefloat *rgb);
-    bool colorCorrection(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool colorCorrection(Imagefloat *rgb);
     void logEncoding(Imagefloat *rgb);
-    bool contrastByDetailLevels(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    void filmGrain(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
-    bool guidedSmoothing(Imagefloat *rgb, int offset_x=0, int offset_y=0, int full_width=-1, int full_height=-1);
+    bool contrastByDetailLevels(Imagefloat *rgb);
+    void filmGrain(Imagefloat *rgb);
+    bool guidedSmoothing(Imagefloat *rgb);
     void hslEqualizer(Imagefloat *rgb);
     void channelMixer(Imagefloat *rgb);
     void exposure(Imagefloat *rgb);
     void rgbCurves(Imagefloat *rgb);
     void blackAndWhite(Imagefloat *rgb);
-    void toneCurve(Imagefloat *img, LUTu *histToneCurve=nullptr);
+    void toneCurve(Imagefloat *img);
     void brightnessContrastSaturation(Imagefloat *img);
     void filmSimulation(Imagefloat *img);
 
@@ -207,24 +198,13 @@ private:
     int full_width;
     int full_height;
 
-    LUTu *hist_tonecurve;
-    LUTu *hist_ccurve;
-    LUTu *hist_lcurve;
+    LUTu *histToneCurve;
+    LUTu *histCCurve;
+    LUTu *histLCurve;
 
     bool show_sharpening_mask;
     
 private:
-    void impulse_nr(Imagefloat *lab, double thresh);
-
-    // pyramid wavelet
-    void dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scale);    //Emil's directional pyramid wavelet
-    void dirpyr_channel(float ** data_fine, float ** data_coarse, int width, int height, int level, int scale);
-    void idirpyr_eq_channel(float ** data_coarse, float ** data_fine, float ** buffer, int width, int height, int level, float multi[6], const double dirpyrThreshold, float ** l_a_h, float ** l_b_c, const double skinprot, float b_l, float t_l, float t_r);
-
-    void PF_correct_RT(Imagefloat *lab, double radius, int thresh);
-
-    void calcVignettingParams(int oW, int oH, const VignettingParams& vignetting, double &w2, double &h2, double& maxRadius, double &v, double &b, double &mul);
-
     void transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH);
     void transformGeneral(bool highQuality, Imagefloat *original, Imagefloat *transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const LensCorrection *pLCPMap);
     void transformLCPCAOnly(Imagefloat *original, Imagefloat *transformed, int cx, int cy, const LensCorrection *pLCPMap);
@@ -237,7 +217,6 @@ private:
     bool needsVignetting();
     bool needsLCP();
     bool needsLensfun();
-//   static cmsUInt8Number* Mempro = NULL;
 };
 
 

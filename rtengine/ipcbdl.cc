@@ -25,10 +25,11 @@
 #include "improcfun.h"
 #include "labmasks.h"
 #include "array2D.h"
+#include "ipcbdl.h"
 
 namespace rtengine {
 
-bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
@@ -74,7 +75,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb, int offset_x, int 
             //     mult[k] = 1.0 + (l.mult[k] - 1.0) * scale_factor;
             // }
             const double threshold = l.threshold / scale;
-            dirpyr_equalizer(rgb->g.ptrs, L, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0));
+            cbdl::dirpyr_equalizer(rgb->g.ptrs, L, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0), multiThread);
             const auto &blend = mask[i];
 
 #ifdef _OPENMP

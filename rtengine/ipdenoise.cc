@@ -1046,10 +1046,10 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
 
     if (denoiseParams.smoothingEnabled) {
         if (denoiseParams.smoothingMethod == DenoiseParams::SmoothingMethod::MEDIAN) {
-            Median median_type[3];
+            denoise::Median median_type[3];
             int median_iterations[3];
             for (int i = 0; i < 3; ++i) {
-                median_type[i] = Median(int(denoiseParams.medianType));
+                median_type[i] = denoise::Median(int(denoiseParams.medianType));
                 median_iterations[i] = denoiseParams.medianIterations;
             }
             if (denoiseParams.medianMethod != DenoiseParams::MedianMethod::RGB) {
@@ -1067,18 +1067,18 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
                     break;
                 case DenoiseParams::MedianMethod::LAB_WEIGHTED:
                     switch (median_type[0]) {
-                    case Median::TYPE_3X3_SOFT:
+                    case denoise::Median::TYPE_3X3_SOFT:
                         break;
-                    case Median::TYPE_3X3_STRONG:
-                    case Median::TYPE_5X5_SOFT:
-                        median_type[0] = Median::TYPE_3X3_SOFT;
+                    case denoise::Median::TYPE_3X3_STRONG:
+                    case denoise::Median::TYPE_5X5_SOFT:
+                        median_type[0] = denoise::Median::TYPE_3X3_SOFT;
                         break;
-                    case Median::TYPE_5X5_STRONG:
-                    case Median::TYPE_7X7:
-                        median_type[0] = Median::TYPE_3X3_STRONG;
+                    case denoise::Median::TYPE_5X5_STRONG:
+                    case denoise::Median::TYPE_7X7:
+                        median_type[0] = denoise::Median::TYPE_3X3_STRONG;
                         break;
-                    case Median::TYPE_9X9:
-                        median_type[0] = Median::TYPE_5X5_SOFT;
+                    case denoise::Median::TYPE_9X9:
+                        median_type[0] = denoise::Median::TYPE_5X5_SOFT;
                         break;
                     }
                     break;

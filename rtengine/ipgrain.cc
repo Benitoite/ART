@@ -103,7 +103,7 @@ public:
         evaluate_grain_lut(mb);
     }
     
-    void operator()(const procparams::GrainParams &gp, LabImage *lab, bool multithread)
+    void operator()(const procparams::GrainParams &gp, Imagefloat *lab, bool multithread)
     {
         const double strength = (gp.strength / 100.0);
         const double octaves = 3;
@@ -111,17 +111,21 @@ public:
         const double zoom = (1.0 + 8 * (double(gp.iso) / GRAIN_SCALE_FACTOR) / 100.0) / 800.0;
         const double s = std::max(scale / 3.0, 1.0) / (double(std::max(gp.scale, 1)) / 100.0);
 
+        const int W = lab->getWidth();
+        const int H = lab->getHeight();
+        float **lab_L = lab->g.ptrs;
+
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
-        for (int j = 0; j < lab->H; ++j) {
+        for (int j = 0; j < H; ++j) {
             double wy = oy + j;
             double y = wy / wd;
-            for (int i = 0; i < lab->W; ++i) {
+            for (int i = 0; i < W; ++i) {
                 double wx = ox + i;
                 double x = wx / wd;
                 double noise = simplex_2d_noise(x, y, octaves, 1.0, zoom) / s;
-                lab->L[j][i] += lut_lookup(noise * strength * GRAIN_LIGHTNESS_STRENGTH_SCALE, lab->L[j][i] / 32768.f);
+                lab_L[j][i] += lut_lookup(noise * strength * GRAIN_LIGHTNESS_STRENGTH_SCALE, lab_L[j][i] / 32768.f);
             }
         }
     }
@@ -360,18 +364,16 @@ private:
 } // namespace
 
 
-void ImProcFunctions::filmGrain(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
+void ImProcFunctions::filmGrain(Imagefloat *rgb)
 {
     if (!params->grain.enabled) {
         return;
     }
-    LabImage lab(rgb->getWidth(), rgb->getHeight());
-    rgb2lab(*rgb, lab);
-    
-    GrainEvaluator ge(offset_x, offset_y, full_width < 0 ? lab.W : full_width, full_height < 0 ? lab.H : full_height, scale);
-    ge(params->grain, &lab, multiThread);
 
-    lab2rgb(lab, *rgb);
+    rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+    
+    GrainEvaluator ge(offset_x, offset_y, full_width < 0 ? rgb->getWidth() : full_width, full_height < 0 ? rgb->getHeight() : full_height, scale);
+    ge(params->grain, rgb, multiThread);
 }
 
 } // namespace rtengine

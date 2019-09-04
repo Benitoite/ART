@@ -30,7 +30,9 @@ using namespace std;
 
 namespace rtengine {
 
-void ImProcFunctions::impulse_nr (Imagefloat *lab, double thresh)
+namespace {
+
+void impulse_nr(Imagefloat *lab, double thresh, bool multithread)
 {
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     // impulse noise removal
@@ -72,7 +74,7 @@ void ImProcFunctions::impulse_nr (Imagefloat *lab, double thresh)
 // choice for the chunk_size than 16
 // race conditions are avoided by the array impish
 #ifdef _OPENMP
-    #pragma omp parallel
+#   pragma omp parallel if (multithread)
 #endif
     {
         int i1, j1, j;
@@ -171,7 +173,20 @@ void ImProcFunctions::impulse_nr (Imagefloat *lab, double thresh)
 
     // delete [] lpf[0];
     delete [] impish[0];
+}
 
+} // namespace
+
+
+void ImProcFunctions::impulsedenoise(Imagefloat *rgb)
+{
+
+    if (params->impulseDenoise.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
+
+    {
+        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+        impulse_nr(rgb, (float)params->impulseDenoise.thresh / 20.0, multiThread);
+    }
 }
 
 } // namespace rtengine

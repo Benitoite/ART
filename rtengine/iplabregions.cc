@@ -33,7 +33,7 @@
 
 namespace rtengine {
 
-bool ImProcFunctions::colorCorrection(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;

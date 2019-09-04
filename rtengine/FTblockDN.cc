@@ -84,11 +84,11 @@ extern MyMutex *fftwMutex;
 namespace {
 
 template <bool useUpperBound>
-void do_median_denoise(float **src, float **dst, float upperBound, int width, int height, ImProcFunctions::Median medianType, int iterations, int numThreads, float **buffer)
+void do_median_denoise(float **src, float **dst, float upperBound, int width, int height, denoise::Median medianType, int iterations, int numThreads, float **buffer)
 {
     iterations = max(1, iterations);
 
-    typedef ImProcFunctions::Median Median;
+    typedef denoise::Median Median;
 
     int border = 1;
 
@@ -426,13 +426,13 @@ void do_median_denoise(float **src, float **dst, float upperBound, int width, in
 
 namespace denoise {
 
-void Median_Denoise(float **src, float **dst, const int width, const int height, const ImProcFunctions::Median medianType, const int iterations, const int numThreads, float **buffer)
+void Median_Denoise(float **src, float **dst, const int width, const int height, const Median medianType, const int iterations, const int numThreads, float **buffer)
 {
     do_median_denoise<false>(src, dst, 0.f, width, height, medianType, iterations, numThreads, buffer);
 }
 
 
-void Median_Denoise(float **src, float **dst, float upperBound, const int width, const int height, const ImProcFunctions::Median medianType, const int iterations, const int numThreads, float **buffer)
+void Median_Denoise(float **src, float **dst, float upperBound, const int width, const int height, const Median medianType, const int iterations, const int numThreads, float **buffer)
 {
     do_median_denoise<true>(src, dst, upperBound, width, height, medianType, iterations, numThreads, buffer);
 }

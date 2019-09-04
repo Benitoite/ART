@@ -160,7 +160,7 @@ void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb)
 } // namespace denoise
 
 
-bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
+bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;

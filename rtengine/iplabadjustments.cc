@@ -1092,7 +1092,7 @@ void chromiLuminanceCurve(const ImProcData &im, Imagefloat *lold, Imagefloat *ln
 } // namespace
 
 
-void ImProcFunctions::labAdjustments(Imagefloat *rgb, LUTu *histCCurve, LUTu *histLCurve)
+void ImProcFunctions::labAdjustments(Imagefloat *rgb)
 {
     if (!params->labCurve.enabled) {
         return;

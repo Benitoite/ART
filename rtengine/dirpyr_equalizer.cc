@@ -38,228 +38,10 @@ constexpr float noise = 2000;
 constexpr int scales[maxlevel] = {1, 2, 4, 8, 16, 32};
 extern const Settings* settings;
 
-//sequence of scales
 
-void ImProcFunctions :: dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scaleprev)
-{
-    int lastlevel = maxlevel;
+namespace {
 
-    float atten123 = (float) settings->level123_cbdl;
-
-    if(atten123 > 50.f) {
-        atten123 = 50.f;
-    }
-
-    if(atten123 < 0.f) {
-        atten123 = 0.f;
-    }
-
-    float atten0 = (float) settings->level0_cbdl;
-
-    if(atten0 > 40.f) {
-        atten123 = 40.f;
-    }
-
-    if(atten0 < 0.f) {
-        atten0 = 0.f;
-    }
-
-    if((t_r - t_l) < 0.55f) {
-        t_l = t_r + 0.55f;    //avoid too small range
-    }
-
-
-    while (lastlevel > 0 && fabs(mult[lastlevel - 1] - 1) < 0.001) {
-        lastlevel--;
-        //printf("last level to process %d \n",lastlevel);
-    }
-
-    if (lastlevel == 0) {
-        if (src != dst) {
-#ifdef _OPENMP
-#           pragma omp parallel for if (multiThread)
-#endif
-            for (int i = 0; i < srcheight; i++) {
-                memcpy(dst[i], src[i], sizeof(float) * srcwidth);
-            }
-        }
-        return;
-    }
-
-    int level;
-    float multi[maxlevel] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
-    float scalefl[maxlevel];
-
-    for(int lv = 0; lv < maxlevel; lv++) {
-        scalefl[lv] = ((float) scales[lv]) / (float) scaleprev;
-
-        if(lv >= 1) {
-            if(scalefl[lv] < 1.f) {
-                multi[lv] = (atten123 * ((float) mult[lv] - 1.f) / 100.f) + 1.f;    //modulate action if zoom < 100%
-            } else {
-                multi[lv] = (float) mult[lv];
-            }
-        } else  {
-            if(scalefl[lv] < 1.f) {
-                multi[lv] = (atten0 * ((float) mult[lv] - 1.f) / 100.f) + 1.f;    //modulate action if zoom < 100%
-            } else {
-                multi[lv] = (float) mult[lv];
-            }
-        }
-
-    }
-
-    multi_array2D<float, maxlevel> dirpyrlo (srcwidth, srcheight);
-
-    level = 0;
-
-    //int thresh = 100 * mult[5];
-    int scale = (int)(scales[level]) / scaleprev;
-
-    if(scale < 1) {
-        scale = 1;
-    }
-
-
-    dirpyr_channel(src, dirpyrlo[0], srcwidth, srcheight, 0, scale);
-
-    level = 1;
-
-    while(level < lastlevel) {
-
-        scale = (int)(scales[level]) / scaleprev;
-
-        if(scale < 1) {
-            scale = 1;
-        }
-
-        dirpyr_channel(dirpyrlo[level - 1], dirpyrlo[level], srcwidth, srcheight, level, scale);
-
-        level ++;
-    }
-
-    float **tmpHue = nullptr, **tmpChr = nullptr;
-
-    if(skinprot != 0.f) {
-        // precalculate hue and chroma, use SSE, if available
-        // by precalculating these values we can greatly reduce the number of calculations in idirpyr_eq_channel()
-        // but we need two additional buffers for this preprocessing
-        tmpHue = new float*[srcheight];
-
-        for (int i = 0; i < srcheight; i++) {
-            tmpHue[i] = new float[srcwidth];
-        }
-
-#ifdef __SSE2__
-#ifdef _OPENMP
-        #pragma omp parallel for
-#endif
-
-        for(int i = 0; i < srcheight; i++) {
-            int j;
-
-            for(j = 0; j < srcwidth - 3; j += 4) {
-                _mm_storeu_ps(&tmpHue[i][j], xatan2f(LVFU(l_b[i][j]), LVFU(l_a[i][j])));
-            }
-
-            for(; j < srcwidth; j++) {
-                tmpHue[i][j] = xatan2f(l_b[i][j], l_a[i][j]);
-            }
-        }
-
-#else
-#ifdef _OPENMP
-        #pragma omp parallel for
-#endif
-
-        for(int i = 0; i < srcheight; i++) {
-            for(int j = 0; j < srcwidth; j++) {
-                tmpHue[i][j] = xatan2f(l_b[i][j], l_a[i][j]);
-            }
-        }
-
-#endif
-        tmpChr = new float*[srcheight];
-
-        for (int i = 0; i < srcheight; i++) {
-            tmpChr[i] = new float[srcwidth];
-        }
-
-#ifdef __SSE2__
-#ifdef _OPENMP
-        #pragma omp parallel
-#endif
-        {
-            __m128 div = _mm_set1_ps(327.68f);
-#ifdef _OPENMP
-            #pragma omp for
-#endif
-
-            for(int i = 0; i < srcheight; i++) {
-                int j;
-
-                for(j = 0; j < srcwidth - 3; j += 4) {
-                    _mm_storeu_ps(&tmpChr[i][j], vsqrtf(SQRV(LVFU(l_b[i][j])) + SQRV(LVFU(l_a[i][j]))) / div);
-                }
-
-                for(; j < srcwidth; j++) {
-                    tmpChr[i][j] = sqrtf(SQR((l_b[i][j])) + SQR((l_a[i][j]))) / 327.68f;
-                }
-            }
-        }
-#else
-#ifdef _OPENMP
-        #pragma omp parallel for
-#endif
-
-        for(int i = 0; i < srcheight; i++) {
-            for(int j = 0; j < srcwidth; j++) {
-                tmpChr[i][j] = sqrtf(SQR((l_b[i][j])) + SQR((l_a[i][j]))) / 327.68f;
-            }
-        }
-
-#endif
-    }
-
-    // with the current implementation of idirpyr_eq_channel we can safely use the buffer from last level as buffer, saves some memory
-    float ** buffer = dirpyrlo[lastlevel - 1];
-
-    for(int level = lastlevel - 1; level > 0; level--) {
-        idirpyr_eq_channel(dirpyrlo[level], dirpyrlo[level - 1], buffer, srcwidth, srcheight, level, multi, dirpyrThreshold, tmpHue, tmpChr, skinprot, b_l, t_l, t_r);
-    }
-
-    scale = scales[0];
-
-    idirpyr_eq_channel(dirpyrlo[0], src/*dst*/, buffer, srcwidth, srcheight, 0, multi, dirpyrThreshold, tmpHue, tmpChr, skinprot, b_l, t_l, t_r);
-
-    if(skinprot != 0.f) {
-        for (int i = 0; i < srcheight; i++) {
-            delete [] tmpChr[i];
-        }
-
-        delete [] tmpChr;
-
-        for (int i = 0; i < srcheight; i++) {
-            delete [] tmpHue[i];
-        }
-
-        delete [] tmpHue;
-    }
-
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-
-    for (int i = 0; i < srcheight; i++)
-        for (int j = 0; j < srcwidth; j++) {
-            dst[i][j] = /*CLIP*/(buffer[i][j]);  // TODO: Really a clip necessary?
-        }
-
-}
-
-
-
-void ImProcFunctions::dirpyr_channel(float ** data_fine, float ** data_coarse, int width, int height, int level, int scale)
+void dirpyr_channel(float ** data_fine, float ** data_coarse, int width, int height, int level, int scale, bool multiThread)
 {
     // scale is spacing of directional averaging weights
     // calculate weights, compute directionally weighted average
@@ -271,7 +53,7 @@ void ImProcFunctions::dirpyr_channel(float ** data_fine, float ** data_coarse, i
         static const int halfwin = 2;
         const int scalewin = halfwin * scale;
 #ifdef _OPENMP
-        #pragma omp parallel
+#       pragma omp parallel if (multiThread)
 #endif
         {
 #ifdef __SSE2__
@@ -380,7 +162,7 @@ void ImProcFunctions::dirpyr_channel(float ** data_fine, float ** data_coarse, i
     } else {    // level <=1 means that all values of domker would be 1.0f, so no need for multiplication
 //      const int scalewin = scale;
 #ifdef _OPENMP
-        #pragma omp parallel
+#       pragma omp parallel if (multiThread)
 #endif
         {
 #ifdef __SSE2__
@@ -483,7 +265,8 @@ void ImProcFunctions::dirpyr_channel(float ** data_fine, float ** data_coarse, i
     }
 }
 
-void ImProcFunctions::idirpyr_eq_channel(float ** data_coarse, float ** data_fine, float ** buffer, int width, int height, int level, float mult[maxlevel], const double dirpyrThreshold, float ** hue, float ** chrom, const double skinprot, float b_l, float t_l, float t_r)
+
+void idirpyr_eq_channel(float ** data_coarse, float ** data_fine, float ** buffer, int width, int height, int level, float mult[maxlevel], const double dirpyrThreshold, float ** hue, float ** chrom, const double skinprot, float b_l, float t_l, float t_r, bool multiThread)
 {
     const float skinprotneg = -skinprot;
     const float factorHard = (1.f - skinprotneg / 100.f);
@@ -528,7 +311,7 @@ void ImProcFunctions::idirpyr_eq_channel(float ** data_coarse, float ** data_fin
 
     if(skinprot == 0.f)
 #ifdef _OPENMP
-        #pragma omp parallel for schedule(dynamic,16)
+#       pragma omp parallel for schedule(dynamic,16) if (multiThread)
 #endif
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
@@ -538,7 +321,7 @@ void ImProcFunctions::idirpyr_eq_channel(float ** data_coarse, float ** data_fin
         }
     else if(skinprot > 0.f)
 #ifdef _OPENMP
-        #pragma omp parallel for schedule(dynamic,16)
+#       pragma omp parallel for schedule(dynamic,16) if (multiThread)
 #endif
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
@@ -553,7 +336,7 @@ void ImProcFunctions::idirpyr_eq_channel(float ** data_coarse, float ** data_fin
         }
     else
 #ifdef _OPENMP
-        #pragma omp parallel for schedule(dynamic,16)
+#       pragma omp parallel for schedule(dynamic,16) if (multiThread)
 #endif
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
@@ -575,6 +358,231 @@ void ImProcFunctions::idirpyr_eq_channel(float ** data_coarse, float ** data_fin
 }
 
 
+} // namespace
+
+//sequence of scales
+
+namespace cbdl {
+
+void dirpyr_equalizer(float ** src, float ** dst, int srcwidth, int srcheight, float ** l_a, float ** l_b, const double * mult, const double dirpyrThreshold, const double skinprot, float b_l, float t_l, float t_r, float scaleprev, bool multiThread)
+{
+    int lastlevel = maxlevel;
+
+    float atten123 = (float) settings->level123_cbdl;
+
+    if(atten123 > 50.f) {
+        atten123 = 50.f;
+    }
+
+    if(atten123 < 0.f) {
+        atten123 = 0.f;
+    }
+
+    float atten0 = (float) settings->level0_cbdl;
+
+    if(atten0 > 40.f) {
+        atten123 = 40.f;
+    }
+
+    if(atten0 < 0.f) {
+        atten0 = 0.f;
+    }
+
+    if((t_r - t_l) < 0.55f) {
+        t_l = t_r + 0.55f;    //avoid too small range
+    }
+
+
+    while (lastlevel > 0 && fabs(mult[lastlevel - 1] - 1) < 0.001) {
+        lastlevel--;
+        //printf("last level to process %d \n",lastlevel);
+    }
+
+    if (lastlevel == 0) {
+        if (src != dst) {
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int i = 0; i < srcheight; i++) {
+                memcpy(dst[i], src[i], sizeof(float) * srcwidth);
+            }
+        }
+        return;
+    }
+
+    int level;
+    float multi[maxlevel] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
+    float scalefl[maxlevel];
+
+    for(int lv = 0; lv < maxlevel; lv++) {
+        scalefl[lv] = ((float) scales[lv]) / (float) scaleprev;
+
+        if(lv >= 1) {
+            if(scalefl[lv] < 1.f) {
+                multi[lv] = (atten123 * ((float) mult[lv] - 1.f) / 100.f) + 1.f;    //modulate action if zoom < 100%
+            } else {
+                multi[lv] = (float) mult[lv];
+            }
+        } else  {
+            if(scalefl[lv] < 1.f) {
+                multi[lv] = (atten0 * ((float) mult[lv] - 1.f) / 100.f) + 1.f;    //modulate action if zoom < 100%
+            } else {
+                multi[lv] = (float) mult[lv];
+            }
+        }
+
+    }
+
+    multi_array2D<float, maxlevel> dirpyrlo (srcwidth, srcheight);
+
+    level = 0;
+
+    //int thresh = 100 * mult[5];
+    int scale = (int)(scales[level]) / scaleprev;
+
+    if(scale < 1) {
+        scale = 1;
+    }
+
+
+    dirpyr_channel(src, dirpyrlo[0], srcwidth, srcheight, 0, scale, multiThread);
+
+    level = 1;
+
+    while(level < lastlevel) {
+
+        scale = (int)(scales[level]) / scaleprev;
+
+        if(scale < 1) {
+            scale = 1;
+        }
+
+        dirpyr_channel(dirpyrlo[level - 1], dirpyrlo[level], srcwidth, srcheight, level, scale, multiThread);
+
+        level ++;
+    }
+
+    float **tmpHue = nullptr, **tmpChr = nullptr;
+
+    if(skinprot != 0.f) {
+        // precalculate hue and chroma, use SSE, if available
+        // by precalculating these values we can greatly reduce the number of calculations in idirpyr_eq_channel()
+        // but we need two additional buffers for this preprocessing
+        tmpHue = new float*[srcheight];
+
+        for (int i = 0; i < srcheight; i++) {
+            tmpHue[i] = new float[srcwidth];
+        }
+
+#ifdef __SSE2__
+#ifdef _OPENMP
+        #pragma omp parallel for
+#endif
+
+        for(int i = 0; i < srcheight; i++) {
+            int j;
+
+            for(j = 0; j < srcwidth - 3; j += 4) {
+                _mm_storeu_ps(&tmpHue[i][j], xatan2f(LVFU(l_b[i][j]), LVFU(l_a[i][j])));
+            }
+
+            for(; j < srcwidth; j++) {
+                tmpHue[i][j] = xatan2f(l_b[i][j], l_a[i][j]);
+            }
+        }
+
+#else
+#ifdef _OPENMP
+        #pragma omp parallel for
+#endif
+
+        for(int i = 0; i < srcheight; i++) {
+            for(int j = 0; j < srcwidth; j++) {
+                tmpHue[i][j] = xatan2f(l_b[i][j], l_a[i][j]);
+            }
+        }
+
+#endif
+        tmpChr = new float*[srcheight];
+
+        for (int i = 0; i < srcheight; i++) {
+            tmpChr[i] = new float[srcwidth];
+        }
+
+#ifdef __SSE2__
+#ifdef _OPENMP
+        #pragma omp parallel
+#endif
+        {
+            __m128 div = _mm_set1_ps(327.68f);
+#ifdef _OPENMP
+            #pragma omp for
+#endif
+
+            for(int i = 0; i < srcheight; i++) {
+                int j;
+
+                for(j = 0; j < srcwidth - 3; j += 4) {
+                    _mm_storeu_ps(&tmpChr[i][j], vsqrtf(SQRV(LVFU(l_b[i][j])) + SQRV(LVFU(l_a[i][j]))) / div);
+                }
+
+                for(; j < srcwidth; j++) {
+                    tmpChr[i][j] = sqrtf(SQR((l_b[i][j])) + SQR((l_a[i][j]))) / 327.68f;
+                }
+            }
+        }
+#else
+#ifdef _OPENMP
+        #pragma omp parallel for
+#endif
+
+        for(int i = 0; i < srcheight; i++) {
+            for(int j = 0; j < srcwidth; j++) {
+                tmpChr[i][j] = sqrtf(SQR((l_b[i][j])) + SQR((l_a[i][j]))) / 327.68f;
+            }
+        }
+
+#endif
+    }
+
+    // with the current implementation of idirpyr_eq_channel we can safely use the buffer from last level as buffer, saves some memory
+    float ** buffer = dirpyrlo[lastlevel - 1];
+
+    for(int level = lastlevel - 1; level > 0; level--) {
+        idirpyr_eq_channel(dirpyrlo[level], dirpyrlo[level - 1], buffer, srcwidth, srcheight, level, multi, dirpyrThreshold, tmpHue, tmpChr, skinprot, b_l, t_l, t_r, multiThread);
+    }
+
+    scale = scales[0];
+
+    idirpyr_eq_channel(dirpyrlo[0], src/*dst*/, buffer, srcwidth, srcheight, 0, multi, dirpyrThreshold, tmpHue, tmpChr, skinprot, b_l, t_l, t_r, multiThread);
+
+    if(skinprot != 0.f) {
+        for (int i = 0; i < srcheight; i++) {
+            delete [] tmpChr[i];
+        }
+
+        delete [] tmpChr;
+
+        for (int i = 0; i < srcheight; i++) {
+            delete [] tmpHue[i];
+        }
+
+        delete [] tmpHue;
+    }
+
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+
+    for (int i = 0; i < srcheight; i++)
+        for (int j = 0; j < srcwidth; j++) {
+            dst[i][j] = /*CLIP*/(buffer[i][j]);  // TODO: Really a clip necessary?
+        }
+
+}
+
+} // namespace cbdl
+
 //  float hipass = (data_fine[i][j]-data_coarse[i][j]);
 //  buffer[i][j] += irangefn[hipass+0x10000] * hipass ;
 
@@ -584,5 +592,5 @@ void ImProcFunctions::idirpyr_eq_channel(float ** data_coarse, float ** data_fin
 #undef NRWT_L
 #undef NRWT_AB
 
-}
+} // namespace rtengine
 

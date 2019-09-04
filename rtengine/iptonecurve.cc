@@ -148,7 +148,7 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
 } // namespace
 
 
-void ImProcFunctions::toneCurve(Imagefloat *img, LUTu *histToneCurve)
+void ImProcFunctions::toneCurve(Imagefloat *img)
 {
     if (histToneCurve && *histToneCurve) {
         img->setMode(Imagefloat::Mode::RGB, multiThread);
