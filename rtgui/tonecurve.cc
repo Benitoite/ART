@@ -79,7 +79,7 @@ ToneCurve::ToneCurve():
     curveEditorG->setCurveListener (this);
 
     shape = static_cast<DiagonalCurveEditor*>(curveEditorG->addCurve(CT_Diagonal, "", toneCurveMode));
-//    shape->setEditID(EUID_ToneCurve1, BT_IMAGEFLOAT);
+    shape->setEditID(EUID_ToneCurve1, BT_IMAGEFLOAT);
     shape->setBottomBarBgGradient(bottomMilestones);
     shape->setLeftBarBgGradient(bottomMilestones);
 
@@ -106,7 +106,7 @@ ToneCurve::ToneCurve():
     curveEditorG2->setCurveListener (this);
 
     shape2 = static_cast<DiagonalCurveEditor*>(curveEditorG2->addCurve(CT_Diagonal, "", toneCurveMode2));
-//    shape2->setEditID(EUID_ToneCurve2, BT_IMAGEFLOAT);
+    shape2->setEditID(EUID_ToneCurve2, BT_IMAGEFLOAT);
     shape2->setBottomBarBgGradient(bottomMilestones);
     shape2->setLeftBarBgGradient(bottomMilestones);
 
@@ -395,11 +395,4 @@ void ToneCurve::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParam
 
             return false;
         });
-}
-
-
-void ToneCurve::procParamsChanged(const rtengine::procparams::ProcParams* params, const rtengine::ProcEvent& ev, const Glib::ustring& descr, const ParamsEdited *paramsEdited)
-{
-    shape->showEditButton(false);
-    shape2->showEditButton(false);
 }

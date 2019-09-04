@@ -27,7 +27,7 @@
 #include "mycurve.h"
 #include "guiutils.h"
 
-class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener, public PParamsChangeListener
+class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener
 {
 private:
     IdleRegister idle_register;
@@ -96,12 +96,4 @@ public:
     void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve);
 
     void setRaw (bool raw);
-
-    PParamsChangeListener *getPParamsChangeListener() override { return this; }
-    void procParamsChanged(
-        const rtengine::procparams::ProcParams* params,
-        const rtengine::ProcEvent& ev,
-        const Glib::ustring& descr,
-        const ParamsEdited* paramsEdited = nullptr) override;
-    void clearParamChanges() override {}
 };

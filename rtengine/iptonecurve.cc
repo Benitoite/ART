@@ -145,6 +145,23 @@ void update_tone_curve_histogram(Imagefloat *img, LUTu &hist, const Glib::ustrin
     }
 }
 
+void fill_pipette(Imagefloat *img, Imagefloat *pipette, bool multithread)
+{
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+    
+#ifdef _OPENMP
+#    pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            pipette->r(y, x) = Color::gamma2curve[CLIP(img->r(y, x))] / 65535.f;
+            pipette->g(y, x) = Color::gamma2curve[CLIP(img->g(y, x))] / 65535.f;
+            pipette->b(y, x) = Color::gamma2curve[CLIP(img->b(y, x))] / 65535.f;
+        }
+    }
+}
+
 } // namespace
 
 
@@ -155,8 +172,19 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
         update_tone_curve_histogram(img, *histToneCurve, params->icm.workingProfile, multiThread);
     }
 
+    Imagefloat *editImgFloat = nullptr;
+    EditUniqueID editID = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
+
+    if ((editID == EUID_ToneCurve1 || editID == EUID_ToneCurve2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_IMAGEFLOAT) {
+        editImgFloat = pipetteBuffer->getImgFloatBuffer();
+    }
+
     if (params->toneCurve.enabled) {
         img->setMode(Imagefloat::Mode::RGB, multiThread);
+
+        if (editImgFloat && editID == EUID_ToneCurve1) {
+            fill_pipette(img, editImgFloat, multiThread);
+        }
         
         ToneCurve tc;
         const DiagonalCurve tcurve1(params->toneCurve.curve, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
@@ -164,6 +192,10 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
         if (!tcurve1.isIdentity()) {
             tc.Set(tcurve1, Color::sRGBGammaCurve);
             apply_tc(img, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
+        }
+
+        if (editImgFloat && editID == EUID_ToneCurve2) {
+            fill_pipette(img, editImgFloat, multiThread);
         }
 
         const DiagonalCurve tcurve2(params->toneCurve.curve2, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
@@ -176,6 +208,18 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
         const FlatCurve satcurve(params->toneCurve.saturation, false, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
         if (!satcurve.isIdentity()) {
             apply_satcurve(img, satcurve, params->icm.workingProfile, multiThread);
+        }
+    } else if (editImgFloat) {
+        const int W = img->getWidth();
+        const int H = img->getHeight();
+
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            std::fill(editImgFloat->r(y), editImgFloat->r(y)+W, 0.f);
+            std::fill(editImgFloat->g(y), editImgFloat->g(y)+W, 0.f);
+            std::fill(editImgFloat->b(y), editImgFloat->b(y)+W, 0.f);
         }
     }
 }
