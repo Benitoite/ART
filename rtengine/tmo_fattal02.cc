@@ -74,6 +74,7 @@
 #include "opthelper.h"
 #include "rt_algo.h"
 #include "rescale.h"
+#include "ipdenoise.h"
 
 namespace rtengine
 {
@@ -1114,7 +1115,7 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
             med = ImProcFunctions::Median::TYPE_3X3_STRONG;
         }
 
-        ipf->Median_Denoise (Yr, Yr, luminance_noise_floor, w, h, med, 1, num_threads, L);
+        denoise::Median_Denoise(Yr, Yr, luminance_noise_floor, w, h, med, 1, num_threads, L);
     }
 
     float noise = alpha * 0.01f;

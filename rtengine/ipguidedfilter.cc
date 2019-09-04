@@ -128,9 +128,11 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
 } // namespace
 
 
-void ImProcFunctions::denoiseGuidedSmoothing(Imagefloat *rgb)
+namespace denoise {
+
+void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb)
 {
-    if (!params->denoise.smoothingEnabled || params->denoise.smoothingMethod != procparams::DenoiseParams::SmoothingMethod::GUIDED) {
+    if (!im.params->denoise.smoothingEnabled || im.params->denoise.smoothingMethod != procparams::DenoiseParams::SmoothingMethod::GUIDED) {
         return;
     }
 
@@ -142,18 +144,20 @@ void ImProcFunctions::denoiseGuidedSmoothing(Imagefloat *rgb)
     array2D<float> G(W, H, rgb->g.ptrs, ARRAY2D_BYREFERENCE);
     array2D<float> B(W, H, rgb->b.ptrs, ARRAY2D_BYREFERENCE);
 
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(im.params->icm.workingProfile);
+    TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(im.params->icm.workingProfile);
 
-    int r = max(int(params->denoise.guidedChromaRadius / scale), 1);
+    int r = max(int(im.params->denoise.guidedChromaRadius / im.scale), 1);
     const float c_eps = 0.1f / float(min(r, 10));
     const float l_eps = 5e-4f;
 
-    guided_smoothing(R, G, B, ws, iws, Channel::C, params->denoise.guidedChromaRadius, c_eps, params->denoise.guidedChromaStrength, scale, multiThread);
-    guided_smoothing(R, G, B, ws, iws, Channel::L, params->denoise.guidedLumaRadius, l_eps, params->denoise.guidedLumaStrength, scale, multiThread);
+    guided_smoothing(R, G, B, ws, iws, Channel::C, im.params->denoise.guidedChromaRadius, c_eps, im.params->denoise.guidedChromaStrength, im.scale, im.multiThread);
+    guided_smoothing(R, G, B, ws, iws, Channel::L, im.params->denoise.guidedLumaRadius, l_eps, im.params->denoise.guidedLumaStrength, im.scale, im.multiThread);
     
     rgb->normalizeFloatTo65535();
 }
+
+} // namespace denoise
 
 
 bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb, int offset_x, int offset_y, int full_width, int full_height)
