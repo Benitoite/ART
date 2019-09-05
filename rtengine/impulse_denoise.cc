@@ -181,11 +181,12 @@ void impulse_nr(Imagefloat *lab, double thresh, bool multithread)
 void ImProcFunctions::impulsedenoise(Imagefloat *rgb)
 {
 
-    if (params->impulseDenoise.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8)
+    if (params->impulseDenoise.enabled && rgb->getWidth() >= 8 && rgb->getHeight() >= 8 && scale >= 0.5)
 
     {
+        float t = params->impulseDenoise.thresh / scale;
         rgb->setMode(Imagefloat::Mode::LAB, multiThread);
-        impulse_nr(rgb, (float)params->impulseDenoise.thresh / 20.0, multiThread);
+        impulse_nr(rgb, t / 20.0, multiThread);
     }
 }
 
