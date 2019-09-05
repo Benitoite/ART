@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # By Morgan Hardwood
-# Version 2018-01-06
+# Version 2019-09-05
 # This script gets the latest source code for the given program and compiles it.
 
 # The name of the program, used for the folder names:
-prog="rawtherapee"
+prog="art"
 
 # The name of the compiled executable:
-exe="${prog}"
+exe="ART"
 
 # The name of the sub-folder, if any, relative to the folder into which the
 # compiled executable is placed.
@@ -22,13 +22,13 @@ exe="${prog}"
 exeRelativePath=""
 
 # The path to the repository:
-repo="https://github.com/Beep6581/RawTherapee.git"
+repo="https://bitbucket.org/agriggio/art.git"
 
 # No touching below this line, with the exception of the "Compile" section
 # -----------------------------------------------------------------------------
 
 # The name of the project's standard branch, typically "master":
-master="dev"
+master="alberto-dev"
 
 buildOnly="false"
 buildType="release"
@@ -138,6 +138,7 @@ cmake \
     -DWITH_SAN="OFF" \
     -DWITH_SYSTEM_KLT="OFF" \
     -DWITH_BENCHMARK="OFF" \
+    -DENABLE_TCMALLOC="ON" \
     "$HOME/programs/code-${prog}" || exit 1
 
 make --jobs="$cpuCount" install || exit 1
