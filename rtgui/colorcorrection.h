@@ -64,6 +64,7 @@ private:
     rtengine::ProcEvent EvSlope;
     rtengine::ProcEvent EvOffset;
     rtengine::ProcEvent EvPower;    
+    rtengine::ProcEvent EvPivot;    
     rtengine::ProcEvent EvChannel;
 
     rtengine::ProcEvent EvList;
@@ -74,7 +75,7 @@ private:
     rtengine::ProcEvent EvShowMask;
     rtengine::ProcEvent EvAreaMask;
 
-    std::vector<rtengine::procparams::ColorCorrectionParams::LabCorrectionRegion> data;
+    std::vector<rtengine::procparams::ColorCorrectionParams::Region> data;
     int showMaskIdx;
 
     friend class ColorCorrectionMasksContentProvider;
@@ -87,6 +88,7 @@ private:
     Adjuster *slope;
     Adjuster *offset;
     Adjuster *power;
+    Adjuster *pivot;
     MyComboBoxText *channel;
 };
 

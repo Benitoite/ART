@@ -73,7 +73,7 @@ public:
 
     bool addPressed() override
     {
-        parent_->data.push_back(rtengine::ColorCorrectionParams::LabCorrectionRegion());
+        parent_->data.push_back(rtengine::ColorCorrectionParams::Region());
         return true;
     }
 
@@ -109,7 +109,7 @@ public:
 
     bool resetPressed() override
     {
-        parent_->data = { ColorCorrectionParams::LabCorrectionRegion() };
+        parent_->data = { ColorCorrectionParams::Region() };
         parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
         return true;
     }
@@ -129,11 +129,11 @@ public:
         auto &r = parent_->data[row];
         const char *ch = "";
         switch (r.channel) {
-        case rtengine::ColorCorrectionParams::LabCorrectionRegion::CHAN_R:
+        case rtengine::ColorCorrectionParams::Region::CHAN_R:
             ch = " [R]"; break;
-        case rtengine::ColorCorrectionParams::LabCorrectionRegion::CHAN_G:
+        case rtengine::ColorCorrectionParams::Region::CHAN_G:
             ch = " [G]"; break;
-        case rtengine::ColorCorrectionParams::LabCorrectionRegion::CHAN_B:
+        case rtengine::ColorCorrectionParams::Region::CHAN_B:
             ch = " [B]"; break;
         default:
             ch = "";
@@ -143,7 +143,7 @@ public:
             {
                 return int(v * 1000) / 1000.f;
             };
-        return Glib::ustring::compose("a=%1 b=%2 S=%3\ns=%4 o=%5 p=%6%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power, ch);
+        return Glib::ustring::compose("a=%1 b=%2 S=%3%8\ns=%4 o=%5 p=%6 P=%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power, r.pivot, ch);
     }
 
     void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
@@ -172,6 +172,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     EvSlope = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_SLOPE");
     EvOffset = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_OFFSET");
     EvPower = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_POWER");
+    EvPivot = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_PIVOT");
     EvChannel = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_CHANNEL");
 
     EvList = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_LIST");
@@ -202,6 +203,10 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     power->setAdjusterListener(this);
     power->setLogScale(10, 1, true);
     box->pack_start(*power);
+    pivot = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_PIVOT"), 0.001, 2.0, 0.001, 1));
+    pivot->setAdjusterListener(this);
+    pivot->setLogScale(100, 0.18, true);
+    box->pack_start(*pivot);
 
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
     channel = Gtk::manage(new MyComboBoxText());
@@ -220,6 +225,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     slope->delay = options.adjusterMaxDelay;
     offset->delay = options.adjusterMaxDelay;
     power->delay = options.adjusterMaxDelay;
+    pivot->delay = options.adjusterMaxDelay;
 
     labMasksContentProvider.reset(new ColorCorrectionMasksContentProvider(this));
     labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
@@ -237,7 +243,7 @@ void ColorCorrection::read(const ProcParams *pp)
     data = pp->colorcorrection.regions;
     auto m = pp->colorcorrection.labmasks;
     if (data.empty()) {
-        data.emplace_back(rtengine::ColorCorrectionParams::LabCorrectionRegion());
+        data.emplace_back(rtengine::ColorCorrectionParams::Region());
         m.emplace_back(rtengine::LabCorrectionMask());
     }
     labMasks->updateAreaMaskDefaults(pp);
@@ -267,6 +273,7 @@ void ColorCorrection::setDefaults(const ProcParams *defParams)
     slope->setDefault(defParams->colorcorrection.regions[0].slope);
     offset->setDefault(defParams->colorcorrection.regions[0].offset);
     power->setDefault(defParams->colorcorrection.regions[0].power);
+    pivot->setDefault(defParams->colorcorrection.regions[0].pivot);
 }
 
 
@@ -287,6 +294,9 @@ void ColorCorrection::adjusterChanged(Adjuster* a, double newval)
         } else if (a == power) {
             gridAB->setEdited(true);
             listener->panelChanged(EvPower, a->getTextValue());
+        } else if (a == pivot) {
+            gridAB->setEdited(true);
+            listener->panelChanged(EvPivot, a->getTextValue());
         }
     }
 }
@@ -341,6 +351,7 @@ void ColorCorrection::regionGet(int idx)
     r.slope = slope->getValue();
     r.offset = offset->getValue();
     r.power = power->getValue();
+    r.pivot = pivot->getValue();
     r.channel = channel->get_active_row_number() - 1;
 }
 
@@ -357,6 +368,7 @@ void ColorCorrection::regionShow(int idx)
     slope->setValue(r.slope);
     offset->setValue(r.offset);
     power->setValue(r.power);
+    pivot->setValue(r.pivot);
     channel->set_active(r.channel+1);
     if (disable) {
         enableListener();

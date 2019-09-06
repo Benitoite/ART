@@ -1944,19 +1944,20 @@ bool GuidedSmoothingParams::operator!=(const GuidedSmoothingParams &other) const
 }
 
 
-ColorCorrectionParams::LabCorrectionRegion::LabCorrectionRegion():
+ColorCorrectionParams::Region::Region():
     a(0),
     b(0),
     saturation(0),
     slope(1),
     offset(0),
     power(1),
-    channel(ColorCorrectionParams::LabCorrectionRegion::CHAN_ALL)
+    pivot(1),
+    channel(ColorCorrectionParams::Region::CHAN_ALL)
 {
 }
 
 
-bool ColorCorrectionParams::LabCorrectionRegion::operator==(const LabCorrectionRegion &other) const
+bool ColorCorrectionParams::Region::operator==(const Region &other) const
 {
     return a == other.a
         && b == other.b
@@ -1964,11 +1965,12 @@ bool ColorCorrectionParams::LabCorrectionRegion::operator==(const LabCorrectionR
         && slope == other.slope
         && offset == other.offset
         && power == other.power
+        && pivot == other.pivot
         && channel == other.channel;
 }
 
 
-bool ColorCorrectionParams::LabCorrectionRegion::operator!=(const LabCorrectionRegion &other) const
+bool ColorCorrectionParams::Region::operator!=(const Region &other) const
 {
     return !(*this == other);
 }
@@ -1976,7 +1978,7 @@ bool ColorCorrectionParams::LabCorrectionRegion::operator!=(const LabCorrectionR
 
 ColorCorrectionParams::ColorCorrectionParams():
     enabled(false),
-    regions{LabCorrectionRegion()},
+    regions{Region()},
     labmasks{LabCorrectionMask()},
     showMask(-1)
 {
@@ -2920,6 +2922,7 @@ int ProcParams::save(bool save_general,
                 putToKeyfile("ColorCorrection", Glib::ustring("Slope_") + n, l.slope, keyFile);
                 putToKeyfile("ColorCorrection", Glib::ustring("Offset_") + n, l.offset, keyFile);
                 putToKeyfile("ColorCorrection", Glib::ustring("Power_") + n, l.power, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("Pivot_") + n, l.pivot, keyFile);
                 putToKeyfile("ColorCorrection", Glib::ustring("Channel_") + n, l.channel, keyFile);
                 colorcorrection.labmasks[j].save(keyFile, "ColorCorrection", "", Glib::ustring("_") + n);
             }
@@ -3993,12 +3996,12 @@ int ProcParams::load(bool load_general,
         if (keyFile.has_group(ccgroup) && RELEVANT_(colorcorrection)) {
             const Glib::ustring prefix = "";
             assignFromKeyfile(keyFile, ccgroup, "Enabled", colorcorrection.enabled);
-            std::vector<ColorCorrectionParams::LabCorrectionRegion> lg;
+            std::vector<ColorCorrectionParams::Region> lg;
             std::vector<LabCorrectionMask> lm;
             bool found = false;
             bool done = false;
             for (int i = 1; !done; ++i) {
-                ColorCorrectionParams::LabCorrectionRegion cur;
+                ColorCorrectionParams::Region cur;
                 LabCorrectionMask curmask;
                 done = true;
                 std::string n = std::to_string(i);
@@ -4023,6 +4026,10 @@ int ProcParams::load(bool load_general,
                     done = false;
                 }
                 if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Power_") + n, cur.power)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Pivot_") + n, cur.pivot)) {
                     found = true;
                     done = false;
                 }

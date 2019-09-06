@@ -1136,7 +1136,7 @@ struct GuidedSmoothingParams {
 
 
 struct ColorCorrectionParams {
-    struct LabCorrectionRegion {
+    struct Region {
         enum { CHAN_ALL = -1, CHAN_R, CHAN_G, CHAN_B };
         double a;
         double b;
@@ -1144,15 +1144,16 @@ struct ColorCorrectionParams {
         double slope;
         double offset;
         double power;
+        double pivot;
         int channel;
 
-        LabCorrectionRegion();
-        bool operator==(const LabCorrectionRegion &other) const;
-        bool operator!=(const LabCorrectionRegion &other) const;
+        Region();
+        bool operator==(const Region &other) const;
+        bool operator!=(const Region &other) const;
     };
 
     bool enabled;
-    std::vector<LabCorrectionRegion> regions;
+    std::vector<Region> regions;
     std::vector<LabCorrectionMask> labmasks;
     int showMask;
 

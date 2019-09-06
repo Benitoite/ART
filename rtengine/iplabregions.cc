@@ -79,6 +79,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
     float slope[n];
     float offset[n];
     float power[n];
+    float pivot[n];
     int channel[n];
     for (int i = 0; i < n; ++i) {
         auto &r = params->colorcorrection.regions[i];
@@ -88,37 +89,48 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
         slope[i] = r.slope;
         offset[i] = r.offset;
         power[i] = r.power;
+        pivot[i] = r.pivot;
         channel[i] = r.channel;
     }
 
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    float ws[3][3];
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            ws[i][j] = dws[i][j];
+        }
+    }
 
-    const auto rgb2yuv =
-        [=](float r, float g, float b, float &Y, float &u, float &v) -> void
-        {
-            Color::rgb2yuv(r, g, b, Y, u, v, ws);
-        };
+    // const auto rgb2yuv =
+    //     [=](float r, float g, float b, float &Y, float &u, float &v) -> void
+    //     {
+    //         Color::rgb2yuv(r, g, b, Y, u, v, ws);
+    //     };
 
-    const auto yuv2rgb =
-        [=](float Y, float u, float v, float &r, float &g, float &b) -> void
-        {
-            Color::yuv2rgb(Y, u, v, r, g, b, ws);
-        };
+    // const auto yuv2rgb =
+    //     [=](float Y, float u, float v, float &r, float &g, float &b) -> void
+    //     {
+    //         Color::yuv2rgb(Y, u, v, r, g, b, ws);
+    //     };
 
     const auto CDL = 
-        [=](float &Y, float &u, float &v, float slope, float offset, float power, float saturation) -> void
+        [=, &ws](float &Y, float &u, float &v, float slope, float offset, float power, float pivot, float saturation) -> void
         {
             float rgb[3];
             if (slope != 1.f || offset != 0.f || power != 1.f) {
-                yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2]);
+                Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], ws);
                 for (int i = 0; i < 3; ++i) {
                     float v = (rgb[i] / 65535.f) * slope + offset;
                     if (v > 0.f) {
-                        v = pow_F(v, power);
+                        if (pivot != 1.f) {
+                            v = pow_F(v / pivot, power) * pivot;
+                        } else {
+                            v = pow_F(v, power);
+                        }
                     }
                     rgb[i] = v * 65535.f;
                 }
-                rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v);
+                Color::rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v, ws);
             }
             if (saturation != 1.f) {
                 u *= saturation;
@@ -127,78 +139,52 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
         };
 
     const auto chan =
-        [=](float prev_Y, float prev_u, float prev_v, float &Y, float &u, float &v, int channel) -> void
+        [=, &ws](float prev_Y, float prev_u, float prev_v, float &Y, float &u, float &v, int channel) -> void
         {
             if (channel >= 0) {
                 float prev_rgb[3];
-                yuv2rgb(prev_Y, prev_u, prev_v, prev_rgb[0], prev_rgb[1], prev_rgb[2]);
+                Color::yuv2rgb(prev_Y, prev_u, prev_v, prev_rgb[0], prev_rgb[1], prev_rgb[2], ws);
                 float rgb[3];
-                yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2]);
+                Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], ws);
                 prev_rgb[channel] = rgb[channel];
-                rgb2yuv(prev_rgb[0], prev_rgb[1], prev_rgb[2], Y, u, v);
+                Color::rgb2yuv(prev_rgb[0], prev_rgb[1], prev_rgb[2], Y, u, v, ws);
             }
         };
     
-//     const auto CDL =
-//         [=](float &l, float &a, float &b, float slope, float offset, float power, float saturation) -> void
-//         {
-//             if (slope != 1.f || offset != 0.f || power != 1.f || saturation != 1.f) {
-//                 float rgb[3];
-//                 float x, y, z;
-//                 Color::Lab2XYZ(l, a, b, x, y, z);
-//                 Color::xyz2rgb(x, y, z, rgb[0], rgb[1], rgb[2], iws);
-//                 for (int i = 0; i < 3; ++i) {
-//                     float v = (rgb[i] / 65535.f) * slope + offset;
-//                     if (v > 0.f) {
-//                         v = pow_F(v, power);
-//                     }
-//                     rgb[i] = v * 65535.f;
-//                 }
-//                 if (saturation != 1.f) {
-//                     float Y = max(Color::rgbLuminance(rgb[0], rgb[1], rgb[2], ws), 0.f);
-//                     for (int i = 0; i < 3; ++i) {
-//                         rgb[i] = max(Y + saturation * (rgb[i] - Y), 0.f);
-//                     }
-//                 }
-//                 Color::rgbxyz(rgb[0], rgb[1], rgb[2], x, y, z, ws);
-//                 Color::XYZ2Lab(x, y, z, l, a, b);
-//             }
-//         };
-
-//     const auto chan =
-//         [=](float prev_l, float prev_a, float prev_b, float &l, float &a, float &b, int channel) -> void
-//         {
-//             if (channel >= 0) {
-//                 float prev_rgb[3];
-//                 float rgb[3];
-//                 float x, y, z;
-//                 Color::Lab2XYZ(l, a, b, x, y, z);
-//                 Color::xyz2rgb(x, y, z, rgb[0], rgb[1], rgb[2], iws);
-//                 Color::Lab2XYZ(prev_l, prev_a, prev_b, x, y, z);
-//                 Color::xyz2rgb(x, y, z, prev_rgb[0], prev_rgb[1], prev_rgb[2], iws);
-//                 prev_rgb[channel] = rgb[channel];
-//                 Color::rgbxyz(prev_rgb[0], prev_rgb[1], prev_rgb[2], x, y, z, ws);
-//                 Color::XYZ2Lab(x, y, z, l, a, b);
-//             }
-//         };
-
 #ifdef __SSE2__
+    vfloat vws[3][3];
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            vws[i][j] = F2V(float(dws[i][j]));
+        }
+    }
+
     const auto CDL_v =
-        [=](vfloat &Y, vfloat &u, vfloat &v, float slope, float offset, float power, float saturation) -> void
+        [=](vfloat &Y, vfloat &u, vfloat &v, float slope, float offset, float power, float pivot, float saturation) -> void
         {
-            if (slope != 1.f || offset != 0.f || power != 1.f || saturation != 1.f) {
-                float YY[4];
-                float uu[4];
-                float vv[4];
-                STVFU(YY[0], Y);
-                STVFU(uu[0], u);
-                STVFU(vv[0], v);
-                for (int i = 0; i < 4; ++i) {
-                    CDL(YY[i], uu[i], vv[i], slope, offset, power, saturation);
+            if (slope != 1.f || offset != 0.f || power != 1.f) {// || saturation != 1.f) {
+                vfloat rgb[3];
+                vfloat vslope = F2V(slope);
+                vfloat voffset = F2V(offset);
+                vfloat vpower = F2V(power);
+                vfloat vpivot = F2V(pivot);
+                vfloat v65535 = F2V(65535.f);
+                Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], vws);
+                for (int i = 0; i < 3; ++i) {
+                    vfloat v = (rgb[i] / v65535) * vslope + voffset;
+                    if (pivot != 1.f) {
+                        v = vself(vmaskf_gt(v, ZEROV), pow_F(v / vpivot, vpower) * vpivot, v);
+                    } else {
+                        v = vself(vmaskf_gt(v, ZEROV), pow_F(v, vpower), v);
+                    }
+                    rgb[i] = v * v65535;
                 }
-                Y = LVFU(YY[0]);
-                u = LVFU(uu[0]);
-                v = LVFU(vv[0]);
+                Color::rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v, vws);
+            }
+            if (saturation != 1.f) {
+                vfloat vsaturation = F2V(saturation);
+                u *= vsaturation;
+                v *= vsaturation;
             }
         };
 
@@ -206,24 +192,12 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
         [=](vfloat prev_Y, vfloat prev_u, vfloat prev_v, vfloat &Y, vfloat &u, vfloat &v, int channel) -> void
         {
             if (channel >= 0) {
-                float YY[4];
-                float uu[4];
-                float vv[4];
-                STVFU(YY[0], Y);
-                STVFU(uu[0], u);
-                STVFU(vv[0], v);
-                float prev_YY[4];
-                float prev_uu[4];
-                float prev_vv[4];
-                STVFU(prev_YY[0], prev_Y);
-                STVFU(prev_uu[0], prev_u);
-                STVFU(prev_vv[0], prev_v);
-                for (int i = 0; i < 4; ++i) {
-                    chan(prev_YY[i], prev_uu[i], prev_vv[i], YY[i], uu[i], vv[i], channel);
-                }
-                Y = LVFU(YY[0]);
-                u = LVFU(uu[0]);
-                v = LVFU(vv[0]);
+                vfloat prev_rgb[3];
+                Color::yuv2rgb(prev_Y, prev_u, prev_v, prev_rgb[0], prev_rgb[1], prev_rgb[2], vws);
+                vfloat rgb[3];
+                Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], vws);
+                prev_rgb[channel] = rgb[channel];
+                Color::rgb2yuv(prev_rgb[0], prev_rgb[1], prev_rgb[2], Y, u, v, vws);
             }
         };
 #endif
@@ -256,7 +230,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     vfloat u_newv = uv + fv * F2V(abcb[i]);
                     vfloat v_newv = vv + fv * F2V(abca[i]);
 
-                    CDL_v(Y_newv, u_newv, v_newv, slope[i], offset[i], power[i], rs[i]);
+                    CDL_v(Y_newv, u_newv, v_newv, slope[i], offset[i], power[i], pivot[i], rs[i]);
                     chan_v(Yv, uv, vv, Y_newv, u_newv, v_newv, channel[i]);
                     Yv = vintpf(lblendv, Y_newv, Yv);
                     uv = vintpf(blendv, u_newv, uv);
@@ -281,7 +255,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     float u_new = u + f * abcb[i];
                     float v_new = v + f * abca[i];
 
-                    CDL(Y_new, u_new, v_new, slope[i], offset[i], power[i], rs[i]);
+                    CDL(Y_new, u_new, v_new, slope[i], offset[i], power[i], pivot[i], rs[i]);
                     chan(Y, u, v, Y_new, u_new, v_new, channel[i]);
                     Y = intp(lblend, Y_new, Y);
                     u = intp(blend, u_new, u);
