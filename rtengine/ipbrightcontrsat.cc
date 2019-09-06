@@ -25,6 +25,8 @@
 
 namespace rtengine {
 
+namespace {
+
 float apply_vibrance(float x, float vib)
 {
     static const float noise = pow_F(2.f, -16.f);
@@ -36,13 +38,11 @@ float apply_vibrance(float x, float vib)
     }
 }
 
+} // namespace
+
 
 void ImProcFunctions::brightnessContrastSaturation(Imagefloat *rgb)
 {
-    if (params->logenc.enabled) {
-        return; // controls applied in logEncoding
-    }
-    
     rgb->setMode(Imagefloat::Mode::RGB, multiThread);
     
     LUTf curve(65536);

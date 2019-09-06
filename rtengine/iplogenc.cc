@@ -31,8 +31,6 @@
 
 namespace rtengine {
 
-extern float apply_vibrance(float x, float vib);
-
 extern const Settings *settings;
 
 namespace {
@@ -106,14 +104,6 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
     const float dynamic_range = params->logenc.whiteEv - params->logenc.blackEv;
     const float noise = pow_F(2.f, -16.f);
     const float log2 = xlogf(2.f);
-    const bool brightness_enabled = params->brightContrSat.enabled && params->brightContrSat.brightness;
-    const float brightness = 1.f + params->brightContrSat.brightness / 100.f;
-    const bool contrast_enabled = params->brightContrSat.enabled && params->brightContrSat.contrast;
-    const float contrast = 1.f + params->brightContrSat.contrast / 100.f;
-    const bool saturation_enabled = params->brightContrSat.enabled && (params->brightContrSat.saturation || params->brightContrSat.vibrance);
-    const float saturation = 1.f + params->brightContrSat.saturation / 100.f;
-    const float vibrance = 1.f - params->brightContrSat.vibrance / 1000.f;
-    const bool vib = params->brightContrSat.vibrance;
     const float b = params->logenc.targetGray > 1 && params->logenc.targetGray < 100 && dynamic_range > 0 ? find_gray(std::abs(params->logenc.blackEv) / dynamic_range, params->logenc.targetGray / 100.f) : 0.f;
     const float linbase = max(b, 0.f);
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -125,12 +115,6 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 x /= 65535.f;
             }
             x = max(x, noise);
-            if (brightness_enabled) {
-                x *= brightness;
-            }
-            if (contrast_enabled) {
-                x = pow_F(x / gray, contrast) * gray;
-            }
             x = max(x / gray, noise);
             x = max((xlogf(x)/log2 - shadows_range) / dynamic_range, noise);
             assert(x == x);
@@ -191,24 +175,6 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                     r *= f;
                     b *= f;
                     g *= f;
-                    if (saturation_enabled) {
-                        float l = Color::rgbLuminance(r, g, b, ws);
-                        float rl = r - l;
-                        float gl = g - l;
-                        float bl = b - l;
-                        if (vib) {
-                            rl = apply_vibrance(rl, vibrance);
-                            gl = apply_vibrance(gl, vibrance);
-                            bl = apply_vibrance(bl, vibrance);
-                        }
-                        r = max(l + saturation * rl, noise);
-                        g = max(l + saturation * gl, noise);
-                        b = max(l + saturation * bl, noise);
-                    }
-
-                    // if (OOG(r) || OOG(g) || OOG(b)) {
-                    //     Color::filmlike_clip(&r, &g, &b);
-                    // }
                 }
             
                 assert(r == r);
@@ -232,15 +198,9 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             }
         }
             
-        //const float epsilon = 0.01f;
         const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
-        //guidedFilter(tmp, tmp, tmp, detail, epsilon, multithread);
         guidedFilterLog(10.f, tmp, detail, epsilon, multithread);
 
-        // array2D<float> blend(W, H);
-        // float contrast = 0.2f;
-        // buildBlendMask(tmp, blend, W, H, contrast);
-               
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
@@ -250,28 +210,16 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
                 float m = norm(r, g, b);
-                float t = intp(0.33f// blend[y][x]
-                               , m, tmp[y][x] * 65535.f);
+                float t = intp(0.33f, m, tmp[y][x] * 65535.f);
                 if (t > noise) {
                     float c = apply(t);
                     float f = c / t;
                     r *= f;
                     g *= f;
                     b *= f;
-                    if (saturation_enabled) {
-                        float l = Color::rgbLuminance(r, g, b, ws);
-                        r = max(l + saturation * (r - l), noise);
-                        g = max(l + saturation * (g - l), noise);
-                        b = max(l + saturation * (b - l), noise);
-                    }
-                    // if (OOG(r) || OOG(g) || OOG(b)) {
-                    //     Color::filmlike_clip(&r, &g, &b);
-                    // }
                 }
             }
         }
-
-        // rgb->normalizeFloatTo65535();
     }
 }
 
