@@ -75,7 +75,7 @@ if(REL_INFO_FILE STREQUAL REL_INFO_FILE-NOTFOUND)
         
         # we emulate the behaviour of git with Mercurial
         execute_process(COMMAND ${HG_CMD} log -r .
-            --template "{sub('^.*/.*:', '', latesttag)}{ifeq(latesttagdistance, 0, '', '-')}{ifeq(latesttagdistance, 0, '', latesttagdistance)}{ifeq(latesttagdistance, 0, '', '-g')}{ifeq(latesttagdistance, 0, '', sub('.....$', '', short(gitnode)))}"
+            --template "{latesttag('re:.*v?[0-9.]+(rc)?[0-9]+$') % '{sub('^.*/.*:', '', tag)}{ifeq(distance, 0, '', '-')}{ifeq(distance, 0, '', distance)}{ifeq(distance, 0, '', '-g')}{ifeq(distance, 0, '', sub('.....$', '', short(gitnode)))}'}"
             OUTPUT_VARIABLE GIT_DESCRIBE
             OUTPUT_STRIP_TRAILING_WHITESPACE
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
@@ -95,7 +95,7 @@ if(REL_INFO_FILE STREQUAL REL_INFO_FILE-NOTFOUND)
             OUTPUT_STRIP_TRAILING_WHITESPACE
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
-        execute_process(COMMAND ${HG_CMD} log -r . --template "{latesttagdistance}"
+        execute_process(COMMAND ${HG_CMD} log -r . --template "{latesttag('re:.*v?[0-9.]+(rc)?[0-9]+$') % '{distance}'}"
             OUTPUT_VARIABLE GIT_COMMITS_SINCE_TAG
             OUTPUT_STRIP_TRAILING_WHITESPACE
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
