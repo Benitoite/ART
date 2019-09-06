@@ -18,11 +18,6 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if defined( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-fpermissive"
-#endif
-
 using namespace std;
 
 // taken from darktable (src/iop/ashift.c)
