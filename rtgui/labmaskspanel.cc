@@ -496,7 +496,7 @@ void LabMasksPanel::populateList()
             list->set_text(j, c+1, cp_->getColumnContent(c, j));
         }
         Glib::ustring am("");
-        if (!r.areaMask.isTrivial()) {
+        if (r.areaEnabled && !r.areaMask.isTrivial()) {
             am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
         }
         list->set_text(
