@@ -32,7 +32,7 @@ using namespace std;
 
 namespace {
 
-void sharpenHaloCtrl (float** luminance, float** blurmap, float** base, float** blend, int W, int H, const SharpeningParams &sharpenParam)
+void sharpenHaloCtrl(float** luminance, float** blurmap, float** base, float** blend, int W, int H, const SharpeningParams &sharpenParam, bool multiThread)
 {
 
     const float scale = (100.f - sharpenParam.halocontrol_amount) * 0.01f;
@@ -40,7 +40,7 @@ void sharpenHaloCtrl (float** luminance, float** blurmap, float** base, float** 
     float** nL = base;
 
 #ifdef _OPENMP
-    #pragma omp parallel for
+#   pragma omp parallel for if (multiThread)
 #endif
 
     for (int i = 2; i < H - 2; i++) {
@@ -151,17 +151,18 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
     }
 }
 
-void deconvsharpening(float** luminance, float** tmp, int W, int H, const SharpeningParams &sharpenParam, float contrast, double scale)
+void deconvsharpening(float** luminance, float** blend, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
 {
     const auto blurradius = sharpenParam.blurradius / scale;
     if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
         return;
     }
 BENCHFUN
+    JaggedArray<float> tmp(W, H);
     JaggedArray<float> tmpI(W, H);
 
 #ifdef _OPENMP
-    #pragma omp parallel for
+#   pragma omp parallel for if (multiThread)
 #endif
     for (int i = 0; i < H; i++) {
         for(int j = 0; j < W; j++) {
@@ -169,17 +170,16 @@ BENCHFUN
         }
     }
 
-    // calculate contrast based blend factors to reduce sharpening in regions with low contrast
-    JaggedArray<float> blend(W, H);
-    //float contrast = sharpenParam.contrast / 100.f;
-    buildBlendMask(luminance, blend, W, H, contrast, 1.f);
     JaggedArray<float>* blurbuffer = nullptr;
+
+    JaggedArray<char> impulse(W, H);
+    markImpulse(W, H, luminance, impulse, 2.f);
 
     if (blurradius >= 0.25f) {
         blurbuffer = new JaggedArray<float>(W, H);
         JaggedArray<float> &blur = *blurbuffer;
 #ifdef _OPENMP
-        #pragma omp parallel
+#       pragma omp parallel if (multiThread)
 #endif
         {
             gaussianBlur(tmpI, blur, W, H, blurradius);
@@ -198,11 +198,8 @@ BENCHFUN
     const double sigma = sharpenParam.deconvradius / scale;
     const float amount = sharpenParam.deconvamount / 100.f;
 
-    JaggedArray<char> impulse(W, H);
-    markImpulse(W, H, luminance, impulse, 2.f);
-
 #ifdef _OPENMP
-    #pragma omp parallel
+#   pragma omp parallel if (multiThread)
 #endif
     {
         for (int k = 0; k < sharpenParam.deconviter; k++) {
@@ -243,59 +240,11 @@ BENCHFUN
     delete blurbuffer;
 }
 
-} // namespace
 
-namespace rtengine {
-
-extern const Settings* settings;
-
-bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
+void unsharp_mask(float **Y, float **blend, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
 {
-    // LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-    // rgb2lab(*rgb, tmplab);
-    // LabImage *lab = &tmplab;
-
-    const int W = rgb->getWidth();
-    const int H = rgb->getHeight();
-
-    if ((!sharpenParam.enabled) || sharpenParam.amount < 1 || W < 8 || H < 8) {
-        return false;
-    }
-
-    //rgb->assignColorSpace(params->icm.workingProfile);
-    rgb->setMode(Imagefloat::Mode::YUV, multiThread);
-    float **Y = rgb->g.ptrs;
-
-    float contrast = pow_F(sharpenParam.contrast / 100.f, 1.2f);
-
-    if(showMask) {
-        // calculate contrast based blend factors to reduce sharpening in regions with low contrast
-        JaggedArray<float> blend(W, H);
-        buildBlendMask(Y, blend, W, H, contrast, 1.f);
-#ifdef _OPENMP
-        #pragma omp parallel for
-#endif
-        for (int i = 0; i < H; ++i) {
-            for (int j = 0; j < W; ++j) {
-                Y[i][j] = blend[i][j] * 65536.f;
-            }
-        }
-
-        //lab2rgb(*lab, *rgb);
-        //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
-        return true;
-    }
-
-    JaggedArray<float> b2(W, H);
-
-    if (sharpenParam.method == "rld") {
-        deconvsharpening(Y, b2, W, H, sharpenParam, contrast, scale);
-        //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
-        return false;
-    }
 BENCHFUN
 
-    // Rest is UNSHARP MASK
     float** b3 = nullptr;
 
     if (sharpenParam.edgesonly) {
@@ -306,22 +255,18 @@ BENCHFUN
         }
     }
 
-    // calculate contrast based blend factors to reduce sharpening in regions with low contrast
-    JaggedArray<float> blend(W, H);
-    //float contrast = sharpenParam.contrast / 100.f;
-    buildBlendMask(Y, blend, W, H, contrast);
-
+    JaggedArray<float> b2(W, H);
     JaggedArray<float> blur(W, H);
 
     const auto blurradius = sharpenParam.blurradius / scale;
     if (blurradius >= 0.25f) {
 #ifdef _OPENMP
-        #pragma omp parallel
+#       pragma omp parallel if (multiThread)
 #endif
         {
             gaussianBlur(Y, blur, W, H, blurradius);
 #ifdef _OPENMP
-            #pragma omp for
+#           pragma omp for
 #endif
             for (int i = 0; i < H; ++i) {
                 for (int j = 0; j < W; ++j) {
@@ -333,7 +278,7 @@ BENCHFUN
 
 
 #ifdef _OPENMP
-    #pragma omp parallel
+#   pragma omp parallel if (multiThread)
 #endif
     {
 
@@ -352,7 +297,7 @@ BENCHFUN
 
     if (!sharpenParam.halocontrol) {
 #ifdef _OPENMP
-        #pragma omp parallel for
+#       pragma omp parallel for if (multiThread)
 #endif
 
         for (int i = 0; i < H; i++)
@@ -360,7 +305,7 @@ BENCHFUN
                 constexpr float upperBound = 2000.f;  // WARNING: Duplicated value, it's baaaaaad !
                 float diff = base[i][j] - b2[i][j];
                 float delta = sharpenParam.threshold.multiply<float, float, float>(
-                                  min(fabsf(diff), upperBound),                   // X axis value = absolute value of the difference, truncated to the max value of this field
+                                  std::min(fabsf(diff), upperBound),                   // X axis value = absolute value of the difference, truncated to the max value of this field
                                   sharpenParam.amount * diff * 0.01f        // Y axis max value
                               );
                 Y[i][j] = intp(blend[i][j], Y[i][j] + delta, Y[i][j]);
@@ -371,7 +316,7 @@ BENCHFUN
             JaggedArray<float> labCopy(W, H);
 
 #ifdef _OPENMP
-            #pragma omp parallel for
+#           pragma omp parallel for if (multiThread)
 #endif
 
             for( int i = 0; i < H; i++ )
@@ -379,9 +324,9 @@ BENCHFUN
                     labCopy[i][j] = Y[i][j];
                 }
 
-            sharpenHaloCtrl (Y, b2, labCopy, blend, W, H, sharpenParam);
+            sharpenHaloCtrl(Y, b2, labCopy, blend, W, H, sharpenParam, multiThread);
         } else {
-            sharpenHaloCtrl (Y, b2, base, blend, W, H, sharpenParam);
+            sharpenHaloCtrl(Y, b2, base, blend, W, H, sharpenParam, multiThread);
         }
 
     }
@@ -396,7 +341,7 @@ BENCHFUN
 
     if (blurradius >= 0.25f) {
 #ifdef _OPENMP
-    #pragma omp parallel for
+#        pragma omp parallel for if (multiThread)
 #endif
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
@@ -404,9 +349,66 @@ BENCHFUN
             }
         }
     }
+}
 
-    //lab2rgb(*lab, *rgb);
-    //rgb->setMode(Imagefloat::Mode::RGB, multiThread);
+
+void apply_gamma(float **Y, int W, int H, float pivot, float gamma, bool multiThread)
+{
+#ifdef _OPENMP
+#    pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = pow_F(std::max(Y[y][x] / pivot, 1e-18f), gamma) * pivot;
+        }
+    }
+}
+
+} // namespace
+
+namespace rtengine {
+
+extern const Settings* settings;
+
+bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
+{
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+
+    if ((!sharpenParam.enabled) || sharpenParam.amount < 1 || W < 8 || H < 8) {
+        return false;
+    }
+
+    rgb->setMode(Imagefloat::Mode::YUV, multiThread);
+    float **Y = rgb->g.ptrs;
+    float contrast = pow_F(sharpenParam.contrast / 100.f, 1.2f);
+    JaggedArray<float> blend(W, H);
+    buildBlendMask(Y, blend, W, H, contrast, 1.f);
+    
+    if (showMask) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int i = 0; i < H; ++i) {
+            for (int j = 0; j < W; ++j) {
+                Y[i][j] = blend[i][j] * 65536.f;
+            }
+        }
+        return true;
+    }
+
+    rgb->normalizeFloatTo1();
+    apply_gamma(Y, W, H, 0.18f, 1.f/3.f, multiThread);
+    
+    if (sharpenParam.method == "rld") {
+        deconvsharpening(Y, blend, W, H, sharpenParam, scale, multiThread);
+    } else {
+        unsharp_mask(Y, blend, W, H, sharpenParam, scale, multiThread);
+    }
+
+    apply_gamma(Y, W, H, 0.18f, 3.f, multiThread);
+    rgb->normalizeFloatTo65535();
+
     return false;
 }
 
