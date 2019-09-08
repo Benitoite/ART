@@ -26,6 +26,7 @@ enum EditUniqueID {
 
     EUID_ToneCurve1,
     EUID_ToneCurve2,
+    EUID_ToneCurveSaturation,
     EUID_Lab_LCurve,
     EUID_Lab_CCurve,
     EUID_Lab_LCCurve,
@@ -41,10 +42,10 @@ enum EditUniqueID {
     EUID_HSV_H,
     EUID_HSV_S,
     EUID_HSV_V,
-    EUID_BlackWhiteLuminance,
-    EUID_BlackWhiteBeforeCurve,
-    EUID_BlackWhiteAfterCurve,
-    EUID_WW_HHCurve,
+    /* EUID_BlackWhiteLuminance, */
+    /* EUID_BlackWhiteBeforeCurve, */
+    /* EUID_BlackWhiteAfterCurve, */
+    /* EUID_WW_HHCurve, */
     EUID_LabMasks_H1,
     EUID_LabMasks_C1,
     EUID_LabMasks_L1,

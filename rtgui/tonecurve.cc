@@ -123,6 +123,7 @@ ToneCurve::ToneCurve():
     satcurveG->setCurveListener(this);
     satcurve = static_cast<FlatCurveEditor *>(satcurveG->addCurve(CT_Flat, "", nullptr, false, false));
     satcurve->setResetCurve(FlatCurveType(default_satcurve[0]), default_satcurve);
+    satcurve->setEditID(EUID_ToneCurveSaturation, BT_SINGLEPLANE_FLOAT);
     satcurve->setBottomBarBgGradient(bottomMilestones);
     satcurveG->curveListComplete();
     satcurveG->show();
@@ -180,7 +181,7 @@ void ToneCurve::setEditProvider(EditDataProvider *provider)
 {
     shape->setEditProvider(provider);
     shape2->setEditProvider(provider);
-    //satcurve->setEditProvider(provider);
+    satcurve->setEditProvider(provider);
 }
 
 

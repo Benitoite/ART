@@ -98,14 +98,21 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
 }
 
 
-void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const Glib::ustring &working_profile, bool multithread)
+void satcurve_lut(const FlatCurve &curve, LUTf &sat)
 {
-    LUTf sat(65536, LUT_CLIP_BELOW);
+    sat(65536, LUT_CLIP_BELOW);
     sat[0] = curve.getVal(0) * 2.f;
     for (int i = 1; i < 65536; ++i) {
-        float v = curve.getVal(pow_F(i / 65535.f, 1.f/2.2f));
+        float v = curve.getVal(Color::gamma2curve[i] / 65535.f);//pow_F(i / 65535.f, 1.f/2.2f));
         sat[i] = v * 2.f;
     }
+}
+
+
+void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const Glib::ustring &working_profile, bool multithread)
+{
+    LUTf sat;
+    satcurve_lut(curve, sat);
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
 
@@ -116,10 +123,28 @@ void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const Glib::ustring
         for (int x = 0; x < rgb->getWidth(); ++x) {
             float r = rgb->r(y, x), g = rgb->g(y, x), b = rgb->b(y, x);
             float Y = Color::rgbLuminance(r, g, b, ws);
-            float s = sat[Y];//sat[pow_F(max(Y, 1e-5f)/65535.f, 1.f/2.2f) * 65535.f];
+            float s = sat[Y];
             rgb->r(y, x) = Y + s * (r - Y);
             rgb->g(y, x) = Y + s * (g - Y);
             rgb->b(y, x) = Y + s * (b - Y);
+        }
+    }
+}
+
+
+void fill_satcurve_pipette(Imagefloat *rgb, PlanarWhateverData<float>* editWhatever, const Glib::ustring &working_profile, bool multithread)
+{
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < rgb->getHeight(); ++y) {
+        for (int x = 0; x < rgb->getWidth(); ++x) {
+            float r = rgb->r(y, x), g = rgb->g(y, x), b = rgb->b(y, x);
+            float Y = Color::rgbLuminance(r, g, b, ws);
+            float s = Color::gamma2curve[Y];
+            editWhatever->v(y, x) = LIM01(s / 65535.f);
         }
     }
 }
@@ -173,10 +198,13 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
     }
 
     Imagefloat *editImgFloat = nullptr;
+    PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID editID = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
 
     if ((editID == EUID_ToneCurve1 || editID == EUID_ToneCurve2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_IMAGEFLOAT) {
         editImgFloat = pipetteBuffer->getImgFloatBuffer();
+    } else if (editID == EUID_ToneCurveSaturation && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+        editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
 
     if (params->toneCurve.enabled) {
@@ -205,6 +233,10 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
             apply_tc(img, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
         }
 
+        if (editWhatever) {
+            fill_satcurve_pipette(img, editWhatever, params->icm.workingProfile, multiThread);
+        }
+
         const FlatCurve satcurve(params->toneCurve.saturation, false, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
         if (!satcurve.isIdentity()) {
             apply_satcurve(img, satcurve, params->icm.workingProfile, multiThread);
@@ -221,6 +253,8 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
             std::fill(editImgFloat->g(y), editImgFloat->g(y)+W, 0.f);
             std::fill(editImgFloat->b(y), editImgFloat->b(y)+W, 0.f);
         }
+    } else if (editWhatever) {
+        editWhatever->fill(0.f);
     }
 }
 
