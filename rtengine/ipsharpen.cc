@@ -151,7 +151,7 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
     }
 }
 
-void deconvsharpening(float** luminance, float** blend, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
+void deconvsharpening(float **luminance, float **blend, char **impulse, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
 {
     const auto blurradius = sharpenParam.blurradius / scale;
     if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
@@ -171,9 +171,6 @@ BENCHFUN
     }
 
     JaggedArray<float>* blurbuffer = nullptr;
-
-    JaggedArray<char> impulse(W, H);
-    markImpulse(W, H, luminance, impulse, 2.f);
 
     if (blurradius >= 0.25f) {
         blurbuffer = new JaggedArray<float>(W, H);
@@ -397,11 +394,17 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
         return true;
     }
 
+    std::unique_ptr<JaggedArray<char>> impulse;
+    if (sharpenParam.method == "rld") {
+        impulse.reset(new JaggedArray<char>(W, H));
+        markImpulse(W, H, Y, *impulse, 2.f);
+    }
+    
     rgb->normalizeFloatTo1();
     apply_gamma(Y, W, H, 0.18f, 1.f/3.f, multiThread);
     
     if (sharpenParam.method == "rld") {
-        deconvsharpening(Y, blend, W, H, sharpenParam, scale, multiThread);
+        deconvsharpening(Y, blend, *impulse, W, H, sharpenParam, scale, multiThread);
     } else {
         unsharp_mask(Y, blend, W, H, sharpenParam, scale, multiThread);
     }
