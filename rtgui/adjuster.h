@@ -145,7 +145,7 @@ public:
     void setValue (double a);
     void setLimits (double vmin, double vmax, double vstep, double vdefault);
     void setEnabled (bool enabled);
-    void setDefault (double def);
+    void setDefault (double def, bool hard=false);
     // will let the adjuster throw it's "changed" signal when the mouse button is released. Can work altogether with the delay value.
     void throwOnButtonRelease(bool throwOnBRelease = true);
     void setNbDisplayedChars (int nbr)

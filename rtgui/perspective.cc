@@ -223,11 +223,11 @@ void PerspCorrection::do_set_metadata(const rtengine::FramesMetaData *meta)
         double f35 = metadata->getFocalLen35mm();
         if (f > 0) {
             flength->setValue(f);
-            flength->setDefault(f);
+            flength->setDefault(f, true);
             if (f35 > 0) {
                 double crop = f35 / f;
                 cropfactor->setValue(crop);
-                cropfactor->setDefault(crop);
+                cropfactor->setDefault(crop, true);
             }
         }
     }

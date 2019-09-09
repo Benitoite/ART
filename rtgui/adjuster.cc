@@ -218,10 +218,13 @@ void Adjuster::throwOnButtonRelease(bool throwOnBRelease)
     eventPending = false;
 }
 
-void Adjuster::setDefault (double def)
+void Adjuster::setDefault (double def, bool hard)
 {
 
     defaultVal = shapeValue (def);
+    if (hard) {
+        ctorDefaultVal = defaultVal;
+    }
 }
 
 void Adjuster::setDefaultEditedState (EditedState eState)
