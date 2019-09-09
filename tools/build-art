@@ -28,7 +28,7 @@ repo="https://bitbucket.org/agriggio/art.git"
 # -----------------------------------------------------------------------------
 
 # The name of the project's standard branch, typically "master":
-master="alberto-dev"
+master="master"
 
 buildOnly="false"
 buildType="release"
