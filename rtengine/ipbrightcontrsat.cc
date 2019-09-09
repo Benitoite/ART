@@ -96,9 +96,9 @@ void ImProcFunctions::brightnessContrastSaturation(Imagefloat *rgb)
             vfloat tmpb;
             for (; j < W - 3; j += 4) {
                 //brightness/contrast
-                STVF(tmpr[0], curve(LVF(rgb->r(i, j))));
-                STVF(tmpg[0], curve(LVF(rgb->g(i, j))));
-                STVF(tmpb[0], curve(LVF(rgb->b(i, j))));
+                tmpr = curve(LVFU(rgb->r(i, j)));
+                tmpg = curve(LVFU(rgb->g(i, j)));
+                tmpb = curve(LVFU(rgb->b(i, j)));
                 for (int k = 0; k < 4; ++k) {
                     setUnlessOOG(rgb->r(i, j+k), rgb->g(i, j+k), rgb->b(i, j+k), tmpr[k], tmpg[k], tmpb[k]);
                 }
