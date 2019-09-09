@@ -2185,7 +2185,7 @@ TP_SHARPENING_ONLYEDGES;Sharpen only edges
 TP_SHARPENING_RADIUS;Radius
 TP_SHARPENING_RLD;RL Deconvolution
 TP_SHARPENING_RLD_AMOUNT;Amount
-TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP;Auto-calculation based on raw data\n(works only for raws with a Bayer matrix).
+TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP;Auto-calculation based on raw data
 TP_SHARPENING_RLD_DAMPING;Damping
 TP_SHARPENING_RLD_ITERATIONS;Iterations
 TP_SHARPENING_THRESHOLD;Threshold
