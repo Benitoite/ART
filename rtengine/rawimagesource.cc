@@ -36,6 +36,8 @@
 #include "rtlensfun.h"
 #include "pdaflinesfilter.h"
 #include "camconst.h"
+#define BENCHMARK
+#include "StopWatch.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -4325,5 +4327,6 @@ void RawImageSource::cleanup ()
     delete phaseOneIccCurve;
     delete phaseOneIccCurveInv;
 }
+
 
 } /* namespace */

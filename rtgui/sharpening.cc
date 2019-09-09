@@ -23,11 +23,13 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Sharpening::Sharpening () : FoldableToolPanel(this, "sharpening", M("TP_SHARPENING_LABEL"), true, true)
+Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENING_LABEL"), true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvSharpenContrast = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_CONTRAST");
     EvSharpenBlur = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_BLUR");
+    EvAutoRadiusOn = m->newEvent(SHARPENING | M_AUTOEXP, "HISTORY_MSG_SHARPENING_AUTORADIUS");
+    EvAutoRadiusOff = m->newEvent(M_VOID, "HISTORY_MSG_SHARPENING_AUTORADIUS");
 
     Gtk::HBox* hb = Gtk::manage (new Gtk::HBox ());
     hb->show ();
@@ -52,6 +54,7 @@ Sharpening::Sharpening () : FoldableToolPanel(this, "sharpening", M("TP_SHARPENI
 
     rld = new Gtk::VBox ();
     dradius = Gtk::manage (new Adjuster (M("TP_SHARPENING_EDRADIUS"), 0.4, 2.5, 0.01, 0.75));
+    dradius->addAutoButton(M("TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP"));
     damount = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_AMOUNT"), 0.0, 100, 1, 100));
     ddamping = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_DAMPING"), 0, 100, 1, 0));
     diter = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_ITERATIONS"), 5, 100, 1, 30));
@@ -143,6 +146,7 @@ Sharpening::Sharpening () : FoldableToolPanel(this, "sharpening", M("TP_SHARPENI
 
 Sharpening::~Sharpening ()
 {
+    idle_register.destroy();
 
     delete usm;
     delete rld;
@@ -180,6 +184,7 @@ void Sharpening::read(const ProcParams* pp)
     damount->setValue       (pp->sharpening.deconvamount);
     diter->setValue         (pp->sharpening.deconviter);
     ddamping->setValue      (pp->sharpening.deconvdamping);
+    dradius->setAutoValue(pp->sharpening.deconvAutoRadius);
 
     removeIfThere (edgebin, edgebox, false);
 
@@ -220,6 +225,7 @@ void Sharpening::write(ProcParams* pp)
     pp->sharpening.deconviter       = (int)diter->getValue ();
     pp->sharpening.deconvamount     = (int)damount->getValue ();
     pp->sharpening.deconvdamping    = (int)ddamping->getValue ();
+    pp->sharpening.deconvAutoRadius = dradius->getAutoValue();
 
     if (method->get_active_row_number() == 0) {
         pp->sharpening.method = "usm";
@@ -286,6 +292,10 @@ void Sharpening::adjusterChanged(Adjuster* a, double newval)
 
 void Sharpening::adjusterAutoToggled(Adjuster* a, bool newval)
 {
+    if (listener && a == dradius) {
+        auto e = (!newval) ? EvAutoRadiusOff : EvAutoRadiusOn;
+        listener->panelChanged(e, newval ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+    }
 }
 
 void Sharpening::adjusterChanged(ThresholdAdjuster* a, double newBottom, double newTop)
@@ -395,4 +405,23 @@ void Sharpening::trimValues (rtengine::procparams::ProcParams* pp)
     eradius->trimValue(pp->sharpening.edges_radius);
     etolerance->trimValue(pp->sharpening.edges_tolerance);
     hcamount->trimValue(pp->sharpening.halocontrol_amount);
+}
+
+
+void Sharpening::autoDeconvRadiusChanged(float radius)
+{
+    idle_register.add(
+        [this, radius]() -> bool
+        {
+            disableListener();
+            if (radius < 0) {
+                dradius->delAutoButton();
+            } else {
+                dradius->addAutoButton(M("TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP"));
+                dradius->setValue(radius);
+            }
+            enableListener();
+            return false;
+        }
+    );
 }

@@ -182,6 +182,7 @@ void Adjuster::addAutoButton (Glib::ustring tooltip)
         } else {
             attach_next_to(*automatic, *reset, Gtk::POS_RIGHT, 1, 1);
         }
+        automatic->show();
     }
 }
 

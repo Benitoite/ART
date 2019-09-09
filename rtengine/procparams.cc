@@ -890,7 +890,8 @@ SharpeningParams::SharpeningParams() :
     deconvamount(100),
     deconvradius(0.75),
     deconviter(30),
-    deconvdamping(0)
+    deconvdamping(0),
+    deconvAutoRadius(false)
 {
 }
 
@@ -912,7 +913,8 @@ bool SharpeningParams::operator ==(const SharpeningParams& other) const
         && deconvamount == other.deconvamount
         && deconvradius == other.deconvradius
         && deconviter == other.deconviter
-        && deconvdamping == other.deconvdamping;
+        && deconvdamping == other.deconvdamping
+        && deconvAutoRadius == other.deconvAutoRadius;
 }
 
 bool SharpeningParams::operator !=(const SharpeningParams& other) const
@@ -2313,6 +2315,7 @@ void ProcParams::setDefaults()
     prsharpening.deconvradius = 0.45;
     prsharpening.deconviter = 100;
     prsharpening.deconvdamping = 0;
+    prsharpening.deconvAutoRadius = false;
 
     wb = WBParams();
 
@@ -2583,6 +2586,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "DeconvAmount", sharpening.deconvamount, keyFile);
             saveToKeyfile("Sharpening", "DeconvDamping", sharpening.deconvdamping, keyFile);
             saveToKeyfile("Sharpening", "DeconvIterations", sharpening.deconviter, keyFile);
+            saveToKeyfile("Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius, keyFile);
         }
 
 // WB
@@ -3404,6 +3408,7 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Sharpening", "DeconvAmount", sharpening.deconvamount);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvDamping", sharpening.deconvdamping);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvIterations", sharpening.deconviter);
+            assignFromKeyfile(keyFile, "Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius);
         }
 
         if (keyFile.has_group("White Balance") && RELEVANT_(wb)) {

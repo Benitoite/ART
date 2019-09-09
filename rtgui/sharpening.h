@@ -25,7 +25,7 @@
 #include "thresholdadjuster.h"
 #include "toolpanel.h"
 
-class Sharpening : public ToolParamBlock, public ThresholdAdjusterListener, public AdjusterListener, public FoldableToolPanel
+class Sharpening : public ToolParamBlock, public ThresholdAdjusterListener, public AdjusterListener, public FoldableToolPanel, public rtengine::AutoDeconvRadiusListener
 {
 
 protected:
@@ -58,8 +58,12 @@ protected:
 
     rtengine::ProcEvent EvSharpenContrast;
     rtengine::ProcEvent EvSharpenBlur;
-public:
+    rtengine::ProcEvent EvAutoRadiusOn;
+    rtengine::ProcEvent EvAutoRadiusOff;
 
+    IdleRegister idle_register;
+    
+public:
     Sharpening();
     ~Sharpening() override;
 
@@ -79,7 +83,9 @@ public:
     void adjusterChanged(ThresholdAdjuster* a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override;
     void adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int newTopL, int newBottomR, int newTopR) override;
 
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+
+    void autoDeconvRadiusChanged(float radius) override;
 };
 
 #endif

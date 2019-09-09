@@ -251,6 +251,12 @@ private:
         if (params.logenc.enabled && params.logenc.autocompute) {
             ipf.getAutoLog(imgsrc, params.logenc);
         }
+        if (params.sharpening.enabled && params.sharpening.deconvAutoRadius) {
+            float r = 0.f;
+            if (imgsrc->getDeconvAutoRadius(&r)) {
+                params.sharpening.deconvradius = r;
+            }
+        }
 
         if (flush) {
             imgsrc->flushRawData();

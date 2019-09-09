@@ -119,6 +119,7 @@ protected:
     std::vector<SizeListener*> sizeListeners;
 
     AutoLogListener *autoLogListener;
+    AutoDeconvRadiusListener *autoRadiusListener;
 
     std::vector<Crop*> crops;
 
@@ -308,6 +309,11 @@ public:
     void setAutoLogListener(AutoLogListener *l)
     {
         autoLogListener = l;
+    }
+
+    void setAutoDeconvRadiusListener(AutoDeconvRadiusListener *l)
+    {
+        autoRadiusListener = l;
     }
 
     void saveInputICCReference (const Glib::ustring& fname, bool apply_wb) override;

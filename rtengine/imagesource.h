@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -164,6 +165,8 @@ public:
         return this;
     }
     virtual void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) = 0;
+
+    virtual bool getDeconvAutoRadius(float *out=nullptr) { return false; }
 };
 }
 #endif

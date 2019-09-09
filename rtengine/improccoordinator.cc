@@ -91,6 +91,7 @@ ImProcCoordinator::ImProcCoordinator():
     dehaListener(nullptr),
     hListener(nullptr),
     autoLogListener(nullptr),
+    autoRadiusListener(nullptr),
     resultValid(false),
     lastOutputProfile("BADFOOD"),
     lastOutputIntent(RI__COUNT),
@@ -400,7 +401,15 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         progress("Preparing shadow/highlight map...", 100 * readyphase / numofphases);
     
         readyphase++;
-    
+
+        if ((todo & M_INIT) && autoRadiusListener) {
+            if (!imgsrc->getDeconvAutoRadius(nullptr)) {
+                autoRadiusListener->autoDeconvRadiusChanged(-1);
+            } else {
+                autoRadiusListener->autoDeconvRadiusChanged(params.sharpening.deconvradius);
+            }
+        }
+        
         if (todo & M_AUTOEXP) {
             if (params.exposure.enabled && params.exposure.autoexp) {
                 LUTu aehist;
@@ -430,6 +439,18 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 ipf.getAutoLog(imgsrc, params.logenc);
                 if (autoLogListener) {
                     autoLogListener->logEncodingChanged(params.logenc);
+                }
+            }
+
+            if (params.sharpening.deconvAutoRadius) {
+                float r = -1.f;
+                if (imgsrc->getDeconvAutoRadius(&r)) {
+                    params.sharpening.deconvradius = r;
+                } else {
+                    r = -1.f;
+                }
+                if (autoRadiusListener) {
+                    autoRadiusListener->autoDeconvRadiusChanged(r);
                 }
             }
         }

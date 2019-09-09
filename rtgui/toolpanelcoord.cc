@@ -578,6 +578,7 @@ void ToolPanelCoordinator::initImage (rtengine::StagedImageProcessor* ipc_, bool
         ipc->setSizeListener (resize);
         ipc->setImageTypeListener (this);
         ipc->setAutoLogListener(logenc);
+        ipc->setAutoDeconvRadiusListener(sharpening);
         flatfield->setShortcutPath (Glib::path_get_dirname (ipc->getInitialImage()->getFileName()));
 
         icm->setRawMeta (raw, (const rtengine::FramesData*)pMetaData);

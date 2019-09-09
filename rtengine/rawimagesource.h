@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -299,6 +300,7 @@ protected:
     void    vflip       (Imagefloat* im);
     void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) override;
 
+    bool getDeconvAutoRadius(float *out=nullptr) override;
 };
 }
 #endif
