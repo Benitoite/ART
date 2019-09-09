@@ -100,7 +100,7 @@ inline int mat3inv(float *const dst, const float *const src)
 procparams::PerspectiveParams import_meta(const procparams::PerspectiveParams &pp, const FramesMetaData *metadata)
 {
     procparams::PerspectiveParams ret(pp);
-    if (metadata) {
+    if (metadata && ret.flength == 0) {
         double f = metadata->getFocalLen();
         double f35 = metadata->getFocalLen35mm();
         if (f > 0 && f35 > 0) {
@@ -128,7 +128,7 @@ PerspectiveCorrection::PerspectiveCorrection():
 void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill, const FramesMetaData *metadata)
 {
     auto pp = import_meta(params, metadata);
-    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 0.f, params.aspect, width, height, ASHIFT_HOMOGRAPH_INVERTED);
+    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 100.f, params.aspect, width, height, ASHIFT_HOMOGRAPH_INVERTED);
 
     ok_ = true;
     calc_scale(width, height, pp, fill);
@@ -257,7 +257,7 @@ void get_view_size(int w, int h, const procparams::PerspectiveParams &params, do
     auto corners = get_corners(w, h);
 
     float homo[3][3];
-    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 0.f, params.aspect, w, h, ASHIFT_HOMOGRAPH_FORWARD);
+    homography((float *)homo, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 100.f, params.aspect, w, h, ASHIFT_HOMOGRAPH_FORWARD);
     
     for (auto &c : corners) {
         float pin[3] = { float(c.x), float(c.y), 1.f };
