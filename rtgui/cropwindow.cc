@@ -1335,11 +1335,16 @@ void CropWindow::updateCursor(int x, int y, int bstate)
         newType = CSMove2D;
     }
 
+    bool need_redraw = (newType != cursor_type) && (newType == CSCropSelect || cursor_type == CSCropSelect);
+
     if (newType != cursor_type) {
         cursor_type = newType;
         CursorManager::setWidgetCursor(iarea->get_window(), cursor_type);
     }
 
+    if (need_redraw) {
+        iarea->redraw();
+    }
 }
 
 void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
@@ -1399,7 +1404,8 @@ void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
         }
     } else {
         CropParams cropParams = cropHandler.cropParams;
-        if (state == SNormal) {
+        bool state_normal = (state == SNormal && iarea->getToolMode() != TMCropSelect);
+        if (state_normal) {
             switch (options.cropGuides) {
             case Options::CROP_GUIDE_NONE:
                 cropParams.guide = "None";
@@ -1411,7 +1417,7 @@ void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
                 break;
             }
         }
-        bool useBgColor = (state == SNormal || state == SDragPicker || state == SDeletePicker || state == SEditDrag1);
+        bool useBgColor = (state_normal || state == SDragPicker || state == SDeletePicker || state == SEditDrag1);
 
         if (cropHandler.cropPixbuf) {
             imgW = cropHandler.cropPixbuf->get_width ();

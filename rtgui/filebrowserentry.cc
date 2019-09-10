@@ -173,8 +173,6 @@ void FileBrowserEntry::customBackBufferUpdate (Cairo::RefPtr<Cairo::Context> c)
             rtengine::procparams::CropParams cparams = thumbnail->getProcParams().crop;
             switch (options.cropGuides) {
             case Options::CROP_GUIDE_NONE:
-                cparams.guide = "None";
-                break;
             case Options::CROP_GUIDE_FRAME:
                 cparams.guide = "Frame";
                 break;

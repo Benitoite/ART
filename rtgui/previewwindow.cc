@@ -89,8 +89,6 @@ void PreviewWindow::updatePreviewImage ()
                 rtengine::CropParams cparams = previewHandler->getCropParams();
                 switch (options.cropGuides) {
                 case Options::CROP_GUIDE_NONE:
-                    cparams.guide = "None";
-                    break;
                 case Options::CROP_GUIDE_FRAME:
                     cparams.guide = "Frame";
                     break;
