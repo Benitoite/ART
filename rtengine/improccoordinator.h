@@ -101,8 +101,6 @@ protected:
     ProgressListener* plistener;
     PreviewImageListener* imageListener;
     AutoExpListener* aeListener;
-    AutoCamListener* acListener;
-    AutoBWListener* abwListener;
     AutoWBListener* awbListener;
     FlatFieldAutoClipListener *flatFieldAutoClipListener;
     AutoContrastListener *bayerAutoContrastListener;
@@ -110,10 +108,7 @@ protected:
     FrameCountListener *frameCountListener;
     ImageTypeListener *imageTypeListener;
 
-    AutoColorTonListener* actListener;
     AutoChromaListener* adnListener;
-    WaveletListener* awavListener;
-    RetinexListener* dehaListener;
 
     HistogramListener* hListener;
     std::vector<SizeListener*> sizeListeners;
@@ -253,33 +248,13 @@ public:
     {
         hListener = h;
     }
-    void setAutoCamListener  (AutoCamListener* acl) override
-    {
-        acListener = acl;
-    }
-    void setAutoBWListener   (AutoBWListener* abw) override
-    {
-        abwListener = abw;
-    }
     void setAutoWBListener   (AutoWBListener* awb) override
     {
         awbListener = awb;
     }
-    void setAutoColorTonListener   (AutoColorTonListener* bwct) override
-    {
-        actListener = bwct;
-    }
     void setAutoChromaListener  (AutoChromaListener* adn) override
     {
         adnListener = adn;
-    }
-    void setRetinexListener  (RetinexListener* adh) override
-    {
-        dehaListener = adh;
-    }
-    void setWaveletListener  (WaveletListener* awa) override
-    {
-        awavListener = awa;
     }
 
     void setFrameCountListener  (FrameCountListener* fcl) override

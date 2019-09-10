@@ -314,15 +314,6 @@ public:
 };
 
 
-class AutoCamListener
-{
-public :
-    virtual ~AutoCamListener() = default;
-    virtual void autoCamChanged(double ccam, double ccamout) = 0;
-    virtual void adapCamChanged(double cadap) = 0;
-    virtual void ybCamChanged(int yb) = 0;
-};
-
 class AutoChromaListener
 {
 public :
@@ -330,27 +321,6 @@ public :
     virtual void chromaChanged(double autchroma, double autred, double autblue) = 0;
     virtual void noiseChanged(double nresid, double highresid) = 0;
     virtual void noiseTilePrev(int tileX, int tileY, int prevX, int prevY, int sizeT, int sizeP) = 0;
-};
-
-class RetinexListener
-{
-public:
-    virtual ~RetinexListener() = default;
-    virtual void minmaxChanged(double cdma, double cdmin, double mini, double maxi, double Tmean, double Tsigma, double Tmin, double Tmax) = 0;
-};
-
-class AutoColorTonListener
-{
-public:
-    virtual ~AutoColorTonListener() = default;
-    virtual void autoColorTonChanged(int bwct, int satthres, int satprot) = 0;
-};
-
-class AutoBWListener
-{
-public:
-    virtual ~AutoBWListener() = default;
-    virtual void BWChanged(double redbw, double greenbw, double bluebw) = 0;
 };
 
 class AutoWBListener
@@ -386,14 +356,6 @@ class AutoContrastListener
 public :
     virtual ~AutoContrastListener() = default;
     virtual void autoContrastChanged (double autoContrast) = 0;
-};
-
-class WaveletListener
-{
-public:
-    virtual ~WaveletListener() = default;
-    virtual void wavChanged(double nlevel) = 0;
-
 };
 
 /** This class represents a detailed part of the image (looking through a kind of window).
@@ -490,17 +452,12 @@ public:
     virtual void        setAutoExpListener      (AutoExpListener* l) = 0;
     virtual void        setHistogramListener    (HistogramListener *l) = 0;
     virtual void        setPreviewImageListener (PreviewImageListener* l) = 0;
-    virtual void        setAutoCamListener      (AutoCamListener* l) = 0;
     virtual void        setFlatFieldAutoClipListener   (FlatFieldAutoClipListener* l) = 0;
     virtual void        setFrameCountListener   (FrameCountListener* l) = 0;
     virtual void        setBayerAutoContrastListener (AutoContrastListener* l) = 0;
     virtual void        setXtransAutoContrastListener (AutoContrastListener* l) = 0;
-    virtual void        setAutoBWListener       (AutoBWListener* l) = 0;
     virtual void        setAutoWBListener       (AutoWBListener* l) = 0;
-    virtual void        setAutoColorTonListener (AutoColorTonListener* l) = 0;
     virtual void        setAutoChromaListener   (AutoChromaListener* l) = 0;
-    virtual void        setRetinexListener      (RetinexListener* l) = 0;
-    virtual void        setWaveletListener      (WaveletListener* l) = 0;
     virtual void        setImageTypeListener    (ImageTypeListener* l) = 0;
     virtual void setAutoLogListener(AutoLogListener *l) = 0;
     virtual void setAutoDeconvRadiusListener(AutoDeconvRadiusListener *l) = 0;
