@@ -199,8 +199,8 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
 
     DynamicProfilePanel *dynProfilePanel;
 
-    Gtk::ComboBoxText *cropGuidesCombo;
-    Gtk::CheckButton *cropAutoFitCB;
+    // Gtk::ComboBoxText *cropGuidesCombo;
+    // Gtk::CheckButton *cropAutoFitCB;
 
     Gtk::CheckButton *denoiseZoomedOut;
     Gtk::CheckButton *thumbRatingMode;

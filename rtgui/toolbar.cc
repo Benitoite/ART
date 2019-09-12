@@ -450,7 +450,11 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
 
         case GDK_KEY_c:
         case GDK_KEY_C:
-            crop_pressed ();
+            if (current != TMCropSelect) {
+                crop_pressed();
+            } else {
+                hand_pressed();
+            }
             return true;
 
         case GDK_KEY_s:
