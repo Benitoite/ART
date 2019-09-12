@@ -738,6 +738,7 @@ void ToolPanelCoordinator::autoCropRequested ()
     }
 
     int x1, y1, x2, y2, w, h;
+    toolBar->setTool(TMCropSelect);
     ipc->getAutoCrop (crop->getRatio(), x1, y1, w, h);
     x2 = x1 + w - 1;
     y2 = y1 + h - 1;
@@ -829,14 +830,35 @@ void ToolPanelCoordinator::spotWBRequested (int size)
     toolBar->setTool (TMSpotWB);
 }
 
-void ToolPanelCoordinator::cropSelectRequested ()
-{
 
+void ToolPanelCoordinator::cropSelectRequested()
+{
     if (!ipc) {
         return;
     }
+    toolBar->setTool(TMCropSelect);
+}
 
-    toolBar->setTool (TMCropSelect);
+
+void ToolPanelCoordinator::cropEnableChanged(bool enabled)
+{
+    if (!ipc) {
+        return;
+    }
+    if (!enabled && toolBar->getTool() == TMCropSelect) {
+        toolBar->setTool(TMHand);
+    }
+}
+
+
+void ToolPanelCoordinator::cropResetRequested()
+{
+    if (!ipc) {
+        return;
+    }
+    if (toolBar->getTool() == TMCropSelect) {
+        toolBar->setTool(TMHand);
+    }
 }
 
 void ToolPanelCoordinator::saveInputICCReference(const Glib::ustring& fname, bool apply_wb)

@@ -303,7 +303,9 @@ public:
     void spotWBRequested (int size) override;
 
     // croppanellistener interface
-    void cropSelectRequested () override;
+    void cropSelectRequested() override;
+    void cropResetRequested() override;
+    void cropEnableChanged(bool enabled) override;
 
     // icmpanellistener interface
     void saveInputICCReference(const Glib::ustring& fname, bool apply_wb) override;

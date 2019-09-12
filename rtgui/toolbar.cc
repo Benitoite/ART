@@ -353,6 +353,11 @@ void ToolBar::switchColorPickersVisibility()
 
 void ToolBar::crop_pressed ()
 {
+    if (current == TMCropSelect) {
+        hand_pressed();
+        return;
+    }
+    
     {
     ConnectionBlocker handBlocker(handConn);
     ConnectionBlocker straBlocker(straConn);
@@ -442,7 +447,7 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
         case GDK_KEY_w:
         case GDK_KEY_W:
             if(wbTool) {
-                wb_pressed ();
+                wb_pressed();
                 return true;
             }
 
@@ -450,21 +455,17 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
 
         case GDK_KEY_c:
         case GDK_KEY_C:
-            if (current != TMCropSelect) {
-                crop_pressed();
-            } else {
-                hand_pressed();
-            }
+            crop_pressed();
             return true;
 
         case GDK_KEY_s:
         case GDK_KEY_S:
-            stra_pressed ();
+            stra_pressed();
             return true;
 
         case GDK_KEY_h:
         case GDK_KEY_H:
-            hand_pressed ();
+            hand_pressed();
             return true;
         }
     } else {

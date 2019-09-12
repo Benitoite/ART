@@ -513,9 +513,8 @@ bool Crop::inImageArea (int x, int y)
 
 void Crop::selectPressed ()
 {
-
     if (clistener) {
-        clistener->cropSelectRequested ();
+        clistener->cropSelectRequested();
     }
 }
 
@@ -544,7 +543,6 @@ void Crop::doresetCrop ()
 
 void Crop::notifyListener ()
 {
-
     if (listener && getEnabled ()) {
         if (nw == 1 && nh == 1) {
             setEnabled(false);
@@ -552,7 +550,10 @@ void Crop::notifyListener ()
             ny = (int)y->get_value ();
             nw = (int)w->get_value ();
             nh = (int)h->get_value ();
-            listener->panelChanged (EvCrop, M("GENERAL_DISABLED"));
+            if (clistener) {
+                clistener->cropResetRequested();
+            }
+            listener->panelChanged(EvCrop, M("GENERAL_DISABLED"));
         } else {
             listener->panelChanged (EvCrop, Glib::ustring::compose ("%1=%2, %3=%4\n%5=%6, %7=%8", M("TP_CROP_X"), nx, M("TP_CROP_Y"), ny, M("TP_CROP_W"), nw, M("TP_CROP_H"), nh));
         }
@@ -561,7 +562,9 @@ void Crop::notifyListener ()
 
 void Crop::enabledChanged ()
 {
-
+    if (clistener) {
+        clistener->cropEnableChanged(getEnabled());
+    }
     if (listener) {
         if (get_inconsistent()) {
             listener->panelChanged (EvCrop, M("GENERAL_UNCHANGED"));

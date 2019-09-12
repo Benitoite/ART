@@ -32,6 +32,8 @@ public:
     virtual ~CropPanelListener() = default;
 
     virtual void cropSelectRequested() = 0;
+    virtual void cropEnableChanged(bool enabled) = 0;
+    virtual void cropResetRequested() = 0;
 };
 
 class Crop final :

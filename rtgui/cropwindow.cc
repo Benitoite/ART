@@ -373,7 +373,7 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                     }
 
                     const bool crop_resize_allowed = (bstate & GDK_CONTROL_MASK) || (iarea->getToolMode() == TMCropSelect);
-                    const bool crop_move_allowed = (bstate & GDK_SHIFT_MASK) || (iarea->getToolMode() == TMCropSelect);
+                    const bool crop_move_allowed = (bstate & GDK_SHIFT_MASK) || (iarea->getToolMode() == TMCropSelect && !(bstate & GDK_CONTROL_MASK));
 
                     if (iarea->getToolMode () == TMColorPicker) {
                         if (hoveredPicker) {
@@ -1295,7 +1295,7 @@ void CropWindow::updateCursor(int x, int y, int bstate)
                 if (onArea(CropObserved, x, y)) {
                     newType = CSMove;
                 } else {
-                    newType = CSCrosshair;
+                    newType = CSArrow; //CSCrosshair;
                 }
             } else if (tm == TMSpotWB) {
                 newType = CSSpotWB;
