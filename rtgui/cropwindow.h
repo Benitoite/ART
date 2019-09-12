@@ -31,6 +31,7 @@
 #include "pointermotionlistener.h"
 #include "cursormanager.h"
 #include "edit.h"
+#include "toolenum.h"
 
 class CropWindow;
 
@@ -67,6 +68,7 @@ class CropWindow : public LWButtonListener, public CropDisplayHandler, public Ed
     bool fitZoom;
     //bool isLowUpdatePriority;
     CursorShape cursor_type;
+    ToolMode prev_tool_mode;
 
     // color pickers
     std::vector<LockableColorPicker*> colorPickers;

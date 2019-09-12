@@ -247,7 +247,7 @@ void writeFailed (Gtk::Window& parent, const std::string& filename)
     msgd.run ();
 }
 
-void drawCrop (Cairo::RefPtr<Cairo::Context> cr, int imx, int imy, int imw, int imh, int startx, int starty, double scale, const rtengine::procparams::CropParams& cparams, bool drawGuide, bool useBgColor, bool fullImageVisible)
+void drawCrop(Glib::RefPtr<Gtk::StyleContext> style, Cairo::RefPtr<Cairo::Context> cr, int imx, int imy, int imw, int imh, int startx, int starty, double scale, const rtengine::procparams::CropParams& cparams, bool drawGuide, bool useBgColor, bool fullImageVisible)
 {
 
     cr->set_line_width (0.);
@@ -260,7 +260,7 @@ void drawCrop (Cairo::RefPtr<Cairo::Context> cr, int imx, int imy, int imw, int 
     double c2y = (cparams.y + cparams.h - starty) * scale - (fullImageVisible ? 0.0 : 1.0);
 
     // crop overlay color, linked with crop windows background
-    if (options.bgcolor == 0 || !useBgColor) {
+    if ((!style && options.bgcolor == 0) || !useBgColor) {
         cr->set_source_rgba (options.cutOverlayBrush[0], options.cutOverlayBrush[1], options.cutOverlayBrush[2], options.cutOverlayBrush[3]);
     } else if (options.bgcolor == 1) {
         cr->set_source_rgb (0, 0, 0);
@@ -270,11 +270,18 @@ void drawCrop (Cairo::RefPtr<Cairo::Context> cr, int imx, int imy, int imw, int 
         cr->set_source_rgb (0.467, 0.467, 0.467);
     }
 
-    cr->rectangle (imx, imy, imw + 0.5, round(c1y) + 0.5);
-    cr->rectangle (imx, round(imy + c2y) + 0.5, imw + 0.5, round(imh - c2y) + 0.5);
-    cr->rectangle (imx, round(imy + c1y) + 0.5, round(c1x) + 0.5, round(c2y - c1y + 1) + 0.5);
-    cr->rectangle (round(imx + c2x) + 0.5, round(imy + c1y) + 0.5, round(imw - c2x) + 0.5, round(c2y - c1y + 1) + 0.5);
-    cr->fill ();
+    if (style && options.bgcolor == 0 && useBgColor) {
+        style->render_background(cr, imx, imy, imw + 0.5, round(c1y) + 0.5);
+        style->render_background(cr, imx, round(imy + c2y) + 0.5, imw + 0.5, round(imh - c2y) + 0.5);
+        style->render_background(cr, imx, round(imy + c1y) + 0.5, round(c1x) + 0.5, round(c2y - c1y + 1) + 0.5);
+        style->render_background(cr, round(imx + c2x) + 0.5, round(imy + c1y) + 0.5, round(imw - c2x) + 0.5, round(c2y - c1y + 1) + 0.5);
+    } else {    
+        cr->rectangle (imx, imy, imw + 0.5, round(c1y) + 0.5);
+        cr->rectangle (imx, round(imy + c2y) + 0.5, imw + 0.5, round(imh - c2y) + 0.5);
+        cr->rectangle (imx, round(imy + c1y) + 0.5, round(c1x) + 0.5, round(c2y - c1y + 1) + 0.5);
+        cr->rectangle (round(imx + c2x) + 0.5, round(imy + c1y) + 0.5, round(imw - c2x) + 0.5, round(c2y - c1y + 1) + 0.5);
+        cr->fill ();
+    }
 
     // rectangle around the cropped area and guides
     if (cparams.guide != "None" && drawGuide) {
@@ -497,6 +504,12 @@ void drawCrop (Cairo::RefPtr<Cairo::Context> cr, int imx, int imy, int imw, int 
     }
 
     cr->reset_clip ();
+}
+
+void drawCrop(Cairo::RefPtr<Cairo::Context> cr, int imx, int imy, int imw, int imh, int startx, int starty, double scale, const rtengine::procparams::CropParams& cparams, bool drawGuide, bool useBgColor, bool fullImageVisible)
+{
+    Glib::RefPtr<Gtk::StyleContext> style(nullptr);
+    drawCrop(style, cr, imx, imy, imw, imh, startx, starty, scale, cparams, drawGuide, useBgColor, fullImageVisible);
 }
 
 /*
