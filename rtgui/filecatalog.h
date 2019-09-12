@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -150,10 +151,7 @@ public:
     // thumbnail browsers
     FileBrowser* fileBrowser;
 
-    CoarsePanel* coarsePanel;
-    ToolBar* toolBar;
-
-    FileCatalog (CoarsePanel* cp, ToolBar* tb, FilePanel* filepanel);
+    FileCatalog(FilePanel* filepanel);
     ~FileCatalog() override;
     void dirSelected (const Glib::ustring& dirname, const Glib::ustring& openfile);
     void closeDir    ();

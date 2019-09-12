@@ -88,8 +88,6 @@ private:
 
     Inspector* inspectorPanel;
     Gtk::VPaned* tpcPaned;
-    //BatchToolPanelCoordinator* tpc;
-    ImageAreaToolListener *iatl_;
     History* history;
     RTWindow* parent;
     Gtk::Notebook* rightNotebook;

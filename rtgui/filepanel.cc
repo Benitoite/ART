@@ -22,26 +22,6 @@
 #include "inspector.h"
 #include "placesbrowser.h"
 
-namespace {
-
-class DummyImageAreaToolListener: public ImageAreaToolListener {
-public:
-    DummyImageAreaToolListener()
-    {
-        tb_ = Gtk::manage(new ToolBar());
-    }
-    void spotWBselected(int x, int y, Thumbnail* thm = nullptr) {}
-    void sharpMaskSelected(bool sharpMask) {}
-    int getSpotWBRectSize() const { return 1; }
-    void cropSelectionReady() {}
-    void rotateSelectionReady(double rotate_deg, Thumbnail* thm = nullptr) {}
-    ToolBar* getToolBar() const { return tb_; }
-    CropGUIListener* startCropEditing(Thumbnail* thm = nullptr) { return nullptr; }
-private:
-    ToolBar *tb_;
-};
-
-} // namespace
 
 FilePanel::FilePanel () :
     parent(nullptr), error(0),
@@ -75,11 +55,8 @@ FilePanel::FilePanel () :
 
     dirpaned->pack1 (*placespaned, false, false);
 
-    //tpc = new BatchToolPanelCoordinator (this);
-    iatl_ = new DummyImageAreaToolListener();
     // Location bar
-    fileCatalog = Gtk::manage ( new FileCatalog (Gtk::manage(new CoarsePanel())/*tpc->coarse*/, iatl_->getToolBar()/*tpc->getToolBar()*/, this) );
-//    fileCatalog = Gtk::manage ( new FileCatalog (tpc->coarse, tpc->getToolBar(), this) );
+    fileCatalog = Gtk::manage(new FileCatalog(this));
     // Holds the location bar and thumbnails
     ribbonPane = Gtk::manage ( new Gtk::Paned() );
     ribbonPane->add(*fileCatalog);
@@ -121,9 +98,6 @@ FilePanel::FilePanel () :
     // sExportPanel->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 
     fileCatalog->setFilterPanel (filterPanel);
-    // fileCatalog->setExportPanel (exportPanel);
-    //fileCatalog->setImageAreaToolListener (tpc);
-    fileCatalog->setImageAreaToolListener(iatl_);
 
     //------------------
 
@@ -184,9 +158,6 @@ FilePanel::~FilePanel ()
     if (inspectorPanel) {
         delete inspectorPanel;
     }
-
-//    delete tpc;
-    delete iatl_;
 }
 
 void FilePanel::on_realize ()

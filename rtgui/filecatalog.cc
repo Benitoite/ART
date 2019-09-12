@@ -42,7 +42,7 @@ using namespace std;
 
 #define CHECKTIME 2000
 
-FileCatalog::FileCatalog (CoarsePanel* cp, ToolBar* tb, FilePanel* filepanel) :
+FileCatalog::FileCatalog(FilePanel* filepanel) :
     filepanel(filepanel),
     selectedDirectoryId(1),
     actionNextPrevious(NAV_NONE),
@@ -52,12 +52,9 @@ FileCatalog::FileCatalog (CoarsePanel* cp, ToolBar* tb, FilePanel* filepanel) :
     hbToolBar1STB(nullptr),
     hasValidCurrentEFS(false),
     filterPanel(nullptr),
-//    exportPanel(nullptr),
     previewsToLoad(0),
     previewsLoaded(0),
-    modifierKey(0),
-    coarsePanel(cp),
-    toolBar(tb)
+    modifierKey(0)
 {
 
     inTabMode = false;
@@ -435,11 +432,6 @@ FileCatalog::FileCatalog (CoarsePanel* cp, ToolBar* tb, FilePanel* filepanel) :
     tbRightPanel_1->set_image (*iRightPanel_1_Hide);
     tbRightPanel_1->signal_toggled().connect( sigc::mem_fun(*this, &FileCatalog::tbRightPanel_1_toggled) );
     buttonBar->pack_end (*tbRightPanel_1, Gtk::PACK_SHRINK);
-
-    buttonBar->pack_end (*coarsePanel, Gtk::PACK_SHRINK);
-    buttonBar->pack_end (*Gtk::manage(new Gtk::VSeparator), Gtk::PACK_SHRINK, 4);
-    buttonBar->pack_end (*toolBar, Gtk::PACK_SHRINK);
-    buttonBar->pack_end (*Gtk::manage(new Gtk::VSeparator), Gtk::PACK_SHRINK, 4);
 
     // add default panel
     hBox = Gtk::manage( new Gtk::HBox () );
@@ -2419,15 +2411,6 @@ bool FileCatalog::handleShortcutKey (GdkEventKey* event)
 
     if (!ctrl || (alt && !options.tabbedUI)) {
         switch(event->keyval) {
-
-        case GDK_KEY_bracketright:
-            coarsePanel->rotateRight();
-            return true;
-
-        case GDK_KEY_bracketleft:
-            coarsePanel->rotateLeft();
-            return true;
-
         case GDK_KEY_i:
         case GDK_KEY_I:
             exifInfo->set_active (!exifInfo->get_active());
