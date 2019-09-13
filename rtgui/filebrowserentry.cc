@@ -42,7 +42,7 @@ Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::hdr;
 Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::ps;
 
 FileBrowserEntry::FileBrowserEntry (Thumbnail* thm, const Glib::ustring& fname)
-    : ThumbBrowserEntryBase (fname), wasInside(false), iatlistener(nullptr), press_x(0), press_y(0), action_x(0), action_y(0), rot_deg(0.0), landscape(true), cropgl(nullptr), state(SNormal), crop_custom_ratio(0.f)
+    : ThumbBrowserEntryBase (fname), wasInside(false), press_x(0), press_y(0), action_x(0), action_y(0), rot_deg(0.0), landscape(true), cropgl(nullptr), state(SNormal), crop_custom_ratio(0.f)
 {
     refresh_status_ = RefreshStatus::READY;
     thumbnail = thm;
@@ -320,9 +320,9 @@ bool FileBrowserEntry::motionNotify (int x, int y)
         }
     }
 
-    if (inside(x, y)) {
-        updateCursor(ix, iy);
-    }
+    // if (inside(x, y)) {
+    //     updateCursor(ix, iy);
+    // }
 
     if (state == SRotateSelecting) {
         action_x = x;
@@ -422,120 +422,6 @@ bool FileBrowserEntry::pressNotify   (int button, int type, int bstate, int x, i
 {
 
     bool b = ThumbBrowserEntryBase::pressNotify (button, type, bstate, x, y);
-
-    if (!iatlistener || !iatlistener->getToolBar()) {
-        return true;
-    }
-
-    ToolMode tm = iatlistener->getToolBar()->getTool ();
-    int ix = x - startx - ofsX;
-    int iy = y - starty - ofsY;
-
-    if (tm == TMNone) {
-        return b;
-    }
-
-    crop_custom_ratio = 0.f;
-
-    if (!b && selected && inside (x, y)) {
-        if (button == 1 && type == GDK_BUTTON_PRESS && state == SNormal) {
-            if ((bstate & GDK_SHIFT_MASK) && cropParams.w > 0 && cropParams.h > 0) {
-                crop_custom_ratio = float(cropParams.w) / float(cropParams.h);
-            }
-            if (onArea (CropTopLeft, ix, iy)) {
-                state = SResizeTL;
-                press_x = x;
-                action_x = cropParams.x;
-                press_y = y;
-                action_y = cropParams.y;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropTopRight, ix, iy)) {
-                state = SResizeTR;
-                press_x = x;
-                action_x = cropParams.w;
-                press_y = y;
-                action_y = cropParams.y;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropBottomLeft, ix, iy)) {
-                state = SResizeBL;
-                press_x = x;
-                action_x = cropParams.x;
-                press_y = y;
-                action_y = cropParams.h;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropBottomRight, ix, iy)) {
-                state = SResizeBR;
-                press_x = x;
-                action_x = cropParams.w;
-                press_y = y;
-                action_y = cropParams.h;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropTop, ix, iy)) {
-                state = SResizeH1;
-                press_y = y;
-                action_y = cropParams.y;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropBottom, ix, iy)) {
-                state = SResizeH2;
-                press_y = y;
-                action_y = cropParams.h;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropLeft, ix, iy)) {
-                state = SResizeW1;
-                press_x = x;
-                action_x = cropParams.x;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropRight, ix, iy)) {
-                state = SResizeW2;
-                press_x = x;
-                action_x = cropParams.w;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if ((bstate & GDK_SHIFT_MASK) && onArea (CropInside, ix, iy)) {
-                state = SCropMove;
-                press_x = x;
-                press_y = y;
-                action_x = cropParams.x;
-                action_y = cropParams.y;
-                cropgl = iatlistener->startCropEditing (thumbnail);
-                b = true;
-            } else if (onArea (CropImage, ix, iy)) {
-                if (tm == TMStraighten) {
-                    state = SRotateSelecting;
-                    press_x = x;
-                    press_y = y;
-                    action_x = x;
-                    action_y = y;
-                    rot_deg = 0;
-                    b = true;
-                } else if (tm == TMSpotWB) {
-                    iatlistener->spotWBselected ((ix - prex) / scale, (iy - prey) / scale, thumbnail);
-                    b = true;
-                } else if (tm == TMCropSelect) {
-                    cropgl = iatlistener->startCropEditing (thumbnail);
-
-                    if (cropgl) {
-                        state = SCropSelecting;
-                        press_x = cropParams.x = (ix - prex) / scale;
-                        press_y = cropParams.y = (iy - prey) / scale;
-                        cropParams.w = cropParams.h = 1;
-                        cropgl->cropInit (cropParams.x, cropParams.y, cropParams.w, cropParams.h);
-                        b = true;
-                    }
-                }
-            }
-        }
-
-        updateCursor (ix, iy);
-    }
-
     return b;
 }
 
@@ -543,36 +429,6 @@ bool FileBrowserEntry::releaseNotify (int button, int type, int bstate, int x, i
 {
 
     bool b = ThumbBrowserEntryBase::releaseNotify (button, type, bstate, x, y);
-
-    int ix = x - startx - ofsX;
-    int iy = y - starty - ofsY;
-
-    if (!b) {
-        if (state == SRotateSelecting) {
-            iatlistener->rotateSelectionReady (rot_deg, thumbnail);
-
-            if (iatlistener->getToolBar()) {
-                iatlistener->getToolBar()->setTool (TMHand);
-            }
-        } else if (cropgl && (state == SCropSelecting || state == SResizeH1 || state == SResizeH2 || state == SResizeW1 || state == SResizeW2 || state == SResizeTL || state == SResizeTR || state == SResizeBL || state == SResizeBR || state == SCropMove)) {
-            cropgl->cropManipReady ();
-            cropgl = nullptr;
-            iatlistener->cropSelectionReady ();
-
-            if (iatlistener->getToolBar()) {
-                iatlistener->getToolBar()->setTool (TMHand);
-            }
-        }
-
-        state = SNormal;
-
-        if (parent) {
-            parent->redrawNeeded (this);
-        }
-
-        updateCursor (ix, iy);
-    }
-
     return b;
 }
 
@@ -657,73 +513,6 @@ bool FileBrowserEntry::onArea (CursorArea a, int x, int y)
     }
 
     return false;
-}
-
-
-void FileBrowserEntry::updateCursor (int x, int y)
-{
-
-    if (!iatlistener || !iatlistener->getToolBar()) {
-        return;
-    }
-
-    CursorShape newCursor = CSUndefined;
-
-    ToolMode tm = iatlistener->getToolBar()->getTool ();
-    Glib::RefPtr<Gdk::Window> w = parent->getDrawingArea ()->get_window();
-
-    if (!selected) {
-        newCursor = CSArrow;
-    } else if (state == SNormal) {
-        if (tm == TMHand && (onArea (CropTop, x, y) || onArea (CropBottom, x, y))) {
-            newCursor = CSResizeHeight;
-        } else if (tm == TMHand && (onArea (CropLeft, x, y) || onArea (CropRight, x, y))) {
-            newCursor = CSResizeWidth;
-        } else if (tm == TMHand && (onArea (CropTopLeft, x, y))) {
-            newCursor = CSResizeTopLeft;
-        } else if (tm == TMHand && (onArea (CropTopRight, x, y))) {
-            newCursor = CSResizeTopRight;
-        } else if (tm == TMHand && (onArea (CropBottomLeft, x, y))) {
-            newCursor = CSResizeBottomLeft;
-        } else if (tm == TMHand && (onArea (CropBottomRight, x, y))) {
-            newCursor = CSResizeBottomRight;
-        } else if (onArea (CropImage, x, y)) {
-            if (tm == TMHand) {
-                newCursor = CSArrow;
-            } else if (tm == TMSpotWB) {
-                newCursor = CSSpotWB;
-            } else if (tm == TMCropSelect) {
-                newCursor = CSCropSelect;
-            } else if (tm == TMStraighten) {
-                newCursor = CSStraighten;
-            }
-        } else {
-            newCursor = CSArrow;
-        }
-    } else if (state == SCropSelecting) {
-        newCursor = CSCropSelect;
-    } else if (state == SRotateSelecting) {
-        newCursor = CSStraighten;
-    } else if (state == SCropMove) {
-        newCursor = CSMove;
-    } else if (state == SResizeW1 || state == SResizeW2) {
-        newCursor = CSResizeWidth;
-    } else if (state == SResizeH1 || state == SResizeH2) {
-        newCursor = CSResizeHeight;
-    } else if (state == SResizeTL) {
-        newCursor = CSResizeTopLeft;
-    } else if (state == SResizeTR) {
-        newCursor = CSResizeTopRight;
-    } else if (state == SResizeBL) {
-        newCursor = CSResizeBottomLeft;
-    } else if (state == SResizeBR) {
-        newCursor = CSResizeBottomRight;
-    }
-
-    if (newCursor != cursor_type) {
-        cursor_type = newCursor;
-        CursorManager::setCursorOfMainWindow (w, cursor_type);
-    }
 }
 
 

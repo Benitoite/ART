@@ -48,7 +48,6 @@ FileCatalog::FileCatalog(FilePanel* filepanel) :
     actionNextPrevious(NAV_NONE),
     listener(nullptr),
     fslistener(nullptr),
-    iatlistener(nullptr),
     hbToolBar1STB(nullptr),
     hasValidCurrentEFS(false),
     filterPanel(nullptr),
@@ -735,7 +734,6 @@ void FileCatalog::previewReady (int dir_id, FileBrowserEntry* fdn)
     }
 
     // put it into the "full directory" browser
-    fdn->setImageAreaToolListener (iatlistener);
     fileBrowser->addEntry (fdn);
 
     // update exif filter settings (minimal & maximal values of exif tags, cameras, lenses, etc...)

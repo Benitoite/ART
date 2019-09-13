@@ -52,7 +52,6 @@ class FileBrowserEntry : public ThumbBrowserEntryBase,
     double scale;
     static bool iconsLoaded;
     bool wasInside;
-    ImageAreaToolListener* iatlistener;
     int press_x, press_y, action_x, action_y;
     double rot_deg;
     bool landscape;
@@ -66,7 +65,7 @@ class FileBrowserEntry : public ThumbBrowserEntryBase,
     IdleRegister idle_register;
 
     bool onArea (CursorArea a, int x, int y);
-    void updateCursor (int x, int y);
+    // void updateCursor (int x, int y);
     void drawStraightenGuide (Cairo::RefPtr<Cairo::Context> c);
     void customBackBufferUpdate (Cairo::RefPtr<Cairo::Context> c) override;
 
@@ -85,11 +84,6 @@ public:
     FileBrowserEntry (Thumbnail* thm, const Glib::ustring& fname);
     ~FileBrowserEntry () override;
     void draw (Cairo::RefPtr<Cairo::Context> cc) override;
-
-    void setImageAreaToolListener (ImageAreaToolListener* l)
-    {
-        iatlistener = l;
-    }
 
     FileThumbnailButtonSet* getThumbButtonSet ();
 

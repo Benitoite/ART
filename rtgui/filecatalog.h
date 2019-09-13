@@ -63,7 +63,6 @@ private:
 
     FileSelectionListener* listener;
     FileSelectionChangeListener* fslistener;
-    ImageAreaToolListener* iatlistener;
     DirSelectionSlot selectDir;
 
     Gtk::HBox* buttonBar;
@@ -220,10 +219,6 @@ public:
     void setFileSelectionChangeListener (FileSelectionChangeListener* l)
     {
         fslistener = l;
-    }
-    void setImageAreaToolListener (ImageAreaToolListener* l)
-    {
-        iatlistener = l;
     }
     void setDirSelector (const DirSelectionSlot& selectDir);
 
