@@ -304,7 +304,7 @@ public:
 
     // croppanellistener interface
     void cropSelectRequested() override;
-    void cropResetRequested() override;
+    // void cropResetRequested() override;
     void cropEnableChanged(bool enabled) override;
 
     // icmpanellistener interface

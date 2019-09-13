@@ -744,7 +744,7 @@ void ToolPanelCoordinator::autoCropRequested ()
     y2 = y1 + h - 1;
     crop->cropInit (x1, y1, w, h);
     crop->cropResized (x1, y1, x2, y2);
-    crop->cropManipReady ();
+    crop->cropManipReady (x1, y1, w, h);
 }
 
 rtengine::RawImage* ToolPanelCoordinator::getDF()
@@ -851,15 +851,15 @@ void ToolPanelCoordinator::cropEnableChanged(bool enabled)
 }
 
 
-void ToolPanelCoordinator::cropResetRequested()
-{
-    if (!ipc) {
-        return;
-    }
-    if (toolBar->getTool() == TMCropSelect) {
-        toolBar->setTool(TMHand);
-    }
-}
+// void ToolPanelCoordinator::cropResetRequested()
+// {
+//     if (!ipc) {
+//         return;
+//     }
+//     if (toolBar->getTool() == TMCropSelect) {
+//         toolBar->setTool(TMHand);
+//     }
+// }
 
 void ToolPanelCoordinator::saveInputICCReference(const Glib::ustring& fname, bool apply_wb)
 {

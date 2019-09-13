@@ -763,16 +763,11 @@ void CropWindow::buttonRelease (int button, int num, int bstate, int x, int y)
     }
 
     if (cropgl && (state == SCropSelecting || state == SResizeH1 || state == SResizeH2 || state == SResizeW1 || state == SResizeW2 || state == SResizeTL || state == SResizeTR || state == SResizeBL || state == SResizeBR || state == SCropMove)) {
-        cropgl->cropManipReady ();
+        cropgl->cropManipReady(cropHandler.cropParams.x, cropHandler.cropParams.y, cropHandler.cropParams.w, cropHandler.cropParams.h);
         if (iarea->getToolMode() != TMCropSelect) {
             iarea->setToolHand ();
         }
         needRedraw = true;
-
-        // if (fitZoom && options.cropAutoFit) {
-        //     zoomFitCrop();
-        // }
-        //reset_to_normal = false;
     }
 
     if (decorated) {

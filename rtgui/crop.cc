@@ -285,7 +285,7 @@ Crop::Crop():
     oconn = orientation->signal_changed().connect( sigc::mem_fun(*this, &Crop::ratioChanged) );
     gconn = guide->signal_changed().connect( sigc::mem_fun(*this, &Crop::notifyListener) );
     selectCrop->signal_pressed().connect( sigc::mem_fun(*this, &Crop::selectPressed) );
-    resetCrop->signal_pressed().connect( sigc::mem_fun(*this, &Crop::doresetCrop) );
+    resetCrop->signal_pressed().connect( sigc::bind(sigc::mem_fun(*this, &Crop::doresetCrop), true) );
     ppi->signal_value_changed().connect( sigc::mem_fun(*this, &Crop::refreshSize) );
 
     nx = ny = nw = nh = 0;
@@ -518,7 +518,7 @@ void Crop::selectPressed ()
     }
 }
 
-void Crop::doresetCrop ()
+void Crop::doresetCrop(bool notify)
 {
     xDirty = true;
     yDirty = true;
@@ -530,33 +530,34 @@ void Crop::doresetCrop ()
     int W = maxw;
     int H = maxh;
     cropResized (X, Y, W, H);
-    idle_register.add(
-        [this]() -> bool
-        {
-            notifyListener();
-            return false;
-        }
-    );
-
+    if (notify) {
+        idle_register.add(
+            [this]() -> bool
+            {
+                notifyListener();
+                return false;
+            }
+            );
+    }
     refreshSpins();
 }
 
 void Crop::notifyListener ()
 {
     if (listener && getEnabled ()) {
-        if (nw == 1 && nh == 1) {
-            setEnabled(false);
-            nx = (int)x->get_value ();
-            ny = (int)y->get_value ();
-            nw = (int)w->get_value ();
-            nh = (int)h->get_value ();
-            if (clistener) {
-                clistener->cropResetRequested();
-            }
-            listener->panelChanged(EvCrop, M("GENERAL_DISABLED"));
-        } else {
+        // if (nw == 1 && nh == 1) {
+        //     setEnabled(false);
+        //     nx = (int)x->get_value ();
+        //     ny = (int)y->get_value ();
+        //     nw = (int)w->get_value ();
+        //     nh = (int)h->get_value ();
+        //     if (clistener) {
+        //         clistener->cropResetRequested();
+        //     }
+        //     listener->panelChanged(EvCrop, M("GENERAL_DISABLED"));
+        // } else {
             listener->panelChanged (EvCrop, Glib::ustring::compose ("%1=%2, %3=%4\n%5=%6, %7=%8", M("TP_CROP_X"), nx, M("TP_CROP_Y"), ny, M("TP_CROP_W"), nw, M("TP_CROP_H"), nh));
-        }
+        // }
     }
 }
 
@@ -1436,8 +1437,18 @@ void Crop::cropResized (int &x, int &y, int& x2, int& y2)
     );
 }
 
-void Crop::cropManipReady ()
+void Crop::cropManipReady(int &x, int &y, int &w, int &h)
 {
+    if (nw == 1 && nh == 1) {
+        disableListener();
+        doresetCrop(false);
+        x = nx;
+        y = ny;
+        w = nw;
+        h = nh;
+        enableListener();
+    }
+    
     idle_register.add(
         [this]() -> bool
         {

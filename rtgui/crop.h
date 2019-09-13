@@ -33,7 +33,7 @@ public:
 
     virtual void cropSelectRequested() = 0;
     virtual void cropEnableChanged(bool enabled) = 0;
-    virtual void cropResetRequested() = 0;
+    // virtual void cropResetRequested() = 0;
 };
 
 class Crop final :
@@ -53,7 +53,7 @@ public:
     void ratioFixedChanged ();  // The toggle button
     void refreshSize    ();
     void selectPressed  ();
-    void doresetCrop    ();
+    void doresetCrop(bool notify=true);
     void setDimensions   (int mw, int mh);
     void enabledChanged () override;
     void positionChanged ();
@@ -77,7 +77,7 @@ public:
     void cropBottomRightResized (int &x, int &y, int &w, int &h, float custom_ratio=0.f) override;
     void cropInit           (int &x, int &y, int &w, int &h) override;
     void cropResized        (int &x, int &y, int& x2, int& y2) override;
-    void cropManipReady     () override;
+    void cropManipReady(int &x, int &y, int &w, int &h) override;
     bool inImageArea        (int x, int y) override;
     double getRatio         () const override;
 
