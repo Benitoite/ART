@@ -273,8 +273,8 @@ void drawCrop(Glib::RefPtr<Gtk::StyleContext> style, Cairo::RefPtr<Cairo::Contex
     if (style && options.bgcolor == 0 && useBgColor) {
         style->render_background(cr, imx, imy, imw + 0.5, round(c1y) + 0.5);
         style->render_background(cr, imx, round(imy + c2y) + 0.5, imw + 0.5, round(imh - c2y) + 0.5);
-        style->render_background(cr, imx, round(imy + c1y) + 0.5, round(c1x) + 0.5, round(c2y - c1y + 1) + 0.5);
-        style->render_background(cr, round(imx + c2x) + 0.5, round(imy + c1y) + 0.5, round(imw - c2x) + 0.5, round(c2y - c1y + 1) + 0.5);
+        style->render_background(cr, imx, imy + c1y - 1, round(c1x) + 0.5, round(c2y - c1y + 2) + 0.5);
+        style->render_background(cr, round(imx + c2x) + 0.5, imy + c1y - 1, round(imw - c2x) + 0.5, round(c2y - c1y + 2) + 0.5);
     } else {    
         cr->rectangle (imx, imy, imw + 0.5, round(c1y) + 0.5);
         cr->rectangle (imx, round(imy + c2y) + 0.5, imw + 0.5, round(imh - c2y) + 0.5);

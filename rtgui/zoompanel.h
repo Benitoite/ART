@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -30,7 +31,7 @@ protected:
     Gtk::Button*    zoomOut;
     Gtk::Button*    zoomIn;
     Gtk::Button*    zoomFit;
-    Gtk::Button*    zoomFitCrop;
+    //Gtk::Button*    zoomFitCrop;
     Gtk::Button*    zoom11;
     Gtk::Button*    newCrop;
     Gtk::Label*     zoomLabel;
@@ -43,7 +44,7 @@ public:
     void zoomInClicked      ();
     void zoomOutClicked     ();
     void zoomFitClicked     ();
-    void zoomFitCropClicked ();
+    //void zoomFitCropClicked ();
     void zoom11Clicked      ();
     void newCropClicked     ();
     void refreshZoomLabel   ();

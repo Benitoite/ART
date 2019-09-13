@@ -186,8 +186,8 @@ public:
     void zoomIn      (bool toCursor = false, int cursorX = -1, int cursorY = -1);
     void zoomOut     (bool toCursor = false, int cursorX = -1, int cursorY = -1);
     void zoom11      (bool notify = true);
-    void zoomFit     ();
-    void zoomFitCrop ();
+    void zoomFit();
+    void zoomFitCrop() { zoomFit(); }
     double getZoom   ();
     bool isMinZoom   ();
     bool isMaxZoom   ();

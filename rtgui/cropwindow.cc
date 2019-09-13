@@ -339,7 +339,7 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                     screenCoordToImage (x, y, action_x, action_y);
                     changeZoom (zoom11index, true, action_x, action_y);
                     fitZoom = false;
-                } else if (options.cropAutoFit) {
+                } else if (iarea->getToolMode() == TMCropSelect) {//options.cropAutoFit) {
                     zoomFitCrop();
                 } else {
                     zoomFit();
@@ -372,8 +372,9 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                         crop_custom_ratio = float(cropHandler.cropParams.w) / float(cropHandler.cropParams.h);
                     }
 
-                    const bool crop_resize_allowed = (bstate & GDK_CONTROL_MASK) || (iarea->getToolMode() == TMCropSelect);
-                    const bool crop_move_allowed = (bstate & GDK_SHIFT_MASK) || (iarea->getToolMode() == TMCropSelect && !(bstate & GDK_CONTROL_MASK));
+                    const bool crop_mode = iarea->getToolMode() == TMCropSelect;
+                    const bool crop_resize_allowed = (crop_mode ? true : (bstate & GDK_CONTROL_MASK)) && !(bstate & GDK_SHIFT_MASK);
+                    const bool crop_move_allowed = crop_mode ? (!(bstate & GDK_CONTROL_MASK) && !(bstate & GDK_SHIFT_MASK)) : (bstate & GDK_SHIFT_MASK);
 
                     if (iarea->getToolMode () == TMColorPicker) {
                         if (hoveredPicker) {
@@ -488,7 +489,7 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                         int spotx, spoty;
                         screenCoordToImage (x, y, spotx, spoty);
                         iarea->spotWBSelected (spotx, spoty);
-                    } else if (iarea->getToolMode () == TMCropSelect && cropgl) {
+                    } else if (iarea->getToolMode () == TMCropSelect && cropgl && !(bstate & GDK_SHIFT_MASK)) {
                         state = SCropSelecting;
                         screenCoordToImage (x, y, press_x, press_y);
                         cropHandler.cropParams.enabled = true;
@@ -1254,10 +1255,11 @@ void CropWindow::updateCursor(int x, int y, int bstate)
     ToolMode tm = iarea->getToolMode ();
 
     CursorShape newType = cursor_type;
+    const bool crop_mode = iarea->getToolMode() == TMCropSelect;
+    const bool crop_resize_allowed = (crop_mode ? true : (bstate & GDK_CONTROL_MASK)) && !(bstate & GDK_SHIFT_MASK);
+    const bool crop_move_allowed = crop_mode ? (!(bstate & GDK_CONTROL_MASK) && !(bstate & GDK_SHIFT_MASK)) : (bstate & GDK_SHIFT_MASK);
 
     if (state == SNormal) {
-        const bool crop_resize_allowed = (tm == TMHand && (bstate & GDK_CONTROL_MASK)) || (tm == TMCropSelect);
-        const bool crop_move_allowed = (tm == TMCropSelect);
         if (onArea(CropWinButtons, x, y)) {
             newType = CSArrow;
         } else if (onArea(CropToolBar, x, y)) {
@@ -1300,7 +1302,11 @@ void CropWindow::updateCursor(int x, int y, int bstate)
             } else if (tm == TMSpotWB) {
                 newType = CSSpotWB;
             } else if (tm == TMCropSelect) {
-                newType = CSCropSelect;
+                if (!(bstate & GDK_SHIFT_MASK)) {
+                    newType = CSCropSelect;
+                } else {
+                    newType = CSArrow;
+                }
             } else if (tm == TMStraighten) {
                 newType = CSStraighten;
             } else if (tm == TMColorPicker) {
@@ -1385,7 +1391,7 @@ void CropWindow::updateCursor(int x, int y, int bstate)
     prev_tool_mode = tm;
 
     if (change_crop_state == CHANGE_CROP_FULL) {
-        if (options.cropAutoFit) {
+        if (fitZoom) {//options.cropAutoFit) {
             if (tm == TMCropSelect) {
                 zoomFit();
             } else {
@@ -1433,6 +1439,37 @@ void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
         cr->fill ();
     }
 
+    CropParams cropParams = cropHandler.cropParams;
+    bool tweak_crop_guides = (/*state == SNormal &&*/ iarea->getToolMode() != TMCropSelect);
+    if (tweak_crop_guides) {
+        switch (cursor_type) {
+        case CSResizeBottomLeft:
+        case CSResizeBottomRight:
+        case CSResizeDiagonal:
+        case CSResizeHeight:
+        case CSResizeTopLeft:
+        case CSResizeTopRight:
+        case CSResizeWidth:
+            tweak_crop_guides = false;
+            break;
+        default:
+            break;
+        }
+    }
+    if (tweak_crop_guides) {
+        switch (options.cropGuides) {
+        case Options::CROP_GUIDE_NONE:
+            cropParams.guide = "None";
+            break;
+        case Options::CROP_GUIDE_FRAME:
+            cropParams.guide = "Frame";
+            break;
+        default:
+            break;
+        }
+    }
+    const bool useBgColor = (tweak_crop_guides || state == SDragPicker || state == SDeletePicker || state == SEditDrag1);
+
     // draw image
     if (state == SCropImgMove || state == SCropWinResize) {
         // draw a rough image
@@ -1447,45 +1484,17 @@ void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
             Gdk::Cairo::set_source_pixbuf(cr, rough, posX, posY);
             cr->rectangle(posX, posY, rtengine::min (rough->get_width (), imgAreaW-imgX), rtengine::min (rough->get_height (), imgAreaH-imgY));
             cr->fill();
-//            if (cropHandler.cropParams.enabled)
-//                drawCrop (cr, x+imgX, y+imgY, imgW, imgH, cropX, cropY, zoomSteps[cropZoom].zoom, cropHandler.cropParams);
+            if (cropParams.enabled) {
+                int cropX, cropY;
+                cropHandler.getPosition (cropX, cropY);
+                drawCrop(style, cr, posX, posY, rough->get_width(), rough->get_height(), cropX, cropY, zoomSteps[cropZoom].zoom, cropParams, (this == iarea->mainCropWindow), useBgColor, cropHandler.isFullDisplay ());
+            }
         }
 
         if (observedCropWin) {
             drawObservedFrame (cr);
         }
     } else {
-        CropParams cropParams = cropHandler.cropParams;
-        bool tweak_crop_guides = (state == SNormal && iarea->getToolMode() != TMCropSelect);
-        if (tweak_crop_guides) {
-            switch (cursor_type) {
-            case CSResizeBottomLeft:
-            case CSResizeBottomRight:
-            case CSResizeDiagonal:
-            case CSResizeHeight:
-            case CSResizeTopLeft:
-            case CSResizeTopRight:
-            case CSResizeWidth:
-                tweak_crop_guides = false;
-                break;
-            default:
-                break;
-            }
-        }
-        if (tweak_crop_guides) {
-            switch (options.cropGuides) {
-            case Options::CROP_GUIDE_NONE:
-                cropParams.guide = "None";
-                break;
-            case Options::CROP_GUIDE_FRAME:
-                cropParams.guide = "Frame";
-                break;
-            default:
-                break;
-            }
-        }
-        bool useBgColor = (tweak_crop_guides || state == SDragPicker || state == SDeletePicker || state == SEditDrag1);
-
         if (cropHandler.cropPixbuf) {
             imgW = cropHandler.cropPixbuf->get_width ();
             imgH = cropHandler.cropPixbuf->get_height ();
@@ -2190,27 +2199,25 @@ double CropWindow::getZoomFitVal ()
 
 void CropWindow::zoomFit ()
 {
+    if (iarea->getToolMode() == TMCropSelect || !cropHandler.cropParams.enabled) {
+        // fit to the whole uncropped image
+        double z = cropHandler.getFitZoom ();
+        int cz = int(zoomSteps.size())-1;
 
-    double z = cropHandler.getFitZoom ();
-    int cz = int(zoomSteps.size())-1;
+        if (z < zoomSteps[0].zoom) {
+            cz = 0;
+        } else
+            for (int i = 0; i < int(zoomSteps.size())-1; i++)
+                if (zoomSteps[i].zoom <= z && zoomSteps[i + 1].zoom > z) {
+                    cz = i;
+                    break;
+                }
 
-    if (z < zoomSteps[0].zoom) {
-        cz = 0;
-    } else
-        for (int i = 0; i < int(zoomSteps.size())-1; i++)
-            if (zoomSteps[i].zoom <= z && zoomSteps[i + 1].zoom > z) {
-                cz = i;
-                break;
-            }
-
-    zoomVersion = exposeVersion;
-    changeZoom (cz, true, -1, -1);
-    fitZoom = true;
-}
-
-void CropWindow::zoomFitCrop ()
-{
-    if(cropHandler.cropParams.enabled) {
+        zoomVersion = exposeVersion;
+        changeZoom (cz, true, -1, -1);
+        fitZoom = true;
+    } else {
+        // fit to the crop
         double z = cropHandler.getFitCropZoom ();
         int cz = int(zoomSteps.size())-1;
 
@@ -2229,11 +2236,36 @@ void CropWindow::zoomFitCrop ()
         centerY = cropHandler.cropParams.y + cropHandler.cropParams.h / 2;
         setCropAnchorPosition(centerX, centerY);
         changeZoom (cz, true, centerX, centerY);
-        fitZoom = options.cropAutoFit;
-    } else {
-        zoomFit();
+        fitZoom = true; //options.cropAutoFit;
     }
 }
+
+// void CropWindow::zoomFitCrop ()
+// {
+//     if(cropHandler.cropParams.enabled) {
+//         double z = cropHandler.getFitCropZoom ();
+//         int cz = int(zoomSteps.size())-1;
+
+//         if (z < zoomSteps[0].zoom) {
+//             cz = 0;
+//         } else
+//             for (int i = 0; i < int(zoomSteps.size())-1; i++)
+//                 if (zoomSteps[i].zoom <= z && zoomSteps[i + 1].zoom > z) {
+//                     cz = i;
+//                     break;
+//                 }
+
+//         zoomVersion = exposeVersion;
+//         int centerX, centerY;
+//         centerX = cropHandler.cropParams.x + cropHandler.cropParams.w / 2;
+//         centerY = cropHandler.cropParams.y + cropHandler.cropParams.h / 2;
+//         setCropAnchorPosition(centerX, centerY);
+//         changeZoom (cz, true, centerX, centerY);
+//         fitZoom = true; //options.cropAutoFit;
+//     } else {
+//         zoomFit();
+//     }
+// }
 
 void CropWindow::buttonPressed (LWButton* button, int actionCode, void* actionData)
 {

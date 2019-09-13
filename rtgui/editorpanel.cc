@@ -1634,7 +1634,7 @@ bool EditorPanel::handleShortcutKey (GdkEventKey* event)
                     return true;
 
                 case GDK_KEY_f:
-                    iareapanel->imageArea->zoomPanel->zoomFitCropClicked();
+                    iareapanel->imageArea->zoomPanel->zoomFitClicked();
                     return true;
 
                 case GDK_KEY_F5:
@@ -1718,9 +1718,9 @@ bool EditorPanel::handleShortcutKey (GdkEventKey* event)
                 setProgressStr (M ("PROGRESSBAR_SNAPSHOT_ADDED"));
                 return true;
 
-            case GDK_KEY_f:
-                iareapanel->imageArea->zoomPanel->zoomFitClicked();
-                return true;
+            // case GDK_KEY_f:
+            //     iareapanel->imageArea->zoomPanel->zoomFitClicked();
+            //     return true;
         }
     }
 
