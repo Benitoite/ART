@@ -469,6 +469,7 @@ void WhiteBalance::optChanged ()
             const WBEntry& currMethod = WBParams::getWbEntries()[methodId];
 
             tempBias->set_sensitive(currMethod.type == WBEntry::Type::AUTO);
+            bool update_scale = true;
 
             switch (currMethod.type) {
             case WBEntry::Type::CAMERA:
@@ -499,6 +500,7 @@ void WhiteBalance::optChanged ()
                     cache_customGreen (green->getValue());
                     cache_customEqual (equal->getValue());
                 }
+                update_scale = false;
 
                 break;
 
@@ -517,6 +519,10 @@ void WhiteBalance::optChanged ()
                 green->setValue (green->getAddMode() ? 0.0 : (double)(currMethod.green));
                 equal->setValue (equal->getAddMode() ? 0.0 : (double)(currMethod.equal));
                 break;
+            }
+
+            if (update_scale) {
+                green->setLogScale(100, green->getValue(), true);
             }
         }
 
@@ -822,6 +828,7 @@ void WhiteBalance::WBChanged(double temperature, double greenVal)
             temp->setDefault(temperature);
             green->setDefault(greenVal);
             enableListener();
+            green->setLogScale(100, greenVal, true);
 
             return false;
         }
