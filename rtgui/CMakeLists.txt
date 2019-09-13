@@ -161,6 +161,7 @@ set(NONCLISOURCEFILES
     exposure.cc
     brightcontrsat.cc
     hslequalizer.cc
+    filmnegative.cc
     )
 
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")

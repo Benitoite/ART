@@ -301,6 +301,8 @@ protected:
     void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) override;
 
     bool getDeconvAutoRadius(float *out=nullptr) override;
+    bool getFilmNegativeExponents(Coord2D spotA, Coord2D spotB, int tran, const FilmNegativeParams& currentParams, std::array<float, 3>& newExps) override;
+    void filmNegativeProcess(const procparams::FilmNegativeParams &params) override;
 };
 }
 #endif

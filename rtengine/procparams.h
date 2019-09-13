@@ -1345,6 +1345,22 @@ struct RAWParams {
 
 
 /**
+  * Parameters of film negative
+  */
+struct FilmNegativeParams {
+    bool enabled;
+    double redRatio;
+    double greenExp;
+    double blueRatio;
+
+    FilmNegativeParams();
+
+    bool operator ==(const FilmNegativeParams& other) const;
+    bool operator !=(const FilmNegativeParams& other) const;
+};
+
+
+/**
   * This class holds all the processing parameters applied on the images
   */
 class ProcParams {
@@ -1390,6 +1406,7 @@ public:
     GrainParams             grain;
     GuidedSmoothingParams   smoothing;
     ColorCorrectionParams   colorcorrection;
+    FilmNegativeParams      filmNegative;
     int                     rank;            ///< Custom image quality ranking
     int                     colorlabel;      ///< Custom color label
     bool                    inTrash;         ///< Marks deleted image

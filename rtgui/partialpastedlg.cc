@@ -98,6 +98,7 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_HOT_DEAD_PIXEL_FILTER", &pedited.hotDeadPixelFilter, 6},
         {"PARTIALPASTE_DARKFRAME", &pedited.darkframe, 6},
         {"PARTIALPASTE_FLATFIELD", &pedited.flatfield, 6},
+        {"PARTIALPASTE_FILMNEGATIVE", &pedited.filmNegative, 6},
 
         {"PARTIALPASTE_METADATA", &pedited.metadata, 7},
         {"PARTIALPASTE_EXIFCHANGES", &pedited.exif, 7},

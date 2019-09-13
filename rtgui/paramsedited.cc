@@ -79,6 +79,7 @@ void ParamsEdited::set(bool v)
     grain = v;
     smoothing = v;
     colorcorrection = v;
+    filmNegative = v;
     metadata = v;
     exif = v;
     iptc = v;

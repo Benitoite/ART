@@ -80,6 +80,7 @@ public:
     bool grain;
     bool smoothing;
     bool colorcorrection;
+    bool filmNegative;
     bool metadata;
     bool exif;
     bool iptc;

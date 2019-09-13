@@ -82,7 +82,9 @@
 #include "smoothing.h"
 #include "colorcorrection.h"
 #include "hslequalizer.h"
+#include "filmnegative.h"
 #include "guiutils.h"
+#include "../rtengine/noncopyable.h"
 
 class ImageEditorCoordinator;
 
@@ -99,7 +101,9 @@ class ToolPanelCoordinator :
     public ICMPanelListener,
     public ImageAreaToolListener,
     public rtengine::ImageTypeListener,
-    public rtengine::AutoExpListener
+    public rtengine::AutoExpListener,
+    public FilmNegProvider,
+    public rtengine::NonCopyable
 {
 protected:
     WhiteBalance* whitebalance;
@@ -154,6 +158,7 @@ protected:
     Smoothing *smoothing;
     ColorCorrection *colorcorrection;
     DirPyrEqualizer *cbdl;
+    FilmNegative *filmNegative;    
 
     std::vector<PParamsChangeListener*> paramcListeners;
 
@@ -293,6 +298,9 @@ public:
     rtengine::RawImage* getFF() override;
     Glib::ustring GetCurrentImageFilePath() override;
 
+    // FilmNegProvider interface
+    bool getFilmNegativeExponents(rtengine::Coord spotA, rtengine::Coord spotB, std::array<float, 3>& newExps) override;
+    
     // rotatelistener interface
     void straightenRequested () override;
     void autoCropRequested () override;

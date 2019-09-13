@@ -95,6 +95,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     colorcorrection = Gtk::manage(new ColorCorrection());
     smoothing = Gtk::manage(new Smoothing());
     cbdl = Gtk::manage(new DirPyrEqualizer());
+    filmNegative        = Gtk::manage (new FilmNegative ());
 
     // So Demosaic, Line noise filter, Green Equilibration, Ca-Correction (garder le nom de section identique!) and Black-Level will be moved in a "Bayer sensor" tool,
     // and a separate Demosaic and Black Level tool will be created in an "X-Trans sensor" tool
@@ -106,55 +107,56 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     //     Medium -> High ISO
     favorites.resize(options.favorites.size(), nullptr);
 
-    addfavoritePanel (colorPanel, whitebalance);
-    addfavoritePanel (exposurePanel, exposure);
-    addfavoritePanel (exposurePanel, brightContrSat);
-    addfavoritePanel (exposurePanel, toneCurve);
-    addfavoritePanel (colorPanel, chmixer);
+    addfavoritePanel(colorPanel, whitebalance);
+    addfavoritePanel(exposurePanel, exposure);
+    addfavoritePanel(exposurePanel, brightContrSat);
+    addfavoritePanel(exposurePanel, toneCurve);
+    addfavoritePanel(colorPanel, chmixer);
     addfavoritePanel(colorPanel, hsl);
-    addfavoritePanel (colorPanel, blackwhite);
-    addfavoritePanel (exposurePanel, logenc);
-    addfavoritePanel (exposurePanel, shadowshighlights);
-    addfavoritePanel (detailsPanel, sharpening);
-    addfavoritePanel (detailsPanel, localContrast);
-    addfavoritePanel (colorPanel, filmSimulation);
-    addfavoritePanel (colorPanel, softlight);
-    addfavoritePanel (colorPanel, rgbcurves);
+    addfavoritePanel(colorPanel, blackwhite);
+    addfavoritePanel(exposurePanel, logenc);
+    addfavoritePanel(exposurePanel, shadowshighlights);
+    addfavoritePanel(detailsPanel, sharpening);
+    addfavoritePanel(detailsPanel, localContrast);
+    addfavoritePanel(colorPanel, filmSimulation);
+    addfavoritePanel(colorPanel, softlight);
+    addfavoritePanel(colorPanel, rgbcurves);
     addfavoritePanel(colorPanel, lcurve);
     //addfavoritePanel (exposurePanel, epd);
-    addfavoritePanel (exposurePanel, fattal);
-    addfavoritePanel (exposurePanel, toneEqualizer);    
-    addfavoritePanel (exposurePanel, pcvignette);
-    addfavoritePanel (exposurePanel, gradient);
+    addfavoritePanel(exposurePanel, fattal);
+    addfavoritePanel(exposurePanel, toneEqualizer);    
+    addfavoritePanel(exposurePanel, pcvignette);
+    addfavoritePanel(exposurePanel, gradient);
     //addfavoritePanel (exposurePanel, lcurve);
-    addfavoritePanel (detailsPanel, impulsedenoise);
-    addfavoritePanel (detailsPanel, denoise);
-    addfavoritePanel (detailsPanel, defringe);
-    addfavoritePanel (detailsPanel, dehaze);
-    addfavoritePanel (detailsPanel, grain);
-    addfavoritePanel (transformPanel, crop);
-    addfavoritePanel (transformPanel, resize);
-    addfavoritePanel (resize->getPackBox(), prsharpening, 2);
-    addfavoritePanel (transformPanel, lensgeom);
-    addfavoritePanel (lensgeom->getPackBox(), rotate, 2);
-    addfavoritePanel (lensgeom->getPackBox(), perspective, 2);
-    addfavoritePanel (lensgeom->getPackBox(), lensProf, 2);
-    addfavoritePanel (lensgeom->getPackBox(), distortion, 2);
-    addfavoritePanel (lensgeom->getPackBox(), cacorrection, 2);
-    addfavoritePanel (lensgeom->getPackBox(), vignetting, 2);
-    addfavoritePanel (colorPanel, icm);
-    addfavoritePanel (rawPanel, sensorbayer);
-    addfavoritePanel (sensorbayer->getPackBox(), bayerprocess, 2);
-    addfavoritePanel (sensorbayer->getPackBox(), bayerrawexposure, 2);
-    addfavoritePanel (sensorbayer->getPackBox(), bayerpreprocess, 2);
-    addfavoritePanel (sensorbayer->getPackBox(), rawcacorrection, 2);
-    addfavoritePanel (rawPanel, sensorxtrans);
-    addfavoritePanel (sensorxtrans->getPackBox(), xtransprocess, 2);
-    addfavoritePanel (sensorxtrans->getPackBox(), xtransrawexposure, 2);
-    addfavoritePanel (rawPanel, rawexposure);
-    addfavoritePanel (rawPanel, preprocess);
-    addfavoritePanel (rawPanel, darkframe);
-    addfavoritePanel (rawPanel, flatfield);
+    addfavoritePanel(detailsPanel, impulsedenoise);
+    addfavoritePanel(detailsPanel, denoise);
+    addfavoritePanel(detailsPanel, defringe);
+    addfavoritePanel(detailsPanel, dehaze);
+    addfavoritePanel(detailsPanel, grain);
+    addfavoritePanel(transformPanel, crop);
+    addfavoritePanel(transformPanel, resize);
+    addfavoritePanel(resize->getPackBox(), prsharpening, 2);
+    addfavoritePanel(transformPanel, lensgeom);
+    addfavoritePanel(lensgeom->getPackBox(), rotate, 2);
+    addfavoritePanel(lensgeom->getPackBox(), perspective, 2);
+    addfavoritePanel(lensgeom->getPackBox(), lensProf, 2);
+    addfavoritePanel(lensgeom->getPackBox(), distortion, 2);
+    addfavoritePanel(lensgeom->getPackBox(), cacorrection, 2);
+    addfavoritePanel(lensgeom->getPackBox(), vignetting, 2);
+    addfavoritePanel(colorPanel, icm);
+    addfavoritePanel(rawPanel, sensorbayer);
+    addfavoritePanel(sensorbayer->getPackBox(), bayerprocess, 2);
+    addfavoritePanel(sensorbayer->getPackBox(), bayerrawexposure, 2);
+    addfavoritePanel(sensorbayer->getPackBox(), bayerpreprocess, 2);
+    addfavoritePanel(sensorbayer->getPackBox(), rawcacorrection, 2);
+    addfavoritePanel(rawPanel, sensorxtrans);
+    addfavoritePanel(sensorxtrans->getPackBox(), xtransprocess, 2);
+    addfavoritePanel(sensorxtrans->getPackBox(), xtransrawexposure, 2);
+    addfavoritePanel(rawPanel, rawexposure);
+    addfavoritePanel(rawPanel, preprocess);
+    addfavoritePanel(rawPanel, darkframe);
+    addfavoritePanel(rawPanel, flatfield);
+    addfavoritePanel(rawPanel, filmNegative);
     addfavoritePanel(localPanel, colorcorrection);
     addfavoritePanel(localPanel, smoothing);
     addfavoritePanel(localPanel, cbdl);
@@ -268,6 +270,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     perspective->setLensGeomListener(this);
     crop->setCropPanelListener (this);
     icm->setICMPanelListener (this);
+    filmNegative->setFilmNegProvider (this);
 
     toolBar = new ToolBar ();
     toolBar->setToolBarListener (this);
@@ -323,6 +326,7 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorbayer->FoldableToolPanel::show();
                     preprocess->FoldableToolPanel::show();
                     flatfield->FoldableToolPanel::show();
+                    filmNegative->FoldableToolPanel::show();
 
                     return false;
                 }
@@ -337,6 +341,7 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorbayer->FoldableToolPanel::hide();
                     preprocess->FoldableToolPanel::show();
                     flatfield->FoldableToolPanel::show();
+                    filmNegative->FoldableToolPanel::show();
 
                     return false;
                 }
@@ -351,6 +356,7 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorxtrans->FoldableToolPanel::hide();
                     preprocess->FoldableToolPanel::hide();
                     flatfield->FoldableToolPanel::show();
+                    filmNegative->FoldableToolPanel::hide();
 
                     return false;
                 }
@@ -364,6 +370,7 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
                     sensorxtrans->FoldableToolPanel::hide();
                     preprocess->FoldableToolPanel::hide();
                     flatfield->FoldableToolPanel::hide();
+                    filmNegative->FoldableToolPanel::hide();
 
                     return false;
                 }
@@ -374,6 +381,7 @@ void ToolPanelCoordinator::imageTypeChanged (bool isRaw, bool isBayer, bool isXt
             [this]() -> bool
             {
                 rawPanelSW->set_sensitive(false);
+                filmNegative->FoldableToolPanel::hide();
 
                 return false;
             }
@@ -489,7 +497,7 @@ void ToolPanelCoordinator::profileChange(
         // pe.initFrom (lParams);
 
         // filterRawRefresh = pe.raw.isUnchanged() && pe.lensProf.isUnchanged();
-        filterRawRefresh = (params->raw == mergedParams.raw) && (params->lensProf == mergedParams.lensProf);
+        filterRawRefresh = (params->raw == mergedParams.raw) && (params->lensProf == mergedParams.lensProf) && (params->filmNegative == mergedParams.filmNegative);
     }
 
     *params = mergedParams;
@@ -1078,4 +1086,10 @@ void ToolPanelCoordinator::autoExpChanged(double expcomp, int bright, int contr,
 void ToolPanelCoordinator::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve)
 {
     toneCurve->autoMatchedToneCurveChanged(curveMode, curve);
+}
+
+
+bool ToolPanelCoordinator::getFilmNegativeExponents(rtengine::Coord spotA, rtengine::Coord spotB, std::array<float, 3>& newExps)
+{
+    return ipc && ipc->getFilmNegativeExponents(spotA.x, spotA.y, spotB.x, spotB.y, newExps);
 }

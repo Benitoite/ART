@@ -184,8 +184,9 @@ private:
             adjust_procparams(scale_factor);
         }
 
-        imgsrc->setCurrentFrame (params.raw.bayersensor.imageNum);
-        imgsrc->preprocess ( params.raw, params.lensProf, params.coarse, params.denoise.enabled);
+        imgsrc->setCurrentFrame(params.raw.bayersensor.imageNum);
+        imgsrc->preprocess(params.raw, params.lensProf, params.coarse, params.denoise.enabled);
+        imgsrc->filmNegativeProcess(params.filmNegative);
 
         if (pl) {
             pl->setProgress (0.20);

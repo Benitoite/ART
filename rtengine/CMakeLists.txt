@@ -148,6 +148,8 @@ set(RTENGINESOURCEFILES
     ipfilmsim.cc
     iptonecurve.cc
     deconvautoradius.cc
+    filmnegativeproc.cc
+    filmnegativethumb.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)

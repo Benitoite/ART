@@ -221,6 +221,7 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
     tpp->defGain = 1.0;
     tpp->gammaCorrected = false;
     tpp->isRaw = 0;
+    tpp->sensorType = ST_NONE;
     memset (tpp->colorMatrix, 0, sizeof (tpp->colorMatrix));
     tpp->colorMatrix[0][0] = 1.0;
     tpp->colorMatrix[1][1] = 1.0;
@@ -371,6 +372,7 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType 
 {
     Thumbnail* tpp = new Thumbnail ();
     tpp->isRaw = 1;
+    tpp->sensorType = sensorType;
     memset (tpp->colorMatrix, 0, sizeof (tpp->colorMatrix));
     tpp->colorMatrix[0][0] = 1.0;
     tpp->colorMatrix[1][1] = 1.0;
@@ -539,6 +541,7 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
     rtengine::Thumbnail* tpp = new rtengine::Thumbnail;
 
     tpp->isRaw = true;
+    tpp->sensorType = sensorType;
     tpp->embProfile = nullptr;
     tpp->embProfileData = nullptr;
     tpp->embProfileLength = ri->get_profileLen();
@@ -1012,7 +1015,8 @@ Thumbnail::Thumbnail () :
     scaleForSave (8192),
     gammaCorrected (false),
     colorMatrix{},
-    isRaw (true)
+    sensorType(ST_NONE),
+    isRaw(false)
 {
 }
 
@@ -1135,6 +1139,9 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
 
 
     Imagefloat* baseImg = resizeTo<Imagefloat> (rwidth, rheight, interp, thumbImg);
+    if (isRaw && params.filmNegative.enabled && (sensorType == ST_BAYER || sensorType == ST_FUJI_XTRANS)) {
+        processFilmNegative(params, baseImg, rwidth, rheight, rmi, gmi, bmi);
+    }
     baseImg->assignColorSpace(params.icm.workingProfile);
 
     if (params.coarse.rotate) {

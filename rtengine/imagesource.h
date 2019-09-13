@@ -33,13 +33,11 @@
 #include "image16.h"
 #include "imagefloat.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
 using namespace procparams;
 
-class ImageMatrices
-{
+class ImageMatrices {
 
 public:
     double rgb_cam[3][3] = {};
@@ -48,8 +46,8 @@ public:
     double cam_xyz[3][3] = {};
 };
 
-class ImageSource : public InitialImage
-{
+
+class ImageSource: public InitialImage {
 
 private:
     int references;
@@ -63,64 +61,58 @@ protected:
     double dirpyrdenoiseExpComp;
 
 public:
-    ImageSource () : references (1), redAWBMul(-1.), greenAWBMul(-1.), blueAWBMul(-1.),
+    ImageSource(): references (1), redAWBMul(-1.), greenAWBMul(-1.), blueAWBMul(-1.),
         embProfile(nullptr), idata(nullptr), dirpyrdenoiseExpComp(INFINITY) {}
 
-    ~ImageSource            () override {}
-    virtual int         load        (const Glib::ustring &fname) = 0;
-    virtual void        preprocess  (const RAWParams &raw, const LensProfParams &lensProf, const CoarseTransformParams& coarse, bool prepareDenoise = true) {};
-    virtual void        demosaic    (const RAWParams &raw, bool autoContrast, double &contrastThreshold) {};
-    virtual void        flushRawData       () {};
-    virtual void        flushRGB           () {};
-    virtual void        HLRecovery_Global  (const ExposureParams &hrp) {};
-    virtual void        HLRecovery_inpaint (float** red, float** green, float** blue) {};
+    ~ImageSource() override {}
+    virtual int load(const Glib::ustring &fname) = 0;
+    virtual void preprocess(const RAWParams &raw, const LensProfParams &lensProf, const CoarseTransformParams& coarse, bool prepareDenoise = true) {};
+    virtual void demosaic(const RAWParams &raw, bool autoContrast, double &contrastThreshold) {};
+    virtual void flushRawData() {};
+    virtual void flushRGB() {};
+    virtual void HLRecovery_Global(const ExposureParams &hrp) {};
+    virtual void HLRecovery_inpaint(float** red, float** green, float** blue) {};
 
-    virtual bool        isRGBSourceModified () const = 0; // tracks whether cached rgb output of demosaic has been modified
+    virtual bool isRGBSourceModified() const = 0; // tracks whether cached rgb output of demosaic has been modified
 
-    virtual void        setBorder (unsigned int border) {}
-    virtual void        setCurrentFrame (unsigned int frameNum) = 0;
-    virtual int         getFrameCount () = 0;
-    virtual int         getFlatFieldAutoClipValue () = 0;
+    virtual void setBorder(unsigned int border) {}
+    virtual void setCurrentFrame(unsigned int frameNum) = 0;
+    virtual int getFrameCount() = 0;
+    virtual int getFlatFieldAutoClipValue() = 0;
 
 
     // use right after demosaicing image, add coarse transformation and put the result in the provided Imagefloat*
-    virtual void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hlp, const RAWParams &raw) = 0;
-    virtual eSensorType getSensorType () const = 0;
-    virtual bool        isMono () const = 0;
+    virtual void getImage(const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hlp, const RAWParams &raw) = 0;
+    virtual eSensorType getSensorType() const = 0;
+    virtual bool isMono() const = 0;
     // true is ready to provide the AutoWB, i.e. when the image has been demosaiced for RawImageSource
-    virtual bool        isWBProviderReady () = 0;
+    virtual bool isWBProviderReady() = 0;
 
-    virtual void        convertColorSpace    (Imagefloat* image, const ColorManagementParams &cmp, const ColorTemp &wb) = 0; // DIRTY HACK: this method is derived in rawimagesource and strimagesource, but (...,RAWParams raw) will be used ONLY for raw images
-    virtual void        getAutoWBMultipliers (double &rm, double &gm, double &bm) = 0;
-    virtual ColorTemp   getWB       () const = 0;
-    virtual ColorTemp   getSpotWB   (std::vector<Coord2D> &red, std::vector<Coord2D> &green, std::vector<Coord2D> &blue, int tran, double equal) = 0;
+    virtual void convertColorSpace(Imagefloat* image, const ColorManagementParams &cmp, const ColorTemp &wb) = 0; // DIRTY HACK: this method is derived in rawimagesource and strimagesource, but (...,RAWParams raw) will be used ONLY for raw images
+    virtual void getAutoWBMultipliers(double &rm, double &gm, double &bm) = 0;
+    virtual ColorTemp getWB() const = 0;
+    virtual ColorTemp getSpotWB(std::vector<Coord2D> &red, std::vector<Coord2D> &green, std::vector<Coord2D> &blue, int tran, double equal) = 0;
 
-    virtual double      getDefGain  () const
-    {
-        return 1.0;
-    }
+    virtual double getDefGain() const { return 1.0; }
 
-    virtual void        getFullSize (int& w, int& h, int tr = TR_NONE) {}
-    virtual void        getSize     (const PreviewProps &pp, int& w, int& h) = 0;
-    virtual int         getRotateDegree() const
-    {
-        return 0;
-    }
+    virtual void getFullSize(int& w, int& h, int tr = TR_NONE) {}
+    virtual void getSize(const PreviewProps &pp, int& w, int& h) = 0;
+    virtual int getRotateDegree() const { return 0; }
 
-    virtual ImageMatrices* getImageMatrices () = 0;
-    virtual bool           isRAW () const = 0;
-    virtual DCPProfile*    getDCP (const ColorManagementParams &cmp, DCPProfile::ApplyState &as)
+    virtual ImageMatrices* getImageMatrices() = 0;
+    virtual bool isRAW() const = 0;
+    virtual DCPProfile* getDCP(const ColorManagementParams &cmp, DCPProfile::ApplyState &as)
     {
         return nullptr;
     };
 
-    virtual void        setProgressListener (ProgressListener* pl) {}
+    virtual void setProgressListener(ProgressListener* pl) {}
 
-    void        increaseRef () override
+    void increaseRef() override
     {
         references++;
     }
-    void        decreaseRef () override
+    void decreaseRef() override
     {
         references--;
 
@@ -129,8 +121,8 @@ public:
         }
     }
 
-    virtual void        getAutoExpHistogram (LUTu & histogram, int& histcompr) = 0;
-    virtual void        getRAWHistogram (LUTu & histRedRaw, LUTu & histGreenRaw, LUTu & histBlueRaw)
+    virtual void getAutoExpHistogram(LUTu & histogram, int& histcompr) = 0;
+    virtual void getRAWHistogram(LUTu & histRedRaw, LUTu & histGreenRaw, LUTu & histBlueRaw)
     {
         histRedRaw.clear();
         histGreenRaw.clear();
@@ -143,30 +135,32 @@ public:
         outCurve = { 0.0 };
     }
     
-    double getDirPyrDenoiseExpComp ( )
+    double getDirPyrDenoiseExpComp()
     {
         return dirpyrdenoiseExpComp;
     }
     // functions inherited from the InitialImage interface
-    Glib::ustring getFileName () override
+    Glib::ustring getFileName() override
     {
         return fileName;
     }
-    cmsHPROFILE getEmbeddedProfile () override
+    cmsHPROFILE getEmbeddedProfile() override
     {
         return embProfile;
     }
-    const FramesMetaData* getMetaData () override
+    const FramesMetaData* getMetaData() override
     {
         return idata;
     }
-    ImageSource* getImageSource () override
+    ImageSource* getImageSource() override
     {
         return this;
     }
     virtual void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) = 0;
 
     virtual bool getDeconvAutoRadius(float *out=nullptr) { return false; }
+    virtual bool getFilmNegativeExponents(Coord2D spotA, Coord2D spotB, int tran, const FilmNegativeParams& currentParams, std::array<float, 3>& newExps) { return false; }
+    virtual void filmNegativeProcess(const procparams::FilmNegativeParams &params) {}
 };
-}
+} // namespace rtengine
 #endif

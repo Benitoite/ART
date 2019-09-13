@@ -28,12 +28,9 @@
 #include "imagefloat.h"
 #include "../rtgui/threadutils.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
-class Thumbnail
-{
-
+class Thumbnail {
     MyMutex thumbMutex;
 
     cmsHPROFILE camProfile;
@@ -68,6 +65,9 @@ class Thumbnail
     int scaleForSave;
     bool gammaCorrected;
     double colorMatrix[3][3];
+    SensorType sensorType;
+
+    void processFilmNegative(const procparams::ProcParams& params, const Imagefloat* baseImg, int rwidth, int rheight, float &rmi, float &gmi, float &bmi);
 
 public:
 
@@ -157,7 +157,7 @@ public:
         return imgPtr;
     }
 };
-}
+} // namespace rtengine
 
 #endif
 

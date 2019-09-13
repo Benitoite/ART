@@ -233,6 +233,10 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             imgsrc->getRAWHistogram(histRedRaw, histGreenRaw, histBlueRaw);
     
             highDetailPreprocessComputed = highDetailNeeded;
+
+            if (todo & M_RAW) {
+                imgsrc->filmNegativeProcess(params.filmNegative);
+            }                
         }
     
         /*
@@ -822,6 +826,33 @@ void ImProcCoordinator::getAutoCrop(double ratio, int &x, int &y, int &w, int &h
         h = hh;
     }
 }
+
+
+bool ImProcCoordinator::getFilmNegativeExponents(int xA, int yA, int xB, int yB, std::array<float, 3>& newExps)
+{
+    MyMutex::MyLock lock(mProcessing);
+
+    const auto xlate =
+        [this](int x, int y) -> Coord2D
+        {
+            const std::vector<Coord2D> points = {Coord2D(x, y)};
+
+            std::vector<Coord2D> red;
+            std::vector<Coord2D> green;
+            std::vector<Coord2D> blue;
+            ipf.transCoord(fw, fh, points, red, green, blue);
+
+            return green[0];
+        };
+
+    const int tr = getCoarseBitMask(params.coarse);
+
+    const Coord2D p1 = xlate(xA, yA);
+    const Coord2D p2 = xlate(xB, yB);
+
+    return imgsrc->getFilmNegativeExponents(p1, p2, tr, params.filmNegative, newExps);
+}
+
 
 void ImProcCoordinator::setMonitorProfile(const Glib::ustring& profile, RenderingIntent intent)
 {

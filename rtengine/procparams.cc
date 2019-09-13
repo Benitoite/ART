@@ -2271,6 +2271,31 @@ Glib::ustring RAWParams::getFlatFieldBlurTypeString(FlatFieldBlurType type)
 }
 
 
+FilmNegativeParams::FilmNegativeParams():
+    enabled(false),
+    redRatio(1.36),
+    greenExp(1.5),
+    blueRatio(0.86)
+{
+}
+
+
+bool FilmNegativeParams::operator==(const FilmNegativeParams &other) const
+{
+    return
+        enabled == other.enabled
+        && redRatio   == other.redRatio
+        && greenExp == other.greenExp
+        && blueRatio  == other.blueRatio;
+}
+
+
+bool FilmNegativeParams::operator!=(const FilmNegativeParams &other) const
+{
+    return !(*this == other);
+}
+
+
 MetaDataParams::MetaDataParams():
     mode(MetaDataParams::TUNNEL)
 {
@@ -3024,6 +3049,14 @@ int ProcParams::save(bool save_general,
         if (RELEVANT_(rawWhite)) {
             saveToKeyfile("RAW", "PreExposureEnabled", raw.enable_whitepoint, keyFile);
             saveToKeyfile("RAW", "PreExposure", raw.expos, keyFile);
+        }
+
+// Film negative
+        if (RELEVANT_(filmNegative)) {
+            saveToKeyfile("Film Negative", "Enabled", filmNegative.enabled, keyFile);
+            saveToKeyfile("Film Negative", "RedRatio", filmNegative.redRatio, keyFile);
+            saveToKeyfile("Film Negative", "GreenExponent", filmNegative.greenExp, keyFile);
+            saveToKeyfile("Film Negative", "BlueRatio", filmNegative.blueRatio, keyFile);
         }
 
 // MetaData
@@ -4244,6 +4277,13 @@ int ProcParams::load(bool load_general,
             }
         }
 
+        if (keyFile.has_group("Film Negative") && RELEVANT_(filmNegative)) {
+            assignFromKeyfile(keyFile, "Film Negative", "Enabled", filmNegative.enabled);
+            assignFromKeyfile(keyFile, "Film Negative", "RedRatio", filmNegative.redRatio);
+            assignFromKeyfile(keyFile, "Film Negative", "GreenExponent", filmNegative.greenExp);
+            assignFromKeyfile(keyFile, "Film Negative", "BlueRatio", filmNegative.blueRatio);
+        }
+
         if (keyFile.has_group("MetaData") && RELEVANT_(metadata)) {
             int mode = int(MetaDataParams::TUNNEL);
             assignFromKeyfile(keyFile, "MetaData", "Mode", mode);
@@ -4380,7 +4420,8 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && dehaze == other.dehaze
         && grain == other.grain
         && smoothing == other.smoothing
-        && colorcorrection == other.colorcorrection;
+        && colorcorrection == other.colorcorrection
+        && filmNegative == other.filmNegative;
 }
 
 bool ProcParams::operator !=(const ProcParams& other) const
