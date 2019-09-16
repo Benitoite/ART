@@ -140,9 +140,9 @@ void sharpenHaloCtrl(float** luminance, float** blurmap, float** base, float** b
     }
 }
 
-void dcdamping (float** aI, float** aO, float damping, int W, int H)
-{
 
+void dcdamping(float** aI, float** aO, float damping, int W, int H)
+{
     const float dampingFac = -2.0 / (damping * damping);
 
 #ifdef __SSE2__
@@ -152,18 +152,18 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
     fourv = F2V(4.f);
     fivev = F2V(5.f);
     dampingFacv = F2V(dampingFac);
+    const vfloat v65535 = F2V(65535.f);
 #endif
+
 #ifdef _OPENMP
     #pragma omp for
 #endif
-
     for (int i = 0; i < H; i++) {
         int j = 0;
 #ifdef __SSE2__
-
         for (; j < W - 3; j += 4) {
-            Iv = LVFU(aI[i][j]);
-            Ov = LVFU(aO[i][j]);
+            Iv = LVFU(aI[i][j]) * v65535;
+            Ov = LVFU(aO[i][j]) * v65535;
             Lv = xlogf(Iv / Ov);
             Wv = Ov - Iv;
             Uv = (Ov * Lv + Wv) * dampingFacv;
@@ -176,12 +176,11 @@ void dcdamping (float** aI, float** aO, float damping, int W, int H)
             Uv = vselfzero(vmaskf_gt(Ov, zerov), Uv);
             STVFU(aI[i][j], Uv);
         }
-
 #endif
 
         for(; j < W; j++) {
-            float I = aI[i][j];
-            float O = aO[i][j];
+            float I = aI[i][j] * 65535.f;
+            float O = aO[i][j] * 65535.f;
 
             if (O <= 0.f || I <= 0.f) {
                 aI[i][j] = 0.f;
