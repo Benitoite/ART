@@ -32,6 +32,51 @@ using namespace std;
 
 namespace {
 
+template <bool reverse, bool usm>
+void apply_gamma(float **Y, int W, int H, float pivot, float gamma, bool multiThread)
+{
+    BENCHFUN
+
+    if (!reverse) {
+        gamma = 1.f/gamma;
+    }
+
+    LUTf glut(65536);
+    glut[0] = 0;
+    const float d = 65535.f * pivot;
+    for (int i = 1; i < 65536; ++i) {
+        glut[i] = pow_F(float(i)/d, gamma) * pivot;
+        if (reverse || usm) {
+            glut[i] *= 65535.f;
+        }
+    }
+        
+#ifdef _OPENMP
+#    pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            float l = Y[y][x];
+            if (LIKELY(l >= 0.f && l < 65536.f)) {
+                if (reverse && !usm) {
+                    l *= 65535.f;
+                }
+                l = glut[l];
+            } else {
+                if (!reverse) {
+                    l /= 65535.f;
+                }
+                l = pow_F(std::max(l / pivot, 1e-18f), gamma) * pivot;
+                if (reverse || usm) {
+                    l *= 65535.f;
+                }
+            }
+            Y[y][x] = l;
+        }
+    }
+}
+
+
 void sharpenHaloCtrl(float** luminance, float** blurmap, float** base, float** blend, int W, int H, const SharpeningParams &sharpenParam, bool multiThread)
 {
 
@@ -158,6 +203,8 @@ void deconvsharpening(float **luminance, float **blend, char **impulse, int W, i
         return;
     }
 BENCHFUN
+    apply_gamma<false, false>(luminance, W, H, 0.18f, 3.f, multiThread);
+    
     JaggedArray<float> tmp(W, H);
     JaggedArray<float> tmpI(W, H);
 
@@ -235,12 +282,15 @@ BENCHFUN
         }
     } // end parallel
     delete blurbuffer;
+
+    apply_gamma<true, false>(luminance, W, H, 0.18f, 3.f, multiThread);    
 }
 
 
 void unsharp_mask(float **Y, float **blend, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
 {
 BENCHFUN
+    apply_gamma<false, true>(Y, W, H, 1.f, 3.f, multiThread);
 
     float** b3 = nullptr;
 
@@ -346,52 +396,10 @@ BENCHFUN
             }
         }
     }
+
+    apply_gamma<true, true>(Y, W, H, 1.f, 3.f, multiThread);
 }
 
-
-template <bool reverse>
-void apply_gamma(float **Y, int W, int H, float pivot, float gamma, bool multiThread)
-{
-    BENCHFUN
-
-    if (!reverse) {
-        gamma = 1.f/gamma;
-    }
-
-    LUTf glut(65536);
-    glut[0] = 0;
-    const float d = 65535.f * pivot;
-    for (int i = 1; i < 65536; ++i) {
-        glut[i] = pow_F(float(i)/d, gamma) * pivot;
-        if (reverse) {
-            glut[i] *= 65535.f;
-        }
-    }
-        
-#ifdef _OPENMP
-#    pragma omp parallel for if (multiThread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            float l = Y[y][x];
-            if (LIKELY(l >= 0.f && l < 65536.f)) {
-                if (reverse) {
-                    l *= 65535.f;
-                }
-                l = glut[l];
-            } else {
-                if (!reverse) {
-                    l /= 65535.f;
-                }
-                l = pow_F(std::max(l / pivot, 1e-18f), gamma) * pivot;
-                if (reverse) {
-                    l *= 65535.f;
-                }
-            }
-            Y[y][x] = l;
-        }
-    }
-}
 
 } // namespace
 
@@ -432,7 +440,6 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
         markImpulse(W, H, Y, *impulse, 2.f);
     }
     
-    apply_gamma<false>(Y, W, H, 0.18f, 3.f, multiThread);
     
     if (sharpenParam.method == "rld") {
         deconvsharpening(Y, blend, *impulse, W, H, sharpenParam, scale, multiThread);
@@ -440,7 +447,6 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
         unsharp_mask(Y, blend, W, H, sharpenParam, scale, multiThread);
     }
 
-    apply_gamma<true>(Y, W, H, 0.18f, 3.f, multiThread);
 
     return false;
 }
