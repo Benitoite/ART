@@ -3556,7 +3556,7 @@ int ProcParams::load(bool load_general,
             }
         }            
 
-        const Glib::ustring tbgroup = ppVersion < 1001 ? "EPD" : "TextureBoost";
+        const Glib::ustring tbgroup = ppVersion < 1000 ? "EPD" : "TextureBoost";
         if (keyFile.has_group(tbgroup) && RELEVANT_(textureBoost)) {
             assignFromKeyfile(keyFile, tbgroup, "Enabled", textureBoost.enabled);
                 
