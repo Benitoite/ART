@@ -1311,7 +1311,7 @@ PREFERENCES_VIEW;Output device's white balance (monitor, TV, projector, viewing,
 PREFERENCES_WORKFLOW;Layout
 PREFERENCES_XMP_SIDECAR_MODE;XMP sidecar style
 PREFERENCES_XMP_SIDECAR_MODE_STD;Standard (FILENAME.xmp for FILENAME.ext)
-PREFERENCES_XMP_SIDECAR_MODE_EXT;Darktable-like (FILENAME.ext.xmp for FILENAME.ext)
+PREFERENCES_XMP_SIDECAR_MODE_EXT;darktable/digiKam-like (FILENAME.ext.xmp for FILENAME.ext)
 PROFILEPANEL_COPYPPASTE;Parameters to copy
 PROFILEPANEL_GLOBALPROFILES;Bundled profiles
 PROFILEPANEL_LABEL;Processing Profiles
