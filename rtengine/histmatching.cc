@@ -302,6 +302,31 @@ private:
     array2D<float> img_;
 };
 
+
+int avg_luminance(const IImage8 &img, int starty, int startx, int tilesize)
+{
+    int ret = 0;
+    for (int j = 0; j < tilesize; ++j) {
+        for (int i = 0; i < tilesize; ++i) {
+            int l = get_luminance(img, starty + j, startx + i);
+            ret += l;
+        }
+    }
+    return float(ret) / float(SQR(tilesize));
+}
+
+
+int max_corner_luminance(const IImage8 &img)
+{
+    int w = img.getWidth();
+    int h = img.getHeight();
+    int l_tl = avg_luminance(img, 0, 0, 4);
+    int l_tr = avg_luminance(img, 0, w-1-4, 4);
+    int l_bl = avg_luminance(img, h-1-4, 0, 4);
+    int l_br = avg_luminance(img, h-1-4, w-1-4, 4);
+    return max(l_tl, l_tr, l_bl, l_br);
+}
+
 } // namespace
 
 
@@ -397,6 +422,29 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
 
         int sw = source->getWidth(), sh = source->getHeight();
         int tw = target->getWidth(), th = target->getHeight();
+
+        // check if we need auto-distortion correction -- try to see if we
+        // have dark corners
+        int tl = max_corner_luminance(*target);
+        int sl = max_corner_luminance(*source);
+        const int l_noise = 10;
+        if (tl <= l_noise && sl > l_noise) {
+            if (settings->verbose) {
+                std::cout << "histogram matching: corners luminance is "
+                          << tl << " for target, " << sl << " for source, "
+                          << "trying to perform auto-distortion correction"
+                          << std::endl;
+            }
+            neutral.distortion.enabled = true;
+            neutral.distortion.amount = ImProcFunctions::getAutoDistor(getFileName(), 300);
+            if (neutral.distortion.amount != 0) {
+                if (settings->verbose) {
+                    std::cout << "histogram matching: dark corners detected, reprocessing with auto-distortion correction" << std::endl;
+                }
+                target.reset(thumb->processImage(neutral, sensor_type, fh / skip, TI_Nearest, getMetaData(), scale, false, true));
+            }
+        }            
+        
         float thumb_ratio = float(std::max(sw, sh)) / float(std::min(sw, sh));
         float target_ratio = float(std::max(tw, th)) / float(std::min(tw, th));
         int cx = 0, cy = 0;
