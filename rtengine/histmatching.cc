@@ -26,6 +26,7 @@
 #include "iccstore.h"
 #include "../rtgui/mydiagonalcurve.h"
 #include "improcfun.h"
+#include "array2D.h"
 //#define BENCHMARK
 #include "StopWatch.h"
 #include <iostream>
@@ -46,13 +47,40 @@ struct CdfInfo {
 };
 
 
-CdfInfo getCdf(const IImage8 &img)
+typedef int (*PixelGetter)(const IImage8 &img, int y, int x);
+
+
+int get_luminance(const IImage8 &img, int y, int x)
+{
+    return LIM(int(Color::rgbLuminance(float(img.r(y, x)), float(img.g(y, x)), float(img.b(y, x)))), 0, 255);
+}
+
+
+int get_r(const IImage8 &img, int y, int x)
+{
+    return img.r(y, x);
+}
+
+
+int get_g(const IImage8 &img, int y, int x)
+{
+    return img.g(y, x);
+}
+
+
+int get_b(const IImage8 &img, int y, int x)
+{
+    return img.b(y, x);
+}
+
+
+CdfInfo getCdf(const IImage8 &img, PixelGetter getpix)
 {
     CdfInfo ret;
 
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
-            int lum = LIM(int(Color::rgbLuminance(float(img.r(y, x)), float(img.g(y, x)), float(img.b(y, x)))), 0, 255);
+            int lum = getpix(img, y, x);
             ++ret.cdf[lum];
         }
     }
@@ -226,6 +254,54 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
     }
 }
 
+
+class CurveEvaluator {
+public:
+    CurveEvaluator(const IImage8 &source, const IImage8 &target):
+        srchist_{}
+    {
+        int sw = source.getWidth();
+        int sh = source.getHeight();
+        float s = 300 / float(std::max(sw, sh));
+        int w = sw * s;
+        int h = sh * s;
+        img_(w, h);
+
+        for (int y = 0; y < h; ++y) {
+            int sy = y / s;
+            for (int x = 0; x < w; ++x) {
+                int sx = x / s;
+                int l = get_luminance(source, sy, sx);
+                img_[y][x] = float(get_luminance(target, sy, sx)) / 255.f;
+                ++srchist_[l];
+            }
+        }
+    }
+
+    double operator()(const std::vector<double> &curve)
+    {
+        std::array<float, 256> hist = {};
+        DiagonalCurve c(curve);
+
+        for (int y = 0; y < img_.height(); ++y) {
+            for (int x = 0; x < img_.width(); ++x) {
+                int l = c.getVal(img_[y][x]) * 255.f;
+                ++hist[l];
+            }
+        }
+
+        size_t ret = 0;
+        for (size_t i = 0; i < hist.size(); ++i) {
+            ret += std::abs(srchist_[i] - hist[i]);
+        }
+        return ret;
+    }
+
+private:
+    std::array<float, 256> srchist_;
+    array2D<float> img_;
+};
+
 } // namespace
 
 
@@ -365,23 +441,50 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
         target->resizeImgTo(source->getWidth(), source->getHeight(), TI_Nearest, tmp);
         target.reset(tmp);
     }
-    CdfInfo scdf = getCdf(*source);
-    CdfInfo tcdf = getCdf(*target);
+    static const std::vector<PixelGetter> getters = {
+        &get_luminance,
+        &get_r,
+        &get_g,
+        &get_b
+    };
+    std::vector<std::vector<double>> candidates;
+    for (auto g : getters) {
+        CdfInfo scdf = getCdf(*source, g);
+        CdfInfo tcdf = getCdf(*target, g);
 
-    std::vector<int> mapping;
-    int j = 0;
-    for (int i = 0; i < int(tcdf.cdf.size()); ++i) {
-        j = findMatch(tcdf.cdf[i], scdf.cdf, j);
-        if (i >= tcdf.min_val && i <= tcdf.max_val && j >= scdf.min_val && j <= scdf.max_val) {
-            mapping.push_back(j);
-        } else {
-            mapping.push_back(-1);
+        std::vector<int> mapping;
+        int j = 0;
+        for (int i = 0; i < int(tcdf.cdf.size()); ++i) {
+            j = findMatch(tcdf.cdf[i], scdf.cdf, j);
+            if (i >= tcdf.min_val && i <= tcdf.max_val && j >= scdf.min_val && j <= scdf.max_val) {
+                mapping.push_back(j);
+            } else {
+                mapping.push_back(-1);
+            }
+        }
+
+        candidates.push_back({});
+        mappingToCurve(mapping, candidates.back());
+    }
+    CurveEvaluator eval(*source, *target);
+    size_t best = candidates.size();
+    double bestscore = RT_INFINITY;
+    for (size_t i = 0; i < candidates.size(); ++i) {
+        double score = eval(candidates[i]);
+        if (settings->verbose) {
+            std::cout << "histogram matching: candidate " << i
+                      << " has score " << score << std::endl;
+        }
+        if (score < bestscore) {
+            best = i;
+            bestscore = score;
         }
     }
-
-    mappingToCurve(mapping, outCurve);
+    outCurve = candidates[best];
 
     if (settings->verbose) {
+        std::cout << "histogram matching: best match found at " << best
+                  << " with score " << bestscore << std::endl;
         std::cout << "histogram matching: generated curve with " << outCurve.size()/2 << " control points" << std::endl;
     }
 
