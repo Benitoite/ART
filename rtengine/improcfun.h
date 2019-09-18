@@ -118,6 +118,7 @@ public:
     void toneCurve(Imagefloat *img);
     void brightnessContrastSaturation(Imagefloat *img);
     void filmSimulation(Imagefloat *img);
+    void creativeGradients(Imagefloat *img);
 
     enum class Stage {
         STAGE_0,
@@ -157,13 +158,8 @@ public:
     //----------------------------------------------------------------------
     // misc helper functions for image processing ops
     //----------------------------------------------------------------------
-    bool needsLuminanceOnly()
-    {
-        return !(needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsLCP() || needsLensfun()) && (needsVignetting() || needsPCVignetting() || needsGradient());
-    }
-
+    bool needsLuminanceOnly();
     bool needsTransform();
-    
     bool needsPCVignetting();
     
     float resizeScale(const ProcParams* params, int fw, int fh, int &imw, int &imh);
@@ -205,7 +201,7 @@ private:
     bool show_sharpening_mask;
     
 private:
-    void transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH);
+    void transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH, bool creative);
     void transformGeneral(bool highQuality, Imagefloat *original, Imagefloat *transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const LensCorrection *pLCPMap);
     void transformLCPCAOnly(Imagefloat *original, Imagefloat *transformed, int cx, int cy, const LensCorrection *pLCPMap);
 

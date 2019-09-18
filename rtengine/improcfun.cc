@@ -862,6 +862,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         if (!stop) {
             softLight(img);
             localContrast(img);
+            creativeGradients(img);
             filmGrain(img);
         }
         break;

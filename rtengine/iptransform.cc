@@ -492,12 +492,12 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
     bool highQuality = needsCA() && scale == 1;
     bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
     bool needs_perspective = needsPerspective();
-    bool needs_luminance = (needsVignetting() || needsPCVignetting() || needsGradient());
+    bool needs_luminance = needsVignetting();
     bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
     bool needs_transform_general = needs_dist_rot_ca || needs_luminance;
 
     if (! (needs_dist_rot_ca || needs_perspective) && needs_luminance) {
-        transformLuminanceOnly (original, transformed, cx, cy, oW, oH, fW, fH);
+        transformLuminanceOnly(original, transformed, cx, cy, oW, oH, fW, fH, false);
     } else {
         std::unique_ptr<Imagefloat> tmpimg;
         Imagefloat *dest = transformed;
@@ -869,12 +869,12 @@ float calcPCVignetteFactor (const struct pcv_params& pcv, int x, int y)
 
 } // namespace
 
-void ImProcFunctions::transformLuminanceOnly (Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH)
+void ImProcFunctions::transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH, bool creative)
 {
 
-    const bool applyVignetting = needsVignetting();
-    const bool applyGradient = needsGradient();
-    const bool applyPCVignetting = needsPCVignetting();
+    const bool applyVignetting = !creative && needsVignetting();
+    const bool applyGradient = creative && needsGradient();
+    const bool applyPCVignetting = creative && needsPCVignetting();
 
     double vig_w2, vig_h2, maxRadius, v, b, mul;
 
@@ -938,8 +938,8 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     // set up stuff, depending on the mode we are
     bool enableLCPDist = pLCPMap && params->lensProf.useDist;
     bool enableCA = highQuality && needsCA();
-    bool enableGradient = needsGradient();
-    bool enablePCVignetting = needsPCVignetting();
+    constexpr bool enableGradient = false;
+    constexpr bool enablePCVignetting = false;
     bool enableVignetting = needsVignetting();
     bool enableDistortion = needsDistortion();
 
@@ -1247,10 +1247,23 @@ bool ImProcFunctions::needsLensfun()
     return params->lensProf.useLensfun();
 }
 
-bool ImProcFunctions::needsTransform ()
+bool ImProcFunctions::needsTransform()
 {
-    return needsCA () || needsDistortion () || needsRotation () || needsPerspective () || needsGradient () || needsPCVignetting () || needsVignetting () || needsLCP() || needsLensfun();
+    return needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsVignetting() || needsLCP() || needsLensfun();
 }
 
+bool ImProcFunctions::needsLuminanceOnly()
+{
+    return !(needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsLCP() || needsLensfun()) && needsVignetting();
+}
+
+
+void ImProcFunctions::creativeGradients(Imagefloat *img)
+{
+    if (needsGradient() || needsPCVignetting()) {
+        img->setMode(Imagefloat::Mode::RGB, multiThread);
+        transformLuminanceOnly(img, img, offset_x, offset_y, full_width, full_height, full_width * scale, full_height * scale, true);
+    }
+}
 
 } // namespace rtengine

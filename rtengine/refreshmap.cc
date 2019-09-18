@@ -236,10 +236,10 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     DEFRINGE,         // EvPFCurve
     ALLNORAW,         // EvWBequal
     ALLNORAW,         // EvWBequalbo
-    TRANSFORM,        // EvGradientDegree
-    TRANSFORM,        // EvGradientEnabled
-    TRANSFORM,        // EvPCVignetteStrength
-    TRANSFORM,        // EvPCVignetteEnabled
+    LUMINANCECURVE,   // EvGradientDegree
+    LUMINANCECURVE,   // EvGradientEnabled
+    LUMINANCECURVE,   // EvPCVignetteStrength
+    LUMINANCECURVE,   // EvPCVignetteEnabled
     RGBCURVE,         // EvBWChmixEnabled
     RGBCURVE,         // EvBWred
     RGBCURVE,         // EvBWgreen
@@ -264,11 +264,11 @@ int refreshmap[rtengine::NUMOFEVENTS] = {
     RGBCURVE,         // EvAutoch
     0,                // --unused--
     RGBCURVE,         // EvNeutralBW
-    TRANSFORM,        // EvGradientFeather
-    TRANSFORM,        // EvGradientStrength
-    TRANSFORM,        // EvGradientCenter
-    TRANSFORM,        // EvPCVignetteFeather
-    TRANSFORM,        // EvPCVignetteRoundness
+    LUMINANCECURVE,   // EvGradientFeather
+    LUMINANCECURVE,   // EvGradientStrength
+    LUMINANCECURVE,   // EvGradientCenter
+    LUMINANCECURVE,   // EvPCVignetteFeather
+    LUMINANCECURVE,   // EvPCVignetteRoundness
     TRANSFORM,        // EvVignettingRadius,
     TRANSFORM,        // EvVignettingStrength
     TRANSFORM,        // EvVignettingCenter
