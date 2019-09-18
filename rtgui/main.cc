@@ -39,6 +39,7 @@
 #include "version.h"
 #include "extprog.h"
 #include "../rtengine/dynamicprofile.h"
+#include "printhelp.h"
 
 #ifndef WIN32
 #include <glibmm/fileutils.h>
@@ -109,6 +110,30 @@ static void myGdkLockLeave()
 }
 
 
+void process_help_params(int argc, char **argv)
+{
+    for (int i = 1; i < argc; ++i) {
+        Glib::ustring currParam(argv[i]);
+#if ECLIPSE_ARGS
+        currParam = currParam.substr(1, currParam.length() - 2);
+#endif
+        if (currParam.length() > 1 && currParam[0] == '-') {
+            switch (currParam[1]) {
+            case 'v':
+                std::cout << RTNAME << ", version " << RTVERSION << std::endl;
+                exit(0);
+            case '?':
+            case 'h':
+                ART_print_help(argv[0], true);
+                exit(0);
+            default:
+                break;
+            }
+        }
+    }
+}
+
+
 /* Process line command options
  * Returns
  *  0 if process in batch has executed
@@ -168,31 +193,10 @@ int processLineParams ( int argc, char **argv )
 
                 case 'h':
                 case '?':
-                default: {
-                    printf("  An advanced, cross-platform program for developing raw photos.\n\n");
-                    printf("  Website: http://www.rawtherapee.com/\n");
-                    printf("  Documentation: http://rawpedia.rawtherapee.com/\n");
-                    printf("  Forum: https://discuss.pixls.us/c/software/rawtherapee\n");
-                    printf("  Code and bug reports: https://github.com/Beep6581/RawTherapee\n\n");
-                    printf("Symbols:\n");
-                    printf("  <Chevrons> indicate parameters you can change.\n\n");
-                    printf("Usage:\n");
-                    printf("  %s <folder>           Start File Browser inside folder.\n",Glib::path_get_basename (argv[0]).c_str());
-                    printf("  %s <file>             Start Image Editor with file.\n\n",Glib::path_get_basename (argv[0]).c_str());
-                    std::cout << std::endl;
-                    printf("Options:\n");
-#ifdef WIN32
-                    printf("  -w Do not open the Windows console\n");
-#endif
-                    printf("  -v Print RawTherapee version number and exit\n");
-#ifndef __APPLE__
-                    printf("  -R Raise an already running RawTherapee instance (if available)\n");
-#endif
-                    printf("  -h -? Display this help message\n");
-
+                default:
+                    ART_print_help(argv[0], true);
                     ret = -1;
                     break;
-                }
             }
         } else {
             if (argv1.empty()) {
@@ -371,6 +375,8 @@ int main (int argc, char **argv)
     argv0 = "";
     argv1 = "";
     argv2 = "";
+
+    process_help_params(argc, argv);
 
     Glib::init();  // called by Gtk::Main, but this may be important for thread handling, so we call it ourselves now
     Gio::init ();

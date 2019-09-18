@@ -37,6 +37,7 @@
 #include "rtimage.h"
 #include "version.h"
 #include "extprog.h"
+#include "printhelp.h"
 
 #ifndef WIN32
 #include <glibmm/fileutils.h>
@@ -233,18 +234,33 @@ int main (int argc, char **argv)
 
 bool dontLoadCache ( int argc, char **argv )
 {
+    bool ret = false;
     for (int iArg = 1; iArg < argc; iArg++) {
         Glib::ustring currParam (argv[iArg]);
 #if ECLIPSE_ARGS
         currParam = currParam.substr (1, currParam.length() - 2);
 #endif
-        if ( currParam.length() > 1 && currParam.at(0) == '-' && currParam.at(1) == 'q' ) {
-            return true;
+        if (currParam.length() > 1 && currParam[0] == '-') {
+            switch (currParam[1]) {
+            case 'q':
+                ret = true;
+                break;
+            case 'v':
+                std::cout << RTNAME << ", version " << RTVERSION << ", command line." << std::endl;
+                exit(0);
+            case '?':
+            case 'h':
+                ART_print_help(argv[0], false);
+                exit(0);
+            default:
+                break;
+            }
         }
     }
 
-    return false;
+    return ret;
 }
+
 
 int processLineParams ( int argc, char **argv )
 {
@@ -507,80 +523,9 @@ int processLineParams ( int argc, char **argv )
 
                 case 'h':
                 case '?':
-                default: {
-                    Glib::ustring pparamsExt = paramFileExtension.substr (1);
-                    std::cout << "  An advanced, cross-platform program for developing raw photos." << std::endl;
-                    std::cout << std::endl;
-                    std::cout << "  Website: http://bitbucket.org/agriggio/ART" << std::endl;
-                    // std::cout << "  Documentation: http://rawpedia.rawtherapee.com/" << std::endl;
-                    // std::cout << "  Forum: https://discuss.pixls.us/c/software/rawtherapee" << std::endl;
-                    // std::cout << "  Code and bug reports: https://github.com/Beep6581/RawTherapee" << std::endl;
-                    std::cout << std::endl;
-                    std::cout << "Symbols:" << std::endl;
-                    std::cout << "  <Chevrons> indicate parameters you can change." << std::endl;
-                    std::cout << "  [Square brackets] mean the parameter is optional." << std::endl;
-                    std::cout << "  The pipe symbol | indicates a choice of one or the other." << std::endl;
-                    std::cout << "  The dash symbol - denotes a range of possible values from one to the other." << std::endl;
-                    std::cout << std::endl;
-                    std::cout << "Usage:" << std::endl;
-                    std::cout << "  " << Glib::path_get_basename (argv[0]) << " -c <dir>|<files>   Convert files in batch with default parameters." << std::endl;
-                    std::cout << "  " << Glib::path_get_basename (argv[0]) << " <other options> -c <dir>|<files>   Convert files in batch with your own settings." << std::endl;
-                    std::cout << std::endl;
-                    std::cout << "Options:" << std::endl;
-                    std::cout << "  " << Glib::path_get_basename (argv[0]) << "[-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one" << paramFileExtension << "> [-p <two" << paramFileExtension << "> ...] ] [-d] [ -j[1-100] -js<1-3> | -t[z] -b<8|16|16f|32> | -n -b<8|16> ] [-Y] [-f] -c <input>" << std::endl;
-                    std::cout << std::endl;
-                    std::cout << "  -c <files>       Specify one or more input files or folders." << std::endl;
-                    std::cout << "                   When specifying folders, Rawtherapee will look for image file types which comply" << std::endl;
-                    std::cout << "                   with the selected extensions (see also '-a')." << std::endl;
-                    std::cout << "                   -c must be the last option." << std::endl;
-                    std::cout << "  -o <file>|<dir>  Set output file or folder." << std::endl;
-                    std::cout << "                   Saves output file alongside input file if -o is not specified." << std::endl;
-                    std::cout << "  -O <file>|<dir>  Set output file or folder and copy " << pparamsExt << " file into it." << std::endl;
-                    std::cout << "                   Saves output file alongside input file if -O is not specified." << std::endl;
-                    std::cout << "  -q               Quick-start mode. Does not load cached files to speedup start time." << std::endl;
-                    std::cout << "  -a               Process all supported image file types when specifying a folder, even those" << std::endl;
-                    std::cout << "                   not currently selected in Preferences > File Browser > Parsed Extensions." << std::endl;
-                    std::cout << "  -s               Use the existing sidecar file to build the processing parameters," << std::endl;
-                    std::cout << "                   e.g. for photo.raw there should be a photo.raw." << pparamsExt << " file in the same folder." << std::endl;
-                    std::cout << "                   If the sidecar file does not exist, neutral values will be used." << std::endl;
-                    std::cout << "  -S               Like -s but skip if the sidecar file does not exist." << std::endl;
-                    std::cout << "  -p <file" << paramFileExtension << ">    Specify processing profile to be used for all conversions." << std::endl;
-                    std::cout << "                   You can specify as many sets of \"-p <file" << paramFileExtension << ">\" options as you like," << std::endl;
-                    std::cout << "                   each will be built on top of the previous one, as explained below." << std::endl;
-                    std::cout << "  -d               Use the default raw or non-raw processing profile as set in" << std::endl;
-                    std::cout << "                   Preferences > Image Processing > Default Processing Profile" << std::endl;
-                    std::cout << "  -j[1-100]        Specify output to be JPEG (default, if -t and -n are not set)." << std::endl;
-                    std::cout << "                   Optionally, specify compression 1-100 (default value: 92)." << std::endl;
-                    std::cout << "  -js<1-3>         Specify the JPEG chroma subsampling parameter, where:" << std::endl;
-                    std::cout << "                   1 = Best compression:   2x2, 1x1, 1x1 (4:2:0)" << std::endl;
-                    std::cout << "                       Chroma halved vertically and horizontally." << std::endl;
-                    std::cout << "                   2 = Balanced (default): 2x1, 1x1, 1x1 (4:2:2)" << std::endl;
-                    std::cout << "                       Chroma halved horizontally." << std::endl;
-                    std::cout << "                   3 = Best quality:       1x1, 1x1, 1x1 (4:4:4)" << std::endl;
-                    std::cout << "                       No chroma subsampling." << std::endl;
-                    std::cout << "  -b<8|16|16f|32>  Specify bit depth per channel." << std::endl;
-                    std::cout << "                   8   = 8-bit integer.  Applies to JPEG, PNG and TIFF. Default for JPEG and PNG." << std::endl;
-                    std::cout << "                   16  = 16-bit integer. Applies to TIFF and PNG. Default for TIFF." << std::endl;
-                    std::cout << "                   16f = 16-bit float.   Applies to TIFF." << std::endl;
-                    std::cout << "                   32  = 32-bit float.   Applies to TIFF." << std::endl;
-                    std::cout << "  -t[z]            Specify output to be TIFF." << std::endl;
-                    std::cout << "                   Uncompressed by default, or deflate compression with 'z'." << std::endl;
-                    std::cout << "  -n               Specify output to be compressed PNG." << std::endl;
-                    std::cout << "                   Compression is hard-coded to PNG_FILTER_PAETH, Z_RLE." << std::endl;
-                    std::cout << "  -Y               Overwrite output if present." << std::endl;
-                    std::cout << "  -f               Use the custom fast-export processing pipeline." << std::endl;
-                    std::cout << std::endl;
-                    std::cout << "Your " << pparamsExt << " files can be incomplete, ART will build the final values as follows:" << std::endl;
-                    std::cout << "  1- A new processing profile is created using neutral values," << std::endl;
-                    std::cout << "  2- If the \"-d\" option is set, the values are overridden by those found in" << std::endl;
-                    std::cout << "     the default raw or non-raw processing profile." << std::endl;
-                    std::cout << "  3- If one or more \"-p\" options are set, the values are overridden by those" << std::endl;
-                    std::cout << "     found in these processing profiles." << std::endl;
-                    std::cout << "  4- If the \"-s\" or \"-S\" options are set, the values are finally overridden by those" << std::endl;
-                    std::cout << "     found in the sidecar files." << std::endl;
-                    std::cout << "  The processing profiles are processed in the order specified on the command line." << std::endl;
+                default:
+                    ART_print_help(argv[0], false);
                     return -1;
-                }
             }
         } else {
             argv1 = Glib::ustring (fname_to_utf8 (argv[iArg]));
