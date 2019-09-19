@@ -27,6 +27,7 @@
 
 ImageArea::ImageArea (ImageAreaPanel* p) : parent(p), fullImageWidth(0), fullImageHeight(0)
 {
+    get_style_context()->add_class("drawingarea");
 
     infotext = "";
     cropgl = nullptr;
