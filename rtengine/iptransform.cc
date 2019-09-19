@@ -1262,7 +1262,19 @@ void ImProcFunctions::creativeGradients(Imagefloat *img)
 {
     if (needsGradient() || needsPCVignetting()) {
         img->setMode(Imagefloat::Mode::RGB, multiThread);
-        transformLuminanceOnly(img, img, offset_x, offset_y, full_width, full_height, full_width * scale, full_height * scale, true);
+        int cx = offset_x;
+        int cy = offset_y;
+        int cw, ch;
+        if (full_width < 0) {
+            cw = img->getWidth();
+            ch = img->getHeight();
+        } else {
+            cw = full_width;
+            ch = full_height;
+        }
+        int fw = cw * scale;
+        int fh = ch * scale;
+        transformLuminanceOnly(img, img, cx, cy, cw, ch, fw, fh, true);
     }
 }
 

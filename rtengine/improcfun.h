@@ -74,6 +74,28 @@ public:
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
+    // pipeline management
+    //----------------------------------------------------------------------
+    enum class Stage {
+        STAGE_0,
+        STAGE_1,
+        STAGE_2,
+        STAGE_3
+    };
+    enum class Pipeline {
+        THUMBNAIL,
+        NAVIGATOR,
+        PREVIEW,
+        OUTPUT
+    };
+    bool process(Pipeline pipeline, Stage stage, Imagefloat *img);
+
+    void setViewport(int ox, int oy, int fw, int fh);
+    void setOutputHistograms(LUTu *histToneCurve, LUTu *histCCurve, LUTu *histLCurve);
+    void setShowSharpeningMask(bool yes);
+    //----------------------------------------------------------------------
+    
+    //----------------------------------------------------------------------
     // image processing operations
     //----------------------------------------------------------------------
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
@@ -119,24 +141,6 @@ public:
     void brightnessContrastSaturation(Imagefloat *img);
     void filmSimulation(Imagefloat *img);
     void creativeGradients(Imagefloat *img);
-
-    enum class Stage {
-        STAGE_0,
-        STAGE_1,
-        STAGE_2,
-        STAGE_3
-    };
-    enum class Pipeline {
-        THUMBNAIL,
-        NAVIGATOR,
-        PREVIEW,
-        OUTPUT
-    };
-    bool process(Pipeline pipeline, Stage stage, Imagefloat *img);
-
-    void setViewport(int ox, int oy, int fw, int fh);
-    void setOutputHistograms(LUTu *histToneCurve, LUTu *histCCurve, LUTu *histLCurve);
-    void setShowSharpeningMask(bool yes);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------

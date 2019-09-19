@@ -170,7 +170,7 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     ipf.setOutputHistograms(&histToneCurve, &histCCurve, &histLCurve);
 
     if (todo == CROP && ipf.needsPCVignetting()) {
-        todo |= TRANSFORM;    // Change about Crop does affect TRANSFORM
+        todo |= M_LUMINANCE; //TRANSFORM;    // Change about Crop does affect TRANSFORM
     }
 
     bool highDetailNeeded = false;
@@ -300,6 +300,11 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             }
         }   
     
+        int tr = getCoarseBitMask(params.coarse);    
+        imgsrc->getFullSize(fw, fh, tr);
+        PreviewProps pp(0, 0, fw, fh, scale);
+        ipf.setScale(scale);
+
         if (todo & (M_INIT | M_LINDENOISE | M_HDR)) {
             MyMutex::MyLock initLock(minit);  // Also used in crop window
     
@@ -344,16 +349,12 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
                 awbListener->WBChanged(params.wb.temperature, params.wb.green);
             }
     
-            int tr = getCoarseBitMask(params.coarse);
-    
-            imgsrc->getFullSize(fw, fh, tr);
-    
+            // int tr = getCoarseBitMask(params.coarse);    
+            // imgsrc->getFullSize(fw, fh, tr);
+            // PreviewProps pp(0, 0, fw, fh, scale);
+            // ipf.setScale(scale);
             // Will (re)allocate the preview's buffers
             setScale(scale);
-            PreviewProps pp(0, 0, fw, fh, scale);
-            // Tells to the ImProcFunctions' tools what is the preview scale, which may lead to some simplifications
-            ipf.setScale(scale);
-    
             imgsrc->getImage(currWB, tr, orig_prev, pp, params.exposure, params.raw);
             denoiseInfoStore.valid = false;
             imgsrc->convertColorSpace(orig_prev, params.icm, currWB);

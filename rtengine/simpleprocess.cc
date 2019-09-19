@@ -52,6 +52,7 @@ public:
         imgsrc(nullptr),
         fw(0),
         fh(0),
+        scale_factor(1.0),
         tr(0),
         pp(0, 0, 0, 0, 0),
         tilesize(0),
@@ -177,7 +178,7 @@ private:
 
         ipf_p.reset (new ImProcFunctions (&params, true));
         ImProcFunctions &ipf = * (ipf_p.get());
-        double scale_factor = 1.0;
+        scale_factor = 1.0;
         if (is_fast) {
             int imw, imh;
             scale_factor = ipf.resizeScale(&params, fw, fh, imw, imh);
@@ -313,10 +314,11 @@ private:
 
         int cx = 0, cy = 0, cw = img->getWidth(), ch = img->getHeight();
         if (params.crop.enabled) {
-            cx = params.crop.x;
-            cy = params.crop.y;
-            cw = params.crop.w;
-            ch = params.crop.h;
+            //params.crop.enabled = false;
+            cx = params.crop.x * scale_factor + 0.5;
+            cy = params.crop.y * scale_factor + 0.5;
+            cw = params.crop.w * scale_factor + 0.5;
+            ch = params.crop.h * scale_factor + 0.5;
 
             ipf.setViewport(cx, cy, img->getWidth(), img->getHeight());
 
@@ -442,29 +444,26 @@ private:
         procparams::ProcParams& params = job->pparams;
         ImProcFunctions &ipf = * (ipf_p.get());
 
-        int imw, imh;
-        double scale_factor = ipf.resizeScale (&params, fw, fh, imw, imh);
-
         if (scale_factor == 1.f) {
             return;
         }
 
-        imw = fw * scale_factor + 0.5;
-        imh = fh * scale_factor + 0.5;
+        int imw = fw * scale_factor + 0.5;
+        int imh = fh * scale_factor + 0.5;
 
-        if (params.crop.enabled) {
-            int cx = params.crop.x;
-            int cy = params.crop.y;
-            int cw = params.crop.w;
-            int ch = params.crop.h;
+        // if (params.crop.enabled) {
+        //     int cx = params.crop.x;
+        //     int cy = params.crop.y;
+        //     int cw = params.crop.w;
+        //     int ch = params.crop.h;
 
-            params.crop.x = cx * scale_factor + 0.5;
-            params.crop.y = cy * scale_factor + 0.5;
-            params.crop.w = cw * scale_factor + 0.5;
-            params.crop.h = ch * scale_factor + 0.5;
-        }
+        //     params.crop.x = cx * scale_factor + 0.5;
+        //     params.crop.y = cy * scale_factor + 0.5;
+        //     params.crop.w = cw * scale_factor + 0.5;
+        //     params.crop.h = ch * scale_factor + 0.5;
+        // }
 
-        assert (params.resize.enabled);
+        assert(params.resize.enabled);
 
         // resize image
         if (params.resize.allowUpscaling || (imw <= fw && imh <= fh)) {
@@ -510,6 +509,7 @@ private:
     ImageSource *imgsrc;
     int fw;
     int fh;
+    double scale_factor;
 
     int tr;
     PreviewProps pp;
