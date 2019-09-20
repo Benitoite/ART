@@ -654,14 +654,10 @@ void ImageArea::initialImageArrived ()
     if (mainCropWindow) {
         int w, h;
         mainCropWindow->cropHandler.getFullImageSize(w, h);
-        if(options.prevdemo != PD_Sidecar || !options.rememberZoomAndPan || w != fullImageWidth || h != fullImageHeight) {
-            if (options.cropAutoFit || options.bgcolor != 0) {
-                mainCropWindow->zoomFitCrop();
-            } else {
-                mainCropWindow->zoomFit();
-            }
-        } else if ((options.cropAutoFit || options.bgcolor != 0) && mainCropWindow->cropHandler.cropParams.enabled) {
-            mainCropWindow->zoomFitCrop();
+        if (options.prevdemo != PD_Sidecar || !options.rememberZoomAndPan || w != fullImageWidth || h != fullImageHeight) {
+            mainCropWindow->zoomFit();
+        } else if (mainCropWindow->cropHandler.cropParams.enabled) {
+            mainCropWindow->zoomFit();
         }
         fullImageWidth = w;
         fullImageHeight = h;

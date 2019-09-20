@@ -73,8 +73,6 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
         ThemeFilename (Glib::ustring sfname, Glib::ustring lfname) : shortFName (sfname), longFName (lfname) {}
     };
 
-    Glib::RefPtr<Gtk::TreeStore> behModel;
-    BehavColumns behavColumns;
     std::vector<ThemeFilename> themeFNames;
     Glib::RefPtr<Glib::Regex> regex;
     Glib::MatchInfo matchInfo;
@@ -169,8 +167,6 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::CheckButton* ckbmenuGroupProfileOperations;
     Gtk::CheckButton* ckbmenuGroupExtProg;
 
-    Gtk::Button*      behAddAll;
-    Gtk::Button*      behSetAll;
     Gtk::CheckButton* chOverwriteOutputFile;
 
     Gtk::ComboBoxText* saveParamsPreference;
@@ -198,9 +194,6 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::Button* btnSaveTpOpenNow;
 
     DynamicProfilePanel *dynProfilePanel;
-
-    // Gtk::ComboBoxText *cropGuidesCombo;
-    // Gtk::CheckButton *cropAutoFitCB;
 
     Gtk::CheckButton *denoiseZoomedOut;
     Gtk::CheckButton *thumbRatingMode;
@@ -258,7 +251,6 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::Widget *getDynamicProfilePanel();
     Gtk::Widget *getFileBrowserPanel();
     Gtk::Widget *getColorManPanel();
-    Gtk::Widget *getBatchProcPanel();
     Gtk::Widget *getPerformancePanel();
     Gtk::Widget *getFastExportPanel();
     Gtk::Widget *getSoundsPanel();
@@ -288,19 +280,9 @@ public:
     void clearThumbImagesPressed ();
     void clearAllPressed ();
 
-    void behAddSetRadioToggled (const Glib::ustring& path, bool add);
-    void behAddRadioToggled (const Glib::ustring& path);
-    void behSetRadioToggled (const Glib::ustring& path);
-    void behAddSetAllPressed (bool add);
-    void behAddAllPressed ();
-    void behSetAllPressed ();
-
     void storeCurrentValue() override;
     void updateProfileList() override;
     void restoreValue() override;
-
-//    void selectICCProfileDir ();
-//    void selectMonitorProfile ();
 };
 
 #endif

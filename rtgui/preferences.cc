@@ -84,8 +84,6 @@ Preferences::Preferences (RTWindow *rtwindow)
     nb->append_page(*getDynamicProfilePanel(), M("PREFERENCES_TAB_DYNAMICPROFILE"));
     nb->append_page(*getFileBrowserPanel(), M("PREFERENCES_TAB_BROWSER"));
     nb->append_page(*getColorManPanel(), M("PREFERENCES_TAB_COLORMGR"));
-    //nb->append_page(*getBatchProcPanel(), M("PREFERENCES_BATCH_PROCESSING"));
-    getBatchProcPanel(); // TODO -- remove preferences as well
     nb->append_page(*getPerformancePanel(), M("PREFERENCES_TAB_PERFORMANCE"));
     nb->append_page(*getFastExportPanel(), M("PREFERENCES_TAB_FASTEXPORT"));
     // Sounds only on Windows and Linux
@@ -122,344 +120,6 @@ int Preferences::getThemeRowNumber (Glib::ustring& longThemeFName)
 
     return -1;
 }
-
-Gtk::Widget* Preferences::getBatchProcPanel ()
-{
-    swBatchProc = Gtk::manage(new Gtk::ScrolledWindow());
-    swBatchProc->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-
-    Gtk::VBox* vbBatchProc = Gtk::manage (new Gtk::VBox ());
-
-    Gtk::ScrolledWindow* behscrollw = Gtk::manage (new Gtk::ScrolledWindow ());
-    behscrollw->set_policy (Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-    behscrollw->set_size_request (-1, 60);
-    Gtk::VBox* vbbeh = Gtk::manage ( new Gtk::VBox () );
-    vbbeh->pack_start (*behscrollw, Gtk::PACK_EXPAND_WIDGET);
-    Gtk::Frame* behFrame = Gtk::manage (new Gtk::Frame (M ("PREFERENCES_BEHAVIOR")));
-    behFrame->add (*vbbeh);
-    vbBatchProc->pack_start (*behFrame, Gtk::PACK_EXPAND_WIDGET, 4);
-    Gtk::TreeView* behTreeView = Gtk::manage (new Gtk::TreeView ());
-    behscrollw->add (*behTreeView);
-
-    behModel = Gtk::TreeStore::create (behavColumns);
-    behTreeView->set_model (behModel);
-
-    behTreeView->append_column (M ("PREFERENCES_PROPERTY"), behavColumns.label);
-    behTreeView->append_column_editable (M ("PREFERENCES_ADD"), behavColumns.badd);
-    behTreeView->append_column_editable (M ("PREFERENCES_SET"), behavColumns.bset);
-
-    Gtk::CellRendererToggle* cr_add = static_cast<Gtk::CellRendererToggle*> (behTreeView->get_column (1)->get_first_cell());
-    Gtk::CellRendererToggle* cr_set = static_cast<Gtk::CellRendererToggle*> (behTreeView->get_column (2)->get_first_cell());
-
-    cr_add->set_radio (true);
-    cr_add->set_property ("xalign", 0.0f);
-    sigc::connection addc = cr_add->signal_toggled().connect (sigc::mem_fun (*this, &Preferences::behAddRadioToggled));
-    cr_set->set_radio (true);
-    cr_set->set_property ("xalign", 0.0f);
-    sigc::connection setc = cr_set->signal_toggled().connect (sigc::mem_fun (*this, &Preferences::behSetRadioToggled));
-
-    behTreeView->get_column (1)->add_attribute (*cr_add, "visible", behavColumns.visible);
-    behTreeView->get_column (1)->set_sizing (Gtk::TREE_VIEW_COLUMN_FIXED);
-    behTreeView->get_column (1)->set_fixed_width (50);
-    behTreeView->get_column (2)->add_attribute (*cr_set, "visible", behavColumns.visible);
-    behTreeView->get_column (2)->set_sizing (Gtk::TREE_VIEW_COLUMN_FIXED);
-    behTreeView->get_column (2)->set_fixed_width (50);
-
-    // fill model
-    Gtk::TreeModel::iterator mi, ci;
-
-    /*
-     * The TRUE/FALSE values of appendBehavList are replaced by the one defined in options.cc,
-     */
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_EXPOSURE_LABEL"));
-    appendBehavList (mi, M ("TP_EXPOSURE_EXPCOMP"), ADDSET_TC_EXPCOMP, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_COMPRHIGHLIGHTS"), ADDSET_TC_HLCOMPAMOUNT, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_COMPRHIGHLIGHTSTHRESHOLD"), ADDSET_TC_HLCOMPTHRESH, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_BLACKLEVEL"), ADDSET_TC_BLACKLEVEL, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_COMPRSHADOWS"), ADDSET_TC_SHCOMP, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_BRIGHTNESS"), ADDSET_TC_BRIGHTNESS, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_CONTRAST"), ADDSET_TC_CONTRAST, false);
-    appendBehavList (mi, M ("TP_EXPOSURE_SATURATION"), ADDSET_TC_SATURATION, false);
-
-    // mi = behModel->append ();
-    // mi->set_value (behavColumns.label, M ("TP_EPD_LABEL"));
-    // appendBehavList (mi, M ("TP_EPD_STRENGTH"), ADDSET_EPD_STRENGTH, false);
-    // appendBehavList (mi, M ("TP_EPD_GAMMA"), ADDSET_EPD_GAMMA, false);
-    // appendBehavList (mi, M ("TP_EPD_EDGESTOPPING"), ADDSET_EPD_EDGESTOPPING, false);
-    // appendBehavList (mi, M ("TP_EPD_SCALE"), ADDSET_EPD_SCALE, false);
-    // appendBehavList (mi, M ("TP_EPD_REWEIGHTINGITERATES"), ADDSET_EPD_REWEIGHTINGITERATES, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_TM_FATTAL_LABEL"));
-    appendBehavList (mi, M ("TP_TM_FATTAL_AMOUNT"), ADDSET_FATTAL_AMOUNT, false);
-    appendBehavList (mi, M ("TP_TM_FATTAL_THRESHOLD"), ADDSET_FATTAL_THRESHOLD, false);
-    appendBehavList (mi, M ("TP_TM_FATTAL_ANCHOR"), ADDSET_FATTAL_ANCHOR, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_RETINEX_LABEL"));
-    appendBehavList (mi, M ("TP_RETINEX_STRENGTH"), ADDSET_RETI_STR, false);
-    appendBehavList (mi, M ("TP_RETINEX_NEIGHBOR"), ADDSET_RETI_NEIGH, false);
-    appendBehavList (mi, M ("TP_RETINEX_VARIANCE"), ADDSET_RETI_VART, false);
-    appendBehavList (mi, M ("TP_RETINEX_GAMMA"), ADDSET_RETI_GAM, false);
-    appendBehavList (mi, M ("TP_RETINEX_SLOPE"), ADDSET_RETI_SLO, false);
-    appendBehavList (mi, M ("TP_RETINEX_GAIN"), ADDSET_RETI_GAIN, false);
-    appendBehavList (mi, M ("TP_RETINEX_OFFSET"), ADDSET_RETI_OFFS, false);
-    appendBehavList (mi, M ("TP_RETINEX_THRESHOLD"), ADDSET_RETI_LIMD, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_SHADOWSHLIGHTS_LABEL"));
-    appendBehavList (mi, M ("TP_SHADOWSHLIGHTS_HIGHLIGHTS"), ADDSET_SH_HIGHLIGHTS, false);
-    appendBehavList (mi, M ("TP_SHADOWSHLIGHTS_SHADOWS"), ADDSET_SH_SHADOWS, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_LABCURVE_LABEL"));
-    appendBehavList (mi, M ("TP_LABCURVE_BRIGHTNESS"), ADDSET_LC_BRIGHTNESS, false);
-    appendBehavList (mi, M ("TP_LABCURVE_CONTRAST"), ADDSET_LC_CONTRAST, false);
-    appendBehavList (mi, M ("TP_LABCURVE_CHROMATICITY"), ADDSET_LC_CHROMATICITY, false);
-
-    mi = behModel->append (); // Used for both Resize and Post-Resize sharpening
-    mi->set_value (behavColumns.label, M ("TP_SHARPENING_LABEL"));
-    appendBehavList (mi, M ("TP_SHARPENING_CONTRAST"), ADDSET_SHARP_CONTRAST, false);
-    appendBehavList (mi, M ("TP_SHARPENING_RADIUS"), ADDSET_SHARP_RADIUS, false);
-    appendBehavList (mi, M ("TP_SHARPENING_AMOUNT"), ADDSET_SHARP_AMOUNT, false);
-    appendBehavList (mi, M ("TP_SHARPENING_RLD_DAMPING"), ADDSET_SHARP_DAMPING, false);
-    appendBehavList (mi, M ("TP_SHARPENING_RLD_ITERATIONS"), ADDSET_SHARP_ITER, false);
-    appendBehavList (mi, M ("TP_SHARPENING_EDTOLERANCE"), ADDSET_SHARP_EDGETOL, false);
-    appendBehavList (mi, M ("TP_SHARPENING_HALOCONTROL"), ADDSET_SHARP_HALOCTRL, false);
-
-    mi = behModel->append();
-    mi->set_value(behavColumns.label, M("TP_LOCALCONTRAST_LABEL"));
-    appendBehavList(mi, M("TP_LOCALCONTRAST_RADIUS"), ADDSET_LOCALCONTRAST_RADIUS, false);
-    appendBehavList(mi, M("TP_LOCALCONTRAST_AMOUNT"), ADDSET_LOCALCONTRAST_AMOUNT, false);
-    appendBehavList(mi, M("TP_LOCALCONTRAST_DARKNESS"), ADDSET_LOCALCONTRAST_DARKNESS, false);
-    appendBehavList(mi, M("TP_LOCALCONTRAST_LIGHTNESS"), ADDSET_LOCALCONTRAST_LIGHTNESS, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_SHARPENEDGE_LABEL"));
-    appendBehavList (mi, M ("TP_SHARPENEDGE_PASSES"), ADDSET_SHARPENEDGE_PASS, false);
-    appendBehavList (mi, M ("TP_SHARPENEDGE_AMOUNT"), ADDSET_SHARPENEDGE_AMOUNT, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_SHARPENMICRO_LABEL"));
-    appendBehavList (mi, M ("TP_SHARPENMICRO_AMOUNT"), ADDSET_SHARPENMICRO_AMOUNT, false);
-    appendBehavList (mi, M ("TP_SHARPENMICRO_CONTRAST"), ADDSET_SHARPENMICRO_CONTRAST, false);
-    appendBehavList (mi, M ("TP_SHARPENMICRO_UNIFORMITY"), ADDSET_SHARPENMICRO_UNIFORMITY, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_DIRPYRDENOISE_LABEL"));
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING"), ADDSET_DIRPYRDN_LUMA, true);
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_LUMINANCE_DETAIL"), ADDSET_DIRPYRDN_LUMDET, true);
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_CHROMINANCE_MASTER"), ADDSET_DIRPYRDN_CHROMA, true);
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN"), ADDSET_DIRPYRDN_CHROMARED, true);
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_CHROMINANCE_BLUEYELLOW"), ADDSET_DIRPYRDN_CHROMABLUE, true);
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_MAIN_GAMMA"), ADDSET_DIRPYRDN_GAMMA, true);
-    appendBehavList (mi, M ("TP_DIRPYRDENOISE_MEDIAN_PASSES"), ADDSET_DIRPYRDN_PASSES, true);
-
-    mi = behModel->append ();
-    mi->set_value ( behavColumns.label, M ("TP_DEHAZE_LABEL") );
-    appendBehavList ( mi, M ( "TP_DEHAZE_STRENGTH" ), ADDSET_DEHAZE_STRENGTH, true );
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_WBALANCE_LABEL"));
-    appendBehavList (mi, M ("TP_WBALANCE_TEMPERATURE"), ADDSET_WB_TEMPERATURE, true);
-    appendBehavList (mi, M ("TP_WBALANCE_GREEN"), ADDSET_WB_GREEN, true);
-    appendBehavList (mi, M ("TP_WBALANCE_EQBLUERED"), ADDSET_WB_EQUAL, true);
-    appendBehavList (mi, M ("TP_WBALANCE_TEMPBIAS"), ADDSET_WB_TEMPBIAS, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_COLORAPP_LABEL"));
-    appendBehavList (mi, M("TP_COLORAPP_LABEL_SCENE") + " - " + M("TP_COLORAPP_ABSOLUTELUMINANCE"), ADDSET_CAT_ADAPTSCENE, true);
-    appendBehavList (mi, M("TP_COLORAPP_LABEL_VIEWING") + " - " + M("TP_COLORAPP_ABSOLUTELUMINANCE"), ADDSET_CAT_ADAPTVIEWING, true);
-    appendBehavList (mi, M ("TP_COLORAPP_LIGHT"), ADDSET_CAT_LIGHT, true);
-    appendBehavList (mi, M ("TP_COLORAPP_BRIGHT"), ADDSET_CAT_BRIGHT, true);
-    appendBehavList (mi, M ("TP_COLORAPP_CHROMA"), ADDSET_CAT_CHROMA, true);
-    appendBehavList (mi, M ("TP_COLORAPP_CHROMA_S"), ADDSET_CAT_CHROMA_S, true);
-    appendBehavList (mi, M ("TP_COLORAPP_CHROMA_M"), ADDSET_CAT_CHROMA_M, true);
-    appendBehavList (mi, M ("TP_COLORAPP_RSTPRO"), ADDSET_CAT_RSTPRO, true);
-    appendBehavList (mi, M ("TP_COLORAPP_CONTRAST"), ADDSET_CAT_CONTRAST, true);
-    appendBehavList (mi, M ("TP_COLORAPP_CONTRAST_Q"), ADDSET_CAT_CONTRAST_Q, true);
-    appendBehavList (mi, M ("TP_COLORAPP_HUE"), ADDSET_CAT_HUE, true);
-    appendBehavList (mi, M ("TP_COLORAPP_BADPIXSL"), ADDSET_CAT_BADPIX, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_VIBRANCE_LABEL"));
-    appendBehavList (mi, M ("TP_VIBRANCE_PASTELS"), ADDSET_VIBRANCE_PASTELS, false);
-    appendBehavList (mi, M ("TP_VIBRANCE_SATURATED"), ADDSET_VIBRANCE_SATURATED, false);
-
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_CHMIXER_LABEL"));
-    appendBehavList (mi, M ("TP_CHMIXER_RED") + ", " + M ("TP_CHMIXER_GREEN") + ", " + M ("TP_CHMIXER_BLUE"), ADDSET_CHMIXER, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_BWMIX_LABEL"));
-    appendBehavList (mi, M ("TP_BWMIX_MIXC"), ADDSET_BLACKWHITE_HUES, false);
-    appendBehavList (mi, M ("TP_BWMIX_GAMMA"), ADDSET_BLACKWHITE_GAMMA, false);
-
-    mi = behModel->append ();
-    mi->set_value ( behavColumns.label, M ("TP_FILMSIMULATION_LABEL") );
-    appendBehavList ( mi, M ( "TP_FILMSIMULATION_STRENGTH" ), ADDSET_FILMSIMULATION_STRENGTH, true );
-
-    mi = behModel->append ();
-    mi->set_value ( behavColumns.label, M ("TP_SOFTLIGHT_LABEL") );
-    appendBehavList ( mi, M ( "TP_SOFTLIGHT_STRENGTH" ), ADDSET_SOFTLIGHT_STRENGTH, true );
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_ROTATE_LABEL"));
-    appendBehavList (mi, M ("TP_ROTATE_DEGREE"), ADDSET_ROTATE_DEGREE, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_RESIZE_LABEL"));
-    appendBehavList (mi, M ("TP_RESIZE_SCALE"), ADDSET_RESIZE_SCALE, true);
-
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_DISTORTION_LABEL"));
-    appendBehavList (mi, M ("TP_DISTORTION_AMOUNT"), ADDSET_DIST_AMOUNT, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_PERSPECTIVE_LABEL"));
-    appendBehavList (mi, M ("TP_PERSPECTIVE_HORIZONTAL") + ", " + M ("TP_PERSPECTIVE_VERTICAL"), ADDSET_PERSPECTIVE, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_GRADIENT_LABEL"));
-    appendBehavList (mi, M ("TP_GRADIENT_DEGREE"), ADDSET_GRADIENT_DEGREE, false);
-    appendBehavList (mi, M ("TP_GRADIENT_FEATHER"), ADDSET_GRADIENT_FEATHER, false);
-    appendBehavList (mi, M ("TP_GRADIENT_STRENGTH"), ADDSET_GRADIENT_STRENGTH, false);
-    appendBehavList (mi, M ("TP_GRADIENT_CENTER_X") + ", " + M ("TP_GRADIENT_CENTER_Y"), ADDSET_GRADIENT_CENTER, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_PCVIGNETTE_LABEL"));
-    appendBehavList (mi, M ("TP_PCVIGNETTE_STRENGTH"), ADDSET_PCVIGNETTE_STRENGTH, false);
-    appendBehavList (mi, M ("TP_PCVIGNETTE_FEATHER"), ADDSET_PCVIGNETTE_FEATHER, false);
-    appendBehavList (mi, M ("TP_PCVIGNETTE_ROUNDNESS"), ADDSET_PCVIGNETTE_ROUNDNESS, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_CACORRECTION_LABEL"));
-    appendBehavList (mi, M ("TP_CACORRECTION_BLUE") + ", " + M ("TP_CACORRECTION_RED"), ADDSET_CA, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_VIGNETTING_LABEL"));
-    appendBehavList (mi, M ("TP_VIGNETTING_AMOUNT"), ADDSET_VIGN_AMOUNT, false);
-    appendBehavList (mi, M ("TP_VIGNETTING_RADIUS"), ADDSET_VIGN_RADIUS, false);
-    appendBehavList (mi, M ("TP_VIGNETTING_STRENGTH"), ADDSET_VIGN_STRENGTH, false);
-    appendBehavList (mi, M ("TP_VIGNETTING_CENTER_X") + ", " + M ("TP_VIGNETTING_CENTER_Y"), ADDSET_VIGN_CENTER, false);
-
-    // mi = behModel->append ();
-    // mi->set_value (behavColumns.label, M ("TP_DIRPYREQUALIZER_LABEL"));
-    // appendBehavList (mi, M ("TP_EXPOSURE_CONTRAST"), ADDSET_DIRPYREQ, true);
-    // appendBehavList (mi, M ("TP_DIRPYREQUALIZER_THRESHOLD"), ADDSET_DIRPYREQ_THRESHOLD, true);
-    // appendBehavList (mi, M ("TP_DIRPYREQUALIZER_SKIN"), ADDSET_DIRPYREQ_SKINPROTECT, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M ("TP_WAVELET_LABEL"));
-    appendBehavList (mi, M ("TP_WAVELET_LEVELS"), ADDSET_WA_THRES, true);
-    appendBehavList (mi, M ("TP_WAVELET_THRESHOLD"), ADDSET_WA_THRESHOLD, true);
-    appendBehavList (mi, M ("TP_WAVELET_THRESHOLD2"), ADDSET_WA_THRESHOLD2, true);
-    appendBehavList (mi, M ("TP_WAVELET_CHRO"), ADDSET_WA_CHRO, true);
-    appendBehavList (mi, M ("TP_WAVELET_CHR"), ADDSET_WA_CHROMA, true);
-    appendBehavList (mi, M ("TP_WAVELET_SKIN"), ADDSET_WA_SKINPROTECT, true);
-    appendBehavList (mi, M ("TP_WAVELET_EDRAD"), ADDSET_WA_EDGRAD, true);
-    appendBehavList (mi, M ("TP_WAVELET_EDVAL"), ADDSET_WA_EDGVAL, true);
-    appendBehavList (mi, M ("TP_WAVELET_RESCON"), ADDSET_WA_RESCON, true);
-    appendBehavList (mi, M ("TP_WAVELET_THR"), ADDSET_WA_THRR, true);
-    appendBehavList (mi, M ("TP_WAVELET_RESCONH"), ADDSET_WA_RESCONH, true);
-    appendBehavList (mi, M ("TP_WAVELET_THRH"), ADDSET_WA_THRRH, true);
-    appendBehavList (mi, M ("TP_WAVELET_RESCHRO"), ADDSET_WA_RESCHRO, true);
-    appendBehavList (mi, M ("TP_WAVELET_TMSTRENGTH"), ADDSET_WA_TMRS, true);
-    appendBehavList (mi, M ("TP_WAVELET_SKY"), ADDSET_WA_SKYPROTECT, true);
-    appendBehavList (mi, M ("TP_WAVELET_CONTRA"), ADDSET_WA_CONTRAST, true);
-    appendBehavList (mi, M ("TP_WAVELET_STRENGTH"), ADDSET_WA_STRENGTH, true);
-    appendBehavList (mi, M ("TP_WAVELET_COMPGAMMA"), ADDSET_WA_GAMMA, true);
-    appendBehavList (mi, M ("TP_WAVELET_EDGEDETECT"), ADDSET_WA_EDGEDETECT, true);
-    appendBehavList (mi, M ("TP_WAVELET_EDGEDETECTTHR"), ADDSET_WA_EDGEDETECTTHR, true);
-    appendBehavList (mi, M ("TP_WAVELET_EDGEDETECTTHR2"), ADDSET_WA_EDGEDETECTTHR2, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_RAW_SENSOR_BAYER_LABEL"));
-    appendBehavList (mi, M ("TP_RAW_FALSECOLOR"), ADDSET_BAYER_FALSE_COLOR_SUPPRESSION, false);
-    appendBehavList (mi, M ("TP_RAW_DCBITERATIONS") + ", " + M("TP_RAW_LMMSEITERATIONS"), ADDSET_BAYER_ITER, false);
-    appendBehavList (mi, M ("TP_RAW_DUALDEMOSAICCONTRAST"), ADDSET_BAYER_DUALDEMOZCONTRAST, false);
-    appendBehavList (mi, M ("TP_RAW_PIXELSHIFTSIGMA"), ADDSET_BAYER_PS_SIGMA, false);
-    appendBehavList (mi, M ("TP_RAW_PIXELSHIFTSMOOTH"), ADDSET_BAYER_PS_SMOOTH, false);
-    appendBehavList (mi, M ("TP_RAW_PIXELSHIFTEPERISO"), ADDSET_BAYER_PS_EPERISO, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_RAW_SENSOR_XTRANS_LABEL"));
-    appendBehavList (mi, M ("TP_RAW_FALSECOLOR"), ADDSET_XTRANS_FALSE_COLOR_SUPPRESSION, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_PREPROCESS_LABEL"));
-    appendBehavList (mi, M ("TP_PREPROCESS_GREENEQUIL"), ADDSET_PREPROCESS_GREENEQUIL, false);
-    appendBehavList (mi, M ("TP_PREPROCESS_LINEDENOISE"), ADDSET_PREPROCESS_LINEDENOISE, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_EXPOS_WHITEPOINT_LABEL"));
-    appendBehavList (mi, M ("TP_RAWEXPOS_LINEAR"), ADDSET_RAWEXPOS_LINEAR, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_EXPOS_BLACKPOINT_LABEL"));
-    appendBehavList (mi, M ("TP_RAWEXPOS_RGB"), ADDSET_RAWEXPOS_BLACKS, false);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_FLATFIELD_LABEL"));
-    appendBehavList (mi, M ("TP_FLATFIELD_CLIPCONTROL"), ADDSET_RAWFFCLIPCONTROL, true);
-
-    mi = behModel->append ();
-    mi->set_value (behavColumns.label, M("MAIN_TAB_RAW") + " - " + M("TP_RAWCACORR_LABEL"));
-    appendBehavList (mi, M ("TP_RAWCACORR_CARED") + ", " + M ("TP_RAWCACORR_CABLUE"), ADDSET_RAWCACORR, true);
-
-    behTreeView->expand_all ();
-
-    behAddAll = Gtk::manage ( new Gtk::Button (M ("PREFERENCES_BEHADDALL")) );
-    behSetAll = Gtk::manage ( new Gtk::Button (M ("PREFERENCES_BEHSETALL")) );
-    behAddAll->set_tooltip_markup (M ("PREFERENCES_BEHADDALLHINT"));
-    behSetAll->set_tooltip_markup (M ("PREFERENCES_BEHSETALLHINT"));
-
-    behAddAll->signal_clicked().connect ( sigc::mem_fun (*this, &Preferences::behAddAllPressed) );
-    behSetAll->signal_clicked().connect ( sigc::mem_fun (*this, &Preferences::behSetAllPressed) );
-
-    Gtk::HBox* buttonpanel1 = Gtk::manage (new Gtk::HBox ());
-    buttonpanel1->pack_end (*behSetAll, Gtk::PACK_SHRINK, 4);
-    buttonpanel1->pack_end (*behAddAll, Gtk::PACK_SHRINK, 4);
-    vbbeh->pack_start (*buttonpanel1, Gtk::PACK_SHRINK, 4);
-
-    chOverwriteOutputFile = Gtk::manage ( new Gtk::CheckButton (M ("PREFERENCES_OVERWRITEOUTPUTFILE")) );
-    vbBatchProc->pack_start (*chOverwriteOutputFile, Gtk::PACK_SHRINK, 4);
-
-    swBatchProc->add(*vbBatchProc);
-    return swBatchProc;
-}
-
-void Preferences::appendBehavList (Gtk::TreeModel::iterator& parent, Glib::ustring label, int id, bool set)
-{
-
-    Gtk::TreeModel::iterator ci = behModel->append (parent->children());
-    ci->set_value (behavColumns.label, label);
-    ci->set_value (behavColumns.visible, true);
-    ci->set_value (behavColumns.badd, !set);
-    ci->set_value (behavColumns.bset, set);
-    ci->set_value (behavColumns.addsetid, id);
-}
-
-void Preferences::behAddSetRadioToggled (const Glib::ustring& path, bool add)
-{
-    Gtk::TreeModel::iterator iter = behModel->get_iter (path);
-    iter->set_value(behavColumns.badd, add);
-    iter->set_value(behavColumns.bset, !add);
-}
-
-void Preferences::behAddRadioToggled (const Glib::ustring& path)
-{
-    behAddSetRadioToggled(path, true);
-}
-
-void Preferences::behSetRadioToggled (const Glib::ustring& path)
-{
-    behAddSetRadioToggled(path, false);
-}
-
 
 Gtk::Widget *Preferences::getDynamicProfilePanel()
 {
@@ -619,24 +279,6 @@ Gtk::Widget* Preferences::getImageProcessingPanel ()
 
     cdf->add(*dirgrid);
     vbImageProcessing->pack_start (*cdf, Gtk::PACK_SHRINK, 4 );
-
-    // // Crop
-    // Gtk::Frame *cropFrame = Gtk::manage(new Gtk::Frame(M("PREFERENCES_CROP")));
-    // Gtk::Grid *cropGrid = Gtk::manage(new Gtk::Grid());
-    // Gtk::Label *cropGuidesLbl = Gtk::manage(new Gtk::Label(M("PREFERENCES_CROP_GUIDES") + ": "));
-    // cropGuidesCombo = Gtk::manage(new Gtk::ComboBoxText());
-    // cropGuidesCombo->append(M("PREFERENCES_CROP_GUIDES_NONE"));
-    // cropGuidesCombo->append(M("PREFERENCES_CROP_GUIDES_FRAME"));
-    // cropGuidesCombo->append(M("PREFERENCES_CROP_GUIDES_FULL"));
-    // cropAutoFitCB = Gtk::manage(new Gtk::CheckButton());
-    // Gtk::Label *cropAutoFitLbl = Gtk::manage(new Gtk::Label(M("PREFERENCES_CROP_AUTO_FIT")));
-    // cropAutoFitLbl->set_line_wrap(true);
-    // cropAutoFitCB->add(*cropAutoFitLbl);
-    // cropGrid->attach(*cropGuidesLbl, 0, 0, 1, 1);
-    // cropGrid->attach(*cropGuidesCombo, 1, 0, 1, 1);
-    // cropGrid->attach(*cropAutoFitCB, 0, 1, 2, 1);
-    // cropFrame->add(*cropGrid);
-    // vbImageProcessing->pack_start(*cropFrame, Gtk::PACK_SHRINK, 4);
 
     swImageProcessing->add(*vbImageProcessing);
 
@@ -1810,13 +1452,6 @@ void Preferences::storePreferences ()
 
     moptions.clutsDir = clutsDir->get_filename();
 
-    moptions.baBehav.resize (ADDSET_PARAM_NUM);
-
-    for (Gtk::TreeIter sections = behModel->children().begin(); sections != behModel->children().end(); sections++)
-        for (Gtk::TreeIter adjs = sections->children().begin(); adjs != sections->children().end(); adjs++) {
-            moptions.baBehav[adjs->get_value (behavColumns.addsetid)] = adjs->get_value (behavColumns.badd);
-        }
-
     int editorMode = editorLayout->get_active_row_number();
     moptions.tabbedUI = (editorMode > 1);
     moptions.multiDisplayMode = editorMode == 3 ? 1 : 0;
@@ -1843,9 +1478,6 @@ void Preferences::storePreferences ()
     moptions.sndLngEditProcDone = txtSndLngEditProcDone->get_text ();
     moptions.sndLngEditProcDoneSecs = spbSndLngEditProcDoneSecs->get_value ();
 #endif
-
-    // moptions.cropGuides = Options::CropGuidesMode(cropGuidesCombo->get_active_row_number());
-    // moptions.cropAutoFit = cropAutoFitCB->get_active();
 
     moptions.thumbnail_rating_mode = thumbRatingMode->get_active() ? Options::ThumbnailRatingMode::XMP : Options::ThumbnailRatingMode::PROCPARAMS;
     moptions.rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync(metadataSyncCombo->get_active_row_number());
@@ -2059,19 +1691,6 @@ void Preferences::fillPreferences ()
 
     addc.block (true);
     setc.block (true);
-
-    moptions.baBehav.resize (ADDSET_PARAM_NUM);
-
-    for (Gtk::TreeIter sections = behModel->children().begin(); sections != behModel->children().end(); ++sections) {
-        for (Gtk::TreeIter adjs = sections->children().begin(); adjs != sections->children().end(); ++adjs) {
-            const bool add = moptions.baBehav[adjs->get_value(behavColumns.addsetid)];
-            adjs->set_value (behavColumns.badd, add);
-            adjs->set_value (behavColumns.bset, !add);
-        }
-    }
-
-    // cropGuidesCombo->set_active(moptions.cropGuides);
-    // cropAutoFitCB->set_active(moptions.cropAutoFit);
 
     addc.block (false);
     setc.block (false);
@@ -2575,23 +2194,3 @@ bool Preferences::splashClosed (GdkEventAny* event)
     return true;
 }
 
-void Preferences::behAddSetAllPressed (bool add)
-{
-    moptions.baBehav.assign(ADDSET_PARAM_NUM, add);
-    for (Gtk::TreeIter sections = behModel->children().begin(); sections != behModel->children().end(); ++sections) {
-        for (Gtk::TreeIter adjs = sections->children().begin(); adjs != sections->children().end(); ++adjs) {
-            adjs->set_value(behavColumns.badd, add);
-            adjs->set_value(behavColumns.bset, !add);
-        }
-    }
-}
-
-void Preferences::behAddAllPressed ()
-{
-    behAddSetAllPressed(true);
-}
-
-void Preferences::behSetAllPressed ()
-{
-    behAddSetAllPressed(false);
-}

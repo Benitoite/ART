@@ -339,7 +339,7 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                     screenCoordToImage (x, y, action_x, action_y);
                     changeZoom (zoom11index, true, action_x, action_y);
                     fitZoom = false;
-                } else if (iarea->getToolMode() == TMCropSelect) {//options.cropAutoFit) {
+                } else if (iarea->getToolMode() == TMCropSelect) {
                     zoomFitCrop();
                 } else {
                     zoomFit();
@@ -652,10 +652,6 @@ void CropWindow::buttonRelease (int button, int num, int bstate, int x, int y)
         }
 
         needRedraw = true;
-
-        // if (fitZoom && options.cropAutoFit) {
-        //     zoomFitCrop();
-        // }
     } else if (state == SCropWinMove) {
         if (iarea->showColorPickers () && !colorPickers.empty()) {
             needRedraw = true;
@@ -1386,7 +1382,7 @@ void CropWindow::updateCursor(int x, int y, int bstate)
     prev_tool_mode = tm;
 
     if (change_crop_state == CHANGE_CROP_FULL) {
-        if (fitZoom) {//options.cropAutoFit) {
+        if (fitZoom) {
             if (tm == TMCropSelect) {
                 zoomFit();
             } else {
@@ -1452,16 +1448,7 @@ void CropWindow::expose (Cairo::RefPtr<Cairo::Context> cr)
         }
     }
     if (tweak_crop_guides) {
-        switch (options.cropGuides) {
-        case Options::CROP_GUIDE_NONE:
-            cropParams.guide = "None";
-            break;
-        case Options::CROP_GUIDE_FRAME:
-            cropParams.guide = "Frame";
-            break;
-        default:
-            break;
-        }
+        cropParams.guide = "None";
     }
     const bool useBgColor = (tweak_crop_guides || state == SDragPicker || state == SDeletePicker || state == SEditDrag1);
 
@@ -2231,36 +2218,10 @@ void CropWindow::zoomFit ()
         centerY = cropHandler.cropParams.y + cropHandler.cropParams.h / 2;
         setCropAnchorPosition(centerX, centerY);
         changeZoom (cz, true, centerX, centerY);
-        fitZoom = true; //options.cropAutoFit;
+        fitZoom = true;
     }
 }
 
-// void CropWindow::zoomFitCrop ()
-// {
-//     if(cropHandler.cropParams.enabled) {
-//         double z = cropHandler.getFitCropZoom ();
-//         int cz = int(zoomSteps.size())-1;
-
-//         if (z < zoomSteps[0].zoom) {
-//             cz = 0;
-//         } else
-//             for (int i = 0; i < int(zoomSteps.size())-1; i++)
-//                 if (zoomSteps[i].zoom <= z && zoomSteps[i + 1].zoom > z) {
-//                     cz = i;
-//                     break;
-//                 }
-
-//         zoomVersion = exposeVersion;
-//         int centerX, centerY;
-//         centerX = cropHandler.cropParams.x + cropHandler.cropParams.w / 2;
-//         centerY = cropHandler.cropParams.y + cropHandler.cropParams.h / 2;
-//         setCropAnchorPosition(centerX, centerY);
-//         changeZoom (cz, true, centerX, centerY);
-//         fitZoom = true; //options.cropAutoFit;
-//     } else {
-//         zoomFit();
-//     }
-// }
 
 void CropWindow::buttonPressed (LWButton* button, int actionCode, void* actionData)
 {

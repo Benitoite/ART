@@ -160,8 +160,8 @@ public:
         R0_1,
         _COUNT
     };
-    bool savesParamsAtExit;
-    SaveFormat saveFormat, saveFormatBatch;
+    SaveFormat saveFormat;
+    SaveFormat saveFormatBatch;
     Glib::ustring savePathTemplate;
     Glib::ustring savePathFolder;
     bool saveUsePathTemplate;
@@ -170,7 +170,7 @@ public:
     Glib::ustring dateFormat;
     int adjusterMinDelay;
     int adjusterMaxDelay;
-    int  startupDir;
+    int startupDir;
     Gtk::SortType dirBrowserSortType;
     Glib::ustring startupPath;
     Glib::ustring profilePath; // can be an absolute or relative path; depending on this value, bundled profiles may not be found
@@ -206,37 +206,33 @@ public:
     int dirBrowserHeight;
     int preferencesWidth;
     int preferencesHeight;
-    bool lastShowAllExif;
     int lastScale;
     int panAccelFactor;
-    int lastCropSize;
     Glib::ustring fontFamily;    // RT's main font family
     int fontSize;                // RT's main font size (units: pt)
     Glib::ustring CPFontFamily;  // ColorPicker font family
     int CPFontSize;              // ColorPicker font size (units: pt)
     bool pseudoHiDPISupport;
-    bool fbOnlyRaw;
     bool fbShowDateTime;
     bool fbShowBasicExif;
     bool fbShowExpComp;
     bool fbShowHidden;
-    int  fbArrangement;
     NavigatorUnit navRGBUnit;
     NavigatorUnit navLCHUnit;
     bool multiUser;
     static Glib::ustring rtdir;
     Glib::ustring version;
-    int thumbSize, thumbSizeTab, thumbSizeQueue;
+    int thumbSize;
+    int thumbSizeTab;
+    int thumbSizeQueue;
     bool sameThumbSize;     // Will use only one thumb size for the file browser and the single editor tab, and avoid recomputing them
     bool showHistory;
-    int showFilePanelState; // 0: normal, 1: maximized, 2: normal, 3: hidden
     bool showInfo;
     bool mainNBVertical;  // main notebook vertical tabs?
     bool showClippedHighlights;
     bool showClippedShadows;
     int highlightThreshold;
     int shadowThreshold;
-    bool blinkClipped;
     int bgcolor;
     Glib::ustring language;
     bool languageAutoDetect;
@@ -264,13 +260,9 @@ public:
     std::set<std::string> parsedExtensionsSet;  // Set containing all retained extensions (lowercase)
     std::vector<int> tpOpen;
     bool autoSaveTpOpen;
-    //std::vector<int> crvOpen;
-    std::vector<int> baBehav;
     rtengine::Settings rtSettings;
 
     std::vector<Glib::ustring> favoriteDirs;
-    std::vector<Glib::ustring> renameTemplates;
-    bool renameUseTemplates;
     bool internalThumbIfUntouched;
     bool overwriteOutputFile;
 
@@ -291,8 +283,12 @@ public:
     bool sndEnable;
 
     int histogramPosition;  // 0=disabled, 1=left pane, 2=right pane
-    bool histogramRed, histogramGreen, histogramBlue;
-    bool histogramLuma, histogramChroma, histogramRAW;
+    bool histogramRed;
+    bool histogramGreen;
+    bool histogramBlue;
+    bool histogramLuma;
+    bool histogramChroma;
+    bool histogramRAW;
     bool histogramBar;
     int histogramHeight;
     int histogramDrawMode;
@@ -305,9 +301,6 @@ public:
 
     // cropping options
     int cropPPI;
-    enum CropGuidesMode { CROP_GUIDE_NONE, CROP_GUIDE_FRAME, CROP_GUIDE_FULL };
-    CropGuidesMode cropGuides;
-    bool cropAutoFit;
 
     // Performance options
     Glib::ustring clutsDir;
@@ -349,7 +342,6 @@ public:
     bool fastexport_bypass_dirpyrDenoise;
     bool fastexport_bypass_dirpyrequalizer;
     Glib::ustring fastexport_raw_bayer_method;
-    //bool fastexport_bypass_raw_bayer_all_enhance;
     bool fastexport_bypass_raw_bayer_dcb_iterations;
     bool fastexport_bypass_raw_bayer_dcb_enhance;
     bool fastexport_bypass_raw_bayer_lmmse_iterations;
@@ -364,15 +356,15 @@ public:
     Glib::ustring fastexport_icm_working_profile;
     Glib::ustring fastexport_icm_output_profile;
     rtengine::RenderingIntent fastexport_icm_outputIntent;
-    bool          fastexport_icm_outputBPC;
+    bool fastexport_icm_outputBPC;
     Glib::ustring fastexport_icm_custom_output_profile;
-    bool          fastexport_resize_enabled;
-    double        fastexport_resize_scale;
+    bool fastexport_resize_enabled;
+    double fastexport_resize_scale;
     Glib::ustring fastexport_resize_appliesTo;
     Glib::ustring fastexport_resize_method;
-    int           fastexport_resize_dataspec;
-    int           fastexport_resize_width;
-    int           fastexport_resize_height;
+    int fastexport_resize_dataspec;
+    int fastexport_resize_width;
+    int fastexport_resize_height;
     bool fastexport_use_fast_pipeline;
 
     std::vector<Glib::ustring> favorites;
@@ -382,16 +374,11 @@ public:
     Glib::ustring lastFlatfieldDir;
     Glib::ustring lastRgbCurvesDir;
     Glib::ustring lastLabCurvesDir;
-    Glib::ustring lastRetinexDir;
-    Glib::ustring lastDenoiseCurvesDir;
-    Glib::ustring lastWaveletCurvesDir;
     Glib::ustring lastPFCurvesDir;
     Glib::ustring lastHsvCurvesDir;
     Glib::ustring lastToneCurvesDir;
     Glib::ustring lastColorToningCurvesDir;
-    Glib::ustring lastVibranceCurvesDir;
     Glib::ustring lastProfilingReferenceDir;
-    Glib::ustring lastBWCurvesDir;
     Glib::ustring lastLensProfileDir;
     Glib::ustring lastICCProfCreatorDir;
     bool gimpPluginShowInfoDialog;
@@ -406,14 +393,14 @@ public:
     ThumbnailRatingMode thumbnail_rating_mode;
     
 
-    Options ();
+    Options();
 
-    Options* copyFrom        (Options* other);
-    void filterOutParsedExtensions ();
-    void setDefaults     ();
-    void readFromFile (Glib::ustring fname);
-    void saveToFile (Glib::ustring fname);
-    static void load (bool lightweight = false);
+    Options *copyFrom(Options *other);
+    void filterOutParsedExtensions();
+    void setDefaults();
+    void readFromFile(Glib::ustring fname);
+    void saveToFile(Glib::ustring fname);
+    static void load(bool lightweight = false);
     static void save();
 
     // if multiUser=false, send back the global profile path
@@ -421,17 +408,17 @@ public:
     Glib::ustring getUserProfilePath();
     Glib::ustring getGlobalProfilePath();
     Glib::ustring findProfilePath (Glib::ustring &profName);
-    bool is_parse_extention (Glib::ustring fname);
-    bool has_retained_extention (const Glib::ustring& fname);
-    bool is_extention_enabled (const Glib::ustring& ext);
+    bool is_parse_extention(Glib::ustring fname);
+    bool has_retained_extention(const Glib::ustring& fname);
+    bool is_extention_enabled(const Glib::ustring& ext);
     bool is_defProfRawMissing();
     bool is_bundledDefProfRawMissing();
     bool is_defProfImgMissing();
     bool is_bundledDefProfImgMissing();
-    void setDefProfRawMissing (bool value);
-    void setBundledDefProfRawMissing (bool value);
-    void setDefProfImgMissing (bool value);
-    void setBundledDefProfImgMissing (bool value);
+    void setDefProfRawMissing(bool value);
+    void setBundledDefProfRawMissing(bool value);
+    void setDefProfImgMissing(bool value);
+    void setBundledDefProfImgMissing(bool value);
     static Glib::ustring getICCProfileCopyright();
 };
 

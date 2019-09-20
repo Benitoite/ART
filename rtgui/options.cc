@@ -159,18 +159,6 @@ void Options::updatePaths()
         lastLabCurvesDir = preferredPath;
     }
 
-    if (lastRetinexDir.empty() || !Glib::file_test(lastRetinexDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastLabCurvesDir, Glib::FILE_TEST_IS_DIR)) {
-        lastRetinexDir = preferredPath;
-    }
-
-    if (lastDenoiseCurvesDir.empty() || !Glib::file_test(lastDenoiseCurvesDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastDenoiseCurvesDir, Glib::FILE_TEST_IS_DIR)) {
-        lastDenoiseCurvesDir = preferredPath;
-    }
-
-    if (lastWaveletCurvesDir.empty() || !Glib::file_test(lastWaveletCurvesDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastWaveletCurvesDir, Glib::FILE_TEST_IS_DIR)) {
-        lastWaveletCurvesDir = preferredPath;
-    }
-
     if (lastPFCurvesDir.empty() || !Glib::file_test(lastPFCurvesDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastPFCurvesDir, Glib::FILE_TEST_IS_DIR)) {
         lastPFCurvesDir = preferredPath;
     }
@@ -187,16 +175,8 @@ void Options::updatePaths()
         lastProfilingReferenceDir = preferredPath;
     }
 
-    if (lastVibranceCurvesDir.empty() || !Glib::file_test(lastVibranceCurvesDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastVibranceCurvesDir, Glib::FILE_TEST_IS_DIR)) {
-        lastVibranceCurvesDir = preferredPath;
-    }
-
     if (loadSaveProfilePath.empty() || !Glib::file_test(loadSaveProfilePath, Glib::FILE_TEST_EXISTS) || !Glib::file_test(loadSaveProfilePath, Glib::FILE_TEST_IS_DIR)) {
         loadSaveProfilePath = preferredPath;
-    }
-
-    if (lastBWCurvesDir.empty() || !Glib::file_test(lastBWCurvesDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastBWCurvesDir, Glib::FILE_TEST_IS_DIR)) {
-        lastBWCurvesDir = preferredPath;
     }
 
     if (lastICCProfCreatorDir.empty() || !Glib::file_test(lastICCProfCreatorDir, Glib::FILE_TEST_EXISTS) || !Glib::file_test(lastICCProfCreatorDir, Glib::FILE_TEST_IS_DIR)) {
@@ -296,7 +276,6 @@ void Options::setDefaults()
     meowY = 0;
     saveAsDialogWidth = 920;
     saveAsDialogHeight = 680;
-    savesParamsAtExit = true;
     saveFormat.format = "jpg";
     saveFormat.jpegQuality = 92;
     saveFormat.jpegSubSamp = 2;
@@ -346,11 +325,8 @@ void Options::setDefaults()
     CPFontSize = 8;
     pseudoHiDPISupport = false;
     lastScale = 5;
-    lastShowAllExif = false;
     panAccelFactor = 5;
     rememberZoomAndPan = true;
-    lastCropSize = 1;
-    fbOnlyRaw = false;
     fbShowDateTime = true;
     fbShowBasicExif = true;
     fbShowExpComp = false;
@@ -362,7 +338,6 @@ void Options::setDefaults()
 #else
     fbShowHidden = false;
 #endif
-    fbArrangement = 2;                  // was 0
     navRGBUnit = NavigatorUnit::PERCENT;
     navLCHUnit = NavigatorUnit::PERCENT;
     multiUser = true;
@@ -375,7 +350,6 @@ void Options::setDefaults()
     thumbSizeQueue = 160;
     sameThumbSize = false;               // preferring speed of switch between file browser and single editor tab
     showHistory = true;
-    showFilePanelState = 0;             // Not used anymore ; was the thumb strip state
     showInfo = true;
     cropPPI = 600;
     showClippedHighlights = false;
@@ -383,7 +357,6 @@ void Options::setDefaults()
     highlightThreshold = 253;           // was 254
     shadowThreshold = 8;                // was 0
     bgcolor = 0;
-    blinkClipped = false;
     language = DefaultLanguage;
     languageAutoDetect = langMgr.isOSLanguageDetectSupported();
     lastSaveAsPath = "";
@@ -413,8 +386,6 @@ void Options::setDefaults()
     parseExtensionsEnabled.clear();
     parsedExtensions.clear();
     parsedExtensionsSet.clear();
-    renameUseTemplates = false;
-    renameTemplates.clear();
     thumbnailZoomRatios.clear();
     thumbnailZoomRatios.push_back(0.2);
     thumbnailZoomRatios.push_back(0.3);
@@ -452,7 +423,7 @@ void Options::setDefaults()
     maxInspectorBuffers = 2; //  a rather conservative value for low specced systems...
     inspectorDelay = 0;
     serializeTiffRead = true;
-    denoiseZoomedOut = false;
+    denoiseZoomedOut = true;
 
     FileBrowserToolbarSingleRow = false;
     hideTPVScrollbar = false;
@@ -528,9 +499,6 @@ void Options::setDefaults()
     sndBatchQueueDone = "complete";
     sndLngEditProcDone = "window-attention";
 #endif
-
-    // 0 = SET mode, 1 = ADD mode
-    baBehav.assign(ADDSET_PARAM_NUM, 0);
 
     rtSettings.darkFramesPath = "";
     rtSettings.flatFieldsPath = "";
@@ -611,28 +579,21 @@ void Options::setDefaults()
     // at the end of the "updatePaths" method.
     lastRgbCurvesDir = "";
     lastLabCurvesDir = "";
-    lastRetinexDir = "";
-    lastDenoiseCurvesDir = "";
-    lastWaveletCurvesDir = "";
     lastPFCurvesDir = "";
     lastHsvCurvesDir = "";
     lastToneCurvesDir = "";
-    lastVibranceCurvesDir = "";
     lastProfilingReferenceDir = "";
-    lastBWCurvesDir = "";
     lastLensProfileDir = "";
     lastICCProfCreatorDir = "";
     gimpPluginShowInfoDialog = true;
     maxRecentFolders = 15;
     rtSettings.lensfunDbDirectory = ""; // set also in main.cc and main-cli.cc
-    cropGuides = CROP_GUIDE_NONE; //CROP_GUIDE_FULL;
-    cropAutoFit = true; //false;
 
     rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
 
-    thumbnail_rating_mode = Options::ThumbnailRatingMode::PROCPARAMS;
-    rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::STD;
-    rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::NONE;
+    thumbnail_rating_mode = Options::ThumbnailRatingMode::XMP;
+    rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
+    rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::READ;
 }
 
 Options* Options::copyFrom(Options* other)
@@ -700,10 +661,6 @@ void Options::readFromFile(Glib::ustring fname)
 
                 if (keyFile.has_key("General", "AdjusterMaxDelay")) {
                     adjusterMaxDelay = keyFile.get_integer("General", "AdjusterMaxDelay");
-                }
-
-                if (keyFile.has_key("General", "StoreLastProfile")) {
-                    savesParamsAtExit = keyFile.get_boolean("General", "StoreLastProfile");
                 }
 
                 if (keyFile.has_key("General", "MultiUser")) {
@@ -927,10 +884,6 @@ void Options::readFromFile(Glib::ustring fname)
                     sameThumbSize = keyFile.get_integer("File Browser", "SameThumbSize");
                 }
 
-                if (keyFile.has_key("File Browser", "BrowseOnlyRaw")) {
-                    fbOnlyRaw = keyFile.get_boolean("File Browser", "BrowseOnlyRaw");
-                }
-
                 if (keyFile.has_key("File Browser", "BrowserShowsDate")) {
                     fbShowDateTime = keyFile.get_boolean("File Browser", "BrowserShowsDate");
                 }
@@ -971,24 +924,12 @@ void Options::readFromFile(Glib::ustring fname)
                     }
                 }
 
-                if (keyFile.has_key("File Browser", "ThumbnailArrangement")) {
-                    fbArrangement = keyFile.get_integer("File Browser", "ThumbnailArrangement");
-                }
-
                 if (keyFile.has_key("File Browser", "ThumbnailInterpolation")) {
                     thumbInterp = keyFile.get_integer("File Browser", "ThumbnailInterpolation");
                 }
 
                 if (keyFile.has_key("File Browser", "FavoriteDirs")) {
                     favoriteDirs = keyFile.get_string_list("File Browser", "FavoriteDirs");
-                }
-
-                if (keyFile.has_key("File Browser", "RenameTemplates")) {
-                    renameTemplates = keyFile.get_string_list("File Browser", "RenameTemplates");
-                }
-
-                if (keyFile.has_key("File Browser", "RenameUseTemplates")) {
-                    renameUseTemplates = keyFile.get_boolean("File Browser", "RenameUseTemplates");
                 }
 
                 if (keyFile.has_key("File Browser", "ThumbnailZoomRatios")) {
@@ -1064,10 +1005,6 @@ void Options::readFromFile(Glib::ustring fname)
 
                 if (keyFile.has_key("Clipping Indication", "ShadowThreshold")) {
                     shadowThreshold = keyFile.get_integer("Clipping Indication", "ShadowThreshold");
-                }
-
-                if (keyFile.has_key("Clipping Indication", "BlinkClipped")) {
-                    blinkClipped = keyFile.get_boolean("Clipping Indication", "BlinkClipped");
                 }
             }
 
@@ -1250,10 +1187,6 @@ void Options::readFromFile(Glib::ustring fname)
                     lastScale = keyFile.get_integer("GUI", "LastPreviewScale");
                 }
 
-                if (keyFile.has_key("GUI", "LastShowAllExif")) {
-                    lastShowAllExif = keyFile.get_boolean("GUI", "LastShowAllExif");
-                }
-
                 if (keyFile.has_key("GUI", "PanAccelFactor")) {
                     panAccelFactor = keyFile.get_integer("GUI", "PanAccelFactor");
                 }
@@ -1262,16 +1195,8 @@ void Options::readFromFile(Glib::ustring fname)
                     rememberZoomAndPan = keyFile.get_boolean("GUI", "RememberZoomAndPan");
                 }
 
-                if (keyFile.has_key("GUI", "LastCropSize")) {
-                    lastCropSize = keyFile.get_integer("GUI", "LastCropSize");
-                }
-
                 if (keyFile.has_key("GUI", "ShowHistory")) {
                     showHistory = keyFile.get_boolean("GUI", "ShowHistory");
-                }
-
-                if (keyFile.has_key("GUI", "ShowFilePanelState")) {
-                    showFilePanelState = keyFile.get_integer("GUI", "ShowFilePanelState");
                 }
 
                 if (keyFile.has_key("GUI", "ShowInfo")) {
@@ -1392,14 +1317,6 @@ void Options::readFromFile(Glib::ustring fname)
                 if (keyFile.has_key("Crop Settings", "PPI")) {
                     cropPPI = keyFile.get_integer("Crop Settings", "PPI");
                 }
-
-                // if (keyFile.has_key("Crop Settings", "GuidesMode")) {
-                //     cropGuides = CropGuidesMode(std::max(int(CROP_GUIDE_NONE), std::min(keyFile.get_integer("Crop Settings", "GuidesMode"), int(CROP_GUIDE_FULL))));
-                // }
-
-                // if (keyFile.has_key("Crop Settings", "AutoFit")) {
-                //     cropAutoFit = keyFile.get_boolean("Crop Settings", "AutoFit");
-                // }
             }
 
             if (keyFile.has_group("Color Management")) {
@@ -1629,13 +1546,6 @@ void Options::readFromFile(Glib::ustring fname)
                 }
             }
 
-            if (keyFile.has_group("Batch Processing")) {
-                if (keyFile.has_key("Batch Processing", "AdjusterBehavior")) {
-                    baBehav = keyFile.get_integer_list("Batch Processing", "AdjusterBehavior");
-                    baBehav.resize(ADDSET_PARAM_NUM);
-                }
-            }
-
             if (keyFile.has_group("Sounds")) {
                 if (keyFile.has_key("Sounds", "Enable")) {
                     sndEnable = keyFile.get_boolean("Sounds", "Enable");
@@ -1799,15 +1709,10 @@ void Options::readFromFile(Glib::ustring fname)
                 safeDirGet(keyFile, "Dialogs", "LastFlatfieldDir", lastFlatfieldDir);
                 safeDirGet(keyFile, "Dialogs", "LastRgbCurvesDir", lastRgbCurvesDir);
                 safeDirGet(keyFile, "Dialogs", "LastLabCurvesDir", lastLabCurvesDir);
-                safeDirGet(keyFile, "Dialogs", "LastRetinexDir", lastRetinexDir);
-                safeDirGet(keyFile, "Dialogs", "LastDenoiseCurvesDir", lastDenoiseCurvesDir);
-                safeDirGet(keyFile, "Dialogs", "LastWaveletCurvesDir", lastWaveletCurvesDir);
                 safeDirGet(keyFile, "Dialogs", "LastPFCurvesDir", lastPFCurvesDir);
                 safeDirGet(keyFile, "Dialogs", "LastHsvCurvesDir", lastHsvCurvesDir);
-                safeDirGet(keyFile, "Dialogs", "LastBWCurvesDir", lastBWCurvesDir);
 
                 safeDirGet(keyFile, "Dialogs", "LastToneCurvesDir", lastToneCurvesDir);
-                safeDirGet(keyFile, "Dialogs", "LastVibranceCurvesDir", lastVibranceCurvesDir);
                 safeDirGet(keyFile, "Dialogs", "LastProfilingReferenceDir", lastProfilingReferenceDir);
                 safeDirGet(keyFile, "Dialogs", "LastLensProfileDir", lastLensProfileDir);
                 safeDirGet(keyFile, "Dialogs", "LastICCProfCreatorDir", lastICCProfCreatorDir);
@@ -1896,7 +1801,6 @@ void Options::saveToFile(Glib::ustring fname)
         Glib::KeyFile keyFile;
 
         keyFile.set_boolean("General", "TabbedEditor", tabbedUI);
-        keyFile.set_boolean("General", "StoreLastProfile", savesParamsAtExit);
 
         if (startupDir == STARTUPDIR_HOME) {
             keyFile.set_string("General", "StartupDirectory", "home");
@@ -1925,7 +1829,6 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_string("External Editor", "PhotoshopDir", psDir);
         keyFile.set_string("External Editor", "CustomEditor", customEditorProg);
 
-        keyFile.set_boolean("File Browser", "BrowseOnlyRaw", fbOnlyRaw);
         keyFile.set_boolean("File Browser", "BrowserShowsDate", fbShowDateTime);
         keyFile.set_boolean("File Browser", "BrowserShowsExif", fbShowBasicExif);
         keyFile.set_boolean("File Browser", "BrowserShowsExpComp", fbShowExpComp);
@@ -1942,13 +1845,9 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_string_list("File Browser", "ParseExtensions", pext);
         Glib::ArrayHandle<int> pextena = parseExtensionsEnabled;
         keyFile.set_integer_list("File Browser", "ParseExtensionsEnabled", pextena);
-        keyFile.set_integer("File Browser", "ThumbnailArrangement", fbArrangement);
         keyFile.set_integer("File Browser", "ThumbnailInterpolation", thumbInterp);
         Glib::ArrayHandle<Glib::ustring> pfav = favoriteDirs;
         keyFile.set_string_list("File Browser", "FavoriteDirs", pfav);
-        Glib::ArrayHandle<Glib::ustring> pren = renameTemplates;
-        keyFile.set_string_list("File Browser", "RenameTemplates", pren);
-        keyFile.set_boolean("File Browser", "RenameUseTemplates", renameUseTemplates);
         Glib::ArrayHandle<double> ptzoom = thumbnailZoomRatios;
         keyFile.set_double_list("File Browser", "ThumbnailZoomRatios", ptzoom);
         keyFile.set_boolean("File Browser", "OverlayedFileNames", overlayedFileNames);
@@ -1982,7 +1881,6 @@ void Options::saveToFile(Glib::ustring fname)
         }
         keyFile.set_integer("Clipping Indication", "HighlightThreshold", highlightThreshold);
         keyFile.set_integer("Clipping Indication", "ShadowThreshold", shadowThreshold);
-        keyFile.set_boolean("Clipping Indication", "BlinkClipped", blinkClipped);
 
         keyFile.set_integer("Performance", "RgbDenoiseThreadLimit", rgbDenoiseThreadLimit);
         keyFile.set_integer("Performance", "ClutCacheSize", clutCacheSize);
@@ -2069,12 +1967,9 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_integer("GUI", "CPFontSize", CPFontSize);
         keyFile.set_boolean("GUI", "PseudoHiDPISupport", pseudoHiDPISupport);
         keyFile.set_integer("GUI", "LastPreviewScale", lastScale);
-        keyFile.set_boolean("GUI", "LastShowAllExif", lastShowAllExif);
         keyFile.set_integer("GUI", "PanAccelFactor", panAccelFactor);
         keyFile.set_boolean("GUI", "RememberZoomAndPan", rememberZoomAndPan);
-        keyFile.set_integer("GUI", "LastCropSize", lastCropSize);
         keyFile.set_boolean("GUI", "ShowHistory", showHistory);
-        keyFile.set_integer("GUI", "ShowFilePanelState", showFilePanelState);
         keyFile.set_boolean("GUI", "ShowInfo", showInfo);
         keyFile.set_boolean("GUI", "MainNBVertical", mainNBVertical);
         keyFile.set_boolean("GUI", "ShowClippedHighlights", showClippedHighlights);
@@ -2109,8 +2004,6 @@ void Options::saveToFile(Glib::ustring fname)
         //keyFile.set_integer_list ("GUI", "CurvePanelsExpanded", crvopen);
 
         keyFile.set_integer("Crop Settings", "PPI", cropPPI);
-        // keyFile.set_integer("Crop Settings", "GuidesMode", cropGuides);
-        // keyFile.set_boolean("Crop Settings", "AutoFit", cropAutoFit);
 
         keyFile.set_string("Color Management", "PrinterProfile", rtSettings.printerProfile);
         keyFile.set_integer("Color Management", "PrinterIntent", rtSettings.printerIntent);
@@ -2168,15 +2061,10 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_string("ICC Profile Creator", "Copyright", ICCPC_copyright);
         keyFile.set_boolean("ICC Profile Creator", "AppendParamsToDesc", ICCPC_appendParamsToDesc);
 
-
-        Glib::ArrayHandle<int> bab = baBehav;
-        keyFile.set_integer_list("Batch Processing", "AdjusterBehavior", bab);
-
         keyFile.set_boolean("Sounds", "Enable", sndEnable);
         keyFile.set_string("Sounds", "BatchQueueDone", sndBatchQueueDone);
         keyFile.set_string("Sounds", "LngEditProcDone", sndLngEditProcDone);
         keyFile.set_double("Sounds", "LngEditProcDoneSecs", sndLngEditProcDoneSecs);
-
 
         keyFile.set_boolean("Fast Export", "fastexport_bypass_sharpening", fastexport_bypass_sharpening);
         keyFile.set_boolean("Fast Export", "fastexport_bypass_defringe", fastexport_bypass_defringe);
@@ -2213,14 +2101,9 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_string("Dialogs", "LastFlatfieldDir", lastFlatfieldDir);
         keyFile.set_string("Dialogs", "LastRgbCurvesDir", lastRgbCurvesDir);
         keyFile.set_string("Dialogs", "LastLabCurvesDir", lastLabCurvesDir);
-        keyFile.set_string("Dialogs", "LastRetinexDir", lastRetinexDir);
-        keyFile.set_string("Dialogs", "LastDenoiseCurvesDir", lastDenoiseCurvesDir);
-        keyFile.set_string("Dialogs", "LastWaveletCurvesDir", lastWaveletCurvesDir);
         keyFile.set_string("Dialogs", "LastPFCurvesDir", lastPFCurvesDir);
         keyFile.set_string("Dialogs", "LastHsvCurvesDir", lastHsvCurvesDir);
-        keyFile.set_string("Dialogs", "LastBWCurvesDir", lastBWCurvesDir);
         keyFile.set_string("Dialogs", "LastToneCurvesDir", lastToneCurvesDir);
-        keyFile.set_string("Dialogs", "LastVibranceCurvesDir", lastVibranceCurvesDir);
         keyFile.set_string("Dialogs", "LastProfilingReferenceDir", lastProfilingReferenceDir);
         keyFile.set_string("Dialogs", "LastLensProfileDir", lastLensProfileDir);
         keyFile.set_string("Dialogs", "LastICCProfCreatorDir", lastICCProfCreatorDir);
