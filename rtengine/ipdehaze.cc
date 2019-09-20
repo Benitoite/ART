@@ -214,6 +214,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         return;
     }
 
+    img->setMode(Imagefloat::Mode::RGB, multiThread);
     img->normalizeFloatTo1();
     
     const int W = img->getWidth();
@@ -316,14 +317,14 @@ void ImProcFunctions::dehaze(Imagefloat *img)
             float rgb[3] = { img->r(y, x), img->g(y, x), img->b(y, x) };
             // ... t >= tl to avoid negative values
             float tl = 1.f - min(rgb[0]/ambient[0], rgb[1]/ambient[1], rgb[2]/ambient[2]);
-            // ... t >= tu to avoid values > 1
-            float tu = t0 - teps;
-            for (int c = 0; c < 3; ++c) {
-                if (ambient[c] < 1) {
-                    tu = max(tu, (rgb[c] - ambient[c])/(1.f - ambient[c]));
-                }
-            }
-            float mt = max(t[y][x], t0, tl + teps, tu + teps);
+            // // ... t >= tu to avoid values > 1
+            // float tu = t0 - teps;
+            // for (int c = 0; c < 3; ++c) {
+            //     if (ambient[c] < 1) {
+            //         tu = max(tu, (rgb[c] - ambient[c])/(1.f - ambient[c]));
+            //     }
+            // }
+            float mt = max(t[y][x], t0, tl + teps);//, tu + teps);
             if (params->dehaze.showDepthMap) {
                 img->r(y, x) = img->g(y, x) = img->b(y, x) = LIM01(1.f - mt);
             } else if (luminance) {
