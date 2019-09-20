@@ -250,7 +250,6 @@ void ImProcFunctions::dehaze(Imagefloat *img)
             rescaleNearest(G, GG, multiThread);
             rescaleNearest(B, BB, multiThread);
             array2D<float> D(ww, hh);
-            rescaleNearest(dark, D, multiThread);
 
             patchsize = 2;
             int npatches = get_dark_channel(RR, GG, BB, D, patchsize, nullptr, false, multiThread);
