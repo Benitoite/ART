@@ -314,13 +314,15 @@ private:
 
         int cx = 0, cy = 0, cw = img->getWidth(), ch = img->getHeight();
         if (params.crop.enabled) {
-            //params.crop.enabled = false;
+            int iw = img->getWidth();
+            int ih = img->getHeight();
+
             cx = params.crop.x * scale_factor + 0.5;
             cy = params.crop.y * scale_factor + 0.5;
-            cw = params.crop.w * scale_factor + 0.5;
-            ch = params.crop.h * scale_factor + 0.5;
+            cw = std::min(int(params.crop.w * scale_factor + 0.5), iw - cx);
+            ch = std::min(int(params.crop.h * scale_factor + 0.5), ih - cy);
 
-            ipf.setViewport(cx, cy, img->getWidth(), img->getHeight());
+            ipf.setViewport(cx, cy, iw, ih);
 
             Imagefloat *tmpimg = new Imagefloat(cw, ch, img);
 #ifdef _OPENMP
