@@ -278,7 +278,12 @@ Gtk::Widget* Preferences::getImageProcessingPanel ()
     dirgrid->attach_next_to(*clutsRestartNeeded, *clutsDir, Gtk::POS_RIGHT, 1, 1);
 
     cdf->add(*dirgrid);
-    vbImageProcessing->pack_start (*cdf, Gtk::PACK_SHRINK, 4 );
+    vbImageProcessing->pack_start(*cdf, Gtk::PACK_SHRINK, 4 );
+
+    Gtk::Frame *owf = Gtk::manage(new Gtk::Frame(M("PREFERENCES_BATCH_PROCESSING")));
+    chOverwriteOutputFile = Gtk::manage(new Gtk::CheckButton(M("PREFERENCES_OVERWRITEOUTPUTFILE")));
+    owf->add(*chOverwriteOutputFile);
+    vbImageProcessing->pack_start(*owf, Gtk::PACK_SHRINK, 4);
 
     swImageProcessing->add(*vbImageProcessing);
 

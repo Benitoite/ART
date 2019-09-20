@@ -46,24 +46,6 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Glib::RefPtr<Gtk::ListStore> extensionModel;
 
 
-    class BehavColumns : public Gtk::TreeModel::ColumnRecord
-    {
-    public:
-        Gtk::TreeModelColumn<Glib::ustring> label;
-        Gtk::TreeModelColumn<bool>          badd;
-        Gtk::TreeModelColumn<bool>          bset;
-        Gtk::TreeModelColumn<bool>          visible;
-        Gtk::TreeModelColumn<int>           addsetid;
-        BehavColumns()
-        {
-            add (label);
-            add (badd);
-            add (bset);
-            add (visible);
-            add (addsetid);
-        }
-    };
-
     class ThemeFilename
     {
     public:
@@ -233,14 +215,11 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
 
     int getThemeRowNumber (Glib::ustring& longThemeFName);
 
-    void appendBehavList (Gtk::TreeModel::iterator& parent, Glib::ustring label, int id, bool set);
-
     Gtk::ScrolledWindow *swGeneral;
     Gtk::ScrolledWindow *swImageProcessing;
     Gtk::ScrolledWindow *swDynamicProfile;
     Gtk::ScrolledWindow *swFileBrowser;
     Gtk::ScrolledWindow *swColorMan;
-    Gtk::ScrolledWindow *swBatchProc;
     Gtk::ScrolledWindow *swPerformance;
     Gtk::ScrolledWindow *swSounds;
     Gtk::ScrolledWindow *swFastExport;
