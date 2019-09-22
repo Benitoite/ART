@@ -59,6 +59,53 @@ namespace {
 #endif
 
 
+float normalize(Imagefloat *rgb, bool multithread)
+{
+    float maxval = 0.f;
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+#ifdef _OPENMP
+#   pragma omp parallel for reduction(max:maxval) if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            maxval = max(maxval, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x));
+        }
+    }
+    maxval = max(maxval * 2.f, 65535.f);
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            rgb->r(y, x) /= maxval;
+            rgb->g(y, x) /= maxval;
+            rgb->b(y, x) /= maxval;
+        }
+    }
+    return maxval;
+}
+
+
+void restore(Imagefloat *rgb, float maxval, bool multithread)
+{
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+    if (maxval > 0.f) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                rgb->r(y, x) *= maxval;
+                rgb->g(y, x) *= maxval;
+                rgb->b(y, x) *= maxval;
+            }
+        }
+    }
+}
+
+
 int get_dark_channel(const array2D<float> &R, const array2D<float> &G, const array2D<float> &B, array2D<float> &dst, int patchsize, const float ambient[3], bool clip, bool multithread)
 {
     const int W = R.width();
@@ -215,7 +262,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
 
     img->setMode(Imagefloat::Mode::RGB, multiThread);
-    img->normalizeFloatTo1();
+    const float maxchan = normalize(img, multiThread); //img->normalizeFloatTo1();
     
     const int W = img->getWidth();
     const int H = img->getHeight();
@@ -271,7 +318,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         if (options.rtSettings.verbose) {
             std::cout << "dehaze: no haze detected" << std::endl;
         }
-        img->normalizeFloatTo65535();
+        //img->normalizeFloatTo65535();
+        restore(img, maxchan, multiThread);
         return; // probably no haze at all
     }
 
@@ -347,7 +395,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    img->normalizeFloatTo65535();
+    //img->normalizeFloatTo65535();
+    restore(img, maxchan, multiThread);
 }
 
 
