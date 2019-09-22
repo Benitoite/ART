@@ -85,7 +85,7 @@ public:
     void Set(const std::vector<double> &curvePoints);
     float operator[](float index) const
     {
-        return lutOpacityCurveWL[index];
+        return lutOpacityCurveWL ? lutOpacityCurveWL[index] : 0.f;
     }
 
     operator bool (void) const
