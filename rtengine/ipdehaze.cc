@@ -242,7 +242,7 @@ void ImProcFunctions::dehaze(Imagefloat *img)
             constexpr int sizecap = 200;
             float r = float(W)/float(H);
             int ww = r >= 1.f ? sizecap : float(sizecap) / r;
-            int hh = r >= 1.f ? float(sizecap) * r : sizecap;
+            int hh = r >= 1.f ? float(sizecap) / r : sizecap;
             array2D<float> RR(ww, hh);
             array2D<float> GG(ww, hh);
             array2D<float> BB(ww, hh);
