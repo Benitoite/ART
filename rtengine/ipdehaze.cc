@@ -280,7 +280,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     float max_t = 0.f;
 
     {
-        array2D<float> R(W, H);
+        //array2D<float> R(W, H);
+        array2D<float> &R = dark; // R and dark can safely use the same buffer, which is faster and reduces memory allocations/deallocations
         array2D<float> G(W, H);
         array2D<float> B(W, H);
         extract_channels(img, R, G, B, patchsize, 1e-1, multiThread);
