@@ -101,10 +101,10 @@ float calcRadiusBayer(const float * const *rawData, int W, int H, float lowerLim
 //-----------------------------------------------------------------------------
 float calcRadiusXtrans(const float * const *rawData, int W, int H, float lowerLimit, float upperLimit, unsigned int starty, unsigned int startx)
 {
-    BENCHFUN
+
     float maxRatio = 1.f;
 #ifdef _OPENMP
-#   pragma omp parallel for reduction(max:maxRatio) schedule(dynamic, 16)
+    #pragma omp parallel for reduction(max:maxRatio) schedule(dynamic, 16)
 #endif
     for (int row = starty + 3; row < H - 4; row += 3) {
         for (int col = startx + 3; col < W - 4; col += 3) {
@@ -112,9 +112,9 @@ float calcRadiusXtrans(const float * const *rawData, int W, int H, float lowerLi
             const float valtr = rawData[row][col + 1];
             const float valbl = rawData[row + 1][col];
             const float valbr = rawData[row + 1][col + 1];
-            if (valtl > 0.f) {
+            if (valtl > 1.f) {
                 const float maxValtltr = std::max(valtl, valtr);
-                if (valtr > 0.f && maxValtltr > lowerLimit) {
+                if (valtr > 1.f && maxValtltr > lowerLimit) {
                     const float minVal = std::min(valtl, valtr);
                     if (UNLIKELY(maxValtltr > maxRatio * minVal)) {
                         bool clipped = false;
@@ -129,12 +129,11 @@ float calcRadiusXtrans(const float * const *rawData, int W, int H, float lowerLi
                         }
                         if (!clipped) {
                             maxRatio = maxValtltr / minVal;
-//                            std::cout << "d" << col << " : " << row << " ::: " << maxRatio << " at " << maxValtltr << std::endl;
                         }
                     }
                 }
                 const float maxValtlbl = std::max(valtl, valbl);
-                if (valbl > 0.f && maxValtlbl > lowerLimit) {
+                if (valbl > 1.f && maxValtlbl > lowerLimit) {
                     const float minVal = std::min(valtl, valbl);
                     if (UNLIKELY(maxValtlbl > maxRatio * minVal)) {
                         bool clipped = false;
@@ -149,14 +148,13 @@ float calcRadiusXtrans(const float * const *rawData, int W, int H, float lowerLi
                         }
                         if (!clipped) {
                             maxRatio = maxValtlbl / minVal;
-//                            std::cout << "a" << col << " : " << row << " ::: " << maxRatio << " at " << maxValtlbl << std::endl;
                         }
                     }
                 }
             }
-            if (valbr > 0.f) {
+            if (valbr > 1.f) {
                 const float maxValblbr = std::max(valbl, valbr);
-                if (valbl > 0.f && maxValblbr > lowerLimit) {
+                if (valbl > 1.f && maxValblbr > lowerLimit) {
                     const float minVal = std::min(valbl, valbr);
                     if (UNLIKELY(maxValblbr > maxRatio * minVal)) {
                         bool clipped = false;
@@ -171,12 +169,11 @@ float calcRadiusXtrans(const float * const *rawData, int W, int H, float lowerLi
                         }
                         if (!clipped) {
                             maxRatio = maxValblbr / minVal;
-//                            std::cout << "b" << col << " : " << row << " ::: " << maxRatio << " at " << maxValblbr << std::endl;
                         }
                     }
                 }
                 const float maxValtrbr = std::max(valtr, valbr);
-                if (valtr > 0.f && maxValtrbr > lowerLimit) {
+                if (valtr > 1.f && maxValtrbr > lowerLimit) {
                     const float minVal = std::min(valtr, valbr);
                     if (UNLIKELY(maxValtrbr > maxRatio * minVal)) {
                         if (maxValtrbr == valbr) { // check for influence by clipped green in neighborhood
@@ -189,7 +186,6 @@ float calcRadiusXtrans(const float * const *rawData, int W, int H, float lowerLi
                             }
                         }
                         maxRatio = maxValtrbr / minVal;
-//                        std::cout << "c" << col << " : " << row << " ::: " << maxRatio << " at " << maxValtrbr << std::endl;
                     }
                 }
             }
