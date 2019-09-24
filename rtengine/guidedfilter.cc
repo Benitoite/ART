@@ -148,17 +148,11 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
     const size_t w = W / subsampling;
     const size_t h = H / subsampling;
 
-    AlignedBuffer<float> blur_buf(w * h);
     const auto f_mean =
-        [&](array2D<float> &d, array2D<float> &s, int rad) -> void
+        [multithread](array2D<float> &d, array2D<float> &s, int rad) -> void
         {
             rad = LIM(rad, 0, (min(s.width(), s.height()) - 1) / 2 - 1);
-            float **src = s;
-            float **dst = d;
-#ifdef _OPENMP
-            #pragma omp parallel if (multithread)
-#endif
-            boxblur<float, float>(src, dst, blur_buf.data, rad, rad, s.width(), s.height());
+            boxblur(s, d, rad, s.width(), s.height(), multithread);
         };
 
     array2D<float> I1(w, h);
