@@ -95,16 +95,6 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                     G[y][x] = intp(bf, gg, ig);
                     B[y][x] = intp(bf, bb, ib);
                 } else {
-                    // float Y = Color::rgbLuminance(rr, gg, bb, ws);
-                    // float iY = Color::rgbLuminance(ir, ig, ib, ws);
-                    // float oY = luminance ? intp(bf, Y, iY) : iY;
-                    // rr = luminance ? ir - iY : intp(bf, rr - Y, ir - iY); 
-                    // gg = luminance ? ig - iY : intp(bf, gg - Y, ig - iY); 
-                    // bb = luminance ? ib - iY : intp(bf, bb - Y, ib - iY);
-                    // R[y][x] = oY + rr;
-                    // G[y][x] = oY + gg;
-                    // B[y][x] = oY + bb;
-
                     float iY, iu, iv;
                     float oY, ou, ov;
                     rgb2yuv(ir, ig, ib, iY, iu, iv);
@@ -136,7 +126,7 @@ void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb)
         return;
     }
 
-    rgb->normalizeFloatTo1();
+    rgb->normalizeFloatTo1(im.multiThread);
 
     const int W = rgb->getWidth();
     const int H = rgb->getHeight();
@@ -154,7 +144,7 @@ void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb)
     guided_smoothing(R, G, B, ws, iws, Channel::C, im.params->denoise.guidedChromaRadius, c_eps, im.params->denoise.guidedChromaStrength, im.scale, im.multiThread);
     guided_smoothing(R, G, B, ws, iws, Channel::L, im.params->denoise.guidedLumaRadius, l_eps, im.params->denoise.guidedLumaStrength, im.scale, im.multiThread);
     
-    rgb->normalizeFloatTo65535();
+    rgb->normalizeFloatTo65535(im.multiThread);
 }
 
 } // namespace denoise
@@ -170,10 +160,6 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
     }
     
     if (params->smoothing.enabled) {
-        // LabImage tmplab(rgb->getWidth(), rgb->getHeight());
-        // rgb2lab(*rgb, tmplab);
-        // LabImage *lab = &tmplab;
-        
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H3);
             fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
@@ -186,7 +172,6 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(rgb, params->smoothing.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, nullptr, &mask)) {
-            // lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
@@ -195,21 +180,15 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 
         Imagefloat working(W, H);
         rgb->setMode(Imagefloat::Mode::RGB, multiThread);
-        rgb->normalizeFloatTo1();
-        //rgb->assignColorSpace(params->icm.workingProfile);
+        rgb->normalizeFloatTo1(multiThread);
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
         
         for (int i = 0; i < n; ++i) {
             rgb->copyTo(&working);
-            // lab2rgb(*lab, working, params->icm.workingProfile);
-            // working.normalizeFloatTo1();
             
             auto &r = params->smoothing.regions[i];
-
-            // const int W = working.getWidth();
-            // const int H = working.getHeight();
             array2D<float> R(W, H, working.r.ptrs, ARRAY2D_BYREFERENCE);
             array2D<float> G(W, H, working.g.ptrs, ARRAY2D_BYREFERENCE);
             array2D<float> B(W, H, working.b.ptrs, ARRAY2D_BYREFERENCE);
@@ -224,11 +203,6 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 #endif
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
-                    // float ll, aa, bb;
-                    // Color::rgb2lab(R[y][x] * 65535.f, G[y][x] * 65535.f, B[y][x] * 65535.f, ll, aa, bb, ws);
-                    // lab->L[y][x] = intp(blend[y][x], ll, lab->L[y][x]);
-                    // lab->a[y][x] = intp(blend[y][x], aa, lab->a[y][x]);
-                    // lab->b[y][x] = intp(blend[y][x], bb, lab->b[y][x]);
                     rgb->r(y, x) = intp(blend[y][x], working.r(y, x), rgb->r(y, x));
                     rgb->g(y, x) = intp(blend[y][x], working.g(y, x), rgb->g(y, x));
                     rgb->b(y, x) = intp(blend[y][x], working.b(y, x), rgb->b(y, x));
@@ -236,8 +210,7 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
             }
         }
 
-        rgb->normalizeFloatTo65535();
-        // lab2rgb(*lab, *rgb);
+        rgb->normalizeFloatTo65535(multiThread);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

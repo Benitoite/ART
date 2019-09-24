@@ -216,7 +216,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
 
     BENCHFUN
 
-    rgb->normalizeFloatTo1();
+    rgb->normalizeFloatTo1(multiThread);
 
     const int W = rgb->getWidth();
     const int H = rgb->getHeight();
@@ -227,7 +227,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
 
     tone_eq(R, G, B, params->toneEqualizer, params->icm.workingProfile, scale, multiThread);
     
-    rgb->normalizeFloatTo65535();
+    rgb->normalizeFloatTo65535(multiThread);
 }
 
 } // namespace rtengine

@@ -73,36 +73,14 @@ float normalize(Imagefloat *rgb, bool multithread)
         }
     }
     maxval = max(maxval * 2.f, 65535.f);
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            rgb->r(y, x) /= maxval;
-            rgb->g(y, x) /= maxval;
-            rgb->b(y, x) /= maxval;
-        }
-    }
+    rgb->multiply(1.f/maxval, multithread);
     return maxval;
 }
 
 
 void restore(Imagefloat *rgb, float maxval, bool multithread)
 {
-    const int W = rgb->getWidth();
-    const int H = rgb->getHeight();
-    if (maxval > 0.f) {
-#ifdef _OPENMP
-#       pragma omp parallel for if (multithread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                rgb->r(y, x) *= maxval;
-                rgb->g(y, x) *= maxval;
-                rgb->b(y, x) *= maxval;
-            }
-        }
-    }
+    rgb->multiply(maxval, multithread);
 }
 
 
@@ -319,7 +297,6 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         if (options.rtSettings.verbose) {
             std::cout << "dehaze: no haze detected" << std::endl;
         }
-        //img->normalizeFloatTo65535();
         restore(img, maxchan, multiThread);
         return; // probably no haze at all
     }
@@ -396,7 +373,6 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         }
     }
 
-    //img->normalizeFloatTo65535();
     restore(img, maxchan, multiThread);
 }
 

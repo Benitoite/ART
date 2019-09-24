@@ -34,8 +34,7 @@ namespace rtengine {
 
 Imagefloat::Imagefloat():
     color_space_("sRGB"),
-    mode_(uint32_t(Mode::RGB)),
-    norm_1_(false)
+    mode_(Mode::RGB)
 {
     ws_[0][0] = RT_INFINITY_F;
     iws_[0][0] = RT_INFINITY_F;
@@ -43,8 +42,7 @@ Imagefloat::Imagefloat():
 
 Imagefloat::Imagefloat(int w, int h, const Imagefloat *state_from):
     color_space_("sRGB"),
-    mode_(uint32_t(Mode::RGB)),
-    norm_1_(false)
+    mode_(Mode::RGB)
 {
     allocate(w, h);
     ws_[0][0] = RT_INFINITY_F;
@@ -187,7 +185,6 @@ void Imagefloat::copyState(Imagefloat *to) const
 {
     to->color_space_ = color_space_;
     to->mode_ = mode_;
-    to->norm_1_ = norm_1_;
     to->ws_[0][0] = RT_INFINITY_F;
     to->iws_[0][0] = RT_INFINITY_F;
 }
@@ -394,54 +391,48 @@ Imagefloat::to16() const
 }
 
 
-// convert values's range to [0;1] ; this method assumes that the input values's range is [0;65535]
-void Imagefloat::normalizeFloatTo1()
+void Imagefloat::multiply(float factor, bool multithread)
 {
-    if (norm_1_) {
-        return;
-    }
-    
-    int w = width;
-    int h = height;
-
-#ifdef _OPENMP
-    #pragma omp parallel for firstprivate(w, h) schedule(dynamic, 5)
+    const int W = width;
+    const int H = height;
+#ifdef __SSE2__
+    vfloat vfactor = F2V(factor);
 #endif
 
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            r(y, x) /= 65535.f;
-            g(y, x) /= 65535.f;
-            b(y, x) /= 65535.f;
+#ifdef _OPENMP
+#   pragma omp parallel for firstprivate(W, H) schedule(dynamic, 5) if (multithread)
+#endif
+    for (int y = 0; y < H; y++) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W-3; x += 4) {
+            vfloat rv = LVF(r(y, x));
+            vfloat gv = LVF(g(y, x));
+            vfloat bv = LVF(b(y, x));
+            STVF(r(y, x), rv * vfactor);
+            STVF(g(y, x), gv * vfactor);
+            STVF(b(y, x), bv * vfactor);
+        }
+#endif
+        for (; x < W; ++x) {
+            r(y, x) *= factor;
+            g(y, x) *= factor;
+            b(y, x) *= factor;
         }
     }
+}
 
-    norm_1_ = true;
+
+// convert values's range to [0;1] ; this method assumes that the input values's range is [0;65535]
+void Imagefloat::normalizeFloatTo1(bool multithread)
+{
+    multiply(1.f/65535.f, multithread);
 }
 
 // convert values's range to [0;65535 ; this method assumes that the input values's range is [0;1]
-void Imagefloat::normalizeFloatTo65535()
+void Imagefloat::normalizeFloatTo65535(bool multithread)
 {
-    if (!norm_1_) {
-        return;
-    }
-
-    int w = width;
-    int h = height;
-
-#ifdef _OPENMP
-    #pragma omp parallel for firstprivate(w, h) schedule(dynamic, 5)
-#endif
-
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            r(y, x) *= 65535.f;
-            g(y, x) *= 65535.f;
-            b(y, x) *= 65535.f;
-        }
-    }
-
-    norm_1_ = false;
+    multiply(65535.f, multithread);
 }
 
 void Imagefloat::calcCroppedHistogram(const ProcParams &params, float scale, LUTu & hist)
@@ -542,8 +533,7 @@ void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform)
 // Parallelized transformation; create transform with cmsFLAGS_NOCACHE!
 void Imagefloat::ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy)
 {
-    mode_ = uint32_t(Mode::RGB);
-    norm_1_ = false;
+    mode_ = Mode::RGB;
     
     // LittleCMS cannot parallelize planar Lab float images
     // so build temporary buffers to allow multi processor execution
@@ -668,7 +658,7 @@ void Imagefloat::setMode(Mode mode, bool multithread)
         }
     }
     
-    mode_ = uint32_t(mode);
+    mode_ = mode;
 }
 
 

@@ -102,8 +102,9 @@ public:
         delete this;
     }
 
-    void normalizeFloatTo1();
-    void normalizeFloatTo65535();
+    void multiply(float factor, bool multithread);
+    void normalizeFloatTo1(bool multithread=true);
+    void normalizeFloatTo65535(bool multithread=true);
     void calcCroppedHistogram(const ProcParams &params, float scale, LUTu & hist);
     void ExecCMSTransform(cmsHTRANSFORM hTransform);
     void ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy);
@@ -115,14 +116,12 @@ public:
         LAB  // g = L, r = A, b = B
     };
 
-    Mode mode() const { return Mode(mode_); }
+    Mode mode() const { return mode_; }
     const Glib::ustring colorSpace() const { return color_space_; }
-    bool isNormalizedTo1() const { return norm_1_; }
 
     void assignColorSpace(const Glib::ustring &space);
     void setMode(Mode mode, bool multithread);
-    void assignMode(Mode mode) { mode_ = uint32_t(mode); }
-    void setNormalizedTo1(bool yes) { norm_1_ = yes; }
+    void assignMode(Mode mode) { mode_ = mode; }
 
     void copyState(Imagefloat *to) const;
 
@@ -148,8 +147,7 @@ private:
     void get_ws();
     
     Glib::ustring color_space_;
-    uint32_t mode_ : 31;
-    bool norm_1_ : 1;
+    Mode mode_;
     float ws_[3][3];
     float iws_[3][3];
 #ifdef __SSE2__

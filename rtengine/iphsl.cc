@@ -42,7 +42,7 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
     }
 
     img->setMode(Imagefloat::Mode::YUV, multiThread);
-    img->normalizeFloatTo1();
+    img->normalizeFloatTo1(multiThread);
     
     const int W = img->getWidth();
     const int H = img->getHeight();
@@ -208,7 +208,7 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
         }
     }
     
-    img->normalizeFloatTo65535();
+    img->normalizeFloatTo65535(multiThread);
 }
 
 } // namespace rtengine
