@@ -87,9 +87,8 @@ Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, const std::s
     tpp = nullptr;
 }
 
-void Thumbnail::_generateThumbnailImage ()
+void Thumbnail::_generateThumbnailImage(bool save_in_cache)
 {
-
     //  delete everything loaded into memory
     delete tpp;
     tpp = nullptr;
@@ -158,11 +157,15 @@ void Thumbnail::_generateThumbnailImage ()
 
     if (tpp) {
         tpp->getAutoWBMultipliers(cfs.redAWBMul, cfs.greenAWBMul, cfs.blueAWBMul);
-        _saveThumbnail ();
+        if (save_in_cache) {
+            _saveThumbnail();
+        }
         cfs.supported = true;
         needsReProcessing = true;
 
-        cfs.save (getCacheFileName ("data", ".txt"));
+        if (save_in_cache) {
+            cfs.save(getCacheFileName("data", ".txt"));
+        }
 
         generateExifDateTimeStrings ();
     }
@@ -855,15 +858,16 @@ void Thumbnail::_loadThumbnail(bool firstTrial)
     succ = succ && tpp->readImage (getCacheFileName ("images", ""));
 
     if (!succ && firstTrial) {
-        _generateThumbnailImage ();
+        _generateThumbnailImage(false);
+        return;
 
-        if (cfs.supported && firstTrial) {
-            _loadThumbnail (false);
-        }
+        // if (cfs.supported && firstTrial) {
+        //     _loadThumbnail (false);
+        // }
 
-        if (tpp == nullptr) {
-            return;
-        }
+        // if (tpp == nullptr) {
+        //     return;
+        // }
     } else if (!succ) {
         delete tpp;
         tpp = nullptr;

@@ -94,7 +94,7 @@ class Thumbnail: public PParamsSnapshotListener {
 
     void _loadThumbnail(bool firstTrial = true);
     void _saveThumbnail();
-    void _generateThumbnailImage();
+    void _generateThumbnailImage(bool save_in_cache=true);
     int infoFromImage(const Glib::ustring& fname);
     void loadThumbnail(bool firstTrial = true);
     void generateExifDateTimeStrings();
