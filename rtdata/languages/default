@@ -972,7 +972,9 @@ MAIN_TAB_COLOR;Color
 MAIN_TAB_COLOR_TOOLTIP;Shortcut: <b>Alt-c</b>
 MAIN_TAB_DETAIL;Detail
 MAIN_TAB_DETAIL_TOOLTIP;Shortcut: <b>Alt-d</b>
-MAIN_TAB_DEVELOP; Batch Edit 
+MAIN_TAB_DEVELOP; Batch Edit
+MAIN_TAB_EFFECTS;Special effects
+MAIN_TAB_EFFECTS_TOOLTIP;Shortcut: <b>Alt-f</b>
 MAIN_TAB_EXIF;Exif
 MAIN_TAB_EXPORT; Fast Export 
 MAIN_TAB_EXPOSURE;Exposure

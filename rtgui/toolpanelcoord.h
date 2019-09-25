@@ -172,8 +172,9 @@ protected:
     ToolVBox* colorPanel;
     ToolVBox* transformPanel;
     ToolVBox* rawPanel;
-    ToolVBox* advancedPanel;
-    ToolVBox* localPanel;
+    // ToolVBox* advancedPanel;
+    ToolVBox *localPanel;
+    ToolVBox *effectsPanel;
     ToolBar* toolBar;
 
     TextOrIcon* toiF;
@@ -184,7 +185,8 @@ protected:
     TextOrIcon* toiR;
     TextOrIcon* toiM;
     TextOrIcon* toiW;
-    TextOrIcon* toiL;
+    TextOrIcon *toiL;
+    TextOrIcon *toiFx;
 
     Gtk::Image* imgPanelEnd[8];
     Gtk::VBox* vbPanelEnd[8];
@@ -195,8 +197,9 @@ protected:
     Gtk::ScrolledWindow* colorPanelSW;
     Gtk::ScrolledWindow* transformPanelSW;
     Gtk::ScrolledWindow* rawPanelSW;
-    Gtk::ScrolledWindow* advancedPanelSW;
-    Gtk::ScrolledWindow* localPanelSW;
+    // Gtk::ScrolledWindow* advancedPanelSW;
+    Gtk::ScrolledWindow *localPanelSW;
+    Gtk::ScrolledWindow *effectsPanelSW;
 
     std::vector<MyExpander*> expList;
 

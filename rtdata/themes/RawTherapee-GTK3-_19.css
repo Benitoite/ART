@@ -356,7 +356,7 @@ GtkNotebook tab {
     border-style: none;
     border-color: #262626;
     border-radius: 0;
-    padding: 3px;
+    padding: 1px;
 }
 
 GtkNotebook tab:hover {
