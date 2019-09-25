@@ -850,18 +850,20 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         logEncoding(img);
         brightnessContrastSaturation(img);
         dcpProfile(img, dcpProf, dcpApplyState, multiThread);
-        filmSimulation(img);
+        //filmSimulation(img);
         toneCurve(img);
         shadowsHighlights(img);
-        blackAndWhite(img);
+        //blackAndWhite(img);
         labAdjustments(img);
         stop = stop || textureBoost(img);
         if (pipeline != Pipeline::THUMBNAIL) {
             stop = stop || contrastByDetailLevels(img);
         }
-        if (!stop) {
+        if (!stop) { 
             softLight(img);
             localContrast(img);
+            filmSimulation(img);
+            blackAndWhite(img);
             creativeGradients(img);
             filmGrain(img);
         }
