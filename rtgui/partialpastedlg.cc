@@ -26,6 +26,7 @@ namespace {
 const std::vector<std::string> groups = {
     "PARTIALPASTE_EXPOSUREGROUP",
     "PARTIALPASTE_DETAILGROUP",
+    "PARTIALPASTE_EFFECTSGROUP",
     "PARTIALPASTE_COLORGROUP",
     "PARTIALPASTE_LENSGROUP",
     "PARTIALPASTE_COMPOSITIONGROUP",
@@ -45,64 +46,65 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
 {
     return {
         {"PARTIALPASTE_EXPOSURE", &pedited.exposure, 0},
-        {"PARTIALPASTE_BRIGHTCONTRSAT", &pedited.brightContrSat, 0},
-        {"PARTIALPASTE_TONECURVE", &pedited.toneCurve, 0},
-        {"PARTIALPASTE_TM_LOG", &pedited.logenc, 0},
-        {"PARTIALPASTE_SHADOWSHIGHLIGHTS", &pedited.sh, 0},
         {"PARTIALPASTE_TONE_EQUALIZER", &pedited.toneEqualizer, 0},
+        {"PARTIALPASTE_TONECURVE", &pedited.toneCurve, 0},
+        {"PARTIALPASTE_SHADOWSHIGHLIGHTS", &pedited.sh, 0},
         {"PARTIALPASTE_TM_FATTAL", &pedited.fattal, 0},
-        {"PARTIALPASTE_PCVIGNETTE", &pedited.pcvignette, 0},
-        {"PARTIALPASTE_GRADIENT", &pedited.gradient, 0},
+        {"PARTIALPASTE_TM_LOG", &pedited.logenc, 0},
 
         {"PARTIALPASTE_SHARPENING", &pedited.sharpening, 1},
         {"PARTIALPASTE_LOCALCONTRAST", &pedited.localContrast, 1},
-        {"PARTIALPASTE_IMPULSEDENOISE", &pedited.impulseDenoise, 1},
         {"PARTIALPASTE_DIRPYRDENOISE", &pedited.denoise, 1},
+        {"PARTIALPASTE_IMPULSEDENOISE", &pedited.impulseDenoise, 1},
         {"PARTIALPASTE_DEFRINGE", &pedited.defringe, 1},
-        {"PARTIALPASTE_DEHAZE", &pedited.dehaze, 1},
-        {"PARTIALPASTE_GRAIN", &pedited.grain, 1},
 
-        {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 2},
-        {"PARTIALPASTE_ICMSETTINGS", &pedited.icm, 2},
-        {"PARTIALPASTE_CHANNELMIXER", &pedited.chmixer, 2},
         {"PARTIALPASTE_CHANNELMIXERBW", &pedited.blackwhite, 2},
-        {"PARTIALPASTE_HSLEQUALIZER", &pedited.hsl, 2},
         {"PARTIALPASTE_FILMSIMULATION", &pedited.filmSimulation, 2},
         {"PARTIALPASTE_SOFTLIGHT", &pedited.softlight, 2},
-        {"PARTIALPASTE_RGBCURVES", &pedited.rgbCurves, 2},
-        {"PARTIALPASTE_LABCURVE", &pedited.labCurve, 2},
-
-        {"PARTIALPASTE_DISTORTION", &pedited.distortion, 3},
-        {"PARTIALPASTE_CACORRECTION", &pedited.cacorrection, 3},
-        {"PARTIALPASTE_VIGNETTING", &pedited.vignetting, 3},
-        {"PARTIALPASTE_LENSPROFILE", &pedited.lensProf, 3},
-
-        {"PARTIALPASTE_COARSETRANS", &pedited.coarse, 4},
-        {"PARTIALPASTE_ROTATION", &pedited.rotate, 4},
-        {"PARTIALPASTE_CROP", &pedited.crop, 4},
-        {"PARTIALPASTE_RESIZE", &pedited.resize, 4},
-        {"PARTIALPASTE_PRSHARPENING", &pedited.prsharpening, 4},
-        {"PARTIALPASTE_PERSPECTIVE", &pedited.perspective, 4},
-        {"PARTIALPASTE_COMMONTRANSFORMPARAMS", &pedited.commonTrans, 4},
+        {"PARTIALPASTE_PCVIGNETTE", &pedited.pcvignette, 2},
+        {"PARTIALPASTE_GRADIENT", &pedited.gradient, 2},
+        {"PARTIALPASTE_DEHAZE", &pedited.dehaze, 2},
+        {"PARTIALPASTE_GRAIN", &pedited.grain, 2},
         
-        {"PARTIALPASTE_COLORCORRECTION", &pedited.colorcorrection, 5},
-        {"PARTIALPASTE_DIRPYREQUALIZER", &pedited.dirpyrequalizer, 5},
-        {"PARTIALPASTE_SMOOTHING", &pedited.smoothing, 5},
-        {"PARTIALPASTE_TEXTUREBOOST", &pedited.textureBoost, 5},
+        {"PARTIALPASTE_WHITEBALANCE", &pedited.wb, 3},
+        {"PARTIALPASTE_ICMSETTINGS", &pedited.icm, 3},
+        {"PARTIALPASTE_SATURATION", &pedited.saturation, 3},
+        {"PARTIALPASTE_CHANNELMIXER", &pedited.chmixer, 3},
+        {"PARTIALPASTE_HSLEQUALIZER", &pedited.hsl, 3},
+        {"PARTIALPASTE_RGBCURVES", &pedited.rgbCurves, 3},
+        {"PARTIALPASTE_LABCURVE", &pedited.labCurve, 3},
 
-        {"PARTIALPASTE_RAW_DEMOSAIC", &pedited.demosaic, 6},
-        {"PARTIALPASTE_RAW_BLACK", &pedited.rawBlack, 6},
-        {"PARTIALPASTE_RAW_WHITE", &pedited.rawWhite, 6},
-        {"PARTIALPASTE_RAW_PREPROCESSING", &pedited.rawPreprocessing, 6},
-        {"PARTIALPASTE_RAWCA", &pedited.rawCA, 6},
-        {"PARTIALPASTE_HOT_DEAD_PIXEL_FILTER", &pedited.hotDeadPixelFilter, 6},
-        {"PARTIALPASTE_DARKFRAME", &pedited.darkframe, 6},
-        {"PARTIALPASTE_FLATFIELD", &pedited.flatfield, 6},
-        {"PARTIALPASTE_FILMNEGATIVE", &pedited.filmNegative, 6},
+        {"PARTIALPASTE_DISTORTION", &pedited.distortion, 4},
+        {"PARTIALPASTE_CACORRECTION", &pedited.cacorrection, 4},
+        {"PARTIALPASTE_VIGNETTING", &pedited.vignetting, 4},
+        {"PARTIALPASTE_LENSPROFILE", &pedited.lensProf, 4},
 
-        {"PARTIALPASTE_METADATA", &pedited.metadata, 7},
-        {"PARTIALPASTE_EXIFCHANGES", &pedited.exif, 7},
-        {"PARTIALPASTE_IPTCINFO", &pedited.iptc, 7}
+        {"PARTIALPASTE_COARSETRANS", &pedited.coarse, 5},
+        {"PARTIALPASTE_ROTATION", &pedited.rotate, 5},
+        {"PARTIALPASTE_CROP", &pedited.crop, 5},
+        {"PARTIALPASTE_RESIZE", &pedited.resize, 5},
+        {"PARTIALPASTE_PRSHARPENING", &pedited.prsharpening, 5},
+        {"PARTIALPASTE_PERSPECTIVE", &pedited.perspective, 5},
+        {"PARTIALPASTE_COMMONTRANSFORMPARAMS", &pedited.commonTrans, 5},
+        
+        {"PARTIALPASTE_COLORCORRECTION", &pedited.colorcorrection, 6},
+        {"PARTIALPASTE_DIRPYREQUALIZER", &pedited.dirpyrequalizer, 6},
+        {"PARTIALPASTE_SMOOTHING", &pedited.smoothing, 6},
+        {"PARTIALPASTE_TEXTUREBOOST", &pedited.textureBoost, 6},
+
+        {"PARTIALPASTE_RAW_DEMOSAIC", &pedited.demosaic, 7},
+        {"PARTIALPASTE_RAW_BLACK", &pedited.rawBlack, 7},
+        {"PARTIALPASTE_RAW_WHITE", &pedited.rawWhite, 7},
+        {"PARTIALPASTE_RAW_PREPROCESSING", &pedited.rawPreprocessing, 7},
+        {"PARTIALPASTE_RAWCA", &pedited.rawCA, 7},
+        {"PARTIALPASTE_HOT_DEAD_PIXEL_FILTER", &pedited.hotDeadPixelFilter, 7},
+        {"PARTIALPASTE_DARKFRAME", &pedited.darkframe, 7},
+        {"PARTIALPASTE_FLATFIELD", &pedited.flatfield, 7},
+        {"PARTIALPASTE_FILMNEGATIVE", &pedited.filmNegative, 7},
+
+        {"PARTIALPASTE_METADATA", &pedited.metadata, 8},
+        {"PARTIALPASTE_EXIFCHANGES", &pedited.exif, 8},
+        {"PARTIALPASTE_IPTCINFO", &pedited.iptc, 8}
     };
 }
 
@@ -132,15 +134,15 @@ PartialPasteDlg::PartialPasteDlg(const Glib::ustring &title, Gtk::Window *parent
     Gtk::VBox *vbCol2 = Gtk::manage(new Gtk::VBox());
     Gtk::VBox *vbCol3 = Gtk::manage(new Gtk::VBox());
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
         vbCol1->pack_start(*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
-    for (int i = 2; i < 5; i++) {
+    for (int i = 3; i < 6; i++) {
         vbCol2->pack_start(*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 
-    for (int i = 5; i < 9; i++) {
+    for (int i = 6; i < 9; i++) {
         vbCol3->pack_start(*vboxes[i], Gtk::PACK_SHRINK, 2);
     }
 

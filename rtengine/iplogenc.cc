@@ -235,7 +235,7 @@ void ImProcFunctions::getAutoLog(ImageSource *imgsrc, LogEncodingParams &lparams
     Imagefloat img(int(fw / SCALE + 0.5), int(fh / SCALE + 0.5));
     ProcParams neutral;
     neutral.exposure.enabled = true;
-    neutral.exposure.clampOOG = false;
+    // neutral.exposure.clampOOG = false;
     imgsrc->getImage(imgsrc->getWB(), tr, &img, pp, neutral.exposure, neutral.raw);
     imgsrc->convertColorSpace(&img, params->icm, imgsrc->getWB());
 

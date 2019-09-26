@@ -333,8 +333,6 @@ private:
 
 struct ExposureParams {
     bool enabled;
-    bool autoexp;
-    double clip;
     enum HighlightReconstruction {
         HR_OFF,
         HR_BLEND,
@@ -342,11 +340,6 @@ struct ExposureParams {
     };
     HighlightReconstruction hrmode;
     double expcomp;
-    int black;
-    int shcompr;
-    int hlcompr;        // Highlight Recovery's compression
-    int hlcomprthresh;  // Highlight Recovery's threshold
-    bool clampOOG; // clamp out of gamut colours
 
     ExposureParams();
 
@@ -355,17 +348,15 @@ struct ExposureParams {
 };
 
 
-struct BrightnessContrastSaturationParams {
+struct SaturationParams {
     bool enabled;
-    int brightness;
-    int contrast;
     int saturation;
     int vibrance;
 
-    BrightnessContrastSaturationParams();
+    SaturationParams();
 
-    bool operator ==(const BrightnessContrastSaturationParams &other) const;
-    bool operator !=(const BrightnessContrastSaturationParams &other) const;
+    bool operator ==(const SaturationParams &other) const;
+    bool operator !=(const SaturationParams &other) const;
 };
 
 /**
@@ -383,6 +374,7 @@ struct ToneCurveParams {
         PERCEPTUAL         // Keep color appearance constant using perceptual modeling
     };
 
+    int contrast;
     std::vector<double> curve;
     std::vector<double> curve2;
     TcMode curveMode;
@@ -521,7 +513,6 @@ struct WBEntry {
     int temperature;
     double green;
     double equal;
-    double tempBias;
 };
 
 struct WBParams {
@@ -530,7 +521,6 @@ struct WBParams {
     int             temperature;
     double          green;
     double          equal;
-    double          tempBias;
 
     WBParams();
 
@@ -1366,7 +1356,7 @@ struct FilmNegativeParams {
 class ProcParams {
 public:
     ExposureParams          exposure;
-    BrightnessContrastSaturationParams brightContrSat;
+    SaturationParams saturation;
     ToneCurveParams         toneCurve;       ///< Tone curve parameters
     LCurveParams            labCurve;        ///< CIELAB luminance curve parameters
     LocalContrastParams     localContrast;   ////< Local contrast parameters

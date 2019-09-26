@@ -30,7 +30,7 @@
 #include "whitebalance.h"
 #include "coarsepanel.h"
 #include "exposure.h"
-#include "brightcontrsat.h"
+#include "saturation.h"
 #include "tonecurve.h"
 #include "shadowshighlights.h"
 #include "toneequalizer.h"
@@ -124,7 +124,7 @@ protected:
     ICMPanel* icm;
     Crop* crop;
     Exposure *exposure;
-    BrightnessContrastSaturation *brightContrSat;
+    Saturation *saturation;
     ToneCurve* toneCurve;
     ShadowsHighlights* shadowshighlights;
     ToneEqualizer *toneEqualizer;
@@ -281,10 +281,10 @@ public:
 
 
     // wbprovider interface
-    void getAutoWB (double& temp, double& green, double equal, double tempBias) override
+    void getAutoWB (double& temp, double& green, double equal) override
     {
         if (ipc) {
-            ipc->getAutoWB (temp, green, equal, tempBias);
+            ipc->getAutoWB (temp, green, equal);
         }
     }
     void getCamWB (double& temp, double& green) override

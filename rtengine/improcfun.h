@@ -138,7 +138,7 @@ public:
     void rgbCurves(Imagefloat *rgb);
     void blackAndWhite(Imagefloat *rgb);
     void toneCurve(Imagefloat *img);
-    void brightnessContrastSaturation(Imagefloat *img);
+    void saturationVibrance(Imagefloat *img);
     void filmSimulation(Imagefloat *img);
     void creativeGradients(Imagefloat *img);
     //----------------------------------------------------------------------

@@ -849,7 +849,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
     case Stage::STAGE_3:
         creativeGradients(img);
         logEncoding(img);
-        brightnessContrastSaturation(img);
+        saturationVibrance(img);
         dcpProfile(img, dcpProf, dcpApplyState, multiThread);
         //filmSimulation(img);
         toneCurve(img);

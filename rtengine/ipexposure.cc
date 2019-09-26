@@ -166,12 +166,12 @@ void ImProcFunctions::exposure(Imagefloat *img)
     LUTf shtonecurve(65536);
 
     const double expcomp = params->exposure.expcomp;
-    const int hlcompr = params->exposure.hlcompr;
-    const int hlcomprthresh = params->exposure.hlcomprthresh;
+    const int hlcompr = 0;//params->exposure.hlcompr;
+    const int hlcomprthresh = 0;//params->exposure.hlcomprthresh;
 
     {
-        const int black = params->exposure.black;
-        const int shcompr = params->exposure.shcompr;
+        const int black = 0;//params->exposure.black;
+        const int shcompr = 0;//params->exposure.shcompr;
         
         LUTf tonecurve(65536);
         LUTu vhist16(65536), histToneCurve(256);

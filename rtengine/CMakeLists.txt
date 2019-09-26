@@ -144,7 +144,7 @@ set(RTENGINESOURCEFILES
     ipexposure.cc
     iprgbcurves.cc
     ipbw.cc
-    ipbrightcontrsat.cc
+    ipsaturation.cc
     ipfilmsim.cc
     iptonecurve.cc
     deconvautoradius.cc

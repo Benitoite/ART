@@ -44,10 +44,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
 
     coarse              = Gtk::manage (new CoarsePanel ());
     exposure = Gtk::manage(new Exposure());
-    brightContrSat = Gtk::manage(new BrightnessContrastSaturation());
-    brightContrSat->setAutoLevelsButton(exposure->getAutoLevelsButton());
+    saturation = Gtk::manage(new Saturation());
     toneCurve           = Gtk::manage (new ToneCurve ());
-    //shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
+    shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
     toneEqualizer = Gtk::manage(new ToneEqualizer());
     impulsedenoise      = Gtk::manage (new ImpulseDenoise ());
     defringe            = Gtk::manage (new Defringe ());
@@ -112,9 +111,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(exposurePanel, exposure);
     addfavoritePanel(exposurePanel, toneEqualizer);    
     addfavoritePanel(exposurePanel, toneCurve);
-    addfavoritePanel(exposurePanel, logenc);
-    //addfavoritePanel(exposurePanel, shadowshighlights);
+    addfavoritePanel(exposurePanel, shadowshighlights);
     addfavoritePanel(exposurePanel, fattal);
+    addfavoritePanel(exposurePanel, logenc);
 
     // details
     addfavoritePanel(detailsPanel, sharpening);
@@ -125,7 +124,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
 
     // color
     addfavoritePanel(colorPanel, whitebalance);
-    addfavoritePanel(colorPanel/*exposurePanel*/, brightContrSat);
+    addfavoritePanel(colorPanel/*exposurePanel*/, saturation);
     addfavoritePanel(colorPanel, chmixer);
     addfavoritePanel(colorPanel, hsl);
     addfavoritePanel(colorPanel, rgbcurves);
@@ -1099,8 +1098,7 @@ void ToolPanelCoordinator::autoPerspectiveRequested(bool horiz, bool vert, doubl
 
 void ToolPanelCoordinator::autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons)
 {
-    exposure->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
-    brightContrSat->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
+    // exposure->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
 }
 
 

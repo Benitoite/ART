@@ -298,7 +298,6 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
             tpp->greenAWBMul = avg_g / double (n);
             tpp->blueAWBMul  = avg_b / double (n);
             tpp->wbEqual = wbEq;
-            tpp->wbTempBias = 0.0;
 
             cTemp.mul2temp (tpp->redAWBMul, tpp->greenAWBMul, tpp->blueAWBMul, tpp->wbEqual, tpp->autoWBTemp, tpp->autoWBGreen);
         }
@@ -943,7 +942,6 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
         tpp->greenAWBMul = ri->get_rgb_cam (1, 0) * reds + ri->get_rgb_cam (1, 1) * greens + ri->get_rgb_cam (1, 2) * blues;
         tpp->blueAWBMul  = ri->get_rgb_cam (2, 0) * reds + ri->get_rgb_cam (2, 1) * greens + ri->get_rgb_cam (2, 2) * blues;
         tpp->wbEqual = wbEq;
-        tpp->wbTempBias = 0.0;
 
         ColorTemp cTemp;
         cTemp.mul2temp (tpp->redAWBMul, tpp->greenAWBMul, tpp->blueAWBMul, tpp->wbEqual, tpp->autoWBTemp, tpp->autoWBGreen);
@@ -995,7 +993,6 @@ Thumbnail::Thumbnail () :
     autoWBTemp (2700),
     autoWBGreen (1.0),
     wbEqual (-1.0),
-    wbTempBias (0.0),
     aeHistCompression (3),
     aeValid(false),
     aeExposureCompensation(0.0),
@@ -1072,13 +1069,11 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     std::string camName = metadata->getCamera();
     
     // check if the WB's equalizer value has changed
-    if (wbEqual < (params.wb.equal - 5e-4) || wbEqual > (params.wb.equal + 5e-4) || wbTempBias < (params.wb.tempBias - 5e-4) || wbTempBias > (params.wb.tempBias + 5e-4)) {
+    if (wbEqual < (params.wb.equal - 5e-4) || wbEqual > (params.wb.equal + 5e-4)) {
         wbEqual = params.wb.equal;
-        wbTempBias = params.wb.tempBias;
         // recompute the autoWB
         ColorTemp cTemp;
         cTemp.mul2temp (redAWBMul, greenAWBMul, blueAWBMul, wbEqual, autoWBTemp, autoWBGreen);
-        autoWBTemp += autoWBTemp * wbTempBias;
     }
 
     // compute WB multipliers
@@ -1298,17 +1293,15 @@ void Thumbnail::getCamWB (double& temp, double& green)
     green = currWB.getGreen ();
 }
 
-void Thumbnail::getAutoWB (double& temp, double& green, double equal, double tempBias)
+void Thumbnail::getAutoWB (double& temp, double& green, double equal)
 {
 
-    if (equal != wbEqual || tempBias != wbTempBias) {
+    if (equal != wbEqual) {
         // compute the values depending on equal
         ColorTemp cTemp;
         wbEqual = equal;
-        wbTempBias = tempBias;
         // compute autoWBTemp and autoWBGreen
         cTemp.mul2temp (redAWBMul, greenAWBMul, blueAWBMul, wbEqual, autoWBTemp, autoWBGreen);
-        autoWBTemp += autoWBTemp * tempBias;
     }
 
     temp = autoWBTemp;
@@ -1325,12 +1318,12 @@ void Thumbnail::getAutoWBMultipliers (double& rm, double& gm, double& bm)
 void Thumbnail::applyAutoExp (procparams::ProcParams& params)
 {
 
-    if (params.exposure.enabled && params.exposure.autoexp && aeHistogram) {
-        ImProcFunctions ipf (&params, false);
-        params.brightContrSat.enabled = true;
-        ipf.getAutoExp (aeHistogram, aeHistCompression, params.exposure.clip, params.exposure.expcomp,
-                        params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
-    }
+    // if (params.exposure.enabled && params.exposure.autoexp && aeHistogram) {
+    //     ImProcFunctions ipf (&params, false);
+    //     params.brightContrSat.enabled = true;
+    //     ipf.getAutoExp (aeHistogram, aeHistCompression, params.exposure.clip, params.exposure.expcomp,
+    //                     params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
+    // }
 }
 
 void Thumbnail::getSpotWB (const procparams::ProcParams& params, int xp, int yp, int rect, double& rtemp, double& rgreen)

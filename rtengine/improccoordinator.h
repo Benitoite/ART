@@ -67,7 +67,6 @@ protected:
     ColorTemp autoWB;
 
     double lastAwbEqual;
-    double lastAwbTempBias;
 
     ImProcFunctions ipf;
     DCPProfile::ApplyState dcpApplyState;
@@ -200,7 +199,7 @@ public:
 
     DetailedCrop* createCrop  (::EditDataProvider *editDataProvider, bool isDetailWindow) override;
 
-    bool getAutoWB   (double& temp, double& green, double equal, double tempBias) override;
+    bool getAutoWB   (double& temp, double& green, double equal) override;
     void getCamWB    (double& temp, double& green) override;
     void getSpotWB   (int x, int y, int rectSize, double& temp, double& green) override;
     void getAutoCrop (double ratio, int &x, int &y, int &w, int &h) override;

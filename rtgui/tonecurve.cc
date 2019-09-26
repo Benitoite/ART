@@ -51,6 +51,10 @@ ToneCurve::ToneCurve():
     EvSatCurve = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_TONECURVE_SATCURVE");
     EvToolEnabled.set_action(AUTOEXP);
 
+    contrast = Gtk::manage (new Adjuster(M("TP_BRIGHTCONTRSAT_CONTRAST"), -100, 100, 1, 0));
+    pack_start(*contrast);
+    contrast->setAdjusterListener(this);
+
     CurveListener::setMulti(true);
 
     std::vector<GradientMilestone> bottomMilestones;
@@ -150,6 +154,8 @@ void ToneCurve::read(const ProcParams* pp)
 
     setEnabled(pp->toneCurve.enabled);
 
+    contrast->setValue(pp->toneCurve.contrast);
+
     shape->setCurve (pp->toneCurve.curve);
     shape2->setCurve (pp->toneCurve.curve2);
 
@@ -188,6 +194,7 @@ void ToneCurve::setEditProvider(EditDataProvider *provider)
 void ToneCurve::write(ProcParams* pp)
 {
     pp->toneCurve.enabled = getEnabled();
+    pp->toneCurve.contrast = contrast->getValue();
     pp->toneCurve.curve = shape->getCurve ();
     pp->toneCurve.curve2 = shape2->getCurve ();
 
@@ -240,6 +247,7 @@ void ToneCurve::setRaw(bool raw)
 
 void ToneCurve::setDefaults(const ProcParams* defParams)
 {
+    contrast->setDefault(defParams->toneCurve.contrast);
 }
 
 
@@ -396,4 +404,18 @@ void ToneCurve::autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParam
 
             return false;
         });
+}
+
+
+void ToneCurve::adjusterChanged(Adjuster *a, double newval)
+{
+    if (!listener || !getEnabled()) {
+        return;
+    }
+
+    Glib::ustring costr = Glib::ustring::format((int)a->getValue());
+
+    if (a == contrast) {
+        listener->panelChanged(EvContrast, costr);
+    }
 }

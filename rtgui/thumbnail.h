@@ -152,7 +152,7 @@ public:
             temp = green = -1.0;
         }
     }
-    void getAutoWB(double& temp, double& green, double equal, double tempBias);
+    void getAutoWB(double& temp, double& green, double equal);
     void getSpotWB(int x, int y, int rect, double& temp, double& green)
     {
         if (tpp) {

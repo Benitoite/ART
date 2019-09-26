@@ -24,26 +24,26 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-namespace {
+// namespace {
 
-constexpr float CCURVE_BASE = 32;
+// constexpr float CCURVE_BASE = 32;
 
-std::vector<double> translate_curve(const std::vector<double> &c, double base, bool to_log)
-{
-    auto ret(c);
-    if (ret.size() > 0 && ret[0] != DCT_Linear && ret[0] != DCT_Parametric) {
-        for (int i = 1, n = ret.size(); i < n; ++i) {
-            if (to_log) {
-                ret[i] = rtengine::lin2log(ret[i], base);
-            } else {
-                ret[i] = rtengine::log2lin(ret[i], base);
-            }
-        }
-    }
-    return ret;
-}
+// std::vector<double> translate_curve(const std::vector<double> &c, double base, bool to_log)
+// {
+//     auto ret(c);
+//     if (ret.size() > 0 && ret[0] != DCT_Linear && ret[0] != DCT_Parametric) {
+//         for (int i = 1, n = ret.size(); i < n; ++i) {
+//             if (to_log) {
+//                 ret[i] = rtengine::lin2log(ret[i], base);
+//             } else {
+//                 ret[i] = rtengine::log2lin(ret[i], base);
+//             }
+//         }
+//     }
+//     return ret;
+// }
 
-} // namespace
+// } // namespace
 
 LCurve::LCurve () : FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"), false, true)
 {

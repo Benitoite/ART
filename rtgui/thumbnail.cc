@@ -198,7 +198,7 @@ const ProcParams& Thumbnail::getProcParamsU ()
             pparams.master.wb.temperature = ct;
         } else if (pparams.master.wb.method == "Auto") {
             double ct;
-            getAutoWB (ct, pparams.master.wb.green, pparams.master.wb.equal, pparams.master.wb.tempBias);
+            getAutoWB(ct, pparams.master.wb.green, pparams.master.wb.equal);
             pparams.master.wb.temperature = ct;
         }
     }
@@ -747,7 +747,7 @@ const Glib::ustring& Thumbnail::getDateTimeString ()
     return dateTimeString;
 }
 
-void Thumbnail::getAutoWB (double& temp, double& green, double equal, double tempBias)
+void Thumbnail::getAutoWB (double& temp, double& green, double equal)
 {
     if (cfs.redAWBMul != -1.0) {
         rtengine::ColorTemp ct(cfs.redAWBMul, cfs.greenAWBMul, cfs.blueAWBMul, equal);

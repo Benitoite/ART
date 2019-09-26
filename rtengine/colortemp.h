@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -55,13 +56,10 @@ public:
     ColorTemp (double t, double g, double e, const std::string &m);
     ColorTemp (double mulr, double mulg, double mulb, double e);
 
-    void update (const double rmul, const double gmul, const double bmul, const double equal, const double tempBias=0.0)
+    void update (const double rmul, const double gmul, const double bmul, const double equal)
     {
         this->equal = equal;
         mul2temp (rmul, gmul, bmul, this->equal, temp, green);
-        if (tempBias != 0.0 && tempBias >= -1.0 && tempBias <= 1.0) {
-            temp += temp * tempBias;
-        }
     }
     void useDefaults (const double equal)
     {

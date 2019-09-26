@@ -159,7 +159,7 @@ set(NONCLISOURCEFILES
     colorcorrection.cc
     fastexport.cc
     exposure.cc
-    brightcontrsat.cc
+    saturation.cc
     hslequalizer.cc
     filmnegative.cc
     )

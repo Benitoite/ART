@@ -44,7 +44,7 @@ class Thumbnail {
     double camwbGreen;
     double camwbBlue;
     double redAWBMul, greenAWBMul, blueAWBMul;  // multipliers for auto WB
-    double autoWBTemp, autoWBGreen, wbEqual, wbTempBias;    // autoWBTemp and autoWBGreen are updated each time autoWB is requested and if wbEqual has been modified
+    double autoWBTemp, autoWBGreen, wbEqual;    // autoWBTemp and autoWBGreen are updated each time autoWB is requested and if wbEqual has been modified
     LUTu aeHistogram;
     int  aeHistCompression;
     bool aeValid;
@@ -88,7 +88,7 @@ public:
     static Thumbnail* loadFromImage (const Glib::ustring& fname, int &w, int &h, int fixwh, double wbEq, bool inspectorMode = false);
 
     void getCamWB     (double& temp, double& green);
-    void getAutoWB    (double& temp, double& green, double equal, double tempBias);
+    void getAutoWB    (double& temp, double& green, double equal);
     void getAutoWBMultipliers (double& rm, double& gm, double& bm);
     void getSpotWB    (const procparams::ProcParams& params, int x, int y, int rect, double& temp, double& green);
     void applyAutoExp (procparams::ProcParams& pparams);
