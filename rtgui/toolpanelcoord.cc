@@ -108,32 +108,46 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     //     Medium -> High ISO
     favorites.resize(options.favorites.size(), nullptr);
 
-    addfavoritePanel(colorPanel, whitebalance);
+    // exposure
     addfavoritePanel(exposurePanel, exposure);
-    addfavoritePanel(colorPanel/*exposurePanel*/, brightContrSat);
+    addfavoritePanel(exposurePanel, toneEqualizer);    
     addfavoritePanel(exposurePanel, toneCurve);
-    addfavoritePanel(colorPanel, chmixer);
-    addfavoritePanel(colorPanel, hsl);
-    addfavoritePanel(effectsPanel, blackwhite);
     addfavoritePanel(exposurePanel, logenc);
     //addfavoritePanel(exposurePanel, shadowshighlights);
+    addfavoritePanel(exposurePanel, fattal);
+
+    // details
     addfavoritePanel(detailsPanel, sharpening);
     addfavoritePanel(detailsPanel, localContrast);
-    addfavoritePanel(effectsPanel, filmSimulation);
-    addfavoritePanel(effectsPanel, softlight);
+    addfavoritePanel(detailsPanel, denoise);
+    addfavoritePanel(detailsPanel, impulsedenoise);
+    addfavoritePanel(detailsPanel, defringe);
+
+    // color
+    addfavoritePanel(colorPanel, whitebalance);
+    addfavoritePanel(colorPanel/*exposurePanel*/, brightContrSat);
+    addfavoritePanel(colorPanel, chmixer);
+    addfavoritePanel(colorPanel, hsl);
     addfavoritePanel(colorPanel, rgbcurves);
     addfavoritePanel(colorPanel, lcurve);
-    //addfavoritePanel (exposurePanel, epd);
-    addfavoritePanel(exposurePanel, fattal);
-    addfavoritePanel(exposurePanel, toneEqualizer);    
+    addfavoritePanel(colorPanel, icm);
+
+    // local
+    addfavoritePanel(localPanel, colorcorrection);
+    addfavoritePanel(localPanel, smoothing);
+    addfavoritePanel(localPanel, cbdl);
+    addfavoritePanel(localPanel, textureBoost);
+
+    // effects
+    addfavoritePanel(effectsPanel, blackwhite);
+    addfavoritePanel(effectsPanel, filmSimulation);
+    addfavoritePanel(effectsPanel, softlight);
     addfavoritePanel(effectsPanel, pcvignette);
     addfavoritePanel(effectsPanel, gradient);
-    //addfavoritePanel (exposurePanel, lcurve);
-    addfavoritePanel(detailsPanel, impulsedenoise);
-    addfavoritePanel(detailsPanel, denoise);
-    addfavoritePanel(detailsPanel, defringe);
     addfavoritePanel(effectsPanel, dehaze);
     addfavoritePanel(effectsPanel, grain);
+
+    // transform
     addfavoritePanel(transformPanel, crop);
     addfavoritePanel(transformPanel, resize);
     addfavoritePanel(resize->getPackBox(), prsharpening, 2);
@@ -144,7 +158,8 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(lensgeom->getPackBox(), distortion, 2);
     addfavoritePanel(lensgeom->getPackBox(), cacorrection, 2);
     addfavoritePanel(lensgeom->getPackBox(), vignetting, 2);
-    addfavoritePanel(colorPanel, icm);
+
+    // raw
     addfavoritePanel(rawPanel, sensorbayer);
     addfavoritePanel(sensorbayer->getPackBox(), bayerprocess, 2);
     addfavoritePanel(sensorbayer->getPackBox(), bayerrawexposure, 2);
@@ -158,10 +173,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(rawPanel, darkframe);
     addfavoritePanel(rawPanel, flatfield);
     addfavoritePanel(rawPanel, filmNegative);
-    addfavoritePanel(localPanel, colorcorrection);
-    addfavoritePanel(localPanel, smoothing);
-    addfavoritePanel(localPanel, cbdl);
-    addfavoritePanel(localPanel, textureBoost);
 
     int favoriteCount = 0;
     for(auto it = favorites.begin(); it != favorites.end(); ++it) {
