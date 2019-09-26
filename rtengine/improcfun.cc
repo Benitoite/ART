@@ -847,6 +847,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         stop = stop || guidedSmoothing(img);
         break;
     case Stage::STAGE_3:
+        creativeGradients(img);
         logEncoding(img);
         brightnessContrastSaturation(img);
         dcpProfile(img, dcpProf, dcpApplyState, multiThread);
@@ -864,7 +865,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
             localContrast(img);
             filmSimulation(img);
             blackAndWhite(img);
-            creativeGradients(img);
+            //creativeGradients(img);
             filmGrain(img);
         }
         break;
