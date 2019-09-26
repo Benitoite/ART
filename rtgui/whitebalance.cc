@@ -341,7 +341,7 @@ WhiteBalance::WhiteBalance () : FoldableToolPanel(this, "whitebalance", M("TP_WB
     //pack_start (*boxgreen);
     pack_start (*green);
     pack_start (*equal);
-    pack_start (*tempBias);
+//    pack_start (*tempBias);
 
     temp->setAdjusterListener (this);
     green->setAdjusterListener (this);

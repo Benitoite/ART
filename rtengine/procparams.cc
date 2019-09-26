@@ -2477,14 +2477,14 @@ int ProcParams::save(bool save_general,
 // Exposure
         if (RELEVANT_(exposure)) {
             saveToKeyfile("Exposure", "Enabled", exposure.enabled, keyFile);
-            saveToKeyfile("Exposure", "Auto", exposure.autoexp, keyFile);
-            saveToKeyfile("Exposure", "Clip", exposure.clip, keyFile);
+            // saveToKeyfile("Exposure", "Auto", exposure.autoexp, keyFile);
+            // saveToKeyfile("Exposure", "Clip", exposure.clip, keyFile);
             saveToKeyfile("Exposure", "Compensation", exposure.expcomp, keyFile);
-            saveToKeyfile("Exposure", "Black", exposure.black, keyFile);
-            saveToKeyfile("Exposure", "HighlightCompr", exposure.hlcompr, keyFile);
-            saveToKeyfile("Exposure", "HighlightComprThreshold", exposure.hlcomprthresh, keyFile);
-            saveToKeyfile("Exposure", "ShadowCompr", exposure.shcompr, keyFile);
-            saveToKeyfile("Exposure", "ClampOOG", exposure.clampOOG, keyFile);
+            // saveToKeyfile("Exposure", "Black", exposure.black, keyFile);
+            // saveToKeyfile("Exposure", "HighlightCompr", exposure.hlcompr, keyFile);
+            // saveToKeyfile("Exposure", "HighlightComprThreshold", exposure.hlcomprthresh, keyFile);
+            // saveToKeyfile("Exposure", "ShadowCompr", exposure.shcompr, keyFile);
+            // saveToKeyfile("Exposure", "ClampOOG", exposure.clampOOG, keyFile);
 
             Glib::ustring hr = "Off";
             switch (exposure.hrmode) {
@@ -3179,23 +3179,23 @@ int ProcParams::load(bool load_general,
                 if (RELEVANT_(exposure)) {
                     exposure.enabled = true;
                     
-                    if (ppVersion < PPVERSION_AEXP) {
-                        exposure.autoexp = false; // prevent execution of autoexp when opening file created with earlier versions of autoexp algorithm
-                    } else {
-                        assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
-                    }
+                    // if (ppVersion < PPVERSION_AEXP) {
+                    //     exposure.autoexp = false; // prevent execution of autoexp when opening file created with earlier versions of autoexp algorithm
+                    // } else {
+                    //     assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
+                    // }
 
-                    assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
+                    // assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
                     assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
-                    assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
-                    assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
-                    assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
-                    assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
-                    assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
+                    // assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
+                    // assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
+                    // assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
+                    // assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
+                    // assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
 
-                    if (exposure.shcompr > 100) {
-                        exposure.shcompr = 100; // older pp3 files can have values above 100.
-                    }
+                    // if (exposure.shcompr > 100) {
+                    //     exposure.shcompr = 100; // older pp3 files can have values above 100.
+                    // }
                 }
 
                 if (RELEVANT_(toneCurve)) {
@@ -3218,8 +3218,8 @@ int ProcParams::load(bool load_general,
                 }
                 if (RELEVANT_(brightContrSat)) {
                     brightContrSat.enabled = true;
-                    assignFromKeyfile(keyFile, "Exposure", "Brightness", brightContrSat.brightness);
-                    assignFromKeyfile(keyFile, "Exposure", "Contrast", brightContrSat.contrast);
+                    // assignFromKeyfile(keyFile, "Exposure", "Brightness", brightContrSat.brightness);
+                    // assignFromKeyfile(keyFile, "Exposure", "Contrast", brightContrSat.contrast);
                     assignFromKeyfile(keyFile, "Exposure", "Saturation", brightContrSat.saturation);
                 }
             }
@@ -3241,14 +3241,14 @@ int ProcParams::load(bool load_general,
         } else {
             if (keyFile.has_group("Exposure") && RELEVANT_(exposure)) {
                 assignFromKeyfile(keyFile, "Exposure", "Enabled", exposure.enabled);
-                assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
-                assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
+                // assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
+                // assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
                 assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
-                assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
-                assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
-                assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
-                assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
-                assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
+                // assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
+                // assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
+                // assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
+                // assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
+                // assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
                 if (ppVersion >= 1000) {
                     Glib::ustring hr;
                     assignFromKeyfile(keyFile, "Exposure", "HLRecovery", hr);
@@ -3277,8 +3277,8 @@ int ProcParams::load(bool load_general,
             }
             if (keyFile.has_group("BrightnessContrastSaturation") && RELEVANT_(brightContrSat)) {
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Enabled", brightContrSat.enabled);
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Brightness", brightContrSat.brightness);
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Contrast", brightContrSat.contrast);
+                // assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Brightness", brightContrSat.brightness);
+                // assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Contrast", brightContrSat.contrast);
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Saturation", brightContrSat.saturation);
                 assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Vibrance", brightContrSat.vibrance);
             }
@@ -3399,12 +3399,12 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Luminance Curve", "LCurve", labCurve.lcurve);
             assignFromKeyfile(keyFile, "Luminance Curve", "aCurve", labCurve.acurve);
             assignFromKeyfile(keyFile, "Luminance Curve", "bCurve", labCurve.bcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "ccCurve", labCurve.cccurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "chCurve", labCurve.chcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "lhCurve", labCurve.lhcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "hhCurve", labCurve.hhcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "LcCurve", labCurve.lccurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "ClCurve", labCurve.clcurve);
+            // assignFromKeyfile(keyFile, "Luminance Curve", "ccCurve", labCurve.cccurve);
+            // assignFromKeyfile(keyFile, "Luminance Curve", "chCurve", labCurve.chcurve);
+            // assignFromKeyfile(keyFile, "Luminance Curve", "lhCurve", labCurve.lhcurve);
+            // assignFromKeyfile(keyFile, "Luminance Curve", "hhCurve", labCurve.hhcurve);
+            // assignFromKeyfile(keyFile, "Luminance Curve", "LcCurve", labCurve.lccurve);
+            // assignFromKeyfile(keyFile, "Luminance Curve", "ClCurve", labCurve.clcurve);
         }
 
         if (keyFile.has_group("Sharpening") && RELEVANT_(sharpening)) {
@@ -3619,7 +3619,7 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "LogEncoding", "Detail", logenc.detail);
         }
 
-        if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333 && RELEVANT_(sh)) {
+        if (false && keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333 && RELEVANT_(sh)) {
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Enabled", sh.enabled);
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", sh.highlights);
             assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth);

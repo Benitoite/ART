@@ -36,9 +36,9 @@ BrightnessContrastSaturation::BrightnessContrastSaturation():
     autolevels = nullptr;
     
     brightness = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_BRIGHTNESS"), -100, 100, 1, 0));
-    pack_start (*brightness);
+//    pack_start (*brightness);
     contrast   = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_CONTRAST"), -100, 100, 1, 0));
-    pack_start (*contrast);
+//    pack_start (*contrast);
     saturation = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_SATURATION"), -100, 100, 1, 0));
     pack_start (*saturation);
     vibrance = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_VIBRANCE"), -100, 100, 1, 0));

@@ -36,8 +36,8 @@ Exposure::Exposure():
 
 //----------- OOG clamping ----------------------------------
     clampOOG = Gtk::manage(new Gtk::CheckButton(M("TP_EXPOSURE_CLAMPOOG")));
-    pack_start(*clampOOG);
-    pack_start (*Gtk::manage (new  Gtk::HSeparator()));
+    // pack_start(*clampOOG);
+    // pack_start (*Gtk::manage (new  Gtk::HSeparator()));
     clampOOG->signal_toggled().connect(sigc::mem_fun(*this, &Exposure::clampOOGChanged));
     
 //----------- Auto Levels ----------------------------------
@@ -70,7 +70,7 @@ Exposure::Exposure():
     abox->pack_end (*neutral, true, true, 0);
     abox->pack_end (*sclip, false, false, 0);
     abox->pack_end (*lclip, false, false, 0);
-    pack_start (*abox);
+//    pack_start (*abox);
 
 //-------------- Highlight Reconstruction -----------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
@@ -96,20 +96,20 @@ Exposure::Exposure():
     expcomp->setLogScale(64, 0, true);
     pack_start (*expcomp);
 
-    //----------- Highlight recovery & threshold -------------
+//     //----------- Highlight recovery & threshold -------------
     hlcompr = Gtk::manage (new Adjuster (M("TP_EXPOSURE_COMPRHIGHLIGHTS"), 0, 500, 1, 0));
-    pack_start (*hlcompr);
+//     pack_start (*hlcompr);
     hlcomprthresh = Gtk::manage (new Adjuster (M("TP_EXPOSURE_COMPRHIGHLIGHTSTHRESHOLD"), 0, 100, 1, 0));
-    pack_start (*hlcomprthresh);
+//     pack_start (*hlcomprthresh);
 
-//----------- Black Level & Compression -------------------
+// //----------- Black Level & Compression -------------------
     black = Gtk::manage (new Adjuster (M("TP_EXPOSURE_BLACKLEVEL"), -16384, 32768, 50, 0));
     black->setLogScale(500, 0, true);
-    pack_start (*black);
+//     pack_start (*black);
     shcompr = Gtk::manage (new Adjuster (M("TP_EXPOSURE_COMPRSHADOWS"), 0, 100, 1, 50));
-    pack_start (*shcompr);
+//     pack_start (*shcompr);
 
-    pack_start (*Gtk::manage (new  Gtk::HSeparator()));
+//     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
 // --------- Set Up Listeners -------------
     expcomp->setAdjusterListener (this);

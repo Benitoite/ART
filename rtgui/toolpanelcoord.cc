@@ -47,7 +47,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     brightContrSat = Gtk::manage(new BrightnessContrastSaturation());
     brightContrSat->setAutoLevelsButton(exposure->getAutoLevelsButton());
     toneCurve           = Gtk::manage (new ToneCurve ());
-    shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
+    //shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
     toneEqualizer = Gtk::manage(new ToneEqualizer());
     impulsedenoise      = Gtk::manage (new ImpulseDenoise ());
     defringe            = Gtk::manage (new Defringe ());
@@ -110,13 +110,13 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
 
     addfavoritePanel(colorPanel, whitebalance);
     addfavoritePanel(exposurePanel, exposure);
-    addfavoritePanel(exposurePanel, brightContrSat);
+    addfavoritePanel(colorPanel/*exposurePanel*/, brightContrSat);
     addfavoritePanel(exposurePanel, toneCurve);
     addfavoritePanel(colorPanel, chmixer);
     addfavoritePanel(colorPanel, hsl);
     addfavoritePanel(effectsPanel, blackwhite);
     addfavoritePanel(exposurePanel, logenc);
-    addfavoritePanel(exposurePanel, shadowshighlights);
+    //addfavoritePanel(exposurePanel, shadowshighlights);
     addfavoritePanel(detailsPanel, sharpening);
     addfavoritePanel(detailsPanel, localContrast);
     addfavoritePanel(effectsPanel, filmSimulation);
