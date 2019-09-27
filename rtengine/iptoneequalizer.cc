@@ -56,24 +56,6 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     const int H = R.height();
     array2D<float> Y(W, H);
 
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-        }
-    }
-
-    int detail = LIM(pp.detail + 5, 0, 10);
-    const int radius = float(detail) / scale + 0.5f;
-    const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
-    if (radius > 0) {
-        rtengine::guidedFilterLog(10.f, Y, radius, epsilon, multithread);
-    }
-    
     const auto log2 =
         [](float x) -> float
         {
@@ -96,7 +78,7 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 
     const auto conv = [&](int v) -> float
                       {
-                          return exp2(float(v) / 100.f * 2.f);
+                          return exp2(float(v) / 100.f * 2.5f);
                       };
 
     const float factors[12] = {
@@ -114,6 +96,43 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         conv(pp.bands[4])  //   4 EV
     };
 
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        }
+    }
+
+    int detail = LIM(pp.detail + 5, 0, 5);
+    int radius = float(detail) / scale + 0.5f;
+    float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
+    if (radius > 0) {
+        rtengine::guidedFilterLog(10.f, Y, radius, epsilon, multithread);
+    }
+
+    if (pp.detail > 0) {
+        array2D<float> Y2(W, H);
+        
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float l = LIM(log2(std::max(Y[y][x], 1e-9f)), centers[0], centers[11]);
+                float ll = round(l * 10.f) / 10.f;
+                Y2[y][x] = Y[y][x];
+                Y[y][x] = exp2(ll);
+            }
+        }
+        radius = 350.f / scale;
+        epsilon = 0.05f / float(6 - std::min(pp.detail, 5));
+        rtengine::guidedFilter(Y2, Y, Y, radius, epsilon, multithread);
+    }
+    
     const auto gauss =
         [](float b, float x) -> float
         {
