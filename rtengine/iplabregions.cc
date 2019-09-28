@@ -218,9 +218,9 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
             int x = 0;
 #ifdef __SSE2__
             for (; x < W - 3; x += 4) {
-                vfloat Yv = LVFU(rgb->g(y, x));
-                vfloat uv = LVFU(rgb->b(y, x));
-                vfloat vv = LVFU(rgb->r(y, x));
+                vfloat Yv = LVF(rgb->g(y, x));
+                vfloat uv = LVF(rgb->b(y, x));
+                vfloat vv = LVF(rgb->r(y, x));
 
                 for (int i = 0; i < n; ++i) {
                     vfloat blendv = LVFU(abmask[i][y][x]);
@@ -236,9 +236,9 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     uv = vintpf(blendv, u_newv, uv);
                     vv = vintpf(blendv, v_newv, vv);
                 }
-                STVFU(rgb->g(y, x), Yv);
-                STVFU(rgb->b(y, x), uv);
-                STVFU(rgb->r(y, x), vv);
+                STVF(rgb->g(y, x), Yv);
+                STVF(rgb->b(y, x), uv);
+                STVF(rgb->r(y, x), vv);
             }
 #endif
             for (; x < W; ++x) {
