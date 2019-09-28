@@ -817,11 +817,6 @@ bool RGBCurvesParams::operator !=(const RGBCurvesParams& other) const
 
 LocalContrastParams::LocalContrastParams():
     enabled(false),
-    mode(USM),
-    radius(80),
-    amount(0.2),
-    darkness(1.0),
-    lightness(1.0),
     contrast(0),
     curve{
         static_cast<double>(FCT_MinMaxCPoints),
@@ -842,11 +837,6 @@ bool LocalContrastParams::operator==(const LocalContrastParams &other) const
 {
     return
         enabled == other.enabled
-        && mode == other.mode
-        && radius == other.radius
-        && amount == other.amount
-        && darkness == other.darkness
-        && lightness == other.lightness
         && contrast == other.contrast
         && curve == other.curve;
 }
@@ -2502,11 +2492,6 @@ int ProcParams::save(bool save_general,
 // Local contrast
         if (RELEVANT_(localContrast)) {
             saveToKeyfile("Local Contrast", "Enabled", localContrast.enabled, keyFile);
-            saveToKeyfile("Local Contrast", "Mode", int(localContrast.mode), keyFile);
-            saveToKeyfile("Local Contrast", "Radius", localContrast.radius, keyFile);
-            saveToKeyfile("Local Contrast", "Amount", localContrast.amount, keyFile);
-            saveToKeyfile("Local Contrast", "Darkness", localContrast.darkness, keyFile);
-            saveToKeyfile("Local Contrast", "Lightness", localContrast.lightness, keyFile);
             saveToKeyfile("Local Contrast", "Contrast", localContrast.contrast, keyFile);
             saveToKeyfile("Local Contrast", "Curve", localContrast.curve, keyFile);
         }
@@ -3288,13 +3273,6 @@ int ProcParams::load(bool load_general,
         
         if (keyFile.has_group("Local Contrast") && RELEVANT_(localContrast)) {
             assignFromKeyfile(keyFile, "Local Contrast", "Enabled", localContrast.enabled);
-            int m = static_cast<int>(LocalContrastParams::USM);
-            assignFromKeyfile(keyFile, "Local Contrast", "Mode", m);
-            localContrast.mode = LocalContrastParams::Mode(min(max(m, 0), 1));
-            assignFromKeyfile(keyFile, "Local Contrast", "Radius", localContrast.radius);
-            assignFromKeyfile(keyFile, "Local Contrast", "Amount", localContrast.amount);
-            assignFromKeyfile(keyFile, "Local Contrast", "Darkness", localContrast.darkness);
-            assignFromKeyfile(keyFile, "Local Contrast", "Lightness", localContrast.lightness);
             assignFromKeyfile(keyFile, "Local Contrast", "Contrast", localContrast.contrast);
             assignFromKeyfile(keyFile, "Local Contrast", "Curve", localContrast.curve);
         }
