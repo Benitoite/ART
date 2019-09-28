@@ -177,7 +177,7 @@ public:
     {
         plistener = pl;
     }
-    void        getAutoExpHistogram (LUTu & histogram, int& histcompr) override;
+    void getAutoExpHistogram(LUTu & histogram, int& histcompr) override;
     void        getRAWHistogram (LUTu & histRedRaw, LUTu & histGreenRaw, LUTu & histBlueRaw) override;
     void getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve) override;
     DCPProfile *getDCP(const ColorManagementParams &cmp, DCPProfile::ApplyState &as) override;

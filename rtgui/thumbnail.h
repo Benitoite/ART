@@ -161,12 +161,6 @@ public:
             temp = green = -1.0;
         }
     }
-    void applyAutoExp(rtengine::procparams::ProcParams& pparams)
-    {
-        if (tpp) {
-            tpp->applyAutoExp (pparams);
-        }
-    }
 
     ThFileType getType();
     Glib::ustring getFileName() { return fname; }

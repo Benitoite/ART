@@ -408,19 +408,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
         
         if (todo & M_AUTOEXP) {
-            // if (params.exposure.enabled && params.exposure.autoexp) {
-            //     LUTu aehist;
-            //     int aehistcompr;
-            //     imgsrc->getAutoExpHistogram(aehist, aehistcompr);
-            //     ipf.getAutoExp(aehist, aehistcompr, params.exposure.clip, params.exposure.expcomp,
-            //                    params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
-    
-            //     if (aeListener) {
-            //         aeListener->autoExpChanged(params.exposure.expcomp, params.brightContrSat.brightness, params.brightContrSat.contrast,
-            //                                    params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh, hrenabled);
-            //     }
-            // }
-    
             if (params.toneCurve.histmatching) {
                 if (!params.toneCurve.fromHistMatching) {
                     imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);

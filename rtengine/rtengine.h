@@ -293,7 +293,7 @@ public:
       * @param hlcompr is the new highlight recovery amount
       * @param hlcomprthresh is the new threshold for hlcompr
       * @param hlrecons set to true if HighLight Reconstruction is enabled */
-    virtual void autoExpChanged(double brightness, int bright, int contrast, int black, int hlcompr, int hlcomprthresh, bool hlrecons) = 0;
+    virtual void autoExpChanged(double brightness, int bright, int contrast, int black, int hlcompr, int hlcomprthresh, bool hlrecons) {}
 
     virtual void autoMatchedToneCurveChanged(procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) = 0;
 };
