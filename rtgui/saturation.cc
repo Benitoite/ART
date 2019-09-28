@@ -28,16 +28,16 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 
 Saturation::Saturation():
-    FoldableToolPanel(this, "saturation", M("TP_BRIGHTCONTRSAT_LABEL"), false, true)
+    FoldableToolPanel(this, "saturation", M("TP_SATURATION_LABEL"), false, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvVibrance = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_BRIGHTCONTRSAT_VIBRANCE");
+    EvVibrance = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SATURATION_VIBRANCE");
     EvToolEnabled.set_action(LUMINANCECURVE);
     // autolevels = nullptr;
     
-    saturation = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_SATURATION"), -100, 100, 1, 0));
+    saturation = Gtk::manage (new Adjuster (M("TP_SATURATION_SATURATION"), -100, 100, 1, 0));
     pack_start (*saturation);
-    vibrance = Gtk::manage (new Adjuster (M("TP_BRIGHTCONTRSAT_VIBRANCE"), -100, 100, 1, 0));
+    vibrance = Gtk::manage (new Adjuster (M("TP_SATURATION_VIBRANCE"), -100, 100, 1, 0));
     pack_start(*vibrance);
 
     saturation->setLogScale(2, 0, true);
