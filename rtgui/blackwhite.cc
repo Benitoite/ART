@@ -23,6 +23,7 @@
 #include <cmath>
 #include "guiutils.h"
 #include "edit.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
@@ -37,8 +38,12 @@ extern void computeBWMixerConstants(const Glib::ustring &setting, const Glib::us
 } // namespace rtengine
 
 
-BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LABEL"), false, true)
+BlackWhite::BlackWhite():
+    FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LABEL"), false, true)
 {
+    auto m = ProcEventMapper::getInstance();
+    EvColorCast = m->newEvent(M_LUMINANCE, "HISTORY_MSG_BWMIX_COLORCAST");
+    
     nextredbw = 0.3333;
     nextgreenbw = 0.3333;
     nextbluebw = 0.3333;
@@ -184,10 +189,14 @@ BlackWhite::BlackWhite (): FoldableToolPanel(this, "blackwhite", M("TP_BWMIX_LAB
 
     gammaFrame->add(*gammaVBox);
 
-    show_all();
+    colorCast = Gtk::manage(new ThresholdAdjuster(M("TP_BWMIX_COLORCAST"), 0., 100., 0., M("TP_BWMIX_SATURATION"), 1., 0., 360., 0., M("TP_BWMIX_HUE"), 1., nullptr, false));
+    colorCast->setAdjusterListener(this);
+    colorCast->setBgColorProvider(this, 1);
+    colorCast->setUpdatePolicy(RTUP_DYNAMIC);
 
-    disableListener();
-    enableListener();
+    pack_start(*colorCast, Gtk::PACK_SHRINK, 0);
+
+    show_all();
 }
 
 
@@ -235,7 +244,6 @@ void BlackWhite::read(const ProcParams* pp)
 
     settingChanged();
 
-
     if (pp->blackwhite.filter == "None") {
         filter->set_active (0);
     } else if (pp->blackwhite.filter == "Red") {
@@ -266,6 +274,7 @@ void BlackWhite::read(const ProcParams* pp)
     gammaRed->setValue (pp->blackwhite.gammaRed);
     gammaGreen->setValue (pp->blackwhite.gammaGreen);
     gammaBlue->setValue (pp->blackwhite.gammaBlue);
+    colorCast->setValue<int>(pp->blackwhite.colorCast);
 
     filterconn.block(false);
     settingconn.block(false);
@@ -287,6 +296,7 @@ void BlackWhite::write (ProcParams* pp)
     pp->blackwhite.gammaBlue = gammaBlue->getValue ();
     pp->blackwhite.setting = getSettingString();
     pp->blackwhite.filter = getFilterString();
+    pp->blackwhite.colorCast = colorCast->getValue<int>();
 }
 
 
@@ -356,6 +366,7 @@ void BlackWhite::neutral_pressed ()
     mixerRed->resetValue(false);
     mixerGreen->resetValue(false);
     mixerBlue->resetValue(false);
+    colorCast->setValue(0, 0);
 
     enableListener();
 
@@ -377,6 +388,7 @@ void BlackWhite::setDefaults (const ProcParams* defParams)
     gammaRed->setDefault (defParams->blackwhite.gammaRed);
     gammaGreen->setDefault (defParams->blackwhite.gammaGreen);
     gammaBlue->setDefault (defParams->blackwhite.gammaBlue);
+    colorCast->setDefault(defParams->blackwhite.colorCast);
 }
 
 
@@ -404,6 +416,17 @@ void BlackWhite::adjusterChanged(Adjuster* a, double newval)
         }
     }
 }
+
+
+void BlackWhite::adjusterChanged(ThresholdAdjuster *a, double newBottom, double newTop)
+{
+    if (listener && getEnabled() && a == colorCast) {
+        listener->panelChanged(
+            EvColorCast,
+            Glib::ustring::compose(Glib::ustring(M("TP_BWMIX_HUE") + ": %1" + "\n" + M("TP_BWMIX_SATURATION") + ": %2"), int(newTop), int(newBottom)));
+    }
+}
+
 
 void BlackWhite::adjusterAutoToggled(Adjuster* a, bool newval)
 {
@@ -548,4 +571,32 @@ Glib::ustring BlackWhite::getFilterString()
     }
 
     return retVal;
+}
+
+
+void BlackWhite::colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller)
+{
+
+    float R = 0.f, G = 0.f, B = 0.f;
+
+    if (callerId == 1) {  // Slider 1 background
+        if (valY <= 0.5)
+            // the hue range
+        {
+            Color::hsv2rgb01(float(valX), 1.0f, 0.5f, R, G, B);
+        } else {
+            // the strength applied to the current hue
+            double strength, hue;
+            colorCast->getValue(strength, hue);
+            Color::hsv2rgb01(hue / 360.f, 1.f, 1.f, R, G, B);
+            const double gray = 0.46;
+            R = (gray * (1.0 - valX)) + R * valX;
+            G = (gray * (1.0 - valX)) + G * valX;
+            B = (gray * (1.0 - valX)) + B * valX;
+        }
+    }
+
+    caller->ccRed = double(R);
+    caller->ccGreen = double(G);
+    caller->ccBlue = double(B);
 }

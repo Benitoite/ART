@@ -903,6 +903,7 @@ struct BlackWhiteParams {
     int gammaRed;
     int gammaGreen;
     int gammaBlue;
+    Threshold<int> colorCast;
 
     BlackWhiteParams();
 

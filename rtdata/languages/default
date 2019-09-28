@@ -729,6 +729,7 @@ HISTORY_MSG_490;DRC - Amount
 HISTORY_MSG_491;White Balance
 HISTORY_MSG_492;RGB Curves
 HISTORY_MSG_493;L*a*b* Adjustments
+HISTORY_MSG_BWMIX_COLORCAST;B&amp;W - Color cast
 HISTORY_MSG_SATURATION_VIBRANCE;S&amp;V - Vibrance
 HISTORY_MSG_CBDL_LIST;CbDL - regions
 HISTORY_MSG_CBDL_HUEMASK;CbDL - H mask
@@ -1416,6 +1417,9 @@ TP_BWMIX_AUTOCH;Auto
 TP_BWMIX_CC_ENABLED;Adjust complementary color
 TP_BWMIX_CC_TOOLTIP;Enable to allow automatic adjustment of complementary colors in ROYGCBPM mode.
 TP_BWMIX_CHANNEL;Luminance equalizer
+TP_BWMIX_COLORCAST;Color cast
+TP_BWMIX_HUE;Hue
+TP_BWMIX_SATURATION;Saturation
 TP_BWMIX_CURVEEDITOR1;'Before' curve
 TP_BWMIX_CURVEEDITOR2;'After' curve
 TP_BWMIX_CURVEEDITOR_AFTER_TOOLTIP;Tone curve, after B&amp;W conversion, at the end of treatment.

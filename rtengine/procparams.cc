@@ -1576,7 +1576,8 @@ BlackWhiteParams::BlackWhiteParams() :
     mixerBlue(33),
     gammaRed(0),
     gammaGreen(0),
-    gammaBlue(0)
+    gammaBlue(0),
+    colorCast(0, 0, false)
 {
 }
 
@@ -1591,7 +1592,8 @@ bool BlackWhiteParams::operator ==(const BlackWhiteParams& other) const
         && mixerBlue == other.mixerBlue
         && gammaRed == other.gammaRed
         && gammaGreen == other.gammaGreen
-        && gammaBlue == other.gammaBlue;
+        && gammaBlue == other.gammaBlue
+        && colorCast == other.colorCast;
 }
 
 bool BlackWhiteParams::operator !=(const BlackWhiteParams& other) const
@@ -2519,6 +2521,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Black & White", "GammaRed", blackwhite.gammaRed, keyFile);
             saveToKeyfile("Black & White", "GammaGreen", blackwhite.gammaGreen, keyFile);
             saveToKeyfile("Black & White", "GammaBlue", blackwhite.gammaBlue, keyFile);
+            saveToKeyfile("Black & White", "ColorCast", blackwhite.colorCast.toVector(), keyFile);
         }
 
 // HSL equalizer
@@ -3261,6 +3264,12 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Black & White", "GammaBlue", blackwhite.gammaBlue);
             assignFromKeyfile(keyFile, "Black & White", "Filter", blackwhite.filter);
             assignFromKeyfile(keyFile, "Black & White", "Setting", blackwhite.setting);
+            if (keyFile.has_key("Black & White", "ColorCast")) {
+                std::vector<int> ccast = keyFile.get_integer_list("Black & White", "ColorCast");
+                if (ccast.size() >= 2) {
+                    blackwhite.colorCast.setValues(ccast[0], ccast[1]);
+                }
+            }
         }
 
         if (keyFile.has_group("HSL Equalizer") && RELEVANT_(hsl)) {
