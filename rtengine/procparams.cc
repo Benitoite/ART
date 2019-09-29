@@ -2475,6 +2475,7 @@ int ProcParams::save(bool save_general,
 // Tone curve
         if (RELEVANT_(toneCurve)) {
             saveToKeyfile("ToneCurve", "Enabled", toneCurve.enabled, keyFile);
+            saveToKeyfile("ToneCurve", "Contrast", toneCurve.contrast, keyFile);
             saveToKeyfile("ToneCurve", "HistogramMatching", toneCurve.histmatching, keyFile);
             saveToKeyfile("ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching, keyFile);
 
