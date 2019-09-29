@@ -116,6 +116,8 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 
     if (pp.detail > 0) {
         array2D<float> Y2(W, H);
+        constexpr float base_epsilon = 0.02f;
+        constexpr float base_posterization = 5.f;
         
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
@@ -123,14 +125,14 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
                 float l = LIM(log2(std::max(Y[y][x], 1e-9f)), centers[0], centers[11]);
-                float ll = round(l * 10.f) / 10.f;
+                float ll = round(l * base_posterization) / base_posterization;
                 Y2[y][x] = Y[y][x];
                 Y[y][x] = exp2(ll);
             }
         }
         radius = 350.f / scale;
-        epsilon = 0.05f / float(6 - std::min(pp.detail, 5));
-        rtengine::guidedFilter(Y2, Y, Y, radius, epsilon, multithread);
+        epsilon = base_epsilon / float(6 - std::min(pp.detail, 5));
+        rtengine::guidedFilter(Y2, Y, Y, radius, epsilon, multithread);        
     }
     
     const auto gauss =
