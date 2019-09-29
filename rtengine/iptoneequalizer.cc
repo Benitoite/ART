@@ -43,7 +43,7 @@
 #include "sleef.c"
 #include "opthelper.h"
 #include "guidedfilter.h"
-#define BENCHMARK
+//#define BENCHMARK
 #include "StopWatch.h"
 
 namespace rtengine {
@@ -164,6 +164,13 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
             return correction;
         };
 
+    LUTf lut(65536);
+    for (int i = 0; i < 65536; ++i) {
+        float y = float(i)/65535.f;
+        float c = process_pixel(y);
+        lut[i] = c;
+    }
+
 #ifdef __SSE2__
     vfloat vfactors[12];
     vfloat vcenters[12];
@@ -199,6 +206,9 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 
             return correction;
         };
+
+    vfloat v1 = F2V(1.f);
+    vfloat v65535 = F2V(65535.f);
 #endif // __SSE2__
     
         
@@ -210,15 +220,21 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 #ifdef __SSE2__
         for (; x < W - 3; x += 4) {
             vfloat cY = LVFU(Y[y][x]);
-            vfloat corr = vprocess_pixel(cY);
-            STVFU(R[y][x], LVFU(R[y][x]) * corr);
-            STVFU(G[y][x], LVFU(G[y][x]) * corr);
-            STVFU(B[y][x], LVFU(B[y][x]) * corr);
+            vmask m = vmaskf_gt(cY, v1);
+            vfloat corr;
+            if (_mm_movemask_ps((vfloat)m)) {
+                corr = vprocess_pixel(cY);
+            } else {
+                corr = lut[cY * v65535];
+            }
+            STVF(R[y][x], LVF(R[y][x]) * corr);
+            STVF(G[y][x], LVF(G[y][x]) * corr);
+            STVF(B[y][x], LVF(B[y][x]) * corr);
         }
 #endif // __SSE2__
         for (; x < W; ++x) {
             float cY = Y[y][x];
-            float corr = process_pixel(cY);
+            float corr = cY > 1.f ? process_pixel(cY) : lut[cY * 65535.f];
             R[y][x] *= corr;
             G[y][x] *= corr;
             B[y][x] *= corr;
