@@ -340,6 +340,8 @@ void proPhotoBlue(Imagefloat *rgb, bool multiThread)
 void dcpProfile(Imagefloat *img, DCPProfile *dcp, const DCPProfile::ApplyState *as, bool multithread)
 {
     if (dcp && as) {
+        img->setMode(Imagefloat::Mode::RGB, multithread);
+        
         const int H = img->getHeight();
         const int W = img->getWidth();
 #ifdef _OPENMP
