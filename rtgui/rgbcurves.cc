@@ -25,7 +25,7 @@ RGBCurves::RGBCurves () : FoldableToolPanel(this, "rgbcurves", M("TP_RGBCURVES_L
 {
     std::vector<GradientMilestone> milestones;
 
-    curveEditorG = new CurveEditorGroup (options.lastRgbCurvesDir, M("TP_RGBCURVES_CHANNEL"));
+    curveEditorG = new CurveEditorGroup(options.lastRgbCurvesDir, "");//M("TP_RGBCURVES_CHANNEL"));
     curveEditorG->setCurveListener (this);
 
     Rshape = static_cast<DiagonalCurveEditor*>(curveEditorG->addCurve(CT_Diagonal, M("TP_RGBCURVES_RED")));

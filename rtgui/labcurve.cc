@@ -73,9 +73,9 @@ LCurve::LCurve () : FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"),
     chromaticity->setLogScale(2, 0, true);
 
     //%%%%%%%%%%%%%%%%%%
-    Gtk::HSeparator *hsep2 = Gtk::manage (new  Gtk::HSeparator());
-    hsep2->show ();
-    pack_start (*hsep2, Gtk::PACK_EXPAND_WIDGET, 4);
+    // Gtk::HSeparator *hsep2 = Gtk::manage (new  Gtk::HSeparator());
+    // hsep2->show ();
+    // pack_start (*hsep2, Gtk::PACK_EXPAND_WIDGET, 4);
 
     avoidcolorshift = Gtk::manage (new Gtk::CheckButton (M("TP_LABCURVE_AVOIDCOLORSHIFT")));
     avoidcolorshift->set_tooltip_text (M("TP_LABCURVE_AVOIDCOLORSHIFT_TOOLTIP"));
@@ -97,9 +97,9 @@ LCurve::LCurve () : FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"),
 
     //%%%%%%%%%%%%%%%%%%%
 
-    Gtk::HSeparator *hsep3 = Gtk::manage (new  Gtk::HSeparator());
-    hsep3->show ();
-    pack_start (*hsep3, Gtk::PACK_EXPAND_WIDGET, 4);
+    // Gtk::HSeparator *hsep3 = Gtk::manage (new  Gtk::HSeparator());
+    // hsep3->show ();
+    // pack_start (*hsep3, Gtk::PACK_EXPAND_WIDGET, 4);
 
     curveEditorG = new CurveEditorGroup (options.lastLabCurvesDir);
     curveEditorG->setCurveListener (this);
@@ -231,9 +231,9 @@ LCurve::LCurve () : FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"),
     curveEditorG->curveListComplete();
 
     pack_start (*curveEditorG, Gtk::PACK_SHRINK, 4);
-    Gtk::HSeparator *hsepdh = Gtk::manage (new  Gtk::HSeparator());
-    hsepdh->show ();
-    pack_start (*hsepdh, Gtk::PACK_EXPAND_WIDGET, 4);
+    // Gtk::HSeparator *hsepdh = Gtk::manage (new  Gtk::HSeparator());
+    // hsepdh->show ();
+    // pack_start (*hsepdh, Gtk::PACK_EXPAND_WIDGET, 4);
 
 }
 
