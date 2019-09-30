@@ -54,7 +54,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     textureBoost        = Gtk::manage (new TextureBoost());
     sharpening          = Gtk::manage (new Sharpening ());
     localContrast       = Gtk::manage(new LocalContrast());
-    lcurve              = Gtk::manage (new LCurve ());
+    lcurve              = Gtk::manage (new LabCurve ());
     rgbcurves           = Gtk::manage (new RGBCurves ());
     lensgeom            = Gtk::manage (new LensGeometry ());
     lensProf            = Gtk::manage (new LensProfilePanel ());

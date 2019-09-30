@@ -134,7 +134,7 @@ protected:
     Denoise* denoise;
     TextureBoost *textureBoost;
     Sharpening* sharpening;
-    LCurve* lcurve;
+    LabCurve* lcurve;
     RGBCurves* rgbcurves;
     SoftLight *softlight;
     Dehaze *dehaze;

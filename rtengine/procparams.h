@@ -393,28 +393,19 @@ struct ToneCurveParams {
 /**
   * Parameters of the luminance curve
   */
-struct LCurveParams {
+struct LabCurveParams {
     bool enabled;
-    std::vector<double>   lcurve;
-    std::vector<double>   acurve;
-    std::vector<double>   bcurve;
-    std::vector<double>   cccurve;
-    std::vector<double>   chcurve;
-    std::vector<double>   lhcurve;
-    std::vector<double>   hhcurve;
-    std::vector<double>   lccurve;
-    std::vector<double>   clcurve;
-    int     brightness;
-    int     contrast;
-    int     chromaticity;
-    bool    avoidcolorshift;
-    double  rstprotection;
-    bool    lcredsk;
+    int brightness;
+    int contrast;
+    int chromaticity;
+    std::vector<double> lcurve;
+    std::vector<double> acurve;
+    std::vector<double> bcurve;
 
-    LCurveParams();
+    LabCurveParams();
 
-    bool operator ==(const LCurveParams& other) const;
-    bool operator !=(const LCurveParams& other) const;
+    bool operator ==(const LabCurveParams& other) const;
+    bool operator !=(const LabCurveParams& other) const;
 };
 
 
@@ -1350,7 +1341,7 @@ public:
     ExposureParams          exposure;
     SaturationParams saturation;
     ToneCurveParams         toneCurve;       ///< Tone curve parameters
-    LCurveParams            labCurve;        ///< CIELAB luminance curve parameters
+    LabCurveParams          labCurve;        ///< CIELAB luminance curve parameters
     LocalContrastParams     localContrast;   ////< Local contrast parameters
     RGBCurvesParams         rgbCurves;       ///< RGB curves parameters
     SharpeningParams        sharpening;      ///< Sharpening parameters

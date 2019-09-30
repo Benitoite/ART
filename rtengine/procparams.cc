@@ -722,8 +722,11 @@ bool ToneCurveParams::operator !=(const ToneCurveParams& other) const
 }
 
 
-LCurveParams::LCurveParams() :
+LabCurveParams::LabCurveParams() :
     enabled(false),
+    brightness(0),
+    contrast(0),
+    chromaticity(0),
     lcurve{
         DCT_Linear
     },
@@ -732,56 +735,23 @@ LCurveParams::LCurveParams() :
     },
     bcurve{
         DCT_Linear
-    },
-    cccurve{
-        DCT_Linear
-    },
-    chcurve{
-        FCT_Linear
-    },
-    lhcurve{
-        FCT_Linear
-    },
-    hhcurve{
-        FCT_Linear
-    },
-    lccurve{
-        DCT_Linear
-    },
-    clcurve{
-        DCT_Linear
-    },
-    brightness(0),
-    contrast(0),
-    chromaticity(0),
-    avoidcolorshift(false),
-    rstprotection(0),
-    lcredsk(true)
+    }
 {
 }
 
-bool LCurveParams::operator ==(const LCurveParams& other) const
+bool LabCurveParams::operator ==(const LabCurveParams& other) const
 {
     return
         enabled == other.enabled
-        && lcurve == other.lcurve
-        && acurve == other.acurve
-        && bcurve == other.bcurve
-        && cccurve == other.cccurve
-        && chcurve == other.chcurve
-        && lhcurve == other.lhcurve
-        && hhcurve == other.hhcurve
-        && lccurve == other.lccurve
-        && clcurve == other.clcurve
         && brightness == other.brightness
         && contrast == other.contrast
         && chromaticity == other.chromaticity
-        && avoidcolorshift == other.avoidcolorshift
-        && rstprotection == other.rstprotection
-        && lcredsk == other.lcredsk;
+        && lcurve == other.lcurve
+        && acurve == other.acurve
+        && bcurve == other.bcurve;
 }
 
-bool LCurveParams::operator !=(const LCurveParams& other) const
+bool LabCurveParams::operator !=(const LabCurveParams& other) const
 {
     return !(*this == other);
 }
@@ -2303,7 +2273,7 @@ void ProcParams::setDefaults()
         
     toneCurve = ToneCurveParams();
 
-    labCurve = LCurveParams();
+    labCurve = LabCurveParams();
 
     rgbCurves = RGBCurvesParams();
 
@@ -2544,18 +2514,9 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Luminance Curve", "Brightness", labCurve.brightness, keyFile);
             saveToKeyfile("Luminance Curve", "Contrast", labCurve.contrast, keyFile);
             saveToKeyfile("Luminance Curve", "Chromaticity", labCurve.chromaticity, keyFile);
-            saveToKeyfile("Luminance Curve", "AvoidColorShift", labCurve.avoidcolorshift, keyFile);
-            saveToKeyfile("Luminance Curve", "RedAndSkinTonesProtection", labCurve.rstprotection, keyFile);
-            saveToKeyfile("Luminance Curve", "LCredsk", labCurve.lcredsk, keyFile);
             saveToKeyfile("Luminance Curve", "LCurve", labCurve.lcurve, keyFile);
             saveToKeyfile("Luminance Curve", "aCurve", labCurve.acurve, keyFile);
             saveToKeyfile("Luminance Curve", "bCurve", labCurve.bcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "ccCurve", labCurve.cccurve, keyFile);
-            saveToKeyfile("Luminance Curve", "chCurve", labCurve.chcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "lhCurve", labCurve.lhcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "hhCurve", labCurve.hhcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "LcCurve", labCurve.lccurve, keyFile);
-            saveToKeyfile("Luminance Curve", "ClCurve", labCurve.clcurve, keyFile);
         }
 
 // Sharpening
@@ -3292,55 +3253,13 @@ int ProcParams::load(bool load_general,
         }
 
         if (keyFile.has_group("Luminance Curve") && RELEVANT_(labCurve)) {
-            if (ppVersion >= 329) {
-                assignFromKeyfile(keyFile, "Luminance Curve", "Enabled", labCurve.enabled);
-            } else {
-                labCurve.enabled = true;
-            }
-
+            assignFromKeyfile(keyFile, "Luminance Curve", "Enabled", labCurve.enabled);
             assignFromKeyfile(keyFile, "Luminance Curve", "Brightness", labCurve.brightness);
             assignFromKeyfile(keyFile, "Luminance Curve", "Contrast", labCurve.contrast);
-
-            if (ppVersion < 303) {
-                // transform Saturation into Chromaticity
-                // if Saturation == 0, should we set BWToning on?
-                assignFromKeyfile(keyFile, "Luminance Curve", "Saturation", labCurve.chromaticity);
-                // transform AvoidColorClipping into AvoidColorShift
-                assignFromKeyfile(keyFile, "Luminance Curve", "AvoidColorClipping", labCurve.avoidcolorshift);
-            } else {
-                if (keyFile.has_key("Luminance Curve", "Chromaticity")) {
-                    labCurve.chromaticity = keyFile.get_integer("Luminance Curve", "Chromaticity");
-
-                    if (ppVersion >= 303 && ppVersion < 314 && labCurve.chromaticity == -100) {
-                        blackwhite.enabled = true;
-                    }
-                }
-
-                assignFromKeyfile(keyFile, "Luminance Curve", "AvoidColorShift", labCurve.avoidcolorshift);
-                assignFromKeyfile(keyFile, "Luminance Curve", "RedAndSkinTonesProtection", labCurve.rstprotection);
-            }
-
-            assignFromKeyfile(keyFile, "Luminance Curve", "LCredsk", labCurve.lcredsk);
-
-            if (ppVersion < 314) {
-                // Backward compatibility: If BWtoning is true, Chromaticity has to be set to -100, which will produce the same effect
-                // and will enable the b&w toning mode ('a' & 'b' curves)
-                if (keyFile.has_key("Luminance Curve", "BWtoning")) {
-                    if (keyFile.get_boolean("Luminance Curve", "BWtoning")) {
-                        labCurve.chromaticity = -100;
-                    }
-                }
-            }
-
+            assignFromKeyfile(keyFile, "Luminance Curve", "Chromaticity", labCurve.chromaticity);
             assignFromKeyfile(keyFile, "Luminance Curve", "LCurve", labCurve.lcurve);
             assignFromKeyfile(keyFile, "Luminance Curve", "aCurve", labCurve.acurve);
             assignFromKeyfile(keyFile, "Luminance Curve", "bCurve", labCurve.bcurve);
-            // assignFromKeyfile(keyFile, "Luminance Curve", "ccCurve", labCurve.cccurve);
-            // assignFromKeyfile(keyFile, "Luminance Curve", "chCurve", labCurve.chcurve);
-            // assignFromKeyfile(keyFile, "Luminance Curve", "lhCurve", labCurve.lhcurve);
-            // assignFromKeyfile(keyFile, "Luminance Curve", "hhCurve", labCurve.hhcurve);
-            // assignFromKeyfile(keyFile, "Luminance Curve", "LcCurve", labCurve.lccurve);
-            // assignFromKeyfile(keyFile, "Luminance Curve", "ClCurve", labCurve.clcurve);
         }
 
         if (keyFile.has_group("Sharpening") && RELEVANT_(sharpening)) {
