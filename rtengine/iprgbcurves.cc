@@ -70,7 +70,7 @@ void ImProcFunctions::rgbCurves(Imagefloat *img)
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                editWhatever->v(y, x) = Color::gamma2curve[chan[y][x]] / 65536.f;
+                editWhatever->v(y, x) = LIM01(Color::gamma2curve[chan[y][x]] / 65535.f);
             }
         }
     }
@@ -80,7 +80,21 @@ void ImProcFunctions::rgbCurves(Imagefloat *img)
 #       pragma omp parallel for if (multiThread)
 #endif
         for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
+            int x = 0;
+#ifdef __SSE2__
+            for (; x < W-3; x += 4) {
+                if (rCurve) {
+                    STVF(img->r(y, x), rCurve[LVF(img->r(y, x))]);
+                }
+                if (gCurve) {
+                    STVF(img->g(y, x), gCurve[LVF(img->g(y, x))]);
+                }
+                if (bCurve) {
+                    STVF(img->b(y, x), bCurve[LVF(img->b(y, x))]);
+                }
+            }
+#endif // __SSE2__
+            for (; x < W; ++x) {
                 if (rCurve) {
                     img->r(y, x) = rCurve[img->r(y, x)];
                 }
