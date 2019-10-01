@@ -491,9 +491,9 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
 
     bool highQuality = needsCA() && scale == 1;
     bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
-    bool needs_perspective = needsPerspective();
     bool needs_luminance = needsVignetting();
     bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
+    bool needs_perspective = needsPerspective() || needs_lcp_ca;
     bool needs_transform_general = needs_dist_rot_ca || needs_luminance;
 
     if (! (needs_dist_rot_ca || needs_perspective) && needs_luminance) {
