@@ -252,7 +252,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     }
 
     BENCHFUN
-
+    rgb->setMode(Imagefloat::Mode::RGB, multiThread);
     rgb->normalizeFloatTo1(multiThread);
 
     const int W = rgb->getWidth();
