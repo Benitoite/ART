@@ -76,24 +76,25 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
     };
 
-    const auto conv = [&](int v) -> float
+    const auto conv = [&](int v, float lo, float hi) -> float
                       {
-                          return exp2(float(v) / 100.f * 2.5f);
+                          const float f = v < 0 ? lo : hi;
+                          return exp2(float(v) / 100.f * f);
                       };
 
     const float factors[12] = {
-        conv(pp.bands[0]), // -18 EV
-        conv(pp.bands[0]), // -16 EV
-        conv(pp.bands[0]), // -14 EV
-        conv(pp.bands[0]), // -12 EV
-        conv(pp.bands[0]), // -10 EV
-        conv(pp.bands[0]), //  -8 EV
-        conv(pp.bands[1]), //  -6 EV
-        conv(pp.bands[2]), //  -4 EV
-        conv(pp.bands[3]), //  -2 EV
-        conv(pp.bands[4]), //   0 EV
-        conv(pp.bands[4]), //   2 EV
-        conv(pp.bands[4])  //   4 EV
+        conv(pp.bands[0], 2.f, 3.f), // -18 EV
+        conv(pp.bands[0], 2.f, 3.f), // -16 EV
+        conv(pp.bands[0], 2.f, 3.f), // -14 EV
+        conv(pp.bands[0], 2.f, 3.f), // -12 EV
+        conv(pp.bands[0], 2.f, 3.f), // -10 EV
+        conv(pp.bands[0], 2.f, 3.f), //  -8 EV
+        conv(pp.bands[1], 2.f, 3.f), //  -6 EV
+        conv(pp.bands[2], 2.5f, 2.5f), //  -4 EV
+        conv(pp.bands[3], 3.f, 2.f), //  -2 EV
+        conv(pp.bands[4], 3.f, 2.f), //   0 EV
+        conv(pp.bands[4], 3.f, 2.f), //   2 EV
+        conv(pp.bands[4], 3.f, 2.f)  //   4 EV
     };
 
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
