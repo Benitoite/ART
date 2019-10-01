@@ -32,19 +32,19 @@ using namespace rtengine::procparams;
 ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favoritePanelSW(nullptr), hasChanged (false), editDataProvider (nullptr)
 {
 
-    favoritePanel   = Gtk::manage (new ToolVBox ());
-    exposurePanel   = Gtk::manage (new ToolVBox ());
-    detailsPanel    = Gtk::manage (new ToolVBox ());
-    colorPanel      = Gtk::manage (new ToolVBox ());
-    transformPanel  = Gtk::manage (new ToolVBox ());
-    rawPanel        = Gtk::manage (new ToolVBox ());
-    advancedPanel    = Gtk::manage (new ToolVBox ());
+    favoritePanel = Gtk::manage(new ToolVBox ());
+    exposurePanel = Gtk::manage(new ToolVBox ());
+    detailsPanel = Gtk::manage(new ToolVBox ());
+    colorPanel = Gtk::manage(new ToolVBox ());
+    transformPanel = Gtk::manage(new ToolVBox ());
+    rawPanel = Gtk::manage(new ToolVBox ());
+    // advancedPanel = Gtk::manage(new ToolVBox ());
     localPanel = Gtk::manage(new ToolVBox());
+    effectsPanel = Gtk::manage(new ToolVBox());
 
     coarse              = Gtk::manage (new CoarsePanel ());
     exposure = Gtk::manage(new Exposure());
-    brightContrSat = Gtk::manage(new BrightnessContrastSaturation());
-    brightContrSat->setAutoLevelsButton(exposure->getAutoLevelsButton());
+    saturation = Gtk::manage(new Saturation());
     toneCurve           = Gtk::manage (new ToneCurve ());
     shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
     toneEqualizer = Gtk::manage(new ToneEqualizer());
@@ -54,7 +54,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     textureBoost        = Gtk::manage (new TextureBoost());
     sharpening          = Gtk::manage (new Sharpening ());
     localContrast       = Gtk::manage(new LocalContrast());
-    lcurve              = Gtk::manage (new LCurve ());
+    lcurve              = Gtk::manage (new LabCurve ());
     rgbcurves           = Gtk::manage (new RGBCurves ());
     lensgeom            = Gtk::manage (new LensGeometry ());
     lensProf            = Gtk::manage (new LensProfilePanel ());
@@ -107,32 +107,46 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     //     Medium -> High ISO
     favorites.resize(options.favorites.size(), nullptr);
 
-    addfavoritePanel(colorPanel, whitebalance);
+    // exposure
     addfavoritePanel(exposurePanel, exposure);
-    addfavoritePanel(exposurePanel, brightContrSat);
+    addfavoritePanel(exposurePanel, toneEqualizer);    
     addfavoritePanel(exposurePanel, toneCurve);
-    addfavoritePanel(colorPanel, chmixer);
-    addfavoritePanel(colorPanel, hsl);
-    addfavoritePanel(colorPanel, blackwhite);
-    addfavoritePanel(exposurePanel, logenc);
     addfavoritePanel(exposurePanel, shadowshighlights);
+    addfavoritePanel(exposurePanel, fattal);
+    addfavoritePanel(exposurePanel, logenc);
+
+    // details
     addfavoritePanel(detailsPanel, sharpening);
     addfavoritePanel(detailsPanel, localContrast);
-    addfavoritePanel(colorPanel, filmSimulation);
-    addfavoritePanel(colorPanel, softlight);
+    addfavoritePanel(detailsPanel, denoise);
+    addfavoritePanel(detailsPanel, impulsedenoise);
+    addfavoritePanel(detailsPanel, defringe);
+
+    // color
+    addfavoritePanel(colorPanel, whitebalance);
+    addfavoritePanel(colorPanel/*exposurePanel*/, saturation);
+    addfavoritePanel(colorPanel, chmixer);
+    addfavoritePanel(colorPanel, hsl);
     addfavoritePanel(colorPanel, rgbcurves);
     addfavoritePanel(colorPanel, lcurve);
-    //addfavoritePanel (exposurePanel, epd);
-    addfavoritePanel(exposurePanel, fattal);
-    addfavoritePanel(exposurePanel, toneEqualizer);    
-    addfavoritePanel(exposurePanel, pcvignette);
-    addfavoritePanel(exposurePanel, gradient);
-    //addfavoritePanel (exposurePanel, lcurve);
-    addfavoritePanel(detailsPanel, impulsedenoise);
-    addfavoritePanel(detailsPanel, denoise);
-    addfavoritePanel(detailsPanel, defringe);
-    addfavoritePanel(detailsPanel, dehaze);
-    addfavoritePanel(detailsPanel, grain);
+    addfavoritePanel(colorPanel, icm);
+
+    // local
+    addfavoritePanel(localPanel, colorcorrection);
+    addfavoritePanel(localPanel, smoothing);
+    addfavoritePanel(localPanel, cbdl);
+    addfavoritePanel(localPanel, textureBoost);
+
+    // effects
+    addfavoritePanel(effectsPanel, blackwhite);
+    addfavoritePanel(effectsPanel, filmSimulation);
+    addfavoritePanel(effectsPanel, softlight);
+    addfavoritePanel(effectsPanel, pcvignette);
+    addfavoritePanel(effectsPanel, gradient);
+    addfavoritePanel(effectsPanel, dehaze);
+    addfavoritePanel(effectsPanel, grain);
+
+    // transform
     addfavoritePanel(transformPanel, crop);
     addfavoritePanel(transformPanel, resize);
     addfavoritePanel(resize->getPackBox(), prsharpening, 2);
@@ -143,7 +157,8 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(lensgeom->getPackBox(), distortion, 2);
     addfavoritePanel(lensgeom->getPackBox(), cacorrection, 2);
     addfavoritePanel(lensgeom->getPackBox(), vignetting, 2);
-    addfavoritePanel(colorPanel, icm);
+
+    // raw
     addfavoritePanel(rawPanel, sensorbayer);
     addfavoritePanel(sensorbayer->getPackBox(), bayerprocess, 2);
     addfavoritePanel(sensorbayer->getPackBox(), bayerrawexposure, 2);
@@ -157,10 +172,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(rawPanel, darkframe);
     addfavoritePanel(rawPanel, flatfield);
     addfavoritePanel(rawPanel, filmNegative);
-    addfavoritePanel(localPanel, colorcorrection);
-    addfavoritePanel(localPanel, smoothing);
-    addfavoritePanel(localPanel, cbdl);
-    addfavoritePanel(localPanel, textureBoost);
 
     int favoriteCount = 0;
     for(auto it = favorites.begin(); it != favorites.end(); ++it) {
@@ -181,8 +192,9 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     colorPanelSW       = Gtk::manage (new MyScrolledWindow ());
     transformPanelSW   = Gtk::manage (new MyScrolledWindow ());
     rawPanelSW         = Gtk::manage (new MyScrolledWindow ());
-    advancedPanelSW    = Gtk::manage (new MyScrolledWindow ());
+    // advancedPanelSW    = Gtk::manage (new MyScrolledWindow ());
     localPanelSW = Gtk::manage(new MyScrolledWindow());
+    effectsPanelSW = Gtk::manage(new MyScrolledWindow());
     updateVScrollbars (options.hideTPVScrollbar);
 
     // load panel endings
@@ -213,13 +225,17 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     colorPanel->pack_start (*Gtk::manage (new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
     colorPanel->pack_start (*vbPanelEnd[3], Gtk::PACK_SHRINK, 4);
 
-    advancedPanelSW->add       (*advancedPanel);
-    advancedPanel->pack_start (*Gtk::manage (new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
-    advancedPanel->pack_start (*vbPanelEnd[6], Gtk::PACK_SHRINK, 0);
+    // advancedPanelSW->add       (*advancedPanel);
+    // advancedPanel->pack_start (*Gtk::manage (new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
+    // advancedPanel->pack_start (*vbPanelEnd[6], Gtk::PACK_SHRINK, 0);
 
     localPanelSW->add(*localPanel);
     localPanel->pack_start(*Gtk::manage(new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
-    localPanel->pack_start(*vbPanelEnd[7], Gtk::PACK_SHRINK, 0);
+    localPanel->pack_start(*vbPanelEnd[6], Gtk::PACK_SHRINK, 0);
+
+    effectsPanelSW->add(*effectsPanel);
+    effectsPanel->pack_start(*Gtk::manage(new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
+    effectsPanel->pack_start(*vbPanelEnd[7], Gtk::PACK_SHRINK, 0);
     
     transformPanelSW->add (*transformPanel);
     transformPanel->pack_start (*Gtk::manage (new Gtk::HSeparator), Gtk::PACK_SHRINK, 0);
@@ -238,6 +254,8 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     toiR = Gtk::manage (new TextOrIcon ("bayer.png", M ("MAIN_TAB_RAW"), M ("MAIN_TAB_RAW_TOOLTIP")));
     toiM = Gtk::manage (new TextOrIcon ("metadata.png", M ("MAIN_TAB_METADATA"), M ("MAIN_TAB_METADATA_TOOLTIP")));
     toiL = Gtk::manage(new TextOrIcon("local-edit.png", M("MAIN_TAB_LOCAL"), M("MAIN_TAB_LOCAL_TOOLTIP")));
+    toiFx = Gtk::manage(new TextOrIcon("wand.png", M("MAIN_TAB_EFFECTS"), M("MAIN_TAB_EFFECTS_TOOLTIP")));
+    
 
     if (favoritePanelSW) {
         toolPanelNotebook->append_page (*favoritePanelSW,  *toiF);
@@ -246,6 +264,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     toolPanelNotebook->append_page (*detailsPanelSW,   *toiD);
     toolPanelNotebook->append_page (*colorPanelSW,     *toiC);
     toolPanelNotebook->append_page(*localPanelSW, *toiL);
+    toolPanelNotebook->append_page(*effectsPanelSW, *toiFx);
     toolPanelNotebook->append_page (*transformPanelSW, *toiT);
     toolPanelNotebook->append_page (*rawPanelSW,       *toiR);
     toolPanelNotebook->append_page (*metadata,    *toiM);
@@ -950,9 +969,9 @@ bool ToolPanelCoordinator::handleShortcutKey (GdkEventKey* event)
                 toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*rawPanelSW));
                 return true;
 
-            // case GDK_KEY_w:
-            //     toolPanelNotebook->set_current_page (toolPanelNotebook->page_num (*advancedPanelSW));
-            //     return true;
+            case GDK_KEY_f:
+                toolPanelNotebook->set_current_page(toolPanelNotebook->page_num(*effectsPanelSW));
+                return true;
 
             case GDK_KEY_x:
                 toolPanelNotebook->set_current_page(toolPanelNotebook->page_num(*localPanelSW));
@@ -979,8 +998,9 @@ void ToolPanelCoordinator::updateVScrollbars (bool hide)
     colorPanelSW->set_policy        (Gtk::POLICY_AUTOMATIC, policy);
     transformPanelSW->set_policy    (Gtk::POLICY_AUTOMATIC, policy);
     rawPanelSW->set_policy          (Gtk::POLICY_AUTOMATIC, policy);
-    advancedPanelSW->set_policy      (Gtk::POLICY_AUTOMATIC, policy);
-    localPanelSW->set_policy      (Gtk::POLICY_AUTOMATIC, policy);
+    // advancedPanelSW->set_policy      (Gtk::POLICY_AUTOMATIC, policy);
+    localPanelSW->set_policy(Gtk::POLICY_AUTOMATIC, policy);
+    effectsPanelSW->set_policy(Gtk::POLICY_AUTOMATIC, policy);
 
     for (auto currExp : expList) {
         currExp->updateVScrollbars (hide);
@@ -1078,8 +1098,7 @@ void ToolPanelCoordinator::autoPerspectiveRequested(bool horiz, bool vert, doubl
 
 void ToolPanelCoordinator::autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons)
 {
-    exposure->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
-    brightContrSat->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
+    // exposure->autoExpChanged(expcomp, bright, contr, black, hlcompr, hlcomprthresh, hlrecons);
 }
 
 

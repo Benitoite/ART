@@ -640,15 +640,8 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
 
 ExposureParams::ExposureParams():
     enabled(true),
-    autoexp(false),
-    clip(0.02),
     hrmode(HR_OFF),
-    expcomp(0),
-    black(0),
-    shcompr(50),
-    hlcompr(0),
-    hlcomprthresh(0),
-    clampOOG(true)
+    expcomp(0)
 {
 }
 
@@ -656,15 +649,8 @@ ExposureParams::ExposureParams():
 bool ExposureParams::operator==(const ExposureParams &other) const
 {
     return enabled == other.enabled
-        && autoexp == other.autoexp
-        && clip == other.clip
         && hrmode == other.hrmode
-        && expcomp == other.expcomp
-        && black == other.black
-        && shcompr == other.shcompr
-        && hlcompr == other.hlcompr
-        && hlcomprthresh == other.hlcomprthresh
-        && clampOOG == other.clampOOG;    
+        && expcomp == other.expcomp;
 }
 
 
@@ -674,27 +660,23 @@ bool ExposureParams::operator!=(const ExposureParams &other) const
 }
 
 
-BrightnessContrastSaturationParams::BrightnessContrastSaturationParams():
+SaturationParams::SaturationParams():
     enabled(false),
-    brightness(0),
-    contrast(0),
     saturation(0),
     vibrance(0)
 {
 }
 
 
-bool BrightnessContrastSaturationParams::operator==(const BrightnessContrastSaturationParams &other) const
+bool SaturationParams::operator==(const SaturationParams &other) const
 {
     return enabled == other.enabled
-        && brightness == other.brightness
-        && contrast == other.contrast
         && saturation == other.saturation
         && vibrance == other.vibrance;
 }
 
 
-bool BrightnessContrastSaturationParams::operator!=(const BrightnessContrastSaturationParams &other) const
+bool SaturationParams::operator!=(const SaturationParams &other) const
 {
     return !(*this == other);
 }
@@ -702,6 +684,7 @@ bool BrightnessContrastSaturationParams::operator!=(const BrightnessContrastSatu
 
 ToneCurveParams::ToneCurveParams():
     enabled(false),
+    contrast(0),
     curve{
         DCT_Linear
     },
@@ -722,6 +705,7 @@ ToneCurveParams::ToneCurveParams():
 bool ToneCurveParams::operator ==(const ToneCurveParams& other) const
 {
     return enabled == other.enabled
+        && contrast == other.contrast
         && curve == other.curve
         && curve2 == other.curve2
         && curveMode == other.curveMode
@@ -738,8 +722,11 @@ bool ToneCurveParams::operator !=(const ToneCurveParams& other) const
 }
 
 
-LCurveParams::LCurveParams() :
+LabCurveParams::LabCurveParams() :
     enabled(false),
+    brightness(0),
+    contrast(0),
+    chromaticity(0),
     lcurve{
         DCT_Linear
     },
@@ -748,56 +735,23 @@ LCurveParams::LCurveParams() :
     },
     bcurve{
         DCT_Linear
-    },
-    cccurve{
-        DCT_Linear
-    },
-    chcurve{
-        FCT_Linear
-    },
-    lhcurve{
-        FCT_Linear
-    },
-    hhcurve{
-        FCT_Linear
-    },
-    lccurve{
-        DCT_Linear
-    },
-    clcurve{
-        DCT_Linear
-    },
-    brightness(0),
-    contrast(0),
-    chromaticity(0),
-    avoidcolorshift(false),
-    rstprotection(0),
-    lcredsk(true)
+    }
 {
 }
 
-bool LCurveParams::operator ==(const LCurveParams& other) const
+bool LabCurveParams::operator ==(const LabCurveParams& other) const
 {
     return
         enabled == other.enabled
-        && lcurve == other.lcurve
-        && acurve == other.acurve
-        && bcurve == other.bcurve
-        && cccurve == other.cccurve
-        && chcurve == other.chcurve
-        && lhcurve == other.lhcurve
-        && hhcurve == other.hhcurve
-        && lccurve == other.lccurve
-        && clcurve == other.clcurve
         && brightness == other.brightness
         && contrast == other.contrast
         && chromaticity == other.chromaticity
-        && avoidcolorshift == other.avoidcolorshift
-        && rstprotection == other.rstprotection
-        && lcredsk == other.lcredsk;
+        && lcurve == other.lcurve
+        && acurve == other.acurve
+        && bcurve == other.bcurve;
 }
 
-bool LCurveParams::operator !=(const LCurveParams& other) const
+bool LabCurveParams::operator !=(const LabCurveParams& other) const
 {
     return !(*this == other);
 }
@@ -833,16 +787,15 @@ bool RGBCurvesParams::operator !=(const RGBCurvesParams& other) const
 
 LocalContrastParams::LocalContrastParams():
     enabled(false),
-    mode(USM),
-    radius(80),
-    amount(0.2),
-    darkness(1.0),
-    lightness(1.0),
     contrast(0),
     curve{
         static_cast<double>(FCT_MinMaxCPoints),
         0.0,
         0.50,
+        0.35,
+        0.35,
+        0.50,
+        0.675,
         0.35,
         0.35,
         1.00,
@@ -858,11 +811,6 @@ bool LocalContrastParams::operator==(const LocalContrastParams &other) const
 {
     return
         enabled == other.enabled
-        && mode == other.mode
-        && radius == other.radius
-        && amount == other.amount
-        && darkness == other.darkness
-        && lightness == other.lightness
         && contrast == other.contrast
         && curve == other.curve;
 }
@@ -928,8 +876,7 @@ WBParams::WBParams() :
     method("Camera"),
     temperature(6504),
     green(1.0),
-    equal(1.0),
-    tempBias(0.0)
+    equal(1.0)
 {
 }
 
@@ -940,8 +887,7 @@ bool WBParams::operator ==(const WBParams& other) const
         && method == other.method
         && temperature == other.temperature
         && green == other.green
-        && equal == other.equal
-        && tempBias == other.tempBias;
+        && equal == other.equal;
 }
 
 bool WBParams::operator !=(const WBParams& other) const
@@ -952,40 +898,40 @@ bool WBParams::operator !=(const WBParams& other) const
 const std::vector<WBEntry>& WBParams::getWbEntries()
 {
     static const std::vector<WBEntry> wb_entries = {
-        {"Camera",               WBEntry::Type::CAMERA,      M("TP_WBALANCE_CAMERA"),         0, 1.f,   1.f,   0.f},
-        {"Auto",                 WBEntry::Type::AUTO,        M("TP_WBALANCE_AUTO"),           0, 1.f,   1.f,   0.f},
-        {"Daylight",             WBEntry::Type::DAYLIGHT,    M("TP_WBALANCE_DAYLIGHT"),    5300, 1.f,   1.f,   0.f},
-        {"Cloudy",               WBEntry::Type::CLOUDY,      M("TP_WBALANCE_CLOUDY"),      6200, 1.f,   1.f,   0.f},
-        {"Shade",                WBEntry::Type::SHADE,       M("TP_WBALANCE_SHADE"),       7600, 1.f,   1.f,   0.f},
-        {"Water 1",              WBEntry::Type::WATER,       M("TP_WBALANCE_WATER1"),     35000, 0.3f,  1.1f,  0.f},
-        {"Water 2",              WBEntry::Type::WATER,       M("TP_WBALANCE_WATER2"),     48000, 0.63f, 1.38f, 0.f},
-        {"Tungsten",             WBEntry::Type::TUNGSTEN,    M("TP_WBALANCE_TUNGSTEN"),    2856, 1.f,   1.f,   0.f},
-        {"Fluo F1",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO1"),       6430, 1.f,   1.f,   0.f},
-        {"Fluo F2",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO2"),       4230, 1.f,   1.f,   0.f},
-        {"Fluo F3",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO3"),       3450, 1.f,   1.f,   0.f},
-        {"Fluo F4",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO4"),       2940, 1.f,   1.f,   0.f},
-        {"Fluo F5",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO5"),       6350, 1.f,   1.f,   0.f},
-        {"Fluo F6",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO6"),       4150, 1.f,   1.f,   0.f},
-        {"Fluo F7",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO7"),       6500, 1.f,   1.f,   0.f},
-        {"Fluo F8",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO8"),       5020, 1.f,   1.f,   0.f},
-        {"Fluo F9",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO9"),       4330, 1.f,   1.f,   0.f},
-        {"Fluo F10",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO10"),      5300, 1.f,   1.f,   0.f},
-        {"Fluo F11",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO11"),      4000, 1.f,   1.f,   0.f},
-        {"Fluo F12",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO12"),      3000, 1.f,   1.f,   0.f},
-        {"HMI Lamp",             WBEntry::Type::LAMP,        M("TP_WBALANCE_HMI"),         4800, 1.f,   1.f,   0.f},
-        {"GTI Lamp",             WBEntry::Type::LAMP,        M("TP_WBALANCE_GTI"),         5000, 1.f,   1.f,   0.f},
-        {"JudgeIII Lamp",        WBEntry::Type::LAMP,        M("TP_WBALANCE_JUDGEIII"),    5100, 1.f,   1.f,   0.f},
-        {"Solux Lamp 3500K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX35"),     3480, 1.f,   1.f,   0.f},
-        {"Solux Lamp 4100K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX41"),     3930, 1.f,   1.f,   0.f},
-        {"Solux Lamp 4700K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX47"),     4700, 1.f,   1.f,   0.f},
-        {"NG Solux Lamp 4700K",  WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX47_NG"),  4480, 1.f,   1.f,   0.f},
-        {"LED LSI Lumelex 2040", WBEntry::Type::LED,         M("TP_WBALANCE_LED_LSI"),     2970, 1.f,   1.f,   0.f},
-        {"LED CRS SP12 WWMR16",  WBEntry::Type::LED,         M("TP_WBALANCE_LED_CRS"),     3050, 1.f,   1.f,   0.f},
-        {"Flash 5500K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH55"),     5500, 1.f,   1.f,   0.f},
-        {"Flash 6000K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH60"),     6000, 1.f,   1.f,   0.f},
-        {"Flash 6500K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH65"),     6500, 1.f,   1.f,   0.f},
+        {"Camera",               WBEntry::Type::CAMERA,      M("TP_WBALANCE_CAMERA"),         0, 1.f,   1.f},
+        {"Auto",                 WBEntry::Type::AUTO,        M("TP_WBALANCE_AUTO"),           0, 1.f,   1.f},
+        {"Daylight",             WBEntry::Type::DAYLIGHT,    M("TP_WBALANCE_DAYLIGHT"),    5300, 1.f,   1.f},
+        {"Cloudy",               WBEntry::Type::CLOUDY,      M("TP_WBALANCE_CLOUDY"),      6200, 1.f,   1.f},
+        {"Shade",                WBEntry::Type::SHADE,       M("TP_WBALANCE_SHADE"),       7600, 1.f,   1.f},
+        {"Water 1",              WBEntry::Type::WATER,       M("TP_WBALANCE_WATER1"),     35000, 0.3f,  1.1f},
+        {"Water 2",              WBEntry::Type::WATER,       M("TP_WBALANCE_WATER2"),     48000, 0.63f, 1.38f},
+        {"Tungsten",             WBEntry::Type::TUNGSTEN,    M("TP_WBALANCE_TUNGSTEN"),    2856, 1.f,   1.f},
+        {"Fluo F1",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO1"),       6430, 1.f,   1.f},
+        {"Fluo F2",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO2"),       4230, 1.f,   1.f},
+        {"Fluo F3",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO3"),       3450, 1.f,   1.f},
+        {"Fluo F4",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO4"),       2940, 1.f,   1.f},
+        {"Fluo F5",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO5"),       6350, 1.f,   1.f},
+        {"Fluo F6",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO6"),       4150, 1.f,   1.f},
+        {"Fluo F7",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO7"),       6500, 1.f,   1.f},
+        {"Fluo F8",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO8"),       5020, 1.f,   1.f},
+        {"Fluo F9",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO9"),       4330, 1.f,   1.f},
+        {"Fluo F10",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO10"),      5300, 1.f,   1.f},
+        {"Fluo F11",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO11"),      4000, 1.f,   1.f},
+        {"Fluo F12",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO12"),      3000, 1.f,   1.f},
+        {"HMI Lamp",             WBEntry::Type::LAMP,        M("TP_WBALANCE_HMI"),         4800, 1.f,   1.f},
+        {"GTI Lamp",             WBEntry::Type::LAMP,        M("TP_WBALANCE_GTI"),         5000, 1.f,   1.f},
+        {"JudgeIII Lamp",        WBEntry::Type::LAMP,        M("TP_WBALANCE_JUDGEIII"),    5100, 1.f,   1.f},
+        {"Solux Lamp 3500K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX35"),     3480, 1.f,   1.f},
+        {"Solux Lamp 4100K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX41"),     3930, 1.f,   1.f},
+        {"Solux Lamp 4700K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX47"),     4700, 1.f,   1.f},
+        {"NG Solux Lamp 4700K",  WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX47_NG"),  4480, 1.f,   1.f},
+        {"LED LSI Lumelex 2040", WBEntry::Type::LED,         M("TP_WBALANCE_LED_LSI"),     2970, 1.f,   1.f},
+        {"LED CRS SP12 WWMR16",  WBEntry::Type::LED,         M("TP_WBALANCE_LED_CRS"),     3050, 1.f,   1.f},
+        {"Flash 5500K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH55"),     5500, 1.f,   1.f},
+        {"Flash 6000K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH60"),     6000, 1.f,   1.f},
+        {"Flash 6500K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH65"),     6500, 1.f,   1.f},
         // Should remain the last one
-        {"Custom",               WBEntry::Type::CUSTOM,      M("TP_WBALANCE_CUSTOM"),        0, 1.f,   1.f,   0.f}
+        {"Custom",               WBEntry::Type::CUSTOM,      M("TP_WBALANCE_CUSTOM"),        0, 1.f,   1.f}
     };
 
     return wb_entries;
@@ -1604,7 +1550,8 @@ BlackWhiteParams::BlackWhiteParams() :
     mixerBlue(33),
     gammaRed(0),
     gammaGreen(0),
-    gammaBlue(0)
+    gammaBlue(0),
+    colorCast(0, 0, false)
 {
 }
 
@@ -1619,7 +1566,8 @@ bool BlackWhiteParams::operator ==(const BlackWhiteParams& other) const
         && mixerBlue == other.mixerBlue
         && gammaRed == other.gammaRed
         && gammaGreen == other.gammaGreen
-        && gammaBlue == other.gammaBlue;
+        && gammaBlue == other.gammaBlue
+        && colorCast == other.colorCast;
 }
 
 bool BlackWhiteParams::operator !=(const BlackWhiteParams& other) const
@@ -2321,11 +2269,11 @@ void ProcParams::setDefaults()
 {
     exposure = ExposureParams();
 
-    brightContrSat = BrightnessContrastSaturationParams();
+    saturation = SaturationParams();
         
     toneCurve = ToneCurveParams();
 
-    labCurve = LCurveParams();
+    labCurve = LabCurveParams();
 
     rgbCurves = RGBCurvesParams();
 
@@ -2477,15 +2425,7 @@ int ProcParams::save(bool save_general,
 // Exposure
         if (RELEVANT_(exposure)) {
             saveToKeyfile("Exposure", "Enabled", exposure.enabled, keyFile);
-            saveToKeyfile("Exposure", "Auto", exposure.autoexp, keyFile);
-            saveToKeyfile("Exposure", "Clip", exposure.clip, keyFile);
             saveToKeyfile("Exposure", "Compensation", exposure.expcomp, keyFile);
-            saveToKeyfile("Exposure", "Black", exposure.black, keyFile);
-            saveToKeyfile("Exposure", "HighlightCompr", exposure.hlcompr, keyFile);
-            saveToKeyfile("Exposure", "HighlightComprThreshold", exposure.hlcomprthresh, keyFile);
-            saveToKeyfile("Exposure", "ShadowCompr", exposure.shcompr, keyFile);
-            saveToKeyfile("Exposure", "ClampOOG", exposure.clampOOG, keyFile);
-
             Glib::ustring hr = "Off";
             switch (exposure.hrmode) {
             case ExposureParams::HR_OFF: hr = "Off"; break;
@@ -2496,17 +2436,16 @@ int ProcParams::save(bool save_general,
         }
 
 // Brightness, Contrast, Saturation
-        if (RELEVANT_(brightContrSat)) {
-            saveToKeyfile("BrightnessContrastSaturation", "Enabled", brightContrSat.enabled, keyFile);
-            saveToKeyfile("BrightnessContrastSaturation", "Brightness", brightContrSat.brightness, keyFile);
-            saveToKeyfile("BrightnessContrastSaturation", "Contrast", brightContrSat.contrast, keyFile);
-            saveToKeyfile("BrightnessContrastSaturation", "Saturation", brightContrSat.saturation, keyFile);
-            saveToKeyfile("BrightnessContrastSaturation", "Vibrance", brightContrSat.vibrance, keyFile);
+        if (RELEVANT_(saturation)) {
+            saveToKeyfile("Saturation", "Enabled", saturation.enabled, keyFile);
+            saveToKeyfile("Saturation", "Saturation", saturation.saturation, keyFile);
+            saveToKeyfile("Saturation", "Vibrance", saturation.vibrance, keyFile);
         }
 
 // Tone curve
         if (RELEVANT_(toneCurve)) {
             saveToKeyfile("ToneCurve", "Enabled", toneCurve.enabled, keyFile);
+            saveToKeyfile("ToneCurve", "Contrast", toneCurve.contrast, keyFile);
             saveToKeyfile("ToneCurve", "HistogramMatching", toneCurve.histmatching, keyFile);
             saveToKeyfile("ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching, keyFile);
 
@@ -2530,11 +2469,6 @@ int ProcParams::save(bool save_general,
 // Local contrast
         if (RELEVANT_(localContrast)) {
             saveToKeyfile("Local Contrast", "Enabled", localContrast.enabled, keyFile);
-            saveToKeyfile("Local Contrast", "Mode", int(localContrast.mode), keyFile);
-            saveToKeyfile("Local Contrast", "Radius", localContrast.radius, keyFile);
-            saveToKeyfile("Local Contrast", "Amount", localContrast.amount, keyFile);
-            saveToKeyfile("Local Contrast", "Darkness", localContrast.darkness, keyFile);
-            saveToKeyfile("Local Contrast", "Lightness", localContrast.lightness, keyFile);
             saveToKeyfile("Local Contrast", "Contrast", localContrast.contrast, keyFile);
             saveToKeyfile("Local Contrast", "Curve", localContrast.curve, keyFile);
         }
@@ -2562,6 +2496,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Black & White", "GammaRed", blackwhite.gammaRed, keyFile);
             saveToKeyfile("Black & White", "GammaGreen", blackwhite.gammaGreen, keyFile);
             saveToKeyfile("Black & White", "GammaBlue", blackwhite.gammaBlue, keyFile);
+            saveToKeyfile("Black & White", "ColorCast", blackwhite.colorCast.toVector(), keyFile);
         }
 
 // HSL equalizer
@@ -2579,18 +2514,9 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Luminance Curve", "Brightness", labCurve.brightness, keyFile);
             saveToKeyfile("Luminance Curve", "Contrast", labCurve.contrast, keyFile);
             saveToKeyfile("Luminance Curve", "Chromaticity", labCurve.chromaticity, keyFile);
-            saveToKeyfile("Luminance Curve", "AvoidColorShift", labCurve.avoidcolorshift, keyFile);
-            saveToKeyfile("Luminance Curve", "RedAndSkinTonesProtection", labCurve.rstprotection, keyFile);
-            saveToKeyfile("Luminance Curve", "LCredsk", labCurve.lcredsk, keyFile);
             saveToKeyfile("Luminance Curve", "LCurve", labCurve.lcurve, keyFile);
             saveToKeyfile("Luminance Curve", "aCurve", labCurve.acurve, keyFile);
             saveToKeyfile("Luminance Curve", "bCurve", labCurve.bcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "ccCurve", labCurve.cccurve, keyFile);
-            saveToKeyfile("Luminance Curve", "chCurve", labCurve.chcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "lhCurve", labCurve.lhcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "hhCurve", labCurve.hhcurve, keyFile);
-            saveToKeyfile("Luminance Curve", "LcCurve", labCurve.lccurve, keyFile);
-            saveToKeyfile("Luminance Curve", "ClCurve", labCurve.clcurve, keyFile);
         }
 
 // Sharpening
@@ -2621,7 +2547,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("White Balance", "Temperature", wb.temperature, keyFile);
             saveToKeyfile("White Balance", "Green", wb.green, keyFile);
             saveToKeyfile("White Balance", "Equal", wb.equal, keyFile);
-            saveToKeyfile("White Balance", "TemperatureBias", wb.tempBias, keyFile);
         }
 
 
@@ -3178,24 +3103,7 @@ int ProcParams::load(bool load_general,
             if (keyFile.has_group("Exposure")) {
                 if (RELEVANT_(exposure)) {
                     exposure.enabled = true;
-                    
-                    if (ppVersion < PPVERSION_AEXP) {
-                        exposure.autoexp = false; // prevent execution of autoexp when opening file created with earlier versions of autoexp algorithm
-                    } else {
-                        assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
-                    }
-
-                    assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
                     assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
-                    assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
-                    assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
-                    assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
-                    assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
-                    assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
-
-                    if (exposure.shcompr > 100) {
-                        exposure.shcompr = 100; // older pp3 files can have values above 100.
-                    }
                 }
 
                 if (RELEVANT_(toneCurve)) {
@@ -3216,11 +3124,9 @@ int ProcParams::load(bool load_general,
                         assignFromKeyfile(keyFile, "Exposure", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
                     }
                 }
-                if (RELEVANT_(brightContrSat)) {
-                    brightContrSat.enabled = true;
-                    assignFromKeyfile(keyFile, "Exposure", "Brightness", brightContrSat.brightness);
-                    assignFromKeyfile(keyFile, "Exposure", "Contrast", brightContrSat.contrast);
-                    assignFromKeyfile(keyFile, "Exposure", "Saturation", brightContrSat.saturation);
+                if (RELEVANT_(saturation)) {
+                    saturation.enabled = true;
+                    assignFromKeyfile(keyFile, "Exposure", "Saturation", saturation.saturation);
                 }
             }
             if (keyFile.has_group("HLRecovery") && RELEVANT_(exposure)) {
@@ -3241,14 +3147,7 @@ int ProcParams::load(bool load_general,
         } else {
             if (keyFile.has_group("Exposure") && RELEVANT_(exposure)) {
                 assignFromKeyfile(keyFile, "Exposure", "Enabled", exposure.enabled);
-                assignFromKeyfile(keyFile, "Exposure", "Auto", exposure.autoexp);
-                assignFromKeyfile(keyFile, "Exposure", "Clip", exposure.clip);
                 assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
-                assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
-                assignFromKeyfile(keyFile, "Exposure", "HighlightCompr", exposure.hlcompr);
-                assignFromKeyfile(keyFile, "Exposure", "HighlightComprThreshold", exposure.hlcomprthresh);
-                assignFromKeyfile(keyFile, "Exposure", "ShadowCompr", exposure.shcompr);
-                assignFromKeyfile(keyFile, "Exposure", "ClampOOG", exposure.clampOOG);
                 if (ppVersion >= 1000) {
                     Glib::ustring hr;
                     assignFromKeyfile(keyFile, "Exposure", "HLRecovery", hr);
@@ -3275,15 +3174,14 @@ int ProcParams::load(bool load_general,
                     }
                 }
             }
-            if (keyFile.has_group("BrightnessContrastSaturation") && RELEVANT_(brightContrSat)) {
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Enabled", brightContrSat.enabled);
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Brightness", brightContrSat.brightness);
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Contrast", brightContrSat.contrast);
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Saturation", brightContrSat.saturation);
-                assignFromKeyfile(keyFile, "BrightnessContrastSaturation", "Vibrance", brightContrSat.vibrance);
+            if (keyFile.has_group("Saturation") && RELEVANT_(saturation)) {
+                assignFromKeyfile(keyFile, "Saturation", "Enabled", saturation.enabled);
+                assignFromKeyfile(keyFile, "Saturation", "Saturation", saturation.saturation);
+                assignFromKeyfile(keyFile, "Saturation", "Vibrance", saturation.vibrance);
             }
             if (keyFile.has_group("ToneCurve") && RELEVANT_(toneCurve)) {
                 assignFromKeyfile(keyFile, "ToneCurve", "Enabled", toneCurve.enabled);
+                assignFromKeyfile(keyFile, "ToneCurve", "Contrast", toneCurve.contrast);
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveMode", tc_mapping, toneCurve.curveMode);
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveMode2", tc_mapping, toneCurve.curveMode2);
 
@@ -3332,6 +3230,12 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Black & White", "GammaBlue", blackwhite.gammaBlue);
             assignFromKeyfile(keyFile, "Black & White", "Filter", blackwhite.filter);
             assignFromKeyfile(keyFile, "Black & White", "Setting", blackwhite.setting);
+            if (keyFile.has_key("Black & White", "ColorCast")) {
+                std::vector<int> ccast = keyFile.get_integer_list("Black & White", "ColorCast");
+                if (ccast.size() >= 2) {
+                    blackwhite.colorCast.setValues(ccast[0], ccast[1]);
+                }
+            }
         }
 
         if (keyFile.has_group("HSL Equalizer") && RELEVANT_(hsl)) {
@@ -3344,67 +3248,18 @@ int ProcParams::load(bool load_general,
         
         if (keyFile.has_group("Local Contrast") && RELEVANT_(localContrast)) {
             assignFromKeyfile(keyFile, "Local Contrast", "Enabled", localContrast.enabled);
-            int m = static_cast<int>(LocalContrastParams::USM);
-            assignFromKeyfile(keyFile, "Local Contrast", "Mode", m);
-            localContrast.mode = LocalContrastParams::Mode(min(max(m, 0), 1));
-            assignFromKeyfile(keyFile, "Local Contrast", "Radius", localContrast.radius);
-            assignFromKeyfile(keyFile, "Local Contrast", "Amount", localContrast.amount);
-            assignFromKeyfile(keyFile, "Local Contrast", "Darkness", localContrast.darkness);
-            assignFromKeyfile(keyFile, "Local Contrast", "Lightness", localContrast.lightness);
             assignFromKeyfile(keyFile, "Local Contrast", "Contrast", localContrast.contrast);
             assignFromKeyfile(keyFile, "Local Contrast", "Curve", localContrast.curve);
         }
 
         if (keyFile.has_group("Luminance Curve") && RELEVANT_(labCurve)) {
-            if (ppVersion >= 329) {
-                assignFromKeyfile(keyFile, "Luminance Curve", "Enabled", labCurve.enabled);
-            } else {
-                labCurve.enabled = true;
-            }
-
+            assignFromKeyfile(keyFile, "Luminance Curve", "Enabled", labCurve.enabled);
             assignFromKeyfile(keyFile, "Luminance Curve", "Brightness", labCurve.brightness);
             assignFromKeyfile(keyFile, "Luminance Curve", "Contrast", labCurve.contrast);
-
-            if (ppVersion < 303) {
-                // transform Saturation into Chromaticity
-                // if Saturation == 0, should we set BWToning on?
-                assignFromKeyfile(keyFile, "Luminance Curve", "Saturation", labCurve.chromaticity);
-                // transform AvoidColorClipping into AvoidColorShift
-                assignFromKeyfile(keyFile, "Luminance Curve", "AvoidColorClipping", labCurve.avoidcolorshift);
-            } else {
-                if (keyFile.has_key("Luminance Curve", "Chromaticity")) {
-                    labCurve.chromaticity = keyFile.get_integer("Luminance Curve", "Chromaticity");
-
-                    if (ppVersion >= 303 && ppVersion < 314 && labCurve.chromaticity == -100) {
-                        blackwhite.enabled = true;
-                    }
-                }
-
-                assignFromKeyfile(keyFile, "Luminance Curve", "AvoidColorShift", labCurve.avoidcolorshift);
-                assignFromKeyfile(keyFile, "Luminance Curve", "RedAndSkinTonesProtection", labCurve.rstprotection);
-            }
-
-            assignFromKeyfile(keyFile, "Luminance Curve", "LCredsk", labCurve.lcredsk);
-
-            if (ppVersion < 314) {
-                // Backward compatibility: If BWtoning is true, Chromaticity has to be set to -100, which will produce the same effect
-                // and will enable the b&w toning mode ('a' & 'b' curves)
-                if (keyFile.has_key("Luminance Curve", "BWtoning")) {
-                    if (keyFile.get_boolean("Luminance Curve", "BWtoning")) {
-                        labCurve.chromaticity = -100;
-                    }
-                }
-            }
-
+            assignFromKeyfile(keyFile, "Luminance Curve", "Chromaticity", labCurve.chromaticity);
             assignFromKeyfile(keyFile, "Luminance Curve", "LCurve", labCurve.lcurve);
             assignFromKeyfile(keyFile, "Luminance Curve", "aCurve", labCurve.acurve);
             assignFromKeyfile(keyFile, "Luminance Curve", "bCurve", labCurve.bcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "ccCurve", labCurve.cccurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "chCurve", labCurve.chcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "lhCurve", labCurve.lhcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "hhCurve", labCurve.hhcurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "LcCurve", labCurve.lccurve);
-            assignFromKeyfile(keyFile, "Luminance Curve", "ClCurve", labCurve.clcurve);
         }
 
         if (keyFile.has_group("Sharpening") && RELEVANT_(sharpening)) {
@@ -3450,7 +3305,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "White Balance", "Temperature", wb.temperature);
             assignFromKeyfile(keyFile, "White Balance", "Green", wb.green);
             assignFromKeyfile(keyFile, "White Balance", "Equal", wb.equal);
-            assignFromKeyfile(keyFile, "White Balance", "TemperatureBias", wb.tempBias);
         }
 
         if (keyFile.has_group("Defringing") && RELEVANT_(defringe)) {
@@ -4378,7 +4232,7 @@ bool ProcParams::operator ==(const ProcParams& other) const
 {
     return
         exposure == other.exposure
-        && brightContrSat == other.brightContrSat
+        && saturation == other.saturation
         && toneCurve == other.toneCurve
         && localContrast == other.localContrast
         && labCurve == other.labCurve

@@ -65,7 +65,6 @@ protected:
     Adjuster* temp;
     Adjuster* green;
     Adjuster* equal;
-    Adjuster* tempBias;
 
     Gtk::Button* spotbutton;
     int opt;

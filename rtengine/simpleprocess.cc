@@ -223,7 +223,7 @@ private:
         } else if (params.wb.method == "Auto") {
             double rm, gm, bm;
             imgsrc->getAutoWBMultipliers (rm, gm, bm);
-            currWB.update (rm, gm, bm, params.wb.equal, params.wb.tempBias);
+            currWB.update(rm, gm, bm, params.wb.equal);
         }
 
         if (params.denoise.enabled) {
@@ -238,13 +238,6 @@ private:
             pl->setProgress (0.50);
         }
 
-        if (params.exposure.enabled && params.exposure.autoexp) {
-            LUTu aehist;
-            int aehistcompr;
-            imgsrc->getAutoExpHistogram (aehist, aehistcompr);
-            params.brightContrSat.enabled = true;
-            ipf.getAutoExp (aehist, aehistcompr, params.exposure.clip, params.exposure.expcomp, params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
-        }
         if (params.toneCurve.histmatching) {
             if (!params.toneCurve.fromHistMatching) {
                 imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);
@@ -373,6 +366,7 @@ private:
                 }
             }
             if (params.prsharpening.enabled) {
+                ipf.setScale(1);
                 ipf.sharpening(img, params.prsharpening);
             }
         }
@@ -475,7 +469,7 @@ private:
             img = resized;
         }
 
-        params.resize.enabled = false;
+        //params.resize.enabled = false;
 
         fw = imw;
         fh = imh;

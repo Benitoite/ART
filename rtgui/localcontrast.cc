@@ -30,29 +30,11 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     auto m = ProcEventMapper::getInstance();
     auto EVENT = DISPLAY;
     EvLocalContrastEnabled = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_ENABLED");
-    EvLocalContrastMode = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_MODE");
-    EvLocalContrastRadius = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_RADIUS");
-    EvLocalContrastAmount = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_AMOUNT");
-    EvLocalContrastDarkness = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DARKNESS");
-    EvLocalContrastLightness = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_LIGHTNESS");
     EvLocalContrastContrast = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CONTRAST");
     EvLocalContrastCurve = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CURVE");
 
-    usm = Gtk::manage(new Gtk::VBox());
-    wavelets = Gtk::manage(new Gtk::VBox());
+    Gtk::VBox *wavelets = Gtk::manage(new Gtk::VBox());
 
-    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
-    mode = Gtk::manage(new MyComboBoxText ());
-    mode->append(M("TP_LOCALCONTRAST_USM"));
-    mode->append(M("TP_LOCALCONTRAST_WAVELETS"));
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_LOCALCONTRAST_MODE") + ":")), Gtk::PACK_SHRINK, 4);
-    hb->pack_start(*mode);
-    pack_start(*hb);
-    
-    radius = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_RADIUS"), 20., 200., 1., 80.));
-    amount = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_AMOUNT"), 0., 1., 0.01, 0.2));
-    darkness = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_DARKNESS"), 0., 3., 0.01, 1.));
-    lightness = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_LIGHTNESS"), 0., 3., 0.01, 1.));
     contrast = Gtk::manage(new Adjuster(M("TP_LOCALCONTRAST_CONTRAST"), -100., 100., 0.1, 0.));
 
     const LocalContrastParams default_params;
@@ -65,28 +47,11 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     cg->curveListComplete();
     cg->show();
     
-    mode->signal_changed().connect(sigc::mem_fun(*this, &LocalContrast::modeChanged));
-    
-    radius->setAdjusterListener(this);
-    amount->setAdjusterListener(this);
-    darkness->setAdjusterListener(this);
-    lightness->setAdjusterListener(this);
     contrast->setAdjusterListener(this);
-
-    radius->show();
-    amount->show();
-    darkness->show();
-    lightness->show();
-
-    usm->pack_start(*radius);
-    usm->pack_start(*amount);
-    usm->pack_start(*darkness);
-    usm->pack_start(*lightness);
 
     wavelets->pack_start(*cg);
     wavelets->pack_start(*contrast);
 
-    pack_start(*usm);
     pack_start(*wavelets);
 }
 
@@ -96,19 +61,8 @@ void LocalContrast::read(const ProcParams *pp)
     disableListener();
 
     setEnabled(pp->localContrast.enabled);
-    if (pp->localContrast.mode == LocalContrastParams::USM) {
-        mode->set_active(0);
-    } else {
-        mode->set_active(1);
-    }
-    radius->setValue(pp->localContrast.radius);
-    amount->setValue(pp->localContrast.amount);
-    darkness->setValue(pp->localContrast.darkness);
-    lightness->setValue(pp->localContrast.lightness);
     contrast->setValue(pp->localContrast.contrast);
     curve->setCurve(pp->localContrast.curve);
-
-    modeChanged();
 
     enableListener();
 }
@@ -116,11 +70,6 @@ void LocalContrast::read(const ProcParams *pp)
 
 void LocalContrast::write(ProcParams *pp)
 {
-    pp->localContrast.mode = LocalContrastParams::Mode(min(mode->get_active_row_number(), 1));
-    pp->localContrast.radius = radius->getValue();
-    pp->localContrast.amount = amount->getValue();
-    pp->localContrast.darkness = darkness->getValue();
-    pp->localContrast.lightness = lightness->getValue();
     pp->localContrast.enabled = getEnabled();
     pp->localContrast.contrast = contrast->getValue();
     pp->localContrast.curve = curve->getCurve();
@@ -128,10 +77,6 @@ void LocalContrast::write(ProcParams *pp)
 
 void LocalContrast::setDefaults(const ProcParams *defParams)
 {
-    radius->setDefault(defParams->localContrast.radius);
-    amount->setDefault(defParams->localContrast.amount);
-    darkness->setDefault(defParams->localContrast.darkness);
-    lightness->setDefault(defParams->localContrast.lightness);
     contrast->setDefault(defParams->localContrast.contrast);
     curve->setResetCurve(FlatCurveType(defParams->localContrast.curve.at(0)), defParams->localContrast.curve);
 }
@@ -139,15 +84,7 @@ void LocalContrast::setDefaults(const ProcParams *defParams)
 void LocalContrast::adjusterChanged(Adjuster* a, double newval)
 {
     if (listener && getEnabled()) {
-        if (a == radius) {
-            listener->panelChanged(EvLocalContrastRadius, a->getTextValue());
-        } else if (a == amount) {
-            listener->panelChanged(EvLocalContrastAmount, a->getTextValue());
-        } else if (a == darkness) {
-            listener->panelChanged(EvLocalContrastDarkness, a->getTextValue());
-        } else if (a == lightness) {
-            listener->panelChanged(EvLocalContrastLightness, a->getTextValue());
-        } else if (a == contrast) {
+        if (a == contrast) {
             listener->panelChanged(EvLocalContrastContrast, a->getTextValue());
         }
     }
@@ -167,23 +104,6 @@ void LocalContrast::enabledChanged ()
         } else {
             listener->panelChanged(EvLocalContrastEnabled, M("GENERAL_DISABLED"));
         }
-    }
-}
-
-
-void LocalContrast::modeChanged()
-{
-    removeIfThere(this, usm, false);
-    removeIfThere(this, wavelets, false);
-
-    if (mode->get_active_row_number() == 0) {
-        pack_start(*usm);
-    } else if (mode->get_active_row_number() == 1) {
-        pack_start(*wavelets);
-    }
-
-    if (listener && getEnabled() ) {
-        listener->panelChanged(EvLocalContrastMode, mode->get_active_text());
     }
 }
 

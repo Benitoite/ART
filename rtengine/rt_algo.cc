@@ -393,7 +393,7 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
                         }
                     }
 
-                    contrastThreshold = minvar <= 4.f ? calcContrastThreshold(luminance, topLeftYStart + minI, topLeftXStart + minJ, tilesize) : 0.f;
+                    contrastThreshold = minvar <= 8.f ? calcContrastThreshold(luminance, topLeftYStart + minI, topLeftXStart + minJ, tilesize) : 0.f;
                 }
             }
         }

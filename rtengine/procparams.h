@@ -333,8 +333,6 @@ private:
 
 struct ExposureParams {
     bool enabled;
-    bool autoexp;
-    double clip;
     enum HighlightReconstruction {
         HR_OFF,
         HR_BLEND,
@@ -342,11 +340,6 @@ struct ExposureParams {
     };
     HighlightReconstruction hrmode;
     double expcomp;
-    int black;
-    int shcompr;
-    int hlcompr;        // Highlight Recovery's compression
-    int hlcomprthresh;  // Highlight Recovery's threshold
-    bool clampOOG; // clamp out of gamut colours
 
     ExposureParams();
 
@@ -355,17 +348,15 @@ struct ExposureParams {
 };
 
 
-struct BrightnessContrastSaturationParams {
+struct SaturationParams {
     bool enabled;
-    int brightness;
-    int contrast;
     int saturation;
     int vibrance;
 
-    BrightnessContrastSaturationParams();
+    SaturationParams();
 
-    bool operator ==(const BrightnessContrastSaturationParams &other) const;
-    bool operator !=(const BrightnessContrastSaturationParams &other) const;
+    bool operator ==(const SaturationParams &other) const;
+    bool operator !=(const SaturationParams &other) const;
 };
 
 /**
@@ -383,6 +374,7 @@ struct ToneCurveParams {
         PERCEPTUAL         // Keep color appearance constant using perceptual modeling
     };
 
+    int contrast;
     std::vector<double> curve;
     std::vector<double> curve2;
     TcMode curveMode;
@@ -401,28 +393,19 @@ struct ToneCurveParams {
 /**
   * Parameters of the luminance curve
   */
-struct LCurveParams {
+struct LabCurveParams {
     bool enabled;
-    std::vector<double>   lcurve;
-    std::vector<double>   acurve;
-    std::vector<double>   bcurve;
-    std::vector<double>   cccurve;
-    std::vector<double>   chcurve;
-    std::vector<double>   lhcurve;
-    std::vector<double>   hhcurve;
-    std::vector<double>   lccurve;
-    std::vector<double>   clcurve;
-    int     brightness;
-    int     contrast;
-    int     chromaticity;
-    bool    avoidcolorshift;
-    double  rstprotection;
-    bool    lcredsk;
+    int brightness;
+    int contrast;
+    int chromaticity;
+    std::vector<double> lcurve;
+    std::vector<double> acurve;
+    std::vector<double> bcurve;
 
-    LCurveParams();
+    LabCurveParams();
 
-    bool operator ==(const LCurveParams& other) const;
-    bool operator !=(const LCurveParams& other) const;
+    bool operator ==(const LabCurveParams& other) const;
+    bool operator !=(const LabCurveParams& other) const;
 };
 
 
@@ -431,15 +414,6 @@ struct LCurveParams {
  */
 struct LocalContrastParams {
     bool enabled;
-    enum Mode {
-        USM,
-        WAVELETS
-    };
-    Mode mode;
-    int radius;
-    double amount;
-    double darkness;
-    double lightness;
     double contrast;
     std::vector<double> curve;
 
@@ -521,7 +495,6 @@ struct WBEntry {
     int temperature;
     double green;
     double equal;
-    double tempBias;
 };
 
 struct WBParams {
@@ -530,7 +503,6 @@ struct WBParams {
     int             temperature;
     double          green;
     double          equal;
-    double          tempBias;
 
     WBParams();
 
@@ -922,6 +894,7 @@ struct BlackWhiteParams {
     int gammaRed;
     int gammaGreen;
     int gammaBlue;
+    Threshold<int> colorCast;
 
     BlackWhiteParams();
 
@@ -1366,9 +1339,9 @@ struct FilmNegativeParams {
 class ProcParams {
 public:
     ExposureParams          exposure;
-    BrightnessContrastSaturationParams brightContrSat;
+    SaturationParams saturation;
     ToneCurveParams         toneCurve;       ///< Tone curve parameters
-    LCurveParams            labCurve;        ///< CIELAB luminance curve parameters
+    LabCurveParams          labCurve;        ///< CIELAB luminance curve parameters
     LocalContrastParams     localContrast;   ////< Local contrast parameters
     RGBCurvesParams         rgbCurves;       ///< RGB curves parameters
     SharpeningParams        sharpening;      ///< Sharpening parameters

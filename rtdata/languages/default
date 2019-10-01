@@ -353,7 +353,7 @@ HISTORY_MSG_96;L*a*b* - a* curve
 HISTORY_MSG_97;L*a*b* - b* curve
 HISTORY_MSG_98;Demosaicing method
 HISTORY_MSG_99;Hot pixel filter
-HISTORY_MSG_100;B, C &amp; S - Saturation
+HISTORY_MSG_100;S&amp;V - Saturation
 HISTORY_MSG_101;HSL - Hue
 HISTORY_MSG_102;HSL - Saturation
 HISTORY_MSG_103;HSL - Lightness
@@ -729,7 +729,8 @@ HISTORY_MSG_490;DRC - Amount
 HISTORY_MSG_491;White Balance
 HISTORY_MSG_492;RGB Curves
 HISTORY_MSG_493;L*a*b* Adjustments
-HISTORY_MSG_BRIGHTCONTRSAT_VIBRANCE;B, C &amp; S - Vibrance
+HISTORY_MSG_BWMIX_COLORCAST;B&amp;W - Color cast
+HISTORY_MSG_SATURATION_VIBRANCE;S&amp;V - Vibrance
 HISTORY_MSG_CBDL_LIST;CbDL - regions
 HISTORY_MSG_CBDL_HUEMASK;CbDL - H mask
 HISTORY_MSG_CBDL_CHROMATICITYMASK;CbDL - C mask
@@ -841,7 +842,7 @@ HISTORY_MSG_SOFTLIGHT_STRENGTH;Soft light - Strength
 HISTORY_MSG_TM_FATTAL_ANCHOR;DRC - Anchor
 HISTORY_MSG_TONE_EQUALIZER_ENABLED;Tone equalizer
 HISTORY_MSG_TONE_EQUALIZER_BANDS;Tone equalizer - Bands
-HISTORY_MSG_TONE_EQUALIZER_DETAIL;Tone equalizer - Detail
+HISTORY_MSG_TONE_EQUALIZER_DETAIL;Tone equalizer - Regularization
 HISTORY_MSG_TONECURVE_SATCURVE;Tone curve - Saturation
 HISTORY_NEWSNAPSHOT;Add
 HISTORY_NEWSNAPSHOT_TOOLTIP;Shortcut: <b>Alt-s</b>
@@ -972,7 +973,9 @@ MAIN_TAB_COLOR;Color
 MAIN_TAB_COLOR_TOOLTIP;Shortcut: <b>Alt-c</b>
 MAIN_TAB_DETAIL;Detail
 MAIN_TAB_DETAIL_TOOLTIP;Shortcut: <b>Alt-d</b>
-MAIN_TAB_DEVELOP; Batch Edit 
+MAIN_TAB_DEVELOP; Batch Edit
+MAIN_TAB_EFFECTS;Special effects
+MAIN_TAB_EFFECTS_TOOLTIP;Shortcut: <b>Alt-f</b>
 MAIN_TAB_EXIF;Exif
 MAIN_TAB_EXPORT; Fast Export 
 MAIN_TAB_EXPOSURE;Exposure
@@ -1027,8 +1030,9 @@ OPTIONS_BUNDLED_MISSING;The bundled profile "<b>%1</b>" could not be found!\n\nY
 OPTIONS_DEFIMG_MISSING;The default profile for <b>non-raw photos</b> could not be found or is not set.\n\nPlease check your profiles' directory, it may be missing or damaged.\n\n"<b>%1</b>" will be used instead.
 OPTIONS_DEFRAW_MISSING;The default profile for <b>raw photos</b> could not be found or is not set.\n\nPlease check your profiles' directory, it may be missing or damaged.\n\n"<b>%1</b>" will be used instead.
 PARTIALPASTE_ADVANCEDGROUP;Advanced Settings
+PARTIALPASTE_EFFECTSGROUP;Special Effects Settings
 PARTIALPASTE_EXPOSUREGROUP;Exposure Settings
-PARTIALPASTE_BRIGHTCONTRSAT;Brigthness, contrast & saturation
+PARTIALPASTE_SATURATION;Saturation & vibrance
 PARTIALPASTE_TONECURVE;Tone curves
 PARTIALPASTE_CACORRECTION;Chromatic aberration correction
 PARTIALPASTE_CHANNELMIXER;Channel mixer
@@ -1400,11 +1404,11 @@ TOOLBAR_TOOLTIP_CROP;<b>Crop</b> selection.\nShortcut: <b>c</b>\nMove the crop u
 TOOLBAR_TOOLTIP_HAND;Hand tool.\nShortcut: <b>h</b>
 TOOLBAR_TOOLTIP_STRAIGHTEN;<b>Straighten</b> / <b>fine rotation</b>.\nShortcut: <b>s</b>\n\nIndicate the vertical or horizontal by drawing a guide line over the image preview. Angle of rotation will be shown next to the guide line. Center of rotation is the geometrical center of the image.
 TOOLBAR_TOOLTIP_WB;Spot white balance.\nShortcut: <b>w</b>
-TP_BRIGHTCONTRSAT_LABEL;Brightness, Contrast & Saturation
+TP_SATURATION_LABEL;Saturation & Vibrance
 TP_BRIGHTCONTRSAT_BRIGHTNESS;Brightness
 TP_BRIGHTCONTRSAT_CONTRAST;Contrast
-TP_BRIGHTCONTRSAT_SATURATION;Saturation
-TP_BRIGHTCONTRSAT_VIBRANCE;Vibrance
+TP_SATURATION_SATURATION;Saturation
+TP_SATURATION_VIBRANCE;Vibrance
 TP_BWMIX_ALGO;Algorithm OYCPM
 TP_BWMIX_ALGO_LI;Linear
 TP_BWMIX_ALGO_SP;Special effects
@@ -1413,6 +1417,9 @@ TP_BWMIX_AUTOCH;Auto
 TP_BWMIX_CC_ENABLED;Adjust complementary color
 TP_BWMIX_CC_TOOLTIP;Enable to allow automatic adjustment of complementary colors in ROYGCBPM mode.
 TP_BWMIX_CHANNEL;Luminance equalizer
+TP_BWMIX_COLORCAST;Color cast
+TP_BWMIX_HUE;Hue
+TP_BWMIX_SATURATION;Saturation
 TP_BWMIX_CURVEEDITOR1;'Before' curve
 TP_BWMIX_CURVEEDITOR2;'After' curve
 TP_BWMIX_CURVEEDITOR_AFTER_TOOLTIP;Tone curve, after B&amp;W conversion, at the end of treatment.
@@ -2225,7 +2232,7 @@ TP_TONE_EQUALIZER_BAND_1;Shadows
 TP_TONE_EQUALIZER_BAND_2;Midtones
 TP_TONE_EQUALIZER_BAND_3;Highlights
 TP_TONE_EQUALIZER_BAND_4;Whites
-TP_TONE_EQUALIZER_DETAIL;Detail
+TP_TONE_EQUALIZER_DETAIL;Regularization
 TP_TONE_EQUALIZER_LABEL;Tone Equalizer
 TP_VIBRANCE_AVOIDCOLORSHIFT;Avoid color shift
 TP_VIBRANCE_CURVEEDITOR_SKINTONES;HH

@@ -41,8 +41,7 @@
 #include "StopWatch.h"
 #include "median.h"
 
-namespace
-{
+namespace {
 
 bool checkRawImageThumb (const rtengine::RawImage& raw_image)
 {
@@ -180,12 +179,11 @@ void scale_colors (rtengine::RawImage *ri, float scale_mul[4], float cblack[4], 
     }
 }
 
-}
+} // namespace
 
 extern Options options;
 
-namespace rtengine
-{
+namespace rtengine {
 
 extern const Settings *settings;
 
@@ -286,10 +284,10 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
             printf ("loadFromImage: Unsupported image type \"%s\"!\n", img->getType());
         }
 
-        ProcParams paramsForAutoExp; // Dummy for constructor
-        ImProcFunctions ipf (&paramsForAutoExp, false);
-        ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
-        tpp->aeValid = true;
+        // ProcParams paramsForAutoExp; // Dummy for constructor
+        // ImProcFunctions ipf (&paramsForAutoExp, false);
+        // ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
+        // tpp->aeValid = true;
 
         if (n > 0) {
             ColorTemp cTemp;
@@ -298,7 +296,6 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
             tpp->greenAWBMul = avg_g / double (n);
             tpp->blueAWBMul  = avg_b / double (n);
             tpp->wbEqual = wbEq;
-            tpp->wbTempBias = 0.0;
 
             cTemp.mul2temp (tpp->redAWBMul, tpp->greenAWBMul, tpp->blueAWBMul, tpp->wbEqual, tpp->autoWBTemp, tpp->autoWBGreen);
         }
@@ -922,10 +919,10 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 }
             }
         }
-        ProcParams paramsForAutoExp; // Dummy for constructor
-        ImProcFunctions ipf (&paramsForAutoExp, false);
-        ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
-        tpp->aeValid = true;
+        // ProcParams paramsForAutoExp; // Dummy for constructor
+        // ImProcFunctions ipf (&paramsForAutoExp, false);
+        // ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
+        // tpp->aeValid = true;
 
         if (ri->get_colors() == 1) {
             pixSum[0] = pixSum[1] = pixSum[2] = 1.;
@@ -943,7 +940,6 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
         tpp->greenAWBMul = ri->get_rgb_cam (1, 0) * reds + ri->get_rgb_cam (1, 1) * greens + ri->get_rgb_cam (1, 2) * blues;
         tpp->blueAWBMul  = ri->get_rgb_cam (2, 0) * reds + ri->get_rgb_cam (2, 1) * greens + ri->get_rgb_cam (2, 2) * blues;
         tpp->wbEqual = wbEq;
-        tpp->wbTempBias = 0.0;
 
         ColorTemp cTemp;
         cTemp.mul2temp (tpp->redAWBMul, tpp->greenAWBMul, tpp->blueAWBMul, tpp->wbEqual, tpp->autoWBTemp, tpp->autoWBGreen);
@@ -995,7 +991,6 @@ Thumbnail::Thumbnail () :
     autoWBTemp (2700),
     autoWBGreen (1.0),
     wbEqual (-1.0),
-    wbTempBias (0.0),
     aeHistCompression (3),
     aeValid(false),
     aeExposureCompensation(0.0),
@@ -1072,13 +1067,11 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     std::string camName = metadata->getCamera();
     
     // check if the WB's equalizer value has changed
-    if (wbEqual < (params.wb.equal - 5e-4) || wbEqual > (params.wb.equal + 5e-4) || wbTempBias < (params.wb.tempBias - 5e-4) || wbTempBias > (params.wb.tempBias + 5e-4)) {
+    if (wbEqual < (params.wb.equal - 5e-4) || wbEqual > (params.wb.equal + 5e-4)) {
         wbEqual = params.wb.equal;
-        wbTempBias = params.wb.tempBias;
         // recompute the autoWB
         ColorTemp cTemp;
         cTemp.mul2temp (redAWBMul, greenAWBMul, blueAWBMul, wbEqual, autoWBTemp, autoWBGreen);
-        autoWBTemp += autoWBTemp * wbTempBias;
     }
 
     // compute WB multipliers
@@ -1298,17 +1291,15 @@ void Thumbnail::getCamWB (double& temp, double& green)
     green = currWB.getGreen ();
 }
 
-void Thumbnail::getAutoWB (double& temp, double& green, double equal, double tempBias)
+void Thumbnail::getAutoWB (double& temp, double& green, double equal)
 {
 
-    if (equal != wbEqual || tempBias != wbTempBias) {
+    if (equal != wbEqual) {
         // compute the values depending on equal
         ColorTemp cTemp;
         wbEqual = equal;
-        wbTempBias = tempBias;
         // compute autoWBTemp and autoWBGreen
         cTemp.mul2temp (redAWBMul, greenAWBMul, blueAWBMul, wbEqual, autoWBTemp, autoWBGreen);
-        autoWBTemp += autoWBTemp * tempBias;
     }
 
     temp = autoWBTemp;
@@ -1322,16 +1313,6 @@ void Thumbnail::getAutoWBMultipliers (double& rm, double& gm, double& bm)
     bm = blueAWBMul;
 }
 
-void Thumbnail::applyAutoExp (procparams::ProcParams& params)
-{
-
-    if (params.exposure.enabled && params.exposure.autoexp && aeHistogram) {
-        ImProcFunctions ipf (&params, false);
-        params.brightContrSat.enabled = true;
-        ipf.getAutoExp (aeHistogram, aeHistCompression, params.exposure.clip, params.exposure.expcomp,
-                        params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
-    }
-}
 
 void Thumbnail::getSpotWB (const procparams::ProcParams& params, int xp, int yp, int rect, double& rtemp, double& rgreen)
 {
@@ -1998,43 +1979,6 @@ bool Thumbnail::writeEmbProfile (const Glib::ustring& fname)
     return false;
 }
 
-bool Thumbnail::readAEHistogram  (const Glib::ustring& fname)
-{
-
-    FILE* f = g_fopen(fname.c_str(), "rb");
-
-    if (!f) {
-        aeHistogram.reset();
-    } else {
-        aeHistogram(65536 >> aeHistCompression);
-        const size_t histoBytes = (65536 >> aeHistCompression) * sizeof(aeHistogram[0]);
-        const size_t bytesRead = fread(&aeHistogram[0], 1, histoBytes, f);
-        fclose (f);
-        if (bytesRead != histoBytes) {
-            aeHistogram.reset();
-            return false;
-        }
-        return true;
-    }
-
-    return false;
-}
-
-bool Thumbnail::writeAEHistogram (const Glib::ustring& fname)
-{
-
-    if (aeHistogram) {
-        FILE* f = g_fopen (fname.c_str (), "wb");
-
-        if (f) {
-            fwrite (&aeHistogram[0], 1, (65536 >> aeHistCompression)*sizeof (aeHistogram[0]), f);
-            fclose (f);
-            return true;
-        }
-    }
-
-    return false;
-}
 
 unsigned char* Thumbnail::getImage8Data()
 {
@@ -2046,6 +1990,4 @@ unsigned char* Thumbnail::getImage8Data()
     return nullptr;
 }
 
-
-
-}
+} // namespace rtengine

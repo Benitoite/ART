@@ -30,7 +30,7 @@
 #include "whitebalance.h"
 #include "coarsepanel.h"
 #include "exposure.h"
-#include "brightcontrsat.h"
+#include "saturation.h"
 #include "tonecurve.h"
 #include "shadowshighlights.h"
 #include "toneequalizer.h"
@@ -124,7 +124,7 @@ protected:
     ICMPanel* icm;
     Crop* crop;
     Exposure *exposure;
-    BrightnessContrastSaturation *brightContrSat;
+    Saturation *saturation;
     ToneCurve* toneCurve;
     ShadowsHighlights* shadowshighlights;
     ToneEqualizer *toneEqualizer;
@@ -134,7 +134,7 @@ protected:
     Denoise* denoise;
     TextureBoost *textureBoost;
     Sharpening* sharpening;
-    LCurve* lcurve;
+    LabCurve* lcurve;
     RGBCurves* rgbcurves;
     SoftLight *softlight;
     Dehaze *dehaze;
@@ -172,8 +172,9 @@ protected:
     ToolVBox* colorPanel;
     ToolVBox* transformPanel;
     ToolVBox* rawPanel;
-    ToolVBox* advancedPanel;
-    ToolVBox* localPanel;
+    // ToolVBox* advancedPanel;
+    ToolVBox *localPanel;
+    ToolVBox *effectsPanel;
     ToolBar* toolBar;
 
     TextOrIcon* toiF;
@@ -184,7 +185,8 @@ protected:
     TextOrIcon* toiR;
     TextOrIcon* toiM;
     TextOrIcon* toiW;
-    TextOrIcon* toiL;
+    TextOrIcon *toiL;
+    TextOrIcon *toiFx;
 
     Gtk::Image* imgPanelEnd[8];
     Gtk::VBox* vbPanelEnd[8];
@@ -195,8 +197,9 @@ protected:
     Gtk::ScrolledWindow* colorPanelSW;
     Gtk::ScrolledWindow* transformPanelSW;
     Gtk::ScrolledWindow* rawPanelSW;
-    Gtk::ScrolledWindow* advancedPanelSW;
-    Gtk::ScrolledWindow* localPanelSW;
+    // Gtk::ScrolledWindow* advancedPanelSW;
+    Gtk::ScrolledWindow *localPanelSW;
+    Gtk::ScrolledWindow *effectsPanelSW;
 
     std::vector<MyExpander*> expList;
 
@@ -278,10 +281,10 @@ public:
 
 
     // wbprovider interface
-    void getAutoWB (double& temp, double& green, double equal, double tempBias) override
+    void getAutoWB (double& temp, double& green, double equal) override
     {
         if (ipc) {
-            ipc->getAutoWB (temp, green, equal, tempBias);
+            ipc->getAutoWB (temp, green, equal);
         }
     }
     void getCamWB (double& temp, double& green) override

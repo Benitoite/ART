@@ -688,13 +688,13 @@ void Imagefloat::rgb_to_xyz(bool multithread)
 #ifdef __SSE2__
         vfloat Xv, Yv, Zv;
         for (; x < width-3; x += 4) {
-            vfloat rv = LVFU(r(y, x));
-            vfloat gv = LVFU(g(y, x));
-            vfloat bv = LVFU(b(y, x));
+            vfloat rv = LVF(r(y, x));
+            vfloat gv = LVF(g(y, x));
+            vfloat bv = LVF(b(y, x));
             Color::rgbxyz(rv, gv, bv, Xv, Yv, Zv, vws_);
-            STVFU(r(y, x), Xv);
-            STVFU(g(y, x), Yv);
-            STVFU(b(y, x), Zv);
+            STVF(r(y, x), Xv);
+            STVF(g(y, x), Yv);
+            STVF(b(y, x), Zv);
         }
 #endif
         for (; x < width; ++x) {
@@ -720,13 +720,13 @@ void Imagefloat::rgb_to_yuv(bool multithread)
 #ifdef __SSE2__
         vfloat Yv, uv, vv;
         for (; x < width-3; x += 4) {
-            vfloat rv = LVFU(r(y, x));
-            vfloat gv = LVFU(g(y, x));
-            vfloat bv = LVFU(b(y, x));
+            vfloat rv = LVF(r(y, x));
+            vfloat gv = LVF(g(y, x));
+            vfloat bv = LVF(b(y, x));
             Color::rgb2yuv(rv, gv, bv, Yv, uv, vv, vws_);
-            STVFU(g(y, x), Yv);
-            STVFU(b(y, x), uv);
-            STVFU(r(y, x), vv);
+            STVF(g(y, x), Yv);
+            STVF(b(y, x), uv);
+            STVF(r(y, x), vv);
         }
 #endif
         for (; x < width; ++x) {
@@ -748,13 +748,13 @@ void Imagefloat::xyz_to_rgb(bool multithread)
 #ifdef __SSE2__
         vfloat Rv, Gv, Bv;
         for (; x < width-3; x += 4) {
-            vfloat xv = LVFU(r(y, x));
-            vfloat yv = LVFU(g(y, x));
-            vfloat zv = LVFU(b(y, x));
+            vfloat xv = LVF(r(y, x));
+            vfloat yv = LVF(g(y, x));
+            vfloat zv = LVF(b(y, x));
             Color::xyz2rgb(xv, yv, zv, Rv, Gv, Bv, viws_);
-            STVFU(r(y, x), Rv);
-            STVFU(g(y, x), Gv);
-            STVFU(b(y, x), Bv);
+            STVF(r(y, x), Rv);
+            STVF(g(y, x), Gv);
+            STVF(b(y, x), Bv);
         }
 #endif
         for (; x < width; ++x) {
@@ -799,13 +799,13 @@ void Imagefloat::yuv_to_rgb(bool multithread)
 #ifdef __SSE2__
         vfloat Rv, Gv, Bv;
         for (; x < width-3; x += 4) {
-            vfloat Yv = LVFU(g(y, x));
-            vfloat uv = LVFU(b(y, x));
-            vfloat vv = LVFU(r(y, x));
+            vfloat Yv = LVF(g(y, x));
+            vfloat uv = LVF(b(y, x));
+            vfloat vv = LVF(r(y, x));
             Color::yuv2rgb(Yv, uv, vv, Rv, Gv, Bv, vws_);
-            STVFU(r(y, x), Rv);
-            STVFU(g(y, x), Gv);
-            STVFU(b(y, x), Bv);
+            STVF(r(y, x), Rv);
+            STVF(g(y, x), Gv);
+            STVF(b(y, x), Bv);
         }
 #endif
         for (; x < width; ++x) {
@@ -862,13 +862,13 @@ void Imagefloat::rgb_to_lab(bool multithread)
         vfloat Rv, Gv, Bv;
         vfloat Lv, av, bv;
         for (; x < width-3; x += 4) {
-            Rv = LVFU(r(y, x));
-            Gv = LVFU(g(y, x));
-            Bv = LVFU(b(y, x));
+            Rv = LVF(r(y, x));
+            Gv = LVF(g(y, x));
+            Bv = LVF(b(y, x));
             Color::rgb2lab(Rv, Gv, Bv, Lv, av, bv, vws_);
-            STVFU(g(y, x), Lv);
-            STVFU(r(y, x), av);
-            STVFU(b(y, x), bv);
+            STVF(g(y, x), Lv);
+            STVF(r(y, x), av);
+            STVF(b(y, x), bv);
         }
 #endif
         for (; x < width; ++x) {
@@ -921,15 +921,15 @@ void Imagefloat::yuv_to_lab(bool multithread)
         vfloat Xv, Yv, Zv;
         vfloat Lv, av, bv;
         for (; x < width-3; x += 4) {
-            Rv = LVFU(r(y, x));
-            Gv = LVFU(g(y, x));
-            Bv = LVFU(b(y, x));
+            Rv = LVF(r(y, x));
+            Gv = LVF(g(y, x));
+            Bv = LVF(b(y, x));
             Color::yuv2rgb(Gv, Bv, Rv, Rv, Gv, Bv, vws_);
             Color::rgbxyz(Rv, Gv, Bv, Xv, Yv, Zv, vws_);
             Color::XYZ2Lab(Xv, Yv, Zv, Lv, av, bv);
-            STVFU(g(y, x), Lv);
-            STVFU(r(y, x), av);
-            STVFU(b(y, x), bv);
+            STVF(g(y, x), Lv);
+            STVF(r(y, x), av);
+            STVF(b(y, x), bv);
         }
 #endif
         for (; x < width; ++x) {
@@ -963,13 +963,13 @@ void Imagefloat::lab_to_rgb(bool multithread)
         vfloat Lv, av, bv;
         vfloat Rv, Gv, Bv;
         for (; x < width-3; x += 4) {
-            Lv = LVFU(g(y, x));
-            av = LVFU(r(y, x));
-            bv = LVFU(b(y, x));
+            Lv = LVF(g(y, x));
+            av = LVF(r(y, x));
+            bv = LVF(b(y, x));
             Color::lab2rgb(Lv, av, bv, Rv, Gv, Bv, viws_);
-            STVFU(r(y, x), Rv);
-            STVFU(g(y, x), Gv);
-            STVFU(b(y, x), Bv);
+            STVF(r(y, x), Rv);
+            STVF(g(y, x), Gv);
+            STVF(b(y, x), Bv);
         }
 #endif
         for (; x < width; ++x) {
@@ -1012,14 +1012,14 @@ void Imagefloat::lab_to_yuv(bool multithread)
         vfloat Rv, Gv, Bv;
         vfloat Xv, Yv, Zv;
         for (; x < width-3; x += 4) {
-            Lv = LVFU(g(y, x));
-            av = LVFU(r(y, x));
-            bv = LVFU(b(y, x));
+            Lv = LVF(g(y, x));
+            av = LVF(r(y, x));
+            bv = LVF(b(y, x));
             Color::Lab2XYZ(Lv, av, bv, Xv, Yv, Zv);
             Color::xyz2rgb(Xv, Yv, Zv, Rv, Gv, Bv, viws_);
-            STVFU(g(y, x), Yv);
-            STVFU(b(y, x), Yv - Bv);
-            STVFU(r(y, x), Rv - Yv);
+            STVF(g(y, x), Yv);
+            STVF(b(y, x), Yv - Bv);
+            STVF(r(y, x), Rv - Yv);
         }
 #endif
         for (; x < width; ++x) {

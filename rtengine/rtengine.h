@@ -293,7 +293,7 @@ public:
       * @param hlcompr is the new highlight recovery amount
       * @param hlcomprthresh is the new threshold for hlcompr
       * @param hlrecons set to true if HighLight Reconstruction is enabled */
-    virtual void autoExpChanged(double brightness, int bright, int contrast, int black, int hlcompr, int hlcomprthresh, bool hlrecons) = 0;
+    virtual void autoExpChanged(double brightness, int bright, int contrast, int black, int hlcompr, int hlcomprthresh, bool hlrecons) {}
 
     virtual void autoMatchedToneCurveChanged(procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) = 0;
 };
@@ -439,7 +439,7 @@ public:
       * @return a pointer to the Crop object that handles the image data trough its own pipeline */
     virtual DetailedCrop* createCrop  (::EditDataProvider *editDataProvider, bool isDetailWindow) = 0;
 
-    virtual bool        getAutoWB   (double& temp, double& green, double equal, double tempBias) = 0;
+    virtual bool        getAutoWB   (double& temp, double& green, double equal) = 0;
     virtual void        getCamWB    (double& temp, double& green) = 0;
     virtual void        getSpotWB  (int x, int y, int rectSize, double& temp, double& green) = 0;
     virtual void        getAutoCrop (double ratio, int &x, int &y, int &w, int &h) = 0;

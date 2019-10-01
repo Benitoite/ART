@@ -35,29 +35,7 @@ protected:
     MyComboBoxText *hrmode;
 
     Gtk::HBox *abox;
-
-    Gtk::ToggleButton *autolevels;
-    Gtk::Label *lclip;
-    MySpinButton *sclip;
-    Gtk::Button *neutral;
     Adjuster *expcomp;
-    Adjuster *black;
-    Adjuster *hlcompr;
-    Adjuster *hlcomprthresh;
-    Adjuster *shcompr;
-    Gtk::CheckButton *clampOOG;
-
-    bool clipDirty, lastAuto;
-    sigc::connection autoconn, neutralconn;
-
-    rtengine::ProcEvent EvClampOOG;
-
-    // used temporarily in eventing
-    double nextExpcomp;
-    int nextHlcompr;
-    int nextHlcomprthresh;
-    int nextBlack;
-    bool nextHLRecons;
 
 public:
     Exposure();
@@ -70,20 +48,9 @@ public:
 
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void neutral_pressed();
-    void autolevels_toggled();
-    void clip_changed();
-    bool clip_changed_();
-    void waitForAutoExp();
-    void enableAll();
-
-    void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons);
 
     void setRaw(bool raw);
 
     void hrmodeChanged();
-    void clampOOGChanged();
-
-    Gtk::ToggleButton *getAutoLevelsButton() { return autolevels; }
 };
 

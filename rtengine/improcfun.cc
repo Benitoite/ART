@@ -831,7 +831,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         exposure(img);
         hslEqualizer(img);
         toneEqualizer(img);
-        rgbCurves(img);
+        //rgbCurves(img);
         if (params->icm.workingProfile == "ProPhoto") {
             proPhotoBlue(img, multiThread);
         }
@@ -849,13 +849,15 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         stop = stop || guidedSmoothing(img);
         break;
     case Stage::STAGE_3:
+        creativeGradients(img);
         logEncoding(img);
-        brightnessContrastSaturation(img);
+        saturationVibrance(img);
         dcpProfile(img, dcpProf, dcpApplyState, multiThread);
         //filmSimulation(img);
         toneCurve(img);
         shadowsHighlights(img);
         //blackAndWhite(img);
+        rgbCurves(img);
         labAdjustments(img);
         stop = stop || textureBoost(img);
         if (pipeline != Pipeline::THUMBNAIL) {
@@ -866,7 +868,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
             localContrast(img);
             filmSimulation(img);
             blackAndWhite(img);
-            creativeGradients(img);
+            //creativeGradients(img);
             filmGrain(img);
         }
         break;

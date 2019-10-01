@@ -30,7 +30,7 @@ class ParamsEdited {
 public:
     bool general;
     bool exposure;
-    bool brightContrSat;
+    bool saturation;
     bool toneCurve;
     bool labCurve;
     bool localContrast;

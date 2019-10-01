@@ -27,24 +27,16 @@
 #include "mycurve.h"
 #include "guiutils.h"
 
-class BrightnessContrastSaturation: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
+class Saturation: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
 private:
-    Adjuster *brightness;
-    Adjuster *contrast;
     Adjuster *saturation;
     Adjuster *vibrance;
 
     rtengine::ProcEvent EvVibrance;
     
-    Gtk::ToggleButton *autolevels;
-
-    // used temporarily in eventing
-    int nextBrightness;
-    int nextContrast;
-
 public:
-    BrightnessContrastSaturation();
-    ~BrightnessContrastSaturation() override;
+    Saturation();
+    ~Saturation() override;
 
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
@@ -53,8 +45,4 @@ public:
 
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-
-    void setAutoLevelsButton(Gtk::ToggleButton *b) { autolevels = b; }
-
-    void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons);
 };

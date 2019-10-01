@@ -43,7 +43,7 @@
 #include "sleef.c"
 #include "opthelper.h"
 #include "guidedfilter.h"
-#define BENCHMARK
+//#define BENCHMARK
 #include "StopWatch.h"
 
 namespace rtengine {
@@ -56,24 +56,6 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
     const int H = R.height();
     array2D<float> Y(W, H);
 
-    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
-        }
-    }
-
-    int detail = LIM(pp.detail + 5, 0, 10);
-    const int radius = float(detail) / scale + 0.5f;
-    const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
-    if (radius > 0) {
-        rtengine::guidedFilterLog(10.f, Y, radius, epsilon, multithread);
-    }
-    
     const auto log2 =
         [](float x) -> float
         {
@@ -94,26 +76,66 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
         -4.0f, -2.0f, 0.0f, 2.0f, 4.0f
     };
 
-    const auto conv = [&](int v) -> float
+    const auto conv = [&](int v, float lo, float hi) -> float
                       {
-                          return exp2(float(v) / 100.f * 2.f);
+                          const float f = v < 0 ? lo : hi;
+                          return exp2(float(v) / 100.f * f);
                       };
 
     const float factors[12] = {
-        conv(pp.bands[0]), // -18 EV
-        conv(pp.bands[0]), // -16 EV
-        conv(pp.bands[0]), // -14 EV
-        conv(pp.bands[0]), // -12 EV
-        conv(pp.bands[0]), // -10 EV
-        conv(pp.bands[0]), //  -8 EV
-        conv(pp.bands[1]), //  -6 EV
-        conv(pp.bands[2]), //  -4 EV
-        conv(pp.bands[3]), //  -2 EV
-        conv(pp.bands[4]), //   0 EV
-        conv(pp.bands[4]), //   2 EV
-        conv(pp.bands[4])  //   4 EV
+        conv(pp.bands[0], 2.f, 3.f), // -18 EV
+        conv(pp.bands[0], 2.f, 3.f), // -16 EV
+        conv(pp.bands[0], 2.f, 3.f), // -14 EV
+        conv(pp.bands[0], 2.f, 3.f), // -12 EV
+        conv(pp.bands[0], 2.f, 3.f), // -10 EV
+        conv(pp.bands[0], 2.f, 3.f), //  -8 EV
+        conv(pp.bands[1], 2.f, 3.f), //  -6 EV
+        conv(pp.bands[2], 2.5f, 2.5f), //  -4 EV
+        conv(pp.bands[3], 3.f, 2.f), //  -2 EV
+        conv(pp.bands[4], 3.f, 2.f), //   0 EV
+        conv(pp.bands[4], 3.f, 2.f), //   2 EV
+        conv(pp.bands[4], 3.f, 2.f)  //   4 EV
     };
 
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(workingProfile);
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            Y[y][x] = Color::rgbLuminance(R[y][x], G[y][x], B[y][x], ws);
+        }
+    }
+
+    int detail = LIM(pp.detail + 5, 0, 5);
+    int radius = float(detail) / scale + 0.5f;
+    float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
+    if (radius > 0) {
+        rtengine::guidedFilterLog(10.f, Y, radius, epsilon, multithread);
+    }
+
+    if (pp.detail > 0) {
+        array2D<float> Y2(W, H);
+        constexpr float base_epsilon = 0.02f;
+        constexpr float base_posterization = 5.f;
+        
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                float l = LIM(log2(std::max(Y[y][x], 1e-9f)), centers[0], centers[11]);
+                float ll = round(l * base_posterization) / base_posterization;
+                Y2[y][x] = Y[y][x];
+                Y[y][x] = exp2(ll);
+            }
+        }
+        radius = 350.f / scale;
+        epsilon = base_epsilon / float(6 - std::min(pp.detail, 5));
+        rtengine::guidedFilter(Y2, Y, Y, radius, epsilon, multithread);        
+    }
+    
     const auto gauss =
         [](float b, float x) -> float
         {
@@ -142,6 +164,13 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 
             return correction;
         };
+
+    LUTf lut(65536);
+    for (int i = 0; i < 65536; ++i) {
+        float y = float(i)/65535.f;
+        float c = process_pixel(y);
+        lut[i] = c;
+    }
 
 #ifdef __SSE2__
     vfloat vfactors[12];
@@ -178,6 +207,9 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 
             return correction;
         };
+
+    vfloat v1 = F2V(1.f);
+    vfloat v65535 = F2V(65535.f);
 #endif // __SSE2__
     
         
@@ -189,15 +221,21 @@ void tone_eq(array2D<float> &R, array2D<float> &G, array2D<float> &B, const Tone
 #ifdef __SSE2__
         for (; x < W - 3; x += 4) {
             vfloat cY = LVFU(Y[y][x]);
-            vfloat corr = vprocess_pixel(cY);
-            STVFU(R[y][x], LVFU(R[y][x]) * corr);
-            STVFU(G[y][x], LVFU(G[y][x]) * corr);
-            STVFU(B[y][x], LVFU(B[y][x]) * corr);
+            vmask m = vmaskf_gt(cY, v1);
+            vfloat corr;
+            if (_mm_movemask_ps((vfloat)m)) {
+                corr = vprocess_pixel(cY);
+            } else {
+                corr = lut[cY * v65535];
+            }
+            STVF(R[y][x], LVF(R[y][x]) * corr);
+            STVF(G[y][x], LVF(G[y][x]) * corr);
+            STVF(B[y][x], LVF(B[y][x]) * corr);
         }
 #endif // __SSE2__
         for (; x < W; ++x) {
             float cY = Y[y][x];
-            float corr = process_pixel(cY);
+            float corr = cY > 1.f ? process_pixel(cY) : lut[cY * 65535.f];
             R[y][x] *= corr;
             G[y][x] *= corr;
             B[y][x] *= corr;
@@ -215,7 +253,7 @@ void ImProcFunctions::toneEqualizer(Imagefloat *rgb)
     }
 
     BENCHFUN
-
+    rgb->setMode(Imagefloat::Mode::RGB, multiThread);
     rgb->normalizeFloatTo1(multiThread);
 
     const int W = rgb->getWidth();

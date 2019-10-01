@@ -28,12 +28,14 @@
 #include "curveeditorgroup.h"
 #include "mycurve.h"
 #include "colorprovider.h"
+#include "thresholdadjuster.h"
 
 class BlackWhite final :
     public ToolParamBlock,
     public AdjusterListener,
     public FoldableToolPanel,
-    public ColorProvider
+    public ColorProvider,
+    public ThresholdAdjusterListener
 {
 public:
 
@@ -56,12 +58,22 @@ public:
     Glib::ustring getSettingString ();
     Glib::ustring getFilterString  ();
 
+    void adjusterChanged(ThresholdAdjuster *a, double newBottom, double newTop) override;
+    void adjusterChanged(ThresholdAdjuster *a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override {}
+    void adjusterChanged(ThresholdAdjuster *a, int newBottom, int newTop) override {}
+    void adjusterChanged(ThresholdAdjuster *a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override {}
+    void adjusterChanged2(ThresholdAdjuster *a, int newBottomL, int newTopL, int newBottomR, int newTopR) override {}
+
+    void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
+    
 private:
     void showFilter();
     void hideFilter();
     void showMixer(bool RGBIsSensitive = true);
     void showGamma();
     void hideGamma();
+
+    rtengine::ProcEvent EvColorCast;
 
     Gtk::Button*         neutral;
     Gtk::Label*          RGBLabels;
@@ -72,6 +84,7 @@ private:
     Adjuster *gammaRed;
     Adjuster *gammaGreen;
     Adjuster *gammaBlue;
+    ThresholdAdjuster *colorCast;
     Gtk::HBox*        filterHBox;
     Gtk::HSeparator*  filterSep, *filterSep2;
     MyComboBoxText*   filter;

@@ -28,6 +28,71 @@ namespace rtengine {
 
 namespace {
 
+void apply_contrast(Imagefloat *rgb, const ImProcData &im, int contrast)
+{
+    const int W = rgb->getWidth();
+    const int H = rgb->getHeight();
+    
+#ifdef _OPENMP
+#   pragma omp parallel for if (im.multiThread)
+#endif
+    for (int i = 0; i < H; ++i) {
+        for (int j = 0; j < W; ++j) {
+            float &r = rgb->r(i, j);
+            float &g = rgb->g(i, j);
+            float &b = rgb->b(i, j);
+            if (OOG(r) || OOG(g) || OOG(b)) {
+                Color::filmlike_clip(&r, &g, &b);
+            }
+        }
+    }
+    
+    if (!contrast) {
+        return;
+    }
+
+    LUTf curve(65536);
+    LUTf curve1(65536);
+    LUTf curve2(65536);
+    LUTu dummy;
+    LUTu hist16(65536);
+    ToneCurve customToneCurve1, customToneCurve2;
+
+    ImProcFunctions ipf(im.params, im.multiThread);
+    ipf.firstAnalysis(rgb, *im.params, hist16);
+    CurveFactory::complexCurve(0, 0, 0, 0, 0, 0, contrast,
+                               { DCT_Linear }, { DCT_Linear },
+                               hist16, curve1, curve2, curve, dummy,
+                               customToneCurve1, customToneCurve2,
+                               max(im.scale, 1.0));
+    
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (im.multiThread)
+#endif
+    for (int i = 0; i < H; ++i) {
+        int j = 0;
+#ifdef __SSE2__
+        vfloat tmpr;
+        vfloat tmpg;
+        vfloat tmpb;
+        for (; j < W - 3; j += 4) {
+            //brightness/contrast
+            tmpr = curve(LVFU(rgb->r(i, j)));
+            tmpg = curve(LVFU(rgb->g(i, j)));
+            tmpb = curve(LVFU(rgb->b(i, j)));
+            for (int k = 0; k < 4; ++k) {
+                setUnlessOOG(rgb->r(i, j+k), rgb->g(i, j+k), rgb->b(i, j+k), tmpr[k], tmpg[k], tmpb[k]);
+            }
+        }
+#endif
+        for (; j < W; ++j) {
+            //brightness/contrast
+            setUnlessOOG(rgb->r(i, j), rgb->g(i, j), rgb->b(i, j), curve[rgb->r(i, j)], curve[rgb->g(i, j)], curve[rgb->b(i, j)]);
+        }
+    }
+}
+
 template <class Curve>
 inline void apply_batch(const Curve &c, Imagefloat *rgb, int W, int H, bool multithread)
 {
@@ -209,6 +274,9 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
 
     if (params->toneCurve.enabled) {
         img->setMode(Imagefloat::Mode::RGB, multiThread);
+
+        ImProcData im(params, scale, multiThread);
+        apply_contrast(img, im, params->toneCurve.contrast);
 
         if (editImgFloat && editID == EUID_ToneCurve1) {
             fill_pipette(img, editImgFloat, multiThread);

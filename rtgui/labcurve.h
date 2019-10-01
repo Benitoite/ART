@@ -27,56 +27,32 @@
 #include "curveeditorgroup.h"
 #include "colorprovider.h"
 
-class LCurve : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public CurveListener, public ColorProvider
+class LabCurve: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public CurveListener, public ColorProvider
 {
 
 protected:
     CurveEditorGroup* curveEditorG;
-//    CurveEditorGroup* curveEditorGD;
     Adjuster* brightness;
     Adjuster* contrast;
     Adjuster* chromaticity;
     DiagonalCurveEditor* lshape;
     DiagonalCurveEditor* ashape;
     DiagonalCurveEditor* bshape;
-    DiagonalCurveEditor* ccshape;
-    DiagonalCurveEditor* lcshape;
-    FlatCurveEditor*   chshape;
-    FlatCurveEditor*   lhshape;
-    FlatCurveEditor*   hhshape;
-    Gtk::Label* labmdh;
-    Gtk::HBox* dhbox;
-
-    DiagonalCurveEditor* clshape;
-    DiagonalCurveEditor* cdshape;
-
-    //%%%%%%%%%%%%%%%%
-    Gtk::CheckButton* avoidcolorshift;
-    Gtk::CheckButton* lcredsk;
-
-    Adjuster* rstprotection;
-    sigc::connection  bwtconn, acconn, lcconn;
-    bool lastACVal, lastLCVal;
-
-    //%%%%%%%%%%%%%%%%
 
 public:
-
-    LCurve();
-    ~LCurve() override;
+    LabCurve();
+    ~LabCurve() override;
 
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void autoOpenCurve  () override;
-    void setEditProvider     (EditDataProvider *provider) override;
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void autoOpenCurve() override;
+    void setEditProvider(EditDataProvider *provider) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
 
-    void curveChanged (CurveEditor* ce) override;
-    void adjusterChanged (Adjuster* a, double newval) override;
+    void curveChanged(CurveEditor* ce) override;
+    void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void avoidcolorshift_toggled ();
-    void lcredsk_toggled();
 
     void updateCurveBackgroundHistogram(
         const LUTu& histToneCurve,
@@ -91,11 +67,7 @@ public:
         const LUTu& histLRETI
     );
 
-    void colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
-
     void enabledChanged() override;
-
-    float blendPipetteValues(CurveEditor *ce, float chan1, float chan2, float chan3) override;
 };
 
 #endif

@@ -127,11 +127,15 @@ PerspectiveCorrection::PerspectiveCorrection():
 
 void PerspectiveCorrection::init(int width, int height, const procparams::PerspectiveParams &params, bool fill, const FramesMetaData *metadata)
 {
-    auto pp = import_meta(params, metadata);
-    homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 100.f, params.aspect, width, height, ASHIFT_HOMOGRAPH_INVERTED);
+    if (params.enabled) {
+        auto pp = import_meta(params, metadata);
+        homography((float *)ihomograph_, params.angle, params.vertical / 100.0, -params.horizontal / 100.0, params.shear / 100.0, params.flength * params.cropfactor, 100.f, params.aspect, width, height, ASHIFT_HOMOGRAPH_INVERTED);
 
-    ok_ = true;
-    calc_scale(width, height, pp, fill);
+        ok_ = true;
+        calc_scale(width, height, pp, fill);
+    } else {
+        ok_ = false;
+    }
 }
 
 

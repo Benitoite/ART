@@ -27,12 +27,13 @@
 #include "mycurve.h"
 #include "guiutils.h"
 
-class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener
+class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener, public AdjusterListener
 {
 private:
     IdleRegister idle_register;
 
 protected:
+    Adjuster *contrast;
     MyComboBoxText* toneCurveMode;
     MyComboBoxText* toneCurveMode2;
     Gtk::ToggleButton *histmatching;
@@ -92,8 +93,8 @@ public:
     );
 
     void histmatchingToggled();
-
     void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve);
-
     void setRaw (bool raw);
+
+    void adjusterChanged(Adjuster *a, double newval) override;
 };

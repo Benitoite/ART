@@ -46,7 +46,6 @@ ImProcCoordinator::ImProcCoordinator():
     workimg(nullptr),
     imgsrc(nullptr),
     lastAwbEqual(0.),
-    lastAwbTempBias(0.0),
     ipf(&params, true),
     monitorIntent(RI_RELATIVE),
     softProof(false),
@@ -322,17 +321,15 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
             } else if (params.wb.method == "Camera") {
                 currWB = imgsrc->getWB();
             } else if (params.wb.method == "Auto") {
-                if (lastAwbEqual != params.wb.equal || lastAwbTempBias != params.wb.tempBias) {
+                if (lastAwbEqual != params.wb.equal) {
                     double rm, gm, bm;
                     imgsrc->getAutoWBMultipliers(rm, gm, bm);
     
                     if (rm != -1.) {
-                        autoWB.update(rm, gm, bm, params.wb.equal, params.wb.tempBias);
+                        autoWB.update(rm, gm, bm, params.wb.equal);
                         lastAwbEqual = params.wb.equal;
-                        lastAwbTempBias = params.wb.tempBias;
                     } else {
                         lastAwbEqual = -1.;
-                        lastAwbTempBias = 0.0;
                         autoWB.useDefaults(params.wb.equal);
                     }
                 }
@@ -411,19 +408,6 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
         }
         
         if (todo & M_AUTOEXP) {
-            if (params.exposure.enabled && params.exposure.autoexp) {
-                LUTu aehist;
-                int aehistcompr;
-                imgsrc->getAutoExpHistogram(aehist, aehistcompr);
-                ipf.getAutoExp(aehist, aehistcompr, params.exposure.clip, params.exposure.expcomp,
-                               params.brightContrSat.brightness, params.brightContrSat.contrast, params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh);
-    
-                if (aeListener) {
-                    aeListener->autoExpChanged(params.exposure.expcomp, params.brightContrSat.brightness, params.brightContrSat.contrast,
-                                               params.exposure.black, params.exposure.hlcompr, params.exposure.hlcomprthresh, hrenabled);
-                }
-            }
-    
             if (params.toneCurve.histmatching) {
                 if (!params.toneCurve.fromHistMatching) {
                     imgsrc->getAutoMatchedToneCurve(params.icm, params.toneCurve.curve);
@@ -712,23 +696,21 @@ void ImProcCoordinator::progress(Glib::ustring str, int pr)
       }*/
 }
 
-bool ImProcCoordinator::getAutoWB(double& temp, double& green, double equal, double tempBias)
+bool ImProcCoordinator::getAutoWB(double& temp, double& green, double equal)
 {
 
     if (imgsrc) {
-        if (lastAwbEqual != equal || lastAwbTempBias != tempBias) {
+        if (lastAwbEqual != equal) {
 // Issue 2500            MyMutex::MyLock lock(minit);  // Also used in crop window
             double rm, gm, bm;
             imgsrc->getAutoWBMultipliers(rm, gm, bm);
 
             if (rm != -1) {
-                autoWB.update(rm, gm, bm, equal, tempBias);
+                autoWB.update(rm, gm, bm, equal);
                 lastAwbEqual = equal;
-                lastAwbTempBias = tempBias;
             } else {
                 lastAwbEqual = -1.;
                 autoWB.useDefaults(equal);
-                lastAwbTempBias = 0.0;
             }
         }
 
@@ -908,17 +890,15 @@ void ImProcCoordinator::saveInputICCReference(const Glib::ustring& fname, bool a
     if (params.wb.method == "Camera") {
         currWB = imgsrc->getWB();
     } else if (params.wb.method == "Auto") {
-        if (lastAwbEqual != params.wb.equal || lastAwbTempBias != params.wb.tempBias) {
+        if (lastAwbEqual != params.wb.equal) {
             double rm, gm, bm;
             imgsrc->getAutoWBMultipliers(rm, gm, bm);
 
             if (rm != -1.) {
-                autoWB.update(rm, gm, bm, params.wb.equal, params.wb.tempBias);
+                autoWB.update(rm, gm, bm, params.wb.equal);
                 lastAwbEqual = params.wb.equal;
-                lastAwbTempBias = params.wb.tempBias;
             } else {
                 lastAwbEqual = -1.;
-                lastAwbTempBias = 0.0;
                 autoWB.useDefaults(params.wb.equal);
             }
         }

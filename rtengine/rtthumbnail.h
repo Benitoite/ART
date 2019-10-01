@@ -44,7 +44,7 @@ class Thumbnail {
     double camwbGreen;
     double camwbBlue;
     double redAWBMul, greenAWBMul, blueAWBMul;  // multipliers for auto WB
-    double autoWBTemp, autoWBGreen, wbEqual, wbTempBias;    // autoWBTemp and autoWBGreen are updated each time autoWB is requested and if wbEqual has been modified
+    double autoWBTemp, autoWBGreen, wbEqual;    // autoWBTemp and autoWBGreen are updated each time autoWB is requested and if wbEqual has been modified
     LUTu aeHistogram;
     int  aeHistCompression;
     bool aeValid;
@@ -88,10 +88,9 @@ public:
     static Thumbnail* loadFromImage (const Glib::ustring& fname, int &w, int &h, int fixwh, double wbEq, bool inspectorMode = false);
 
     void getCamWB     (double& temp, double& green);
-    void getAutoWB    (double& temp, double& green, double equal, double tempBias);
+    void getAutoWB    (double& temp, double& green, double equal);
     void getAutoWBMultipliers (double& rm, double& gm, double& bm);
     void getSpotWB    (const procparams::ProcParams& params, int x, int y, int rect, double& temp, double& green);
-    void applyAutoExp (procparams::ProcParams& pparams);
 
     unsigned char* getGrayscaleHistEQ (int trim_width);
     bool writeImage (const Glib::ustring& fname);
@@ -103,10 +102,6 @@ public:
     bool readEmbProfile  (const Glib::ustring& fname);
     bool writeEmbProfile (const Glib::ustring& fname);
 
-    bool readAEHistogram  (const Glib::ustring& fname);
-    bool writeAEHistogram (const Glib::ustring& fname);
-
-    bool isAeValid() { return aeValid; };
     unsigned char* getImage8Data();  // accessor to the 8bit image if it is one, which should be the case for the "Inspector" mode.
 
     // Hombre: ... let's hope that proper template can make this cleaner

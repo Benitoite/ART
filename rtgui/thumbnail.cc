@@ -87,9 +87,8 @@ Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, const std::s
     tpp = nullptr;
 }
 
-void Thumbnail::_generateThumbnailImage ()
+void Thumbnail::_generateThumbnailImage(bool save_in_cache)
 {
-
     //  delete everything loaded into memory
     delete tpp;
     tpp = nullptr;
@@ -158,11 +157,15 @@ void Thumbnail::_generateThumbnailImage ()
 
     if (tpp) {
         tpp->getAutoWBMultipliers(cfs.redAWBMul, cfs.greenAWBMul, cfs.blueAWBMul);
-        _saveThumbnail ();
+        if (save_in_cache) {
+            _saveThumbnail();
+        }
         cfs.supported = true;
         needsReProcessing = true;
 
-        cfs.save (getCacheFileName ("data", ".txt"));
+        if (save_in_cache) {
+            cfs.save(getCacheFileName("data", ".txt"));
+        }
 
         generateExifDateTimeStrings ();
     }
@@ -195,7 +198,7 @@ const ProcParams& Thumbnail::getProcParamsU ()
             pparams.master.wb.temperature = ct;
         } else if (pparams.master.wb.method == "Auto") {
             double ct;
-            getAutoWB (ct, pparams.master.wb.green, pparams.master.wb.equal, pparams.master.wb.tempBias);
+            getAutoWB(ct, pparams.master.wb.green, pparams.master.wb.equal);
             pparams.master.wb.temperature = ct;
         }
     }
@@ -744,7 +747,7 @@ const Glib::ustring& Thumbnail::getDateTimeString ()
     return dateTimeString;
 }
 
-void Thumbnail::getAutoWB (double& temp, double& green, double equal, double tempBias)
+void Thumbnail::getAutoWB (double& temp, double& green, double equal)
 {
     if (cfs.redAWBMul != -1.0) {
         rtengine::ColorTemp ct(cfs.redAWBMul, cfs.greenAWBMul, cfs.blueAWBMul, equal);
@@ -855,15 +858,16 @@ void Thumbnail::_loadThumbnail(bool firstTrial)
     succ = succ && tpp->readImage (getCacheFileName ("images", ""));
 
     if (!succ && firstTrial) {
-        _generateThumbnailImage ();
+        _generateThumbnailImage(false);
+        return;
 
-        if (cfs.supported && firstTrial) {
-            _loadThumbnail (false);
-        }
+        // if (cfs.supported && firstTrial) {
+        //     _loadThumbnail (false);
+        // }
 
-        if (tpp == nullptr) {
-            return;
-        }
+        // if (tpp == nullptr) {
+        //     return;
+        // }
     } else if (!succ) {
         delete tpp;
         tpp = nullptr;
@@ -871,11 +875,6 @@ void Thumbnail::_loadThumbnail(bool firstTrial)
     }
 
     if ( cfs.thumbImgType == CacheImageData::FULL_THUMBNAIL ) {
-        if(!tpp->isAeValid()) {
-            // load aehistogram
-            tpp->readAEHistogram (getCacheFileName ("aehistograms", ""));
-        }
-
         // load embedded profile
         tpp->readEmbProfile (getCacheFileName ("embprofiles", ".icc"));
 
@@ -921,10 +920,6 @@ void Thumbnail::_saveThumbnail ()
     // save thumbnail image
     tpp->writeImage (getCacheFileName ("images", ""));
 
-    if(!tpp->isAeValid()) {
-        // save aehistogram
-        tpp->writeAEHistogram (getCacheFileName ("aehistograms", ""));
-    }
     // save embedded profile
     tpp->writeEmbProfile (getCacheFileName ("embprofiles", ".icc"));
 

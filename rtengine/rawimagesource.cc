@@ -717,7 +717,7 @@ void RawImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
     hlmax[2] = clmax[2] * bm;
 
     const bool hrenabled = hrp.enabled && hrp.hrmode != procparams::ExposureParams::HR_OFF;
-    const bool clampOOG = !hrp.enabled || hrp.clampOOG;
+    const bool clampOOG = !hrp.enabled;// || hrp.clampOOG;
 
     const bool doClip = (chmax[0] >= clmax[0] || chmax[1] >= clmax[1] || chmax[2] >= clmax[2]) && !hrenabled && clampOOG;
 

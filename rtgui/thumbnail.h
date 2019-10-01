@@ -94,7 +94,7 @@ class Thumbnail: public PParamsSnapshotListener {
 
     void _loadThumbnail(bool firstTrial = true);
     void _saveThumbnail();
-    void _generateThumbnailImage();
+    void _generateThumbnailImage(bool save_in_cache=true);
     int infoFromImage(const Glib::ustring& fname);
     void loadThumbnail(bool firstTrial = true);
     void generateExifDateTimeStrings();
@@ -152,19 +152,13 @@ public:
             temp = green = -1.0;
         }
     }
-    void getAutoWB(double& temp, double& green, double equal, double tempBias);
+    void getAutoWB(double& temp, double& green, double equal);
     void getSpotWB(int x, int y, int rect, double& temp, double& green)
     {
         if (tpp) {
             tpp->getSpotWB (getProcParams(), x, y, rect, temp, green);
         } else {
             temp = green = -1.0;
-        }
-    }
-    void applyAutoExp(rtengine::procparams::ProcParams& pparams)
-    {
-        if (tpp) {
-            tpp->applyAutoExp (pparams);
         }
     }
 
