@@ -86,6 +86,7 @@ std::vector<Glib::ustring> listSubDirs (const Glib::RefPtr<Gio::File>& dir, bool
 DirBrowser::DirBrowser () : dirTreeModel(),
     dtColumns(),
     tvc(M("DIRBROWSER_FOLDERS")),
+    selected_dir_(""),
     expandSuccess(false)
 #ifdef WIN32
     , volumes(0)
@@ -142,7 +143,8 @@ void DirBrowser::fillDirTree ()
     tvc.add_attribute(*render_pb, "pixbuf-expander-open", dtColumns.icon1);
     tvc.pack_start (crt);
     tvc.add_attribute(crt, "text", dtColumns.filename);
-
+    tvc.set_cell_data_func(crt, sigc::mem_fun(*this, &DirBrowser::on_cell_data_name));
+ 
     dirtree->append_column(tvc);
 
     tvc.set_sort_order(options.dirBrowserSortType);
@@ -159,6 +161,25 @@ void DirBrowser::fillDirTree ()
     dirtree->signal_row_activated().connect(sigc::mem_fun(*this, &DirBrowser::row_activated));
     dirTreeModel->signal_sort_column_changed().connect(sigc::mem_fun(*this, &DirBrowser::on_sort_column_changed));
 }
+
+
+void DirBrowser::on_cell_data_name(Gtk::CellRenderer *renderer, const Gtk::TreeModel::iterator &iter)
+{
+    //Get the value from the model and show it appropriately in the view:
+    Gtk::TreeModel::Row row = *iter;
+    Glib::ustring dirname = row[dtColumns.dirname];
+    Glib::ustring name = row[dtColumns.filename];
+
+    if (dirname == selected_dir_) {
+        name = "<b>" + name + "</b>";
+    }
+
+    Gtk::CellRendererText *text_renderer = dynamic_cast<Gtk::CellRendererText *>(renderer);
+    if (text_renderer) {
+        text_renderer->property_markup() = name;
+    }
+}
+
 
 #ifdef WIN32
 void DirBrowser::addRoot (char letter)
@@ -383,8 +404,11 @@ void DirBrowser::row_activated (const Gtk::TreeModel::Path& path, Gtk::TreeViewC
 
     Glib::ustring dname = dirTreeModel->get_iter (path)->get_value (dtColumns.dirname);
 
-    if (Glib::file_test (dname, Glib::FILE_TEST_IS_DIR))
+    if (Glib::file_test (dname, Glib::FILE_TEST_IS_DIR)) {
+        selected_dir_ = dname;
         dirSelectionSignal (dname, Glib::ustring());
+        dirtree->queue_draw();
+    }
 }
 
 Gtk::TreePath DirBrowser::expandToDir (const Glib::ustring& absDirPath)
@@ -474,7 +498,9 @@ void DirBrowser::open (const Glib::ustring& dirname, const Glib::ustring& fileNa
         absFilePath = Glib::build_filename (absDirPath, fileName);
     }
 
+    selected_dir_ = absDirPath;
     dirSelectionSignal (absDirPath, absFilePath);
+    dirtree->queue_draw();
 }
 
 void DirBrowser::file_changed (const Glib::RefPtr<Gio::File>& file, const Glib::RefPtr<Gio::File>& other_file, Gio::FileMonitorEvent event_type, const Gtk::TreeModel::iterator& iter, const Glib::ustring& dirName)

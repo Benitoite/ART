@@ -58,6 +58,7 @@ private:
     Gtk::TreeViewColumn tvc;
     Gtk::CellRendererText crt;
     Gtk::CellRendererPixbuf crb;
+    Glib::ustring selected_dir_;
 
 
     Gtk::TreeView *dirtree;
@@ -90,6 +91,8 @@ private:
     void updateDir (const Gtk::TreeModel::iterator& iter);
 
     IdleRegister idle_register;
+
+    void on_cell_data_name(Gtk::CellRenderer *renderer, const Gtk::TreeModel::iterator &iter);
 
 public:
     DirBrowser ();
