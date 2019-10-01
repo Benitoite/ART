@@ -316,6 +316,11 @@ void DirBrowser::row_expanded (const Gtk::TreeModel::iterator& iter, const Gtk::
 
     if (subDirs.empty()) {
         dirtree->collapse_row(path);
+        Gtk::TreeNodeChildren children = iter->children();
+        std::list<Gtk::TreeIter> forErase(children.begin(), children.end());
+        for (auto &c : forErase) {
+            dirTreeModel->erase(c);
+        }
     } else {
         Gtk::TreeNodeChildren children = iter->children();
         std::list<Gtk::TreeIter> forErase(children.begin(), children.end());
