@@ -74,9 +74,9 @@ public:
     Impl(): nConcurrentThreads(0)
     {
 #ifdef _OPENMP
-        int threadCount = omp_get_num_procs();
+        int threadCount = std::max(omp_get_num_procs()-1, 1);
 #else
-        int threadCount = 2;
+        int threadCount = 1;
 #endif
         //threadCount = 1;
 

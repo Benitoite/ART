@@ -73,7 +73,7 @@ public:
     {
         int threadCount = 1;
 #ifdef _OPENMP
-        threadCount = omp_get_num_procs();
+        threadCount = std::max(omp_get_num_procs()-1, 1);
 #endif
 
         threadPool_ = new Glib::ThreadPool(threadCount, 0);
