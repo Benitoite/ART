@@ -366,6 +366,7 @@ private:
                 }
             }
             if (params.prsharpening.enabled) {
+                ipf.setScale(1);
                 ipf.sharpening(img, params.prsharpening);
             }
         }
@@ -468,7 +469,7 @@ private:
             img = resized;
         }
 
-        params.resize.enabled = false;
+        //params.resize.enabled = false;
 
         fw = imw;
         fh = imh;
