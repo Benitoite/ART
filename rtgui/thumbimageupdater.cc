@@ -71,14 +71,16 @@ public:
         active_(0),
         inactive_waiting_(false)
     {
-        int threadCount = 1;
 #ifdef _OPENMP
-        threadCount = std::max(omp_get_num_procs()-1, 1);
+        initial_thread_count_ = omp_get_num_procs();
+#else
+        initial_thread_count_ = 1;
 #endif
 
-        threadPool_ = new Glib::ThreadPool(threadCount, 0);
+        threadPool_ = new Glib::ThreadPool(initial_thread_count_, 0);
     }
 
+    int initial_thread_count_;
     Glib::ThreadPool* threadPool_;
 
     // Need to be a Glib::Threads::Mutex because used in a Glib::Threads::Cond object...
@@ -172,6 +174,18 @@ public:
                 inactive_.broadcast();
             }
         }
+    }
+
+    void slowDown()
+    {
+        if (initial_thread_count_ > 1) {
+            threadPool_->set_max_threads(initial_thread_count_-1);
+        }
+    }
+
+    void speedUp()
+    {
+        threadPool_->set_max_threads(initial_thread_count_);
     }
 };
 
@@ -273,3 +287,14 @@ void ThumbImageUpdater::removeAllJobs()
     }
 }
 
+
+void ThumbImageUpdater::slowDown()
+{
+    impl_->slowDown();
+}
+
+
+void ThumbImageUpdater::speedUp()
+{
+    impl_->speedUp();
+}

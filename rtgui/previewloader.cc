@@ -74,15 +74,16 @@ public:
     Impl(): nConcurrentThreads(0)
     {
 #ifdef _OPENMP
-        int threadCount = std::max(omp_get_num_procs()-1, 1);
+        initial_thread_count_ = omp_get_num_procs();
 #else
-        int threadCount = 1;
+        initial_thread_count_ = 1;
 #endif
         //threadCount = 1;
 
-        threadPool_ = new Glib::ThreadPool(threadCount, 0);
+        threadPool_ = new Glib::ThreadPool(initial_thread_count_, 0);
     }
 
+    int initial_thread_count_;
     Glib::ThreadPool* threadPool_;
     MyMutex mutex_;
     JobSet jobs_;
@@ -162,6 +163,18 @@ public:
             j.listener_->previewsFinished(j.dir_id_);
         }
     }
+
+    void slowDown()
+    {
+        if (initial_thread_count_ > 1) {
+            threadPool_->set_max_threads(initial_thread_count_-1);
+        }
+    }
+
+    void speedUp()
+    {
+        threadPool_->set_max_threads(initial_thread_count_);
+    }
 };
 
 PreviewLoader::PreviewLoader():
@@ -205,3 +218,13 @@ void PreviewLoader::removeAllJobs()
 }
 
 
+void PreviewLoader::slowDown()
+{
+    impl_->slowDown();
+}
+
+
+void PreviewLoader::speedUp()
+{
+    impl_->speedUp();
+}

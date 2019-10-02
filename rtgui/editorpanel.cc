@@ -1004,6 +1004,8 @@ void EditorPanel::on_realize ()
 
 void EditorPanel::open (Thumbnail* tmb, rtengine::InitialImage* isrc)
 {
+    thumbImageUpdater->slowDown();
+    previewLoader->slowDown();
 
     close();
 

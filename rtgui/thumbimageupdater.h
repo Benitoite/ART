@@ -86,6 +86,9 @@ public:
      */
     void removeAllJobs(void);
 
+    void slowDown();
+    void speedUp();
+
 private:
 
     ThumbImageUpdater();
