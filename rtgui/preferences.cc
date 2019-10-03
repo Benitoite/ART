@@ -365,7 +365,9 @@ Gtk::Widget* Preferences::getPerformancePanel ()
     thumbnailInspectorMode->append(M("PREFERENCES_THUMBNAIL_INSPECTOR_RAW_IF_NO_JPEG_FULLSIZE"));
     insphb->pack_start(*Gtk::manage(new Gtk::Label(M("PREFERENCES_THUMBNAIL_INSPECTOR_MODE") + ": ")), Gtk::PACK_SHRINK, 4);
     insphb->pack_start(*thumbnailInspectorMode);
+    thumbnailInspectorFilmCurve = Gtk::manage(new Gtk::CheckButton(M("PREFERENCES_THUMBNAIL_INSPECTOR_RAW_FILM_CURVE")));
     inspectorvb->pack_start(*insphb);
+    inspectorvb->pack_start(*thumbnailInspectorFilmCurve);        
     finspect->add (*inspectorvb);
     vbPerformance->pack_start (*finspect, Gtk::PACK_SHRINK, 4);
 
@@ -1475,6 +1477,7 @@ void Preferences::storePreferences ()
     moptions.clutCacheSize = clutCacheSizeSB->get_value_as_int();
     moptions.maxInspectorBuffers = maxInspectorBuffersSB->get_value_as_int();
     moptions.rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(thumbnailInspectorMode->get_active_row_number());
+    moptions.rtSettings.thumbnail_inspector_raw_apply_film_curve = thumbnailInspectorFilmCurve->get_active();
 
 // Sounds only on Windows and Linux
 #if defined(WIN32) || defined(__linux__)
@@ -1685,6 +1688,7 @@ void Preferences::fillPreferences ()
     clutCacheSizeSB->set_value (moptions.clutCacheSize);
     maxInspectorBuffersSB->set_value (moptions.maxInspectorBuffers);
     thumbnailInspectorMode->set_active(int(moptions.rtSettings.thumbnail_inspector_mode));
+    thumbnailInspectorFilmCurve->set_active(moptions.rtSettings.thumbnail_inspector_raw_apply_film_curve);
 
     darkFrameDir->set_current_folder ( moptions.rtSettings.darkFramesPath );
     darkFrameChanged ();

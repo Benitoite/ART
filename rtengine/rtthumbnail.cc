@@ -340,14 +340,14 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType,
     src.convertColorSpace(&tmp, neutral.icm, src.getWB());
 
     LUTi gamma(65536);
-    const bool apply_filmcurve = false;
+    const bool apply_filmcurve = settings->thumbnail_inspector_raw_apply_film_curve;
     if (apply_filmcurve) {
         DiagonalCurve filmcurve({
                 DCT_Spline,
                 0, 0,
-                0.11, 0.089999999999999997,
-                0.32000000000000001, 0.42999999999999999,
-                0.66000000000000003, 0.87,
+                0.11, 0.09,
+                0.32, 0.47,
+                0.66, 0.87,
                 1, 1
             });
         for (int i = 0; i < 65536; ++i) {
@@ -372,7 +372,7 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType,
             int g = tmp.g(y, x);
             int b = tmp.b(y, x);
             // avoid magenta highlights
-            if (r > maxval && b > maxval) {
+            if (r >= maxval && b >= maxval) {
                 int v = CLIP((r + g + b) / 3) * 255 / 65535;
                 img->r(y, x) = img->g(y, x) = img->b(y, x) = v;
             } else {

@@ -590,6 +590,7 @@ void Options::setDefaults()
     rtSettings.lensfunDbDirectory = ""; // set also in main.cc and main-cli.cc
 
     rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
+    rtSettings.thumbnail_inspector_raw_apply_film_curve = false;
 
     thumbnail_rating_mode = Options::ThumbnailRatingMode::XMP;
     rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
@@ -1037,6 +1038,10 @@ void Options::readFromFile(Glib::ustring fname)
                     rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(keyFile.get_integer("Performance", "ThumbnailInspectorMode"));
                 }
 
+                if (keyFile.has_key("Performance", "ThumbnailInspectorRawFilmCurve")) {
+                    rtSettings.thumbnail_inspector_raw_apply_film_curve = keyFile.get_boolean("Performance", "ThumbnailInspectorRawFilmCurve");
+                }
+                
                 if (keyFile.has_key("Performance", "DenoiseZoomedOut")) {
                     denoiseZoomedOut = keyFile.get_boolean("Performance", "DenoiseZoomedOut");
                 }
@@ -1889,6 +1894,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_integer("Performance", "PreviewDemosaicFromSidecar", prevdemo);
         keyFile.set_boolean("Performance", "SerializeTiffRead", serializeTiffRead);
         keyFile.set_integer("Performance", "ThumbnailInspectorMode", int(rtSettings.thumbnail_inspector_mode));
+        keyFile.set_boolean("Performance", "ThumbnailInspectorRawFilmCurve", rtSettings.thumbnail_inspector_raw_apply_film_curve);
         keyFile.set_boolean("Performance", "DenoiseZoomedOut", denoiseZoomedOut);
 
         keyFile.set_string("Output", "Format", saveFormat.format);

@@ -91,6 +91,7 @@ public:
         RAW_IF_NOT_JPEG_FULLSIZE
     };
     ThumbnailInspectorMode thumbnail_inspector_mode;
+    bool thumbnail_inspector_raw_apply_film_curve;
 
     enum class XmpSidecarStyle {
         STD, // FILENAME.xmp for FILENAME.ext
