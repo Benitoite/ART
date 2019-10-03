@@ -38,8 +38,9 @@
 #include "improccoordinator.h"
 #include "settings.h"
 #include <locale.h>
-#include "StopWatch.h"
 #include "median.h"
+#define BENCHMARK
+#include "StopWatch.h"
 
 namespace {
 
@@ -338,24 +339,46 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType,
     src.getImage(src.getWB(), TR_NONE, &tmp, pp, neutral.exposure, neutral.raw);
     src.convertColorSpace(&tmp, neutral.icm, src.getWB());
 
+    LUTi gamma(65536);
+    const bool apply_filmcurve = false;
+    if (apply_filmcurve) {
+        DiagonalCurve filmcurve({
+                DCT_Spline,
+                0, 0,
+                0.11, 0.089999999999999997,
+                0.32000000000000001, 0.42999999999999999,
+                0.66000000000000003, 0.87,
+                1, 1
+            });
+        for (int i = 0; i < 65536; ++i) {
+            float x = Color::gamma_srgbclipped(i) / 65535.f;
+            float y = filmcurve.getVal(x) * 255.f;
+            gamma[i] = y;
+        }
+    } else {
+        for (int i = 0; i < 65536; ++i) {
+            gamma[i] = int(Color::gamma_srgbclipped(i)) * 255 / 65535;
+        }
+    }
+
     Image8 *img = new Image8(w, h);
-    const float f = 255.f/65535.f;
+    const int maxval = MAXVALF;
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            float r = tmp.r(y, x);
-            float g = tmp.g(y, x);
-            float b = tmp.b(y, x);
+            int r = tmp.r(y, x);
+            int g = tmp.g(y, x);
+            int b = tmp.b(y, x);
             // avoid magenta highlights
-            if (r > MAXVALF && b > MAXVALF) {
-                float v = CLIP((r + g + b) / 3.f) * f;
+            if (r > maxval && b > maxval) {
+                int v = CLIP((r + g + b) / 3) * 255 / 65535;
                 img->r(y, x) = img->g(y, x) = img->b(y, x) = v;
             } else {
-                img->r(y, x) = Color::gamma_srgbclipped(r) * f;
-                img->g(y, x) = Color::gamma_srgbclipped(g) * f;
-                img->b(y, x) = Color::gamma_srgbclipped(b) * f;
+                img->r(y, x) = gamma[r];
+                img->g(y, x) = gamma[g];
+                img->b(y, x) = gamma[b];
             }
         }
     }
