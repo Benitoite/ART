@@ -579,16 +579,26 @@ void BlackWhite::colorForValue(double valX, double valY, enum ColorCaller::ElemT
 
     float R = 0.f, G = 0.f, B = 0.f;
 
+    const auto to_hue =
+        [](float x) -> float
+        {
+            x -= 0.05f;
+            if (x < 0.f) {
+                x += 1.f;
+            }
+            return x;
+        };
+
     if (callerId == 1) {  // Slider 1 background
         if (valY <= 0.5)
             // the hue range
         {
-            Color::hsv2rgb01(float(valX), 1.0f, 0.5f, R, G, B);
+            Color::hsv2rgb01(to_hue(valX), 1.0f, 0.5f, R, G, B);
         } else {
             // the strength applied to the current hue
             double strength, hue;
             colorCast->getValue(strength, hue);
-            Color::hsv2rgb01(hue / 360.f, 1.f, 1.f, R, G, B);
+            Color::hsv2rgb01(to_hue(hue / 360.f), 1.f, 1.f, R, G, B);
             const double gray = 0.46;
             R = (gray * (1.0 - valX)) + R * valX;
             G = (gray * (1.0 - valX)) + G * valX;
