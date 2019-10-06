@@ -454,7 +454,6 @@ bool AreaMask::Shape::operator!=(const Shape &other) const
 
 
 AreaMask::AreaMask():
-    inverted(false),
     feather(0),
     contrast{DCT_Linear},
     shapes{Shape()}
@@ -464,8 +463,7 @@ AreaMask::AreaMask():
 
 bool AreaMask::operator==(const AreaMask &other) const
 {
-    return inverted == other.inverted
-        && feather == other.feather
+    return feather == other.feather
         && contrast == other.contrast
         && shapes == other.shapes;
 }
@@ -518,6 +516,7 @@ LabCorrectionMask::LabCorrectionMask():
             0.35
             },
     maskBlur(0),
+    inverted(false),
     areaEnabled(false),
     areaMask()
 {
@@ -530,6 +529,7 @@ bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
         && chromaticityMask == other.chromaticityMask
         && lightnessMask == other.lightnessMask
         && maskBlur == other.maskBlur
+        && inverted == other.inverted
         && areaEnabled == other.areaEnabled
         && areaMask == other.areaMask;
 }
@@ -577,8 +577,8 @@ bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, lightnessMask);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, maskBlur);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskInverted" + suffix, inverted);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, areaEnabled);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskInverted" + suffix, areaMask.inverted);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast);
     if (areaMask.contrast.empty() || areaMask.contrast[0] < DCT_Linear || areaMask.contrast[0] >= DCT_Unchanged) {
@@ -620,8 +620,8 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask, keyfile);
     putToKeyfile(group_name, prefix + "LightnessMask" + suffix, lightnessMask, keyfile);
     putToKeyfile(group_name, prefix + "MaskBlur" + suffix, maskBlur, keyfile);
+    putToKeyfile(group_name, prefix + "MaskInverted" + suffix, inverted, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskEnabled" + suffix, areaEnabled, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskInverted" + suffix, areaMask.inverted, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast, keyfile);
     for (size_t i = 0; i < areaMask.shapes.size(); ++i) {

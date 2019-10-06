@@ -101,7 +101,6 @@ struct AreaMask {
         bool operator==(const Shape &other) const;
         bool operator!=(const Shape &other) const;
     };
-    bool inverted;
     double feather; // [0,100]
     std::vector<double> contrast; // curve
     std::vector<Shape> shapes;
@@ -119,6 +118,7 @@ public:
     std::vector<double> chromaticityMask;
     std::vector<double> lightnessMask;
     double maskBlur;
+    bool inverted;
     bool areaEnabled;
     AreaMask areaMask;
 

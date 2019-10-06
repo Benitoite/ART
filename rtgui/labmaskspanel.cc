@@ -148,15 +148,16 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     maskBlur->setAdjusterListener(this);
     pack_start(*maskBlur);
 
+    maskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_INVERTED")));
+    maskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onMaskInvertedChanged));
+    pack_start(*maskInverted);
+
     areaMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_AREA")));
     areaMask->signal_enabled_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskEnableToggled));
     ToolParamBlock *area = Gtk::manage(new ToolParamBlock());
     hb = Gtk::manage(new Gtk::HBox());
     areaMaskButtonsHb = hb;
-
-    areaMaskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_AREA_INVERTED")));
-    areaMaskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskInvertedChanged));
-    hb->pack_start(*areaMaskInverted, Gtk::PACK_EXPAND_WIDGET);
+    //hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_EXPAND_WIDGET);
 
     areaMaskCopy = Gtk::manage(new Gtk::Button());
     areaMaskCopy->add(*Gtk::manage(new RTImage("copy.png")));
@@ -170,6 +171,8 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMaskPaste->signal_clicked().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskPastePressed));
     add_button(areaMaskPaste, hb, 24);
 
+    hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_EXPAND_WIDGET);
+    
     areaMaskToggle = new Gtk::ToggleButton();
     areaMaskToggle->get_style_context()->add_class("independent");
     areaMaskToggle->add(*Gtk::manage(new RTImage("crosshair-adjust.png")));
@@ -286,7 +289,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     showMask = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_SHOW")));
     showMask->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onShowMaskChanged));
     pack_start(*showMask, Gtk::PACK_SHRINK, 4);
-
+        
     maskBlur->delay = options.adjusterMaxDelay;
 }
 
@@ -347,8 +350,8 @@ void LabMasksPanel::maskGet(int idx)
     r.chromaticityMask = chromaticityMask->getCurve();
     r.lightnessMask = lightnessMask->getCurve();
     r.maskBlur = maskBlur->getValue();
+    r.inverted = maskInverted->get_active();
     r.areaEnabled = areaMask->getEnabled();
-    r.areaMask.inverted = areaMaskInverted->get_active();
     r.areaMask.feather = areaMaskFeather->getValue();
     r.areaMask.contrast = areaMaskContrast->getCurve();
     if (area_shape_index_ < r.areaMask.shapes.size()) {
@@ -522,13 +525,13 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         chromaticityMask->setCurve(r.chromaticityMask);
         lightnessMask->setCurve(r.lightnessMask);
         maskBlur->setValue(r.maskBlur);
+        maskInverted->set_active(r.inverted);
 
         if (unsub && isCurrentSubscriber()) {
             unsubscribe();
         }
         areaMaskToggle->set_active(false);
         areaMask->setEnabled(r.areaEnabled);
-        areaMaskInverted->set_active(r.areaMask.inverted);
         areaMaskFeather->setValue(r.areaMask.feather);
         areaMaskContrast->setCurve(r.areaMask.contrast);
         if (area_shape_index_ < r.areaMask.shapes.size()) {
@@ -588,7 +591,7 @@ void LabMasksPanel::onAreaMaskToggleChanged()
 }
 
 
-void LabMasksPanel::onAreaMaskInvertedChanged()
+void LabMasksPanel::onMaskInvertedChanged()
 {
     auto l = getListener();
     if (l) {
@@ -806,9 +809,9 @@ void LabMasksPanel::setEdited(bool yes)
     chromaticityMask->setUnChanged(!yes);
     lightnessMask->setUnChanged(!yes);
     maskBlur->setEditedState(yes ? Edited : UnEdited);
+    maskInverted->set_inconsistent(!yes);
     showMask->set_inconsistent(!yes);
     areaMask->set_inconsistent(!yes);
-    areaMaskInverted->set_inconsistent(!yes);
     for (auto a : areaMaskAdjusters) {
         a->setEditedState(yes ? Edited : UnEdited);
     }
@@ -828,9 +831,9 @@ bool LabMasksPanel::getEdited()
         || !chromaticityMask->isUnChanged()
         || !lightnessMask->isUnChanged()
         || maskBlur->getEditedState() == Edited
+        || !maskInverted->get_inconsistent()
         || !showMask->get_inconsistent()
         || !areaMask->get_inconsistent()
-        || !areaMaskInverted->get_inconsistent()
         || !areaMaskContrast->isUnChanged();
 }
 
@@ -1029,7 +1032,7 @@ void LabMasksPanel::onAreaMaskPastePressed()
             areaMaskRoundness->setValue(s.roundness);
             //areaMaskMode->set_active(int(s.mode));
             toggleAreaShapeMode(int(s.mode));
-            areaMaskInverted->set_active(a.inverted);
+            //areaMaskInverted->set_active(a.inverted);
         }
         populateShapeList(selected_, area_shape_index_);
         maskShow(selected_, true);        

@@ -176,10 +176,10 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
 #endif
     for (int y = 0; y < mask.height(); ++y) {
         for (int x = 0; x < mask.width(); ++x) {
-            float v = LIM01(mask[y][x]);
-            if (!areaMask.inverted) {
-                v = 1.f - v;
-            }
+            float v = 1.f - LIM01(mask[y][x]);
+            // if (!areaMask.inverted) {
+            //     v = 1.f - v;
+            // }
             mask[y][x] = contrast(v);
             assert(mask[y][x] == mask[y][x]);
         }
@@ -389,6 +389,24 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
                     }
                     if (Lmask) {
                         (*Lmask)[i][y][x] *= guide[y][x];
+                    }
+                }
+            }
+        }
+    }
+
+    for (int i = begin_idx; i < end_idx; ++i) {
+        if (masks[i].inverted) {
+#ifdef _OPENMP
+#           pragma omp parallel for if (multithread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    if (abmask) {
+                        (*abmask)[i][y][x] = 1.f - (*abmask)[i][y][x];
+                    }
+                    if (Lmask) {
+                        (*Lmask)[i][y][x] = 1.f - (*Lmask)[i][y][x];
                     }
                 }
             }

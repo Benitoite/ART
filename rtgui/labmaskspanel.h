@@ -99,7 +99,7 @@ private:
     void onCopyPressed();
     void onResetPressed();
     void onAreaMaskEnableToggled();
-    void onAreaMaskInvertedChanged();
+    void onMaskInvertedChanged();
     void onAreaMaskToggleChanged();
     void onShowMaskChanged();
     void onAreaShapeSelectionChanged();
@@ -148,6 +148,7 @@ private:
     Adjuster *maskBlur;
     Gtk::CheckButton *showMask;
     sigc::connection selectionConn;
+    Gtk::CheckButton *maskInverted;
     MyExpander *areaMask;
     Gtk::HBox *areaMaskButtonsHb;
     Gtk::ListViewText *areaMaskShapes;
@@ -159,7 +160,6 @@ private:
     Gtk::ToggleButton *areaMaskToggle;
     Gtk::Button *areaMaskCopy;
     Gtk::Button *areaMaskPaste;
-    Gtk::CheckButton *areaMaskInverted;
     Adjuster *areaMaskFeather;
     DiagonalCurveEditor *areaMaskContrast;
     Gtk::ToggleButton *areaMaskMode[3];
