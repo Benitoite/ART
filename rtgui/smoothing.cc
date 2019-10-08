@@ -325,3 +325,9 @@ void Smoothing::channelChanged()
         listener->panelChanged(EvChannel, channel->get_active_text());
     }
 }
+
+
+void Smoothing::setAreaDrawListener(AreaDrawListener *l)
+{
+    labMasks->setAreaDrawListener(l);
+}

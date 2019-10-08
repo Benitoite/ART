@@ -81,6 +81,7 @@ public:
     void clearParamChanges() override {}
 
     void updateGeometry(int fullWidth, int fullHeight);
+    void setAreaDrawListener(AreaDrawListener *l);
 
     void adjusterChanged(ThresholdAdjuster* a, double newBottom, double newTop) override {}
     void adjusterChanged(ThresholdAdjuster* a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override {}

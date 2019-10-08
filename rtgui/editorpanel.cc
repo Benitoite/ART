@@ -809,6 +809,7 @@ EditorPanel::EditorPanel (FilePanel* filePanel)
     iareapanel->imageArea->setCropGUIListener (tpc->getCropGUIListener());
     iareapanel->imageArea->setPointerMotionListener (navigator);
     iareapanel->imageArea->setImageAreaToolListener (tpc);
+    iareapanel->imageArea->setAreaDrawListenerProvider(tpc);
 
     // initialize components
     info->set_active (options.showInfo);

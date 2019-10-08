@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -66,6 +67,7 @@ protected:
     void get_preferred_width_for_height_vfunc (int height, int &minimum_width, int &natural_width) const override;
 
     int fullImageWidth, fullImageHeight;
+    AreaDrawListenerProvider *alp_;
 public:
     CropWindow* mainCropWindow;
     CropWindow* flawnOverWindow;
@@ -157,6 +159,8 @@ public:
     {
         return mainCropWindow;
     }
+
+    void setAreaDrawListenerProvider(AreaDrawListenerProvider *ap);
 };
 
 

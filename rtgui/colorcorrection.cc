@@ -390,3 +390,9 @@ void ColorCorrection::setListener(ToolPanelListener *tpl)
      ToolPanel::setListener(tpl);
      gridAB->setListener(tpl);
 }
+
+
+void ColorCorrection::setAreaDrawListener(AreaDrawListener *l)
+{
+    labMasks->setAreaDrawListener(l);
+}

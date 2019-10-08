@@ -57,12 +57,41 @@ public:
 };
 
 
+class AreaDrawUpdater {
+public:
+    virtual ~AreaDrawUpdater() = default;
+    enum Phase {
+        BEGIN,
+        UPDATE,
+        END
+    };
+    virtual void updateArea(Phase phase, int x1, int y1, int x2, int y2) = 0;
+    virtual void cancelUpdateArea() = 0;
+};
+
+
+class AreaDrawListener {
+public:
+    virtual ~AreaDrawListener() = default;
+    virtual void startDrawingArea(AreaDrawUpdater *updater) = 0;
+    virtual void stopDrawingArea() = 0;
+};
+
+
+class AreaDrawListenerProvider {
+public:
+    virtual ~AreaDrawListenerProvider() = default;
+    virtual void setAreaDrawListener(AreaDrawListener *listener) = 0;
+};
+
+
 class LabMasksPanel:
     public Gtk::VBox,
     public AdjusterListener,
     public CurveListener,
     public ColorProvider,
-    public AreaMask {
+    public AreaMask,
+    public AreaDrawUpdater {
 public:
     LabMasksPanel(LabMasksContentProvider *cp);
     ~LabMasksPanel();
@@ -87,6 +116,10 @@ public:
     bool getEdited();
 
     void updateSelected();
+
+    void updateArea(AreaDrawUpdater::Phase phase, int x1, int y1, int x2, int y2) override;
+    void cancelUpdateArea() override;
+    void setAreaDrawListener(AreaDrawListener *l);
     
 private:
     ToolPanelListener *getListener();
@@ -109,6 +142,7 @@ private:
     void onAreaMaskCopyPressed();
     void onAreaMaskPastePressed();
     void onAreaShapeModeChanged(int i);
+    void onAreaMaskDrawChanged();
     
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
@@ -122,6 +156,8 @@ private:
     void disableListener();
     void enableListener();
 
+    const rtengine::ProcEvent &areaMaskEvent() const;
+
     LabMasksContentProvider *cp_;
     std::vector<rtengine::procparams::LabCorrectionMask> masks_;
     unsigned int selected_;
@@ -133,6 +169,7 @@ private:
     rtengine::ProcEvent EvMaskBlur;
     rtengine::ProcEvent EvShowMask;
     rtengine::ProcEvent EvAreaMask;
+    rtengine::ProcEvent EvAreaMaskVoid;
 
     Gtk::ListViewText *list;
     Gtk::Button *reset;
@@ -158,6 +195,8 @@ private:
     Gtk::Button *areaMaskRemove;
     unsigned int area_shape_index_;
     Gtk::ToggleButton *areaMaskToggle;
+    Gtk::ToggleButton *areaMaskDraw;
+    sigc::connection areaMaskDrawConn;
     Gtk::Button *areaMaskCopy;
     Gtk::Button *areaMaskPaste;
     Adjuster *areaMaskFeather;
@@ -175,4 +214,5 @@ private:
     std::vector<bool> listenerDisabled;
     rtengine::procparams::AreaMask::Shape defaultAreaShape;
     bool listEdited;
+    AreaDrawListener *adl_;
 };

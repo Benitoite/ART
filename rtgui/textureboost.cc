@@ -303,3 +303,9 @@ void TextureBoost::regionShow(int idx)
         enableListener();
     }
 }
+
+
+void TextureBoost::setAreaDrawListener(AreaDrawListener *l)
+{
+    labMasks->setAreaDrawListener(l);
+}

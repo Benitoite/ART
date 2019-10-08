@@ -32,6 +32,7 @@
 #include "cursormanager.h"
 #include "edit.h"
 #include "toolenum.h"
+#include "labmaskspanel.h"
 
 class CropWindow;
 
@@ -46,7 +47,7 @@ public:
 };
 
 class ImageArea;
-class CropWindow : public LWButtonListener, public CropDisplayHandler, public EditCoordSystem, public ObjectMOBuffer
+class CropWindow : public LWButtonListener, public CropDisplayHandler, public EditCoordSystem, public ObjectMOBuffer, public AreaDrawListener
 {
     static bool initialized;
 
@@ -139,6 +140,8 @@ class CropWindow : public LWButtonListener, public CropDisplayHandler, public Ed
     size_t zoom11index;
 
     void initZoomSteps();
+
+    AreaDrawUpdater *area_updater_;
     
 public:
     CropHandler cropHandler;
@@ -238,6 +241,9 @@ public:
     void remoteMoveReady ();
 
     ImageArea* getImageArea();
+
+    void startDrawingArea(AreaDrawUpdater *updater) override;
+    void stopDrawingArea() override;
 };
 
 #endif

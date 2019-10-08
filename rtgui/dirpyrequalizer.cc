@@ -401,3 +401,9 @@ void DirPyrEqualizer::levelsShow(int idx)
         enableListener();
     }
 }
+
+
+void DirPyrEqualizer::setAreaDrawListener(AreaDrawListener *l)
+{
+    labMasks->setAreaDrawListener(l);
+}

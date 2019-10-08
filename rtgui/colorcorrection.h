@@ -51,6 +51,7 @@ public:
     void clearParamChanges() override {}
 
     void updateGeometry(int fullWidth, int fullHeight);
+    void setAreaDrawListener(AreaDrawListener *l);
 
 private:
     void regionGet(int idx);

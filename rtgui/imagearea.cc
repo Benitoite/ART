@@ -25,7 +25,9 @@
 #include "../rtengine/refreshmap.h"
 #include "options.h"
 
-ImageArea::ImageArea (ImageAreaPanel* p) : parent(p), fullImageWidth(0), fullImageHeight(0)
+ImageArea::ImageArea(ImageAreaPanel* p):
+    parent(p), fullImageWidth(0), fullImageHeight(0),
+    alp_(nullptr)
 {
     get_style_context()->add_class("drawingarea");
 
@@ -100,6 +102,9 @@ void ImageArea::on_resized (Gtk::Allocation& req)
             mainCropWindow->setPosition (0, 0);
             mainCropWindow->setSize (get_width(), get_height());  // this execute the refresh itself
             mainCropWindow->enable();  // start processing !
+            if (alp_) {
+                alp_->setAreaDrawListener(mainCropWindow);
+            }
         } else {
             mainCropWindow->setSize (get_width(), get_height());  // this execute the refresh itself
         }
@@ -776,3 +781,12 @@ void ImageArea::get_preferred_width_for_height_vfunc (int height, int &minimum_w
     get_preferred_width_vfunc (minimum_width, natural_width);
 }
 
+
+void ImageArea::setAreaDrawListenerProvider(AreaDrawListenerProvider *alp)
+{
+    alp_ = alp;
+    
+    if (mainCropWindow && alp_) {
+        alp_->setAreaDrawListener(mainCropWindow);
+    }
+}

@@ -19,6 +19,7 @@
  */
 
 #include "labmaskspanel.h"
+#include "eventmapper.h"
 
 namespace {
 
@@ -40,10 +41,12 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     masks_(),
     selected_(0),
     area_shape_index_(0),
-    listEdited(false)
+    listEdited(false),
+    adl_(nullptr)
 {
     Gtk::Widget *child = cp_->getWidget();
     cp_->getEvents(EvMaskList, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask);
+    EvAreaMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvAreaMask.get_message());
     
     CurveListener::setMulti(true);
     
@@ -172,13 +175,22 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     add_button(areaMaskPaste, hb, 24);
 
     hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_EXPAND_WIDGET);
+
+    areaMaskDraw = new Gtk::ToggleButton();
+    //areaMaskDraw->get_style_context()->add_class("independent");
+    areaMaskDraw->add(*Gtk::manage(new RTImage("area-shape-draw.png")));
+    areaMaskDraw->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP"));
+    areaMaskDrawConn = areaMaskDraw->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskDrawChanged));
+    add_button(areaMaskDraw, hb, 24);
+    //hb->pack_start(*areaMaskDraw, Gtk::PACK_SHRINK, 0);
     
     areaMaskToggle = new Gtk::ToggleButton();
-    areaMaskToggle->get_style_context()->add_class("independent");
+    //areaMaskToggle->get_style_context()->add_class("independent");
     areaMaskToggle->add(*Gtk::manage(new RTImage("crosshair-adjust.png")));
     areaMaskToggle->set_tooltip_text(M("EDIT_OBJECT_TOOLTIP"));
     areaMaskToggle->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskToggleChanged));
-    hb->pack_start(*areaMaskToggle, Gtk::PACK_SHRINK, 0);
+    add_button(areaMaskToggle, hb, 24);
+    //hb->pack_start(*areaMaskToggle, Gtk::PACK_SHRINK, 0);
     area->pack_start(*hb);
 
     const auto add_adjuster =
@@ -621,6 +633,12 @@ void LabMasksPanel::updateAreaMask(bool from_mask)
 }
 
 
+inline const rtengine::ProcEvent &LabMasksPanel::areaMaskEvent() const
+{
+    return areaMask->getEnabled() ? EvAreaMask : EvAreaMaskVoid;
+}
+
+
 bool LabMasksPanel::button1Released()
 {
     if (last_object_ != -1) {
@@ -629,7 +647,7 @@ bool LabMasksPanel::button1Released()
         populateShapeList(selected_, area_shape_index_);
         auto l = getListener();
         if (l) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
     return AreaMask::button1Released();
@@ -689,7 +707,7 @@ void LabMasksPanel::curveChanged(CurveEditor* ce)
     auto l = getListener();
     if (l) {
         if (ce == areaMaskContrast) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         } else if (ce == hueMask) {
             l->panelChanged(EvHMask, M("HISTORY_CUSTOMCURVE"));
         } else if (ce == chromaticityMask) {
@@ -716,7 +734,7 @@ void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
         onAreaShapeSelectionChanged();
         populateShapeList(selected_, area_shape_index_);
         if (l) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
     maskShow(selected_, true);
@@ -889,8 +907,8 @@ void LabMasksPanel::onAreaShapeResetPressed()
         maskShow(selected_, true);        
         enableListener();
         auto l = getListener();
-        if (l && areaMask->getEnabled()) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        if (l) {// && areaMask->getEnabled()) {
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
 }
@@ -907,8 +925,8 @@ void LabMasksPanel::onAreaShapeAddPressed()
         areaShapeSelect(am.shapes.size()-1, true);
         maskShow(selected_, true);        
         auto l = getListener();
-        if (l && areaMask->getEnabled()) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        if (l) {// && areaMask->getEnabled()) {
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
 }
@@ -923,8 +941,8 @@ void LabMasksPanel::onAreaShapeRemovePressed()
         areaShapeSelect(area_shape_index_ > 0 ? area_shape_index_ - 1 : 0, true);
         maskShow(selected_, true);
         auto l = getListener();
-        if (l && areaMask->getEnabled()) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        if (l) {// && areaMask->getEnabled()) {
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
 }
@@ -962,7 +980,7 @@ void LabMasksPanel::onAreaShapeModeChanged(int i)
     populateShapeList(selected_, area_shape_index_);
     auto l = getListener();
     if (l) {
-        l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
     }
     maskShow(selected_, true);
 }
@@ -1038,8 +1056,8 @@ void LabMasksPanel::onAreaMaskPastePressed()
         maskShow(selected_, true);        
         enableListener();
         auto l = getListener();
-        if (l && areaMask->getEnabled()) {
-            l->panelChanged(EvAreaMask, M("GENERAL_CHANGED"));
+        if (l) {// && areaMask->getEnabled()) {
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
 }
@@ -1071,3 +1089,75 @@ void LabMasksPanel::areaShapeSelect(int sel, bool update_list)
         areaMaskShapes->get_selection()->select(pth);
     }
 }
+
+
+void LabMasksPanel::setAreaDrawListener(AreaDrawListener *l)
+{
+    adl_ = l;
+}
+
+
+void LabMasksPanel::updateArea(AreaDrawUpdater::Phase phase, int x1, int y1, int x2, int y2)
+{
+    EditDataProvider *provider = getEditProvider();
+
+    if (!provider) {
+        return;
+    }
+
+    int imW = 0, imH = 0;
+    provider->getImageSize(imW, imH);
+    if (!imW || !imH) {
+        return;
+    }
+
+    if (x1 > x2) {
+        std::swap(x1, x2);
+    }
+    if (y1 > y2) {
+        std::swap(y1, y2);
+    }
+    width_ = float(x2 - x1) * 100.f / imW;
+    height_ = float(y2 - y1) * 100.f / imH;
+    center_x_ = (x1 + (x2 - x1)/2 - imW/2) * 200.f / imW;
+    center_y_ = (y1 + (y2 - y1)/2 - imH/2) * 200.f / imH;
+    angle_ = 0;
+    if (phase == AreaDrawUpdater::BEGIN) {
+        subscribe();
+    }
+    updateGeometry();
+    if (phase == AreaDrawUpdater::END) {
+        updateAreaMask(true);
+        onAreaShapeSelectionChanged();
+        populateShapeList(selected_, area_shape_index_);
+        ConnectionBlocker blocker(areaMaskDrawConn);
+        areaMaskDraw->set_active(false);
+        areaMaskToggle->set_active(true);
+
+        auto l = getListener();
+        if (l) {// && areaMask->getEnabled()) {
+            l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
+        }
+    }
+}
+
+
+void LabMasksPanel::cancelUpdateArea()
+{
+    updateAreaMask(false);
+    areaMaskToggle->set_active(true);
+}
+
+
+void LabMasksPanel::onAreaMaskDrawChanged()
+{
+    if (adl_) {
+        areaMaskToggle->set_active(false);
+        if (areaMaskDraw->get_active()) {
+            adl_->startDrawingArea(this);
+        } else {
+            adl_->stopDrawingArea();
+        }
+    }
+}
+

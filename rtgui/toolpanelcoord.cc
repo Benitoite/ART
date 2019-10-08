@@ -450,6 +450,9 @@ void ToolPanelCoordinator::panelChanged(const rtengine::ProcEvent& event, const 
         ipc->getInitialImage()->getImageSource()->getFullSize (fw, fh, tr);
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
         colorcorrection->updateGeometry(fw, fh);
+        smoothing->updateGeometry(fw, fh);
+        cbdl->updateGeometry(fw, fh);
+        textureBoost->updateGeometry(fw, fh);
     }
 
     // some transformations make the crop change for convenience
@@ -1111,4 +1114,13 @@ void ToolPanelCoordinator::autoMatchedToneCurveChanged(rtengine::procparams::Ton
 bool ToolPanelCoordinator::getFilmNegativeExponents(rtengine::Coord spotA, rtengine::Coord spotB, std::array<float, 3>& newExps)
 {
     return ipc && ipc->getFilmNegativeExponents(spotA.x, spotA.y, spotB.x, spotB.y, newExps);
+}
+
+
+void ToolPanelCoordinator::setAreaDrawListener(AreaDrawListener *listener)
+{
+    colorcorrection->setAreaDrawListener(listener);
+    smoothing->setAreaDrawListener(listener);
+    cbdl->setAreaDrawListener(listener);
+    textureBoost->setAreaDrawListener(listener);
 }
