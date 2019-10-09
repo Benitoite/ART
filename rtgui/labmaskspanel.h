@@ -143,6 +143,7 @@ private:
     void onAreaMaskPastePressed();
     void onAreaShapeModeChanged(int i);
     void onAreaMaskDrawChanged();
+    void onAreaMaskDrawAddPressed();
     
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
@@ -195,6 +196,7 @@ private:
     Gtk::Button *areaMaskRemove;
     unsigned int area_shape_index_;
     Gtk::ToggleButton *areaMaskToggle;
+    Gtk::Button *areaMaskDrawAdd;
     Gtk::ToggleButton *areaMaskDraw;
     sigc::connection areaMaskDrawConn;
     Gtk::Button *areaMaskCopy;

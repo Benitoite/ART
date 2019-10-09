@@ -1892,7 +1892,9 @@ TP_LABMASKS_AREA_HEIGHT;Height
 TP_LABMASKS_INVERTED;Inverted
 TP_LABMASKS_AREA_ROUNDNESS;Roundness
 TP_LABMASKS_AREA_MASK_COPY_TOOLTIP;Copy the current area mask to the clipboard
-TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP;Draw an area mask on the preview image
+TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP;Edit the current area shape by drawing on the preview image
+TP_LABMASKS_AREA_MASK_DRAW_ADD_TOOLTIP;Add an area shape by drawing on the preview image
+TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP;Display the current area shape on the preview image
 TP_LABMASKS_AREA_MASK_PASTE_TOOLTIP;Paste an area mask from the clipboard
 TP_LABMASKS_AREA_SHAPE;Shape
 TP_LABMASKS_AREA_SHAPE_MODE;Mode

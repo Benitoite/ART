@@ -176,18 +176,21 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_EXPAND_WIDGET);
 
+    areaMaskDrawAdd = new Gtk::Button();
+    areaMaskDrawAdd->add(*Gtk::manage(new RTImage("area-shape-draw-add.png")));
+    areaMaskDrawAdd->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_DRAW_ADD_TOOLTIP"));
+    areaMaskDrawAdd->signal_clicked().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskDrawAddPressed));
+    add_button(areaMaskDrawAdd, hb, 24);
+
     areaMaskDraw = new Gtk::ToggleButton();
-    //areaMaskDraw->get_style_context()->add_class("independent");
     areaMaskDraw->add(*Gtk::manage(new RTImage("area-shape-draw.png")));
     areaMaskDraw->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP"));
     areaMaskDrawConn = areaMaskDraw->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskDrawChanged));
     add_button(areaMaskDraw, hb, 24);
-    //hb->pack_start(*areaMaskDraw, Gtk::PACK_SHRINK, 0);
     
     areaMaskToggle = new Gtk::ToggleButton();
-    //areaMaskToggle->get_style_context()->add_class("independent");
     areaMaskToggle->add(*Gtk::manage(new RTImage("crosshair-adjust.png")));
-    areaMaskToggle->set_tooltip_text(M("EDIT_OBJECT_TOOLTIP"));
+    areaMaskToggle->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP"));
     areaMaskToggle->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskToggleChanged));
     add_button(areaMaskToggle, hb, 24);
     //hb->pack_start(*areaMaskToggle, Gtk::PACK_SHRINK, 0);
@@ -1162,3 +1165,9 @@ void LabMasksPanel::onAreaMaskDrawChanged()
     }
 }
 
+
+void LabMasksPanel::onAreaMaskDrawAddPressed()
+{
+    onAreaShapeAddPressed();
+    areaMaskDraw->set_active(true);
+}
