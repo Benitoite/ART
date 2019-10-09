@@ -1297,7 +1297,7 @@ void CropWindow::updateCursor(int x, int y, int bstate)
         } else if (crop_resize_allowed && (onArea(CropLeft, x, y) || onArea(CropRight, x, y))) {
             newType = CSResizeWidth;
         } else if (crop_move_allowed && onArea(CropInside, x, y)) {
-            newType = CSMove;
+            newType = CSMove2D;
         } else if (onArea(CropImage, x, y)) {
             int objectID = -1;
 
