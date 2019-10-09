@@ -596,6 +596,7 @@ void LabMasksPanel::setEditProvider(EditDataProvider *provider)
 void LabMasksPanel::onAreaMaskToggleChanged()
 {
     if (areaMaskToggle->get_active()) {
+        areaMaskDraw->set_active(false);
         subscribe();
     } else {
         unsubscribe();
@@ -1152,8 +1153,8 @@ void LabMasksPanel::cancelUpdateArea()
 void LabMasksPanel::onAreaMaskDrawChanged()
 {
     if (adl_) {
-        areaMaskToggle->set_active(false);
         if (areaMaskDraw->get_active()) {
+            areaMaskToggle->set_active(false);
             adl_->startDrawingArea(this);
         } else {
             adl_->stopDrawingArea();
