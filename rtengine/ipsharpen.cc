@@ -197,8 +197,8 @@ void dcdamping(float** aI, float** aO, float damping, int W, int H)
 
 void deconvsharpening(float **luminance, float **blend, char **impulse, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
 {
-    const auto blurradius = sharpenParam.blurradius / scale;
-    if (sharpenParam.deconvamount == 0 && blurradius < 0.25f) {
+    // const auto blurradius = sharpenParam.blurradius / scale;
+    if (sharpenParam.deconvamount == 0) {// && blurradius < 0.25f) {
         return;
     }
 BENCHFUN
@@ -216,26 +216,27 @@ BENCHFUN
         }
     }
 
-    JaggedArray<float>* blurbuffer = nullptr;
+    // JaggedArray<float>* blurbuffer = nullptr;
 
-    if (blurradius >= 0.25f) {
-        blurbuffer = new JaggedArray<float>(W, H);
-        JaggedArray<float> &blur = *blurbuffer;
-#ifdef _OPENMP
-#       pragma omp parallel if (multiThread)
-#endif
-        {
-            gaussianBlur(tmpI, blur, W, H, blurradius);
-#ifdef _OPENMP
-            #pragma omp for
-#endif
-            for (int i = 0; i < H; ++i) {
-                for (int j = 0; j < W; ++j) {
-                    blur[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
-                }
-            }
-        }
-    }
+//     if (blurradius >= 0.25f) {
+//         // blurbuffer = new JaggedArray<float>(W, H);
+//         // JaggedArray<float> &blur = *blurbuffer;
+// #ifdef _OPENMP
+// #       pragma omp parallel if (multiThread)
+// #endif
+//         {
+//             gaussianBlur(blend, blend, W, H, blurradius);
+// //             gaussianBlur(tmpI, blur, W, H, blurradius);
+// // #ifdef _OPENMP
+// //             #pragma omp for
+// // #endif
+// //             for (int i = 0; i < H; ++i) {
+// //                 for (int j = 0; j < W; ++j) {
+// //                     blur[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
+// //                 }
+// //             }
+//         }
+//     }
     const float damping = sharpenParam.deconvdamping / 5.0;
     const bool needdamp = sharpenParam.deconvdamping > 0;
     const double sigma = sharpenParam.deconvradius / scale;
@@ -268,19 +269,19 @@ BENCHFUN
             }
         }
 
-        if (blurradius >= 0.25f) {
-            JaggedArray<float> &blur = *blurbuffer;
-#ifdef _OPENMP
-        #pragma omp for
-#endif
-            for (int i = 0; i < H; ++i) {
-                for (int j = 0; j < W; ++j) {
-                    luminance[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
-                }
-            }
-        }
+//         if (blurradius >= 0.25f) {
+//             JaggedArray<float> &blur = *blurbuffer;
+// #ifdef _OPENMP
+//         #pragma omp for
+// #endif
+//             for (int i = 0; i < H; ++i) {
+//                 for (int j = 0; j < W; ++j) {
+//                     luminance[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
+//                 }
+//             }
+//         }
     } // end parallel
-    delete blurbuffer;
+    // delete blurbuffer;
 
     apply_gamma<true, false>(luminance, W, H, 0.18f, 3.f, multiThread);    
 }
@@ -302,25 +303,25 @@ BENCHFUN
     }
 
     JaggedArray<float> b2(W, H);
-    JaggedArray<float> blur(W, H);
+    // JaggedArray<float> blur(W, H);
 
-    const auto blurradius = sharpenParam.blurradius / scale;
-    if (blurradius >= 0.25f) {
-#ifdef _OPENMP
-#       pragma omp parallel if (multiThread)
-#endif
-        {
-            gaussianBlur(Y, blur, W, H, blurradius);
-#ifdef _OPENMP
-#           pragma omp for
-#endif
-            for (int i = 0; i < H; ++i) {
-                for (int j = 0; j < W; ++j) {
-                    blur[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
-                }
-            }
-        }
-    }
+//     const auto blurradius = sharpenParam.blurradius / scale;
+//     if (blurradius >= 0.25f) {
+// #ifdef _OPENMP
+// #       pragma omp parallel if (multiThread)
+// #endif
+//         {
+//             gaussianBlur(Y, blur, W, H, blurradius);
+// #ifdef _OPENMP
+// #           pragma omp for
+// #endif
+//             for (int i = 0; i < H; ++i) {
+//                 for (int j = 0; j < W; ++j) {
+//                     blur[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
+//                 }
+//             }
+//         }
+//     }
 
 
 #ifdef _OPENMP
@@ -385,16 +386,16 @@ BENCHFUN
         delete [] b3;
     }
 
-    if (blurradius >= 0.25f) {
-#ifdef _OPENMP
-#        pragma omp parallel for if (multiThread)
-#endif
-        for (int i = 0; i < H; ++i) {
-            for (int j = 0; j < W; ++j) {
-                Y[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
-            }
-        }
-    }
+//     if (blurradius >= 0.25f) {
+// #ifdef _OPENMP
+// #        pragma omp parallel for if (multiThread)
+// #endif
+//         for (int i = 0; i < H; ++i) {
+//             for (int j = 0; j < W; ++j) {
+//                 Y[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
+//             }
+//         }
+//     }
 
     apply_gamma<true, true>(Y, W, H, 1.f, 3.f, multiThread);
 }

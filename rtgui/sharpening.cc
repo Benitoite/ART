@@ -27,7 +27,7 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
 {
     auto m = ProcEventMapper::getInstance();
     EvSharpenContrast = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_CONTRAST");
-    EvSharpenBlur = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_BLUR");
+    // EvSharpenBlur = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_BLUR");
     EvAutoRadiusOn = m->newEvent(SHARPENING | M_AUTOEXP, "HISTORY_MSG_SHARPENING_AUTORADIUS");
     EvAutoRadiusOff = m->newEvent(M_VOID, "HISTORY_MSG_SHARPENING_AUTORADIUS");
 
@@ -37,10 +37,10 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     contrast->setAdjusterListener (this);
     pack_start(*contrast);
     contrast->show();
-    blur = Gtk::manage(new Adjuster (M("TP_SHARPENING_BLUR"), 0.2, 2.0, 0.05, 0.2));
-    blur->setAdjusterListener (this);
-    pack_start(*blur);
-    blur->show();
+    // blur = Gtk::manage(new Adjuster (M("TP_SHARPENING_BLUR"), 0.2, 2.0, 0.05, 0.2));
+    // blur->setAdjusterListener (this);
+    // pack_start(*blur);
+    // blur->show();
 
     Gtk::Label* ml = Gtk::manage (new Gtk::Label (M("TP_SHARPENING_METHOD") + ":"));
     ml->show ();
@@ -172,7 +172,7 @@ void Sharpening::read(const ProcParams* pp)
     lastHaloControl = pp->sharpening.halocontrol;
 
     contrast->setValue      (pp->sharpening.contrast);
-    blur->setValue          (pp->sharpening.blurradius);
+    // blur->setValue          (pp->sharpening.blurradius);
     amount->setValue        (pp->sharpening.amount);
     radius->setValue        (pp->sharpening.radius);
     threshold->setValue<int>(pp->sharpening.threshold);
@@ -211,7 +211,7 @@ void Sharpening::write(ProcParams* pp)
 {
 
     pp->sharpening.contrast         = contrast->getValue ();
-    pp->sharpening.blurradius       = blur->getValue ();
+    // pp->sharpening.blurradius       = blur->getValue ();
     pp->sharpening.amount           = (int)amount->getValue();
     pp->sharpening.enabled          = getEnabled ();
     pp->sharpening.radius           = radius->getValue ();
@@ -237,7 +237,7 @@ void Sharpening::write(ProcParams* pp)
 void Sharpening::setDefaults(const ProcParams* defParams)
 {
     contrast->setDefault (defParams->sharpening.contrast);
-    blur->setDefault (defParams->sharpening.blurradius);
+    // blur->setDefault (defParams->sharpening.blurradius);
     amount->setDefault (defParams->sharpening.amount);
     radius->setDefault (defParams->sharpening.radius);
     threshold->setDefault<int> (defParams->sharpening.threshold);
@@ -256,7 +256,7 @@ void Sharpening::adjusterChanged(Adjuster* a, double newval)
 
         Glib::ustring costr;
 
-        if (a == radius || a == dradius || a == blur) {
+        if (a == radius || a == dradius /*|| a == blur*/) {
             costr = Glib::ustring::format (std::setw(3), std::fixed, std::setprecision(2), a->getValue());
         } else if (a == eradius) {
             costr = Glib::ustring::format (std::setw(2), std::fixed, std::setprecision(1), a->getValue());
@@ -270,8 +270,8 @@ void Sharpening::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged (EvShrAmount, costr);
         } else if (a == radius) {
             listener->panelChanged (EvShrRadius, costr);
-        } else if (a == blur) {
-            listener->panelChanged (EvSharpenBlur, costr);
+        // } else if (a == blur) {
+        //     listener->panelChanged (EvSharpenBlur, costr);
         } else if (a == eradius) {
             listener->panelChanged (EvShrEdgeRadius, costr);
         } else if (a == etolerance) {
@@ -395,7 +395,7 @@ void Sharpening::method_changed ()
 void Sharpening::trimValues (rtengine::procparams::ProcParams* pp)
 {
     contrast->trimValue(pp->sharpening.contrast);
-    blur->trimValue(pp->sharpening.blurradius);
+    // blur->trimValue(pp->sharpening.blurradius);
     radius->trimValue(pp->sharpening.radius);
     dradius->trimValue(pp->sharpening.deconvradius);
     amount->trimValue(pp->sharpening.amount);

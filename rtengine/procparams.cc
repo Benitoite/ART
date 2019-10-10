@@ -825,7 +825,7 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 SharpeningParams::SharpeningParams() :
     enabled(false),
     contrast(20.0),
-    blurradius(0.2),
+    blurradius(0),//.2),
     radius(0.5),
     amount(200),
     threshold(20, 80, 2000, 1200, false),
@@ -848,7 +848,7 @@ bool SharpeningParams::operator ==(const SharpeningParams& other) const
     return
         enabled == other.enabled
         && contrast == other.contrast
-        && blurradius == other.blurradius
+        // && blurradius == other.blurradius
         && radius == other.radius
         && amount == other.amount
         && threshold == other.threshold
@@ -2525,7 +2525,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "Contrast", sharpening.contrast, keyFile);
             saveToKeyfile("Sharpening", "Method", sharpening.method, keyFile);
             saveToKeyfile("Sharpening", "Radius", sharpening.radius, keyFile);
-            saveToKeyfile("Sharpening", "BlurRadius", sharpening.blurradius, keyFile);
+            // saveToKeyfile("Sharpening", "BlurRadius", sharpening.blurradius, keyFile);
             saveToKeyfile("Sharpening", "Amount", sharpening.amount, keyFile);
             saveToKeyfile("Sharpening", "Threshold", sharpening.threshold.toVector(), keyFile);
             saveToKeyfile("Sharpening", "OnlyEdges", sharpening.edgesonly, keyFile);
@@ -3270,7 +3270,7 @@ int ProcParams::load(bool load_general,
                 sharpening.contrast = 0;
             }
             assignFromKeyfile(keyFile, "Sharpening", "Radius", sharpening.radius);
-            assignFromKeyfile(keyFile, "Sharpening", "BlurRadius", sharpening.blurradius);
+            // assignFromKeyfile(keyFile, "Sharpening", "BlurRadius", sharpening.blurradius);
             assignFromKeyfile(keyFile, "Sharpening", "Amount", sharpening.amount);
 
             if (keyFile.has_key("Sharpening", "Threshold")) {

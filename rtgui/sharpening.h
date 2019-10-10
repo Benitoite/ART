@@ -30,7 +30,7 @@ class Sharpening : public ToolParamBlock, public ThresholdAdjusterListener, publ
 
 protected:
     Adjuster* contrast;
-    Adjuster* blur;
+    // Adjuster* blur;
     MyComboBoxText* method;
     Adjuster* dradius;
     Adjuster* damount;
