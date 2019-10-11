@@ -61,10 +61,10 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
             Color::yuv2rgb(Y, u * Y, v * Y, R, G, B, ws);
         };
         
-    if (radius > 0 && strength > 0) {
+    int r = max(int(round(radius / scale)), 0);
+    if (r > 0 && strength > 0) {
         const int W = R.width();
         const int H = R.height();
-        int r = max(int(radius / scale), 1);
 
         array2D<float> iR(W, H, R, 0);
         array2D<float> iG(W, H, G, 0);
