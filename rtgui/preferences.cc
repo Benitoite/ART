@@ -655,7 +655,7 @@ Gtk::Widget* Preferences::getGeneralPanel ()
     parseDir (argv0 + "/languages", langs, "");
 
     for (size_t i = 0; i < langs.size(); i++) {
-        if ("default" != langs[i] && "README" != langs[i] && "LICENSE" != langs[i]) {
+        if (/*"default" != langs[i] &&*/ "README" != langs[i] && "LICENSE" != langs[i] && langs[i].size() > 0 && langs[langs.size()-1] != '~') {
             languages->append (langs[i]);
         }
     }
