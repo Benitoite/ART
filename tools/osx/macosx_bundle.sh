@@ -98,7 +98,7 @@ RESOURCES="${CONTENTS}/Resources"
 MACOS="${CONTENTS}/MacOS"
 LIB="${CONTENTS}/Frameworks"
 ETC="${RESOURCES}/etc"
-EXECUTABLE="${MACOS}/rawtherapee"
+EXECUTABLE="${MACOS}/ART"
 
 msg "Removing old files:"
 rm -rf "${APP}" "${PROJECT_NAME}_*.dmg"
@@ -165,14 +165,17 @@ cp /opt/local/share/lensfun/version_2/* "${RESOURCES}/share/lensfun"
 # Copy liblensfun to Frameworks
 cp /opt/local/lib/liblensfun.2.dylib "${RESOURCES}/../Frameworks"
 
-# Copy libiomp5 to Frameworks
-cp /opt/local/lib/libomp/libiomp5.dylib "${RESOURCES}/../Frameworks"
+# Copy libopm to Frameworks
+cp /opt/local/lib/libomp.dylib "${RESOURCES}/../Frameworks"
+
+# Copy libexiv2 to Frameworks
+cp /opt/local/lib/libexiv2.27.dylib "${RESOURCES}/../Frameworks"
 
 # Copy the libiomp5 license into the app bundle
-cp "${PROJECT_SOURCE_DIR}/licenses/osx_libiomp5_LICENSE.txt" "${RESOURCES}"
+#cp "${PROJECT_SOURCE_DIR}/licenses/osx_libiomp5_LICENSE.txt" "${RESOURCES}"
 
 # Install names
-find -E "${CONTENTS}" -type f -regex '.*/(rawtherapee-cli|rawtherapee|.*\.(dylib|so))' | while read -r x; do
+find -E "${CONTENTS}" -type f -regex '.*/(ART-cli|ART|.*\.(dylib|so))' | while read -r x; do
     msg "Modifying install names: ${x}"
     {
         # id
@@ -193,7 +196,7 @@ PROJECT_SOURCE_DATA_DIR="${PROJECT_SOURCE_DIR}/tools/osx"
 
 # Executable loader
 # Note: executable is renamed to 'rawtherapee-bin'.
-mv "${MACOS}/rawtherapee" "${MACOS}/rawtherapee-bin"
+mv "${MACOS}/ART" "${MACOS}/rawtherapee-bin"
 install -m 0755 "${PROJECT_SOURCE_DATA_DIR}/executable_loader.in" "${MACOS}/rawtherapee"
 # App bundle resources
 cp "${PROJECT_SOURCE_DATA_DIR}/"{rawtherapee,profile}.icns "${RESOURCES}"
