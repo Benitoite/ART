@@ -674,6 +674,19 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
                    white_from_cc ? "provided by camconst.json" : "provided by dcraw");
             printf("raw crop: %d %d %d %d (provided by %s)\n", left_margin, top_margin, iwidth, iheight, (cc && cc->has_rawCrop()) ? "camconst.json" : "dcraw");
             printf("color matrix provided by %s\n", (cc && cc->has_dcrawMatrix()) ? "camconst.json" : "dcraw");
+            if (cc->has_dcrawMatrix()) {
+                const short *mx = cc->get_dcrawMatrix();
+                printf("[");
+                const char *sep = "";
+                for (int j = 0; j < 12; j++) {
+                    if (!mx[j]) {
+                        break;
+                    }
+                    printf("%s%d", sep, mx[j]);
+                    sep = ", ";
+                }
+                printf("]\n");
+            }
         }
     }
 
