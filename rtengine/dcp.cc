@@ -1728,7 +1728,10 @@ DCPProfile::Matrix DCPProfile::makeXyzCam(const ColorTemp& white_balance, const 
         /* DNG ref way to convert XY to temperature, which affect matrix mixing. A different model here
            typically does not affect the result too much, ie it's probably not strictly necessary to
            use the DNG reference code here, but we do it for now. */
-        const double wbtemp = xyCoordToTemperature(white_xy);
+        //const double wbtemp = xyCoordToTemperature(white_xy);
+        const double wbtemp = white_balance.getTemp();
+        // std::cout << "WB TEMP ADOBE: " << wbtemp
+        //           << " ART: " << white_balance.getTemp() << std::endl;
 
         if (wbtemp <= temperature_1) {
             mix = 1.0;
