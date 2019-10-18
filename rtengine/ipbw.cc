@@ -367,8 +367,18 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
         img->setMode(Imagefloat::Mode::YUV, multiThread);
 
         LUTf Ylut(65536);
+        DiagonalCurve filmcurve({
+                DCT_Spline,
+                0, 0,
+                0.11, 0.09,
+                0.32, 0.47,
+                0.66, 0.87,
+                1, 1
+            });
         for (int i = 0; i < 65536; ++i) {
-            Ylut[i] = pow_F(float(i)/65535.f, 0.3f) * 65535.f;
+            float x = Color::gamma_srgbclipped(i) / 65535.f;
+            float y = filmcurve.getVal(x) * 65535.f;
+            Ylut[i] = y;
         }
 
 #ifdef __SSE2__
