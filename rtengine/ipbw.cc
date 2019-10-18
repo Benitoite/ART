@@ -360,11 +360,26 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
 
     if (params->blackwhite.colorCast.getBottom() > 0) {
         // apply color cast
-        float s = float(params->blackwhite.colorCast.getBottom()) / 100.f;
+        float s = pow_F(float(params->blackwhite.colorCast.getBottom()) / 100.f, 3.f);
         float h = float(params->blackwhite.colorCast.getTop()) / 180.f * rtengine::RT_PI;
         float u, v;
         Color::hsl2yuv(h, s, u, v);
         img->setMode(Imagefloat::Mode::YUV, multiThread);
+
+        LUTf Ylut(65536);
+        DiagonalCurve filmcurve({
+                DCT_Spline,
+                0, 0,
+                0.11, 0.09,
+                0.32, 0.47,
+                0.66, 0.87,
+                1, 1
+            });
+        for (int i = 0; i < 65536; ++i) {
+            float x = Color::gamma_srgbclipped(i) / 65535.f;
+            float y = filmcurve.getVal(x) * 65535.f;
+            Ylut[i] = y;
+        }
 
 #ifdef __SSE2__
         vfloat uv = F2V(u);
@@ -378,13 +393,13 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
             int x = 0;
 #ifdef __SSE2__
             for (; x < W - 3; x += 4) {
-                vfloat Yv = LVF(img->g(y, x));
+                vfloat Yv = Ylut[LVF(img->g(y, x))];
                 STVF(img->b(y, x), LVF(img->b(y, x)) + Yv * uv);
                 STVF(img->r(y, x), LVF(img->r(y, x)) + Yv * vv);
             }
 #endif
             for (; x < W; ++x) {
-                float Y = img->g(y, x);
+                float Y = Ylut[img->g(y, x)];
                 img->b(y, x) += Y * u;
                 img->r(y, x) += Y * v;
             }

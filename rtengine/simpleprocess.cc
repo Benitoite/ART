@@ -401,7 +401,7 @@ private:
 
 
         // Setting the output curve to readyImg
-        if (params.icm.outputProfile != "" && params.icm.outputProfile != ColorManagementParams::NoICMString) {
+        if (params.icm.outputProfile != "" && params.icm.outputProfile != ColorManagementParams::NoICMString && params.icm.outputProfile != ColorManagementParams::NoProfileString) {
 
             cmsHPROFILE jprof = ICCStore::getInstance()->getProfile (params.icm.outputProfile); //get outProfile
 

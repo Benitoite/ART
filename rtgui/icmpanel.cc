@@ -200,6 +200,7 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
     oProfVBox->pack_start(*oProfNames, Gtk::PACK_SHRINK);
 
     oProfNames->append(M("TP_ICM_NOICM"));
+    oProfNames->append(M("TP_ICM_NOPROFILE"));
     oProfNames->set_active(0);
 
     std::vector<Glib::ustring> opnames = ICCStore::getInstance()->getProfiles(rtengine::ICCStore::ProfileType::OUTPUT);
@@ -207,7 +208,7 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
     for (size_t i = 0; i < opnames.size(); i++) {
         oProfNames->append(opnames[i]);
     }
-
+    
     oProfNames->set_active(0);
 
     // Rendering intent
@@ -492,6 +493,8 @@ void ICMPanel::read(const ProcParams* pp)
 
     if (pp->icm.outputProfile == ColorManagementParams::NoICMString) {
         oProfNames->set_active_text(M("TP_ICM_NOICM"));
+    } else if (pp->icm.outputProfile == ColorManagementParams::NoProfileString) {
+        oProfNames->set_active_text(M("TP_ICM_NOPROFILE"));
     } else {
         oProfNames->set_active_text(pp->icm.outputProfile);
     }
@@ -538,8 +541,10 @@ void ICMPanel::write(ProcParams* pp)
 
     pp->icm.workingProfile = wProfNames->get_active_text();
     pp->icm.dcpIlluminant = rtengine::max<int>(dcpIll->get_active_row_number(), 0);
-    if (oProfNames->get_active_text() == M("TP_ICM_NOICM")) {
+    if (oProfNames->get_active_row_number() == 0) {//M("TP_ICM_NOICM")) {
         pp->icm.outputProfile  = ColorManagementParams::NoICMString;
+    } else if (oProfNames->get_active_row_number() == 1) {
+        pp->icm.outputProfile  = ColorManagementParams::NoProfileString;
     } else {
         pp->icm.outputProfile  = oProfNames->get_active_text();
     }

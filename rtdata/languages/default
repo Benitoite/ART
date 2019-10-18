@@ -1830,6 +1830,7 @@ TP_ICM_INPUTNONE_TOOLTIP;Use no input color profile at all.\nUse only in special
 TP_ICM_INPUTPROFILE;Input Profile
 TP_ICM_LABEL;Color Management
 TP_ICM_NOICM;No ICM: sRGB Output
+TP_ICM_NOPROFILE;No profile (passthrough mode)
 TP_ICM_OUTPUTPROFILE;Output Profile
 TP_ICM_PROFILEINTENT;Rendering Intent
 TP_ICM_SAVEREFERENCE;Save Reference Image

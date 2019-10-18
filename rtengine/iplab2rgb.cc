@@ -315,7 +315,7 @@ Imagefloat* ImProcFunctions::lab2rgbOut(Imagefloat *img, int cx, int cy, int cw,
 
         image->ExecCMSTransform(hTransform, img, cx, cy);
         cmsDeleteTransform(hTransform);
-    } else {
+    } else if (icm.outputProfile != procparams::ColorManagementParams::NoProfileString) {
         
 #ifdef _OPENMP
         #pragma omp parallel for schedule(dynamic,16) if (multiThread)
@@ -346,6 +346,9 @@ Imagefloat* ImProcFunctions::lab2rgbOut(Imagefloat *img, int cx, int cy, int cw,
                 image->b(i - cy, j - cx) = Color::gamma2curve[CLIP(B)];
             }
         }
+    } else {
+        img->copyTo(image);
+        image->setMode(Imagefloat::Mode::RGB, multiThread);
     }
 
     return image;

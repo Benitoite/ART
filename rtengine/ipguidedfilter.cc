@@ -47,18 +47,12 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         [&](float R, float G, float B, float &Y, float &u, float &v) -> void
         {
             Color::rgb2yuv(R, G, B, Y, u, v, ws);
-            if (Y > 0.f) {
-                u /= Y;
-                v /= Y;
-            } else {
-                u = v = 0.f;
-            }
         };
 
     const auto yuv2rgb =
         [&](float Y, float u, float v, float &R, float &G, float &B) -> void
         {
-            Color::yuv2rgb(Y, u * Y, v * Y, R, G, B, ws);
+            Color::yuv2rgb(Y, u, v, R, G, B, ws);
         };
         
     int r = max(int(round(radius / scale)), 0);
@@ -104,8 +98,9 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                         ou = iu;
                         ov = iv;
                     } else {
-                        ou = intp(bf, ou, iu);
-                        ov = intp(bf, ov, iv);
+                        float bump = oY > 1e-5f ? iY / oY : 1.f;
+                        ou = intp(bf, ou, iu) * bump;
+                        ov = intp(bf, ov, iv) * bump;
                         oY = iY;
                     }
                     yuv2rgb(oY, ou, ov, R[y][x], G[y][x], B[y][x]);
