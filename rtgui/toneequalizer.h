@@ -38,8 +38,8 @@ public:
 
 private:
     std::array<Adjuster *, 5> bands;
-    Adjuster *detail;
+    Adjuster *regularization;
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvBands;
-    rtengine::ProcEvent EvDetail;
+    rtengine::ProcEvent EvRegularization;
 };

@@ -28,7 +28,7 @@ ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_T
     auto m = ProcEventMapper::getInstance();
     EvEnabled = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_ENABLED");
     EvBands = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_BANDS");
-    EvDetail = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_DETAIL");
+    EvRegularization = m->newEvent(RGBCURVE, "HISTORY_MSG_TONE_EQUALIZER_REGULARIZATION");
 
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i] = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_BAND_" + std::to_string(i)), -100, 100, 1, 0));
@@ -36,9 +36,9 @@ ToneEqualizer::ToneEqualizer(): FoldableToolPanel(this, "toneequalizer", M("TP_T
         pack_start(*bands[i]);
     }
     pack_start(*Gtk::manage(new Gtk::HSeparator()));
-    detail = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_DETAIL"), -5, 5, 1, 0));
-    detail->setAdjusterListener(this);
-    pack_start(*detail);
+    regularization = Gtk::manage(new Adjuster(M("TP_TONE_EQUALIZER_DETAIL"), -5, 5, 1, 0));
+    regularization->setAdjusterListener(this);
+    pack_start(*regularization);
     
     show_all_children ();
 }
@@ -53,7 +53,7 @@ void ToneEqualizer::read(const ProcParams *pp)
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->setValue(pp->toneEqualizer.bands[i]);
     }
-    detail->setValue(pp->toneEqualizer.detail);
+    regularization->setValue(pp->toneEqualizer.regularization);
     
     enableListener();
 }
@@ -65,7 +65,7 @@ void ToneEqualizer::write(ProcParams *pp)
         pp->toneEqualizer.bands[i] = bands[i]->getValue();
     }
     pp->toneEqualizer.enabled = getEnabled();
-    pp->toneEqualizer.detail = detail->getValue();
+    pp->toneEqualizer.regularization = regularization->getValue();
 }
 
 
@@ -74,15 +74,15 @@ void ToneEqualizer::setDefaults(const ProcParams *defParams)
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->setDefault(defParams->toneEqualizer.bands[i]);
     }
-    detail->setDefault(defParams->toneEqualizer.detail);
+    regularization->setDefault(defParams->toneEqualizer.regularization);
 }
 
 
 void ToneEqualizer::adjusterChanged(Adjuster *a, double newval)
 {
     if (listener && getEnabled()) {
-        if (a == detail) {
-            listener->panelChanged(EvDetail, Glib::ustring::format(a->getValue()));
+        if (a == regularization) {
+            listener->panelChanged(EvRegularization, Glib::ustring::format(a->getValue()));
         } else {
             Glib::ustring s;
             for (size_t i = 0; i < bands.size(); ++i) {
@@ -118,5 +118,5 @@ void ToneEqualizer::trimValues(rtengine::procparams::ProcParams *pp)
     for (size_t i = 0; i < bands.size(); ++i) {
         bands[i]->trimValue(pp->toneEqualizer.bands[i]);
     }
-    detail->trimValue(pp->toneEqualizer.detail);
+    regularization->trimValue(pp->toneEqualizer.regularization);
 }

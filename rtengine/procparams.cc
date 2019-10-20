@@ -1191,7 +1191,7 @@ bool SHParams::operator !=(const SHParams& other) const
 ToneEqualizerParams::ToneEqualizerParams():
     enabled(false),
     bands{0,0,0,0,0},
-    detail(0)
+    regularization(1)
 {
 }
 
@@ -1201,7 +1201,7 @@ bool ToneEqualizerParams::operator ==(const ToneEqualizerParams& other) const
     return
         enabled == other.enabled
         && bands == other.bands
-        && detail == other.detail;
+        && regularization == other.regularization;
 }
 
 
@@ -2649,7 +2649,7 @@ int ProcParams::save(bool save_general,
             for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
                 saveToKeyfile("ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i], keyFile);
             }
-            saveToKeyfile("ToneEqualizer", "Detail", toneEqualizer.detail, keyFile);
+            saveToKeyfile("ToneEqualizer", "Regularization", toneEqualizer.regularization, keyFile);
         }
         
 // Crop
@@ -3493,7 +3493,11 @@ int ProcParams::load(bool load_general,
             for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
                 assignFromKeyfile(keyFile, "ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i]);
             }
-            assignFromKeyfile(keyFile, "ToneEqualizer", "Detail", toneEqualizer.detail);
+            if (ppVersion >= 1002) {
+                assignFromKeyfile(keyFile, "ToneEqualizer", "Regularization", toneEqualizer.regularization);
+            } else {
+                assignFromKeyfile(keyFile, "ToneEqualizer", "Detail", toneEqualizer.regularization);
+            }
         }
         
         if (keyFile.has_group("Crop") && RELEVANT_(crop)) {
