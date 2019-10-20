@@ -2390,7 +2390,7 @@ BENCHFUN
                                 array2D<float> mask;
                                 if (detail_thresh > 0) {
                                     mask(width, height);
-                                    float thr = log2lin(float(detail_thresh)/200.f, 100.f);
+                                    float thr = log2lin(float(detail_thresh)/200.f, 10.f);
                                     buildBlendMask(labdn->L, mask, width, height, thr);
                                     float r = 20.f / scale;
                                     if (r > 0) {
@@ -2401,11 +2401,45 @@ BENCHFUN
                                     const float alfa = 0.856f;
                                     const float beta = 1.f + std::sqrt(log2lin(thr, 100.f));
                                     buildGradientsMask(width, height, labdn->L, m2, params_Ldetail/100.f, 7, 3, alfa, beta, multiThread);
+                                    float h = 0.f;
+                                    float l = RT_INFINITY;
                                     for (int i = 0; i < height; ++i) {
                                         for (int j = 0; j < width; ++j) {
                                             mask[i][j] *= m2[i][j];
+                                            h = max(mask[i][j], h);
+                                            l = min(mask[i][j], l);
                                         }
                                     }
+                                    if (h > 0.f) {
+                                        float f = (h - l);
+                                        for (int i = 0; i < height; ++i) {
+                                            for (int j = 0; j < width; ++j) {
+                                                mask[i][j] = (mask[i][j] - l) / f;
+                                            }
+                                        }
+                                    }
+                                    array2D<float> guide(width, height);
+                                    LUTf ll(32769);
+                                    for (int i = 0; i < 32769; ++i) {
+                                        ll[i] = xlin2log(float(i) / 32768.f, 10.f);
+                                    }
+                                    for (int i = 0; i < height; ++i) {
+                                        for (int j = 0; j < width; ++j) {
+                                            guide[i][j] = ll[labdn->L[i][j]];
+                                        }
+                                    }
+                                    guidedFilter(guide, mask, mask, r, 0.01f, multiThread);
+                                    #if 0
+                                    {
+                                        Imagefloat tmp(width, height);
+                                        for (int i = 0; i < height; ++i) {
+                                            for (int j = 0; j < width; ++j) {
+                                                tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
+                                            }
+                                        }
+                                        tmp.saveTIFF("/tmp/out.tif", 16);
+                                    }
+                                    #endif
                                 }
 
 #ifdef _OPENMP
