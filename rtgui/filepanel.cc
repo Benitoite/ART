@@ -230,6 +230,17 @@ void FilePanel::on_NB_switch_page(Gtk::Widget* page, guint page_num)
         set_position(pane_pos_);
         queue_draw();
     }
+    idle_register.add(
+        [this]() -> bool
+        {
+            for (const auto &e : fileCatalog->fileBrowser->getEntries()) {
+                if (e->selected) {
+                    fileCatalog->fileBrowser->setScrollPosition(e->getStartX(), e->getStartY());
+                    break;
+                }
+            }
+            return false;
+        }, G_PRIORITY_LOW);
 }
 
 bool FilePanel::fileSelected (Thumbnail* thm)
