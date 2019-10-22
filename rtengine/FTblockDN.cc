@@ -1411,11 +1411,230 @@ void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
     }
 }
 
+
+void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin, int numtiles, int numthreads, int denoiseNestedLevels, float **LbloxArray, float **fLbloxArray, size_t blox_array_size, float params_Ldetail, int detail_thresh, array2D<float> &tilemask_in, array2D<float> &tilemask_out, fftwf_plan *plan_forward_blox, fftwf_plan *plan_backward_blox, int max_numblox_W, double scale)
+{
+    const auto compute_detail =
+        [](float d) -> float
+        {
+            return SQR(static_cast<float>(SQR(100. - d) + 50.*(100. - d)) * TS * 0.5f);
+        };
+    const float detail_hi = compute_detail(params_Ldetail);
+    const float detail_lo = compute_detail(0.f);
+    
+    // calculation for detail recovery blocks
+    const int numblox_W = ceil((static_cast<float>(width)) / (offset)) + 2 * blkrad;
+    const int numblox_H = ceil((static_cast<float>(height)) / (offset)) + 2 * blkrad;
+
+    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // Main detail recovery algorithm: Block loop
+    //DCT block data storage
+
+    //residual between input and denoised L channel
+    array2D<float> Ldetail(width, height, ARRAY2D_CLEAR_DATA);
+    array2D<float> Ldetail2;
+    if (detail_thresh > 0) {
+        Ldetail2(width, height, ARRAY2D_CLEAR_DATA);
+    }
+    //pixel weight
+    array2D<float> totwt(width, height, ARRAY2D_CLEAR_DATA); //weight for combining DCT blocks
+
+    if (numtiles == 1) {
+        for (int i = 0; i < denoiseNestedLevels * numthreads; ++i) {
+            LbloxArray[i]  = reinterpret_cast<float*>(fftwf_malloc(max_numblox_W * TS * TS * sizeof(float)));
+            fLbloxArray[i] = reinterpret_cast<float*>(fftwf_malloc(max_numblox_W * TS * TS * sizeof(float)));
+        }
+    }
+
+#ifdef _OPENMP
+    int masterThread = omp_get_thread_num();
+#endif
+#ifdef _OPENMP
+#pragma omp parallel num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
+#endif
+    {
+#ifdef _OPENMP
+        int subThread = masterThread * denoiseNestedLevels + omp_get_thread_num();
+#else
+        int subThread = 0;
+#endif
+        float blurbuffer[TS * TS] ALIGNED64;
+        float *Lblox = LbloxArray[subThread];
+        float *fLblox = fLbloxArray[subThread];
+        float pBuf[width + TS + 2 * blkrad * offset] ALIGNED16;
+        float nbrwt[TS * TS] ALIGNED64;
+#ifdef _OPENMP
+#pragma omp for
+#endif
+
+        for (int vblk = 0; vblk < numblox_H; ++vblk) {
+
+            int top = (vblk - blkrad) * offset;
+            float * datarow = pBuf + blkrad * offset;
+
+            for (int i = 0; i < TS; ++i) {
+                int row = top + i;
+                int rr = row;
+
+                if (row < 0) {
+                    rr = MIN(-row, height - 1);
+                } else if (row >= height) {
+                    rr = MAX(0, 2 * height - 2 - row);
+                }
+
+                for (int j = 0; j < labdn->W; ++j) {
+                    datarow[j] = ((*Lin)[rr][j] - labdn->L[rr][j]);
+                }
+
+                for (int j = -blkrad * offset; j < 0; ++j) {
+                    datarow[j] = datarow[MIN(-j, width - 1)];
+                }
+
+                for (int j = width; j < width + TS + blkrad * offset; ++j) {
+                    datarow[j] = datarow[MAX(0, 2 * width - 2 - j)];
+                }//now we have a padded data row
+
+                //now fill this row of the blocks with Lab high pass data
+                for (int hblk = 0; hblk < numblox_W; ++hblk) {
+                    int left = (hblk - blkrad) * offset;
+                    int indx = (hblk) * TS; //index of block in malloc
+
+                    if (top + i >= 0 && top + i < height) {
+                        int j;
+
+                        for (j = 0; j < min((-left), TS); ++j) {
+                            Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
+                        }
+
+                        for (; j < min(TS, width - left); ++j) {
+                            Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
+                            totwt[top + i][left + j] += tilemask_in[i][j] * tilemask_out[i][j];
+                        }
+
+                        for (; j < TS; ++j) {
+                            Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
+                        }
+                    } else {
+                        for (int j = 0; j < TS; ++j) {
+                            Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
+                        }
+                    }
+
+                }
+
+            }//end of filling block row
+
+            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            //fftwf_print_plan (plan_forward_blox);
+            float *block_out[] = { fLblox, Lblox };
+            float **Lout[] = { static_cast<float **>(Ldetail), static_cast<float **>(Ldetail2) };
+            float detail[] = { detail_hi, detail_lo };
+            for (int k = 0; k < (detail_thresh > 0 ? 2 : 1); ++k) {
+                int plan_idx = int(numblox_W != max_numblox_W);
+                fftwf_execute_r2r(plan_forward_blox[plan_idx], Lblox, block_out[k]);    // DCT an entire row of tiles
+                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // now process the vblk row of blocks for noise reduction
+                for (int hblk = 0; hblk < numblox_W; ++hblk) {
+                    RGBtile_denoise(scale, block_out[k], hblk, detail[k], nbrwt, blurbuffer);
+                }//end of horizontal block loop
+
+                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+                //now perform inverse FT of an entire row of blocks
+                fftwf_execute_r2r(plan_backward_blox[plan_idx], block_out[k], block_out[k]);    //for DCT
+                int topproc = (vblk - blkrad) * offset;
+                //add row of blocks to output image tile
+                RGBoutput_tile_row(scale, block_out[k], Lout[k], tilemask_out, height, width, topproc);
+                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            }
+        }//end of vertical block loop
+
+        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    }
+    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    //const int detail_thresh = dnparams.luminanceDetailThreshold;
+    array2D<float> mask;
+    if (detail_thresh > 0) {
+        mask(width, height);
+        float thr = log2lin(float(detail_thresh)/200.f, 10.f);
+        buildBlendMask(labdn->L, mask, width, height, thr);
+        float r = 20.f / scale;
+        if (r > 0) {
+            float **m = mask;
+            gaussianBlur(m, m, width, height, r);
+        }
+        array2D<float> m2(width, height);
+        const float alfa = 0.856f;
+        const float beta = 1.f + std::sqrt(log2lin(thr, 100.f));
+        buildGradientsMask(width, height, labdn->L, m2, params_Ldetail/100.f, 7, 3, alfa, beta, numthreads > 1);
+        float h = 0.f;
+        float l = RT_INFINITY;
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                mask[i][j] *= m2[i][j];
+                h = max(mask[i][j], h);
+                l = min(mask[i][j], l);
+            }
+        }
+        if (h > 0.f) {
+            const float f = (h - l);
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    mask[i][j] = std::sqrt(LIM01((mask[i][j] - l) / f));
+                }
+            }
+        }
+        array2D<float> guide(width, height);
+        LUTf ll(32769);
+        for (int i = 0; i < 32769; ++i) {
+            ll[i] = xlin2log(float(i) / 32768.f, 10.f);
+        }
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                guide[i][j] = ll[labdn->L[i][j]];
+            }
+        }
+        guidedFilter(guide, mask, mask, r, 0.01f, numthreads > 1);
+#if 0
+        {
+            Imagefloat tmp(width, height);
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
+                }
+            }
+            tmp.saveTIFF("/tmp/out.tif", 16);
+        }
+#endif
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
+#endif
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            //may want to include masking threshold for large hipass data to preserve edges/detail
+            float d = Ldetail[i][j] / totwt[i][j];
+            if (detail_thresh > 0) {
+                float d2 = Ldetail2[i][j] / totwt[i][j];
+                d = intp(mask[i][j], d, d2);
+            }
+            //labdn->L[i][j] += Ldetail[i][j] / totwt[i][j]; //note that labdn initially stores the denoised hipass data
+            labdn->L[i][j] += d;
+        }
+    }
+}
+
+
 void RGB_denoise(ImProcData &im, int kall, Imagefloat * src, Imagefloat * dst, Imagefloat * calclum, float * ch_M, float *max_r, float *max_b, bool isRAW, const procparams::DenoiseParams & dnparams, const double expcomp, const NoiseCurve & noiseLCurve, const NoiseCurve & noiseCCurve, float &nresi, float &highresi)
 {
     const ProcParams *params = im.params;
     const double scale = im.scale;
-    const bool multiThread = im.multiThread;
+    //const bool multiThread = im.multiThread;
     
     // const int TS = max(int(default_TS / scale), 4);
     // const int offset = max(int(default_offset / scale), 1);
@@ -1585,7 +1804,6 @@ BENCHFUN
 
         const float gain = pow(2.0f, float(expcomp));
         float params_Ldetail = min(float(dnparams.luminanceDetail), 99.9f); // max out to avoid div by zero when using noisevar_Ldetail as divisor
-        float noisevar_Ldetail = SQR(static_cast<float>(SQR(100. - params_Ldetail) + 50.*(100. - params_Ldetail)) * TS * 0.5f);
 
         array2D<float> tilemask_in(TS, TS);
         array2D<float> tilemask_out(TS, TS);
@@ -2238,229 +2456,12 @@ BENCHFUN
                         if (!memoryAllocationFailed) {
                             //wavelet denoised L channel
                             //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                            // now do detail recovery using block DCT to detect
-                            // patterns missed by wavelet denoise
-                            // blocks are not the same thing as tiles!
-
-                            // calculation for detail recovery blocks
-                            const int numblox_W = ceil((static_cast<float>(width)) / (offset)) + 2 * blkrad;
-                            const int numblox_H = ceil((static_cast<float>(height)) / (offset)) + 2 * blkrad;
-
-
-
-                            // end of tiling calc
-
-                            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                            // Main detail recovery algorithm: Block loop
-                            //DCT block data storage
-
-                            if (denoiseLuminance /*&& execwavelet*/) {
-                                //residual between input and denoised L channel
-                                array2D<float> Ldetail(width, height, ARRAY2D_CLEAR_DATA);
-                                //pixel weight
-                                array2D<float> totwt(width, height, ARRAY2D_CLEAR_DATA); //weight for combining DCT blocks
-
-                                if (numtiles == 1) {
-                                    for (int i = 0; i < denoiseNestedLevels * numthreads; ++i) {
-                                        LbloxArray[i]  = reinterpret_cast<float*>(fftwf_malloc(max_numblox_W * TS * TS * sizeof(float)));
-                                        fLbloxArray[i] = reinterpret_cast<float*>(fftwf_malloc(max_numblox_W * TS * TS * sizeof(float)));
-                                    }
-                                }
-
-#ifdef _OPENMP
-                                int masterThread = omp_get_thread_num();
-#endif
-#ifdef _OPENMP
-                                #pragma omp parallel num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
-#endif
-                                {
-#ifdef _OPENMP
-                                    int subThread = masterThread * denoiseNestedLevels + omp_get_thread_num();
-#else
-                                    int subThread = 0;
-#endif
-                                    float blurbuffer[TS * TS] ALIGNED64;
-                                    float *Lblox = LbloxArray[subThread];
-                                    float *fLblox = fLbloxArray[subThread];
-                                    float pBuf[width + TS + 2 * blkrad * offset] ALIGNED16;
-                                    float nbrwt[TS * TS] ALIGNED64;
-#ifdef _OPENMP
-                                    #pragma omp for
-#endif
-
-                                    for (int vblk = 0; vblk < numblox_H; ++vblk) {
-
-                                        int top = (vblk - blkrad) * offset;
-                                        float * datarow = pBuf + blkrad * offset;
-
-                                        for (int i = 0; i < TS; ++i) {
-                                            int row = top + i;
-                                            int rr = row;
-
-                                            if (row < 0) {
-                                                rr = MIN(-row, height - 1);
-                                            } else if (row >= height) {
-                                                rr = MAX(0, 2 * height - 2 - row);
-                                            }
-
-                                            for (int j = 0; j < labdn->W; ++j) {
-                                                datarow[j] = ((*Lin)[rr][j] - labdn->L[rr][j]);
-                                            }
-
-                                            for (int j = -blkrad * offset; j < 0; ++j) {
-                                                datarow[j] = datarow[MIN(-j, width - 1)];
-                                            }
-
-                                            for (int j = width; j < width + TS + blkrad * offset; ++j) {
-                                                datarow[j] = datarow[MAX(0, 2 * width - 2 - j)];
-                                            }//now we have a padded data row
-
-                                            //now fill this row of the blocks with Lab high pass data
-                                            for (int hblk = 0; hblk < numblox_W; ++hblk) {
-                                                int left = (hblk - blkrad) * offset;
-                                                int indx = (hblk) * TS; //index of block in malloc
-
-                                                if (top + i >= 0 && top + i < height) {
-                                                    int j;
-
-                                                    for (j = 0; j < min((-left), TS); ++j) {
-                                                        Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
-                                                    }
-
-                                                    for (; j < min(TS, width - left); ++j) {
-                                                        Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
-                                                        totwt[top + i][left + j] += tilemask_in[i][j] * tilemask_out[i][j];
-                                                    }
-
-                                                    for (; j < TS; ++j) {
-                                                        Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
-                                                    }
-                                                } else {
-                                                    for (int j = 0; j < TS; ++j) {
-                                                        Lblox[(indx + i)*TS + j] = tilemask_in[i][j] * datarow[left + j]; // luma data
-                                                    }
-                                                }
-
-                                            }
-
-                                        }//end of filling block row
-
-                                        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                                        //fftwf_print_plan (plan_forward_blox);
-                                        if (numblox_W == max_numblox_W) {
-                                            fftwf_execute_r2r(plan_forward_blox[0], Lblox, fLblox);    // DCT an entire row of tiles
-                                        } else {
-                                            fftwf_execute_r2r(plan_forward_blox[1], Lblox, fLblox);    // DCT an entire row of tiles
-                                        }
-
-                                        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                                        // now process the vblk row of blocks for noise reduction
-
-
-                                        for (int hblk = 0; hblk < numblox_W; ++hblk) {
-                                            RGBtile_denoise(scale, fLblox, hblk, noisevar_Ldetail, nbrwt, blurbuffer);
-                                        }//end of horizontal block loop
-
-                                        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-                                        //now perform inverse FT of an entire row of blocks
-                                        if (numblox_W == max_numblox_W) {
-                                            fftwf_execute_r2r(plan_backward_blox[0], fLblox, Lblox);    //for DCT
-                                        } else {
-                                            fftwf_execute_r2r(plan_backward_blox[1], fLblox, Lblox);    //for DCT
-                                        }
-
-                                        int topproc = (vblk - blkrad) * offset;
-
-                                        //add row of blocks to output image tile
-                                        RGBoutput_tile_row(scale, Lblox, Ldetail, tilemask_out, height, width, topproc);
-
-                                        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-                                    }//end of vertical block loop
-
-                                    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-                                }
-                                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-                                const int detail_thresh = dnparams.luminanceDetailThreshold;
-                                array2D<float> mask;
-                                if (detail_thresh > 0) {
-                                    mask(width, height);
-                                    float thr = log2lin(float(detail_thresh)/200.f, 10.f);
-                                    buildBlendMask(labdn->L, mask, width, height, thr);
-                                    float r = 20.f / scale;
-                                    if (r > 0) {
-                                        float **m = mask;
-                                        gaussianBlur(m, m, width, height, r);
-                                    }
-                                    array2D<float> m2(width, height);
-                                    const float alfa = 0.856f;
-                                    const float beta = 1.f + std::sqrt(log2lin(thr, 100.f));
-                                    buildGradientsMask(width, height, labdn->L, m2, params_Ldetail/100.f, 7, 3, alfa, beta, multiThread);
-                                    float h = 0.f;
-                                    float l = RT_INFINITY;
-                                    for (int i = 0; i < height; ++i) {
-                                        for (int j = 0; j < width; ++j) {
-                                            mask[i][j] *= m2[i][j];
-                                            h = max(mask[i][j], h);
-                                            l = min(mask[i][j], l);
-                                        }
-                                    }
-                                    if (h > 0.f) {
-                                        float f = (h - l);
-                                        for (int i = 0; i < height; ++i) {
-                                            for (int j = 0; j < width; ++j) {
-                                                mask[i][j] = (mask[i][j] - l) / f;
-                                            }
-                                        }
-                                    }
-                                    array2D<float> guide(width, height);
-                                    LUTf ll(32769);
-                                    for (int i = 0; i < 32769; ++i) {
-                                        ll[i] = xlin2log(float(i) / 32768.f, 10.f);
-                                    }
-                                    for (int i = 0; i < height; ++i) {
-                                        for (int j = 0; j < width; ++j) {
-                                            guide[i][j] = ll[labdn->L[i][j]];
-                                        }
-                                    }
-                                    guidedFilter(guide, mask, mask, r, 0.01f, multiThread);
-                                    #if 0
-                                    {
-                                        Imagefloat tmp(width, height);
-                                        for (int i = 0; i < height; ++i) {
-                                            for (int j = 0; j < width; ++j) {
-                                                tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
-                                            }
-                                        }
-                                        tmp.saveTIFF("/tmp/out.tif", 16);
-                                    }
-                                    #endif
-                                }
-
-#ifdef _OPENMP
-                                #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
-#endif
-
-                                for (int i = 0; i < height; ++i) {
-                                    for (int j = 0; j < width; ++j) {
-                                        //may want to include masking threshold for large hipass data to preserve edges/detail
-                                        float d = Ldetail[i][j] / totwt[i][j];
-                                        if (detail_thresh > 0) {
-                                            d *= mask[i][j];
-                                        }
-                                        //labdn->L[i][j] += Ldetail[i][j] / totwt[i][j]; //note that labdn initially stores the denoised hipass data
-                                        labdn->L[i][j] += d;
-                                    }
-                                }
-
-                                mask.free();
+                            if (denoiseLuminance) {
+                                // now do detail recovery using block DCT to detect
+                                // patterns missed by wavelet denoise
+                                // blocks are not the same thing as tiles!
+                                detail_recovery(width, height, labdn, Lin, numtiles, numthreads, denoiseNestedLevels, LbloxArray, fLbloxArray, blox_array_size, params_Ldetail, dnparams.luminanceDetailThreshold, tilemask_in, tilemask_out, plan_forward_blox, plan_backward_blox, max_numblox_W, scale);
                             }
-
                             //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                             // transform denoised "Lab" to output RGB
 
