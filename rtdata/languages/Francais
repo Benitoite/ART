@@ -1337,6 +1337,7 @@ PROFILEPANEL_TOOLTIPCOPY;Copie le profil courant dans le presse-papier\n<b>CTRL-
 PROFILEPANEL_TOOLTIPLOAD;Charger un profil depuis un fichier\n<b>CTRL-clic</b> pour sélectionner les paramètres à charger
 PROFILEPANEL_TOOLTIPPASTE;Colle le profil depuis le presse-papier\n<b>CTRL-clic</b> pour sélectionner les paramètres à coller
 PROFILEPANEL_TOOLTIPSAVE;Enregistrer le profil actuel\n<b>CTRL-clic</b> pour sélectionner les paramètres à enregistrer
+PROGRESSBAR_DECODING; Décodage
 PROGRESSBAR_LOADING;Chargement de l'Image...
 PROGRESSBAR_LOADINGTHUMBS;Chargement des vignettes...
 PROGRESSBAR_LOADJPEG;Chargement du fichier JPEG...
@@ -1418,7 +1419,7 @@ TP_BWMIX_AUTOCH;Auto
 TP_BWMIX_CC_ENABLED;Ajuster les couleurs complémentaires
 TP_BWMIX_CC_TOOLTIP;Activer pour permettre l'ajustage automatique des couleur complémentaire dans le mode ROJVCBPM
 TP_BWMIX_CHANNEL;Égaliseur de Luminance
-TP_BWMIX_COLORCAST;Dominante couleur
+TP_BWMIX_COLORCAST;Teinte
 TP_BWMIX_HUE;Teinte
 TP_BWMIX_SATURATION;Saturation
 TP_BWMIX_CURVEEDITOR1;Courbe 'avant'
@@ -1726,7 +1727,7 @@ TP_DR_COMP_METHOD_LOG;Encodage Log
 TP_EPD_EDGESTOPPING;Arrêt des bords
 TP_EPD_GAMMA;Gamma
 TP_EPD_LIST_TITLE;Paramètres
-TP_EPD_LABEL;Compression tonale
+TP_EPD_LABEL;Augmentation de Texture
 TP_EPD_REWEIGHTINGITERATES;Itérations de la pondération
 TP_EPD_SCALE;Échelle
 TP_EPD_STRENGTH;Force
