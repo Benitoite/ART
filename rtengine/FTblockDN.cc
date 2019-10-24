@@ -1434,9 +1434,9 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
     //residual between input and denoised L channel
     array2D<float> Ldetail(width, height, ARRAY2D_CLEAR_DATA);
     array2D<float> Ldetail2;
-    if (detail_thresh > 0) {
-        Ldetail2(width, height, ARRAY2D_CLEAR_DATA);
-    }
+    // if (detail_thresh > 0) {
+    //     Ldetail2(width, height, ARRAY2D_CLEAR_DATA);
+    // }
     //pixel weight
     array2D<float> totwt(width, height, ARRAY2D_CLEAR_DATA); //weight for combining DCT blocks
 
@@ -1530,7 +1530,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
             float *block_out[] = { fLblox, Lblox };
             float **Lout[] = { static_cast<float **>(Ldetail), static_cast<float **>(Ldetail2) };
             float detail[] = { detail_hi, detail_lo };
-            for (int k = 0; k < (detail_thresh > 0 ? 2 : 1); ++k) {
+            for (int k = 0; k < 1/*(detail_thresh > 0 ? 2 : 1)*/; ++k) {
                 int plan_idx = int(numblox_W != max_numblox_W);
                 fftwf_execute_r2r(plan_forward_blox[plan_idx], Lblox, block_out[k]);    // DCT an entire row of tiles
                 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1557,6 +1557,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
 
     //const int detail_thresh = dnparams.luminanceDetailThreshold;
     array2D<float> mask;
+#if 0
     if (detail_thresh > 0) {
         mask(width, height);
         float thr = log2lin(float(detail_thresh)/200.f, 10.f);
@@ -1597,7 +1598,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
                 guide[i][j] = ll[labdn->L[i][j]];
             }
         }
-        guidedFilter(guide, mask, mask, r, 0.003f, numthreads > 1);
+        guidedFilter(guide, mask, mask, r * 100, 0.1f, numthreads > 1);
 #if 0
         {
             Imagefloat tmp(width, height);
@@ -1609,7 +1610,92 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
             tmp.saveTIFF("/tmp/out.tif", 16);
         }
 #endif
+#if 1
+        {
+            array2D<float> g2(width, height);
+            guidedFilter(guide, guide, g2, r, 0.1f, numthreads > 1);
+            Imagefloat tmp(width, height);
+            float l = 1.f, h = 0.f;
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    float v = LIM01(std::abs(guide[i][j] - g2[i][j]));
+                    l = std::min(l, v);
+                    h = std::max(h, v);
+                    g2[i][j] = v;
+                    //tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = v * 65535.f;
+                }
+            }
+            float f = h - l;
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    float v = (g2[i][j] - l) / f;
+                    tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = v * 65535.f;
+                }
+            }
+            tmp.saveTIFF("/tmp/edges.tif", 16);
+            // for (int i = 0; i < height; ++i) {
+            //     for (int j = 0; j < width; ++j) {
+            //         tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = guide[i][j] * 65535.f;
+            //     }
+            // }
+            // tmp.saveTIFF("/tmp/guide.tif", 16);
+            // for (int i = 0; i < height; ++i) {
+            //     for (int j = 0; j < width; ++j) {
+            //         tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = g2[i][j] * 65535.f;
+            //     }
+            // }
+            // tmp.saveTIFF("/tmp/g2.tif", 16);
+        }
+#endif
     }
+#else // if 0
+    if (detail_thresh > 0) {
+        mask(width, height);
+        float r = 20.f / scale;
+        array2D<float> guide(width, height);
+        LUTf ll(32769);
+        for (int i = 0; i < 32769; ++i) {
+            ll[i] = xlin2log(float(i) / 32768.f, 10.f);
+        }
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                guide[i][j] = ll[labdn->L[i][j]];
+            }
+        }
+        guidedFilter(guide, guide, mask, r, 0.1f, numthreads > 1);
+        float l = 1.f, h = 0.f;
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                float v = pow_F(LIM01(std::abs(guide[i][j] - mask[i][j])), 1.f/3.f);
+                l = std::min(l, v);
+                h = std::max(h, v);
+                mask[i][j] = v;
+            }
+        }
+        float thr = 1.f - LIM01(float(detail_thresh)/100.f);
+        float f = (h - l) * (1.f - thr);
+        if (f > 0.f) {
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    float v = (mask[i][j] - l) * f + thr;
+                    mask[i][j] = v;
+                }
+            }
+        }
+    }
+#if 0
+    {
+        Imagefloat tmp(width, height);
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
+            }
+        }
+        tmp.saveTIFF("/tmp/mask.tif", 16);
+    }
+#endif
+#endif // if 0
+    
 
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
@@ -1620,8 +1706,9 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
             //may want to include masking threshold for large hipass data to preserve edges/detail
             float d = Ldetail[i][j] / totwt[i][j];
             if (detail_thresh > 0) {
-                float d2 = Ldetail2[i][j] / totwt[i][j];
-                d = intp(mask[i][j], d, d2);
+                //float d2 = Ldetail2[i][j] / totwt[i][j];
+                //d = intp(mask[i][j], d, d2);
+                d *= mask[i][j];
             }
             //labdn->L[i][j] += Ldetail[i][j] / totwt[i][j]; //note that labdn initially stores the denoised hipass data
             labdn->L[i][j] += d;
