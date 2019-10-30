@@ -1678,19 +1678,19 @@ bool EditorPanel::handleShortcutKey (GdkEventKey* event)
 
                     return true;
 
-                case GDK_KEY_b:
-                    if (!gimpPlugin && !simpleEditor) {
-                        do_queue_image(false);
-                    }
+                // case GDK_KEY_b:
+                //     if (!gimpPlugin && !simpleEditor) {
+                //         do_queue_image(false);
+                //     }
 
-                    return true;
+                //     return true;
  
-                case GDK_KEY_B:
-                    if (!gimpPlugin && !simpleEditor) {
-                        do_queue_image(true);
-                    }
+                // case GDK_KEY_B:
+                //     if (!gimpPlugin && !simpleEditor) {
+                //         do_queue_image(true);
+                //     }
 
-                    return true;
+                //     return true;
                    
                 case GDK_KEY_e:
                     if (!gimpPlugin) {

@@ -711,17 +711,19 @@ void FileBrowser::menuItemActivated (Gtk::MenuItem* m)
         return;
     }
 
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++) {
         if (m == rank[i]) {
             rankingRequested (mselected, i);
             return;
         }
+    }
 
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++) {
         if (m == colorlabel[i]) {
             colorlabelRequested (mselected, i);
             return;
         }
+    }
 
     for (size_t j = 0; j < mMenuExtProgs.size(); j++) {
         if (m == amiExtProg[j]) {
