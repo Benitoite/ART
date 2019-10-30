@@ -378,7 +378,12 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                     const bool crop_resize_allowed = (crop_mode ? true : (bstate & GDK_CONTROL_MASK)) && !(bstate & GDK_SHIFT_MASK);
                     const bool crop_move_allowed = crop_mode ? (!(bstate & GDK_CONTROL_MASK) && !(bstate & GDK_SHIFT_MASK)) : (bstate & GDK_SHIFT_MASK);
 
-                    if (iarea->getToolMode () == TMColorPicker) {
+                    if (iarea->getToolMode() == TMHand && area_updater_) {
+                        state = SCropSelecting;
+                        screenCoordToImage(x, y, press_x, press_y);
+                        reset_area_updater = false;
+                        area_updater_->updateArea(AreaDrawUpdater::BEGIN, press_x, press_y, press_x+1, press_y+1);
+                    } else if (iarea->getToolMode () == TMColorPicker) {
                         if (hoveredPicker) {
                             if ((bstate & GDK_CONTROL_MASK) && !(bstate & GDK_SHIFT_MASK)) {
                                 hoveredPicker->decSize();
@@ -499,11 +504,6 @@ void CropWindow::buttonPress (int button, int type, int bstate, int x, int y)
                         cropHandler.cropParams.y = press_y;
                         cropHandler.cropParams.w = cropHandler.cropParams.h = 1;
                         cropgl->cropInit (cropHandler.cropParams.x, cropHandler.cropParams.y, cropHandler.cropParams.w, cropHandler.cropParams.h);
-                    } else if (iarea->getToolMode() == TMHand && area_updater_) {
-                        state = SCropSelecting;
-                        screenCoordToImage(x, y, press_x, press_y);
-                        reset_area_updater = false;
-                        area_updater_->updateArea(AreaDrawUpdater::BEGIN, press_x, press_y, press_x+1, press_y+1);
                     } else if (iarea->getToolMode () == TMHand && !editSubscriber) {
                         if (state != SEditDrag1) {
                             state = SCropImgMove;
