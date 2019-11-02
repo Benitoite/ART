@@ -28,6 +28,41 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
+namespace {
+
+constexpr int ABS_RGB = 10;
+constexpr int REL_RGB = 11;
+
+const std::vector<std::array<const char *, 2>> presets = {
+    {"NormalContrast", "TP_BWMIX_SET_NORMCONTAST"},
+    {"HighContrast", "TP_BWMIX_SET_HIGHCONTAST"},
+    {"Luminance", "TP_BWMIX_SET_LUMINANCE"},
+    {"Landscape", "TP_BWMIX_SET_LANDSCAPE"},
+    {"Portrait", "TP_BWMIX_SET_PORTRAIT"},
+    {"LowSensitivity", "TP_BWMIX_SET_LOWSENSIT"},
+    {"HighSensitivity", "TP_BWMIX_SET_HIGHSENSIT"},
+    {"Panchromatic", "TP_BWMIX_SET_PANCHRO"},
+    {"HyperPanchromatic", "TP_BWMIX_SET_HYPERPANCHRO"},
+    {"Orthochromatic", "TP_BWMIX_SET_ORTHOCHRO"},
+    {"RGB-Abs", "TP_BWMIX_SET_RGBABS"},
+    {"RGB-Rel", "TP_BWMIX_SET_RGBREL"},
+    {"InfraRed", "TP_BWMIX_SET_INFRARED"}
+};
+
+const std::vector<std::array<const char *, 2>> filters = {
+    {"None", "TP_BWMIX_FILTER_NONE"},
+    {"Red", "TP_BWMIX_FILTER_RED"},
+    {"Orange", "TP_BWMIX_FILTER_REDYELLOW"},
+    {"Yellow", "TP_BWMIX_FILTER_YELLOW"},
+    {"YellowGreen", "TP_BWMIX_FILTER_GREENYELLOW"},
+    {"Green", "TP_BWMIX_FILTER_GREEN"},
+    {"Cyan", "TP_BWMIX_FILTER_BLUEGREEN"},
+    {"Blue", "TP_BWMIX_FILTER_BLUE"},
+    {"Purple", "TP_BWMIX_FILTER_PURPLE"}
+};
+
+} // namespace
+
 namespace rtengine {
 
 extern void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &filter, const Glib::ustring &algo,
@@ -68,21 +103,10 @@ BlackWhite::BlackWhite():
 
     settingHBox->pack_start (*settingLabel, Gtk::PACK_SHRINK);
     setting = Gtk::manage (new MyComboBoxText ());
-    setting->append (M("TP_BWMIX_SET_NORMCONTAST"));
-    setting->append (M("TP_BWMIX_SET_HIGHCONTAST"));
-    setting->append (M("TP_BWMIX_SET_LUMINANCE"));
-    setting->append (M("TP_BWMIX_SET_LANDSCAPE"));
-    setting->append (M("TP_BWMIX_SET_PORTRAIT"));
-    setting->append (M("TP_BWMIX_SET_LOWSENSIT"));
-    setting->append (M("TP_BWMIX_SET_HIGHSENSIT"));
-    setting->append (M("TP_BWMIX_SET_PANCHRO"));
-    setting->append (M("TP_BWMIX_SET_HYPERPANCHRO"));
-    setting->append (M("TP_BWMIX_SET_ORTHOCHRO"));
-    setting->append (M("TP_BWMIX_SET_RGBABS"));
-    setting->append (M("TP_BWMIX_SET_RGBREL"));
-    setting->append (M("TP_BWMIX_SET_INFRARED"));
-
-    setting->set_active (11);
+    for (auto &p : presets) {
+        setting->append(M(p[1]));
+    }
+    setting->set_active (REL_RGB);
     settingHBox->pack_start (*setting);
     mixerVBox->pack_start (*settingHBox);
     settingconn = setting->signal_changed().connect ( sigc::mem_fun(*this, &BlackWhite::settingChanged) );
@@ -102,15 +126,9 @@ BlackWhite::BlackWhite():
     Gtk::Label *filterLabel = Gtk::manage (new Gtk::Label (M("TP_BWMIX_FILTER") + ":"));
     filterHBox->pack_start (*filterLabel, Gtk::PACK_SHRINK);
     filter = Gtk::manage (new MyComboBoxText ());
-    filter->append (M("TP_BWMIX_FILTER_NONE"));
-    filter->append (M("TP_BWMIX_FILTER_RED"));
-    filter->append (M("TP_BWMIX_FILTER_REDYELLOW"));
-    filter->append (M("TP_BWMIX_FILTER_YELLOW"));
-    filter->append (M("TP_BWMIX_FILTER_GREENYELLOW"));
-    filter->append (M("TP_BWMIX_FILTER_GREEN"));
-    filter->append (M("TP_BWMIX_FILTER_BLUEGREEN"));
-    filter->append (M("TP_BWMIX_FILTER_BLUE"));
-    filter->append (M("TP_BWMIX_FILTER_PURPLE"));
+    for (auto &p : filters) {
+        filter->append(M(p[1]));
+    }
 
     filter->set_active (0);
     filterHBox->pack_start (*filter);
@@ -214,54 +232,20 @@ void BlackWhite::read(const ProcParams* pp)
     settingconn.block(true);
     enaccconn.block (true);
 
-    if (pp->blackwhite.setting == "NormalContrast") {
-        setting->set_active (0);
-    } else if (pp->blackwhite.setting == "HighContrast") {
-        setting->set_active (1);
-    } else if (pp->blackwhite.setting == "Luminance") {
-        setting->set_active (2);
-    } else if (pp->blackwhite.setting == "Landscape") {
-        setting->set_active (3);
-    } else if (pp->blackwhite.setting == "Portrait") {
-        setting->set_active (4);
-    } else if (pp->blackwhite.setting == "LowSensitivity") {
-        setting->set_active (5);
-    } else if (pp->blackwhite.setting == "HighSensitivity") {
-        setting->set_active (6);
-    } else if (pp->blackwhite.setting == "Panchromatic") {
-        setting->set_active (7);
-    } else if (pp->blackwhite.setting == "HyperPanchromatic") {
-        setting->set_active (8);
-    } else if (pp->blackwhite.setting == "Orthochromatic") {
-        setting->set_active (9);
-    } else if (pp->blackwhite.setting == "RGB-Abs") {
-        setting->set_active (10);
-    } else if (pp->blackwhite.setting == "RGB-Rel") {
-        setting->set_active (11);
-    } else if (pp->blackwhite.setting == "InfraRed") {
-        setting->set_active (12);
+    for (size_t i = 0; i < presets.size(); ++i) {
+        if (pp->blackwhite.setting == presets[i][0]) {
+            setting->set_active(i);
+            break;
+        }
     }
 
     settingChanged();
 
-    if (pp->blackwhite.filter == "None") {
-        filter->set_active (0);
-    } else if (pp->blackwhite.filter == "Red") {
-        filter->set_active (1);
-    } else if (pp->blackwhite.filter == "Orange") {
-        filter->set_active (2);
-    } else if (pp->blackwhite.filter == "Yellow") {
-        filter->set_active (3);
-    } else if (pp->blackwhite.filter == "YellowGreen") {
-        filter->set_active (4);
-    } else if (pp->blackwhite.filter == "Green") {
-        filter->set_active (5);
-    } else if (pp->blackwhite.filter == "Cyan") {
-        filter->set_active (6);
-    } else if (pp->blackwhite.filter == "Blue") {
-        filter->set_active (7);
-    } else if (pp->blackwhite.filter == "Purple") {
-        filter->set_active (8);
+    for (size_t i = 0; i < filters.size(); ++i) {
+        if (pp->blackwhite.filter == filters[i][0]) {
+            filter->set_active(i);
+            break;
+        }
     }
 
     filterChanged();
@@ -303,18 +287,12 @@ void BlackWhite::write (ProcParams* pp)
 void BlackWhite::settingChanged ()
 {
 
-    if ( setting->get_active_row_number() == 10 || setting->get_active_row_number() == 11 ) {
-        // RGB Channel Mixer
-        showMixer();
-        showFilter();
-    } else if ( setting->get_active_row_number() == 12 ) {
+    if ( setting->get_active_row_number() == 12 ) {
         // Infrared
         filter->set_active (0);
-        showMixer(false);
         hideFilter();
     } else {
         // RGB Presets
-        showMixer(false);
         showFilter();
     }
 
@@ -395,7 +373,7 @@ void BlackWhite::setDefaults (const ProcParams* defParams)
 void BlackWhite::adjusterChanged(Adjuster* a, double newval)
 {
     if (a == mixerRed || a == mixerGreen || a == mixerBlue) {
-        updateRGBLabel();
+        updateRGBLabel(false);
     }
 
     if (listener  && getEnabled()) {
@@ -432,7 +410,7 @@ void BlackWhite::adjusterAutoToggled(Adjuster* a, bool newval)
 {
 }
 
-void BlackWhite::updateRGBLabel ()
+void BlackWhite::updateRGBLabel(bool from_preset)
 {
     float kcorrec = 1.f;
     float r, g, b;
@@ -461,10 +439,18 @@ void BlackWhite::updateRGBLabel ()
         );
 
     // We have to update the RGB sliders too if preset values has been chosen
-    if (sSetting != "RGB-Abs" && sSetting != "RGB-Rel") {
-        mixerRed->setValue(mixR);
-        mixerGreen->setValue(mixG);
-        mixerBlue->setValue(mixB);
+    if (from_preset) {
+        if (sSetting != "RGB-Abs" && sSetting != "RGB-Rel") {
+            mixerRed->setValue(mixR);
+            mixerGreen->setValue(mixG);
+            mixerBlue->setValue(mixB);
+        }
+    } else {
+        if (sSetting != "RGB-Abs" && sSetting != "RGB-Rel") {
+            disableListener();
+            setting->set_active(REL_RGB);
+            enableListener();
+        }
     }
 }
 
@@ -492,85 +478,24 @@ void BlackWhite::hideFilter()
     filterSep->hide();
 }
 
-void BlackWhite::showMixer(bool RGBIsSensitive)
-{
-    RGBLabels->show();
-
-    mixerRed->set_sensitive (RGBIsSensitive);
-    mixerGreen->set_sensitive (RGBIsSensitive);
-    mixerBlue->set_sensitive (RGBIsSensitive);
-}
-
-void BlackWhite::showGamma()
-{
-    gammaFrame->show();
-}
-
-void BlackWhite::hideGamma()
-{
-    gammaFrame->hide();
-}
 
 Glib::ustring BlackWhite::getSettingString()
 {
     Glib::ustring retVal;
-
-    if (setting->get_active_row_number() == 0) {
-        retVal = "NormalContrast";
-    } else if (setting->get_active_row_number() == 1) {
-        retVal = "HighContrast";
-    } else if (setting->get_active_row_number() == 2) {
-        retVal = "Luminance";
-    } else if (setting->get_active_row_number() == 3) {
-        retVal = "Landscape";
-    } else if (setting->get_active_row_number() == 4) {
-        retVal = "Portrait";
-    } else if (setting->get_active_row_number() == 5) {
-        retVal = "LowSensitivity";
-    } else if (setting->get_active_row_number() == 6) {
-        retVal = "HighSensitivity";
-    } else if (setting->get_active_row_number() == 7) {
-        retVal = "Panchromatic";
-    } else if (setting->get_active_row_number() == 8) {
-        retVal = "HyperPanchromatic";
-    } else if (setting->get_active_row_number() == 9) {
-        retVal = "Orthochromatic";
-    } else if (setting->get_active_row_number() == 10) {
-        retVal = "RGB-Abs";
-    } else if (setting->get_active_row_number() == 11) {
-        retVal = "RGB-Rel";
-    } else if (setting->get_active_row_number() == 12) {
-        retVal = "InfraRed";
+    int r = setting->get_active_row_number();
+    if (r >= 0 && size_t(r) < presets.size()) {
+        return presets[r][0];
     }
-
-    return retVal;
+    return "RGB-Rel";
 }
 
 Glib::ustring BlackWhite::getFilterString()
 {
-    Glib::ustring retVal;
-
-    if (filter->get_active_row_number() == 0) {
-        retVal = "None";
-    } else if (filter->get_active_row_number() == 1) {
-        retVal = "Red";
-    } else if (filter->get_active_row_number() == 2) {
-        retVal = "Orange";
-    } else if (filter->get_active_row_number() == 3) {
-        retVal = "Yellow";
-    } else if (filter->get_active_row_number() == 4) {
-        retVal = "YellowGreen";
-    } else if (filter->get_active_row_number() == 5) {
-        retVal = "Green";
-    } else if (filter->get_active_row_number() == 6) {
-        retVal = "Cyan";
-    } else if (filter->get_active_row_number() == 7) {
-        retVal = "Blue";
-    } else if (filter->get_active_row_number() == 8) {
-        retVal = "Purple";
+    int r = filter->get_active_row_number();
+    if (r >= 0 && size_t(r) < filters.size()) {
+        return filters[r][0];
     }
-
-    return retVal;
+    return "None";
 }
 
 

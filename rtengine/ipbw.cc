@@ -20,6 +20,8 @@
 // extracted and datapted from ImProcFunctions::rgbProc (improcfun.cc) of
 // RawTherapee
 
+#include <array>
+#include <unordered_map>
 #include "improcfun.h"
 #include "curves.h"
 #include "color.h"
@@ -61,6 +63,26 @@ void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &
         som = -1.f;
     }
 
+    static const std::unordered_map<std::string, std::array<float, 3>> presets = {
+        {"NormalContrast", {43.f, 33.f, 30.f}},
+        {"Panchromatic", {33.3f, 33.3f, 33.3f}},
+        {"HyperPanchromatic", {41.f, 25.f, 34.f}},
+        {"LowSensitivity", {27.f, 27.f, 46.f}},
+        {"HighSensitivity", {30.f, 28.f, 42.f}},
+        {"Orthochromatic", {0.f, 42.f, 58.f}},
+        {"HighContrast", {40.f, 34.f, 60.f}},
+        {"Luminance", {30.f, 59.f, 11.f}},
+        {"Landscape", {66.f, 24.f, 10.f}},
+        {"Portrait", {54.f, 44.f, 12.f}},
+        {"InfraRed", {-40.f, 200.f, -17.f}}
+    };
+
+    auto it = presets.find(setting);
+    if (it != presets.end()) {
+        mixerRed = it->second[0];
+        mixerGreen = it->second[1];
+        mixerBlue = it->second[2];
+    }
 
     // rM = mixerRed, gM = mixerGreen, bM = mixerBlue !
     //presets
@@ -68,51 +90,51 @@ void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &
         kcorec = som / 100.f;
     }
 
-    if (setting == "NormalContrast") {
-        mixerRed = 43.f ;
-        mixerGreen = 33.f;
-        mixerBlue = 30.f;
-    } else if (setting == "Panchromatic")      {
-        mixerRed = 33.3f;
-        mixerGreen = 33.3f;
-        mixerBlue = 33.3f;
-    } else if (setting == "HyperPanchromatic") {
-        mixerRed = 41.f ;
-        mixerGreen = 25.f;
-        mixerBlue = 34.f;
-    } else if (setting == "LowSensitivity")    {
-        mixerRed = 27.f ;
-        mixerGreen = 27.f;
-        mixerBlue = 46.f;
-    } else if (setting == "HighSensitivity")   {
-        mixerRed = 30.f ;
-        mixerGreen = 28.f;
-        mixerBlue = 42.f;
-    } else if (setting == "Orthochromatic")    {
-        mixerRed = 0.f  ;
-        mixerGreen = 42.f;
-        mixerBlue = 58.f;
-    } else if (setting == "HighContrast")      {
-        mixerRed = 40.f ;
-        mixerGreen = 34.f;
-        mixerBlue = 60.f;
-    } else if (setting == "Luminance")         {
-        mixerRed = 30.f ;
-        mixerGreen = 59.f;
-        mixerBlue = 11.f;
-    } else if (setting == "Landscape")         {
-        mixerRed = 66.f ;
-        mixerGreen = 24.f;
-        mixerBlue = 10.f;
-    } else if (setting == "Portrait")          {
-        mixerRed = 54.f ;
-        mixerGreen = 44.f;
-        mixerBlue = 12.f;
-    } else if (setting == "InfraRed")          {
-        mixerRed = -40.f;
-        mixerGreen = 200.f;
-        mixerBlue = -17.f;
-    }
+    // if (setting == "NormalContrast") {
+    //     mixerRed = 43.f ;
+    //     mixerGreen = 33.f;
+    //     mixerBlue = 30.f;
+    // } else if (setting == "Panchromatic")      {
+    //     mixerRed = 33.3f;
+    //     mixerGreen = 33.3f;
+    //     mixerBlue = 33.3f;
+    // } else if (setting == "HyperPanchromatic") {
+    //     mixerRed = 41.f ;
+    //     mixerGreen = 25.f;
+    //     mixerBlue = 34.f;
+    // } else if (setting == "LowSensitivity")    {
+    //     mixerRed = 27.f ;
+    //     mixerGreen = 27.f;
+    //     mixerBlue = 46.f;
+    // } else if (setting == "HighSensitivity")   {
+    //     mixerRed = 30.f ;
+    //     mixerGreen = 28.f;
+    //     mixerBlue = 42.f;
+    // } else if (setting == "Orthochromatic")    {
+    //     mixerRed = 0.f  ;
+    //     mixerGreen = 42.f;
+    //     mixerBlue = 58.f;
+    // } else if (setting == "HighContrast")      {
+    //     mixerRed = 40.f ;
+    //     mixerGreen = 34.f;
+    //     mixerBlue = 60.f;
+    // } else if (setting == "Luminance")         {
+    //     mixerRed = 30.f ;
+    //     mixerGreen = 59.f;
+    //     mixerBlue = 11.f;
+    // } else if (setting == "Landscape")         {
+    //     mixerRed = 66.f ;
+    //     mixerGreen = 24.f;
+    //     mixerBlue = 10.f;
+    // } else if (setting == "Portrait")          {
+    //     mixerRed = 54.f ;
+    //     mixerGreen = 44.f;
+    //     mixerBlue = 12.f;
+    // } else if (setting == "InfraRed")          {
+    //     mixerRed = -40.f;
+    //     mixerGreen = 200.f;
+    //     mixerBlue = -17.f;
+    // }
 
     rrm = mixerRed;
     ggm = mixerGreen;
@@ -139,51 +161,24 @@ void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &
     filblue = 1.f;
     filcor = 1.f;
 
-    if          (filter == "None")        {
-        filred = 1.f;
-        filgreen = 1.f;
-        filblue = 1.f;
-        filcor = 1.f;
-    } else if     (filter == "Red")         {
-        filred = 1.f;
-        filgreen = 0.05f;
-        filblue = 0.f;
-        filcor = 1.08f;
-    } else if     (filter == "Orange")      {
-        filred = 1.f;
-        filgreen = 0.6f;
-        filblue = 0.f;
-        filcor = 1.35f;
-    } else if     (filter == "Yellow")      {
-        filred = 1.f;
-        filgreen = 1.f;
-        filblue = 0.05f;
-        filcor = 1.23f;
-    } else if     (filter == "YellowGreen") {
-        filred = 0.6f;
-        filgreen = 1.f;
-        filblue = 0.3f;
-        filcor = 1.32f;
-    } else if     (filter == "Green")       {
-        filred = 0.2f;
-        filgreen = 1.f;
-        filblue = 0.3f;
-        filcor = 1.41f;
-    } else if     (filter == "Cyan")        {
-        filred = 0.05f;
-        filgreen = 1.f;
-        filblue = 1.f;
-        filcor = 1.23f;
-    } else if     (filter == "Blue")        {
-        filred = 0.f;
-        filgreen = 0.05f;
-        filblue = 1.f;
-        filcor = 1.20f;
-    } else if     (filter == "Purple")      {
-        filred = 1.f;
-        filgreen = 0.05f;
-        filblue = 1.f;
-        filcor = 1.23f;
+    static const std::unordered_map<std::string, std::array<float, 4>> filters = {
+        {"None", {1.f, 1.f, 1.f, 1.f}},
+        {"Red", {1.f, 0.05f, 0.f, 1.08f}},
+        {"Orange", {1.f, 0.6f, 0.f, 1.35f}},
+        {"Yellow", {1.f, 1.f, 0.05f, 1.23f}},
+        {"YellowGreen", {0.6f, 1.f, 0.3f, 1.32f}},
+        {"Green", {0.2f, 1.f, 0.3f, 1.41f}},
+        {"Cyan", {0.05f, 1.f, 1.f, 1.23f}},
+        {"Blue", {0.f, 0.05f, 1.f, 1.20f}},
+        {"Purple", {1.f, 0.05f, 1.f, 1.23f}}
+    };
+
+    auto it2 = filters.find(filter);
+    if (it2 != filters.end()) {
+        filred = it2->second[0];
+        filgreen = it2->second[1];
+        filblue = it2->second[2];
+        filcor = it2->second[3];
     }
 
     mixerRed   = mixerRed * filred;
@@ -198,7 +193,7 @@ void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &
     mixerGreen = filcor * mixerGreen / (mixerRed + mixerGreen + mixerBlue);
     mixerBlue  = filcor * mixerBlue  / (mixerRed + mixerGreen + mixerBlue);
 
-    if(filter != "None") {
+    if (filter != "None") {
         som = mixerRed + mixerGreen + mixerBlue;
 
         if(som >= 0.f && som < 1.f) {
@@ -209,85 +204,11 @@ void computeBWMixerConstants(const Glib::ustring &setting, const Glib::ustring &
             som = -1.f;
         }
 
-        if(setting == "RGB-Abs") {
+        if (setting == "RGB-Abs") {
             kcorec = kcorec * som;
         }
     }
 }
-
-namespace {
-
-/**
- * @brief Used by Black and White to correct gamma for each channel red, green and blue channel
- * @param r red channel input and output value [0 ; 65535]
- * @param g green channel input and output value [0 ; 65535]
- * @param b blue channel input and output value [0 ; 65535]
- * @param gammabwr gamma value for red channel [>0]
- * @param gammabwg gamma value for red channel [>0]
- * @param gammabwb gamma value for red channel [>0]
- */
-#ifdef __SSE2__
-void trcGammaBW(float &r, float &g, float &b, float gammabwr, float gammabwg, float gammabwb)
-{
-    // correct gamma for black and white image : pseudo TRC curve of ICC profile
-    vfloat rgbv = _mm_set_ps(0.f, r, r, r); // input channel is always r
-    vfloat gammabwv = _mm_set_ps(0.f, gammabwb, gammabwg, gammabwr);
-    vfloat c65535v = F2V(65535.f);
-    rgbv /= c65535v;
-    rgbv = vmaxf(rgbv, ZEROV);
-    rgbv = pow_F(rgbv, gammabwv);
-    rgbv *= c65535v;
-    float temp[4] ALIGNED16;
-    STVF(temp[0], rgbv);
-    r = temp[0];
-    g = temp[1];
-    b = temp[2];
-}
-
-void trcGammaBWRow(float *r, float *g, float *b, int width, float gammabwr, float gammabwg, float gammabwb)
-{
-    // correct gamma for black and white image : pseudo TRC curve of ICC profile
-    vfloat c65535v = F2V(65535.f);
-    vfloat gammabwrv = F2V(gammabwr);
-    vfloat gammabwgv = F2V(gammabwg);
-    vfloat gammabwbv = F2V(gammabwb);
-    int i = 0;
-    for(; i < width - 3; i += 4 ) {
-        vfloat inv = _mm_loadu_ps(&r[i]); // input channel is always r
-        inv /= c65535v;
-        inv = vmaxf(inv, ZEROV);
-        vfloat rv = pow_F(inv, gammabwrv);
-        vfloat gv = pow_F(inv, gammabwgv);
-        vfloat bv = pow_F(inv, gammabwbv);
-        rv *= c65535v;
-        gv *= c65535v;
-        bv *= c65535v;
-        _mm_storeu_ps(&r[i], rv);
-        _mm_storeu_ps(&g[i], gv);
-        _mm_storeu_ps(&b[i], bv);
-    }
-    for(; i < width; i++) {
-        trcGammaBW(r[i], g[i], b[i], gammabwr, gammabwg, gammabwb);
-    }
-}
-
-#else // __SSE2__
-void trcGammaBW(float &r, float &g, float &b, float gammabwr, float gammabwg, float gammabwb)
-{
-    // correct gamma for black and white image : pseudo TRC curve of ICC profile
-    float in = r; // input channel is always r
-    in /= 65535.0f;
-    in = max(in, 0.f);
-    b = pow_F (in, gammabwb);
-    b *= 65535.0f;
-    r = pow_F (in, gammabwr);
-    r *= 65535.0f;
-    g = pow_F (in, gammabwg);
-    g *= 65535.0f;
-}
-#endif // __SSE2__
-
-} // namespace
 
 
 void ImProcFunctions::blackAndWhite(Imagefloat *img)
@@ -339,22 +260,57 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
     double rrm, ggm, bbm;
     computeBWMixerConstants(params->blackwhite.setting, params->blackwhite.filter, "", filcor, bwr, bwg, bwb, kcorec, rrm, ggm, bbm);
 
+    LUTf gamma_r, gamma_g, gamma_b;
+    if (hasgammabw) {
+        gamma_r(65536);
+        gamma_g(65536);
+        gamma_b(65536);
+        for (int i = 0; i < 65536; ++i) {
+            gamma_r[i] = pow_F(float(i) / 65535.f, gammabwr) * 65535.f;
+            gamma_g[i] = pow_F(float(i) / 65535.f, gammabwg) * 65535.f;
+            gamma_b[i] = pow_F(float(i) / 65535.f, gammabwb) * 65535.f;
+        }
+    }
+
+#ifdef __SSE2__
+    vfloat bwr_v = F2V(bwr);
+    vfloat bwg_v = F2V(bwg);
+    vfloat bwb_v = F2V(bwb);
+    vfloat kcorec_v = F2V(kcorec);
+#endif
+
 #ifdef _OPENMP
 #   pragma omp parallel for if (multiThread)
 #endif
     for (int y = 0; y < H; ++y) {
+        int x = 0;
 #ifdef __SSE2__
-        if (hasgammabw) {
-            trcGammaBWRow(img->r(y), img->g(y), img->b(y), W, gammabwr, gammabwg, gammabwb);
+        for (; x < W-3; x += 4) {
+            vfloat r = LVF(img->r(y, x));
+            vfloat g = LVF(img->g(y, x));
+            vfloat b = LVF(img->b(y, x));
+            if (hasgammabw) {
+                r = gamma_r[r];
+                g = gamma_g[g];
+                b = gamma_b[b];
+            }
+            vfloat bw = ((bwr_v * r + bwg_v * g + bwb_v * b) * kcorec_v);
+            STVF(img->r(y, x), bw);
+            STVF(img->g(y, x), bw);
+            STVF(img->b(y, x), bw);
         }
 #endif
-        for (int x = 0; x < W; ++x) {
-#ifndef __SSE2__
+
+        for (; x < W; ++x) {
+            float r = img->r(y, x);
+            float g = img->g(y, x);
+            float b = img->b(y, x);
             if (hasgammabw) {
-                trcGammaBW(img->r(y, x), img->g(y, x), img->b(y, x), gammabwr, gammabwg, gammabwb);
+                r = gamma_r[r];
+                g = gamma_g[g];
+                b = gamma_b[b];
             }
-#endif
-            img->r(y, x) = img->g(y, x) = img->b(y, x) = ((bwr * img->r(y, x) + bwg * img->g(y, x) + bwb * img->b(y, x)) * kcorec);
+            img->r(y, x) = img->g(y, x) = img->b(y, x) = ((bwr * r + bwg * g + bwb * b) * kcorec);
         }
     }
 

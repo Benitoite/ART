@@ -45,18 +45,18 @@ public:
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void neutral_pressed ();
+    void neutral_pressed();
 
-    void updateRGBLabel      ();
-    void adjusterChanged     (Adjuster* a, double newval) override;
+    void updateRGBLabel(bool from_preset=true);
+    void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled (Adjuster* a, bool newval) override;
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    void enabledChanged      () override;
-    void filterChanged       ();
-    void settingChanged      ();
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+    void enabledChanged() override;
+    void filterChanged();
+    void settingChanged();
 
-    Glib::ustring getSettingString ();
-    Glib::ustring getFilterString  ();
+    Glib::ustring getSettingString();
+    Glib::ustring getFilterString();
 
     void adjusterChanged(ThresholdAdjuster *a, double newBottom, double newTop) override;
     void adjusterChanged(ThresholdAdjuster *a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override {}
@@ -69,9 +69,6 @@ public:
 private:
     void showFilter();
     void hideFilter();
-    void showMixer(bool RGBIsSensitive = true);
-    void showGamma();
-    void hideGamma();
 
     rtengine::ProcEvent EvColorCast;
 
