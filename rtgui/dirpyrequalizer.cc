@@ -134,7 +134,7 @@ public:
             Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[3]),
             Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[4]),
             Glib::ustring::format(std::fixed, std::setprecision(2), r.mult[5]),
-            Glib::ustring::format(std::fixed, std::setprecision(2), r.threshold));
+            Glib::ustring::format(std::fixed, std::setprecision(0), r.threshold));
     }
 
     void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
@@ -204,7 +204,7 @@ DirPyrEqualizer::DirPyrEqualizer(): FoldableToolPanel(this, "dirpyrequalizer", M
     Gtk::HSeparator *separator3 = Gtk::manage (new  Gtk::HSeparator());
     box->pack_start(*separator3, Gtk::PACK_SHRINK, 2);
 
-    threshold = Gtk::manage ( new Adjuster (M("TP_DIRPYREQUALIZER_THRESHOLD"), 0, 1, 0.01, 0.2) );
+    threshold = Gtk::manage ( new Adjuster (M("TP_DIRPYREQUALIZER_THRESHOLD"), 0, 100, 1, 0) );
     threshold->setAdjusterListener(this);
     box->pack_start(*threshold);
 
@@ -274,7 +274,7 @@ void DirPyrEqualizer::adjusterChanged(Adjuster* a, double newval)
         if (a == threshold) {
             listener->panelChanged (EvDirPyrEqualizerThreshold,
                                     Glib::ustring::compose("%1",
-                                            Glib::ustring::format(std::fixed, std::setprecision(2), threshold->getValue()))
+                                            Glib::ustring::format(std::fixed, std::setprecision(0), threshold->getValue()))
                                    );
         } else {
             listener->panelChanged (EvDirPyrEqualizer,

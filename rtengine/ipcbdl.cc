@@ -26,6 +26,7 @@
 #include "labmasks.h"
 #include "array2D.h"
 #include "ipcbdl.h"
+#include "rt_algo.h"
 
 namespace rtengine {
 
@@ -64,7 +65,7 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb)
         const int W = rgb->getWidth();
         const int H = rgb->getHeight();
         
-        array2D<float> L(W, H, rgb->g.ptrs, 0);
+        array2D<float> L(W, H);//, rgb->g.ptrs, 0);
 
         // double mult[6];
         // const double scale_factor = 1.0;//min(1.5 / scale, 1.0);
@@ -74,9 +75,20 @@ bool ImProcFunctions::contrastByDetailLevels(Imagefloat *rgb)
             // for (int k = 0; k < 6; ++k) {
             //     mult[k] = 1.0 + (l.mult[k] - 1.0) * scale_factor;
             // }
-            const double threshold = l.threshold / scale;
-            cbdl::dirpyr_equalizer(rgb->g.ptrs, L, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0), multiThread);
+            float contrast = l.threshold / (100.f * scale);
+            buildBlendMask(rgb->g.ptrs, L, W, H, contrast);
             const auto &blend = mask[i];
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    blend[y][x] *= L[y][x];
+                }
+            }
+            
+            const double threshold = 0.2/*l.threshold*/ / scale;
+            cbdl::dirpyr_equalizer(rgb->g.ptrs, L, W, H, nullptr, nullptr, l.mult, /*l.*/threshold, 0.0, 0.f, 0.f, 0.f, std::max(scale, 1.0), multiThread);
 
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
