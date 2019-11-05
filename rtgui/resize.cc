@@ -71,6 +71,7 @@ Resize::Resize () : FoldableToolPanel(this, "resize", M("TP_RESIZE_LABEL"), fals
 
     scale = new Adjuster (M("TP_RESIZE_SCALE"), 0.01, MAX_SCALE, 0.01, 1.);
     scale->setAdjusterListener (this);
+    scale->setLogScale(MAX_SCALE * 10.f, 1.f, true);
 
     pack_start (*scale, Gtk::PACK_SHRINK, 4);
 
