@@ -1672,13 +1672,35 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
                 mask[i][j] = v;
             }
         }
+        float cthresh = 0.1f;
+        buildBlendMask(labdn->L, guide, width, height, cthresh);
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                //mask[i][j] = std::max(mask[i][j], guide[i][j]);
+                //h = std::max(h, mask[i][j]);
+                float sigma = 1.f - 1.f / (1.f + xexpf(16.f - 16.f * mask[i][j] / 0.3f));
+                mask[i][j] = LIM01((mask[i][j] + sigma * guide[i][j]) / 2.f);
+                // if (guide[i][j] >= 0.75f && mask[i][j] <= 0.3f) {
+                //     mask[i][j] = guide[i][j];
+//                    h = std::max(h, mask[i][j]);
+                // }
+            }
+        }
         float thr = 1.f - LIM01(float(detail_thresh)/100.f);
         float f = (h - l) * (1.f - thr);
         if (f > 0.f) {
+            // DiagonalCurve curve({
+            //         DCT_Spline,
+            //             0.0, 0.0,
+            //             0.3, 0.1,
+            //             0.7, 0.9,
+            //             1.0, 1.0
+            //             });
             for (int i = 0; i < height; ++i) {
                 for (int j = 0; j < width; ++j) {
                     float v = (mask[i][j] - l) * f + thr;
                     mask[i][j] = v;
+                    //mask[i][j] = curve.getVal(v) + thr;
                 }
             }
         }
