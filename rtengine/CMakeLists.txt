@@ -97,6 +97,7 @@ set(RTENGINESOURCEFILES
     lcp.cc
     loadinitial.cc
     myfile.cc
+    panasonic_decoders.cc
     pipettebuffer.cc
     pixelshift.cc
     previewimage.cc
