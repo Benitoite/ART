@@ -230,7 +230,7 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
 }
 
 
-void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool multithread, int subsampling)
+void guidedFilterLog(const array2D<float> &guide, float base, array2D<float> &chan, int r, float eps, bool multithread, int subsampling)
 {
 #ifdef _OPENMP
 #    pragma omp parallel for if (multithread)
@@ -241,7 +241,7 @@ void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool mu
         }
     }
 
-    guidedFilter(chan, chan, chan, r, eps, multithread, subsampling);
+    guidedFilter(guide, chan, chan, r, eps, multithread, subsampling);
 
 #ifdef _OPENMP
 #    pragma omp parallel for if (multithread)
@@ -253,5 +253,10 @@ void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool mu
     }
 }
 
+
+void guidedFilterLog(float base, array2D<float> &chan, int r, float eps, bool multithread, int subsampling)
+{
+    guidedFilterLog(chan, base, chan, r, eps, multithread, subsampling);
+}
 
 } // namespace rtengine
