@@ -201,6 +201,7 @@ public:
     type_trash_changed trash_changed();
 
     int getColumnWidth() const;
+    bool isSelected(const Glib::ustring &fname) const;
 };
 
 #endif

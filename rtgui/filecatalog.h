@@ -259,6 +259,7 @@ public:
         fileBrowser->openPrevImage();
     }
     void selectImage (Glib::ustring fname, bool clearFilters);
+    bool isSelected(const Glib::ustring &fname) const;
     void openNextPreviousEditorImage (Glib::ustring fname, bool clearFilters, eRTNav nextPrevious);
 
     bool handleShortcutKey (GdkEventKey* event);

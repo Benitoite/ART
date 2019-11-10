@@ -2136,6 +2136,12 @@ void FileCatalog::selectImage (Glib::ustring fname, bool clearFilters)
 }
 
 
+bool FileCatalog::isSelected(const Glib::ustring &fname) const
+{
+    return fileBrowser->isSelected(fname);
+}
+
+
 void FileCatalog::openNextPreviousEditorImage (Glib::ustring fname, bool clearFilters, eRTNav nextPrevious)
 {
 

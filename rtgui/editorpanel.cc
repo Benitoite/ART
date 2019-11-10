@@ -1678,20 +1678,18 @@ bool EditorPanel::handleShortcutKey (GdkEventKey* event)
 
                     return true;
 
-                // case GDK_KEY_b:
-                //     if (!gimpPlugin && !simpleEditor) {
-                //         do_queue_image(false);
-                //     }
-
-                //     return true;
- 
-                // case GDK_KEY_B:
-                //     if (!gimpPlugin && !simpleEditor) {
-                //         do_queue_image(true);
-                //     }
-
-                //     return true;
-                   
+                case GDK_KEY_b:
+                case GDK_KEY_B:
+                    if (!simpleEditor && catalogPane && catalogPane->is_visible() && fPanel->fileCatalog->isSelected(fname)) {
+                        // propagate this to fPanel, so that if there is a
+                        // multiple selection all the selected thumbs get
+                        // enqueued
+                    } else if (!gimpPlugin && !simpleEditor) {
+                        do_queue_image(event->keyval == GDK_KEY_B);
+                        return true;
+                    }
+                    break;
+                    
                 case GDK_KEY_e:
                     if (!gimpPlugin) {
                         sendToGimpPressed();

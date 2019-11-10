@@ -2017,3 +2017,14 @@ int FileBrowser::getColumnWidth() const
     }
     return ret;
 }
+
+
+bool FileBrowser::isSelected(const Glib::ustring &fname) const
+{
+    for (const auto &s : selected) {
+        if (s->filename == fname) {
+            return true;
+        }
+    }
+    return false;
+}
