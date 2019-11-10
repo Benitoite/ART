@@ -1555,39 +1555,13 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
     }
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    //const int detail_thresh = dnparams.luminanceDetailThreshold;
     array2D<float> mask;
-#if 0
     if (detail_thresh > 0) {
         mask(width, height);
-        float thr = log2lin(float(detail_thresh)/200.f, 10.f);
-        buildBlendMask(labdn->L, mask, width, height, thr);
-        float r = 20.f / scale;
-        if (r > 0) {
-            float **m = mask;
-            gaussianBlur(m, m, width, height, r);
-        }
-        array2D<float> m2(width, height);
-        const float alfa = 0.856f;
-        const float beta = 1.f + std::sqrt(log2lin(thr, 100.f));
-        buildGradientsMask(width, height, labdn->L, m2, params_Ldetail/100.f, 7, 3, alfa, beta, numthreads > 1);
-        float h = 0.f;
-        float l = RT_INFINITY;
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                mask[i][j] *= m2[i][j];
-                h = max(mask[i][j], h);
-                l = min(mask[i][j], l);
-            }
-        }
-        if (h > 0.f) {
-            const float f = (h - l);
-            for (int i = 0; i < height; ++i) {
-                for (int j = 0; j < width; ++j) {
-                    mask[i][j] = std::sqrt(LIM01((mask[i][j] - l) / f));
-                }
-            }
-        }
+        float cthresh = 0.1f * scale;
+        float amount = LIM01(float(detail_thresh)/100.f);
+        float thr = 1.f - amount;
+        buildBlendMask(labdn->L, mask, width, height, cthresh, amount);
         array2D<float> guide(width, height);
         LUTf ll(32769);
         for (int i = 0; i < 32769; ++i) {
@@ -1598,7 +1572,12 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
                 guide[i][j] = ll[labdn->L[i][j]];
             }
         }
-        guidedFilter(guide, mask, mask, r * 100, 0.1f, numthreads > 1);
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                mask[i][j] = LIM01(mask[i][j] + thr);
+            }
+        }
+        guidedFilter(guide, mask, mask, 20.f / scale, 0.1f, numthreads > 1);
 #if 0
         {
             Imagefloat tmp(width, height);
@@ -1607,117 +1586,10 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
                     tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
                 }
             }
-            tmp.saveTIFF("/tmp/out.tif", 16);
+            tmp.saveTIFF("/tmp/mask.tif", 16);
         }
 #endif
-#if 1
-        {
-            array2D<float> g2(width, height);
-            guidedFilter(guide, guide, g2, r, 0.1f, numthreads > 1);
-            Imagefloat tmp(width, height);
-            float l = 1.f, h = 0.f;
-            for (int i = 0; i < height; ++i) {
-                for (int j = 0; j < width; ++j) {
-                    float v = LIM01(std::abs(guide[i][j] - g2[i][j]));
-                    l = std::min(l, v);
-                    h = std::max(h, v);
-                    g2[i][j] = v;
-                    //tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = v * 65535.f;
-                }
-            }
-            float f = h - l;
-            for (int i = 0; i < height; ++i) {
-                for (int j = 0; j < width; ++j) {
-                    float v = (g2[i][j] - l) / f;
-                    tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = v * 65535.f;
-                }
-            }
-            tmp.saveTIFF("/tmp/edges.tif", 16);
-            // for (int i = 0; i < height; ++i) {
-            //     for (int j = 0; j < width; ++j) {
-            //         tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = guide[i][j] * 65535.f;
-            //     }
-            // }
-            // tmp.saveTIFF("/tmp/guide.tif", 16);
-            // for (int i = 0; i < height; ++i) {
-            //     for (int j = 0; j < width; ++j) {
-            //         tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = g2[i][j] * 65535.f;
-            //     }
-            // }
-            // tmp.saveTIFF("/tmp/g2.tif", 16);
-        }
-#endif
-    }
-#else // if 0
-    if (detail_thresh > 0) {
-        mask(width, height);
-        float r = 20.f / scale;
-        array2D<float> guide(width, height);
-        LUTf ll(32769);
-        for (int i = 0; i < 32769; ++i) {
-            ll[i] = xlin2log(float(i) / 32768.f, 10.f);
-        }
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                guide[i][j] = ll[labdn->L[i][j]];
-            }
-        }
-        guidedFilter(guide, guide, mask, r, 0.1f, numthreads > 1);
-        float l = 1.f, h = 0.f;
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                float v = pow_F(LIM01(std::abs(guide[i][j] - mask[i][j])), 1.f/3.f);
-                l = std::min(l, v);
-                h = std::max(h, v);
-                mask[i][j] = v;
-            }
-        }
-        float cthresh = 0.1f;
-        buildBlendMask(labdn->L, guide, width, height, cthresh);
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                //mask[i][j] = std::max(mask[i][j], guide[i][j]);
-                //h = std::max(h, mask[i][j]);
-                float sigma = 1.f - 1.f / (1.f + xexpf(16.f - 16.f * mask[i][j] / 0.3f));
-                mask[i][j] = LIM01((mask[i][j] + sigma * guide[i][j]) / 2.f);
-                // if (guide[i][j] >= 0.75f && mask[i][j] <= 0.3f) {
-                //     mask[i][j] = guide[i][j];
-//                    h = std::max(h, mask[i][j]);
-                // }
-            }
-        }
-        float thr = 1.f - LIM01(float(detail_thresh)/100.f);
-        float f = (h - l) * (1.f - thr);
-        if (f > 0.f) {
-            // DiagonalCurve curve({
-            //         DCT_Spline,
-            //             0.0, 0.0,
-            //             0.3, 0.1,
-            //             0.7, 0.9,
-            //             1.0, 1.0
-            //             });
-            for (int i = 0; i < height; ++i) {
-                for (int j = 0; j < width; ++j) {
-                    float v = (mask[i][j] - l) * f + thr;
-                    mask[i][j] = v;
-                    //mask[i][j] = curve.getVal(v) + thr;
-                }
-            }
-        }
-    }
-#if 0
-    {
-        Imagefloat tmp(width, height);
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
-            }
-        }
-        tmp.saveTIFF("/tmp/mask.tif", 16);
-    }
-#endif
-#endif // if 0
-    
+    }   
 
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
