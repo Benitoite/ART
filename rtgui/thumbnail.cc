@@ -1149,7 +1149,7 @@ void Thumbnail::saveRating()
             if (rating_.color.edited) {
                 xmp["Xmp.xmp.Label"] = xmp_color2label(rating_.color);
             }
-            if (rating_.trash ? rating_.trash.edited : rating_.rank.edited) {
+            if (rating_.trash.edited || rating_.rank.edited) {
                 xmp["Xmp.xmp.Rating"] = (rating_.trash ? "-1" : std::to_string(rating_.rank));
             }
             rtengine::Exiv2Metadata meta;
