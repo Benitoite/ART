@@ -1122,113 +1122,14 @@ void FileCatalog::developRequested(const std::vector<FileBrowserEntry*>& tbe, bo
             Thumbnail* th = fbe->thumbnail;
             rtengine::procparams::ProcParams params = th->getProcParams();
 
-            // if fast mode is selected, override (disable) params
-            // controlling time and resource consuming tasks
-            // and also those which effect is not pronounced after reducing the image size
-            // TODO!!! could expose selections below via preferences
-            // if (fastmode) {
-            //     if (!options.fastexport_use_fast_pipeline) {
-            //         if (options.fastexport_bypass_sharpening) {
-            //             params.sharpening.enabled = false;
-            //         }
-
-            //         if (options.fastexport_bypass_sharpenMicro) {
-            //             params.sharpenMicro.enabled = false;
-            //         }
-
-            //         //if (options.fastexport_bypass_lumaDenoise) params.lumaDenoise.enabled = false;
-            //         //if (options.fastexport_bypass_colorDenoise) params.colorDenoise.enabled = false;
-            //         if (options.fastexport_bypass_defringe) {
-            //             params.defringe.enabled = false;
-            //         }
-
-            //         if (options.fastexport_bypass_dirpyrDenoise) {
-            //             params.denoise.enabled = false;
-            //         }
-
-            //         if (options.fastexport_bypass_dirpyrequalizer) {
-            //             params.dirpyrequalizer.enabled = false;
-            //         }
-
-            //         //if (options.fastexport_bypass_raw_bayer_all_enhance) params.raw.bayersensor.all_enhance = false;
-            //         if (options.fastexport_bypass_raw_bayer_dcb_iterations) {
-            //             params.raw.bayersensor.dcb_iterations = 0;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_bayer_dcb_enhance) {
-            //             params.raw.bayersensor.dcb_enhance = false;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_bayer_lmmse_iterations) {
-            //             params.raw.bayersensor.lmmse_iterations = 0;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_bayer_linenoise) {
-            //             params.raw.bayersensor.linenoise = 0;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_bayer_greenthresh) {
-            //             params.raw.bayersensor.greenthresh = 0;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_ccSteps) {
-            //             params.raw.bayersensor.ccSteps = params.raw.xtranssensor.ccSteps = 0;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_ca) {
-            //             params.raw.ca_autocorrect = false;
-            //             params.raw.cared = 0;
-            //             params.raw.cablue = 0;
-            //         }
-
-            //         if (options.fastexport_bypass_raw_df) {
-            //             params.raw.df_autoselect = false;
-            //             params.raw.dark_frame = "";
-            //         }
-
-            //         if (options.fastexport_bypass_raw_ff) {
-            //             params.raw.ff_AutoSelect = false;
-            //             params.raw.ff_file = "";
-            //         }
-
-            //         params.raw.bayersensor.method = options.fastexport_raw_bayer_method;
-            //         params.raw.xtranssensor.method = options.fastexport_raw_xtrans_method;
-            //         params.icm.inputProfile = options.fastexport_icm_input_profile;
-            //         params.icm.workingProfile = options.fastexport_icm_working_profile;
-            //         params.icm.outputProfile = options.fastexport_icm_output_profile;
-            //         params.icm.outputIntent = options.fastexport_icm_outputIntent;
-            //         params.icm.outputBPC = options.fastexport_icm_outputBPC;
-            //     }
-
-            //     if (params.resize.enabled) {
-            //         params.resize.width = rtengine::min(params.resize.width, options.fastexport_resize_width);
-            //         params.resize.height = rtengine::min(params.resize.height, options.fastexport_resize_height);
-            //     } else {
-            //         params.resize.width = options.fastexport_resize_width;
-            //         params.resize.height = options.fastexport_resize_height;
-            //     }
-
-            //     params.resize.enabled = options.fastexport_resize_enabled;
-            //     params.resize.scale = options.fastexport_resize_scale;
-            //     params.resize.appliesTo = options.fastexport_resize_appliesTo;
-            //     params.resize.method = options.fastexport_resize_method;
-            //     params.resize.dataspec = options.fastexport_resize_dataspec;
-            //     params.resize.allowUpscaling = false;
-            // }
-
-            // rtengine::ProcessingJob* pjob = rtengine::ProcessingJob::create (fbe->filename, th->getType() == FT_Raw, params, fastmode && options.fastexport_use_fast_pipeline);
             auto pjob = create_processing_job(fbe->filename, th->getType() == FT_Raw, params, fastmode);
 
             int pw;
             int ph = BatchQueue::calcMaxThumbnailHeight();
             th->getThumbnailSize (pw, ph);
 
-            // processThumbImage is the processing intensive part, but adding to queue must be ordered
-            //#pragma omp ordered
-            //{
             BatchQueueEntry* bqh = new BatchQueueEntry (pjob, params, fbe->filename, pw, ph, th);
             entries.push_back(bqh);
-            //}
         }
 
         listener->addBatchQueueJobs( entries );

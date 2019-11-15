@@ -46,7 +46,7 @@ ExportPanel::ExportPanel () //: listener (nullptr)
     bypass_sharpening       = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_SHARPENING")));
     bypass_defringe         = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_DEFRINGE")));
     bypass_dirpyrDenoise    = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_DIRPYRDENOISE")));
-    bypass_dirpyrequalizer  = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_DIRPYREQUALIZER")));
+    bypass_localContrast  = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_LOCALCONTRAST")));
     bypass_raw_ccSteps      = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_RAW_CCSTEPS")));
     bypass_raw_ca           = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_RAW_CA")));
     bypass_raw_df           = Gtk::manage ( new Gtk::CheckButton (M ("EXPORT_BYPASS_RAW_DF")));
@@ -135,7 +135,7 @@ ExportPanel::ExportPanel () //: listener (nullptr)
     bypass_box->pack_start (*bypass_sharpening, Gtk::PACK_SHRINK, 4);
     bypass_box->pack_start (*bypass_defringe, Gtk::PACK_SHRINK, 4);
     bypass_box->pack_start (*bypass_dirpyrDenoise, Gtk::PACK_SHRINK, 4);
-    bypass_box->pack_start (*bypass_dirpyrequalizer, Gtk::PACK_SHRINK, 4);
+    bypass_box->pack_start (*bypass_localContrast, Gtk::PACK_SHRINK, 4);
 
     bayerFrameVBox->pack_start (*hb_raw_bayer_method, Gtk::PACK_SHRINK, 4);
     //bayerFrameVBox->pack_start(*bypass_raw_all_enhance , Gtk::PACK_SHRINK, 4);
@@ -203,7 +203,7 @@ ExportPanel::ExportPanel () //: listener (nullptr)
     bypass_sharpeningConn           = bypass_sharpening->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     bypass_defringeConn             = bypass_defringe->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     bypass_dirpyrDenoiseConn        = bypass_dirpyrDenoise->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
-    bypass_dirpyrequalizerConn      = bypass_dirpyrequalizer->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
+    bypass_localContrastConn      = bypass_localContrast->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     //bypass_raw_all_enhanceConn    = bypass_raw_bayer_all_enhance->signal_toggled().connect (sigc::bind (sigc::mem_fun(*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     bypass_raw_bayer_dcb_iterationsConn   = bypass_raw_bayer_dcb_iterations->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
     bypass_raw_bayer_dcb_enhanceConn      = bypass_raw_bayer_dcb_enhance->signal_toggled().connect (sigc::bind (sigc::mem_fun (*bypass_ALL, &Gtk::CheckButton::set_inconsistent), true));
@@ -253,7 +253,7 @@ void ExportPanel::SaveSettings(Options &opts)
     FE_OPT_STORE_ (opts.fastexport_bypass_sharpening, bypass_sharpening->get_active        ());
     FE_OPT_STORE_ (opts.fastexport_bypass_defringe, bypass_defringe->get_active          ());
     FE_OPT_STORE_ (opts.fastexport_bypass_dirpyrDenoise, bypass_dirpyrDenoise->get_active     ());
-    FE_OPT_STORE_ (opts.fastexport_bypass_dirpyrequalizer, bypass_dirpyrequalizer->get_active   ());
+    FE_OPT_STORE_ (opts.fastexport_bypass_localContrast, bypass_localContrast->get_active   ());
     //opts.fastexport_bypass_raw_bayer_all_enhance    = bypass_raw_all_enhance->get_active           ();
     FE_OPT_STORE_ (opts.fastexport_bypass_raw_bayer_dcb_iterations, bypass_raw_bayer_dcb_iterations->get_active  ());
     FE_OPT_STORE_ (opts.fastexport_bypass_raw_bayer_dcb_enhance, bypass_raw_bayer_dcb_enhance->get_active     ());
@@ -311,7 +311,7 @@ void ExportPanel::LoadSettings(Options &opts)
     bypass_sharpening->set_active        (opts.fastexport_bypass_sharpening         );
     bypass_defringe->set_active          (opts.fastexport_bypass_defringe           );
     bypass_dirpyrDenoise->set_active     (opts.fastexport_bypass_dirpyrDenoise      );
-    bypass_dirpyrequalizer->set_active   (opts.fastexport_bypass_dirpyrequalizer    );
+    bypass_localContrast->set_active   (opts.fastexport_bypass_localContrast    );
     //bypass_raw_bayer_all_enhance->set_active   (opts.fastexport_bypass_raw_bayer_all_enhance     );
     bypass_raw_bayer_dcb_iterations->set_active  (opts.fastexport_bypass_raw_bayer_dcb_iterations  );
     bypass_raw_bayer_dcb_enhance->set_active     (opts.fastexport_bypass_raw_bayer_dcb_enhance     );
@@ -377,7 +377,7 @@ void ExportPanel::bypassALL_Toggled()
     bypass_sharpeningConn.block         (true);
     bypass_defringeConn.block           (true);
     bypass_dirpyrDenoiseConn.block      (true);
-    bypass_dirpyrequalizerConn.block    (true);
+    bypass_localContrastConn.block    (true);
     //bypass_raw_bayer_all_enhanceConn.block    (true);
     bypass_raw_bayer_dcb_iterationsConn.block   (true);
     bypass_raw_bayer_dcb_enhanceConn.block      (true);
@@ -394,7 +394,7 @@ void ExportPanel::bypassALL_Toggled()
     bypass_sharpening->set_active (bypass_ALL->get_active());
     bypass_defringe->set_active (bypass_ALL->get_active());
     bypass_dirpyrDenoise->set_active (bypass_ALL->get_active());
-    bypass_dirpyrequalizer->set_active (bypass_ALL->get_active());
+    bypass_localContrast->set_active (bypass_ALL->get_active());
     //bypass_raw_bayer_all_enhance->set_active(bypass_ALL->get_active());
     bypass_raw_bayer_dcb_iterations->set_active (bypass_ALL->get_active());
     bypass_raw_bayer_dcb_enhance->set_active (bypass_ALL->get_active());
@@ -409,7 +409,7 @@ void ExportPanel::bypassALL_Toggled()
     bypass_sharpeningConn.block           (false);
     bypass_defringeConn.block             (false);
     bypass_dirpyrDenoiseConn.block        (false);
-    bypass_dirpyrequalizerConn.block      (false);
+    bypass_localContrastConn.block      (false);
     //bypass_raw_bayer_all_enhanceConn.block    (false);
     bypass_raw_bayer_dcb_iterationsConn.block   (false);
     bypass_raw_bayer_dcb_enhanceConn.block      (false);
@@ -434,7 +434,7 @@ fastexport_bypass_lumaDenoise
 fastexport_bypass_colorDenoise
 fastexport_bypass_defringe
 fastexport_bypass_dirpyrDenoise
-fastexport_bypass_dirpyrequalizer
+fastexport_bypass_localContrast
 fastexport_raw_bayer_method
 fastexport_bypass_raw_bayer_all_enhance
 fastexport_bypass_raw_bayer_dcb_iterations

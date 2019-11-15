@@ -94,7 +94,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     logenc              = Gtk::manage(new LogEncoding());
     colorcorrection = Gtk::manage(new ColorCorrection());
     smoothing = Gtk::manage(new Smoothing());
-    cbdl = Gtk::manage(new DirPyrEqualizer());
+    // cbdl = Gtk::manage(new DirPyrEqualizer());
     filmNegative        = Gtk::manage (new FilmNegative ());
 
     // So Demosaic, Line noise filter, Green Equilibration, Ca-Correction (garder le nom de section identique!) and Black-Level will be moved in a "Bayer sensor" tool,
@@ -117,7 +117,7 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
 
     // details
     addfavoritePanel(detailsPanel, sharpening);
-    addfavoritePanel(detailsPanel, localContrast);
+    // addfavoritePanel(detailsPanel, localContrast);
     addfavoritePanel(detailsPanel, denoise);
     addfavoritePanel(detailsPanel, impulsedenoise);
     addfavoritePanel(detailsPanel, defringe);
@@ -134,7 +134,8 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     // local
     addfavoritePanel(localPanel, colorcorrection);
     addfavoritePanel(localPanel, smoothing);
-    addfavoritePanel(localPanel, cbdl);
+    //addfavoritePanel(localPanel, cbdl);
+    addfavoritePanel(localPanel, localContrast);
     addfavoritePanel(localPanel, textureBoost);
 
     // effects
@@ -451,7 +452,8 @@ void ToolPanelCoordinator::panelChanged(const rtengine::ProcEvent& event, const 
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
         colorcorrection->updateGeometry(fw, fh);
         smoothing->updateGeometry(fw, fh);
-        cbdl->updateGeometry(fw, fh);
+        // cbdl->updateGeometry(fw, fh);
+        localContrast->updateGeometry(fw, fh);
         textureBoost->updateGeometry(fw, fh);
     }
 
@@ -552,7 +554,8 @@ void ToolPanelCoordinator::profileChange(
         gradient->updateGeometry (params->gradient.centerX, params->gradient.centerY, params->gradient.feather, params->gradient.degree, fw, fh);
         colorcorrection->updateGeometry(fw, fh);
         smoothing->updateGeometry(fw, fh);
-        cbdl->updateGeometry(fw, fh);
+        //cbdl->updateGeometry(fw, fh);
+        localContrast->updateGeometry(fw, fh);
         textureBoost->updateGeometry(fw, fh);
     }
 
@@ -1121,6 +1124,7 @@ void ToolPanelCoordinator::setAreaDrawListener(AreaDrawListener *listener)
 {
     colorcorrection->setAreaDrawListener(listener);
     smoothing->setAreaDrawListener(listener);
-    cbdl->setAreaDrawListener(listener);
+    //cbdl->setAreaDrawListener(listener);
+    localContrast->setAreaDrawListener(listener);
     textureBoost->setAreaDrawListener(listener);
 }

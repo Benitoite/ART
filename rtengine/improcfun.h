@@ -123,13 +123,13 @@ public:
     void defringe(Imagefloat *rgb);
     void dehaze(Imagefloat *rgb);
     void dynamicRangeCompression(Imagefloat *rgb);
-    void localContrast(Imagefloat *rgb);
+    bool localContrast(Imagefloat *rgb);
     void shadowsHighlights(Imagefloat *rgb);
     void toneEqualizer(Imagefloat *rgb);
     void softLight(Imagefloat *rgb);
     bool colorCorrection(Imagefloat *rgb);
     void logEncoding(Imagefloat *rgb);
-    bool contrastByDetailLevels(Imagefloat *rgb);
+    // bool contrastByDetailLevels(Imagefloat *rgb);
     void filmGrain(Imagefloat *rgb);
     bool guidedSmoothing(Imagefloat *rgb);
     void hslEqualizer(Imagefloat *rgb);

@@ -37,8 +37,8 @@ void adjust_fast_params(rtengine::procparams::ProcParams &params)
             params.denoise.enabled = false;
         }
 
-        if (options.fastexport_bypass_dirpyrequalizer) {
-            params.dirpyrequalizer.enabled = false;
+        if (options.fastexport_bypass_localContrast) {
+            params.localContrast.enabled = false;
         }
 
         //if (options.fastexport_bypass_raw_bayer_all_enhance) params.raw.bayersensor.all_enhance = false;

@@ -57,7 +57,7 @@
 #include "toolbar.h"
 #include "lensgeom.h"
 #include "lensgeomlistener.h"
-#include "dirpyrequalizer.h"
+//#include "dirpyrequalizer.h"
 #include "preprocess.h"
 #include "bayerpreprocess.h"
 #include "bayerprocess.h"
@@ -158,7 +158,7 @@ protected:
     MetaDataPanel* metadata;
     Smoothing *smoothing;
     ColorCorrection *colorcorrection;
-    DirPyrEqualizer *cbdl;
+    // DirPyrEqualizer *cbdl;
     FilmNegative *filmNegative;    
 
     std::vector<PParamsChangeListener*> paramcListeners;

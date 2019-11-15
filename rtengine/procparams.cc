@@ -785,24 +785,41 @@ bool RGBCurvesParams::operator !=(const RGBCurvesParams& other) const
 }
 
 
-LocalContrastParams::LocalContrastParams():
-    enabled(false),
+LocalContrastParams::Region::Region():
     contrast(0),
     curve{
-        static_cast<double>(FCT_MinMaxCPoints),
+        FCT_MinMaxCPoints,
         0.0,
-        0.50,
-        0.35,
-        0.35,
-        0.50,
-        0.675,
-        0.35,
-        0.35,
-        1.00,
-        0.50,
-        0.35,
-        0.35
+        0.5,
+        0.0,
+        0.0,
+        1.0,
+        0.5,
+        0.0,
+        0.0
     }
+{
+}
+
+
+bool LocalContrastParams::Region::operator==(const Region &other) const
+{
+    return contrast == other.contrast
+        && curve == other.curve;
+}
+
+
+bool LocalContrastParams::Region::operator!=(const Region &other) const
+{
+    return !(*this == other);
+}
+
+
+LocalContrastParams::LocalContrastParams():
+    enabled(false),
+    regions{Region()},
+    labmasks{LabCorrectionMask()},
+    showMask(-1)
 {
 }
 
@@ -811,8 +828,9 @@ bool LocalContrastParams::operator==(const LocalContrastParams &other) const
 {
     return
         enabled == other.enabled
-        && contrast == other.contrast
-        && curve == other.curve;
+        && regions == other.regions
+        && labmasks == other.labmasks
+        && showMask == other.showMask;
 }
 
 
@@ -1690,79 +1708,6 @@ bool ColorManagementParams::operator !=(const ColorManagementParams& other) cons
 }
 
 
-DirPyrEqualizerParams::Levels::Levels():
-    mult{
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0
-    },
-    threshold(0)
-{
-}
-
-
-bool DirPyrEqualizerParams::Levels::operator==(const Levels &other) const
-{
-    for (int i = 0; i < 6; ++i) {
-        if (mult[i] != other.mult[i]) {
-            return false;
-        }
-    }
-    return threshold == other.threshold;
-}
-
-
-bool DirPyrEqualizerParams::Levels::operator!=(const Levels &other) const
-{
-    return !(*this == other);
-}
-
-
-DirPyrEqualizerParams::DirPyrEqualizerParams() :
-    enabled(false),
-    levels{Levels()},
-    labmasks{LabCorrectionMask()},
-    showMask(-1)
-    // threshold(0.2),
-    // skinprotect(0.0),
-    // hueskin (-5, 25, 170, 120, false),
-    // cbdlMethod("bef")
-{
-}
-
-
-bool DirPyrEqualizerParams::operator ==(const DirPyrEqualizerParams& other) const
-{
-    return
-        enabled == other.enabled
-        && levels == other.levels
-        && labmasks == other.labmasks
-        && showMask == other.showMask;
-        // && gamutlab == other.gamutlab
-        // && [this, &other]() -> bool
-        //     {
-        //         for (unsigned int i = 0; i < 6; ++i) {
-        //             if (mult[i] != other.mult[i]) {
-        //                 return false;
-        //             }
-        //         }
-        //         return true;
-        //     }()
-        // && threshold == other.threshold
-        // && skinprotect == other.skinprotect
-        // && hueskin == other.hueskin
-        // && cbdlMethod == other.cbdlMethod;
-}
-
-bool DirPyrEqualizerParams::operator !=(const DirPyrEqualizerParams& other) const
-{
-    return !(*this == other);
-}
-
-
 FilmSimulationParams::FilmSimulationParams() :
     enabled(false),
     strength(100)
@@ -2341,8 +2286,6 @@ void ProcParams::setDefaults()
 
     icm = ColorManagementParams();
 
-    dirpyrequalizer = DirPyrEqualizerParams();
-
     filmSimulation = FilmSimulationParams();
 
     softlight = SoftLightParams();
@@ -2470,8 +2413,14 @@ int ProcParams::save(bool save_general,
 // Local contrast
         if (RELEVANT_(localContrast)) {
             saveToKeyfile("Local Contrast", "Enabled", localContrast.enabled, keyFile);
-            saveToKeyfile("Local Contrast", "Contrast", localContrast.contrast, keyFile);
-            saveToKeyfile("Local Contrast", "Curve", localContrast.curve, keyFile);
+            for (size_t j = 0; j < localContrast.regions.size(); ++j) {
+                std::string n = j ? std::string("_") + std::to_string(j) : std::string("");
+                auto &r = localContrast.regions[j];
+                putToKeyfile("Local Contrast", Glib::ustring("Contrast") + n, r.contrast, keyFile);
+                putToKeyfile("Local Contrast", Glib::ustring("Curve") + n, r.curve, keyFile);
+                localContrast.labmasks[j].save(keyFile, "Local Contrast", "", n);
+            }
+            saveToKeyfile("Local Contrast", "showMask", localContrast.showMask, keyFile);
         }
 
 
@@ -2805,21 +2754,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Color Management", "OutputBPC", icm.outputBPC, keyFile);
         }
 
-
-// Directional pyramid equalizer
-        if (RELEVANT_(dirpyrequalizer)) {
-            saveToKeyfile("Directional Pyramid Equalizer", "Enabled", dirpyrequalizer.enabled, keyFile);
-            for (size_t j = 0; j < dirpyrequalizer.levels.size(); ++j) {
-                std::string n = std::to_string(j+1);
-                auto &l = dirpyrequalizer.levels[j];
-                for (int i = 0; i < 6; ++i) {
-                    putToKeyfile("Directional Pyramid Equalizer", Glib::ustring("Mult") + std::to_string(i) + "_" + n, l.mult[i], keyFile);
-                }
-                putToKeyfile("Directional Pyramid Equalizer", Glib::ustring("Threshold_") + n, l.threshold, keyFile);
-                dirpyrequalizer.labmasks[j].save(keyFile, "Directional Pyramid Equalizer", "", Glib::ustring("_") + n);
-            }
-            saveToKeyfile("Directional Pyramid Equalizer", "ShowMask", dirpyrequalizer.showMask, keyFile);
-        }
 
 // Soft Light
         if (RELEVANT_(softlight)) {
@@ -3249,8 +3183,39 @@ int ProcParams::load(bool load_general,
         
         if (keyFile.has_group("Local Contrast") && RELEVANT_(localContrast)) {
             assignFromKeyfile(keyFile, "Local Contrast", "Enabled", localContrast.enabled);
-            assignFromKeyfile(keyFile, "Local Contrast", "Contrast", localContrast.contrast);
-            assignFromKeyfile(keyFile, "Local Contrast", "Curve", localContrast.curve);
+                
+            std::vector<LocalContrastParams::Region> ll;
+            std::vector<LabCorrectionMask> lm;
+            bool found = false;
+            bool done = false;
+            for (int i = 0; !done; ++i) {
+                LocalContrastParams::Region cur;
+                LabCorrectionMask curmask;
+                done = true;
+                std::string n = i ? std::string("_") + std::to_string(i) : std::string("");
+                if (assignFromKeyfile(keyFile, "Local Contrast", Glib::ustring("Contrast") + n, cur.contrast)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "Local Contrast", Glib::ustring("Curve") + n, cur.curve)) {
+                    found = true;
+                    done = false;
+                }
+                if (curmask.load(keyFile, "Local Contrast", "", n)) {
+                    found = true;
+                    done = false;
+                }
+                if (!done) {
+                    ll.emplace_back(cur);
+                    lm.emplace_back(curmask);
+                }
+            }
+            if (found) {
+                localContrast.regions = std::move(ll);
+                localContrast.labmasks = std::move(lm);
+            }
+            assert(localContrast.regions.size() == localContrast.labmasks.size());
+            assignFromKeyfile(keyFile, "Local Contrast", "ShowMask", localContrast.showMask);
         }
 
         if (keyFile.has_group("Luminance Curve") && RELEVANT_(labCurve)) {
@@ -3722,85 +3687,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Color Management", "OutputBPC", icm.outputBPC);
         }
 
-        if (keyFile.has_group("Directional Pyramid Equalizer") && RELEVANT_(dirpyrequalizer)) {
-            if (ppVersion < 347) {
-                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Enabled", dirpyrequalizer.enabled);
-
-                dirpyrequalizer.levels = {DirPyrEqualizerParams::Levels()};
-                dirpyrequalizer.labmasks = {LabCorrectionMask()};
-
-                auto &l = dirpyrequalizer.levels[0];
-
-                if (ppVersion < 316) {
-                    for (int i = 0; i < 5; i ++) {
-                        std::stringstream ss;
-                        ss << "Mult" << i;
-
-                        if (keyFile.has_key("Directional Pyramid Equalizer", ss.str())) {
-                            if (i == 4) {
-                                l.threshold = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
-                            } else {
-                                l.mult[i] = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
-                            }
-                        }
-                    }
-
-                    l.mult[4] = 1.0;
-                } else {
-                    // 5 level wavelet + dedicated threshold parameter
-                    for (int i = 0; i < 6; i ++) {
-                        std::stringstream ss;
-                        ss << "Mult" << i;
-
-                        if (keyFile.has_key("Directional Pyramid Equalizer", ss.str())) {
-                            l.mult[i] = keyFile.get_double("Directional Pyramid Equalizer", ss.str());
-                        }
-                    }
-
-                    assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Threshold", l.threshold);
-//                    assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Skinprotect", dirpyrequalizer.skinprotect);
-                    // TODO - port skin protection from old pp3's
-                }
-            } else {
-                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "Enabled", dirpyrequalizer.enabled);
-                
-                std::vector<DirPyrEqualizerParams::Levels> ll;
-                std::vector<LabCorrectionMask> lm;
-                bool found = false;
-                bool done = false;
-                for (int i = 1; !done; ++i) {
-                    DirPyrEqualizerParams::Levels cur;
-                    LabCorrectionMask curmask;
-                    done = true;
-                    std::string n = std::to_string(i);
-                    for (int j = 0; j < 6; ++j) {
-                        if (assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", Glib::ustring("Mult") + std::to_string(j) + "_" + n, cur.mult[j])) {
-                            found = true;
-                            done = false;
-                        }
-                    }
-                    if (assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", Glib::ustring("Threshold_") + n, cur.threshold)) {
-                        found = true;
-                        done = false;
-                    }
-                    if (curmask.load(keyFile, "Directional Pyramid Equalizer", "", Glib::ustring("_") + n)) {
-                        found = true;
-                        done = false;
-                    }
-                    if (!done) {
-                        ll.emplace_back(cur);
-                        lm.emplace_back(curmask);
-                    }
-                }
-                if (found) {
-                    dirpyrequalizer.levels = std::move(ll);
-                    dirpyrequalizer.labmasks = std::move(lm);
-                }
-                assert(dirpyrequalizer.levels.size() == dirpyrequalizer.labmasks.size());
-                assignFromKeyfile(keyFile, "Directional Pyramid Equalizer", "ShowMask", dirpyrequalizer.showMask);
-            }
-        }
-
         if (keyFile.has_group("SoftLight") && RELEVANT_(softlight)) {
             assignFromKeyfile(keyFile, "SoftLight", "Enabled", softlight.enabled);
             assignFromKeyfile(keyFile, "SoftLight", "Strength", softlight.strength);
@@ -4269,7 +4155,6 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && resize == other.resize
         && raw == other.raw
         && icm == other.icm
-        && dirpyrequalizer == other.dirpyrequalizer
         && filmSimulation == other.filmSimulation
         && softlight == other.softlight
         && rgbCurves == other.rgbCurves

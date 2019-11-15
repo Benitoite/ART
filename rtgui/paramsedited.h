@@ -73,7 +73,6 @@ public:
     bool flatfield;
     bool rawCA;
     
-    bool dirpyrequalizer;
     bool filmSimulation;
     bool softlight;
     bool dehaze;

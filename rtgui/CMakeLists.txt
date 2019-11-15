@@ -43,7 +43,7 @@ set(NONCLISOURCEFILES
     diagonalcurveeditorsubgroup.cc
     dirbrowser.cc
     denoise.cc
-    dirpyrequalizer.cc
+    #dirpyrequalizer.cc
     distortion.cc
     dynamicprofilepanel.cc
     edit.cc

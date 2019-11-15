@@ -414,9 +414,19 @@ struct LabCurveParams {
  * Parameters for local contrast
  */
 struct LocalContrastParams {
+    struct Region {
+        double contrast;
+        std::vector<double> curve;
+
+        Region();
+        bool operator==(const Region &other) const;
+        bool operator!=(const Region &other) const;
+    };
+
     bool enabled;
-    double contrast;
-    std::vector<double> curve;
+    std::vector<Region> regions;
+    std::vector<LabCorrectionMask> labmasks;
+    int showMask;
 
     LocalContrastParams();
 
@@ -1004,32 +1014,6 @@ typedef std::map<Glib::ustring, Glib::ustring> ExifPairs;
   */
 typedef std::map<Glib::ustring, std::vector<Glib::ustring>> IPTCPairs;
 
-/**
-* Directional pyramid equalizer params
-*/
-struct DirPyrEqualizerParams {
-    bool enabled;
-    // bool gamutlab;
-    struct Levels {
-        double mult[6];
-        double threshold;
-        Levels();
-        bool operator==(const Levels &other) const;
-        bool operator!=(const Levels &other) const;
-    };
-    std::vector<Levels> levels;
-    std::vector<LabCorrectionMask> labmasks;
-    int showMask;
-    // double skinprotect;
-    // Threshold<int> hueskin;
-    // Glib::ustring cbdlMethod;
-
-    DirPyrEqualizerParams();
-
-    bool operator ==(const DirPyrEqualizerParams& other) const;
-    bool operator !=(const DirPyrEqualizerParams& other) const;
-};
-
 
 /**
  *  Film simualtion params
@@ -1374,7 +1358,6 @@ public:
     ResizeParams            resize;          ///< Resize parameters
     ColorManagementParams   icm;             ///< profiles/color spaces used during the image processing
     RAWParams               raw;             ///< RAW parameters before demosaicing
-    DirPyrEqualizerParams   dirpyrequalizer; ///< directional pyramid wavelet parameters
     FilmSimulationParams    filmSimulation;  ///< film simulation parameters
     SoftLightParams         softlight;       ///< softlight parameters
     DehazeParams            dehaze;          ///< dehaze parameters

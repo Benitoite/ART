@@ -24,10 +24,21 @@
 #include "toolpanel.h"
 #include "curveeditor.h"
 #include "curveeditorgroup.h"
+#include "labmaskspanel.h"
 
-class LocalContrast: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public CurveListener
-{
+class LocalContrast: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public CurveListener, public PParamsChangeListener {
 private:
+    void regionGet(int idx);
+    void regionShow(int idx);
+    
+    std::vector<rtengine::procparams::LocalContrastParams::Region> regionData;
+    int showMaskIdx;
+
+    friend class LocalContrastMasksContentProvider;
+    std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
+    LabMasksPanel *labMasks;
+
+    Gtk::VBox *box;
     Adjuster *contrast;
     CurveEditorGroup *cg;
     FlatCurveEditor *curve;
@@ -36,6 +47,14 @@ private:
     rtengine::ProcEvent EvLocalContrastContrast;
     rtengine::ProcEvent EvLocalContrastCurve;
     
+    rtengine::ProcEvent EvList;
+    rtengine::ProcEvent EvHueMask;
+    rtengine::ProcEvent EvChromaticityMask;
+    rtengine::ProcEvent EvLightnessMask;
+    rtengine::ProcEvent EvMaskBlur;
+    rtengine::ProcEvent EvShowMask;
+    rtengine::ProcEvent EvAreaMask;
+
 public:
 
     LocalContrast();
@@ -48,5 +67,18 @@ public:
     void enabledChanged() override;
     void curveChanged() override;
     void autoOpenCurve() override;
+
+    void setEditProvider(EditDataProvider *provider) override;
+
+    PParamsChangeListener *getPParamsChangeListener() override { return this; }
+    void procParamsChanged(
+        const rtengine::procparams::ProcParams* params,
+        const rtengine::ProcEvent& ev,
+        const Glib::ustring& descr,
+        const ParamsEdited* paramsEdited = nullptr) override;
+    void clearParamChanges() override {}
+
+    void updateGeometry(int fullWidth, int fullHeight);
+    void setAreaDrawListener(AreaDrawListener *l);
 };
 

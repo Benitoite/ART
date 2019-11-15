@@ -52,7 +52,7 @@ protected:
             icm_output  = options.rtSettings.srgb;
             icm_gamma   = "default";
     */
-    Gtk::CheckButton* bypass_dirpyrequalizer; // also could leave untouched but disable only small radius adjustments
+    Gtk::CheckButton* bypass_localContrast;
     //Gtk::CheckButton* bypass_raw_all_enhance;
 
     MyComboBoxText* raw_bayer_method;
@@ -82,7 +82,7 @@ protected:
     //sigc::connection bypass_colorDenoiseConn    ;
     sigc::connection bypass_defringeConn          ;
     sigc::connection bypass_dirpyrDenoiseConn     ;
-    sigc::connection bypass_dirpyrequalizerConn   ;
+    sigc::connection bypass_localContrastConn   ;
     //sigc::connection bypass_raw_bayer_all_enhanceConn   ;
     sigc::connection bypass_raw_bayer_dcb_iterationsConn  ;
     sigc::connection bypass_raw_bayer_dcb_enhanceConn     ;

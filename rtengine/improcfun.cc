@@ -860,12 +860,14 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         rgbCurves(img);
         labAdjustments(img);
         stop = stop || textureBoost(img);
-        if (pipeline != Pipeline::THUMBNAIL) {
-            stop = stop || contrastByDetailLevels(img);
-        }
+        // if (pipeline != Pipeline::THUMBNAIL) {
+        //     stop = stop || contrastByDetailLevels(img);
+        // }
         if (!stop) { 
             softLight(img);
-            localContrast(img);
+        }
+        stop = stop || localContrast(img);
+        if (!stop) {
             filmSimulation(img);
             blackAndWhite(img);
             //creativeGradients(img);

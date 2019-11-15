@@ -53,7 +53,7 @@ set(RTENGINESOURCEFILES
     demosaic_algos.cc
     dfmanager.cc
     diagonalcurves.cc
-    dirpyr_equalizer.cc
+    #dirpyr_equalizer.cc
     dual_demosaic_RT.cc
     dynamicprofile.cc
     eahd_demosaic.cc
@@ -133,7 +133,7 @@ set(RTENGINESOURCEFILES
     ipguidedfilter.cc
     iplogenc.cc
     labmasks.cc
-    ipcbdl.cc
+    #ipcbdl.cc
     ipgrain.cc
     ipdenoise.cc
     iptextureboost.cc

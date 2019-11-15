@@ -31,6 +31,7 @@
 #include "array2D.h"
 #include "cplx_wavelet_dec.h"
 #include "curves.h"
+#include "labmasks.h"
 
 
 namespace rtengine {
@@ -247,10 +248,10 @@ void evaluate_params(wavelet_decomposition &wd, float *mean, float *meanN, float
 }
 
 
-void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double scale, bool multiThread)
+void local_contrast_wavelets(array2D<float> &Y, const LocalContrastParams::Region &params, double scale, bool multiThread)
 {
-    const int W = rgb->getWidth();
-    const int H = rgb->getHeight();
+    const int W = Y.width();
+    const int H = Y.height();
 
     int wavelet_level = 7;
     int dim = min(W, H);
@@ -258,15 +259,13 @@ void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double s
         --wavelet_level;
     }
     int skip = scale;
-//    int skip = min(lab->W-1 , lab->H-1, int(scale));
-    array2D<float> Y(W, H, rgb->g.ptrs);
     wavelet_decomposition wd(static_cast<float *>(Y), W, H, wavelet_level, 1, skip);
 
     if (wd.memoryAllocationFailed) {
         return;
     }
 
-    const float contrast = params->localContrast.contrast;
+    const float contrast = params.contrast;
     int maxlvl = wd.maxlevel();
 
     if (contrast != 0) {
@@ -356,7 +355,7 @@ void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double s
     evaluate_params(wd, mean, meanN, sigma, sigmaN, MaxP, MaxN, multiThread);
 
     WavOpacityCurveWL curve;
-    curve.Set(params->localContrast.curve);
+    curve.Set(params.curve);
 
     for (int dir = 1; dir < 4; dir++) {
         for (int level = 0; level < maxlvl; ++level) {
@@ -413,27 +412,63 @@ void local_contrast_wavelets(Imagefloat *rgb, const ProcParams *params, double s
     }
 
     wd.reconstruct(static_cast<float *>(Y), 1.f);
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multiThread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            rgb->g(y, x) = Y[y][x];
-        }
-    }
 }
 
 } // namespace
 
-void ImProcFunctions::localContrast(Imagefloat *rgb)
+
+bool ImProcFunctions::localContrast(Imagefloat *rgb)
 {
-    if (!params->localContrast.enabled) {
-        return;
+    PlanarWhateverData<float> *editWhatever = nullptr;
+    EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
+
+    if ((eid == EUID_LabMasks_H2 || eid == EUID_LabMasks_C2 || eid == EUID_LabMasks_L2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+        editWhatever = pipetteBuffer->getSinglePlaneBuffer();
+    }
+    
+    if (params->localContrast.enabled) {
+        rgb->setMode(Imagefloat::Mode::LAB, multiThread);
+        
+        if (editWhatever) {
+            LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
+            fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
+        }
+        
+        int n = params->localContrast.regions.size();
+        int show_mask_idx = params->localContrast.showMask;
+        if (show_mask_idx >= n) {
+            show_mask_idx = -1;
+        }
+        std::vector<array2D<float>> mask(n);
+        if (!generateLabMasks(rgb, params->localContrast.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+            return true; // show mask is active, nothing more to do
+        }
+
+        const int W = rgb->getWidth();
+        const int H = rgb->getHeight();
+        
+        array2D<float> L(W, H, rgb->g.ptrs);
+
+        for (int i = 0; i < n; ++i) {
+            auto &r = params->localContrast.regions[i];
+            local_contrast_wavelets(L, r, scale, multiThread);
+            const auto &blend = mask[i];
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    float l = rgb->g(y, x);
+                    rgb->g(y, x) = intp(blend[y][x], L[y][x], l);
+                    L[y][x] = rgb->g(y, x);
+                }
+            }
+        }
+    } else if (editWhatever) {
+        editWhatever->fill(0.f);
     }
 
-    rgb->setMode(Imagefloat::Mode::LAB, multiThread);
-    local_contrast_wavelets(rgb, params, scale, multiThread);
+    return false;
 }
 
 } // namespace rtengine

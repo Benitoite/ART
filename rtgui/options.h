@@ -340,7 +340,7 @@ public:
     bool fastexport_bypass_sharpening;
     bool fastexport_bypass_defringe;
     bool fastexport_bypass_dirpyrDenoise;
-    bool fastexport_bypass_dirpyrequalizer;
+    bool fastexport_bypass_localContrast;
     Glib::ustring fastexport_raw_bayer_method;
     bool fastexport_bypass_raw_bayer_dcb_iterations;
     bool fastexport_bypass_raw_bayer_dcb_enhance;

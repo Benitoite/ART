@@ -72,7 +72,6 @@ void ParamsEdited::set(bool v)
     darkframe = v;
     flatfield = v;
     rawCA = v;
-    dirpyrequalizer = v;
     filmSimulation = v;
     softlight = v;
     dehaze = v;
