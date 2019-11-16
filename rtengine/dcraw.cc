@@ -9317,6 +9317,10 @@ void CLASS identify()
     parse_foveon();
   else if (!memcmp (head,"CI",2))
     parse_cine();
+  //---  RT  ----------------------------------------------------------------
+  else if (!memcmp(head + 4, "ftypcrx ", 8))
+    parse_canon_cr3();
+  //-------------------------------------------------------------------------
   if (make[0] == 0)
     for (zero_fsize=i=0; i < sizeof table / sizeof *table; i++)
       if (fsize == table[i].fsize) {

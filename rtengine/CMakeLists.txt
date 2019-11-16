@@ -151,6 +151,7 @@ set(RTENGINESOURCEFILES
     deconvautoradius.cc
     filmnegativeproc.cc
     filmnegativethumb.cc
+    canon_cr3_decoder.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)
