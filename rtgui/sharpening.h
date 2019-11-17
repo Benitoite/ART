@@ -34,8 +34,6 @@ protected:
     MyComboBoxText* method;
     Adjuster* dradius;
     Adjuster* damount;
-    Adjuster* ddamping;
-    Adjuster* diter;
     Gtk::VBox* usm;
     Gtk::VBox* rld;
 

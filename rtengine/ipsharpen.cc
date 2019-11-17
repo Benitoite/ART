@@ -30,6 +30,9 @@
 using namespace std;
 
 
+namespace rtengine { extern const Settings *settings; }
+
+
 namespace {
 
 template <bool reverse, bool usm>
@@ -141,71 +144,17 @@ void sharpenHaloCtrl(float** luminance, float** blurmap, float** base, float** b
 }
 
 
-void dcdamping(float** aI, float** aO, float damping, int W, int H)
-{
-    const float dampingFac = -2.0 / (damping * damping);
-
-#ifdef __SSE2__
-    vfloat Iv, Ov, Uv, zerov, onev, fourv, fivev, dampingFacv, Tv, Wv, Lv;
-    zerov = _mm_setzero_ps();
-    onev = F2V(1.f);
-    fourv = F2V(4.f);
-    fivev = F2V(5.f);
-    dampingFacv = F2V(dampingFac);
-    const vfloat v65535 = F2V(65535.f);
-#endif
-
-#ifdef _OPENMP
-    #pragma omp for
-#endif
-    for (int i = 0; i < H; i++) {
-        int j = 0;
-#ifdef __SSE2__
-        for (; j < W - 3; j += 4) {
-            Iv = LVFU(aI[i][j]) * v65535;
-            Ov = LVFU(aO[i][j]) * v65535;
-            Lv = xlogf(Iv / Ov);
-            Wv = Ov - Iv;
-            Uv = (Ov * Lv + Wv) * dampingFacv;
-            Uv = vminf(Uv, onev);
-            Tv = Uv * Uv;
-            Tv = Tv * Tv;
-            Uv = Tv * (fivev - Uv * fourv);
-            Uv = (Wv / Iv) * Uv + onev;
-            Uv = vselfzero(vmaskf_gt(Iv, zerov), Uv);
-            Uv = vselfzero(vmaskf_gt(Ov, zerov), Uv);
-            STVFU(aI[i][j], Uv);
-        }
-#endif
-
-        for(; j < W; j++) {
-            float I = aI[i][j] * 65535.f;
-            float O = aO[i][j] * 65535.f;
-
-            if (O <= 0.f || I <= 0.f) {
-                aI[i][j] = 0.f;
-                continue;
-            }
-
-            float U = (O * xlogf(I / O) - I + O) * dampingFac;
-            U = rtengine::min(U, 1.0f);
-            U = U * U * U * U * (5.f - U * 4.f);
-            aI[i][j] = (O - I) / I * U + 1.f;
-        }
-    }
-}
-
 void deconvsharpening(float **luminance, float **blend, char **impulse, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
 {
-    // const auto blurradius = sharpenParam.blurradius / scale;
-    if (sharpenParam.deconvamount == 0) {// && blurradius < 0.25f) {
+    if (sharpenParam.deconvamount == 0) {
         return;
     }
 BENCHFUN
-    apply_gamma<false, false>(luminance, W, H, 0.18f, 3.f, multiThread);
-    
+    //apply_gamma<false, false>(luminance, W, H, 0.18f, 3.f, multiThread);
+
     JaggedArray<float> tmp(W, H);
     JaggedArray<float> tmpI(W, H);
+    JaggedArray<float> out(W, H);
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multiThread)
@@ -213,77 +162,79 @@ BENCHFUN
     for (int i = 0; i < H; i++) {
         for(int j = 0; j < W; j++) {
             tmpI[i][j] = std::max(luminance[i][j], 0.f);
+            out[i][j] = RT_NAN;
         }
     }
 
-    // JaggedArray<float>* blurbuffer = nullptr;
-
-//     if (blurradius >= 0.25f) {
-//         // blurbuffer = new JaggedArray<float>(W, H);
-//         // JaggedArray<float> &blur = *blurbuffer;
-// #ifdef _OPENMP
-// #       pragma omp parallel if (multiThread)
-// #endif
-//         {
-//             gaussianBlur(blend, blend, W, H, blurradius);
-// //             gaussianBlur(tmpI, blur, W, H, blurradius);
-// // #ifdef _OPENMP
-// //             #pragma omp for
-// // #endif
-// //             for (int i = 0; i < H; ++i) {
-// //                 for (int j = 0; j < W; ++j) {
-// //                     blur[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
-// //                 }
-// //             }
-//         }
-//     }
-    const float damping = sharpenParam.deconvdamping / 5.0;
-    const bool needdamp = sharpenParam.deconvdamping > 0;
     const double sigma = sharpenParam.deconvradius / scale;
     const float amount = sharpenParam.deconvamount / 100.f;
+    const int maxiter = 20;
+    const float delta_factor = 0.2f;
+    
+    const auto get_output =
+        [&](int i, int j) -> float
+        {
+            float b = impulse[i][j] ? 0.f : blend[i][j] * amount;
+            return intp(b, std::max(tmpI[i][j], 0.0f), luminance[i][j]);
+        };
 
+    const auto check_stop =
+        [&]() -> bool
+        {
+            bool done = true;
+#ifdef _OPENMP
+#           pragma omp for
+#endif
+            for (int y = 0; y < H; ++y) {
+                bool d = true;
+                for (int x = 0; x < W; ++x) {
+                    if (std::isnan(out[y][x])) {
+                        float delta = luminance[y][x] * delta_factor;
+                        if (tmpI[y][x] < luminance[y][x] - delta || tmpI[y][x] > luminance[y][x] + delta) {
+                            out[y][x] = get_output(y, x);
+                        } else {
+                            d = false;
+                        }
+                    }
+                }
+#ifdef _OPENMP
+#               pragma omp critical
+#endif
+                {
+                    done = done && d;
+                }
+            }
+
+            return done;
+        };
+    
 #ifdef _OPENMP
 #   pragma omp parallel if (multiThread)
 #endif
     {
-        for (int k = 0; k < sharpenParam.deconviter; k++) {
-            if (!needdamp) {
-                // apply gaussian blur and divide luminance by result of gaussian blur
-                gaussianBlur(tmpI, tmp, W, H, sigma, nullptr, GAUSS_DIV, luminance);
-            } else {
-                // apply gaussian blur + damping
-                gaussianBlur(tmpI, tmp, W, H, sigma);
-                dcdamping(tmp, luminance, damping, W, H);
-            }
+        for (int k = 0; k < maxiter; k++) {
+            gaussianBlur(tmpI, tmp, W, H, sigma, nullptr, GAUSS_DIV, luminance);
             gaussianBlur(tmp, tmpI, W, H, sigma, nullptr, GAUSS_MULT);
-        } // end for
+            if (check_stop()) {
+                break;
+            }
+        }
 
 #ifdef _OPENMP
         #pragma omp for
 #endif
-
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
-                float b = impulse[i][j] ? 0.f : blend[i][j] * amount;
-                luminance[i][j] = intp(b, std::max(tmpI[i][j], 0.0f), luminance[i][j]);
+                float l = out[i][j];
+                if (std::isnan(l)) {
+                    l = get_output(i, j);
+                }
+                luminance[i][j] = l;
             }
         }
+    }
 
-//         if (blurradius >= 0.25f) {
-//             JaggedArray<float> &blur = *blurbuffer;
-// #ifdef _OPENMP
-//         #pragma omp for
-// #endif
-//             for (int i = 0; i < H; ++i) {
-//                 for (int j = 0; j < W; ++j) {
-//                     luminance[i][j] = intp(blend[i][j], luminance[i][j], std::max(blur[i][j], 0.0f));
-//                 }
-//             }
-//         }
-    } // end parallel
-    // delete blurbuffer;
-
-    apply_gamma<true, false>(luminance, W, H, 0.18f, 3.f, multiThread);    
+    //apply_gamma<true, false>(luminance, W, H, 0.18f, 3.f, multiThread);    
 }
 
 
@@ -303,26 +254,6 @@ BENCHFUN
     }
 
     JaggedArray<float> b2(W, H);
-    // JaggedArray<float> blur(W, H);
-
-//     const auto blurradius = sharpenParam.blurradius / scale;
-//     if (blurradius >= 0.25f) {
-// #ifdef _OPENMP
-// #       pragma omp parallel if (multiThread)
-// #endif
-//         {
-//             gaussianBlur(Y, blur, W, H, blurradius);
-// #ifdef _OPENMP
-// #           pragma omp for
-// #endif
-//             for (int i = 0; i < H; ++i) {
-//                 for (int j = 0; j < W; ++j) {
-//                     blur[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
-//                 }
-//             }
-//         }
-//     }
-
 
 #ifdef _OPENMP
 #   pragma omp parallel if (multiThread)
@@ -386,17 +317,6 @@ BENCHFUN
         delete [] b3;
     }
 
-//     if (blurradius >= 0.25f) {
-// #ifdef _OPENMP
-// #        pragma omp parallel for if (multiThread)
-// #endif
-//         for (int i = 0; i < H; ++i) {
-//             for (int j = 0; j < W; ++j) {
-//                 Y[i][j] = intp(blend[i][j], Y[i][j], std::max(blur[i][j], 0.0f));
-//             }
-//         }
-//     }
-
     apply_gamma<true, true>(Y, W, H, 1.f, 3.f, multiThread);
 }
 
@@ -404,8 +324,6 @@ BENCHFUN
 } // namespace
 
 namespace rtengine {
-
-extern const Settings* settings;
 
 bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
 {

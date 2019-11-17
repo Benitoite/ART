@@ -469,8 +469,6 @@ struct SharpeningParams {
     Glib::ustring  method;
     int            deconvamount;
     double         deconvradius;
-    int            deconviter;
-    int            deconvdamping;
     bool deconvAutoRadius;
 
     SharpeningParams();

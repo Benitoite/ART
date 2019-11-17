@@ -55,16 +55,10 @@ PrSharpening::PrSharpening () : FoldableToolPanel(this, "prsharpening", M("TP_PR
     rld = new Gtk::VBox ();
     dradius = Gtk::manage (new Adjuster (M("TP_SHARPENING_EDRADIUS"), 0.4, 2.5, 0.01, 0.45));
     damount = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_AMOUNT"), 0.0, 100, 1, 100));
-    ddamping = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_DAMPING"), 0, 100, 1, 0));
-    diter = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_ITERATIONS"), 5, 100, 1, 100));
     rld->pack_start (*dradius);
     rld->pack_start (*damount);
-    rld->pack_start (*ddamping);
-    rld->pack_start (*diter);
     dradius->show ();
     damount->show ();
-    ddamping->show ();
-    diter->show ();
     rld->show ();
 
     usm = new Gtk::VBox ();
@@ -125,8 +119,6 @@ PrSharpening::PrSharpening () : FoldableToolPanel(this, "prsharpening", M("TP_PR
 
     dradius->setAdjusterListener (this);
     damount->setAdjusterListener (this);
-    ddamping->setAdjusterListener (this);
-    diter->setAdjusterListener (this);
     radius->setAdjusterListener (this);
     amount->setAdjusterListener (this);
     eradius->setAdjusterListener (this);
@@ -180,8 +172,6 @@ void PrSharpening::read(const ProcParams* pp)
 
     dradius->setValue       (pp->prsharpening.deconvradius);
     damount->setValue       (pp->prsharpening.deconvamount);
-    diter->setValue         (pp->prsharpening.deconviter);
-    ddamping->setValue      (pp->prsharpening.deconvdamping);
 
     removeIfThere (edgebin, edgebox, false);
 
@@ -218,9 +208,7 @@ void PrSharpening::write(ProcParams* pp)
     pp->prsharpening.halocontrol      = halocontrol->get_active ();
     pp->prsharpening.halocontrol_amount = (int)hcamount->getValue ();
     pp->prsharpening.deconvradius     = dradius->getValue ();
-    pp->prsharpening.deconviter       = (int)diter->getValue ();
     pp->prsharpening.deconvamount     = (int)damount->getValue ();
-    pp->prsharpening.deconvdamping    = (int)ddamping->getValue ();
 
     if (method->get_active_row_number() == 0) {
         pp->prsharpening.method = "usm";
@@ -241,8 +229,6 @@ void PrSharpening::setDefaults(const ProcParams* defParams)
     hcamount->setDefault (defParams->prsharpening.halocontrol_amount);
     damount->setDefault (defParams->prsharpening.deconvamount);
     dradius->setDefault (defParams->prsharpening.deconvradius);
-    diter->setDefault (defParams->prsharpening.deconviter);
-    ddamping->setDefault (defParams->prsharpening.deconvdamping);
 }
 
 void PrSharpening::adjusterChanged (Adjuster* a, double newval)
@@ -275,10 +261,6 @@ void PrSharpening::adjusterChanged (Adjuster* a, double newval)
             listener->panelChanged (EvPrShrDRadius, costr);
         } else if (a == damount) {
             listener->panelChanged (EvPrShrDAmount, costr);
-        } else if (a == ddamping) {
-            listener->panelChanged (EvPrShrDDamping, costr);
-        } else if (a == diter) {
-            listener->panelChanged (EvPrShrDIterations, costr);
         }
     }
 }
@@ -389,8 +371,6 @@ void PrSharpening::trimValues (rtengine::procparams::ProcParams* pp)
     dradius->trimValue(pp->prsharpening.deconvradius);
     amount->trimValue(pp->prsharpening.amount);
     damount->trimValue(pp->prsharpening.deconvamount);
-    ddamping->trimValue(pp->prsharpening.deconvdamping);
-    diter->trimValue(pp->prsharpening.deconviter);
     eradius->trimValue(pp->prsharpening.edges_radius);
     etolerance->trimValue(pp->prsharpening.edges_tolerance);
     hcamount->trimValue(pp->prsharpening.halocontrol_amount);
