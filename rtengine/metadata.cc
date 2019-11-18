@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <glib/gstdio.h>
 #include <iostream>
+#include <unistd.h>
 
 #include "metadata.h"
 #include "settings.h"
@@ -46,6 +47,62 @@ Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
     auto image = Exiv2::ImageFactory::open(Glib::filename_from_utf8(fname));
 #endif
     return image;
+}
+
+
+Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const Exiv2::Error &exc)
+{
+    std::string templ = Glib::build_filename(Glib::get_tmp_dir(), Glib::ustring::format("ART-exiftool-%1-XXXXXX", Glib::path_get_basename(fname)));
+    int fd = Glib::mkstemp(templ);
+    if (fd < 0) {
+        throw exc;
+    }
+    std::string outname = templ + ".xmp";
+    int exit_status = -1;
+    std::vector<std::string> argv = {
+        settings->exiftool_path.c_str(),
+        "-TagsFromFile",
+        fname,
+        "-xmp:all<all",       
+        outname
+    };
+    Glib::spawn_sync("", argv, Glib::SPAWN_DEFAULT|Glib::SPAWN_SEARCH_PATH, Glib::SlotSpawnChildSetup(), nullptr, nullptr, &exit_status);
+    close(fd);
+    g_remove(templ.c_str());
+    if (WEXITSTATUS(exit_status) != 0) {
+        if (Glib::file_test(outname, Glib::FILE_TEST_EXISTS)) {
+            g_remove(outname.c_str());
+        }
+        throw exc;
+    }
+    try {
+        auto image = Exiv2::ImageFactory::open(outname);
+        image->readMetadata();
+        auto &exif = image->exifData();
+        auto &xmp = image->xmpData();
+        const auto set_from =
+            [&](const char *src, const char *dst) -> void
+            {
+                auto dk = Exiv2::ExifKey(dst);
+                auto pos = exif.findKey(dk);
+                if (pos == exif.end() || !pos->size()) {
+                    auto sk = Exiv2::XmpKey(src);
+                    auto it = xmp.findKey(sk);
+                    if (it != xmp.end() && it->size()) {
+                        exif[dst] = it->toString();
+                    }
+                }
+            };
+        set_from("Xmp.exifEX.LensModel", "Exif.Photo.LensModel");
+        g_remove(outname.c_str());
+        return image;
+    } catch (Exiv2::AnyError &) {
+        if (Glib::file_test(outname, Glib::FILE_TEST_EXISTS)) {
+            g_remove(outname.c_str());
+        }
+        throw exc;
+    }
+    return Exiv2::Image::AutoPtr();
 }
 
 } // namespace
@@ -78,9 +135,14 @@ Exiv2Metadata::Exiv2Metadata(const Glib::ustring &path, bool merge_xmp_sidecar):
 void Exiv2Metadata::load() const
 {
     if (!src_.empty() && !image_.get()) {
-        auto img = open_exiv2(src_);
-        image_.reset(img.release());
-        image_->readMetadata();
+        try {
+            auto img = open_exiv2(src_);
+            image_.reset(img.release());
+            image_->readMetadata();
+        } catch (Exiv2::Error &exc) {
+            auto img = exiftool_import(src_, exc);
+            image_.reset(img.release());
+        }
 
         if (merge_xmp_) {
             do_merge_xmp(image_.get());

@@ -1182,6 +1182,8 @@ PREFERENCES_DIRSOFTWARE;Installation directory
 PREFERENCES_EDITORCMDLINE;Custom command line
 PREFERENCES_EDITORLAYOUT;Editor layout
 PREFERENCES_EXTERNALEDITOR;External Editor
+PREFERENCES_EXIFTOOL_PATH;Exiftool command
+PREFERENCES_EXIFTOOL_PATH_TOOLTIP;Exiftool is used as a fallback for decoding metadata for formats not yet supported by Exiv2
 PREFERENCES_FBROWSEROPTS;File Browser / Thumbnail Options
 PREFERENCES_FILEBROWSERTOOLBARSINGLEROW;Compact toolbars in File Browser
 PREFERENCES_FLATFIELDFOUND;Found

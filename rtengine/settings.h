@@ -106,6 +106,8 @@ public:
     };
     MetadataXmpSync metadata_xmp_sync;
 
+    Glib::ustring exiftool_path;
+
     /** Creates a new instance of Settings.
       * @return a pointer to the new Settings instance. */
     static Settings* create();
