@@ -5830,7 +5830,9 @@ get2_256:
     struct {
         int AverageBlackLevel;
         int ColorDataSubVer;
-    } imCanon = { 0, 0 };
+        int NormalWhiteLevel;
+        int SpecularWhiteLevel;
+    } imCanon = { 0, 0, 0, 0 };
     long int save1 = ftell(ifp);
 
     switch (len)
@@ -6115,16 +6117,19 @@ get2_256:
       FORC4
           bls += (cblack/*imCanon.ChannelBlackLevel*/[c ^ (c >> 1)] = get2());
       imCanon.AverageBlackLevel = bls / 4;
+      // RT_blacklevel_from_constant = ThreeValBool::F;
     }
-    // if (offsetWhiteLevels)
-    // {
-    //   if ((offsetWhiteLevels - offsetChannelBlackLevel) != 8L)
-    //     fseek(ifp, offsetWhiteLevels, SEEK_SET);
-    //   imCanon.NormalWhiteLevel = get2();
-    //   imCanon.SpecularWhiteLevel = get2();
-    //   FORC4
-    //     imgdata.color.linear_max[c] = imCanon.SpecularWhiteLevel;
-    // }
+    if (offsetWhiteLevels)
+    {
+      if ((offsetWhiteLevels - offsetChannelBlackLevel) != 8L)
+        fseek(ifp, offsetWhiteLevels, SEEK_SET);
+      imCanon.NormalWhiteLevel = get2();
+      imCanon.SpecularWhiteLevel = get2();
+      // FORC4
+      //   imgdata.color.linear_max[c] = imCanon.SpecularWhiteLevel;
+      maximum = imCanon.SpecularWhiteLevel;
+      // RT_whitelevel_from_constant = ThreeValBool::F;
+    }
 
     if(!imCanon.AverageBlackLevel && offsetChannelBlackLevel2)
     {
@@ -6132,6 +6137,7 @@ get2_256:
         FORC4
             bls += (cblack/*imCanon.ChannelBlackLevel*/[c ^ (c >> 1)] = get2());
         imCanon.AverageBlackLevel = bls / 4;
+        // RT_blacklevel_from_constant = ThreeValBool::F;
     }
     fseek(ifp, save1, SEEK_SET);
 

@@ -19,6 +19,13 @@
 #include <iostream>
 #include "dcraw.h"
 
+#ifdef __GNUC__ // silence warning
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 // Code adapted from libraw
 /* -*- C++ -*-
  * Copyright 2019 LibRaw LLC (info@libraw.org)
@@ -3006,7 +3013,7 @@ void DCraw::crxLoadRaw()
     hdr.tileHeight >>= 1;
   }
 
-  /*imgdata.color.*/maximum = (1 << hdr.nBits) - 1;
+//  /*imgdata.color.*/maximum = (1 << hdr.nBits) - 1;
 
   uint8_t *hdrBuf = (uint8_t *)malloc(hdr.mdatHdrSize);
 
@@ -3107,3 +3114,7 @@ int DCraw::crxParseImageHeader(uchar *cmp1TagData, int nTrack)
 #undef _constrain
 #undef libraw_inline
 #undef LIBRAW_CRXTRACKS_MAXCOUNT
+
+#ifdef __GNUC__ // silence warning
+#pragma GCC diagnostic pop
+#endif
