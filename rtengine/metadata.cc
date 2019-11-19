@@ -50,6 +50,16 @@ Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
 }
 
 
+inline bool check_exit_ok(int exit_status)
+{
+#ifdef WIN32
+    return exit_status == 0;
+#else
+    return WIFEXITED(exit_status) && WEXITSTATUS(exit_status) == 0;
+#endif
+}
+
+
 Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const Exiv2::Error &exc)
 {
     std::string templ = Glib::build_filename(Glib::get_tmp_dir(), Glib::ustring::format("ART-exiftool-%1-XXXXXX", Glib::path_get_basename(fname)));
@@ -69,7 +79,7 @@ Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const Exiv2::E
     Glib::spawn_sync("", argv, Glib::SPAWN_DEFAULT|Glib::SPAWN_SEARCH_PATH, Glib::SlotSpawnChildSetup(), nullptr, nullptr, &exit_status);
     close(fd);
     g_remove(templ.c_str());
-    if (WEXITSTATUS(exit_status) != 0) {
+    if (!check_exit_ok(exit_status)) {
         if (Glib::file_test(outname, Glib::FILE_TEST_EXISTS)) {
             g_remove(outname.c_str());
         }
