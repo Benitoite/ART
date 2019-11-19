@@ -256,7 +256,7 @@ int DCraw::parseCR3(unsigned long long oAtomList,
 
   const char sHandlerType[5][5] = {"unk.", "soun", "vide", "hint", "meta"};
 
-  int c, err;
+  int c, err = 0;
 
   ushort tL;                        // Atom length represented in 4 or 8 bytes
   char nmAtom[5];                   // Atom name
