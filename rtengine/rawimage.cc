@@ -618,7 +618,9 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
                 if (RT_blacklevel_from_constant == ThreeValBool::T) {
                     int blackFromCc = cc->get_BlackLevel(i, iso_speed);
                     // if black level from camconst > 0xffff it is an absolute value.
-                    black_c4[i] = blackFromCc > 0xffff ? (blackFromCc & 0xffff) : blackFromCc + cblack[i];
+                    if (blackFromCc != -1) {
+                        black_c4[i] = blackFromCc > 0xffff ? (blackFromCc & 0xffff) : blackFromCc + cblack[i];
+                    }
                 }
 
                 // load 4 channel white level here, will be used if available

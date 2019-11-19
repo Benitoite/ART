@@ -182,6 +182,7 @@ class Preferences : public Gtk::Dialog, public ProfileStoreListener
     Gtk::CheckButton *thumbRatingMode;
     Gtk::ComboBoxText *metadataSyncCombo;
     Gtk::ComboBoxText *xmpSidecarCombo;
+    Gtk::Entry *exiftoolPath;
 
     Glib::ustring storedValueRaw;
     Glib::ustring storedValueImg;

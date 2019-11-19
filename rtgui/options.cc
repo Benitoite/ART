@@ -595,6 +595,10 @@ void Options::setDefaults()
     thumbnail_rating_mode = Options::ThumbnailRatingMode::XMP;
     rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
     rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::READ;
+    rtSettings.exiftool_path = "exiftool";
+#ifdef WIN32
+    rtSettings.exiftool_path += ".exe";
+#endif
 }
 
 Options* Options::copyFrom(Options* other)
@@ -1753,6 +1757,9 @@ void Options::readFromFile(Glib::ustring fname)
                         rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::NONE;
                     }
                 }
+                if (keyFile.has_key("Metadata", "ExiftoolPath")) {
+                    rtSettings.exiftool_path = keyFile.get_string("Metadata", "ExiftoolPath");
+                }
             }
 
 // --------------------------------------------------------------------------------------------------------
@@ -2136,6 +2143,8 @@ void Options::saveToFile(Glib::ustring fname)
         default:
             keyFile.set_string("Metadata", "XMPSynchronization", "none");
         }
+
+        keyFile.set_string("Metadata", "ExiftoolPath", rtSettings.exiftool_path);
 
         keyData = keyFile.to_data();
 
