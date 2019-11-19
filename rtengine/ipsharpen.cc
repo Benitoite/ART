@@ -179,35 +179,17 @@ BENCHFUN
         };
 
     const auto check_stop =
-        [&]() -> bool
+        [&](int y, int x) -> void
         {
-            bool done = true;
-#ifdef _OPENMP
-#           pragma omp for
-#endif
-            for (int y = 0; y < H; ++y) {
-                bool d = true;
-                for (int x = 0; x < W; ++x) {
-                    if (std::isnan(out[y][x])) {
-                        float delta = luminance[y][x] * delta_factor;
-                        if (tmpI[y][x] < luminance[y][x] - delta || tmpI[y][x] > luminance[y][x] + delta) {
-                            out[y][x] = get_output(y, x);
-                        } else {
-                            d = false;
-                        }
-                    }
-                }
-#ifdef _OPENMP
-#               pragma omp critical
-#endif
-                {
-                    done = done && d;
+            if (LIKELY(std::isnan(out[y][x]))) {
+                float l = luminance[y][x];
+                float delta = l * delta_factor;
+                if (UNLIKELY(std::abs(tmpI[y][x] - l) > delta)) {
+                    out[y][x] = get_output(y, x);
                 }
             }
-
-            return done;
         };
-    
+
 #ifdef _OPENMP
 #   pragma omp parallel if (multiThread)
 #endif
@@ -215,13 +197,18 @@ BENCHFUN
         for (int k = 0; k < maxiter; k++) {
             gaussianBlur(tmpI, tmp, W, H, sigma, nullptr, GAUSS_DIV, luminance);
             gaussianBlur(tmp, tmpI, W, H, sigma, nullptr, GAUSS_MULT);
-            if (check_stop()) {
-                break;
+#ifdef _OPENMP
+#           pragma omp for
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    check_stop(y, x);
+                }
             }
         }
 
 #ifdef _OPENMP
-        #pragma omp for
+#       pragma omp for
 #endif
         for (int i = 0; i < H; ++i) {
             for (int j = 0; j < W; ++j) {
