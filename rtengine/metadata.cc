@@ -92,9 +92,22 @@ Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exc
         "-xmp:all<all",       
         outname
     };
-    Glib::spawn_sync("", argv, Glib::SPAWN_DEFAULT|Glib::SPAWN_SEARCH_PATH, Glib::SlotSpawnChildSetup(), nullptr, nullptr, &exit_status);
+    if (settings->verbose) {
+        std::cout << "importing metadata for " << fname << " with exiftool"
+                  << std::endl;
+    }
+    std::string out, err;
+    Glib::spawn_sync("", argv, Glib::SPAWN_DEFAULT|Glib::SPAWN_SEARCH_PATH, Glib::SlotSpawnChildSetup(), &out, &err, &exit_status);
     close(fd);
     g_remove(templ.c_str());
+    if (settings->verbose) {
+        if (!out.empty()) {
+            std::cout << "  exiftool stdout: " << out;
+        }
+        if (!err.empty()) {
+            std::cout << "  exiftool stderr: " << err;
+        }
+    }
     if (!check_exit_ok(exit_status)) {
         if (Glib::file_test(outname, Glib::FILE_TEST_EXISTS)) {
             g_remove(outname.c_str());
