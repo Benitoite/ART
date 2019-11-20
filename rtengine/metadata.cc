@@ -60,8 +60,24 @@ inline bool check_exit_ok(int exit_status)
 }
 
 
+Glib::ustring exiftool_base_dir;
+#ifdef WIN32
+  const Glib::ustring exiftool_default = "exiftool.exe";
+#else
+  const Glib::ustring exiftool_default = "exiftool";
+#endif
+
+
 Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exception &exc)
 {
+    Glib::ustring exiftool = settings->exiftool_path;
+    if (exiftool == exiftool_default) {
+        Glib::ustring e = Glib::build_filename(exiftool_base_dir, exiftool);
+        if (Glib::file_test(e, Glib::FILE_TEST_EXISTS)) {
+            exiftool = e;
+        }
+    }
+        
     std::string templ = Glib::build_filename(Glib::get_tmp_dir(), Glib::ustring::format("ART-exiftool-%1-XXXXXX", Glib::path_get_basename(fname)));
     int fd = Glib::mkstemp(templ);
     if (fd < 0) {
@@ -70,7 +86,7 @@ Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exc
     std::string outname = templ + ".xmp";
     int exit_status = -1;
     std::vector<std::string> argv = {
-        settings->exiftool_path.c_str(),
+        exiftool,
         "-TagsFromFile",
         fname,
         "-xmp:all<all",       
@@ -324,8 +340,9 @@ Exiv2::XmpData Exiv2Metadata::getXmpSidecar(const Glib::ustring &path)
 }
 
 
-void Exiv2Metadata::init()
+void Exiv2Metadata::init(const Glib::ustring &base_dir)
 {
+    exiftool_base_dir = base_dir;
     Exiv2::XmpParser::initialize();
 }
 

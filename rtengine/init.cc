@@ -102,7 +102,7 @@ int init (const Settings* s, Glib::ustring baseDir, Glib::ustring userSettingsDi
 }
 
     Color::init ();
-    Exiv2Metadata::init();
+    Exiv2Metadata::init(baseDir);
     
     delete lcmsMutex;
     lcmsMutex = new MyMutex;

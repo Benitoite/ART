@@ -56,7 +56,7 @@ public:
     static Glib::ustring xmpSidecarPath(const Glib::ustring &path);
     static Exiv2::XmpData getXmpSidecar(const Glib::ustring &path);
 
-    static void init();
+    static void init(const Glib::ustring &base_dir);
     static void cleanup();
    
 private:
