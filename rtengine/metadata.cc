@@ -60,7 +60,7 @@ inline bool check_exit_ok(int exit_status)
 }
 
 
-Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const Exiv2::Error &exc)
+Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exception &exc)
 {
     std::string templ = Glib::build_filename(Glib::get_tmp_dir(), Glib::ustring::format("ART-exiftool-%1-XXXXXX", Glib::path_get_basename(fname)));
     int fd = Glib::mkstemp(templ);
@@ -149,7 +149,7 @@ void Exiv2Metadata::load() const
             auto img = open_exiv2(src_);
             image_.reset(img.release());
             image_->readMetadata();
-        } catch (Exiv2::Error &exc) {
+        } catch (std::exception &exc) {
             auto img = exiftool_import(src_, exc);
             image_.reset(img.release());
         }
