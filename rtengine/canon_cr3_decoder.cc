@@ -626,8 +626,8 @@ libraw_inline void _BitScanReverse(DWORD *Index, unsigned long Mask)
 #define _byteswap_ulong(x) __builtin_bswap32(x)
 #endif
 
-#ifdef LIBRAW_USE_OPENMP
-#  undef LIBRAW_USE_OPENMP
+#ifdef _OPENMP
+#  define LIBRAW_USE_OPENMP
 #endif
 
 #define LIBRAW_EXCEPTION_IO_EOF std::exception()
