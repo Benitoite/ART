@@ -838,7 +838,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         break;
     case Stage::STAGE_2:
         if (pipeline == Pipeline::OUTPUT ||
-            (pipeline == Pipeline::PREVIEW && scale == 1)) {
+            (pipeline == Pipeline::PREVIEW /*&& scale == 1*/)) {
             stop = sharpening(img, params->sharpening, show_sharpening_mask);
             if (!stop) {
                 impulsedenoise(img);

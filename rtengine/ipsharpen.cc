@@ -323,9 +323,10 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
 
     rgb->setMode(Imagefloat::Mode::YUV, multiThread);
     float **Y = rgb->g.ptrs;
-    float contrast = pow_F(sharpenParam.contrast / 100.f, 1.2f);
+    float s_scale = std::sqrt(scale);
+    float contrast = pow_F(sharpenParam.contrast / 100.f, 1.2f) * s_scale;
     JaggedArray<float> blend(W, H);
-    buildBlendMask(Y, blend, W, H, contrast, 1.f);
+    buildBlendMask(Y, blend, W, H, contrast, 1.f, false, 2.f / s_scale);
     
     if (showMask) {
 #ifdef _OPENMP

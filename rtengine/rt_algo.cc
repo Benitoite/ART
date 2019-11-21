@@ -298,8 +298,8 @@ void findMinMaxPercentile(const float* data, size_t size, float minPrct, float& 
     maxOut = rtengine::LIM(maxOut, minVal, maxVal);
 }
 
-void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount, bool autoContrast) {
-
+void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount, bool autoContrast, float blur_radius)
+{
     if (autoContrast) {
         constexpr float minLuminance = 2000.f;
         constexpr float maxLuminance = 20000.f;
@@ -464,7 +464,7 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
             }
 
             // blur blend mask to smooth transitions
-            gaussianBlur(blend, blend, W, H, 2.0);
+            gaussianBlur(blend, blend, W, H, blur_radius); //2.0);
         }
     }
 }
