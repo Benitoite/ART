@@ -61,14 +61,9 @@ void RawImageSource::dual_demosaic_RT(bool isBayer, const RAWParams &raw, int wi
         return;
     }
 
-    array2D<float> redTmp(winw, winh);
-    array2D<float> greenTmp(winw, winh);
-    array2D<float> blueTmp(winw, winh);
     array2D<float> L(winw, winh);
 
     if (isBayer) {
-        vng4_demosaic(rawData, redTmp, greenTmp, blueTmp);
-
         if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::AMAZEVNG4) || raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::PIXELSHIFT)) {
             amaze_demosaic_RT(0, 0, winw, winh, rawData, red, green, blue);
         } else if (raw.bayersensor.method == RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::DCBVNG4) ) {
@@ -82,7 +77,6 @@ void RawImageSource::dual_demosaic_RT(bool isBayer, const RAWParams &raw, int wi
         } else {
             xtrans_interpolate (1, false);
         }
-        fast_xtrans_interpolate(rawData, redTmp, greenTmp, blueTmp);
     }
 
     const float xyz_rgb[3][3] = {          // XYZ from RGB
@@ -108,6 +102,17 @@ void RawImageSource::dual_demosaic_RT(bool isBayer, const RAWParams &raw, int wi
 
     buildBlendMask(L, blend, winw, winh, contrastf, 1.f, autoContrast);
     contrast = contrastf * 100.f;
+
+    array2D<float>& redTmp = L; // L is not needed anymore => reuse it
+    array2D<float> greenTmp(winw, winh);
+    array2D<float> blueTmp(winw, winh);
+
+    if (isBayer) {
+        vng4_demosaic(rawData, redTmp, greenTmp, blueTmp);
+    } else {
+        fast_xtrans_interpolate(rawData, redTmp, greenTmp, blueTmp);
+    }
+
 
     // the following is split into 3 loops intentionally to avoid cache conflicts on CPUs with only 4-way cache
 #ifdef _OPENMP
