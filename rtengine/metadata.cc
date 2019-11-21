@@ -120,6 +120,7 @@ Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exc
                 }
             };
         set_from("Xmp.exifEX.LensModel", "Exif.Photo.LensModel");
+        xmp.clear();
         g_remove(outname.c_str());
         return image;
     } catch (Exiv2::AnyError &) {
