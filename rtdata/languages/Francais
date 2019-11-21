@@ -1182,6 +1182,8 @@ PREFERENCES_DIRSOFTWARE;Dossier d'installation
 PREFERENCES_EDITORCMDLINE;Ligne de commande personnelle
 PREFERENCES_EDITORLAYOUT;Disposition de l'éditeur
 PREFERENCES_EXTERNALEDITOR;Éditeur externe
+PREFERENCES_EXIFTOOL_PATH;Commande Exiftool
+PREFERENCES_EXIFTOOL_PATH_TOOLTIP;Exiftool est utilisé comme solution de secours pour décoder les metadata dont les formats ne sont pas supportés par Exiv2
 PREFERENCES_FBROWSEROPTS;Options du navigateur de fichiers et de vignettes
 PREFERENCES_FILEBROWSERTOOLBARSINGLEROW;Barre d'outil compact dans le Navigateur de Fichiers
 PREFERENCES_FLATFIELDFOUND;Trouvé
@@ -1314,7 +1316,7 @@ PREFERENCES_TUNNELMETADATA; Copier Exif/IPTC/XMP unchangé vers le fichier de so
 PREFERENCES_USEBUNDLEDPROFILES;Utiliser les profils fournis
 PREFERENCES_VIEW;Balance des blancs des dispositifs de sortie (écran, TV, projecteur, etc.)
 PREFERENCES_WORKFLOW;Habitudes de travail
-PREFERENCES_XMP_SIDECAR_MODE;XMP Style des fichiers annexes
+PREFERENCES_XMP_SIDECAR_MODE;XMP Style des fichiers associés
 PREFERENCES_XMP_SIDECAR_MODE_STD;Standard (NOMDEFICHIER.xmp pour NOMDEFICHIER.ext)
 PREFERENCES_XMP_SIDECAR_MODE_EXT;darktable/digiKam-like (NOMDEFICHIER.ext.xmp pour NOMDEFICHIER.ext)
 PROFILEPANEL_COPYPPASTE;Paramètres à copier
@@ -1567,9 +1569,9 @@ TP_COLORCORRECTION_LIST_TITLE;Correction
 TP_COLORCORRECTION_MASK;Masque
 TP_COLORCORRECTION_OFFSET;Décalage
 TP_COLORCORRECTION_PIVOT;Pivot
-TP_COLORCORRECTION_POWER;Force (Contraste)
+TP_COLORCORRECTION_POWER;Force "Contraste"
 TP_COLORCORRECTION_SATURATION;Saturation
-TP_COLORCORRECTION_SLOPE;Pente (Luminosité)
+TP_COLORCORRECTION_SLOPE;Pente "Luminosité"
 TP_COLORTONING_AB;o C/L
 TP_COLORTONING_AUTOSAT;Automatique
 TP_COLORTONING_BALANCE;Balance
@@ -1727,7 +1729,7 @@ TP_DR_COMP_METHOD_LOG;Encodage Log
 TP_EPD_EDGESTOPPING;Arrêt des bords
 TP_EPD_GAMMA;Gamma
 TP_EPD_LIST_TITLE;Paramètres
-TP_EPD_LABEL;Augmentation de Texture
+TP_EPD_LABEL;Amplifier la Texture
 TP_EPD_REWEIGHTINGITERATES;Itérations de la pondération
 TP_EPD_SCALE;Échelle
 TP_EPD_STRENGTH;Force
