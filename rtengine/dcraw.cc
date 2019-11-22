@@ -7018,7 +7018,8 @@ int CLASS parse_tiff (int base)
 
 void CLASS apply_tiff()
 {
-  int max_samp=0, ties=0, os, ns, raw=-1, thm=-1, i;
+  int max_samp=0, ties=0, /*os, ns,*/ raw=-1, thm=-1, i;
+  uint64_t os, ns; // RT
   struct jhead jh;
 
   thumb_misc = 16;
@@ -7048,6 +7049,7 @@ void CLASS apply_tiff()
     }
     if ((tiff_ifd[i].comp != 6 || tiff_ifd[i].samples != 3) &&
 	(tiff_ifd[i].width | tiff_ifd[i].height) < 0x10000 &&
+        (unsigned)tiff_ifd[i].bps < 33 && (unsigned)tiff_ifd[i].samples < 13 && // RT
 	 ns && ((ns > os && (ties = 1)) ||
 		(ns == os && shot_select == ties++))) {
       raw_width     = tiff_ifd[i].width;
