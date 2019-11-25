@@ -324,14 +324,7 @@ void ImProcFunctions::blackAndWhite(Imagefloat *img)
 
         LUTf ulut(65536);
         LUTf vlut(65536);
-        DiagonalCurve filmcurve({
-                DCT_Spline,
-                0, 0,
-                0.11, 0.09,
-                0.32, 0.47,
-                0.66, 0.87,
-                1, 1
-            });
+        DiagonalCurve filmcurve(curves::filmcurve_def);
         FlatCurve satcurve({
                 FCT_MinMaxCPoints,
                 0, 0, 0.35, 0,

@@ -342,14 +342,7 @@ Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType,
     LUTi gamma(65536);
     const bool apply_filmcurve = settings->thumbnail_inspector_raw_apply_film_curve;
     if (apply_filmcurve) {
-        DiagonalCurve filmcurve({
-                DCT_Spline,
-                0, 0,
-                0.11, 0.09,
-                0.32, 0.47,
-                0.66, 0.87,
-                1, 1
-            });
+        DiagonalCurve filmcurve(curves::filmcurve_def);
         for (int i = 0; i < 65536; ++i) {
             float x = Color::gamma_srgbclipped(i) / 65535.f;
             float y = filmcurve.getVal(x) * 255.f;

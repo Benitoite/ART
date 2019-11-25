@@ -42,8 +42,20 @@
 
 using namespace std;
 
-namespace rtengine
-{
+namespace rtengine {
+
+namespace curves {
+
+const std::vector<double> filmcurve_def = {
+    DCT_Spline,
+    0, 0,
+    0.11, 0.09,
+    0.32, 0.47,
+    0.66, 0.87,
+    1, 1
+};
+
+} // namespace curves
 
 bool sanitizeCurve(std::vector<double>& curve)
 {

@@ -78,6 +78,8 @@ bool sanitizeCurve(std::vector<double>& curve);
 
 namespace curves {
 
+extern const std::vector<double> filmcurve_def;
+
 inline void setLutVal(const LUTf &lut, float &val)
 {
     if (!OOG(val)) {
