@@ -1,7 +1,7 @@
 #pragma once
 
 // This number has to be incremented whenever the PP3 file format is modified or the behaviour of a tool changes
-#define PPVERSION 1002
+#define PPVERSION 1003
 #define PPVERSION_AEXP 301 //value of PPVERSION when auto exposure algorithm was modified
 
 /*

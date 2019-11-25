@@ -3792,6 +3792,9 @@ int ProcParams::load(bool load_general,
                 if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Offset_") + n, cur.offset)) {
                     found = true;
                     done = false;
+                    if (ppVersion <= 1002) {
+                        cur.offset *= 2;
+                    }
                 }
                 if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Power_") + n, cur.power)) {
                     found = true;

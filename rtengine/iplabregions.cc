@@ -101,23 +101,12 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
         }
     }
 
-    // const auto rgb2yuv =
-    //     [=](float r, float g, float b, float &Y, float &u, float &v) -> void
-    //     {
-    //         Color::rgb2yuv(r, g, b, Y, u, v, ws);
-    //     };
-
-    // const auto yuv2rgb =
-    //     [=](float Y, float u, float v, float &r, float &g, float &b) -> void
-    //     {
-    //         Color::yuv2rgb(Y, u, v, r, g, b, ws);
-    //     };
-
     const auto CDL = 
         [=, &ws](float &Y, float &u, float &v, float slope, float offset, float power, float pivot, float saturation) -> void
         {
             float rgb[3];
             if (slope != 1.f || offset != 0.f || power != 1.f) {
+                offset /= 2.f;
                 Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], ws);
                 for (int i = 0; i < 3; ++i) {
                     float v = (rgb[i] / 65535.f) * slope + offset;
@@ -165,7 +154,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
             if (slope != 1.f || offset != 0.f || power != 1.f) {// || saturation != 1.f) {
                 vfloat rgb[3];
                 vfloat vslope = F2V(slope);
-                vfloat voffset = F2V(offset);
+                vfloat voffset = F2V(offset / 2.f);
                 vfloat vpower = F2V(power);
                 vfloat vpivot = F2V(pivot);
                 vfloat v65535 = F2V(65535.f);
