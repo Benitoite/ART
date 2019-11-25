@@ -467,19 +467,19 @@ void tmo_fattal02 (size_t width,
     // }
 
 
-    int size = width * height;
+    // int size = width * height;
 
     // find max value, normalize to range 0..100 and take logarithm
     // float minLum = Y (0, 0);
-    float maxLum = Y (0, 0);
+//     float maxLum = Y (0, 0);
 
-#ifdef _OPENMP
-    #pragma omp parallel for reduction(max:maxLum) if(multithread)
-#endif
+// #ifdef _OPENMP
+//     #pragma omp parallel for reduction(max:maxLum) if(multithread)
+// #endif
 
-    for ( int i = 0 ; i < size ; i++ ) {
-        maxLum = std::max (maxLum, Y (i));
-    }
+//     for ( int i = 0 ; i < size ; i++ ) {
+//         maxLum = std::max (maxLum, Y (i));
+//     }
 
     Array2Df* H = new Array2Df (width, height);
     //float temp = 100.f / maxLum;
