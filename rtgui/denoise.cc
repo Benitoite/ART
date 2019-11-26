@@ -353,17 +353,11 @@ void Denoise::colorSpaceChanged()
 
 void Denoise::chrominanceMethodChanged()
 {
-    if (chrominanceMethod->get_active_row_number() == 0) {
-        chrominance->set_sensitive(true);
-        chrominanceRedGreen->set_sensitive(true);
-        chrominanceBlueYellow->set_sensitive(true);
-        chrominanceAutoFactor->hide();
-    } else if (chrominanceMethod->get_active_row_number() == 1) {
-        chrominance->set_sensitive(false);
-        chrominanceRedGreen->set_sensitive(false);
-        chrominanceBlueYellow->set_sensitive(false);
-        chrominanceAutoFactor->show();
-    }
+    bool is_auto = (chrominanceMethod->get_active_row_number() == 1);
+    chrominance->set_visible(!is_auto);
+    chrominanceRedGreen->set_visible(!is_auto);
+    chrominanceBlueYellow->set_visible(!is_auto);
+    chrominanceAutoFactor->set_visible(is_auto);
 
     if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNCmet, chrominanceMethod->get_active_text());
