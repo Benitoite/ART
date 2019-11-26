@@ -135,6 +135,12 @@ void BayerRAWExposure::adjusterChanged(Adjuster* a, double newval)
                 PexBlack0->setValue (PexBlack3->getValue());
             }
         }
+    } else if (PextwoGreen->getLastActive()) {
+        if (a == PexBlack0) {
+            PexBlack3->setValue(PexBlack0->getValue());
+        } else if (a == PexBlack3) {
+            PexBlack0->setValue(PexBlack3->getValue());
+        }
     }
 }
 
@@ -147,9 +153,9 @@ void BayerRAWExposure::checkBoxToggled (CheckBox* c, CheckValue newval)
     if (c == PextwoGreen) {
         if (listener && getEnabled()) {
             listener->panelChanged (EvPreProcessExptwoGreen, PextwoGreen->getLastActive() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
-            if (PextwoGreen->getLastActive()) {
-                PexBlack3->setValue (PexBlack0->getValue());//two green together
-            }
+        }
+        if (PextwoGreen->getLastActive()) {
+            PexBlack3->setValue (PexBlack0->getValue());//two green together
         }
     }
 }
