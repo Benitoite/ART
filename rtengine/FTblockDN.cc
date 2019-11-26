@@ -1558,14 +1558,15 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
     array2D<float> mask;
     if (detail_thresh > 0) {
         mask(width, height);
-        float cthresh = 0.1f * scale;
+        float s_scale = std::sqrt(scale);
+        float cthresh = 0.1f * s_scale;
         float amount = LIM01(float(detail_thresh)/100.f);
         float thr = 1.f - amount;
-        buildBlendMask(labdn->L, mask, width, height, cthresh, amount);
+        buildBlendMask(labdn->L, mask, width, height, cthresh, amount, false, 2.f / s_scale);
         array2D<float> guide(width, height);
         LUTf ll(32769);
         for (int i = 0; i < 32769; ++i) {
-            ll[i] = xlin2log(float(i) / 32768.f, 10.f);
+            ll[i] = xlin2log(float(i) / 32768.f, 25.f);
         }
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
