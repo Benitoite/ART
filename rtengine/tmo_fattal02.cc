@@ -436,7 +436,7 @@ void tmo_fattal02 (size_t width,
 // #endif
     // static const float black_point = 0.1f;
     // static const float white_point = 0.5f;
-    static const float gamma = 1.0f; // 0.8f;
+    // static const float gamma = 1.0f; // 0.8f;
 
     // static const int   detail_level = 3;
     if ( detail_level < 0 ) {
@@ -658,9 +658,9 @@ void tmo_fattal02 (size_t width,
     #pragma omp parallel if(multithread)
 #endif
     {
-#ifdef __SSE2__
-        vfloat gammav = F2V (gamma);
-#endif
+// #ifdef __SSE2__
+//         vfloat gammav = F2V (gamma);
+// #endif
 #ifdef _OPENMP
         #pragma omp for schedule(dynamic,16)
 #endif
@@ -670,13 +670,13 @@ void tmo_fattal02 (size_t width,
 #ifdef __SSE2__
 
             for (; j < width - 3; j += 4) {
-                STVFU (L[i][j], xexpf (gammav * LVFU (L[i][j])));
+                STVFU (L[i][j], xexpf (/*gammav **/ LVFU (L[i][j])));
             }
 
 #endif
 
             for (; j < width; j++) {
-                L[i][j] = xexpf ( gamma * L[i][j]);
+                L[i][j] = xexpf ( /*gamma **/ L[i][j]);
             }
         }
     }
