@@ -294,13 +294,13 @@ void ImProcFunctions::dehaze(Imagefloat *img)
         get_dark_channel(R, G, B, dark, patchsize, ambient, true, multiThread);
     }
 
-    if (min(ambient[0], ambient[1], ambient[2]) < 0.01f) {
-        if (options.rtSettings.verbose) {
-            std::cout << "dehaze: no haze detected" << std::endl;
-        }
-        restore(img, maxchan, multiThread);
-        return; // probably no haze at all
-    }
+    // if (min(ambient[0], ambient[1], ambient[2]) < 0.01f) {
+    //     if (options.rtSettings.verbose) {
+    //         std::cout << "dehaze: no haze detected" << std::endl;
+    //     }
+    //     restore(img, maxchan, multiThread);
+    //     return; // probably no haze at all
+    // }
 
     DEBUG_DUMP(t_tilde);
 
