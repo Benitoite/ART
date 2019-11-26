@@ -190,11 +190,7 @@ public:
     }
     static void inverse33 (const double (*coeff)[3], double (*icoeff)[3]);
 
-    void boxblur2(float** src, float** dst, float** temp, int H, int W, int box );
-    void boxblur_resamp(float **src, float **dst, float** temp, int H, int W, int box, int samp );
     void HLRecovery_inpaint (float** red, float** green, float** blue) override;
-    static void HLRecovery_Luminance (float* rin, float* gin, float* bin, float* rout, float* gout, float* bout, int width, float maxval);
-    static void HLRecovery_CIELab (float* rin, float* gin, float* bin, float* rout, float* gout, float* bout, int width, float maxval, double cam[3][3], double icam[3][3]);
     static void HLRecovery_blend (float* rin, float* gin, float* bin, int width, float maxval, float* hlmax);
     static void init ();
     static void cleanup ();
