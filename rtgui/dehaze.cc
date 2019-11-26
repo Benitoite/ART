@@ -34,7 +34,7 @@ Dehaze::Dehaze(): FoldableToolPanel(this, "dehaze", M("TP_DEHAZE_LABEL"), false,
     EvDehazeDepth = m->newEvent(HDR, "HISTORY_MSG_DEHAZE_DEPTH");
     EvDehazeLuminance = m->newEvent(HDR, "HISTORY_MSG_DEHAZE_LUMINANCE");
     
-    strength = Gtk::manage(new Adjuster(M("TP_DEHAZE_STRENGTH"), 0., 100., 1., 50.));
+    strength = Gtk::manage(new Adjuster(M("TP_DEHAZE_STRENGTH"), -100., 100., 1., 50.));
     strength->setAdjusterListener(this);
     strength->show();
 

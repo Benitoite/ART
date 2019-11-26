@@ -240,11 +240,12 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
 
     img->setMode(Imagefloat::Mode::RGB, multiThread);
-    const float maxchan = normalize(img, multiThread); //img->normalizeFloatTo1();
+    const float maxchan = normalize(img, multiThread);
     
     const int W = img->getWidth();
     const int H = img->getHeight();
-    const float strength = LIM01(float(params->dehaze.strength) / 100.f * 0.9f);
+    const float strength = LIM01(float(std::abs(params->dehaze.strength)) / 100.f * 0.9f);
+    const bool add_haze = params->dehaze.strength < 0;
 
     if (options.rtSettings.verbose) {
         std::cout << "dehaze: strength = " << strength << std::endl;
@@ -328,8 +329,8 @@ void ImProcFunctions::dehaze(Imagefloat *img)
     }
 
     float depth = -float(params->dehaze.depth) / 100.f;
-    const float t0 = max(1e-3f, std::exp(depth * max_t));
-    const float teps = 1e-3f;
+    const float teps = 1e-6f;
+    const float t0 = max(teps, std::exp(depth * max_t));
     const bool luminance = params->dehaze.luminance;
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
     const float ambientY = Color::rgbLuminance(ambient[0], ambient[1], ambient[2], ws);
@@ -349,6 +350,10 @@ void ImProcFunctions::dehaze(Imagefloat *img)
             //         tu = max(tu, (rgb[c] - ambient[c])/(1.f - ambient[c]));
             //     }
             // }
+            float &ir = img->r(y, x);
+            float &ig = img->g(y, x);
+            float &ib = img->b(y, x);
+            
             float mt = max(t[y][x], t0, tl + teps);//, tu + teps);
             if (params->dehaze.showDepthMap) {
                 img->r(y, x) = img->g(y, x) = img->b(y, x) = LIM01(1.f - mt);
@@ -356,19 +361,28 @@ void ImProcFunctions::dehaze(Imagefloat *img)
                 float Y = Color::rgbLuminance(rgb[0], rgb[1], rgb[2], ws);
                 float YY = (Y - ambientY) / mt + ambientY;
                 if (Y > 1e-5f) {
+                    if (add_haze) {
+                        YY = Y + Y - YY;
+                    }
                     float f = YY / Y;
-                    img->r(y, x) = rgb[0] * f;
-                    img->g(y, x) = rgb[1] * f;
-                    img->b(y, x) = rgb[2] * f;
+                    ir = rgb[0] * f;
+                    ig = rgb[1] * f;
+                    ib = rgb[2] * f;
                 }
             } else {
                 float r = (rgb[0] - ambient[0]) / mt + ambient[0];
                 float g = (rgb[1] - ambient[1]) / mt + ambient[1];
                 float b = (rgb[2] - ambient[2]) / mt + ambient[2];
 
-                img->r(y, x) = r;
-                img->g(y, x) = g;
-                img->b(y, x) = b;
+                if (add_haze) {
+                    ir += (ir - r);
+                    ig += (ig - g);
+                    ib += (ib - b);
+                } else {
+                    ir = r;
+                    ig = g;
+                    ib = b;
+                }
             }
         }
     }
