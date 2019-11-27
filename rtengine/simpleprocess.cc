@@ -266,6 +266,8 @@ private:
         procparams::ProcParams& params = job->pparams;
         ImProcFunctions &ipf = *(ipf_p.get());
 
+        imgsrc->convertColorSpace(img, params.icm, currWB);
+        
         if (params.denoise.enabled) {
             ipf.denoise(imgsrc, currWB, img, dnstore, params.denoise);
         }
@@ -276,7 +278,7 @@ private:
         procparams::ProcParams &params = job->pparams;
         ImProcFunctions &ipf = *(ipf_p.get());
 
-        imgsrc->convertColorSpace(img, params.icm, currWB);
+        //imgsrc->convertColorSpace(img, params.icm, currWB);
 
         LUTu hist16(65536);
         ipf.firstAnalysis(img, params, hist16);

@@ -193,6 +193,8 @@ void Crop::update(int todo)
             parent->adnListener->chromaChanged(params.denoise.chrominance, params.denoise.chrominanceRedGreen, params.denoise.chrominanceBlueYellow);
         }
 
+        parent->imgsrc->convertColorSpace(origCrop, params.icm, parent->currWB);
+        
         if ((todo & M_LINDENOISE) && show_denoise) {
             parent->ipf.denoise(parent->imgsrc, parent->currWB, origCrop, parent->denoiseInfoStore, params.denoise);
 
@@ -200,8 +202,6 @@ void Crop::update(int todo)
                 parent->adnListener->chromaChanged(params.denoise.chrominance, params.denoise.chrominanceRedGreen, params.denoise.chrominanceBlueYellow);
             }                
         }
-
-        parent->imgsrc->convertColorSpace(origCrop, params.icm, parent->currWB);
     }
 
     // has to be called after setCropSizes! Tools prior to this point can't handle the Edit mechanism, but that shouldn't be a problem.
