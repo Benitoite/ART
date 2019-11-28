@@ -288,7 +288,6 @@ void ExportPanel::SaveSettings(Options &opts)
 //  opts.fastexport_resize_appliesTo = resize_appliesTo;
 //  opts.fastexport_resize_dataspec  = resize_dataspec ;
 
-    FE_OPT_STORE_ (opts.fastexport_resize_method, "Lanczos");
     FE_OPT_STORE_ (opts.fastexport_resize_width, MaxWidth->get_value_as_int ());
     FE_OPT_STORE_ (opts.fastexport_resize_height, MaxHeight->get_value_as_int ());
 

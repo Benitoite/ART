@@ -1639,11 +1639,12 @@ ResizeParams::ResizeParams() :
     enabled(false),
     scale(1.0),
     appliesTo("Cropped area"),
-    method("Lanczos"),
     dataspec(3),
     width(900),
     height(900),
-    allowUpscaling(false)
+    allowUpscaling(false),
+    ppi(300),
+    unit(PX)
 {
 }
 
@@ -1653,17 +1654,45 @@ bool ResizeParams::operator ==(const ResizeParams& other) const
         enabled == other.enabled
         && scale == other.scale
         && appliesTo == other.appliesTo
-        && method == other.method
         && dataspec == other.dataspec
         && width == other.width
         && height == other.height
-        && allowUpscaling == other.allowUpscaling;
+        && allowUpscaling == other.allowUpscaling
+        && ppi == other.ppi
+        && unit == other.unit;
 }
 
 bool ResizeParams::operator !=(const ResizeParams& other) const
 {
     return !(*this == other);
 }
+
+
+int ResizeParams::get_width() const
+{
+    switch (unit) {
+    case PX: return width;
+    case CM: return std::round(ppi * (width / 2.54)); 
+    case IN: return std::round(ppi * width);
+    default:
+        assert(false);
+        return width;
+    }
+}
+
+
+int ResizeParams::get_height() const
+{
+    switch (unit) {
+    case PX: return height;
+    case CM: return std::round(ppi * (height / 2.54));
+    case IN: return std::round(ppi * height);
+    default:
+        assert(false);
+        return height;
+    }
+}
+
 
 const Glib::ustring ColorManagementParams::NoICMString = Glib::ustring("No ICM: sRGB output");
 const Glib::ustring ColorManagementParams::NoProfileString = Glib::ustring("(none)");
@@ -2693,11 +2722,18 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Resize", "Enabled", resize.enabled, keyFile);
             saveToKeyfile("Resize", "Scale", resize.scale, keyFile);
             saveToKeyfile("Resize", "AppliesTo", resize.appliesTo, keyFile);
-            saveToKeyfile("Resize", "Method", resize.method, keyFile);
             saveToKeyfile("Resize", "DataSpecified", resize.dataspec, keyFile);
             saveToKeyfile("Resize", "Width", resize.width, keyFile);
             saveToKeyfile("Resize", "Height", resize.height, keyFile);
             saveToKeyfile("Resize", "AllowUpscaling", resize.allowUpscaling, keyFile);
+            saveToKeyfile("Resize", "PPI", resize.ppi, keyFile);
+            const char *u = "px";
+            switch (resize.unit) {
+            case ResizeParams::CM: u = "cm"; break;
+            case ResizeParams::IN: u = "in"; break;
+            default: u = "px"; break;
+            }
+            saveToKeyfile("Resize", "Unit", u, keyFile);
         }
 
 // Post resize sharpening
@@ -3582,7 +3618,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Resize", "Enabled", resize.enabled);
             assignFromKeyfile(keyFile, "Resize", "Scale", resize.scale);
             assignFromKeyfile(keyFile, "Resize", "AppliesTo", resize.appliesTo);
-            assignFromKeyfile(keyFile, "Resize", "Method", resize.method);
             assignFromKeyfile(keyFile, "Resize", "DataSpecified", resize.dataspec);
             assignFromKeyfile(keyFile, "Resize", "Width", resize.width);
             assignFromKeyfile(keyFile, "Resize", "Height", resize.height);
@@ -3590,6 +3625,20 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "Resize", "AllowUpscaling", resize.allowUpscaling);
             } else {
                 resize.allowUpscaling = false;
+            }
+            assignFromKeyfile(keyFile, "Resize", "PPI", resize.ppi);
+            if (ppVersion < 1004) {
+                resize.unit = ResizeParams::PX;
+            } else {
+                Glib::ustring u = "px";
+                assignFromKeyfile(keyFile, "Resize", "Unit", u);
+                if (u == "cm") {
+                    resize.unit = ResizeParams::CM;
+                } else if (u == "in") {
+                    resize.unit = ResizeParams::IN;
+                } else {
+                    resize.unit = ResizeParams::PX;
+                }
             }
         }
 

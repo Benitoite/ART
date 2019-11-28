@@ -361,24 +361,27 @@ float ImProcFunctions::resizeScale (const ProcParams* params, int fw, int fh, in
         refh = fh;
     }
 
+    int r_width = params->resize.get_width();
+    int r_height = params->resize.get_height();
+
     switch (params->resize.dataspec) {
         case (1):
             // Width
-            dScale = (double)params->resize.width / (double)refw;
+            dScale = (double)r_width / (double)refw;
             break;
 
         case (2):
             // Height
-            dScale = (double)params->resize.height / (double)refh;
+            dScale = (double)r_height / (double)refh;
             break;
 
         case (3):
 
             // FitBox
-            if ((double)refw / (double)refh > (double)params->resize.width / (double)params->resize.height) {
-                dScale = (double)params->resize.width / (double)refw;
+            if ((double)refw / (double)refh > (double)r_width / (double)r_height) {
+                dScale = (double)r_width / (double)refw;
             } else {
-                dScale = (double)params->resize.height / (double)refh;
+                dScale = (double)r_height / (double)refh;
             }
             dScale = (dScale > 1.0 && !params->resize.allowUpscaling) ? 1.0 : dScale;
 
@@ -413,31 +416,11 @@ void ImProcFunctions::resize (Imagefloat* src, Imagefloat* dst, float dScale)
     time_t t1 = clock();
 #endif
 
-    if (params->resize.method != "Nearest" ) {
-        Lanczos (src, dst, dScale);
-    } else {
-        // Nearest neighbour algorithm
-#ifdef _OPENMP
-        #pragma omp parallel for if (multiThread)
-#endif
-
-        for (int i = 0; i < dst->getHeight(); i++) {
-            int sy = i / dScale;
-            sy = LIM (sy, 0, src->getHeight() - 1);
-
-            for (int j = 0; j < dst->getWidth(); j++) {
-                int sx = j / dScale;
-                sx = LIM (sx, 0, src->getWidth() - 1);
-                dst->r (i, j) = src->r (sy, sx);
-                dst->g (i, j) = src->g (sy, sx);
-                dst->b (i, j) = src->b (sy, sx);
-            }
-        }
-    }
+    Lanczos (src, dst, dScale);
 
 #ifdef PROFILE
     time_t t2 = clock();
-    std::cout << "Resize: " << params->resize.method << ": "
+    std::cout << "Resize: "
               << (float) (t2 - t1) / CLOCKS_PER_SEC << std::endl;
 #endif
 }

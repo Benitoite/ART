@@ -358,11 +358,7 @@ private:
                 double scale = ipf.resizeScale(&params, fw, fh, imw, imh);
                 if (scale < 1.0 || (scale > 1.0 && params.resize.allowUpscaling)) {
                     Imagefloat *resized = new Imagefloat(imw, imh, img);
-                    if (params.resize.method == "Nearest") {
-                        ipf.resize(img, resized, scale);
-                    } else {
-                        ipf.Lanczos(img, resized, scale);
-                    }
+                    ipf.Lanczos(img, resized, scale);
                     delete img;
                     img = resized;
                 }

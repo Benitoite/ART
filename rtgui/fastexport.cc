@@ -91,9 +91,10 @@ void adjust_fast_params(rtengine::procparams::ProcParams &params)
         params.icm.outputBPC = options.fastexport_icm_outputBPC;
     }
 
+    params.resize.unit = rtengine::procparams::ResizeParams::PX;
     if (params.resize.enabled) {
-        params.resize.width = rtengine::min(params.resize.width, options.fastexport_resize_width);
-        params.resize.height = rtengine::min(params.resize.height, options.fastexport_resize_height);
+        params.resize.width = rtengine::min(params.resize.get_width(), options.fastexport_resize_width);
+        params.resize.height = rtengine::min(params.resize.get_height(), options.fastexport_resize_height);
     } else {
         params.resize.width = options.fastexport_resize_width;
         params.resize.height = options.fastexport_resize_height;
@@ -102,7 +103,6 @@ void adjust_fast_params(rtengine::procparams::ProcParams &params)
     params.resize.enabled = options.fastexport_resize_enabled;
     params.resize.scale = options.fastexport_resize_scale;
     params.resize.appliesTo = options.fastexport_resize_appliesTo;
-    params.resize.method = options.fastexport_resize_method;
     params.resize.dataspec = options.fastexport_resize_dataspec;
     params.resize.allowUpscaling = false;
 }

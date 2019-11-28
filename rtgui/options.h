@@ -361,7 +361,6 @@ public:
     bool fastexport_resize_enabled;
     double fastexport_resize_scale;
     Glib::ustring fastexport_resize_appliesTo;
-    Glib::ustring fastexport_resize_method;
     int fastexport_resize_dataspec;
     int fastexport_resize_width;
     int fastexport_resize_height;

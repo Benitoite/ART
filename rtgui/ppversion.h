@@ -1,11 +1,15 @@
 #pragma once
 
 // This number has to be incremented whenever the PP3 file format is modified or the behaviour of a tool changes
-#define PPVERSION 1003
+#define PPVERSION 1004
 #define PPVERSION_AEXP 301 //value of PPVERSION when auto exposure algorithm was modified
 
 /*
   Log of version changes
+  1004  2019-11-28
+        added PPI and Unit to ResizeParams
+  1003  2019-11-25
+        increased sensitivity of ColorCorrectionParams.Offset
   1002  2019-10-20
         ToneEqualizer.Detail --> ToneEqualizer.Regularization
   1001  2019-10-06

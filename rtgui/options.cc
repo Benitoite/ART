@@ -475,7 +475,6 @@ void Options::setDefaults()
     fastexport_resize_enabled            = true;
     fastexport_resize_scale              = 1;
     fastexport_resize_appliesTo          = "Cropped area";
-    fastexport_resize_method             = "Lanczos";
     fastexport_resize_dataspec           = 3;
     fastexport_resize_width              = 900;
     fastexport_resize_height             = 900;
@@ -1691,10 +1690,6 @@ void Options::readFromFile(Glib::ustring fname)
                     fastexport_resize_appliesTo = keyFile.get_string("Fast Export", "fastexport_resize_appliesTo");
                 }
 
-                if (keyFile.has_key("Fast Export", "fastexport_resize_method")) {
-                    fastexport_resize_method = keyFile.get_string("Fast Export", "fastexport_resize_method");
-                }
-
                 if (keyFile.has_key("Fast Export", "fastexport_resize_dataspec")) {
                     fastexport_resize_dataspec = keyFile.get_integer("Fast Export", "fastexport_resize_dataspec");
                 }
@@ -2103,7 +2098,6 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean("Fast Export", "fastexport_resize_enabled", fastexport_resize_enabled);
         keyFile.set_double("Fast Export", "fastexport_resize_scale", fastexport_resize_scale);
         keyFile.set_string("Fast Export", "fastexport_resize_appliesTo", fastexport_resize_appliesTo);
-        keyFile.set_string("Fast Export", "fastexport_resize_method", fastexport_resize_method);
         keyFile.set_integer("Fast Export", "fastexport_resize_dataspec", fastexport_resize_dataspec);
         keyFile.set_integer("Fast Export", "fastexport_resize_width", fastexport_resize_width);
         keyFile.set_integer("Fast Export", "fastexport_resize_height", fastexport_resize_height);

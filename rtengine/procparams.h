@@ -945,16 +945,25 @@ struct ResizeParams {
     bool enabled;
     double scale;
     Glib::ustring appliesTo;
-    Glib::ustring method;
     int dataspec;
-    int width;
-    int height;
+    double width;
+    double height;
     bool allowUpscaling;
+    int ppi;
+    enum Unit {
+        PX,
+        CM,
+        IN
+    };
+    Unit unit;
 
     ResizeParams();
 
     bool operator ==(const ResizeParams& other) const;
     bool operator !=(const ResizeParams& other) const;
+
+    int get_width() const;
+    int get_height() const;
 };
 
 /**
