@@ -21,7 +21,6 @@
 #include "rtlensfun.h"
 #include "settings.h"
 #include <iostream>
-
 namespace rtengine {
 
 extern const Settings *settings;
@@ -498,6 +497,7 @@ std::unique_ptr<LFModifier> LFDatabase::getModifier(const LFCamera &camera, cons
     return ret;
 }
 
+std::set<std::string> LFDatabase::notFound;
 
 std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensProf, const FramesMetaData *idata, int width, int height, const CoarseTransformParams &coarse, int rawRotationDeg)
 {
@@ -519,6 +519,11 @@ std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensP
         return nullptr;
     }
 
+    const std::string key = (make + model + lens).collate_key();
+    if (notFound.find(key) != notFound.end()) {
+        // This combination was not found => do not search again
+        return nullptr;
+    }
     const LFDatabase *db = getInstance();
     LFCamera c = db->findCamera(make, model);
     LFLens l = db->findLens(lensProf.lfAutoMatch() ? c : LFCamera(), lens);
@@ -545,6 +550,10 @@ std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensP
                   << "  lens: " << l.getDisplayString() << "\n"
                   << "  correction: "
                   << (ret ? ret->getDisplayString() : "NONE") << std::endl;
+    }
+
+    if (!ret) {
+        notFound.emplace(key);
     }
 
     return ret;

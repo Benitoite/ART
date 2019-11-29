@@ -21,6 +21,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <vector>
 
 #include <glibmm.h>
@@ -125,6 +126,7 @@ private:
     mutable MyMutex lfDBMutex;
     static LFDatabase instance_;
     lfDatabase *data_;
+    static std::set<std::string> notFound;
 };
 
 } // namespace rtengine
