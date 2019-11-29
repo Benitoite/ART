@@ -822,6 +822,8 @@ HISTORY_MSG_RAWCACORR_AUTOIT;A.C. Raw - Itérations
 HISTORY_MSG_RAWCACORR_COLORSHIFT;A.C. Raw - Éviter les dérives de teinte
 HISTORY_MSG_RAW_BORDER;Bord Raw
 HISTORY_MSG_RESIZE_ALLOWUPSCALING;Redim. - Autoriser l'agrandissement
+HISTORY_MSG_RESIZE_PPI;Redimensionnement - PPI
+HISTORY_MSG_RESIZE_UNIT;Redimensionnement - Unités
 HISTORY_MSG_SHARPENING_AUTORADIUS;Netteté - RLD rayon automatique
 HISTORY_MSG_SHARPENING_BLUR;Netteté - Rayon de floutage
 HISTORY_MSG_SHARPENING_CONTRAST;Netteté - Seuil de contraste
@@ -1833,6 +1835,7 @@ TP_ICM_INPUTNONE_TOOLTIP;N'utilise aucun profil couleur d'entrée du tout. À n'
 TP_ICM_INPUTPROFILE;Profil d'entrée
 TP_ICM_LABEL;ICM
 TP_ICM_NOICM;Pas d'ICM: sortie sRGB
+TP_ICM_NOPROFILE;No profile (passthrough mode) Pas de profils
 TP_ICM_OUTPUTPROFILE;Profil de sortie
 TP_ICM_PROFILEINTENT;Intention de Rendu
 TP_ICM_SAVEREFERENCE;Sauver Image de Référence.
@@ -2090,6 +2093,10 @@ TP_RESIZE_METHOD;Méthode:
 TP_RESIZE_NEAREST;Au plus proche
 TP_RESIZE_SCALE;Échelle
 TP_RESIZE_SPECIFY;Préciser:
+TP_RESIZE_UNIT;Unités
+TP_RESIZE_PX;px
+TP_RESIZE_CM;cm
+TP_RESIZE_IN;in
 TP_RESIZE_W;Largeur:
 TP_RESIZE_WIDTH;Largeur
 TP_RETINEX_CONTEDIT_HSL;Égaliseur d'histogramme TSV
