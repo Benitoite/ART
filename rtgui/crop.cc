@@ -222,7 +222,7 @@ Crop::Crop():
     ppigrid->attach (*sizecm, 1, 1, 1, 1);
     ppigrid->attach (*sizein, 1, 2, 1, 1);
     ppigrid->attach (*ppisubgrid, 0, 1, 1, 2);
-    pack_start (*ppigrid, Gtk::PACK_SHRINK, 0 );
+//    pack_start (*ppigrid, Gtk::PACK_SHRINK, 0 );
 
     ppi->set_value (300);
     // ppigrid END

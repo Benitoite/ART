@@ -24,6 +24,9 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
+namespace { constexpr double IN_TO_CM = 2.54; } 
+
+
 Resize::Resize():
     FoldableToolPanel(this, "resize", M("TP_RESIZE_LABEL"), false, true),
     maxw(100000), maxh(100000)
@@ -163,8 +166,8 @@ Resize::Resize():
     hconn = h->signal_value_changed().connect ( sigc::mem_fun(*this, &Resize::entryHChanged), true);
     aconn = appliesTo->signal_changed().connect ( sigc::mem_fun(*this, &Resize::appliesToChanged) );
     sconn = spec->signal_changed().connect ( sigc::mem_fun(*this, &Resize::specChanged) );
-    ppi->signal_value_changed().connect(sigc::mem_fun(*this, &Resize::ppiChanged));
-    unit->signal_changed().connect(sigc::mem_fun(*this, &Resize::unitChanged));
+    ppiconn = ppi->signal_value_changed().connect(sigc::mem_fun(*this, &Resize::ppiChanged));
+    unitconn = unit->signal_changed().connect(sigc::mem_fun(*this, &Resize::unitChanged));
 
     packBox = Gtk::manage (new ToolParamBlock ());
     pack_end (*packBox);
@@ -189,10 +192,12 @@ Resize::~Resize ()
 void Resize::read(const ProcParams* pp)
 {
     disableListener ();
-    aconn.block (true);
-    wconn.block (true);
-    hconn.block (true);
-    sconn.block (true);
+    ConnectionBlocker ab(aconn);
+    ConnectionBlocker wb(wconn);
+    ConnectionBlocker hb(hconn);
+    ConnectionBlocker sb(sconn);
+    ConnectionBlocker ub(unitconn);
+    ConnectionBlocker pb(ppiconn);
     scale->block(true);
 
     prev_unit = pp->resize.unit;
@@ -208,6 +213,7 @@ void Resize::read(const ProcParams* pp)
 
     updateInfoLabels();
     updateGUI();
+    setRanges();
 
     appliesTo->set_active (0);
 
@@ -221,10 +227,6 @@ void Resize::read(const ProcParams* pp)
     hDirty = false;
 
     scale->block(false);
-    sconn.block (false);
-    wconn.block (false);
-    hconn.block (false);
-    aconn.block (false);
     enableListener ();
 }
 
@@ -264,12 +266,10 @@ void Resize::setDefaults(const ProcParams* defParams)
 
 void Resize::adjusterChanged(Adjuster* a, double newval)
 {
-    wconn.block (true);
-    hconn.block (true);
-    h->set_value ((croph && appliesTo->get_active_row_number() == 0 ? croph : maxh) * a->getValue ());
-    w->set_value ((cropw && appliesTo->get_active_row_number() == 0 ? cropw : maxw) * a->getValue ());
-    wconn.block (false);
-    hconn.block (false);
+    ConnectionBlocker wb(wconn);
+    ConnectionBlocker hb(hconn);
+    h->set_value((croph && appliesTo->get_active_row_number() == 0 ? croph : maxh) * a->getValue());
+    w->set_value((cropw && appliesTo->get_active_row_number() == 0 ? cropw : maxw) * a->getValue());
 
     if (listener && getEnabled()) {
         listener->panelChanged (EvResizeScale, Glib::ustring::format (std::setw(5), std::fixed, std::setprecision(2), scale->getValue()));
@@ -321,9 +321,8 @@ void Resize::appliesToChanged ()
 }
 
 
-void Resize::update (bool isCropped, int cw, int ch, int ow, int oh)
+void Resize::update(bool isCropped, int cw, int ch, int ow, int oh)
 {
-
     // updating crop values now
     if (isCropped) {
         cropw = cw;
@@ -343,6 +342,7 @@ void Resize::update (bool isCropped, int cw, int ch, int ow, int oh)
     setDimensions();
 }
 
+
 void Resize::sizeChanged(int mw, int mh, int ow, int oh)
 {
     // updating max values now
@@ -353,13 +353,14 @@ void Resize::sizeChanged(int mw, int mh, int ow, int oh)
     setDimensions();
 }
 
-void Resize::setDimensions ()
+
+void Resize::setDimensions()
 {
     idle_register.add(
         [this]() -> bool
         {
-            wconn.block(true);
-            hconn.block(true);
+            ConnectionBlocker wb(wconn);
+            ConnectionBlocker hb(hconn);
             scale->block(true);
 
             int refw, refh;
@@ -375,6 +376,7 @@ void Resize::setDimensions ()
             }
 
             setRanges();
+            updateInfoLabels();
 
             switch (spec->get_active_row_number()) {
                 case 0: {
@@ -417,8 +419,6 @@ void Resize::setDimensions ()
             }
 
             scale->block(false);
-            wconn.block(false);
-            hconn.block(false);
 
             return false;
         }
@@ -465,14 +465,13 @@ void Resize::entryWChanged ()
         fitBoxScale();
     } else {
         // Other modes
-        hconn.block (true);
-        scale->block (true);
+        ConnectionBlocker hb(hconn);
+        scale->block(true);
 
         h->set_value (from_px(getComputedHeight()));
         scale->setValue (to_px(w->get_value ()) / (cropw && appliesTo->get_active_row_number() == 0 ? (double)cropw : (double)maxw));
 
-        scale->block (false);
-        hconn.block (false);
+        scale->block(false);
     }
 
     updateInfoLabels();
@@ -499,14 +498,13 @@ void Resize::entryHChanged ()
             fitBoxScale();
         } else {
             // Other modes
-            wconn.block (true);
-            scale->block (true);
+            ConnectionBlocker wb(wconn);
+            scale->block(true);
 
             w->set_value(from_px(getComputedWidth()));
             scale->setValue(to_px(h->get_value()) / (croph && appliesTo->get_active_row_number() == 0 ? (double)croph : (double)maxh));
 
-            scale->block (false);
-            wconn.block (false);
+            scale->block(false);
         }
     }
 
@@ -555,7 +553,9 @@ void Resize::specChanged ()
     }
 
     updateGUI();
+    setRanges();
 }
+
 
 void Resize::updateGUI ()
 {
@@ -597,6 +597,8 @@ void Resize::updateGUI ()
     default:
         break;
     }
+
+    unit->set_sensitive(spec->get_active_row_number() > 0);
 }
 
 void Resize::notifyBBox()
@@ -636,10 +638,19 @@ void Resize::setRanges()
         refw = maxw;
         refh = maxh;
     }
+    if (spec->get_active_row_number() == 3) { // bounding box
+        refw = refh = std::max(refw, refh);
+    }
     
     int factor = allowUpscaling->get_active() ? MAX_SCALE : 1;
     w->set_range(from_px(32), from_px(factor * refw));
     h->set_range(from_px(32), from_px(factor * refh));
+    double v = scale->getValue();
+    scale->block(true);
+    scale->setLimits(0.01, factor, 0.01, 1.0);
+    scale->setLogScale(factor * 10.f, 1.f, factor > 1);
+    scale->setValue(v);
+    scale->block(false);
 }
 
 
@@ -677,7 +688,7 @@ void Resize::ppiChanged()
 
 void Resize::unitChanged()
 {
-    updateInfoLabels();
+    //updateInfoLabels();
     int pw = to_px(w->get_value(), prev_unit);
     int ph = to_px(h->get_value(), prev_unit);
     prev_unit = ResizeParams::Unit(unit->get_active_row_number());
@@ -707,21 +718,21 @@ void Resize::updateInfoLabels()
     double iw = 0, ih = 0;
     switch (ResizeParams::Unit(unit->get_active_row_number())) {
     case ResizeParams::CM:
-        iw = w->get_value() / 2.54 * ppi->get_value();
-        ih = h->get_value() / 2.54 * ppi->get_value();
+        iw = w->get_value() / IN_TO_CM * ppi->get_value();
+        ih = h->get_value() / IN_TO_CM * ppi->get_value();
         size_info_1->set_text(Glib::ustring::compose("%1 px x %2 px", std::round(iw), std::round(ih)));
-        size_info_2->set_text(Glib::ustring::compose("%1 in x %2 in", Glib::ustring::format(std::setprecision(3), w->get_value() / 2.54), Glib::ustring::format(std::setprecision(3), h->get_value() / 2.54)));
+        size_info_2->set_text(Glib::ustring::compose("%1 in x %2 in", Glib::ustring::format(std::setprecision(3), w->get_value() / IN_TO_CM), Glib::ustring::format(std::setprecision(3), h->get_value() / IN_TO_CM)));
         break;
     case ResizeParams::IN:
         iw = w->get_value() * ppi->get_value();
         ih = h->get_value() * ppi->get_value();
         size_info_1->set_text(Glib::ustring::compose("%1 px x %2 px", std::round(iw), std::round(ih)));
-        size_info_2->set_text(Glib::ustring::compose("%1 cm x %2 cm", Glib::ustring::format(std::setprecision(3), w->get_value() * 2.54), Glib::ustring::format(std::setprecision(3), h->get_value() * 2.54)));
+        size_info_2->set_text(Glib::ustring::compose("%1 cm x %2 cm", Glib::ustring::format(std::setprecision(3), w->get_value() * IN_TO_CM), Glib::ustring::format(std::setprecision(3), h->get_value() * IN_TO_CM)));
         break;
     default:
         iw = w->get_value() / ppi->get_value();
         ih = h->get_value() / ppi->get_value();
-        size_info_1->set_text(Glib::ustring::compose("%1 cm x %2 cm", Glib::ustring::format(std::setprecision(3), iw * 2.54), Glib::ustring::format(std::setprecision(3), ih * 2.54)));
+        size_info_1->set_text(Glib::ustring::compose("%1 cm x %2 cm", Glib::ustring::format(std::setprecision(3), iw * IN_TO_CM), Glib::ustring::format(std::setprecision(3), ih * IN_TO_CM)));
         size_info_2->set_text(Glib::ustring::compose("%1 in x %2 in", Glib::ustring::format(std::setprecision(3), iw), Glib::ustring::format(std::setprecision(3), ih)));
         break;
     }
@@ -732,7 +743,7 @@ double Resize::from_px(int p, ResizeParams::Unit u)
 {
     switch (u) {
     case ResizeParams::CM:
-        return double(p) / ppi->get_value() * 2.54;
+        return double(p) / ppi->get_value() * IN_TO_CM;
     case ResizeParams::IN:
         return double(p) / ppi->get_value();
     default:
@@ -751,7 +762,7 @@ int Resize::to_px(double p, ResizeParams::Unit u)
 {
     switch (u) {
     case ResizeParams::CM:
-        return std::round(ppi->get_value() * (p / 2.54));
+        return std::round(ppi->get_value() * (p / IN_TO_CM));
     case ResizeParams::IN:
         return std::round(ppi->get_value() * p);
     default:

@@ -94,6 +94,7 @@ private:
     int cropw, croph;
     rtengine::procparams::ResizeParams::Unit prev_unit;
     sigc::connection sconn, aconn, wconn, hconn;
+    sigc::connection unitconn, ppiconn;
     bool wDirty, hDirty;
     ToolParamBlock *packBox;
     IdleRegister idle_register;

@@ -2733,7 +2733,7 @@ int ProcParams::save(bool save_general,
             case ResizeParams::IN: u = "in"; break;
             default: u = "px"; break;
             }
-            saveToKeyfile("Resize", "Unit", u, keyFile);
+            saveToKeyfile("Resize", "Unit", Glib::ustring(u), keyFile);
         }
 
 // Post resize sharpening
