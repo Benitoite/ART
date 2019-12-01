@@ -390,7 +390,9 @@ public:
         XMP // store in FILENAME.xmp for FILENAME.raw
     };
     ThumbnailRatingMode thumbnail_rating_mode;
-    
+
+    bool thumbnail_inspector_zoom_fit;
+    bool thumbnail_inspector_show_info;
 
     Options();
 

@@ -379,8 +379,8 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
     std::unique_ptr<IImage8> source;
     {
         eSensorType sensor_type;
-        int w, h;
-        std::unique_ptr<Thumbnail> thumb(Thumbnail::loadQuickFromRaw(getFileName(), sensor_type, w, h, 1, false, true, true));
+        int w = -1, h = -1;
+        std::unique_ptr<Thumbnail> thumb(Thumbnail::loadQuickFromRaw(getFileName(), sensor_type, w, h, 1, false, true));
         if (!thumb) {
             if (settings->verbose) {
                 std::cout << "histogram matching: no thumbnail found, generating a neutral curve" << std::endl;

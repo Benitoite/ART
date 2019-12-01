@@ -89,7 +89,7 @@ FilePanel::FilePanel () :
     filterPanel = Gtk::manage ( new FilterPanel () );
     sFilterPanel->add (*filterPanel);
 
-    inspectorPanel = new Inspector();
+    inspectorPanel = new Inspector(fileCatalog);
     fileCatalog->setInspector(inspectorPanel);
 
     // Gtk::ScrolledWindow* sExportPanel = Gtk::manage ( new Gtk::ScrolledWindow() );

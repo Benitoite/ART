@@ -46,16 +46,7 @@ namespace {
 
 bool checkRawImageThumb (const rtengine::RawImage& raw_image)
 {
-    if (!raw_image.is_supportedThumb()) {
-        return false;
-    }
-
-    const ssize_t length =
-        fdata (raw_image.get_thumbOffset(), raw_image.get_file())[1] != 0xD8 && raw_image.is_ppmThumb()
-        ? raw_image.get_thumbWidth() * raw_image.get_thumbHeight() * (raw_image.get_thumbBPS() / 8) * 3
-        : raw_image.get_thumbLength();
-
-    return raw_image.get_thumbOffset() + length <= raw_image.get_file()->size;
+    return raw_image.checkThumbOk();
 }
 
 
@@ -190,7 +181,7 @@ extern const Settings *settings;
 
 using namespace procparams;
 
-Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h, int fixwh, double wbEq, bool inspectorMode)
+Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h, int fixwh, double wbEq)
 {
 
     StdImageSource imgSrc;
@@ -226,19 +217,12 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
     tpp->colorMatrix[1][1] = 1.0;
     tpp->colorMatrix[2][2] = 1.0;
 
-    if (inspectorMode) {
-        // Special case, meaning that we want a full sized thumbnail image (e.g. for the Inspector feature)
-        w = img->getWidth();
-        h = img->getHeight();
-        tpp->scale = 1.;
+    if (fixwh == 1) {
+        w = h * img->getWidth() / img->getHeight();
+        tpp->scale = (double)img->getHeight() / h;
     } else {
-        if (fixwh == 1) {
-            w = h * img->getWidth() / img->getHeight();
-            tpp->scale = (double)img->getHeight() / h;
-        } else {
-            h = w * img->getHeight() / img->getWidth();
-            tpp->scale = (double)img->getWidth() / w;
-        }
+        h = w * img->getHeight() / img->getWidth();
+        tpp->scale = (double)img->getWidth() / w;
     }
 
     // bilinear interpolation
@@ -247,141 +231,54 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
         tpp->thumbImg = nullptr;
     }
 
-    if (inspectorMode) {
-        // we want an Image8
-        if (img->getType() == rtengine::sImage8) {
-            // copy the image
-            Image8 *srcImg = static_cast<Image8*> (img);
-            Image8 *thImg = new Image8 (w, h);
-            srcImg->copyData (thImg);
-            tpp->thumbImg = thImg;
-        } else {
-            // copy the image with a conversion
-            tpp->thumbImg = resizeTo<Image8> (w, h, TI_Bilinear, img);
-        }
+    // we want the same image type than the source file
+    tpp->thumbImg = resizeToSameType (w, h, TI_Bilinear, img);
+
+    // histogram computation
+    tpp->aeHistCompression = 3;
+    tpp->aeHistogram (65536 >> tpp->aeHistCompression);
+
+    double avg_r = 0;
+    double avg_g = 0;
+    double avg_b = 0;
+    int n = 0;
+
+    if (img->getType() == rtengine::sImage8) {
+        Image8 *image = static_cast<Image8*> (img);
+        image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
+    } else if (img->getType() == sImage16) {
+        Image16 *image = static_cast<Image16*> (img);
+        image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
+    } else if (img->getType() == sImagefloat) {
+        Imagefloat *image = static_cast<Imagefloat*> (img);
+        image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
     } else {
-        // we want the same image type than the source file
-        tpp->thumbImg = resizeToSameType (w, h, TI_Bilinear, img);
-
-        // histogram computation
-        tpp->aeHistCompression = 3;
-        tpp->aeHistogram (65536 >> tpp->aeHistCompression);
-
-        double avg_r = 0;
-        double avg_g = 0;
-        double avg_b = 0;
-        int n = 0;
-
-        if (img->getType() == rtengine::sImage8) {
-            Image8 *image = static_cast<Image8*> (img);
-            image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
-        } else if (img->getType() == sImage16) {
-            Image16 *image = static_cast<Image16*> (img);
-            image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
-        } else if (img->getType() == sImagefloat) {
-            Imagefloat *image = static_cast<Imagefloat*> (img);
-            image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
-        } else {
-            printf ("loadFromImage: Unsupported image type \"%s\"!\n", img->getType());
-        }
-
-        // ProcParams paramsForAutoExp; // Dummy for constructor
-        // ImProcFunctions ipf (&paramsForAutoExp, false);
-        // ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
-        // tpp->aeValid = true;
-
-        if (n > 0) {
-            ColorTemp cTemp;
-
-            tpp->redAWBMul   = avg_r / double (n);
-            tpp->greenAWBMul = avg_g / double (n);
-            tpp->blueAWBMul  = avg_b / double (n);
-            tpp->wbEqual = wbEq;
-
-            cTemp.mul2temp (tpp->redAWBMul, tpp->greenAWBMul, tpp->blueAWBMul, tpp->wbEqual, tpp->autoWBTemp, tpp->autoWBGreen);
-        }
-
-        tpp->init ();
+        printf ("loadFromImage: Unsupported image type \"%s\"!\n", img->getType());
     }
+
+    // ProcParams paramsForAutoExp; // Dummy for constructor
+    // ImProcFunctions ipf (&paramsForAutoExp, false);
+    // ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
+    // tpp->aeValid = true;
+
+    if (n > 0) {
+        ColorTemp cTemp;
+
+        tpp->redAWBMul   = avg_r / double (n);
+        tpp->greenAWBMul = avg_g / double (n);
+        tpp->blueAWBMul  = avg_b / double (n);
+        tpp->wbEqual = wbEq;
+
+        cTemp.mul2temp (tpp->redAWBMul, tpp->greenAWBMul, tpp->blueAWBMul, tpp->wbEqual, tpp->autoWBTemp, tpp->autoWBGreen);
+    }
+
+    tpp->init ();
 
     return tpp;
 }
 
 
-namespace {
-
-Image8 *load_inspector_mode(const Glib::ustring &fname, eSensorType &sensorType, int &w, int &h)
-{
-    BENCHFUN
-    
-    RawImageSource src;
-    int err = src.load(fname, true);
-    if (err) {
-        return nullptr;
-    }
-
-    src.getFullSize(w, h);
-    sensorType = src.getSensorType();
-    
-    ProcParams neutral;
-    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
-    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
-    neutral.icm.inputProfile = "(camera)";
-    neutral.icm.workingProfile = options.rtSettings.srgb;
-
-    src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false);
-    double thresholdDummy = 0.f;
-    src.demosaic(neutral.raw, false, thresholdDummy);
-
-    PreviewProps pp(0, 0, w, h, 1);
-
-    Imagefloat tmp(w, h);
-    src.getImage(src.getWB(), TR_NONE, &tmp, pp, neutral.exposure, neutral.raw);
-    src.convertColorSpace(&tmp, neutral.icm, src.getWB());
-
-    LUTi gamma(65536);
-    const bool apply_filmcurve = settings->thumbnail_inspector_raw_apply_film_curve;
-    if (apply_filmcurve) {
-        DiagonalCurve filmcurve(curves::filmcurve_def);
-        for (int i = 0; i < 65536; ++i) {
-            float x = Color::gamma_srgbclipped(i) / 65535.f;
-            float y = filmcurve.getVal(x) * 255.f;
-            gamma[i] = y;
-        }
-    } else {
-        for (int i = 0; i < 65536; ++i) {
-            gamma[i] = int(Color::gamma_srgbclipped(i)) * 255 / 65535;
-        }
-    }
-
-    Image8 *img = new Image8(w, h);
-    const int maxval = MAXVALF;
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            int r = tmp.r(y, x);
-            int g = tmp.g(y, x);
-            int b = tmp.b(y, x);
-            // avoid magenta highlights
-            if (r >= maxval && b >= maxval) {
-                int v = CLIP((r + g + b) / 3) * 255 / 65535;
-                img->r(y, x) = img->g(y, x) = img->b(y, x) = v;
-            } else {
-                img->r(y, x) = gamma[r];
-                img->g(y, x) = gamma[g];
-                img->b(y, x) = gamma[b];
-            }
-        }
-    }
-
-    return img;
-}
-
-} // namespace
-
-Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType &sensorType, int &w, int &h, int fixwh, bool rotate, bool inspectorMode, bool forHistogramMatching)
+Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType &sensorType, int &w, int &h, int fixwh, bool rotate, bool forHistogramMatching)
 {
     Thumbnail* tpp = new Thumbnail ();
     tpp->isRaw = 1;
@@ -391,19 +288,6 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType 
     tpp->colorMatrix[1][1] = 1.0;
     tpp->colorMatrix[2][2] = 1.0;
 
-    if (inspectorMode && !forHistogramMatching && settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
-        Image8 *img = load_inspector_mode(fname, sensorType, w, h);
-        if (!img) {
-            delete tpp;
-            return nullptr;
-        }
-
-        tpp->scale = 1.;
-        tpp->thumbImg = img;
-
-        return tpp;
-    }
-    
     RawImage *ri = new RawImage (fname);
     unsigned int imageNum = 0;
     int r = ri->loadRaw (false, imageNum, false);
@@ -447,27 +331,11 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType 
         return nullptr;
     }
 
-    if (inspectorMode) {
-        // Special case, meaning that we want a full sized thumbnail image (e.g. for the Inspector feature)
+    if (forHistogramMatching) {
+        // Special case, meaning that we want a full sized thumbnail image 
         w = img->getWidth();
         h = img->getHeight();
         tpp->scale = 1.;
-
-        if (!forHistogramMatching && settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW_IF_NOT_JPEG_FULLSIZE && float(std::max(w, h))/float(std::max(ri->get_width(), ri->get_height())) < 0.9f) {
-            delete img;
-            delete ri;
-            
-            img = load_inspector_mode(fname, sensorType, w, h);
-            if (!img) {
-                delete tpp;
-                return nullptr;
-            }
-
-            tpp->scale = 1.;
-            tpp->thumbImg = img;
-            
-            return tpp;
-        }
     } else {
         if (fixwh == 1) {
             w = h * img->getWidth() / img->getHeight();
@@ -483,31 +351,21 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType 
         tpp->thumbImg = nullptr;
     }
 
-    if (inspectorMode) {
+    if (forHistogramMatching) {
         tpp->thumbImg = img;
     } else {
         tpp->thumbImg = resizeTo<Image8> (w, h, TI_Nearest, img);
         delete img;
     }
 
-    if (rotate && ri->get_rotateDegree() > 0) {
-        std::string fname = ri->get_filename();
-        std::string suffix = fname.length() > 4 ? fname.substr (fname.length() - 3) : "";
-
-        for (unsigned int i = 0; i < suffix.length(); i++) {
-            suffix[i] = std::tolower (suffix[i]);
-        }
-
-        // Leaf .mos, Mamiya .mef and Phase One .iiq files have thumbnails already rotated.
-        if (suffix != "mos" && suffix != "mef" && suffix != "iiq")  {
-            tpp->thumbImg->rotate (ri->get_rotateDegree());
-            // width/height may have changed after rotating
-            w = tpp->thumbImg->getWidth();
-            h = tpp->thumbImg->getHeight();
-        }
+    if (rotate && ri->get_rotateDegree() > 0 && ri->thumbNeedsRotation()) {
+        tpp->thumbImg->rotate(ri->get_rotateDegree());
+        // width/height may have changed after rotating
+        w = tpp->thumbImg->getWidth();
+        h = tpp->thumbImg->getHeight();
     }
 
-    if (!inspectorMode) {
+    if (!forHistogramMatching) {
         tpp->init ();
     }
 

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,14 +17,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _PREVIEWIMAGE_
-#define _PREVIEWIMAGE_
+#pragma once
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
+#include <memory>
+#include "image8.h"
 
-namespace rtengine
-{
+
+namespace rtengine {
 
 /** @brief Get a quick preview image out of a raw or standard file
  *
@@ -32,25 +34,21 @@ namespace rtengine
  *
  * For standard image, it simply read it with fast conversion for 32 bits images
  */
-class PreviewImage
-{
-
-private:
-    Cairo::RefPtr<Cairo::ImageSurface> previewImage;
-
+class PreviewImage {
 public:
-    typedef enum mode {
-        PIM_EmbeddedPreviewOnly,  /// Get the embedded image only, fail if doesn't exist
-        PIM_EmbeddedOrRaw,        /// Get the embedded image if it exist, or use the raw file otherwise
-        PIM_ForceRaw              /// Get a preview of the raw file, even if an embedded image exist
-    } PreviewImageMode;
-
-    PreviewImage (const Glib::ustring &fname, const Glib::ustring &ext, const PreviewImageMode mode);
+    PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width=-1, int height=-1);
 
     Cairo::RefPtr<Cairo::ImageSurface> getImage();
 
+private:
+    Image8 *load_raw(const Glib::ustring &fname, int width, int height);
+    Image8 *load_raw_preview(const Glib::ustring &fname, int width, int height);
+    Image8 *load_img(const Glib::ustring &fname, int width, int height);
+    void render();
+    
+    std::unique_ptr<Image8> img_;
+    Cairo::RefPtr<Cairo::ImageSurface> previewImage;
 };
 
-}
+} // namespace rtengine
 
-#endif

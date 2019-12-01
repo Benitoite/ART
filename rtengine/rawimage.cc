@@ -16,8 +16,7 @@
 #include "camconst.h"
 #include "utils.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
 extern const Settings* settings;
 
@@ -852,6 +851,40 @@ RawImage::get_thumbSwap() const
 {
     return (order == 0x4949) == (ntohs(0x1234) == 0x1234);
 }
+
+
+bool RawImage::checkThumbOk() const
+{
+    if (!is_supportedThumb()) {
+        return false;
+    }
+
+    const ssize_t length =
+        fdata (get_thumbOffset(), get_file())[1] != 0xD8 && is_ppmThumb()
+        ? get_thumbWidth() * get_thumbHeight() * (get_thumbBPS() / 8) * 3
+        : get_thumbLength();
+
+    return get_thumbOffset() + length <= get_file()->size;
+}
+
+
+bool RawImage::thumbNeedsRotation() const
+{
+    std::string fname = get_filename();
+    std::string suffix = fname.length() > 4 ? fname.substr(fname.length() - 3) : "";
+
+    for (unsigned int i = 0; i < suffix.length(); i++) {
+        suffix[i] = std::tolower(suffix[i]);
+    }
+
+    // Leaf .mos, Mamiya .mef and Phase One .iiq files have thumbnails already rotated.
+    if (suffix != "mos" && suffix != "mef" && suffix != "iiq")  {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 } //namespace rtengine
 

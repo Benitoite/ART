@@ -17,34 +17,19 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _INSPECTOR_
-#define _INSPECTOR_
+#pragma once
 
 #include <gtkmm.h>
 #include "guiutils.h"
 #include "../rtengine/coord.h"
 
 class InspectorBuffer;
+class FileCatalog;
 
-class Inspector: public Gtk::DrawingArea {
-private:
-    rtengine::Coord center;
-    std::vector<InspectorBuffer*> images;
-    InspectorBuffer* currImage;
-    double zoom;
-    bool active;
-
-    sigc::connection delayconn;
-    Glib::ustring next_image_path;
-
-    bool on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr) override;
-    void deleteBuffers();
-
-    bool doSwitchImage();
-
+class InspectorArea: public Gtk::DrawingArea {
 public:
-    Inspector();
-    ~Inspector() override;
+    InspectorArea();
+    ~InspectorArea() override;
 
     /** @brief Mouse movement to a new position
      * @param pos Location of the mouse, in percentage (i.e. [0;1] range) relative to the full size image ; -1,-1 == out of the image
@@ -60,7 +45,7 @@ public:
     /** @brief Set the new coarse rotation transformation
      * @param transform A semi-bitfield coarse transformation using #defines from iimage.h
      */
-    void setTransformation (int transform);
+    // void setTransformation (int transform);
 
     /** @brief Use this method to flush all image buffer whenever the Inspector panel is hidden
      */
@@ -76,7 +61,11 @@ public:
     bool isActive() const
     {
         return active;
-    };
+    }
+
+    void setInfoText(const Glib::ustring &txt);
+    void infoEnabled(bool yes);
+    void setZoomFit(bool yes);
 
     Gtk::SizeRequestMode get_request_mode_vfunc () const override;
     void get_preferred_height_vfunc (int& minimum_height, int& natural_height) const override;
@@ -84,6 +73,66 @@ public:
     void get_preferred_height_for_width_vfunc (int width, int &minimum_height, int &natural_height) const override;
     void get_preferred_width_for_height_vfunc (int height, int &minimum_width, int &natural_width) const override;
 
+private:
+    bool on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr) override;
+    void deleteBuffers();
+    bool doSwitchImage();
+
+    rtengine::Coord center;
+    std::vector<InspectorBuffer*> images;
+    InspectorBuffer* currImage;
+    //double zoom;
+    bool active;
+
+    sigc::connection delayconn;
+    Glib::ustring next_image_path;
+
+    Glib::ustring info_text_;
+    BackBuffer info_bb_;
 };
 
-#endif
+
+class Inspector: public Gtk::VBox {
+public:
+    Inspector(FileCatalog *filecatalog);
+
+    void mouseMove(rtengine::Coord2D pos, int transform)
+    { ins_.mouseMove(pos, transform); }
+    
+    void switchImage(const Glib::ustring &fullPath);    
+    // void setTransformation(int transform);
+    
+    void flushBuffers() { ins_.flushBuffers(); }
+    
+    void setActive(bool state) { ins_.setActive(state); }
+    bool isActive() const { return ins_.isActive(); };
+    
+private:
+    Gtk::HBox *get_toolbar();
+    Glib::ustring get_info_text();
+    void info_toggled();
+    void mode_toggled(Gtk::ToggleButton *b);
+    void zoom_toggled(Gtk::ToggleButton *b);
+    bool keyPressed(GdkEventKey *evt);
+
+    FileCatalog *filecatalog_;
+
+    Glib::ustring cur_image_;
+    // int cur_transform_;
+    InspectorArea ins_;
+
+    Gtk::ToggleButton *info_;
+    Gtk::ToggleButton *jpg_;
+    Gtk::ToggleButton *rawlinear_;
+    Gtk::ToggleButton *rawfilm_;
+    Gtk::ToggleButton *rawshadow_;
+    Gtk::ToggleButton *zoomfit_;
+    Gtk::ToggleButton *zoom11_;
+
+    sigc::connection jpgconn_;
+    sigc::connection rawlinearconn_;
+    sigc::connection rawfilmconn_;
+    sigc::connection rawshadowconn_;
+    sigc::connection zoomfitconn_;
+    sigc::connection zoom11conn_;
+};

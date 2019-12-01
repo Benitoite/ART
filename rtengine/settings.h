@@ -87,11 +87,15 @@ public:
 
     enum class ThumbnailInspectorMode {
         JPEG,
-        RAW,
-        RAW_IF_NOT_JPEG_FULLSIZE
+        RAW
     };
     ThumbnailInspectorMode thumbnail_inspector_mode;
-    bool thumbnail_inspector_raw_apply_film_curve;
+    enum class ThumbnailInspectorRawCurve {
+        LINEAR,
+        FILM,
+        SHADOW_BOOST
+    };
+    ThumbnailInspectorRawCurve thumbnail_inspector_raw_curve;
 
     enum class XmpSidecarStyle {
         STD, // FILENAME.xmp for FILENAME.ext

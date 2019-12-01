@@ -23,153 +23,278 @@
 #include "iimage.h"
 #include "rtthumbnail.h"
 #include "rawimagesource.h"
+#include "stdimagesource.h"
+
+
+namespace rtengine {
+extern const Settings *settings;
+} // namespace rtengine
+
 
 using namespace rtengine;
 using namespace procparams;
 
-PreviewImage::PreviewImage (const Glib::ustring &fname, const Glib::ustring &ext, const PreviewImageMode mode)
+PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width, int height)
 {
-    rtengine::Thumbnail* tpp = nullptr;
+    auto lext = ext.lowercase();
 
-    if (mode == PIM_EmbeddedPreviewOnly || mode == PIM_EmbeddedOrRaw) {
-
-        const unsigned char *data = nullptr;
-
-        int width = -1, height = -1;
-
-        if (ext.lowercase() == "jpg" || ext.lowercase() == "jpeg") {
-            // int deg = infoFromImage (fname);
-            tpp = rtengine::Thumbnail::loadFromImage (fname, width, height, 1, 1., true);
-
-            if (tpp) {
-                data = tpp->getImage8Data();
-            }
-        } else if (ext.lowercase() == "png") {
-            tpp = rtengine::Thumbnail::loadFromImage (fname, width, height, 1, 1., true);
-
-            if (tpp) {
-                data = tpp->getImage8Data();
-            }
-        } else if (ext.lowercase() == "tif" || ext.lowercase() == "tiff") {
-            // int deg = infoFromImage (fname);
-            tpp = rtengine::Thumbnail::loadFromImage (fname, width, height, 1, 1., true);
-
-            if (tpp) {
-                data = tpp->getImage8Data();
-            }
-        } else {
-            eSensorType sensorType = rtengine::ST_NONE;
-            tpp = rtengine::Thumbnail::loadQuickFromRaw (fname, sensorType, width, height, 1, true, true);
-
-            if (tpp) {
-                data = tpp->getImage8Data();
-            }
-        }
-
-        if (tpp) {
-            if (data) {
-                int w, h;
-                double scale = 1.;
-
-                tpp->getDimensions(w, h, scale);
-
-                previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, w, h);
-                previewImage->flush();
-
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
-                for (unsigned int i = 0; i < (unsigned int)(h); ++i) {
-                    const unsigned char *src = data + i * w * 3;
-                    unsigned char *dst = previewImage->get_data() + i * w * 4;
-
-                    for (unsigned int j = 0; j < (unsigned int)(w); ++j) {
-                        unsigned char r = *(src++);
-                        unsigned char g = *(src++);
-                        unsigned char b = *(src++);
-
-                        poke255_uc(dst, r, g, b);
-                    }
-                }
-                previewImage->mark_dirty();
-            }
-        }
+    if (lext == "jpg" || lext == "jpeg" || lext == "png" || lext == "tif" || lext == "tiff") {
+        img_.reset(load_img(fname, width, height));
+    } else if (settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
+        img_.reset(load_raw(fname, width, height));
+    } else {
+        img_.reset(load_raw_preview(fname, width, height));
     }
 
-    if ((mode == PIM_EmbeddedOrRaw && !tpp) || mode == PIM_ForceRaw) {
-        RawImageSource rawImage;
-        int error = rawImage.load(fname);
-
-        if (!error) {
-            const unsigned char *data = nullptr;
-            int fw, fh;
-
-            procparams::ProcParams params;
-            ColorTemp wb = rawImage.getWB ();
-            rawImage.getFullSize (fw, fh, TR_NONE);
-            PreviewProps pp (0, 0, fw, fh, 1);
-            params.icm.inputProfile = Glib::ustring("(embedded)");
-            params.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
-            params.raw.deadPixelFilter = false;
-            params.raw.ca_autocorrect = false;
-            params.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
-            rawImage.preprocess(params.raw, params.lensProf, params.coarse);
-            double contrastThresholdDummy = 0.0;
-            rawImage.demosaic(params.raw, false, contrastThresholdDummy);
-            Imagefloat image(fw, fh);
-            rawImage.getImage (wb, TR_NONE, &image, pp, params.exposure, params.raw);
-            rtengine::Image8 output(fw, fh);
-            rawImage.convertColorSpace(&image, params.icm, wb);
-#ifdef _OPENMP
-            #pragma omp parallel for schedule(dynamic, 10)
-#endif
-            for (int i = 0; i < fh; ++i)
-                for (int j = 0; j < fw; ++j) {
-                    image.r(i, j) = Color::gamma2curve[image.r(i, j)];
-                    image.g(i, j) = Color::gamma2curve[image.g(i, j)];
-                    image.b(i, j) = Color::gamma2curve[image.b(i, j)];
-                }
-
-
-            image.resizeImgTo<Image8>(fw, fh, TI_Nearest, &output);
-            data = output.getData();
-
-
-            if (data) {
-                int w, h;
-                w = output.getWidth();
-                h = output.getHeight();
-                previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, w, h);
-                previewImage->flush();
-
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
-                for (unsigned int i = 0; i < (unsigned int)(h); i++) {
-                    const unsigned char *src = data + i * w * 3;
-                    unsigned char *dst = previewImage->get_data() + i * w * 4;
-
-                    for (unsigned int j = 0; j < (unsigned int)(w); j++) {
-                        unsigned char r = *(src++);
-                        unsigned char g = *(src++);
-                        unsigned char b = *(src++);
-
-                        poke255_uc(dst, r, g, b);
-                    }
-                }
-
-                previewImage->mark_dirty();
-            }
-        }
-    }
-
-    if (tpp) {
-        delete tpp;
-    }
-
+    if (img_) {
+        previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, img_->getWidth(), img_->getHeight());
+        previewImage->flush();
+        render();
+    }    
 }
+
+
+void PreviewImage::render()
+{
+    if (img_) {
+        const unsigned char *data = img_->data;
+        int w = img_->getWidth();
+        int h = img_->getHeight();
+
+#ifdef _OPENMP
+#       pragma omp parallel for
+#endif
+        for (unsigned int i = 0; i < (unsigned int)(h); ++i) {
+            const unsigned char *src = data + i * w * 3;
+            unsigned char *dst = previewImage->get_data() + i * w * 4;
+
+            for (unsigned int j = 0; j < (unsigned int)(w); ++j) {
+                unsigned char r = *(src++);
+                unsigned char g = *(src++);
+                unsigned char b = *(src++);
+
+                poke255_uc(dst, r, g, b);
+            }
+        }
+        previewImage->mark_dirty();
+    }
+}
+
 
 Cairo::RefPtr<Cairo::ImageSurface> PreviewImage::getImage()
 {
     return previewImage;
+}
+
+
+Image8 *PreviewImage::load_img(const Glib::ustring &fname, int w, int h)
+{
+    StdImageSource imgSrc;
+    if (imgSrc.load (fname)) {
+        return nullptr;
+    }
+
+    ImageIO *img = imgSrc.getImageIO();
+
+    if (w < 0) {
+        w = img->getWidth();
+        h = img->getHeight();
+    } else {
+        std::cout << "BOUNDING BOX: " << w << "x" << h << std::endl;
+        // (w, h) is a bounding box
+        double sw = std::max(double(img->getWidth()) / w, 1.0);
+        double sh = std::max(double(img->getHeight()) / h, 1.0);
+        if (sw > sh) {
+            h = img->getHeight() / sw;
+            w = img->getWidth() / sw;
+        } else {
+            w = img->getWidth() / sh;
+            h = img->getHeight() / sh;
+        }
+    }
+
+    Image8 *ret = new Image8(w, h);
+
+    if (img->getType() == sImage8) {
+        static_cast<Image8 *>(img)->resizeImgTo(w, h, TI_Bilinear, ret);
+    } else if (img->getType() == sImage16) {
+        static_cast<Image16 *>(img)->resizeImgTo(w, h, TI_Bilinear, ret);
+    } else if (img->getType() == sImagefloat) {
+        static_cast<Imagefloat *>(img)->resizeImgTo(w, h, TI_Bilinear, ret);
+    } else {
+        delete ret;
+        ret = nullptr;
+    }
+    
+    return ret;
+}
+
+
+Image8 *PreviewImage::load_raw_preview(const Glib::ustring &fname, int w, int h)
+{
+    RawImage ri(fname);
+    unsigned int imageNum = 0;
+    int r = ri.loadRaw(false, imageNum, false);
+
+    if (r) {
+        return nullptr;
+    }
+
+    int err = 1;
+
+    // See if it is something we support
+    if (!ri.checkThumbOk()) {
+        return nullptr;
+    }
+
+    Image8 *img = new Image8();
+    // No sample format detection occurred earlier, so we set them here,
+    // as they are mandatory for the setScanline method
+    img->setSampleFormat(IIOSF_UNSIGNED_CHAR);
+    img->setSampleArrangement(IIOSA_CHUNKY);
+
+    const char *data ((const char*)fdata (ri.get_thumbOffset(), ri.get_file()));
+
+    if ((unsigned char)data[1] == 0xd8) {
+        err = img->loadJPEGFromMemory(data, ri.get_thumbLength());
+    } else if (ri.is_ppmThumb()) {
+        err = img->loadPPMFromMemory(data, ri.get_thumbWidth(), ri.get_thumbHeight(), ri.get_thumbSwap(), ri.get_thumbBPS());
+    }
+
+    // did we succeed?
+    if (err) {
+        delete img;
+        return nullptr;
+    }
+
+    if (w > 0 && h > 0) {
+        double fw = img->getWidth();
+        double fh = img->getHeight();
+        if ((ri.get_rotateDegree() == 90 || ri.get_rotateDegree() == 270) && ri.thumbNeedsRotation()) {
+            std::swap(w, h);
+        }
+        double sw = std::max(fw / w, 1.0);
+        double sh = std::max(fh / h, 1.0);
+        if (sw > sh) {
+            h = fh / sw;
+            w = fw / sw;
+        } else {
+            w = fw / sh;
+            h = fh / sh;
+        }
+        if ((w != fw || h != fh) && w <= fw && h <= fh) {
+            Image8 *img2 = new Image8(w, h);
+            img->resizeImgTo(w, h, TI_Bilinear, img2);
+            delete img;
+            img = img2;
+        }
+    }
+
+    if (ri.get_rotateDegree() > 0 && ri.thumbNeedsRotation()) {
+        img->rotate(ri.get_rotateDegree());
+    }
+
+    return img;
+}
+
+
+Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
+{
+    RawImageSource src;
+    int err = src.load(fname, true);
+    if (err) {
+        return nullptr;
+    }
+
+    int fw, fh;
+    src.getFullSize(fw, fh);
+    double scale = 1.0;
+
+    if (w < 0) {
+        w = fw;
+        h = fh;
+        scale = 1.0;
+    } else {
+        // (w, h) is a bounding box
+        double sw = std::max(double(fw) / w, 1.0);
+        double sh = std::max(double(fh) / h, 1.0);
+        if (sw > sh) {
+            scale = sw;
+        } else {
+            scale = sh;
+        }
+        w = fw / scale;
+        h = fh / scale;
+    }
+    
+    ProcParams neutral;
+    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
+    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
+    neutral.icm.inputProfile = "(camera)";
+    neutral.icm.workingProfile = options.rtSettings.srgb;
+
+    src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false);
+    double thresholdDummy = 0.f;
+    src.demosaic(neutral.raw, false, thresholdDummy);
+
+    PreviewProps pp(0, 0, fw, fh, int(scale));//1);
+    int iw = fw / int(scale);
+    int ih = fh / int(scale);
+
+    Imagefloat tmp(iw, ih);
+    src.getImage(src.getWB(), TR_NONE, &tmp, pp, neutral.exposure, neutral.raw);
+    src.convertColorSpace(&tmp, neutral.icm, src.getWB());
+
+    LUTi gamma(65536);
+    const bool apply_curve = settings->thumbnail_inspector_raw_curve != Settings::ThumbnailInspectorRawCurve::LINEAR;
+    if (apply_curve) {
+        static const std::vector<double> shadowcurve = {
+            DCT_CatumullRom,
+            0, 0,
+            0.1, 0.4,
+            0.70, 0.75,
+            1, 1
+        };
+        DiagonalCurve curve(settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::FILM ? curves::filmcurve_def : shadowcurve);
+        for (int i = 0; i < 65536; ++i) {
+            float x = Color::gamma_srgbclipped(i) / 65535.f;
+            float y = curve.getVal(x) * 255.f;
+            gamma[i] = y;
+        }
+    } else {
+        for (int i = 0; i < 65536; ++i) {
+            gamma[i] = int(Color::gamma_srgbclipped(i)) * 255 / 65535;
+        }
+    }
+
+    Image8 *img = new Image8(iw, ih);
+    const int maxval = MAXVALF;
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for (int y = 0; y < ih; ++y) {
+        for (int x = 0; x < iw; ++x) {
+            int r = tmp.r(y, x);
+            int g = tmp.g(y, x);
+            int b = tmp.b(y, x);
+            // avoid magenta highlights
+            if (r >= maxval && b >= maxval) {
+                int v = CLIP((r + g + b) / 3) * 255 / 65535;
+                img->r(y, x) = img->g(y, x) = img->b(y, x) = v;
+            } else {
+                img->r(y, x) = gamma[r];
+                img->g(y, x) = gamma[g];
+                img->b(y, x) = gamma[b];
+            }
+        }
+    }
+
+    if (w != iw || h != ih) {
+        Image8 *rimg = new Image8(w, h);
+        img->resizeImgTo(w, h, TI_Bilinear, rimg);
+        delete img;
+        img = rimg;
+    }
+
+    return img;
 }

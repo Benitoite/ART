@@ -589,7 +589,9 @@ void Options::setDefaults()
     rtSettings.lensfunDbDirectory = ""; // set also in main.cc and main-cli.cc
 
     rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
-    rtSettings.thumbnail_inspector_raw_apply_film_curve = false;
+    rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::LINEAR;
+    thumbnail_inspector_zoom_fit = false;
+    thumbnail_inspector_show_info = false;
 
     thumbnail_rating_mode = Options::ThumbnailRatingMode::XMP;
     rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
@@ -1037,16 +1039,26 @@ void Options::readFromFile(Glib::ustring fname)
                     serializeTiffRead = keyFile.get_boolean("Performance", "SerializeTiffRead");
                 }
 
-                if (keyFile.has_key("Performance", "ThumbnailInspectorMode")) {
-                    rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(keyFile.get_integer("Performance", "ThumbnailInspectorMode"));
-                }
-
-                if (keyFile.has_key("Performance", "ThumbnailInspectorRawFilmCurve")) {
-                    rtSettings.thumbnail_inspector_raw_apply_film_curve = keyFile.get_boolean("Performance", "ThumbnailInspectorRawFilmCurve");
-                }
-                
                 if (keyFile.has_key("Performance", "DenoiseZoomedOut")) {
                     denoiseZoomedOut = keyFile.get_boolean("Performance", "DenoiseZoomedOut");
+                }
+            }
+
+            if (keyFile.has_group("Inspector")) {
+                if (keyFile.has_key("Inspector", "Mode")) {
+                    rtSettings.thumbnail_inspector_mode = static_cast<rtengine::Settings::ThumbnailInspectorMode>(keyFile.get_integer("Inspector", "Mode"));
+                }
+
+                if (keyFile.has_key("Inspector", "RawCurve")) {
+                    rtSettings.thumbnail_inspector_raw_curve = static_cast<rtengine::Settings::ThumbnailInspectorRawCurve>(keyFile.get_integer("Inspector", "RawCurve"));
+                }
+
+                if (keyFile.has_key("Inspector", "ZoomFit")) {
+                    thumbnail_inspector_zoom_fit = keyFile.get_boolean("Inspector", "ZoomFit");
+                }
+                
+                if (keyFile.has_key("Inspector", "ShowInfo")) {
+                    thumbnail_inspector_show_info = keyFile.get_boolean("Inspector", "ShowInfo");
                 }
             }
 
@@ -1895,9 +1907,11 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_integer("Performance", "InspectorDelay", inspectorDelay);
         keyFile.set_integer("Performance", "PreviewDemosaicFromSidecar", prevdemo);
         keyFile.set_boolean("Performance", "SerializeTiffRead", serializeTiffRead);
-        keyFile.set_integer("Performance", "ThumbnailInspectorMode", int(rtSettings.thumbnail_inspector_mode));
-        keyFile.set_boolean("Performance", "ThumbnailInspectorRawFilmCurve", rtSettings.thumbnail_inspector_raw_apply_film_curve);
         keyFile.set_boolean("Performance", "DenoiseZoomedOut", denoiseZoomedOut);
+        keyFile.set_integer("Inspector", "Mode", int(rtSettings.thumbnail_inspector_mode));
+        keyFile.set_integer("Inspector", "RawCurve", int(rtSettings.thumbnail_inspector_raw_curve));
+        keyFile.set_boolean("Inspector", "ZoomFit", thumbnail_inspector_zoom_fit);
+        keyFile.set_boolean("Inspector", "ShowInfo", thumbnail_inspector_show_info);
 
         keyFile.set_string("Output", "Format", saveFormat.format);
         keyFile.set_integer("Output", "JpegQuality", saveFormat.jpegQuality);

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __RAWIMAGE_H
-#define __RAWIMAGE_H
+#pragma once
 
 #include <ctime>
 #include <cmath>
@@ -26,8 +26,7 @@
 #include "dcraw.h"
 #include "imageformat.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
 class RawImage: public DCraw
 {
@@ -304,8 +303,11 @@ public:
     {
         return dng_version;
     }
+
+public:
+    bool checkThumbOk() const;
+    bool thumbNeedsRotation() const;
 };
 
-}
+} // namespace rtengine
 
-#endif // __RAWIMAGE_H
