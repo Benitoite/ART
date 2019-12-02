@@ -393,6 +393,7 @@ public:
 
     bool thumbnail_inspector_zoom_fit;
     bool thumbnail_inspector_show_info;
+    bool thumbnail_inspector_enable_cms;
 
     Options();
 

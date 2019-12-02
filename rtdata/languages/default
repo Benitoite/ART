@@ -891,6 +891,7 @@ ICCPROFCREATOR_PROF_V4;ICC v4
 ICCPROFCREATOR_SAVEDIALOG_TITLE;Save ICC profile as...
 ICCPROFCREATOR_SLOPE;Slope
 ICCPROFCREATOR_TRC_PRESET;Tone response curve:
+INSPECTOR_ENABLE_CMS;Enable color management.
 INSPECTOR_INFO;Quick info.
 INSPECTOR_PREVIEW;Embedded preview image.
 INSPECTOR_RAW_LINEAR;Fast raw rendering with a linear tone curve.

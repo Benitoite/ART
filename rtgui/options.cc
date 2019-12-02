@@ -592,6 +592,7 @@ void Options::setDefaults()
     rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::LINEAR;
     thumbnail_inspector_zoom_fit = false;
     thumbnail_inspector_show_info = false;
+    thumbnail_inspector_enable_cms = false;
 
     thumbnail_rating_mode = Options::ThumbnailRatingMode::XMP;
     rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
@@ -1059,6 +1060,10 @@ void Options::readFromFile(Glib::ustring fname)
                 
                 if (keyFile.has_key("Inspector", "ShowInfo")) {
                     thumbnail_inspector_show_info = keyFile.get_boolean("Inspector", "ShowInfo");
+                }
+
+                if (keyFile.has_key("Inspector", "EnableCMS")) {
+                    thumbnail_inspector_enable_cms = keyFile.get_boolean("Inspector", "EnableCMS");
                 }
             }
 
@@ -1912,6 +1917,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_integer("Inspector", "RawCurve", int(rtSettings.thumbnail_inspector_raw_curve));
         keyFile.set_boolean("Inspector", "ZoomFit", thumbnail_inspector_zoom_fit);
         keyFile.set_boolean("Inspector", "ShowInfo", thumbnail_inspector_show_info);
+        keyFile.set_boolean("Inspector", "EnableCMS", thumbnail_inspector_enable_cms);
 
         keyFile.set_string("Output", "Format", saveFormat.format);
         keyFile.set_integer("Output", "JpegQuality", saveFormat.jpegQuality);

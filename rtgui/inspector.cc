@@ -63,7 +63,7 @@ InspectorBuffer::InspectorBuffer(const Glib::ustring &imagePath, int width, int 
             return;
         }
 
-        rtengine::PreviewImage pi(imagePath, ext, width, height);//, rtengine::PreviewImage::PIM_EmbeddedOrRaw);
+        rtengine::PreviewImage pi(imagePath, ext, width, height, options.thumbnail_inspector_enable_cms);
         Cairo::RefPtr<Cairo::ImageSurface> imageSurface = pi.getImage();
 
         if (imageSurface) {
@@ -87,17 +87,17 @@ InspectorArea::InspectorArea():
 {
     Glib::RefPtr<Gtk::StyleContext> style = get_style_context();
     set_name("Inspector");
-    //set_can_focus(false);
 }
+
 
 InspectorArea::~InspectorArea()
 {
     deleteBuffers();
 }
 
+
 bool InspectorArea::on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr)
 {
-
     Glib::RefPtr<Gdk::Window> win = get_window();
 
     if (!win) {
@@ -196,6 +196,7 @@ bool InspectorArea::on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr)
     return true;
 }
 
+
 void InspectorArea::mouseMove (rtengine::Coord2D pos, int transform)
 {
     if (!active) {
@@ -211,7 +212,8 @@ void InspectorArea::mouseMove (rtengine::Coord2D pos, int transform)
     queue_draw();
 }
 
-void InspectorArea::switchImage (const Glib::ustring &fullPath)
+
+void InspectorArea::switchImage(const Glib::ustring &fullPath)
 {
     if (!active) {
         return;
@@ -419,7 +421,6 @@ void InspectorArea::infoEnabled(bool yes)
 
 Inspector::Inspector(FileCatalog *filecatalog):
     filecatalog_(filecatalog)
-//    cur_transform_(0)
 {
     pack_start(ins_);
     pack_start(*get_toolbar(), Gtk::PACK_SHRINK, 2);
@@ -448,13 +449,6 @@ void Inspector::switchImage(const Glib::ustring &fullPath)
 }
 
 
-// void Inspector::setTransformation(int transform)
-// {
-//     cur_transform_ = transform;
-//     ins_.setTransformation(transform);
-// }
-
-
 Gtk::HBox *Inspector::get_toolbar()
 {
     Gtk::HBox *tb = Gtk::manage(new Gtk::HBox());
@@ -466,7 +460,6 @@ Gtk::HBox *Inspector::get_toolbar()
             Gtk::ToggleButton *ret = Gtk::manage(new Gtk::ToggleButton());
             ret->add(*Gtk::manage(new RTImage(icon)));
             ret->set_relief(Gtk::RELIEF_NONE);
-            //ret->set_can_focus(false);
             if (tip) {
                 ret->set_tooltip_markup(M(tip));
             }
@@ -488,6 +481,12 @@ Gtk::HBox *Inspector::get_toolbar()
     zoomfit_ = add_tool("magnifier-fit.png", "INSPECTOR_ZOOM_FIT");
     zoom11_ = add_tool("magnifier-1to1.png", "INSPECTOR_ZOOM_11");
 
+    tb->pack_start(*Gtk::manage(new Gtk::VSeparator()), Gtk::PACK_SHRINK, 4);
+
+    cms_ = add_tool("gamut-softproof.png", "INSPECTOR_ENABLE_CMS");
+
+    //------------------------------------------------------------------------
+    
     info_->set_active(options.thumbnail_inspector_show_info);
     info_->signal_toggled().connect(sigc::mem_fun(*this, &Inspector::info_toggled));
     bool use_jpg = options.rtSettings.thumbnail_inspector_mode == rtengine::Settings::ThumbnailInspectorMode::JPEG;
@@ -499,6 +498,8 @@ Gtk::HBox *Inspector::get_toolbar()
     zoomfit_->set_active(options.thumbnail_inspector_zoom_fit);
     zoom11_->set_active(!options.thumbnail_inspector_zoom_fit);
 
+    cms_->set_active(options.thumbnail_inspector_enable_cms);
+
     jpgconn_ = jpg_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), jpg_));
     rawlinearconn_ = rawlinear_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), rawlinear_));
     rawfilmconn_ = rawfilm_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), rawfilm_));
@@ -506,6 +507,8 @@ Gtk::HBox *Inspector::get_toolbar()
 
     zoomfitconn_ = zoomfit_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::zoom_toggled), zoomfit_));
     zoom11conn_ = zoom11_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::zoom_toggled), zoom11_));
+
+    cms_->signal_toggled().connect(sigc::mem_fun(*this, &Inspector::cms_toggled));
 
     return tb;
 }
@@ -611,7 +614,6 @@ void Inspector::mode_toggled(Gtk::ToggleButton *b)
 
     ins_.flushBuffers();
     ins_.switchImage(cur_image_);
-    //ins_.queue_draw();
 }
 
 
@@ -628,5 +630,12 @@ void Inspector::zoom_toggled(Gtk::ToggleButton *b)
     options.thumbnail_inspector_zoom_fit = zoomfit_->get_active();
     ins_.flushBuffers();
     ins_.switchImage(cur_image_);
-    //ins_.queue_draw();
+}
+
+
+void Inspector::cms_toggled()
+{
+    options.thumbnail_inspector_enable_cms = cms_->get_active();
+    ins_.flushBuffers();
+    ins_.switchImage(cur_image_);
 }

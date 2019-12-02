@@ -24,6 +24,7 @@
 #include "rtthumbnail.h"
 #include "rawimagesource.h"
 #include "stdimagesource.h"
+#include "iccstore.h"
 
 
 namespace rtengine {
@@ -34,7 +35,7 @@ extern const Settings *settings;
 using namespace rtengine;
 using namespace procparams;
 
-PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width, int height)
+PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width, int height, bool enable_cms)
 {
     auto lext = ext.lowercase();
 
@@ -49,34 +50,59 @@ PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext,
     if (img_) {
         previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, img_->getWidth(), img_->getHeight());
         previewImage->flush();
-        render();
+        render(enable_cms);
     }    
 }
 
 
-void PreviewImage::render()
+void PreviewImage::render(bool enable_cms)
 {
     if (img_) {
+        cmsHTRANSFORM xform = nullptr;
+        if (enable_cms) {
+            cmsHPROFILE mprof = ICCStore::getInstance()->getProfile(ICCStore::getInstance()->getDefaultMonitorProfileName());
+            cmsHPROFILE iprof = ICCStore::getInstance()->getsRGBProfile();
+            if (mprof) {
+                xform = cmsCreateTransform(iprof, TYPE_RGB_8, mprof, TYPE_RGB_8, settings->monitorIntent, cmsFLAGS_NOCACHE | (settings->monitorBPC ? cmsFLAGS_BLACKPOINTCOMPENSATION : 0));
+            }
+        }
         const unsigned char *data = img_->data;
         int w = img_->getWidth();
         int h = img_->getHeight();
 
 #ifdef _OPENMP
-#       pragma omp parallel for
+#       pragma omp parallel
 #endif
-        for (unsigned int i = 0; i < (unsigned int)(h); ++i) {
-            const unsigned char *src = data + i * w * 3;
-            unsigned char *dst = previewImage->get_data() + i * w * 4;
+        {
+            std::vector<unsigned char> line(w * 3);
+            unsigned char *buf = &line[0];
+            
+#ifdef _OPENMP
+#           pragma omp for
+#endif
+            for (unsigned int i = 0; i < (unsigned int)(h); ++i) {
+                const unsigned char *src = data + i * w * 3;
+                unsigned char *dst = previewImage->get_data() + i * w * 4;
 
-            for (unsigned int j = 0; j < (unsigned int)(w); ++j) {
-                unsigned char r = *(src++);
-                unsigned char g = *(src++);
-                unsigned char b = *(src++);
+                if (xform) {
+                    cmsDoTransform(xform, src, buf, w);
+                    src = buf;
+                }
+                
+                for (unsigned int j = 0; j < (unsigned int)(w); ++j) {
+                    unsigned char r = *(src++);
+                    unsigned char g = *(src++);
+                    unsigned char b = *(src++);
 
-                poke255_uc(dst, r, g, b);
+                    poke255_uc(dst, r, g, b);
+                }
             }
         }
         previewImage->mark_dirty();
+
+        if (xform) {
+            cmsDeleteTransform(xform);
+        }
     }
 }
 

@@ -36,7 +36,7 @@ namespace rtengine {
  */
 class PreviewImage {
 public:
-    PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width=-1, int height=-1);
+    PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width=-1, int height=-1, bool enable_cms=false);
 
     Cairo::RefPtr<Cairo::ImageSurface> getImage();
 
@@ -44,7 +44,7 @@ private:
     Image8 *load_raw(const Glib::ustring &fname, int width, int height);
     Image8 *load_raw_preview(const Glib::ustring &fname, int width, int height);
     Image8 *load_img(const Glib::ustring &fname, int width, int height);
-    void render();
+    void render(bool enable_cms);
     
     std::unique_ptr<Image8> img_;
     Cairo::RefPtr<Cairo::ImageSurface> previewImage;

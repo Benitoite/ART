@@ -113,12 +113,12 @@ private:
     void info_toggled();
     void mode_toggled(Gtk::ToggleButton *b);
     void zoom_toggled(Gtk::ToggleButton *b);
+    void cms_toggled();
     bool keyPressed(GdkEventKey *evt);
 
     FileCatalog *filecatalog_;
 
     Glib::ustring cur_image_;
-    // int cur_transform_;
     InspectorArea ins_;
 
     Gtk::ToggleButton *info_;
@@ -128,6 +128,7 @@ private:
     Gtk::ToggleButton *rawshadow_;
     Gtk::ToggleButton *zoomfit_;
     Gtk::ToggleButton *zoom11_;
+    Gtk::ToggleButton *cms_;
 
     sigc::connection jpgconn_;
     sigc::connection rawlinearconn_;
