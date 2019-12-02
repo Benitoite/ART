@@ -32,7 +32,6 @@ extern const Settings *settings;
 LFModifier::~LFModifier()
 {
     if (data_) {
-        MyMutex::MyLock lock(lfModifierMutex);
         data_->Destroy();
     }
 }
@@ -75,11 +74,6 @@ bool LFModifier::isCACorrectionAvailable() const
     return (flags_ & LF_MODIFY_TCA);
 }
 
-#ifdef __GNUC__ // silence warning, can be removed when function is implemented
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 void LFModifier::correctCA(double &x, double &y, int cx, int cy, int channel) const
 {
     assert(channel >= 0 && channel <= 2);
@@ -105,25 +99,39 @@ void LFModifier::correctCA(double &x, double &y, int cx, int cy, int channel) co
     y -= cy;
 }
 
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
+#ifdef _OPENMP
+void LFModifier::processVignette(int width, int height, float** rawData) const
+{
+    #pragma omp parallel for schedule(dynamic,16)
+
+    for (int y = 0; y < height; ++y) {
+        data_->ApplyColorModification(rawData[y], 0, y, width, 1, LF_CR_1(INTENSITY), 0);
+    }
+}
+#else
+void LFModifier::processVignette(int width, int height, float** rawData) const
+{
+    data_->ApplyColorModification(rawData[0], 0, 0, width, height, LF_CR_1(INTENSITY), width * sizeof(float));
+}
+
 #endif
 
-
-void LFModifier::processVignetteLine(int width, int y, float *line) const
+#ifdef _OPENMP
+void LFModifier::processVignette3Channels(int width, int height, float** rawData) const
 {
-    MyMutex::MyLock lock(lfModifierMutex);
-    data_->ApplyColorModification(line, 0, y, width, 1, LF_CR_1(INTENSITY), 0);
+    #pragma omp parallel for schedule(dynamic,16)
+
+    for (int y = 0; y < height; ++y) {
+        data_->ApplyColorModification(rawData[y], 0, y, width, 1, LF_CR_3(RED, GREEN, BLUE), 0);
+    }
+}
+#else
+void LFModifier::processVignette3Channels(int width, int height, float** rawData) const
+{
+    data_->ApplyColorModification(rawData[0], 0, 0, width, height, LF_CR_3(RED, GREEN, BLUE), width * 3 * sizeof(float));
 }
 
-
-void LFModifier::processVignetteLine3Channels(int width, int y, float *line) const
-{
-    MyMutex::MyLock lock(lfModifierMutex);
-    data_->ApplyColorModification(line, 0, y, width, 1, LF_CR_3(RED, GREEN, BLUE), 0);
-}
-
-
+#endif
 Glib::ustring LFModifier::getDisplayString() const
 {
     if (!data_) {
@@ -497,14 +505,13 @@ std::unique_ptr<LFModifier> LFDatabase::getModifier(const LFCamera &camera, cons
     return ret;
 }
 
-std::set<std::string> LFDatabase::notFound;
-
-std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensProf, const FramesMetaData *idata, int width, int height, const CoarseTransformParams &coarse, int rawRotationDeg)
+std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensProf, const FramesMetaData *idata, int width, int height, const CoarseTransformParams &coarse, int rawRotationDeg) const
 {
+    const float focallen = idata->getFocalLen();
+
     Glib::ustring make, model, lens;
-    float focallen = idata->getFocalLen();
     if (lensProf.lfAutoMatch()) {
-        if (focallen <= 0) {
+        if (focallen <= 0.f) {
             return nullptr;
         }
         make = idata->getMake();
@@ -515,6 +522,7 @@ std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensP
         model = lensProf.lfCameraModel;
         lens = lensProf.lfLens;
     }
+
     if (make.empty() || model.empty() || lens.empty()) {
         return nullptr;
     }
@@ -524,15 +532,15 @@ std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensP
         // This combination was not found => do not search again
         return nullptr;
     }
-    const LFDatabase *db = getInstance();
-    LFCamera c = db->findCamera(make, model);
-    LFLens l = db->findLens(lensProf.lfAutoMatch() ? c : LFCamera(), lens);
-    if (focallen <= 0 && l.data_ && l.data_->MinFocal == l.data_->MaxFocal) {
-        focallen = l.data_->MinFocal;
-    }
-    if (focallen <= 0) {
-        return nullptr;
-    }
+
+    const LFCamera c = findCamera(make, model);
+    const LFLens l = findLens(
+        lensProf.lfAutoMatch()
+            ? c
+            : LFCamera(),
+        lens
+    );
+
     bool swap_xy = false;
     if (rawRotationDeg >= 0) {
         int rot = (coarse.rotate + rawRotationDeg) % 360;
@@ -542,18 +550,28 @@ std::unique_ptr<LFModifier> LFDatabase::findModifier(const LensProfParams &lensP
         }
     }
 
-    std::unique_ptr<LFModifier> ret = db->getModifier(c, l, idata->getFocalLen(), idata->getFNumber(), idata->getFocusDist(), width, height, swap_xy);
+    std::unique_ptr<LFModifier> ret = getModifier(
+        c,
+        l,
+        idata->getFocalLen(),
+        idata->getFNumber(),
+        idata->getFocusDist(),
+        width,
+        height,
+        swap_xy
+    );
 
     if (settings->verbose) {
         std::cout << "LENSFUN:\n"
                   << "  camera: " << c.getDisplayString() << "\n"
                   << "  lens: " << l.getDisplayString() << "\n"
                   << "  correction: "
-                  << (ret ? ret->getDisplayString() : "NONE") << std::endl;
+                  << (ret ? ret->getDisplayString() : "NONE")
+                  << std::endl;
     }
 
     if (!ret) {
-        notFound.emplace(key);
+        notFound.insert(key);
     }
 
     return ret;
