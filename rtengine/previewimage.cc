@@ -224,13 +224,139 @@ Image8 *PreviewImage::load_raw_preview(const Glib::ustring &fname, int w, int h)
 }
 
 
+namespace {
+
+class PreviewRawImageSource: public RawImageSource {
+public:
+    PreviewRawImageSource(int bw, int bh):
+        RawImageSource(),
+        bbox_W_(bw),
+        bbox_H_(bh)
+    {
+    }
+
+    void rescale()
+    {
+        if (bbox_W_ < 0 || bbox_H_ < 0) {
+            return;
+        }
+        if (fuji || d1x) {
+            return;
+        }
+        if (numFrames != 1) {
+            return;
+        }
+
+        // (w, h) is a bounding box
+        double sw = std::max(double(W) / bbox_W_, 1.0);
+        double sh = std::max(double(H) / bbox_H_, 1.0);
+        int skip = std::max(sw, sh);
+        
+        if (skip <= 1) {
+            return;
+        }
+
+        if (ri->getSensorType() == ST_BAYER) {
+            skip /= 2;
+            if (skip & 1) {
+                --skip;
+            }
+            if (skip <= 1) {
+                return;
+            }
+
+            if (settings->verbose) {
+                std::cout << "SKIP: " << skip << ", FROM: " << W << "x" << H
+                          << " to " << (W/skip) << "x" << (H/skip) << std::endl;
+            }
+            
+            array2D<float> tmp;
+            tmp(W, H, static_cast<float *>(rawData), 0);
+            W /= skip;
+            H /= skip;
+            rawData.free();
+            rawData(W, H);
+            
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int y = 0; y < H; ++y) {
+                int yy = y * skip + int(y & 1);
+                for (int x = 0; x < W; ++x) {
+                    int xx = x * skip + int(x & 1);
+                    rawData[y][x] = tmp[yy][xx];
+                }
+            }
+            flushRGB();
+            red(W, H);
+            green(W, H);
+            blue(W, H);
+        } else if (ri->getSensorType() == ST_FUJI_XTRANS) {
+            return; // TODO
+        } else {
+            int c = ri->get_colors();
+            if (c > 3) {
+                return;
+            }
+
+            if (settings->verbose) {
+                std::cout << "SKIP: " << skip << ", FROM: " << W << "x" << H
+                          << " to " << (W/skip) << "x" << (H/skip) << std::endl;
+            }
+            
+            array2D<float> tmp;
+            tmp(W * c, H, static_cast<float *>(rawData), 0);
+            W /= skip;
+            H /= skip;
+            rawData.free();
+            rawData(W * c, H);
+            
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int y = 0; y < H; ++y) {
+                int yy = y * skip;
+                for (int x = 0; x < W; ++x) {
+                    int xx = x * skip;
+                    for (int j = 0; j < c; ++j) {
+                        rawData[y][c * x + j] = tmp[yy][c * xx + j];
+                    }
+                }
+            }
+            flushRGB();
+            red(W, H);
+            green(W, H);
+            blue(W, H);
+        }
+    }
+
+private:
+    int bbox_W_;
+    int bbox_H_;
+};
+
+} // namespace
+
+
 Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
 {
-    RawImageSource src;
+    PreviewRawImageSource src(w, h);
     int err = src.load(fname, true);
     if (err) {
         return nullptr;
     }
+
+    ProcParams neutral;
+    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
+    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
+    neutral.icm.inputProfile = "(camera)";
+    neutral.icm.workingProfile = options.rtSettings.srgb;
+
+    src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false);
+    double thresholdDummy = 0.f;
+
+    src.rescale();
+    src.demosaic(neutral.raw, false, thresholdDummy);
 
     int fw, fh;
     src.getFullSize(fw, fh);
@@ -252,17 +378,7 @@ Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
         w = fw / scale;
         h = fh / scale;
     }
-    
-    ProcParams neutral;
-    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
-    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
-    neutral.icm.inputProfile = "(camera)";
-    neutral.icm.workingProfile = options.rtSettings.srgb;
-
-    src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false);
-    double thresholdDummy = 0.f;
-    src.demosaic(neutral.raw, false, thresholdDummy);
-
+        
     PreviewProps pp(0, 0, fw, fh, int(scale));//1);
     int iw = fw / int(scale);
     int ih = fh / int(scale);
