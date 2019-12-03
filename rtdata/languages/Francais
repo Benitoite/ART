@@ -891,6 +891,14 @@ ICCPROFCREATOR_PROF_V4;ICC v4
 ICCPROFCREATOR_SAVEDIALOG_TITLE;Enregistrer le profil ICC sous...
 ICCPROFCREATOR_SLOPE;Pente
 ICCPROFCREATOR_TRC_PRESET;Courbe de réponse tonale:
+INSPECTOR_ENABLE_CMS;Active la gestion de la couleur.
+INSPECTOR_INFO;Quick info.
+INSPECTOR_PREVIEW;Aperçu intégré.
+INSPECTOR_RAW_LINEAR;Traitement raw rapide avec une courbe tonale linéaire.
+INSPECTOR_RAW_FILM;Traitement raw rapide avec une courbe tonale film-like.
+INSPECTOR_RAW_SHADOW;Traitement raw rapide avec un courbe tonale amplifiant les ombres.
+INSPECTOR_ZOOM_FIT;Adapter à la fenêtre.
+INSPECTOR_ZOOM_11;Zoom à 100%.
 IPTCPANEL_CATEGORY;Catégorie
 IPTCPANEL_CATEGORYHINT;Identifie le sujet de l'image selon l'opinion du fournisseur.
 IPTCPANEL_CITY;Ville
