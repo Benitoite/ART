@@ -73,6 +73,8 @@ public:
     void get_preferred_height_for_width_vfunc (int width, int &minimum_height, int &natural_height) const override;
     void get_preferred_width_for_height_vfunc (int height, int &minimum_width, int &natural_width) const override;
 
+    sigc::signal<void> signal_ready() { return sig_ready_; }
+
 private:
     bool on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr) override;
     void deleteBuffers();
@@ -83,12 +85,15 @@ private:
     InspectorBuffer* currImage;
     //double zoom;
     bool active;
+    bool first_active_;
 
     sigc::connection delayconn;
     Glib::ustring next_image_path;
 
     Glib::ustring info_text_;
     BackBuffer info_bb_;
+
+    sigc::signal<void> sig_ready_;
 };
 
 
@@ -106,6 +111,8 @@ public:
     
     void setActive(bool state) { ins_.setActive(state); }
     bool isActive() const { return ins_.isActive(); };
+
+    sigc::signal<void> signal_ready() { return ins_.signal_ready(); }
     
 private:
     Gtk::HBox *get_toolbar();

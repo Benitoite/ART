@@ -91,6 +91,7 @@ FilePanel::FilePanel () :
 
     inspectorPanel = new Inspector(fileCatalog);
     fileCatalog->setInspector(inspectorPanel);
+    inspectorPanel->signal_ready().connect(sigc::mem_fun(*this, &FilePanel::on_inspector_ready));
 
     // Gtk::ScrolledWindow* sExportPanel = Gtk::manage ( new Gtk::ScrolledWindow() );
     // exportPanel = Gtk::manage ( new ExportPanel () );
@@ -214,6 +215,19 @@ void FilePanel::init ()
     }
 }
 
+
+void FilePanel::on_inspector_ready()
+{
+    for (const auto &e : fileCatalog->fileBrowser->getEntries()) {
+        if (e->selected) {
+            fileCatalog->fileBrowser->selectEntry(e, true);
+            inspectorPanel->switchImage(e->filename);
+            break;
+        }
+    }
+}
+
+
 void FilePanel::on_NB_switch_page(Gtk::Widget* page, guint page_num)
 {
     if (page_num == 1) {
@@ -224,23 +238,51 @@ void FilePanel::on_NB_switch_page(Gtk::Widget* page, guint page_num)
         pos += rightBox->get_width();
         set_position(pos);
         queue_draw();
+        // auto ins = fileCatalog->fileBrowser->getInspector();
+        // if (ins) {
+        //     ins->signal_ready().connect(sigc::bind(
+        //     for (const auto &e : fileCatalog->fileBrowser->getEntries()) {
+        //         if (e->selected) {
+        //             ins->signal_ready().connect(
+        //                 [&]() -> void
+        //                 {
+        //                     fileCatalog->fileBrowser->selectEntry(e, true);
+        //                     ins->switchImage(e->filename);
+        //                 });
+        //             break;
+        //         }
+        //     }
+        //     //     idle_register.add(
+        //     //         [&]() -> bool
+        //     //         {
+        //     //             idle_register.add([&]() -> bool
+        //     //                               {
+        //     //                                   fileCatalog->fileBrowser->selectEntry(e, true);
+        //     //                                   fileCatalog->fileBrowser->getInspector()->switchImage(e->filename);
+        //     //                                   return false;
+        //     //                               }, G_PRIORITY_LOW);
+        //     //             return false;
+        //     //         }, G_PRIORITY_LOW);
+        //     //     break;
+        //     // }
+        // }
     } else {
         // switching the inspector "off"
         fileCatalog->disableInspector();
         set_position(pane_pos_);
         queue_draw();
     }
-    idle_register.add(
-        [this]() -> bool
-        {
-            for (const auto &e : fileCatalog->fileBrowser->getEntries()) {
-                if (e->selected) {
-                    fileCatalog->fileBrowser->setScrollPosition(e->getStartX(), e->getStartY());
-                    break;
-                }
-            }
-            return false;
-        }, G_PRIORITY_LOW);
+    // idle_register.add(
+    //     [this]() -> bool
+    //     {
+    //         for (const auto &e : fileCatalog->fileBrowser->getEntries()) {
+    //             if (e->selected) {
+    //                 fileCatalog->fileBrowser->setScrollPosition(e->getStartX(), e->getStartY());
+    //                 break;
+    //             }
+    //         }
+    //         return false;
+    //     }, G_PRIORITY_LOW);
 }
 
 bool FilePanel::fileSelected (Thumbnail* thm)

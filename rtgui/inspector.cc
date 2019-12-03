@@ -83,6 +83,7 @@ InspectorBuffer::InspectorBuffer(const Glib::ustring &imagePath, int width, int 
 InspectorArea::InspectorArea():
     currImage(nullptr),
     active(false),
+    first_active_(true),
     info_text_("")
 {
     Glib::RefPtr<Gtk::StyleContext> style = get_style_context();
@@ -191,6 +192,11 @@ bool InspectorArea::on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr)
         if (options.thumbnail_inspector_show_info && info_text_ != "") {
             info_bb_.copySurface(cr);
         }
+    }
+
+    if (first_active_) {
+        first_active_ = false;
+        sig_ready_.emit();
     }
 
     return true;
@@ -331,6 +337,9 @@ void InspectorArea::setActive(bool state)
     }
 
     active = state;
+    if (!active) {
+        first_active_ = true;
+    }
 }
 
 

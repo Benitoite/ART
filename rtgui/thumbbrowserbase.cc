@@ -509,17 +509,21 @@ void ThumbBrowserBase::selectLast (bool enlarge)
 }
 
 
-void ThumbBrowserBase::selectEntry(const ThumbBrowserEntryBase *entry)
+void ThumbBrowserBase::selectEntry(const ThumbBrowserEntryBase *entry, bool scroll)
 {
-    //double h = 0, v = 0;
+    double h = 0, v = 0;
     {
         MYWRITERLOCK(l, entryRW);
-        //scrollToEntry(h, v, internal.get_width(), internal.get_height(), const_cast<ThumbBrowserEntryBase *>(entry));
+        if (scroll) {
+            scrollToEntry(h, v, internal.get_width(), internal.get_height(), const_cast<ThumbBrowserEntryBase *>(entry));
+        }
         selectSingle(const_cast<ThumbBrowserEntryBase *>(entry));
         MYWRITERLOCK_RELEASE(l);
     }
     selectionChanged();
-    //setScrollPosition(h, v);
+    if (scroll) {
+        setScrollPosition(h, v);
+    }
     redraw();
 }
 

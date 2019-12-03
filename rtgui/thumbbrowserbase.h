@@ -152,7 +152,7 @@ public:
     void selectNext (int distance, bool enlarge);
     void selectFirst (bool enlarge);
     void selectLast (bool enlarge);
-    void selectEntry(const ThumbBrowserEntryBase *entry);
+    void selectEntry(const ThumbBrowserEntryBase *entry, bool scroll=false);
 
     virtual bool isInTabMode()
     {

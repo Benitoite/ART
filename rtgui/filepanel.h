@@ -82,6 +82,7 @@ public:
 
 private:
     void on_NB_switch_page(Gtk::Widget* page, guint page_num);
+    void on_inspector_ready();
 
     PlacesBrowser* placesBrowser;
     RecentBrowser* recentBrowser;
