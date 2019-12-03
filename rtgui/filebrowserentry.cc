@@ -291,19 +291,19 @@ bool FileBrowserEntry::motionNotify (int x, int y)
 
     Inspector* inspector = parent->getInspector();
 
-    if (inspector && inspector->isActive() && !parent->isInTabMode()) {
+    if (selected && inspector && inspector->isActive() && !parent->isInTabMode()) {
         const rtengine::Coord2D coord(getPosInImgSpace(x, y));
 
         if (coord.x != -1.) {
             if (!wasInside) {
                 inspector->switchImage(filename);
-                idle_register.add(
-                    [this]() -> bool
-                    {
-                        this->parent->selectEntry(this);
-                        return false;
-                    },
-                    G_PRIORITY_LOW);
+                // idle_register.add(
+                //     [this]() -> bool
+                //     {
+                //         this->parent->selectEntry(this);
+                //         return false;
+                //     },
+                //     G_PRIORITY_LOW);
                 wasInside = true;
             }
             inspector->mouseMove(coord, 0);
