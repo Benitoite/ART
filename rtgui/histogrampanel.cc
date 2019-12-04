@@ -938,35 +938,35 @@ void HistogramArea::updateBackBuffer ()
             drawCurve(cr, lhist, realhistheight, w, h);
             cr->set_source_rgba (0.65, 0.65, 0.65, 0.65);
             cr->fill ();
-            drawMarks(cr, lhist, realhistheight, w, ui, oi);
+            drawMarks(cr, lhist, scale/*realhistheight*/, w, ui, oi);
         }
 
         if (needChroma && !rawMode) {
             drawCurve(cr, chist, realhistheight, w, h);
             cr->set_source_rgb (0.9, 0.9, 0.);
             cr->stroke ();
-            drawMarks(cr, chist, realhistheight, w, ui, oi);
+            drawMarks(cr, chist, scale/*realhistheight*/, w, ui, oi);
         }
 
         if (needRed) {
             drawCurve(cr, rhchanged, realhistheight, w, h);
             cr->set_source_rgb (1.0, 0.0, 0.0);
             cr->stroke ();
-            drawMarks(cr, rhchanged, realhistheight, w, ui, oi);
+            drawMarks(cr, rhchanged, scale/*realhistheight*/, w, ui, oi);
         }
 
         if (needGreen) {
             drawCurve(cr, ghchanged, realhistheight, w, h);
             cr->set_source_rgb (0.0, 1.0, 0.0);
             cr->stroke ();
-            drawMarks(cr, ghchanged, realhistheight, w, ui, oi);
+            drawMarks(cr, ghchanged, scale/*realhistheight*/, w, ui, oi);
         }
 
         if (needBlue) {
             drawCurve(cr, bhchanged, realhistheight, w, h);
             cr->set_source_rgb (0.0, 0.0, 1.0);
             cr->stroke ();
-            drawMarks(cr, bhchanged, realhistheight, w, ui, oi);
+            drawMarks(cr, bhchanged, scale/*realhistheight*/, w, ui, oi);
         }
 
     }
