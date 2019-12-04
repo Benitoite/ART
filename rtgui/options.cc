@@ -315,7 +315,7 @@ void Options::setDefaults()
     toolPanelWidth = 400;
     browserToolPanelWidth = 465;
     browserToolPanelHeight = 600;
-    browserToolPanelOpened = true;;
+    browserToolPanelOpened = true;
     browserDirPanelOpened = true;
     editorFilmStripOpened = true;
     historyPanelWidth = 330;
@@ -601,6 +601,8 @@ void Options::setDefaults()
 #ifdef WIN32
     rtSettings.exiftool_path += ".exe";
 #endif
+
+    browser_width_for_inspector = 0;
 }
 
 Options* Options::copyFrom(Options* other)
@@ -1064,6 +1066,10 @@ void Options::readFromFile(Glib::ustring fname)
 
                 if (keyFile.has_key("Inspector", "EnableCMS")) {
                     thumbnail_inspector_enable_cms = keyFile.get_boolean("Inspector", "EnableCMS");
+                }
+
+                if (keyFile.has_key("Inspector", "BrowserWidth")) {
+                    browser_width_for_inspector = keyFile.get_integer("Inspector", "BrowserWidth");
                 }
             }
 
@@ -1918,6 +1924,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean("Inspector", "ZoomFit", thumbnail_inspector_zoom_fit);
         keyFile.set_boolean("Inspector", "ShowInfo", thumbnail_inspector_show_info);
         keyFile.set_boolean("Inspector", "EnableCMS", thumbnail_inspector_enable_cms);
+        keyFile.set_integer("Inspector", "BrowserWidth", browser_width_for_inspector);
 
         keyFile.set_string("Output", "Format", saveFormat.format);
         keyFile.set_integer("Output", "JpegQuality", saveFormat.jpegQuality);
@@ -2176,6 +2183,10 @@ void Options::saveToFile(Glib::ustring fname)
         fprintf(f, "%s", keyData.c_str());
         fclose(f);
     }
+
+    if (options.rtSettings.verbose) {
+        std::cout << "options saved to " << fname << std::endl;
+    }
 }
 
 void Options::load(bool lightweight)
@@ -2363,7 +2374,6 @@ void Options::load(bool lightweight)
 
 void Options::save()
 {
-
     options.saveToFile(Glib::build_filename(rtdir, "options"));
 }
 
