@@ -16,6 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <set>
 #include "history.h"
 #include "multilangmgr.h"
 #include "rtimage.h"
@@ -333,7 +334,15 @@ void History::addBookmarkPressed ()
 {
 
     if (hTreeView->get_selection()->get_selected()) {
-        addBookmarkWithText (Glib::ustring::compose ("%1 %2", M("HISTORY_SNAPSHOT"), bmnum++));
+        Glib::ustring name;
+        std::set<Glib::ustring> names;
+        for (auto p : getSnapshots()) {
+            names.insert(p.first);
+        }
+        do {
+            name = Glib::ustring::compose("%1 %2", M("HISTORY_SNAPSHOT"), bmnum++);
+        } while (names.find(name) != names.end());
+        addBookmarkWithText(name);
 
         if (snapshotListener) {
             snapshotListener->snapshotsChanged(getSnapshots());
