@@ -43,6 +43,9 @@ PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext,
         img_.reset(load_img(fname, width, height));
     } else if (settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
         img_.reset(load_raw(fname, width, height));
+        if (settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING) {
+            enable_cms = false;
+        }
     } else {
         img_.reset(load_raw_preview(fname, width, height));
     }
@@ -330,6 +333,99 @@ public:
         }
     }
 
+    bool mark_clipped()
+    {
+        if (d1x) {
+            return false;
+        }
+        
+        array2D<float> *channels[3] = { &red, &green, &blue };
+
+        constexpr float hl = 65534.f;
+        constexpr float sh = hl / 2.f;
+        
+        if ((ri->getSensorType() == ST_BAYER || ri->getSensorType() == ST_FUJI_XTRANS) && ri->get_colors() == 3) {
+            const bool bayer = ri->getSensorType() == ST_BAYER;
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    int c = bayer ? ri->FC(y, x) : ri->XTRANSFC(y, x);
+                    if (rawData[y][x] >= clmax[c]) {
+                        for (int i = 0; i < 3; ++i) {
+                            (*channels[i])[y][x] = 0.f;
+                        }
+                        (*channels[c])[y][x] = hl;
+                    } else if (rawData[y][x] <= 0.f) {
+                        for (int i = 0; i < 3; ++i) {
+                            (*channels[i])[y][x] = 0.f;
+                        }
+                        (*channels[c])[y][x] = sh;
+                    }     
+                }
+            }
+            return true;
+        } else if (ri->get_colors() == 1) {
+            const float chmax = 65535.f;
+            
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int xx = 0; xx < W; ++xx) {
+                    int x = 3 * xx;
+                    bool ch = true;
+                    bool cl = true;
+                    for (int i = 0; i < 3; ++i) {
+                        if ((*channels[i])[y][x] < chmax) {
+                            ch = false;
+                        }
+                        if ((*channels[i])[y][x] > 0.f) {
+                            cl = false;
+                        }
+                    }
+                    if (ch) {
+                        (*channels[0])[y][x] = (*channels[1])[y][x] = hl;
+                        (*channels[2])[y][x] = 0.f;
+                    } else if (cl) {
+                        (*channels[0])[y][x] = (*channels[1])[y][x] = sh;
+                        (*channels[2])[y][x] = 0.f;
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+
+    void mark_clipped_rgb(Imagefloat *img)
+    {
+        const int iw = img->getWidth();
+        const int ih = img->getHeight();
+        
+#ifdef _OPENMP
+#       pragma omp parallel for
+#endif
+        for (int y = 0; y < ih; ++y) {
+            for (int x = 0; x < iw; ++x) {
+                float &r = img->r(y, x);
+                float &g = img->g(y, x);
+                float &b = img->b(y, x);
+                if (r >= MAXVALF && b >= MAXVALF && b >= MAXVALF) {
+                    r = g = 65534.f;
+                    b = 0.f;
+                } else if (r <= 0.f && g <= 0.f && b <= 0.f) {
+                    r = g = 65534.f / 2.f;
+                    b = 0.f;
+                } else {
+                    r = g = b = Color::rgbLuminance(r, g, b);
+                }
+            }
+        }
+    }
+
 private:
     int bbox_W_;
     int bbox_H_;
@@ -346,17 +442,29 @@ Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
         return nullptr;
     }
 
+    const bool show_clip = settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING;
+
     ProcParams neutral;
     neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
     neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
     neutral.icm.inputProfile = "(camera)";
     neutral.icm.workingProfile = options.rtSettings.srgb;
 
+    if (show_clip) {
+        neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::MONO);
+        neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::MONO);
+    }
+
     src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false);
     double thresholdDummy = 0.f;
 
     src.rescale();
     src.demosaic(neutral.raw, false, thresholdDummy);
+
+    bool marked = show_clip && src.mark_clipped();
+    // if (show_clip) {
+    //     src.mark_clipped();
+    // }
 
     int fw, fh;
     src.getFullSize(fw, fh);
@@ -384,11 +492,19 @@ Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
     int ih = fh / int(scale);
 
     Imagefloat tmp(iw, ih);
-    src.getImage(src.getWB(), TR_NONE, &tmp, pp, neutral.exposure, neutral.raw);
-    src.convertColorSpace(&tmp, neutral.icm, src.getWB());
+    ColorTemp wb = src.getWB();
+    if (show_clip) {
+        wb = ColorTemp();
+    }
+    src.getImage(wb, TR_NONE, &tmp, pp, neutral.exposure, neutral.raw);
+    if (!show_clip) {
+        src.convertColorSpace(&tmp, neutral.icm, wb);
+    } else if (!marked) {
+        src.mark_clipped_rgb(&tmp);
+    }
 
     LUTi gamma(65536);
-    const bool apply_curve = settings->thumbnail_inspector_raw_curve != Settings::ThumbnailInspectorRawCurve::LINEAR;
+    const bool apply_curve = settings->thumbnail_inspector_raw_curve != Settings::ThumbnailInspectorRawCurve::LINEAR && !show_clip;
     if (apply_curve) {
         static const std::vector<double> shadowcurve = {
             DCT_CatumullRom,

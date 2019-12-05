@@ -93,7 +93,8 @@ public:
     enum class ThumbnailInspectorRawCurve {
         LINEAR,
         FILM,
-        SHADOW_BOOST
+        SHADOW_BOOST,
+        RAW_CLIPPING
     };
     ThumbnailInspectorRawCurve thumbnail_inspector_raw_curve;
 

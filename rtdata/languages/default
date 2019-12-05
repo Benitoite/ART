@@ -896,6 +896,7 @@ INSPECTOR_INFO;Quick info.
 INSPECTOR_PREVIEW;Embedded preview image.
 INSPECTOR_RAW_LINEAR;Fast raw rendering with a linear tone curve.
 INSPECTOR_RAW_FILM;Fast raw rendering with a film-like tone curve.
+INSPECTOR_RAW_CLIP;Raw clipped pixels
 INSPECTOR_RAW_SHADOW;Fast raw rendering with a shadow boosting tone curve.
 INSPECTOR_ZOOM_FIT;Fit to window.
 INSPECTOR_ZOOM_11;Zoom to 100%.

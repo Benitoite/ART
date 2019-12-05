@@ -133,6 +133,7 @@ private:
     Gtk::ToggleButton *rawlinear_;
     Gtk::ToggleButton *rawfilm_;
     Gtk::ToggleButton *rawshadow_;
+    Gtk::ToggleButton *rawclip_;
     Gtk::ToggleButton *zoomfit_;
     Gtk::ToggleButton *zoom11_;
     Gtk::ToggleButton *cms_;
@@ -141,6 +142,7 @@ private:
     sigc::connection rawlinearconn_;
     sigc::connection rawfilmconn_;
     sigc::connection rawshadowconn_;
+    sigc::connection rawclipconn_;
     sigc::connection zoomfitconn_;
     sigc::connection zoom11conn_;
 };

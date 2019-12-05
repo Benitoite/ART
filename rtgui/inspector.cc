@@ -484,6 +484,7 @@ Gtk::HBox *Inspector::get_toolbar()
     rawlinear_ = add_tool("raw-linear-curve.png", "INSPECTOR_RAW_LINEAR");
     rawfilm_ = add_tool("raw-film-curve.png", "INSPECTOR_RAW_FILM");
     rawshadow_ = add_tool("raw-shadow-curve.png", "INSPECTOR_RAW_SHADOW");
+    rawclip_ = add_tool("raw-clip-curve.png", "INSPECTOR_RAW_CLIP");
 
     tb->pack_start(*Gtk::manage(new Gtk::VSeparator()), Gtk::PACK_SHRINK, 4);
 
@@ -503,6 +504,7 @@ Gtk::HBox *Inspector::get_toolbar()
     rawlinear_->set_active(!use_jpg && options.rtSettings.thumbnail_inspector_raw_curve == rtengine::Settings::ThumbnailInspectorRawCurve::LINEAR);
     rawfilm_->set_active(!use_jpg && options.rtSettings.thumbnail_inspector_raw_curve == rtengine::Settings::ThumbnailInspectorRawCurve::FILM);
     rawshadow_->set_active(!use_jpg && options.rtSettings.thumbnail_inspector_raw_curve == rtengine::Settings::ThumbnailInspectorRawCurve::SHADOW_BOOST);
+    rawclip_->set_active(!use_jpg && options.rtSettings.thumbnail_inspector_raw_curve == rtengine::Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING);
 
     zoomfit_->set_active(options.thumbnail_inspector_zoom_fit);
     zoom11_->set_active(!options.thumbnail_inspector_zoom_fit);
@@ -513,6 +515,7 @@ Gtk::HBox *Inspector::get_toolbar()
     rawlinearconn_ = rawlinear_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), rawlinear_));
     rawfilmconn_ = rawfilm_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), rawfilm_));
     rawshadowconn_ = rawshadow_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), rawshadow_));
+    rawclipconn_ = rawclip_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::mode_toggled), rawclip_));
 
     zoomfitconn_ = zoomfit_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::zoom_toggled), zoomfit_));
     zoom11conn_ = zoom11_->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &Inspector::zoom_toggled), zoom11_));
@@ -600,12 +603,14 @@ void Inspector::mode_toggled(Gtk::ToggleButton *b)
     ConnectionBlocker blockl(rawlinearconn_);
     ConnectionBlocker blockf(rawfilmconn_);
     ConnectionBlocker blocks(rawshadowconn_);
+    ConnectionBlocker blockc(rawclipconn_);
 
     bool a = b->get_active();
     jpg_->set_active(false);
     rawlinear_->set_active(false);
     rawfilm_->set_active(false);
     rawshadow_->set_active(false);
+    rawclip_->set_active(false);
     b->set_active(a);
 
     if (jpg_->get_active()) {
@@ -619,6 +624,9 @@ void Inspector::mode_toggled(Gtk::ToggleButton *b)
     } else if (rawshadow_->get_active()) {
         options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
         options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::SHADOW_BOOST;
+    } else if (rawclip_->get_active()) {
+        options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
+        options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING;
     }
 
     ins_.flushBuffers();
