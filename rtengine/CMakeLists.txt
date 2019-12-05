@@ -95,6 +95,7 @@ set(RTENGINESOURCEFILES
     klt/writeFeatures.cc
     labimage.cc
     lcp.cc
+    lmmse_demosaic.cc
     loadinitial.cc
     myfile.cc
     panasonic_decoders.cc
