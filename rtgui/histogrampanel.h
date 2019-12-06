@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _HISTOGRAMPANEL_
-#define _HISTOGRAMPANEL_
+#pragma once
 
 
 #include <gtkmm.h>
@@ -47,7 +47,7 @@ class HistogramScaling
 {
 public:
     double factor;
-    HistogramScaling() : factor(10.0) {}
+    HistogramScaling();
     double log (double vsize, double val);
 };
 
@@ -206,9 +206,8 @@ protected:
     Gtk::Image *barImage_g;
     Gtk::Image *chroImage_g;
 
-    Gtk::Image *mode0Image;
-    Gtk::Image *mode1Image;
-    Gtk::Image *mode2Image;
+    Gtk::Image *mode_images_[3];
+    Glib::ustring mode_tips_[3];
 
     sigc::connection rconn;
     void setHistInvalid ();
@@ -252,4 +251,3 @@ public:
     void toggleButtonMode () override;
 };
 
-#endif

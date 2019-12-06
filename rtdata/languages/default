@@ -247,7 +247,10 @@ HISTOGRAM_TOOLTIP_BAR;Show/Hide RGB indicator bar.
 HISTOGRAM_TOOLTIP_CHRO;Show/Hide chromaticity histogram.
 HISTOGRAM_TOOLTIP_G;Show/Hide green histogram.
 HISTOGRAM_TOOLTIP_L;Show/Hide CIELab luminance histogram.
-HISTOGRAM_TOOLTIP_MODE;Toggle between linear, log-linear and log-log scaling of the histogram.
+HISTOGRAM_TOOLTIP_MODE;Toggle between linear, log-linear and log-log scaling of the histogram.\n(Current mode: %1)
+HISTOGRAM_TOOLTIP_MODE_LINEAR;linear
+HISTOGRAM_TOOLTIP_MODE_LOG_X;log-linear
+HISTOGRAM_TOOLTIP_MODE_LOG_XY;log-log
 HISTOGRAM_TOOLTIP_R;Show/Hide red histogram.
 HISTOGRAM_TOOLTIP_RAW;Show/Hide raw histogram.
 HISTORY_CHANGED;Changed

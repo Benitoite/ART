@@ -79,9 +79,12 @@ HistogramPanel::HistogramPanel ()
     rawImage_g   = new RTImage ("histogram-bayer-off-small.png");
     barImage_g   = new RTImage ("histogram-bar-off-small.png");
 
-    mode0Image  = new RTImage ("histogram-mode-linear-small.png");
-    mode1Image  = new RTImage ("histogram-mode-logx-small.png");
-    mode2Image  = new RTImage ("histogram-mode-logxy-small.png");
+    mode_images_[0] = new RTImage ("histogram-mode-linear-small.png");
+    mode_images_[1] = new RTImage ("histogram-mode-logx-small.png");
+    mode_images_[2] = new RTImage ("histogram-mode-logxy-small.png");
+    mode_tips_[0] = M("HISTOGRAM_TOOLTIP_MODE_LINEAR");
+    mode_tips_[1] = M("HISTOGRAM_TOOLTIP_MODE_LOG_X");
+    mode_tips_[2] = M("HISTOGRAM_TOOLTIP_MODE_LOG_XY");
 
     showRed   = Gtk::manage (new Gtk::ToggleButton ());
     showGreen = Gtk::manage (new Gtk::ToggleButton ());
@@ -144,12 +147,7 @@ HistogramPanel::HistogramPanel ()
     showValue->set_image (showValue->get_active() ? *valueImage : *valueImage_g);
     showChro->set_image  (showChro->get_active()   ? *chroImage : *chroImage_g);
     showRAW->set_image   (showRAW->get_active()   ? *rawImage   : *rawImage_g);
-    if (options.histogramDrawMode == 0)
-        showMode->set_image(*mode0Image);
-    else if (options.histogramDrawMode == 1)
-        showMode->set_image(*mode1Image);
-    else
-        showMode->set_image(*mode2Image);
+    toggleButtonMode();
     showBAR->set_image   (showBAR->get_active()   ? *barImage   : *barImage_g);
 
     setExpandAlignProperties(showRed  , false, false, Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
@@ -201,9 +199,9 @@ HistogramPanel::~HistogramPanel ()
     delete valueImage;
     delete chroImage;
     delete rawImage;
-    delete mode0Image;
-    delete mode1Image;
-    delete mode2Image;
+    for (int i = 0; i < 3; ++i) {
+        delete mode_images_[i];
+    }
     delete barImage;
 
     delete redImage_g;
@@ -279,12 +277,7 @@ void HistogramPanel::raw_toggled ()
 void HistogramPanel::mode_released ()
 {
     options.histogramDrawMode = (options.histogramDrawMode + 1) % 3;
-    if (options.histogramDrawMode == 0)
-        showMode->set_image(*mode0Image);
-    else if (options.histogramDrawMode == 1)
-        showMode->set_image(*mode1Image);
-    else
-        showMode->set_image(*mode2Image);
+    toggleButtonMode();
     rgbv_toggled();
 }
 
@@ -347,18 +340,22 @@ void HistogramPanel::reorder (Gtk::PositionType align)
 // DrawModeListener interface:
 void HistogramPanel::toggleButtonMode ()
 {
-    if (options.histogramDrawMode == 0)
-        showMode->set_image(*mode0Image);
-    else if (options.histogramDrawMode == 1)
-        showMode->set_image(*mode1Image);
-    else
-        showMode->set_image(*mode2Image);
+    int m = LIM(options.histogramDrawMode, 0, 2);
+    showMode->set_image(*mode_images_[m]);
+    showMode->set_tooltip_text(Glib::ustring::compose(M("HISTOGRAM_TOOLTIP_MODE"), mode_tips_[m]));
 }
 
 //
 //
 //
 // HistogramScaling
+HistogramScaling::HistogramScaling():
+    factor(10.0)
+{
+    factor = options.histogram_scaling_factor;
+}
+
+
 double HistogramScaling::log(double vsize, double val)
 {
     //double factor = 10.0; // can be tuned if necessary - higher is flatter curve
@@ -653,6 +650,7 @@ bool HistogramRGBArea::on_button_press_event (GdkEventButton* event)
 void HistogramRGBArea::factorChanged (double newFactor)
 {
     factor = newFactor;
+    options.histogram_scaling_factor = factor;
 }
 
 //

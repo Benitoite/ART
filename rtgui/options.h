@@ -292,6 +292,7 @@ public:
     bool histogramBar;
     int histogramHeight;
     int histogramDrawMode;
+    double histogram_scaling_factor;
     bool FileBrowserToolbarSingleRow;
     bool hideTPVScrollbar;
     int whiteBalanceSpotSize;

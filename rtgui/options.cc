@@ -411,6 +411,7 @@ void Options::setDefaults()
     histogramBar = true;
     histogramHeight = 200;
     histogramDrawMode = 0;
+    histogram_scaling_factor = 10.0;
     curvebboxpos = 1;
     prevdemo = PD_Sidecar;
     rgbDenoiseThreadLimit = 0;
@@ -1315,6 +1316,10 @@ void Options::readFromFile(Glib::ustring fname)
                     histogramDrawMode = keyFile.get_integer ("GUI", "HistogramDrawMode");
                 }
 
+                if (keyFile.has_key("GUI", "HistogramScalingFactor")) {
+                    histogram_scaling_factor = keyFile.get_double("GUI", "HistogramScalingFactor");
+                }
+                
                 if (keyFile.has_key("GUI", "NavigatorRGBUnit")) {
                     navRGBUnit = (NavigatorUnit)keyFile.get_integer("GUI", "NavigatorRGBUnit");
                 }
@@ -2027,6 +2032,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean ("GUI", "HistogramBar", histogramBar);
         keyFile.set_integer ("GUI", "HistogramHeight", histogramHeight);
         keyFile.set_integer ("GUI", "HistogramDrawMode", histogramDrawMode);
+        keyFile.set_double("GUI", "HistogramScalingFactor", histogram_scaling_factor);
         keyFile.set_integer ("GUI", "NavigatorRGBUnit", (int)navRGBUnit);
         keyFile.set_integer ("GUI", "NavigatorLCHUnit", (int)navLCHUnit);
         keyFile.set_boolean ("GUI", "ShowFilmStripToolBar", showFilmStripToolBar);
