@@ -642,7 +642,7 @@ void Resize::setRanges()
         refw = refh = std::max(refw, refh);
     }
     
-    int factor = allowUpscaling->get_active() ? MAX_SCALE : 1;
+    int factor = MAX_SCALE;//allowUpscaling->get_active() ? MAX_SCALE : 1;
     w->set_range(from_px(32), from_px(factor * refw));
     h->set_range(from_px(32), from_px(factor * refh));
     double v = scale->getValue();
