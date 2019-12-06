@@ -335,10 +335,6 @@ public:
 
     bool mark_clipped()
     {
-        if (d1x) {
-            return false;
-        }
-        
         array2D<float> *channels[3] = { &red, &green, &blue };
 
         constexpr float hl = 65534.f;
@@ -352,6 +348,9 @@ public:
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
                     int c = bayer ? ri->FC(y, x) : ri->XTRANSFC(y, x);
+                    if (bayer && c == 3) {
+                        c = 1;
+                    }
                     if (rawData[y][x] >= clmax[c]) {
                         for (int i = 0; i < 3; ++i) {
                             (*channels[i])[y][x] = 0.f;
