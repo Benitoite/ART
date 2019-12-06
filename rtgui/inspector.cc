@@ -605,32 +605,35 @@ void Inspector::mode_toggled(Gtk::ToggleButton *b)
     ConnectionBlocker blocks(rawshadowconn_);
     ConnectionBlocker blockc(rawclipconn_);
 
-    bool a = b->get_active();
-    jpg_->set_active(false);
-    rawlinear_->set_active(false);
-    rawfilm_->set_active(false);
-    rawshadow_->set_active(false);
-    rawclip_->set_active(false);
-    b->set_active(a);
+    if (!b->get_active()) {
+        b->set_active(true);
+    } else {
+        jpg_->set_active(false);
+        rawlinear_->set_active(false);
+        rawfilm_->set_active(false);
+        rawshadow_->set_active(false);
+        rawclip_->set_active(false);
+        b->set_active(true);
 
-    if (jpg_->get_active()) {
-        options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
-    } else if (rawlinear_->get_active()) {
-        options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
-        options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::LINEAR;
-    } else if (rawfilm_->get_active()) {
-        options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
-        options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::FILM;
-    } else if (rawshadow_->get_active()) {
-        options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
-        options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::SHADOW_BOOST;
-    } else if (rawclip_->get_active()) {
-        options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
-        options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING;
+        if (jpg_->get_active()) {
+            options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::JPEG;
+        } else if (rawlinear_->get_active()) {
+            options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
+            options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::LINEAR;
+        } else if (rawfilm_->get_active()) {
+            options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
+            options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::FILM;
+        } else if (rawshadow_->get_active()) {
+            options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
+            options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::SHADOW_BOOST;
+        } else if (rawclip_->get_active()) {
+            options.rtSettings.thumbnail_inspector_mode = rtengine::Settings::ThumbnailInspectorMode::RAW;
+            options.rtSettings.thumbnail_inspector_raw_curve = rtengine::Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING;
+        }
+
+        ins_.flushBuffers();
+        ins_.switchImage(cur_image_);
     }
-
-    ins_.flushBuffers();
-    ins_.switchImage(cur_image_);
 }
 
 
@@ -639,14 +642,17 @@ void Inspector::zoom_toggled(Gtk::ToggleButton *b)
     ConnectionBlocker blockf(zoomfitconn_);
     ConnectionBlocker block1(zoom11conn_);
 
-    bool a = b->get_active();
-    zoomfit_->set_active(false);
-    zoom11_->set_active(false);
-    b->set_active(a);
+    if (!b->get_active()) {
+        b->set_active(true);
+    } else {
+        zoomfit_->set_active(false);
+        zoom11_->set_active(false);
+        b->set_active(true);
 
-    options.thumbnail_inspector_zoom_fit = zoomfit_->get_active();
-    ins_.flushBuffers();
-    ins_.switchImage(cur_image_);
+        options.thumbnail_inspector_zoom_fit = zoomfit_->get_active();
+        ins_.flushBuffers();
+        ins_.switchImage(cur_image_);
+    }
 }
 
 
