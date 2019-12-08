@@ -896,6 +896,7 @@ INSPECTOR_INFO;Quick info.
 INSPECTOR_PREVIEW;Aperçu intégré.
 INSPECTOR_RAW_LINEAR;Traitement raw rapide avec une courbe tonale linéaire.
 INSPECTOR_RAW_FILM;Traitement raw rapide avec une courbe tonale film-like.
+INSPECTOR_RAW_CLIP;Pixels hors domaine.
 INSPECTOR_RAW_SHADOW;Traitement raw rapide avec un courbe tonale amplifiant les ombres.
 INSPECTOR_ZOOM_FIT;Adapter à la fenêtre.
 INSPECTOR_ZOOM_11;Zoom à 100%.
