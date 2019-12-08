@@ -122,6 +122,8 @@ public:
     void setAreaDrawListener(AreaDrawListener *l);
     
 private:
+    void on_map() override;
+    
     ToolPanelListener *getListener();
     void populateList();
     void onSelectionChanged();
@@ -172,6 +174,8 @@ private:
     rtengine::ProcEvent EvAreaMask;
     rtengine::ProcEvent EvAreaMaskVoid;
 
+    MyExpander *mask_exp_;
+    bool first_mask_exp_;
     Gtk::ListViewText *list;
     Gtk::Button *reset;
     Gtk::Button *add;

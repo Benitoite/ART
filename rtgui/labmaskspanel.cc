@@ -111,7 +111,13 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     pack_start(*child);
     pack_start(*Gtk::manage(new Gtk::HSeparator()));
 
-    maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LABMASKS_MASK"), 0.7));
+    Gtk::VBox *mask_box = Gtk::manage(new Gtk::VBox());
+
+    showMask = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_SHOW")));
+    showMask->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onShowMaskChanged));
+    mask_box->pack_start(*showMask, Gtk::PACK_SHRINK, 4);
+    
+    maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, ""/*M("TP_LABMASKS_MASK")*/, 0.7));
     maskEditorGroup->setCurveListener(this);
 
     rtengine::LabCorrectionMask default_params;
@@ -144,16 +150,16 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     maskEditorGroup->curveListComplete();
     maskEditorGroup->show();
-    pack_start(*maskEditorGroup, Gtk::PACK_SHRINK, 2);
+    mask_box->pack_start(*maskEditorGroup, Gtk::PACK_SHRINK, 4);
 
     maskBlur = Gtk::manage(new Adjuster(M("TP_LABMASKS_BLUR"), -10, 500, 0.1, 0));
     maskBlur->setLogScale(10, -10);
     maskBlur->setAdjusterListener(this);
-    pack_start(*maskBlur);
+    mask_box->pack_start(*maskBlur);
 
     maskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_INVERTED")));
     maskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onMaskInvertedChanged));
-    pack_start(*maskInverted);
+    mask_box->pack_start(*maskInverted);
 
     areaMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_AREA")));
     areaMask->signal_enabled_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskEnableToggled));
@@ -298,12 +304,17 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     vb->pack_start(*area);
     vb->pack_start(*areaFrame);
     areaMask->add(*vb, false);
-    areaMask->setLevel(2);
-    pack_start(*areaMask);
+    areaMask->setLevel(1);
+    mask_box->pack_start(*areaMask);
+    mask_box->set_border_width(4);
 
-    showMask = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_SHOW")));
-    showMask->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onShowMaskChanged));
-    pack_start(*showMask, Gtk::PACK_SHRINK, 4);
+    MyExpander *mask_exp = Gtk::manage(new MyExpander(false, M("TP_LABMASKS_MASK")));
+    mask_exp->add(*mask_box, false);
+    mask_exp->setLevel(2);
+    pack_start(*mask_exp);
+
+    mask_exp_ = mask_exp;
+    first_mask_exp_ = true;
         
     maskBlur->delay = options.adjusterMaxDelay;
 }
@@ -1170,4 +1181,15 @@ void LabMasksPanel::onAreaMaskDrawAddPressed()
 {
     onAreaShapeAddPressed();
     areaMaskDraw->set_active(true);
+}
+
+
+void LabMasksPanel::on_map()
+{
+    Gtk::VBox::on_map();
+    if (first_mask_exp_) {
+        areaMask->set_expanded(false);
+        mask_exp_->set_expanded(false);
+        first_mask_exp_ = false;
+    }
 }
