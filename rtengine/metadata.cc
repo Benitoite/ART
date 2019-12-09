@@ -22,6 +22,7 @@
 #include <glib/gstdio.h>
 #include <iostream>
 #include <unistd.h>
+#include <giomm.h>
 
 #ifdef WIN32
 #  include <windows.h>
@@ -40,8 +41,11 @@ namespace rtengine {
 
 extern const Settings *settings;
 
+std::unique_ptr<Exiv2Metadata::ImageCache> Exiv2Metadata::cache_(nullptr);
 
 namespace {
+
+constexpr size_t IMAGE_CACHE_SIZE = 200;
 
 #ifdef WIN32
 std::wstring to_wstr(const Glib::ustring &s)
@@ -348,14 +352,23 @@ Exiv2Metadata::Exiv2Metadata(const Glib::ustring &path, bool merge_xmp_sidecar):
 
 void Exiv2Metadata::load() const
 {
-    if (!src_.empty() && !image_.get()) {
-        try {
-            auto img = open_exiv2(src_);
-            image_.reset(img.release());
-            image_->readMetadata();
-        } catch (std::exception &exc) {
-            auto img = exiftool_import(src_, exc);
-            image_.reset(img.release());
+    if (!src_.empty() && !image_.get() && Glib::file_test(src_.c_str(), Glib::FILE_TEST_EXISTS)) {
+        CacheVal val;
+        auto finfo = Gio::File::create_for_path(src_)->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED);
+        if (cache_ && cache_->get(src_, val) && val.second >= finfo->modification_time()) {
+            image_ = val.first;
+        } else {
+            try {
+                auto img = open_exiv2(src_);
+                image_.reset(img.release());
+                image_->readMetadata();
+            } catch (std::exception &exc) {
+                auto img = exiftool_import(src_, exc);
+                image_.reset(img.release());
+            }
+            if (cache_) {
+                cache_->set(src_, CacheVal(image_, finfo->modification_time()));
+            }
         }
 
         if (merge_xmp_) {
@@ -530,6 +543,7 @@ Exiv2::XmpData Exiv2Metadata::getXmpSidecar(const Glib::ustring &path)
 
 void Exiv2Metadata::init(const Glib::ustring &base_dir)
 {
+    cache_.reset(new ImageCache(IMAGE_CACHE_SIZE));
     exiftool_base_dir = base_dir;
     Exiv2::XmpParser::initialize();
 }
