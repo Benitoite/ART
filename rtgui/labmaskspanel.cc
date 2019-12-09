@@ -315,6 +315,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     mask_exp_ = mask_exp;
     first_mask_exp_ = true;
+    mask_exp_->signal_button_release_event().connect_notify(sigc::mem_fun(this, &LabMasksPanel::onMaskFold));
         
     maskBlur->delay = options.adjusterMaxDelay;
 }
@@ -1191,5 +1192,15 @@ void LabMasksPanel::on_map()
         areaMask->set_expanded(false);
         mask_exp_->set_expanded(false);
         first_mask_exp_ = false;
+    }
+}
+
+
+void LabMasksPanel::onMaskFold(GdkEventButton *evt)
+{
+    if (mask_exp_->get_expanded()) {
+        if (showMask->get_active()) {
+            showMask->set_active(false);
+        }
     }
 }

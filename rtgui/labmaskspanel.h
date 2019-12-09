@@ -123,6 +123,7 @@ public:
     
 private:
     void on_map() override;
+    void onMaskFold(GdkEventButton *evt);
     
     ToolPanelListener *getListener();
     void populateList();
