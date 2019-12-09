@@ -677,13 +677,12 @@ struct FattalToneMappingParams {
   * Parameters of the shadow/highlight enhancement
   */
 struct SHParams {
-    bool    enabled;
-    int     highlights;
-    int     htonalwidth;
-    int     shadows;
-    int     stonalwidth;
-    int     radius;
-    bool    lab;
+    bool enabled;
+    int highlights;
+    int htonalwidth;
+    int shadows;
+    int stonalwidth;
+    int radius;
 
     SHParams();
 

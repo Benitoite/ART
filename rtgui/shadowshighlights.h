@@ -33,7 +33,6 @@ protected:
     Adjuster* shadows;
     Adjuster* s_tonalwidth;
     Adjuster* radius;
-    MyComboBoxText *colorspace;
 
     rtengine::ProcEvent EvSHColorspace;
 
@@ -49,8 +48,6 @@ public:
     void enabledChanged  () override;
 
     void trimValues          (rtengine::procparams::ProcParams* pp) override;
-
-    void colorspaceChanged();
 };
 
 #endif

@@ -1178,8 +1178,7 @@ SHParams::SHParams() :
     htonalwidth(70),
     shadows(0),
     stonalwidth(30),
-    radius(40),
-    lab(false)
+    radius(40)
 {
 }
 
@@ -1191,8 +1190,7 @@ bool SHParams::operator ==(const SHParams& other) const
         && htonalwidth == other.htonalwidth
         && shadows == other.shadows
         && stonalwidth == other.stonalwidth
-        && radius == other.radius
-        && lab == other.lab;
+        && radius == other.radius;
 }
 
 bool SHParams::operator !=(const SHParams& other) const
@@ -2609,7 +2607,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Shadows & Highlights", "Shadows", sh.shadows, keyFile);
             saveToKeyfile("Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
             saveToKeyfile("Shadows & Highlights", "Radius", sh.radius, keyFile);
-            saveToKeyfile("Shadows & Highlights", "Lab", sh.lab, keyFile);
         }
 
 // ToneEqualizer
@@ -3469,11 +3466,6 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", sh.shadows);
             assignFromKeyfile(keyFile, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth);
             assignFromKeyfile(keyFile, "Shadows & Highlights", "Radius", sh.radius);
-            if (ppVersion >= 344) {
-                assignFromKeyfile(keyFile, "Shadows & Highlights", "Lab", sh.lab);
-            } else {
-                sh.lab = true;
-            }
         }
 
         if (keyFile.has_group("ToneEqualizer") && RELEVANT_(toneEqualizer)) {

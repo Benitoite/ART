@@ -24,17 +24,6 @@ using namespace rtengine::procparams;
 
 ShadowsHighlights::ShadowsHighlights () : FoldableToolPanel(this, "shadowshighlights", M("TP_SHADOWSHLIGHTS_LABEL"), false, true)
 {
-    auto m = ProcEventMapper::getInstance();
-    EvSHColorspace = m->newEvent(RGBCURVE, "HISTORY_MSG_SH_COLORSPACE");
-
-    Gtk::HBox* hb = Gtk::manage (new Gtk::HBox ());
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE") + ": ")), Gtk::PACK_SHRINK);
-    colorspace = Gtk::manage(new MyComboBoxText());
-    colorspace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB"));
-    colorspace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB"));
-    hb->pack_start(*colorspace);
-    pack_start(*hb);
-
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
     highlights   = Gtk::manage (new Adjuster (M("TP_SHADOWSHLIGHTS_HIGHLIGHTS"), 0, 100, 1, 0));
@@ -60,8 +49,6 @@ ShadowsHighlights::ShadowsHighlights () : FoldableToolPanel(this, "shadowshighli
     shadows->setAdjusterListener (this);
     s_tonalwidth->setAdjusterListener (this);
 
-    colorspace->signal_changed().connect(sigc::mem_fun(*this, &ShadowsHighlights::colorspaceChanged));
-    
     show_all_children ();
 }
 
@@ -77,12 +64,6 @@ void ShadowsHighlights::read(const ProcParams* pp)
     h_tonalwidth->setValue  (pp->sh.htonalwidth);
     shadows->setValue       (pp->sh.shadows);
     s_tonalwidth->setValue  (pp->sh.stonalwidth);
-
-    if (pp->sh.lab) {
-        colorspace->set_active(1);
-    } else {
-        colorspace->set_active(0);
-    }
     
     enableListener ();
 }
@@ -96,12 +77,6 @@ void ShadowsHighlights::write(ProcParams* pp)
     pp->sh.shadows       = (int)shadows->getValue ();
     pp->sh.stonalwidth   = (int)s_tonalwidth->getValue ();
     pp->sh.enabled       = getEnabled();
-
-    if (colorspace->get_active_row_number() == 0) {
-        pp->sh.lab = false;
-    } else if (colorspace->get_active_row_number() == 1) {
-        pp->sh.lab = true;
-    }
 }
 
 void ShadowsHighlights::setDefaults(const ProcParams* defParams)
@@ -150,14 +125,6 @@ void ShadowsHighlights::enabledChanged ()
         }
     }
 }
-
-void ShadowsHighlights::colorspaceChanged()
-{
-    if (listener && getEnabled() ) {
-        listener->panelChanged(EvSHColorspace, colorspace->get_active_text());
-    }
-}
-
 
 void ShadowsHighlights::trimValues (rtengine::procparams::ProcParams* pp)
 {
