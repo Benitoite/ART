@@ -1909,7 +1909,7 @@ TP_LABMASKS_AREA_ROUNDNESS;Arondi
 TP_LABMASKS_AREA_MASK_COPY_TOOLTIP;Copier la zone dans le presse-papier
 TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP;Editer la zone courante en dessinant sur l'image de prévisualisation
 TP_LABMASKS_AREA_MASK_DRAW_ADD_TOOLTIP;Ajouter une zone en déssinant sur l'image de prévisualisation 
-TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP;Afficher la forme de la zonz dans l'image
+TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP;Afficher la forme de la zone dans l'image
 TP_LABMASKS_AREA_MASK_PASTE_TOOLTIP;Coller la zone dans le presse-papier
 TP_LABMASKS_AREA_SHAPE;Forme
 TP_LABMASKS_AREA_SHAPE_MODE;Mode
