@@ -153,6 +153,7 @@ set(RTENGINESOURCEFILES
     filmnegativeproc.cc
     filmnegativethumb.cc
     canon_cr3_decoder.cc
+    pyramids.cc
     )
 
 if(LENSFUN_HAS_LOAD_DIRECTORY)
