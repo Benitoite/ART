@@ -565,35 +565,6 @@ void RGBoutput_tile_row(double scale, float *bloxrow_L, float ** Ldetail, float 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-float Mad(float * DataList, const int datalen)
-{
-    if (datalen <= 1) { // Avoid possible buffer underrun
-        return 0;
-    }
-
-    //computes Median Absolute Deviation
-    //DataList values should mostly have abs val < 256 because we are in Lab mode
-    int histo[256] ALIGNED64 = {0};
-
-    //calculate histogram of absolute values of wavelet coeffs
-    for (int i = 0; i < datalen; ++i) {
-        histo[min(255, abs(static_cast<int>(DataList[i])))]++;
-    }
-
-    //find median of histogram
-    int median = 0, count = 0;
-
-    while (count < datalen / 2) {
-        count += histo[median];
-        ++median;
-    }
-
-    int count_ = count - histo[median - 1];
-
-    // interpolate
-    return (((median - 1) + (datalen / 2 - count_) / (static_cast<float>(count - count_))) / 0.6745);
-}
-
 float MadRgb(float * DataList, const int datalen)
 {
     if (datalen <= 1) { // Avoid possible buffer underrun
@@ -632,7 +603,7 @@ float MadRgb(float * DataList, const int datalen)
 
 
 
-void Noise_residualAB(wavelet_decomposition &WaveletCoeffs_ab, float &chresid, float &chmaxresid, bool denoiseMethodRgb)
+void Noise_residualAB(wavelet_decomposition &WaveletCoeffs_ab, float &chresid, float &chmaxresid)
 {
     int maxlvl = WaveletCoeffs_ab.maxlevel();
     float resid = 0.f;
@@ -648,11 +619,7 @@ void Noise_residualAB(wavelet_decomposition &WaveletCoeffs_ab, float &chresid, f
         float ** WavCoeffs_ab = WaveletCoeffs_ab.level_coeffs(lvl);
 
         for (int dir = 1; dir < 4; ++dir) {
-            if (denoiseMethodRgb) {
-                madC = SQR(MadRgb(WavCoeffs_ab[dir], Wlvl_ab * Hlvl_ab));
-            } else {
-                madC = SQR(Mad(WavCoeffs_ab[dir], Wlvl_ab * Hlvl_ab));
-            }
+            madC = SQR(MadRgb(WavCoeffs_ab[dir], Wlvl_ab * Hlvl_ab));
 
             resid += madC;
 
@@ -760,7 +727,7 @@ void ShrinkAllL(double scale, wavelet_decomposition &WaveletCoeffs_L, float **bu
 
 void ShrinkAllAB(double scale, wavelet_decomposition &WaveletCoeffs_L, wavelet_decomposition &WaveletCoeffs_ab, float **buffer, int level, int dir,
         float *noisevarchrom, float noisevar_ab, const bool useNoiseCCurve, bool autoch,
-        bool denoiseMethodRgb, float * madL, float * madaab=nullptr,  bool madCalculated=false)
+        float * madL, float * madaab=nullptr,  bool madCalculated=false)
 
 {
     //simple wavelet shrinkage
@@ -786,11 +753,7 @@ void ShrinkAllAB(double scale, wavelet_decomposition &WaveletCoeffs_L, wavelet_d
     if (madCalculated) {
         madab = madaab[dir - 1];
     } else {
-        if (!denoiseMethodRgb) {
-            madab = SQR(Mad(WavCoeffs_ab[dir], W_ab * H_ab));
-        } else {
-            madab = SQR(MadRgb(WavCoeffs_ab[dir], W_ab * H_ab));
-        }
+        madab = SQR(MadRgb(WavCoeffs_ab[dir], W_ab * H_ab));
     }
 
     if (noisevar_ab > 0.001f) {
@@ -1010,7 +973,7 @@ bool WaveletDenoiseAll_BiShrinkL(double scale, wavelet_decomposition &WaveletCoe
 }
 
 bool WaveletDenoiseAll_BiShrinkAB(double scale, wavelet_decomposition &WaveletCoeffs_L, wavelet_decomposition &WaveletCoeffs_ab,
-        float *noisevarchrom, float madL[8][3], float noisevar_ab, const bool useNoiseCCurve, bool autoch, bool denoiseMethodRgb)
+        float *noisevarchrom, float madL[8][3], float noisevar_ab, const bool useNoiseCCurve, bool autoch)
 {
     int maxlvl = WaveletCoeffs_L.maxlevel();
 
@@ -1059,12 +1022,7 @@ bool WaveletDenoiseAll_BiShrinkAB(double scale, wavelet_decomposition &WaveletCo
                     int Wlvl_ab = WaveletCoeffs_ab.level_W(lvl);
                     int Hlvl_ab = WaveletCoeffs_ab.level_H(lvl);
                     float ** WavCoeffs_ab = WaveletCoeffs_ab.level_coeffs(lvl);
-
-                    if (!denoiseMethodRgb) {
-                        madab[lvl][dir - 1] = SQR(Mad(WavCoeffs_ab[dir], Wlvl_ab * Hlvl_ab));
-                    } else {
-                        madab[lvl][dir - 1] = SQR(MadRgb(WavCoeffs_ab[dir], Wlvl_ab * Hlvl_ab));
-                    }
+                    madab[lvl][dir - 1] = SQR(MadRgb(WavCoeffs_ab[dir], Wlvl_ab * Hlvl_ab));
                 }
             }
 
@@ -1081,7 +1039,7 @@ bool WaveletDenoiseAll_BiShrinkAB(double scale, wavelet_decomposition &WaveletCo
                     float ** WavCoeffs_ab = WaveletCoeffs_ab.level_coeffs(lvl);
 
                     if (lvl == maxlvl - 1) {
-                        ShrinkAllAB(scale, WaveletCoeffs_L, WaveletCoeffs_ab, buffer, lvl, dir, noisevarchrom, noisevar_ab, useNoiseCCurve, autoch, denoiseMethodRgb, madL[lvl], madab[lvl], true);
+                        ShrinkAllAB(scale, WaveletCoeffs_L, WaveletCoeffs_ab, buffer, lvl, dir, noisevarchrom, noisevar_ab, useNoiseCCurve, autoch, madL[lvl], madab[lvl], true);
                     } else {
                         //simple wavelet shrinkage
 
@@ -1209,7 +1167,7 @@ bool WaveletDenoiseAllL(double scale, wavelet_decomposition &WaveletCoeffs_L, fl
 
 
 bool WaveletDenoiseAllAB(double scale, wavelet_decomposition &WaveletCoeffs_L, wavelet_decomposition &WaveletCoeffs_ab,
-        float *noisevarchrom, float madL[8][3], float noisevar_ab, const bool useNoiseCCurve, bool autoch, bool denoiseMethodRgb)//mod JD
+        float *noisevarchrom, float madL[8][3], float noisevar_ab, const bool useNoiseCCurve, bool autoch)
 
 {
 
@@ -1247,7 +1205,7 @@ bool WaveletDenoiseAllAB(double scale, wavelet_decomposition &WaveletCoeffs_L, w
 
             for (int lvl = 0; lvl < maxlvl; ++lvl) {
                 for (int dir = 1; dir < 4; ++dir) {
-                    ShrinkAllAB(scale, WaveletCoeffs_L, WaveletCoeffs_ab, buffer, lvl, dir, noisevarchrom, noisevar_ab, useNoiseCCurve, autoch, denoiseMethodRgb, madL[lvl]);
+                    ShrinkAllAB(scale, WaveletCoeffs_L, WaveletCoeffs_ab, buffer, lvl, dir, noisevarchrom, noisevar_ab, useNoiseCCurve, autoch, madL[lvl]);
                 }
             }
         }
@@ -1268,7 +1226,7 @@ bool WaveletDenoiseAllAB(double scale, wavelet_decomposition &WaveletCoeffs_L, w
 void ShrinkAll_info(float ** WavCoeffs_a, float ** WavCoeffs_b,
         int W_ab, int H_ab, float **noisevarlum, float **noisevarchrom, float **noisevarhue, float &chaut, int &Nb, float &redaut, float &blueaut,
         float &maxredaut, float &maxblueaut, float &minredaut, float &minblueaut, int schoice, int lvl, float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc,
-        float &maxchred, float &maxchblue, float &minchred, float &minchblue, int &nb, float &chau, float &chred, float &chblue, bool denoiseMethodRgb)
+        float &maxchred, float &maxchblue, float &minchred, float &minchblue, int &nb, float &chau, float &chred, float &chblue)
 {
 
     //simple wavelet shrinkage
@@ -1332,12 +1290,7 @@ void ShrinkAll_info(float ** WavCoeffs_a, float ** WavCoeffs_b,
 
     for (int dir = 1; dir < 4; ++dir) {
         float mada, madb;
-
-        if (!denoiseMethodRgb) {
-            mada = SQR(Mad(WavCoeffs_a[dir], W_ab * H_ab));
-        } else {
-            mada = SQR(MadRgb(WavCoeffs_a[dir], W_ab * H_ab));
-        }
+        mada = SQR(MadRgb(WavCoeffs_a[dir], W_ab * H_ab));
 
         chred += mada;
 
@@ -1352,12 +1305,7 @@ void ShrinkAll_info(float ** WavCoeffs_a, float ** WavCoeffs_b,
         maxredaut = sqrt(reduc * maxchred);
         minredaut = sqrt(reduc * minchred);
 
-        if (!denoiseMethodRgb) {
-            madb = SQR(Mad(WavCoeffs_b[dir], W_ab * H_ab));
-        } else {
-            madb = SQR(MadRgb(WavCoeffs_b[dir], W_ab * H_ab));
-        }
-
+        madb = SQR(MadRgb(WavCoeffs_b[dir], W_ab * H_ab));
         chblue += madb;
 
         if (madb > maxchblue) {
@@ -1391,7 +1339,7 @@ namespace denoise {
 
 void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
         wavelet_decomposition &WaveletCoeffs_b, float **noisevarlum, float **noisevarchrom, float **noisevarhue, float &chaut, int &Nb, float &redaut, float &blueaut, float &maxredaut, float &maxblueaut, float &minredaut, float &minblueaut, int schoice,
-        float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc, float &maxchred, float &maxchblue, float &minchred, float &minchblue, int &nb, float &chau, float &chred, float &chblue, bool denoiseMethodRgb)
+        float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc, float &maxchred, float &maxchblue, float &minchred, float &minchblue, int &nb, float &chau, float &chred, float &chblue)
 {
 
     int maxlvl = levwav;
@@ -1406,7 +1354,7 @@ void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
 
         ShrinkAll_info(WavCoeffs_a, WavCoeffs_b, Wlvl_ab, Hlvl_ab,
                        noisevarlum, noisevarchrom, noisevarhue, chaut, Nb, redaut, blueaut, maxredaut, maxblueaut, minredaut, minblueaut,
-                       schoice, lvl, chromina, sigma, lumema, sigma_L, redyel, skinc, nsknc, maxchred, maxchblue, minchred, minchblue, nb, chau, chred, chblue, denoiseMethodRgb);
+                       schoice, lvl, chromina, sigma, lumema, sigma_L, redyel, skinc, nsknc, maxchred, maxchblue, minchred, minchblue, nb, chau, chred, chblue);
 
     }
 }
@@ -1564,9 +1512,9 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
         float thr = 1.f - amount;
         buildBlendMask(labdn->L, mask, width, height, cthresh, amount, false, 2.f / s_scale);
         array2D<float> guide(width, height);
-        LUTf ll(32769);
-        for (int i = 0; i < 32769; ++i) {
-            ll[i] = xlin2log(float(i) / 32768.f, 25.f);
+        LUTf ll(65536);
+        for (int i = 0; i < 65536; ++i) {
+            ll[i] = xlin2log(float(i) / 65535.f, 25.f);
         }
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
@@ -1659,10 +1607,9 @@ BENCHFUN
     bool ponder = false;
     float ponderCC = 1.f;
 
-    const bool denoiseMethodRgb = (dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::RGB);
     // init luma noisevarL
     const float noiseluma = static_cast<float>(dnparams.luminance);
-    const float noisevarL = (useNoiseLCurve && (denoiseMethodRgb || !isRAW)) ? static_cast<float>(SQR(((noiseluma + 1.0) / 125.0) * (10. + (noiseluma + 1.0) / 25.0))) : static_cast<float>(SQR((noiseluma / 125.0) * (1.0 + noiseluma / 25.0)));
+    const float noisevarL = (useNoiseLCurve) ? static_cast<float>(SQR(((noiseluma + 1.0) / 125.0) * (10. + (noiseluma + 1.0) / 25.0))) : static_cast<float>(SQR((noiseluma / 125.0) * (1.0 + noiseluma / 25.0)));
     const bool denoiseLuminance = (noisevarL > 0.00001f);
 
     TMatrix wprofi = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
@@ -1764,12 +1711,7 @@ BENCHFUN
 
         LUTf gamcurve(65536, LUT_CLIP_BELOW);
         float gamslope = exp(log(static_cast<double>(gamthresh)) / gam) / gamthresh;
-
-        if (denoiseMethodRgb) {
-            Color::gammaf2lut(gamcurve, gam, gamthresh, gamslope, 65535.f, 32768.f);
-        } else {
-            Color::gammanf2lut(gamcurve, gam, 65535.f, 32768.f);
-        }
+        Color::gammaf2lut(gamcurve, gam, gamthresh, gamslope, 65535.f, 65535.f);
 
         // inverse gamma transform for output data
         float igam = 1.f / gam;
@@ -1777,12 +1719,7 @@ BENCHFUN
         float igamslope = 1.f / gamslope;
 
         LUTf igamcurve(65536, LUT_CLIP_BELOW);
-
-        if (denoiseMethodRgb) {
-            Color::gammaf2lut(igamcurve, igam, igamthresh, igamslope, 32768.f, 65535.f);
-        } else {
-            Color::gammanf2lut(igamcurve, igam, 32768.f, 65535.f);
-        }
+        Color::gammaf2lut(igamcurve, igam, igamthresh, igamslope, 65535.f, 65535.f);
 
         const float gain = pow(2.0f, float(expcomp));
         float params_Ldetail = min(float(dnparams.luminanceDetail), 99.9f); // max out to avoid div by zero when using noisevar_Ldetail as divisor
@@ -1944,14 +1881,6 @@ BENCHFUN
                 }
             }
 
-            TMatrix wiprof = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
-            //inverse matrix user select
-            const float wip[3][3] = {
-                {static_cast<float>(wiprof[0][0]), static_cast<float>(wiprof[0][1]), static_cast<float>(wiprof[0][2])},
-                {static_cast<float>(wiprof[1][0]), static_cast<float>(wiprof[1][1]), static_cast<float>(wiprof[1][2])},
-                {static_cast<float>(wiprof[2][0]), static_cast<float>(wiprof[2][1]), static_cast<float>(wiprof[2][2])}
-            };
-
             TMatrix wprof = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
             const float wp[3][3] = {
@@ -2042,92 +1971,40 @@ BENCHFUN
                         const float maxNoiseVarab = max(noisevarab_b, noisevarab_r);
 
                         if (isRAW) {//image is raw; use channel differences for chroma channels
-
-                            if (!denoiseMethodRgb) { //lab mode
-                                //modification Jacques feb 2013 and july 2014
 #ifdef _OPENMP
-                                #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
+#                           pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
 #endif
 
-                                for (int i = tiletop; i < tilebottom; ++i) {
-                                    int i1 = i - tiletop;
+                            for (int i = tiletop; i < tilebottom; ++i) {
+                                int i1 = i - tiletop;
 
-                                    for (int j = tileleft; j < tileright; ++j) {
-                                        int j1 = j - tileleft;
-                                        float R_ = gain * src->r(i, j);
-                                        float G_ = gain * src->g(i, j);
-                                        float B_ = gain * src->b(i, j);
+                                for (int j = tileleft; j < tileright; ++j) {
+                                    int j1 = j - tileleft;
 
-                                        R_ = Color::denoiseIGammaTab[R_];
-                                        G_ = Color::denoiseIGammaTab[G_];
-                                        B_ = Color::denoiseIGammaTab[B_];
+                                    float X = gain * src->r(i, j);
+                                    float Y = gain * src->g(i, j);
+                                    float Z = gain * src->b(i, j);
+                                    //conversion colorspace to determine luminance with no gamma
+                                    X = X < 65535.f ? gamcurve[X] : (Color::gammaf(X / 65535.f, gam, gamthresh, gamslope) * 65535.f);
+                                    Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 65535.f);
+                                    Z = Z < 65535.f ? gamcurve[Z] : (Color::gammaf(Z / 65535.f, gam, gamthresh, gamslope) * 65535.f);
+                                    //end chroma
+                                    // labdn->L[i1][j1] = Y;
+                                    // labdn->a[i1][j1] = (X - Y);
+                                    // labdn->b[i1][j1] = (Y - Z);
+                                    float l, u, v;
+                                    Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
+                                    labdn->L[i1][j1] = l;
+                                    labdn->a[i1][j1] = v;
+                                    labdn->b[i1][j1] = u;
 
-                                        //apply gamma noise standard (slider)
-                                        R_ = R_ < 65535.f ? gamcurve[R_] : (Color::gammanf(R_ / 65535.f, gam) * 32768.f);
-                                        G_ = G_ < 65535.f ? gamcurve[G_] : (Color::gammanf(G_ / 65535.f, gam) * 32768.f);
-                                        B_ = B_ < 65535.f ? gamcurve[B_] : (Color::gammanf(B_ / 65535.f, gam) * 32768.f);
-
-                                        //true conversion xyz=>Lab
-                                        float X, Y, Z;
-                                        Color::rgbxyz(R_, G_, B_, X, Y, Z, wp);
-
-                                        //convert to Lab
-                                        float L, a, b;
-                                        Color::XYZ2Lab(X, Y, Z, L, a, b);
-
-                                        labdn->L[i1][j1] = L;
-                                        labdn->a[i1][j1] = a;
-                                        labdn->b[i1][j1] = b;
-
-                                        if (((i1 | j1) & 1) == 0) {
-                                            if (numTries == 1) {
-                                                noisevarlum[(i1 >> 1)*width2 + (j1 >> 1)] = useNoiseLCurve ? lumcalc[i >> 1][j >> 1] : noisevarL;
-                                                noisevarchrom[(i1 >> 1)*width2 + (j1 >> 1)] = useNoiseCCurve ? maxNoiseVarab * ccalc[i >> 1][j >> 1] : 1.f;
-                                            } else {
-                                                noisevarlum[(i1 >> 1)*width2 + (j1 >> 1)] = lumcalc[i >> 1][j >> 1];
-                                                noisevarchrom[(i1 >> 1)*width2 + (j1 >> 1)] = ccalc[i >> 1][j >> 1];
-                                            }
-                                        }
-
-                                        //end chroma
-                                    }
-                                }
-                            } else {//RGB mode
-#ifdef _OPENMP
-                                #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
-#endif
-
-                                for (int i = tiletop; i < tilebottom; ++i) {
-                                    int i1 = i - tiletop;
-
-                                    for (int j = tileleft; j < tileright; ++j) {
-                                        int j1 = j - tileleft;
-
-                                        float X = gain * src->r(i, j);
-                                        float Y = gain * src->g(i, j);
-                                        float Z = gain * src->b(i, j);
-                                        //conversion colorspace to determine luminance with no gamma
-                                        X = X < 65535.f ? gamcurve[X] : (Color::gammaf(X / 65535.f, gam, gamthresh, gamslope) * 32768.f);
-                                        Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 32768.f);
-                                        Z = Z < 65535.f ? gamcurve[Z] : (Color::gammaf(Z / 65535.f, gam, gamthresh, gamslope) * 32768.f);
-                                        //end chroma
-                                        // labdn->L[i1][j1] = Y;
-                                        // labdn->a[i1][j1] = (X - Y);
-                                        // labdn->b[i1][j1] = (Y - Z);
-                                        float l, u, v;
-                                        Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
-                                        labdn->L[i1][j1] = l;
-                                        labdn->a[i1][j1] = v;
-                                        labdn->b[i1][j1] = u;
-
-                                        if (((i1 | j1) & 1) == 0) {
-                                            if (numTries == 1) {
-                                                noisevarlum[(i1 >> 1)*width2 + (j1 >> 1)] = useNoiseLCurve ? lumcalc[i >> 1][j >> 1] : noisevarL;
-                                                noisevarchrom[(i1 >> 1)*width2 + (j1 >> 1)] = useNoiseCCurve ? maxNoiseVarab * ccalc[i >> 1][j >> 1] : 1.f;
-                                            } else {
-                                                noisevarlum[(i1 >> 1)*width2 + (j1 >> 1)] = lumcalc[i >> 1][j >> 1];
-                                                noisevarchrom[(i1 >> 1)*width2 + (j1 >> 1)] = ccalc[i >> 1][j >> 1];
-                                            }
+                                    if (((i1 | j1) & 1) == 0) {
+                                        if (numTries == 1) {
+                                            noisevarlum[(i1 >> 1)*width2 + (j1 >> 1)] = useNoiseLCurve ? lumcalc[i >> 1][j >> 1] : noisevarL;
+                                            noisevarchrom[(i1 >> 1)*width2 + (j1 >> 1)] = useNoiseCCurve ? maxNoiseVarab * ccalc[i >> 1][j >> 1] : 1.f;
+                                        } else {
+                                            noisevarlum[(i1 >> 1)*width2 + (j1 >> 1)] = lumcalc[i >> 1][j >> 1];
+                                            noisevarchrom[(i1 >> 1)*width2 + (j1 >> 1)] = ccalc[i >> 1][j >> 1];
                                         }
                                     }
                                 }
@@ -2142,7 +2019,6 @@ BENCHFUN
 
                                 for (int j = tileleft; j < tileright; ++j) {
                                     int j1 = j - tileleft;
-                                    float L, a, b;
                                     float rLum = src->r(i, j) ; //for denoise curves
                                     float gLum = src->g(i, j) ;
                                     float bLum = src->b(i, j) ;
@@ -2155,18 +2031,23 @@ BENCHFUN
                                     float btmp = Color::igammatab_srgb[ src->b(i, j) ];
                                     //modification Jacques feb 2013
                                     // gamma slider different from raw
-                                    rtmp = rtmp < 65535.f ? gamcurve[rtmp] : (Color::gammanf(rtmp / 65535.f, gam) * 32768.f);
-                                    gtmp = gtmp < 65535.f ? gamcurve[gtmp] : (Color::gammanf(gtmp / 65535.f, gam) * 32768.f);
-                                    btmp = btmp < 65535.f ? gamcurve[btmp] : (Color::gammanf(btmp / 65535.f, gam) * 32768.f);
+                                    rtmp = rtmp < 65535.f ? gamcurve[rtmp] : (Color::gammanf(rtmp / 65535.f, gam) * 65535.f);
+                                    gtmp = gtmp < 65535.f ? gamcurve[gtmp] : (Color::gammanf(gtmp / 65535.f, gam) * 65535.f);
+                                    btmp = btmp < 65535.f ? gamcurve[btmp] : (Color::gammanf(btmp / 65535.f, gam) * 65535.f);
 
-                                    float X, Y, Z;
-                                    Color::rgbxyz(rtmp, gtmp, btmp, X, Y, Z, wp);
+                                    // float X, Y, Z;
+                                    // Color::rgbxyz(rtmp, gtmp, btmp, X, Y, Z, wp);
 
-                                    //convert Lab
-                                    Color::XYZ2Lab(X, Y, Z, L, a, b);
-                                    labdn->L[i1][j1] = L;
-                                    labdn->a[i1][j1] = a;
-                                    labdn->b[i1][j1] = b;
+                                    // //convert Lab
+                                    // Color::XYZ2Lab(X, Y, Z, L, a, b);
+                                    // labdn->L[i1][j1] = L;
+                                    // labdn->a[i1][j1] = a;
+                                    // labdn->b[i1][j1] = b;
+                                    float Y, u, v;
+                                    Color::rgb2yuv(rtmp, gtmp, btmp, Y, u, v, wpi);
+                                    labdn->L[i1][j1] = Y;
+                                    labdn->a[i1][j1] = v;
+                                    labdn->b[i1][j1] = u;
 
                                     if (((i1 | j1) & 1) == 0) {
                                         float Llum, alum, blum;
@@ -2302,12 +2183,7 @@ BENCHFUN
                                         int Hlvl_L = Ldecomp->level_H(lvl);
 
                                         float ** WavCoeffs_L = Ldecomp->level_coeffs(lvl);
-
-                                        if (!denoiseMethodRgb) {
-                                            madL[lvl][dir - 1] = SQR(Mad(WavCoeffs_L[dir], Wlvl_L * Hlvl_L));
-                                        } else {
-                                            madL[lvl][dir - 1] = SQR(MadRgb(WavCoeffs_L[dir], Wlvl_L * Hlvl_L));
-                                        }
+                                        madL[lvl][dir - 1] = SQR(MadRgb(WavCoeffs_L[dir], Wlvl_L * Hlvl_L));
                                     }
                                 }
                             }
@@ -2325,16 +2201,16 @@ BENCHFUN
 
                             if (!memoryAllocationFailed) {
                                 if (nrQuality == QUALITY_STANDARD) {
-                                    if (!WaveletDenoiseAllAB(scale, *Ldecomp, *adecomp, noisevarchrom, madL, noisevarab_r, useNoiseCCurve, autoch, denoiseMethodRgb)) { //enhance mode
+                                    if (!WaveletDenoiseAllAB(scale, *Ldecomp, *adecomp, noisevarchrom, madL, noisevarab_r, useNoiseCCurve, autoch)) { //enhance mode
                                         memoryAllocationFailed = true;
                                     }
                                 } else { /*if (nrQuality==QUALITY_HIGH)*/
-                                    if (!WaveletDenoiseAll_BiShrinkAB(scale, *Ldecomp, *adecomp, noisevarchrom, madL, noisevarab_r, useNoiseCCurve, autoch, denoiseMethodRgb)) { //enhance mode
+                                    if (!WaveletDenoiseAll_BiShrinkAB(scale, *Ldecomp, *adecomp, noisevarchrom, madL, noisevarab_r, useNoiseCCurve, autoch)) { //enhance mode
                                         memoryAllocationFailed = true;
                                     }
 
                                     if (!memoryAllocationFailed) {
-                                        if (!WaveletDenoiseAllAB(scale, *Ldecomp, *adecomp, noisevarchrom, madL, noisevarab_r, useNoiseCCurve, autoch, denoiseMethodRgb)) {
+                                        if (!WaveletDenoiseAllAB(scale, *Ldecomp, *adecomp, noisevarchrom, madL, noisevarab_r, useNoiseCCurve, autoch)) {
                                             memoryAllocationFailed = true;
                                         }
                                     }
@@ -2343,7 +2219,7 @@ BENCHFUN
 
                             if (!memoryAllocationFailed) {
                                 if (kall == 0) {
-                                    Noise_residualAB(*adecomp, chresid, chmaxresid, denoiseMethodRgb);
+                                    Noise_residualAB(*adecomp, chresid, chmaxresid);
                                     chresidtemp = chresid;
                                     chmaxresidtemp = chmaxresid;
                                 }
@@ -2362,16 +2238,16 @@ BENCHFUN
 
                                 if (!memoryAllocationFailed) {
                                     if (nrQuality == QUALITY_STANDARD) {
-                                        if (!WaveletDenoiseAllAB(scale, *Ldecomp, *bdecomp, noisevarchrom, madL, noisevarab_b, useNoiseCCurve, autoch, denoiseMethodRgb)) { //enhance mode
+                                        if (!WaveletDenoiseAllAB(scale, *Ldecomp, *bdecomp, noisevarchrom, madL, noisevarab_b, useNoiseCCurve, autoch)) { //enhance mode
                                             memoryAllocationFailed = true;
                                         }
                                     } else { /*if (nrQuality==QUALITY_HIGH)*/
-                                        if (!WaveletDenoiseAll_BiShrinkAB(scale, *Ldecomp, *bdecomp, noisevarchrom, madL, noisevarab_b, useNoiseCCurve, autoch, denoiseMethodRgb)) { //enhance mode
+                                        if (!WaveletDenoiseAll_BiShrinkAB(scale, *Ldecomp, *bdecomp, noisevarchrom, madL, noisevarab_b, useNoiseCCurve, autoch)) { //enhance mode
                                             memoryAllocationFailed = true;
                                         }
 
                                         if (!memoryAllocationFailed) {
-                                            if (!WaveletDenoiseAllAB(scale, *Ldecomp, *bdecomp, noisevarchrom, madL, noisevarab_b, useNoiseCCurve, autoch, denoiseMethodRgb)) {
+                                            if (!WaveletDenoiseAllAB(scale, *Ldecomp, *bdecomp, noisevarchrom, madL, noisevarab_b, useNoiseCCurve, autoch)) {
                                                 memoryAllocationFailed = true;
                                             }
                                         }
@@ -2380,7 +2256,7 @@ BENCHFUN
 
                                 if (!memoryAllocationFailed) {
                                     if (kall == 0) {
-                                        Noise_residualAB(*bdecomp, chresid, chmaxresid, denoiseMethodRgb);
+                                        Noise_residualAB(*bdecomp, chresid, chmaxresid);
                                         chresid += chresidtemp;
                                         chmaxresid += chmaxresidtemp;
                                         chresid = sqrt(chresid / (6 * (levwav)));
@@ -2492,101 +2368,45 @@ BENCHFUN
 
                             //convert back to RGB and write to destination array
                             if (isRAW) {
-                                if (!denoiseMethodRgb) {//Lab mode
-                                    realred /= 100.f;
-                                    realblue /= 100.f;
-
 #ifdef _OPENMP
-                                    #pragma omp parallel for schedule(dynamic,16) num_threads(denoiseNestedLevels)
+#                               pragma omp parallel for num_threads(denoiseNestedLevels)
 #endif
+                                for (int i = tiletop; i < tilebottom; ++i) {
+                                    int i1 = i - tiletop;
 
-                                    for (int i = tiletop; i < tilebottom; ++i) {
-                                        int i1 = i - tiletop;
+                                    for (int j = tileleft; j < tileright; ++j) {
+                                        int j1 = j - tileleft;
+                                        float c_h = sqrt(SQR(labdn->a[i1][j1]) + SQR(labdn->b[i1][j1]));
 
-                                        for (int j = tileleft; j < tileright; ++j) {
-                                            int j1 = j - tileleft;
-                                            //modification Jacques feb 2013
-                                            //true conversion Lab==>xyz
-                                            float L = labdn->L[i1][j1];
-                                            float a = labdn->a[i1][j1];
-                                            float b = labdn->b[i1][j1];
-                                            float c_h = SQR(a) + SQR(b);
+                                        if (c_h > 3000.f) {
+                                            labdn->a[i1][j1] *= 1.f + qhighFactor * realred / 100.f;
+                                            labdn->b[i1][j1] *= 1.f + qhighFactor * realblue / 100.f;
+                                        }
 
-                                            if (c_h > 9000000.f) {
-                                                a *= 1.f + qhighFactor * realred;
-                                                b *= 1.f + qhighFactor * realblue;
-                                            }
+                                        // float Y = labdn->L[i1][j1];
+                                        // float X = (labdn->a[i1][j1]) + Y;
+                                        // float Z = Y - (labdn->b[i1][j1]);
+                                        float X, Y, Z;
+                                        Color::yuv2rgb(labdn->L[i1][j1], labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
 
-                                            //convert XYZ
-                                            float X, Y, Z;
-                                            Color::Lab2XYZ(L, a, b, X, Y, Z);
-                                            //apply inverse gamma noise
-                                            float r_, g_, b_;
-                                            Color::xyz2rgb(X, Y, Z, r_, g_, b_, wip);
-                                            //inverse gamma standard (slider)
-                                            r_ = r_ < 32768.f ? igamcurve[r_] : (Color::gammanf(r_ / 32768.f, igam) * 65535.f);
-                                            g_ = g_ < 32768.f ? igamcurve[g_] : (Color::gammanf(g_ / 32768.f, igam) * 65535.f);
-                                            b_ = b_ < 32768.f ? igamcurve[b_] : (Color::gammanf(b_ / 32768.f, igam) * 65535.f);
 
-                                            //readapt arbitrary gamma (inverse from beginning)
-                                            r_ = Color::denoiseGammaTab[r_];
-                                            g_ = Color::denoiseGammaTab[g_];
-                                            b_ = Color::denoiseGammaTab[b_];
+                                        X = X < 65536.f ? igamcurve[X] : (Color::gammaf(X / 65535.f, igam, igamthresh, igamslope) * 65535.f);
+                                        Y = Y < 65536.f ? igamcurve[Y] : (Color::gammaf(Y / 65535.f, igam, igamthresh, igamslope) * 65535.f);
+                                        Z = Z < 65536.f ? igamcurve[Z] : (Color::gammaf(Z / 65535.f, igam, igamthresh, igamslope) * 65535.f);
 
-                                            if (numtiles == 1) {
-                                                dsttmp->r(i, j) = newGain * r_;
-                                                dsttmp->g(i, j) = newGain * g_;
-                                                dsttmp->b(i, j) = newGain * b_;
-                                            } else {
-                                                float factor = Vmask[i1] * Hmask[j1];
-                                                dsttmp->r(i, j) += factor * r_;
-                                                dsttmp->g(i, j) += factor * g_;
-                                                dsttmp->b(i, j) += factor * b_;
-                                            }
+                                        if (numtiles == 1) {
+                                            dsttmp->r(i, j) = newGain * X;
+                                            dsttmp->g(i, j) = newGain * Y;
+                                            dsttmp->b(i, j) = newGain * Z;
+                                        } else {
+                                            float factor = Vmask[i1] * Hmask[j1];
+                                            dsttmp->r(i, j) += factor * X;
+                                            dsttmp->g(i, j) += factor * Y;
+                                            dsttmp->b(i, j) += factor * Z;
                                         }
                                     }
-                                } else {//RGB mode
-#ifdef _OPENMP
-                                    #pragma omp parallel for num_threads(denoiseNestedLevels)
-#endif
-
-                                    for (int i = tiletop; i < tilebottom; ++i) {
-                                        int i1 = i - tiletop;
-
-                                        for (int j = tileleft; j < tileright; ++j) {
-                                            int j1 = j - tileleft;
-                                            float c_h = sqrt(SQR(labdn->a[i1][j1]) + SQR(labdn->b[i1][j1]));
-
-                                            if (c_h > 3000.f) {
-                                                labdn->a[i1][j1] *= 1.f + qhighFactor * realred / 100.f;
-                                                labdn->b[i1][j1] *= 1.f + qhighFactor * realblue / 100.f;
-                                            }
-
-                                            // float Y = labdn->L[i1][j1];
-                                            // float X = (labdn->a[i1][j1]) + Y;
-                                            // float Z = Y - (labdn->b[i1][j1]);
-                                            float X, Y, Z;
-                                            Color::yuv2rgb(labdn->L[i1][j1], labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
-
-
-                                            X = X < 32768.f ? igamcurve[X] : (Color::gammaf(X / 32768.f, igam, igamthresh, igamslope) * 65535.f);
-                                            Y = Y < 32768.f ? igamcurve[Y] : (Color::gammaf(Y / 32768.f, igam, igamthresh, igamslope) * 65535.f);
-                                            Z = Z < 32768.f ? igamcurve[Z] : (Color::gammaf(Z / 32768.f, igam, igamthresh, igamslope) * 65535.f);
-
-                                            if (numtiles == 1) {
-                                                dsttmp->r(i, j) = newGain * X;
-                                                dsttmp->g(i, j) = newGain * Y;
-                                                dsttmp->b(i, j) = newGain * Z;
-                                            } else {
-                                                float factor = Vmask[i1] * Hmask[j1];
-                                                dsttmp->r(i, j) += factor * X;
-                                                dsttmp->g(i, j) += factor * Y;
-                                                dsttmp->b(i, j) += factor * Z;
-                                            }
-                                        }
-                                    }
-
                                 }
+
                             } else {
 #ifdef _OPENMP
                                 #pragma omp parallel for num_threads(denoiseNestedLevels)
@@ -2598,25 +2418,26 @@ BENCHFUN
                                     for (int j = tileleft; j < tileright; ++j) {
                                         int j1 = j - tileleft;
                                         //modification Jacques feb 2013
-                                        float L = labdn->L[i1][j1];
-                                        float a = labdn->a[i1][j1];
-                                        float b = labdn->b[i1][j1];
-                                        float c_h = sqrt(SQR(a) + SQR(b));
+                                        float Y = labdn->L[i1][j1];
+                                        float v = labdn->a[i1][j1];
+                                        float u = labdn->b[i1][j1];
+                                        float c_h = sqrt(SQR(u) + SQR(v));
 
                                         if (c_h > 3000.f) {
-                                            a *= 1.f + qhighFactor * realred / 100.f;
-                                            b *= 1.f + qhighFactor * realblue / 100.f;
+                                            u *= 1.f + qhighFactor * realred / 100.f;
+                                            v *= 1.f + qhighFactor * realblue / 100.f;
                                         }
 
-                                        float X, Y, Z;
-                                        Color::Lab2XYZ(L, a, b, X, Y, Z);
+                                        // float X, Y, Z;
+                                        // Color::Lab2XYZ(L, a, b, X, Y, Z);
 
                                         float r_, g_, b_;
-                                        Color::xyz2rgb(X, Y, Z, r_, g_, b_, wip);
+                                        // Color::xyz2rgb(X, Y, Z, r_, g_, b_, wip);
+                                        Color::yuv2rgb(Y, u, v, r_, g_, b_, wpi);
                                         //gamma slider is different from Raw
-                                        r_ = r_ < 32768.f ? igamcurve[r_] : (Color::gammanf(r_ / 32768.f, igam) * 65535.f);
-                                        g_ = g_ < 32768.f ? igamcurve[g_] : (Color::gammanf(g_ / 32768.f, igam) * 65535.f);
-                                        b_ = b_ < 32768.f ? igamcurve[b_] : (Color::gammanf(b_ / 32768.f, igam) * 65535.f);
+                                        r_ = r_ < 65536.f ? igamcurve[r_] : (Color::gammanf(r_ / 65535.f, igam) * 65535.f);
+                                        g_ = g_ < 65536.f ? igamcurve[g_] : (Color::gammanf(g_ / 65535.f, igam) * 65535.f);
+                                        b_ = b_ < 65536.f ? igamcurve[b_] : (Color::gammanf(b_ / 65535.f, igam) * 65535.f);
 
                                         if (numtiles == 1) {
                                             dsttmp->r(i, j) = newGain * r_;

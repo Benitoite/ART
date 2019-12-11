@@ -52,7 +52,6 @@ public:
     void trimValues(rtengine::procparams::ProcParams* pp) override;
 
 private:
-    void colorSpaceChanged();
     void aggressiveChanged();
     void chrominanceMethodChanged();
     void medianTypeChanged();
@@ -68,7 +67,6 @@ private:
     rtengine::ProcEvent EvChrominanceAutoFactor;
     rtengine::ProcEvent EvLuminanceDetailThreshold;
 
-    MyComboBoxText *colorSpace;
     MyComboBoxText *aggressive;
     Adjuster *gamma;
     Adjuster *luminance;

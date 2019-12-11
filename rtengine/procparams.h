@@ -554,11 +554,6 @@ struct ImpulseDenoiseParams {
  * Parameters of the directional pyramid denoising
  */
 struct DenoiseParams {
-    enum class ColorSpace {
-        LAB,
-        RGB
-    };
-    
     enum class ChrominanceMethod {
         MANUAL,
         AUTOMATIC
@@ -587,8 +582,6 @@ struct DenoiseParams {
     };
     
     bool enabled;
-
-    ColorSpace colorSpace;
 
     bool aggressive;
     double gamma;

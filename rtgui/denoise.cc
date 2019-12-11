@@ -46,16 +46,6 @@ Denoise::Denoise():
     lumaVBox->set_spacing(2);
 
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE") + ":")), Gtk::PACK_SHRINK, 1);
-    colorSpace = Gtk::manage(new MyComboBoxText());
-    colorSpace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB"));
-    colorSpace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB"));
-    colorSpace->set_active(0);
-    hb->pack_start(*colorSpace, Gtk::PACK_EXPAND_WIDGET, 1);
-    hb->set_tooltip_markup (M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_TOOLTIP"));
-    pack_start(*hb, Gtk::PACK_SHRINK, 1);
-
-    hb = Gtk::manage(new Gtk::HBox());
     hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MAIN_MODE") + ": ")), Gtk::PACK_SHRINK, 1);
     hb->set_tooltip_markup(M("TP_DIRPYRDENOISE_MAIN_MODE_TOOLTIP"));
 
@@ -222,7 +212,6 @@ Denoise::Denoise():
     smoothingEnabled->setLevel(2);
     pack_start(*smoothingEnabled);
 
-    colorSpace->signal_changed().connect(sigc::mem_fun(*this, &Denoise::colorSpaceChanged));
     aggressive->signal_changed().connect(sigc::mem_fun(*this, &Denoise::aggressiveChanged));
     chrominanceMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::chrominanceMethodChanged));
     medianType->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianTypeChanged));
@@ -274,7 +263,6 @@ void Denoise::read(const ProcParams *pp)
 
     setEnabled(pp->denoise.enabled);
     
-    colorSpace->set_active(int(pp->denoise.colorSpace));
     aggressive->set_active(pp->denoise.aggressive ? 1 : 0);
     gamma->setValue(pp->denoise.gamma);
     luminance->setValue(pp->denoise.luminance);
@@ -308,9 +296,6 @@ void Denoise::read(const ProcParams *pp)
 void Denoise::write(ProcParams *pp)
 {
     pp->denoise.enabled = getEnabled();
-    if (colorSpace->get_active_row_number() < 2) {
-        pp->denoise.colorSpace = static_cast<DenoiseParams::ColorSpace>(colorSpace->get_active_row_number());
-    }
     if (aggressive->get_active_row_number() < 2) {
         pp->denoise.aggressive = aggressive->get_active_row_number();
     }
@@ -340,14 +325,6 @@ void Denoise::write(ProcParams *pp)
     pp->denoise.guidedLumaStrength = guidedLumaStrength->getValue();
     pp->denoise.guidedChromaRadius = guidedChromaRadius->getValue();
     pp->denoise.guidedChromaStrength = guidedChromaStrength->getValue();
-}
-
-
-void Denoise::colorSpaceChanged()
-{
-    if (listener && getEnabled() ) {
-        listener->panelChanged(EvDPDNmet, colorSpace->get_active_text());
-    }
 }
 
 

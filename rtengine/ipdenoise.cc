@@ -223,14 +223,8 @@ void RGB_denoise_infoGamCurve(const procparams::DenoiseParams & dnparams, bool i
         }
     }
 
-    bool denoiseMethodRgb = (dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::RGB);
-
-    if (denoiseMethodRgb) {
-        gamslope = exp(log(static_cast<double>(gamthresh)) / gam) / gamthresh;
-        Color::gammaf2lut(gamcurve, gam, gamthresh, gamslope, 65535.f, 32768.f);
-    } else {
-        Color::gammanf2lut(gamcurve, gam, 65535.f, 32768.f);
-    }
+    gamslope = exp(log(static_cast<double>(gamthresh)) / gam) / gamthresh;
+    Color::gammaf2lut(gamcurve, gam, gamthresh, gamslope, 65535.f, 32768.f);
 }
 
 
@@ -300,9 +294,6 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     const int imheight = src->getHeight(), imwidth = src->getWidth();
-
-    bool denoiseMethodRgb = (dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::RGB);
-
     const float gain = pow(2.0f, float(expcomp));
 
     int tilesize;
@@ -469,74 +460,35 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
                     }
                 }
 
-                if (!denoiseMethodRgb) { //lab mode, modification Jacques feb 2013 and july 2014
+                for (int i = tiletop/*, i1=0*/; i < tilebottom; ++i/*, ++i1*/) {
+                    int i1 = i - tiletop;
 
-#ifdef _OPENMP
-                    #pragma omp parallel for if (multiThread)
-#endif
+                    for (int j = tileleft/*, j1=0*/; j < tileright; ++j/*, ++j1*/) {
+                        int j1 = j - tileleft;
 
-                    for (int i = tiletop; i < tilebottom; ++i) {
-                        int i1 = i - tiletop;
+                        float X = gain * src->r(i, j);
+                        float Y = gain * src->g(i, j);
+                        float Z = gain * src->b(i, j);
 
-                        for (int j = tileleft; j < tileright; ++j) {
-                            int j1 = j - tileleft;
-                            float R_ = gain * src->r(i, j);
-                            float G_ = gain * src->g(i, j);
-                            float B_ = gain * src->b(i, j);
+                        X = X < 65535.f ? gamcurve[X] : (Color::gammaf(X / 65535.f, gam, gamthresh, gamslope) * 32768.f);
+                        Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 32768.f);
+                        Z = Z < 65535.f ? gamcurve[Z] : (Color::gammaf(Z / 65535.f, gam, gamthresh, gamslope) * 32768.f);
 
-                            R_ = Color::denoiseIGammaTab[R_];
-                            G_ = Color::denoiseIGammaTab[G_];
-                            B_ = Color::denoiseIGammaTab[B_];
-
-                            //apply gamma noise standard (slider)
-                            R_ = R_ < 65535.f ? gamcurve[R_] : (Color::gammanf(R_ / 65535.f, gam) * 32768.f);
-                            G_ = G_ < 65535.f ? gamcurve[G_] : (Color::gammanf(G_ / 65535.f, gam) * 32768.f);
-                            B_ = B_ < 65535.f ? gamcurve[B_] : (Color::gammanf(B_ / 65535.f, gam) * 32768.f);
-                            //true conversion xyz=>Lab
-                            float X, Y, Z;
-                            Color::rgbxyz(R_, G_, B_, X, Y, Z, wp);
-
-                            //convert to Lab
-                            float L, a, b;
-                            Color::XYZ2Lab(X, Y, Z, L, a, b);
-
-                            labdn->a[i1][j1] = a;
-                            labdn->b[i1][j1] = b;
-                        }
-                    }
-                } else { //RGB mode
-
-                    for (int i = tiletop/*, i1=0*/; i < tilebottom; ++i/*, ++i1*/) {
-                        int i1 = i - tiletop;
-
-                        for (int j = tileleft/*, j1=0*/; j < tileright; ++j/*, ++j1*/) {
-                            int j1 = j - tileleft;
-
-                            float X = gain * src->r(i, j);
-                            float Y = gain * src->g(i, j);
-                            float Z = gain * src->b(i, j);
-
-                            X = X < 65535.f ? gamcurve[X] : (Color::gammaf(X / 65535.f, gam, gamthresh, gamslope) * 32768.f);
-                            Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 32768.f);
-                            Z = Z < 65535.f ? gamcurve[Z] : (Color::gammaf(Z / 65535.f, gam, gamthresh, gamslope) * 32768.f);
-
-                            // labdn->a[i1][j1] = (X - Y);
-                            // labdn->b[i1][j1] = (Y - Z);
-                            float l, u, v;
-                            Color::rgb2yuv(X, Y, Z, l, u, v, wp);
-                            labdn->a[i1][j1] = v;
-                            labdn->b[i1][j1] = u;
-                        }
+                        // labdn->a[i1][j1] = (X - Y);
+                        // labdn->b[i1][j1] = (Y - Z);
+                        float l, u, v;
+                        Color::rgb2yuv(X, Y, Z, l, u, v, wp);
+                        labdn->a[i1][j1] = v;
+                        labdn->b[i1][j1] = u;
                     }
                 }
-
             } else {//image is not raw; use Lab parametrization
                 for (int i = tiletop/*, i1=0*/; i < tilebottom; ++i/*, ++i1*/) {
                     int i1 = i - tiletop;
 
                     for (int j = tileleft/*, j1=0*/; j < tileright; ++j/*, ++j1*/) {
                         int j1 = j - tileleft;
-                        float L, a, b;
+                        //float L, a, b;
                         float rLum = src->r(i, j) ; //for luminance denoise curve
                         float gLum = src->g(i, j) ;
                         float bLum = src->b(i, j) ;
@@ -553,11 +505,13 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
                         gtmp = gtmp < 65535.f ? gamcurve[gtmp] : (Color::gammanf(gtmp / 65535.f, gam) * 32768.f);
                         btmp = btmp < 65535.f ? gamcurve[btmp] : (Color::gammanf(btmp / 65535.f, gam) * 32768.f);
 
-                        float X, Y, Z;
-                        Color::rgbxyz(rtmp, gtmp, btmp, X, Y, Z, wp);
+                        // float X, Y, Z;
+                        // Color::rgbxyz(rtmp, gtmp, btmp, X, Y, Z, wp);
 
-                        //convert Lab
-                        Color::XYZ2Lab(X, Y, Z, L, a, b);
+                        // //convert Lab
+                        // Color::XYZ2Lab(X, Y, Z, L, a, b);
+                        float Y, u, v;
+                        Color::rgb2yuv(rtmp, gtmp, btmp, Y, u, v, wp);
 
                         if (((i1 | j1) & 1) == 0) {
                             float Llum, alum, blum;
@@ -588,8 +542,8 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
                             noisevarhue[i1 >> 1][j1 >> 1] = hN;
                         }
 
-                        labdn->a[i1][j1] = a;
-                        labdn->b[i1][j1] = b;
+                        labdn->a[i1][j1] = v;
+                        labdn->b[i1][j1] = u;
                     }
                 }
             }
@@ -661,8 +615,7 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
                     nb,
                     chau,
                     chred,
-                    chblue,
-                    denoiseMethodRgb
+                    chblue
                 ); // Enhance mode
             }
 
@@ -1053,11 +1006,7 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
                 median_iterations[i] = denoiseParams.medianIterations;
             }
             if (denoiseParams.medianMethod != DenoiseParams::MedianMethod::RGB) {
-                if (denoiseParams.colorSpace == DenoiseParams::ColorSpace::LAB) {
-                    img->setMode(Imagefloat::Mode::LAB, multiThread);
-                } else {
-                    img->setMode(Imagefloat::Mode::YUV, multiThread);
-                }
+                img->setMode(Imagefloat::Mode::YUV, multiThread);
                 switch (denoiseParams.medianMethod) {
                 case DenoiseParams::MedianMethod::LUMINANCE:
                     median_iterations[1] = median_iterations[2] = 0;
