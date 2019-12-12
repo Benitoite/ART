@@ -92,7 +92,7 @@ inline void RawImageSource::interpolate_row_rb_mul_pp (const array2D<float> &raw
                 }
 
                 b = g_mul * cg[j] + b / std::max(1, n);
-                ab[jx] = b;
+                ab[jx] = std::max(0.f, b);
             } else {
                 // linear R-G interp. horizontally
                 float r;
@@ -105,7 +105,7 @@ inline void RawImageSource::interpolate_row_rb_mul_pp (const array2D<float> &raw
                     r = g_mul * cg[j] + (r_mul * rawData[i][j - 1] - g_mul * cg[j - 1] + r_mul * rawData[i][j + 1] - g_mul * cg[j + 1]) / 2;
                 }
 
-                ar[jx] = r;
+                ar[jx] = std::max(0.f, r);
                 // linear B-G interp. vertically
                 float b;
 
@@ -117,7 +117,7 @@ inline void RawImageSource::interpolate_row_rb_mul_pp (const array2D<float> &raw
                     b = g_mul * cg[j] + (b_mul * rawData[i - 1][j] - g_mul * pg[j] + b_mul * rawData[i + 1][j] - g_mul * ng[j]) / 2;
                 }
 
-                ab[jx] = b;
+                ab[jx] = std::max(0.f, b);
             }
         }
     } else if(pg && ng) {
@@ -152,7 +152,7 @@ inline void RawImageSource::interpolate_row_rb_mul_pp (const array2D<float> &raw
 
                 r = g_mul * cg[j] + r / std::max(n, 1);
 
-                ar[jx] = r;
+                ar[jx] = std::max(0.f, r);
             } else {
                 // linear B-G interp. horizontally
                 float b;
@@ -165,7 +165,7 @@ inline void RawImageSource::interpolate_row_rb_mul_pp (const array2D<float> &raw
                     b = g_mul * cg[j] + (b_mul * rawData[i][j - 1] - g_mul * cg[j - 1] + b_mul * rawData[i][j + 1] - g_mul * cg[j + 1]) / 2;
                 }
 
-                ab[jx] = b;
+                ab[jx] = std::max(0.f, b);
                 // linear R-G interp. vertically
                 float r;
 
@@ -177,7 +177,7 @@ inline void RawImageSource::interpolate_row_rb_mul_pp (const array2D<float> &raw
                     r = g_mul * cg[j] + (r_mul * rawData[i - 1][j] - g_mul * pg[j] + r_mul * rawData[i + 1][j] - g_mul * ng[j]) / 2;
                 }
 
-                ar[jx] = r;
+                ar[jx] = std::max(0.f, r);
             }
         }
     }

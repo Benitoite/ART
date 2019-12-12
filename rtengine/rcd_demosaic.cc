@@ -262,9 +262,9 @@ void RawImageSource::rcd_demosaic()
             for (int row = rowStart + rcdBorder; row < rowEnd - rcdBorder; ++row) {
                 for (int col = colStart + rcdBorder; col < colEnd - rcdBorder; ++col) {
                     int idx = (row - rowStart) * tileSize + col - colStart ;
-                    red[row][col] = CLIP(rgb[0][idx] * 65535.f);
-                    green[row][col] = CLIP(rgb[1][idx] * 65535.f);
-                    blue[row][col] = CLIP(rgb[2][idx] * 65535.f);
+                    red[row][col] = std::max(0.f, rgb[0][idx] * 65535.f);
+                    green[row][col] = std::max(0.f, rgb[1][idx] * 65535.f);
+                    blue[row][col] = std::max(0.f, rgb[2][idx] * 65535.f);
                 }
             }
 
