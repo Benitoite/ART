@@ -355,7 +355,12 @@ void local_contrast_wavelets(array2D<float> &Y, const LocalContrastParams::Regio
     evaluate_params(wd, mean, meanN, sigma, sigmaN, MaxP, MaxN, multiThread);
 
     WavOpacityCurveWL curve;
-    curve.Set(params.curve);
+    if (params.curve.empty() || params.curve[0] == FCT_Linear) {
+        LocalContrastParams::Region dflt;
+        curve.Set(dflt.curve);
+    } else {
+        curve.Set(params.curve);
+    }
 
     for (int dir = 1; dir < 4; dir++) {
         for (int level = 0; level < maxlvl; ++level) {
