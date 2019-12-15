@@ -66,10 +66,7 @@ void apply_gamma(float **Y, int W, int H, float pivot, float gamma, bool multiTh
                 }
                 l = glut[l];
             } else {
-                if (!reverse) {
-                    l /= 65535.f;
-                }
-                l = pow_F(std::max(l / pivot, 1e-18f), gamma) * pivot;
+                l = pow_F(std::max(l / d, 1e-18f), gamma) * pivot;
                 if (reverse || usm) {
                     l *= 65535.f;
                 }
