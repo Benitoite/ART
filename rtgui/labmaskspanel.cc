@@ -770,7 +770,7 @@ void LabMasksPanel::populateList()
                 hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
                 hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
                 hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
-                r.deltaEMask.enabled ? "dE" : "",
+                r.deltaEMask.enabled ? "ΔE" : "",
                 r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "",
                 am));
     }
@@ -839,7 +839,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
             hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
             hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
             hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
-            r.deltaEMask.enabled ? "dE" : "",
+            r.deltaEMask.enabled ? "ΔE" : "",
             r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", am));
     Gtk::TreePath pth;
     pth.push_back(idx);
