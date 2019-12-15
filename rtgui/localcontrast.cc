@@ -41,7 +41,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask) override
     {
         mask_list = parent_->EvList;
         h_mask = parent_->EvHueMask;
@@ -50,6 +50,7 @@ public:
         blur = parent_->EvMaskBlur;
         show = parent_->EvShowMask;
         area_mask = parent_->EvAreaMask;
+        deltaE_mask = parent_->EvDeltaEMask;
     }
 
     ToolPanelListener *listener() override
@@ -144,11 +145,12 @@ public:
         return Glib::ustring::compose("%1\n[%2]", c, r.contrast);
     }
 
-    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
+    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) override
     {
         hcurve = EUID_LabMasks_H2;
         ccurve = EUID_LabMasks_C2;
         lcurve = EUID_LabMasks_L2;
+        deltaE = EUID_LabMasks_DE2;
     }
 
 private:
@@ -175,6 +177,7 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     EvMaskBlur = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_MASKBLUR");
     EvShowMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_SHOWMASK");
     EvAreaMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_AREAMASK");
+    EvDeltaEMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DELTAEMASK");
     
     box = Gtk::manage(new Gtk::VBox());
 
@@ -333,4 +336,10 @@ void LocalContrast::regionShow(int idx)
 void LocalContrast::setAreaDrawListener(AreaDrawListener *l)
 {
     labMasks->setAreaDrawListener(l);
+}
+
+
+void LocalContrast::setDeltaEColorProvider(DeltaEColorProvider *p)
+{
+    labMasks->setDeltaEColorProvider(p);
 }

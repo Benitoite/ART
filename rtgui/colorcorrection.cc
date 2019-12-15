@@ -42,7 +42,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask) override
     {
         mask_list = parent_->EvList;
         h_mask = parent_->EvHueMask;
@@ -51,6 +51,7 @@ public:
         blur = parent_->EvMaskBlur;
         show = parent_->EvShowMask;
         area_mask = parent_->EvAreaMask;
+        deltaE_mask = parent_->EvDeltaEMask;
     }
 
     ToolPanelListener *listener() override
@@ -146,11 +147,12 @@ public:
         return Glib::ustring::compose("a=%1 b=%2 S=%3%8\ns=%4 o=%5 p=%6 P=%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power, r.pivot, ch);
     }
 
-    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
+    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) override
     {
         hcurve = EUID_LabMasks_H1;
         ccurve = EUID_LabMasks_C1;
         lcurve = EUID_LabMasks_L1;
+        deltaE = EUID_LabMasks_DE1;
     }
 
 private:
@@ -182,6 +184,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     EvMaskBlur = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_MASKBLUR");
     EvShowMask = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_SHOWMASK");
     EvAreaMask = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_AREAMASK");
+    EvDeltaEMask = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_DELTAEMASK");
 
     box = Gtk::manage(new Gtk::VBox());
 
@@ -395,4 +398,10 @@ void ColorCorrection::setListener(ToolPanelListener *tpl)
 void ColorCorrection::setAreaDrawListener(AreaDrawListener *l)
 {
     labMasks->setAreaDrawListener(l);
+}
+
+
+void ColorCorrection::setDeltaEColorProvider(DeltaEColorProvider *p)
+{
+    labMasks->setDeltaEColorProvider(p);
 }

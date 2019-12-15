@@ -218,6 +218,54 @@ void rgb2lab(Imagefloat::Mode mode, float R, float G, float B, float &L, float &
     }
 }
 
+
+class DeltaEEvaluator {
+public:
+    DeltaEEvaluator(const std::vector<LabCorrectionMask> &masks)
+    {
+        masks_.reserve(masks.size());
+        for (auto &m : masks) {
+            masks_.push_back(m.deltaEMask);
+            refs_.push_back(cmsCIELab());
+            auto &de = masks_.back();
+            auto &v = refs_.back();
+            double h = de.H * 2.f * RT_PI / 360.f;
+            v.L = de.L * 100.f;
+            v.a = de.C * std::cos(h) * 100.f;
+            v.b = de.C * std::sin(h) * 100.f;
+        }
+    }
+    
+    float operator()(size_t idx, float L, float a, float b)
+    {
+        auto &m = masks_[idx];
+        if (!m.enabled || m.weight_L + m.weight_C + m.weight_H == 0) {
+            return 1.f;
+        }
+        cmsCIELab c = { L * 100.f, a * 100.f, b * 100.f };
+        auto &r = refs_[idx];
+        const auto W = [](int w) -> double { return w ? 100.0 / w : 1000.0; };
+        auto d = cmsCIE2000DeltaE(&r, &c, W(m.weight_L), W(m.weight_C), W(m.weight_H));
+        return getval(m.range, 1.0 + LIM01(m.decay/100.0), d);
+    }
+
+private:
+    float getval(float range, float decay, float d)
+    {
+        if (d <= range * 0.4f) {
+            return 1.f;
+        } else if (d >= range * 5.f) {
+            return 0.f;
+        } else {
+            // Generalised logistic function (see Wikipedia)
+            return 1.f - 1.f / (1 + 100.f * xexpf(-decay * (d - range)));
+        }
+    }
+    
+    std::vector<DeltaEMask> masks_;
+    std::vector<cmsCIELab> refs_;
+};
+
 } // namespace
 
 
@@ -243,6 +291,9 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
 
     for (int i = begin_idx; i < end_idx; ++i) {
         auto &r = masks[i];
+        if (r.deltaEMask.enabled) {
+            has_mask = true;
+        }
         if (!r.hueMask.empty() && r.hueMask[0] != FCT_Linear && r.hueMask != dflt.hueMask) {
             hmask[i].reset(new FlatCurve(r.hueMask, true));
             has_mask = true;
@@ -282,6 +333,8 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
         // magic constant c_factor: normally chromaticity is in [0; 42000] (see color.h), but here we use the constant to match how the chromaticity pipette works (see improcfun.cc lines 4705-4706 and color.cc line 1930
         constexpr float c_factor = 327.68f / 48000.f;
 
+        DeltaEEvaluator dE(masks);
+
 #ifdef _OPENMP
 #       pragma omp parallel if (multithread)
 #endif
@@ -290,6 +343,8 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
             float cBuffer[W];
             float hBuffer[W];
             float lBuffer[W];
+            float aBuffer[W];
+            float bBuffer[W];
 #endif
 #ifdef _OPENMP
 #           pragma omp for schedule(dynamic, 16)
@@ -297,21 +352,26 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
             for (int y = 0; y < H; ++y) {
 #ifdef __SSE2__
                 for (int x = 0; x < W; ++x) {
-                    rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), lBuffer[x], cBuffer[x], hBuffer[x], wp);
+                    rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), lBuffer[x], aBuffer[x], bBuffer[x], wp);
                 }
                 // vectorized precalculation
-                Color::Lab2Lch(cBuffer, hBuffer, cBuffer, hBuffer, W);
+                Color::Lab2Lch(aBuffer, bBuffer, cBuffer, hBuffer, W);
                 fastlin2log(cBuffer, c_factor, 10.f, W);
 #endif
                 for (int x = 0; x < W; ++x) {
 #ifdef __SSE2__
                     const float l = lBuffer[x] / 32768.f;
+                    const float a = aBuffer[x] / 42000.f;
+                    const float b = bBuffer[x] / 42000.f;
                     // use precalculated values
                     const float c = cBuffer[x];
                     float h = hBuffer[x];
 #else
                     float l, a, b;
                     rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), l, a, b, wp);
+                    l /= 32768.f;
+                    a /= 42000.f;
+                    b /= 42000.f;
                     float c, h;
                     Color::Lab2Lch(a, b, c, h);
                     c = xlin2log(c * c_factor, 10.f);
@@ -328,7 +388,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
                         auto &hm = hmask[i];
                         auto &cm = cmask[i];
                         auto &lm = lmask[i];
-                        float blend = LIM01((hm ? hm->getVal(h) : 1.f) * (cm ? cm->getVal(c) : 1.f) * (lm ? lm->getVal(l) : 1.f));
+                        float blend = LIM01(dE(i, l, a, b) * (hm ? hm->getVal(h) : 1.f) * (cm ? cm->getVal(c) : 1.f) * (lm ? lm->getVal(l) : 1.f));
                         if (Lmask) {
                             (*Lmask)[i][y][x] = blend;
                         }
@@ -482,6 +542,41 @@ void fillPipetteLabMasks(Imagefloat *rgb, PlanarWhateverData<float>* editWhateve
             editWhatever->v(y, x) = v;
         }
     }
+}
+
+
+bool getDeltaEColor(Imagefloat *rgb, int x, int y, int offset_x, int offset_y, int full_width, int full_height, double scale, float &L, float &C, float &H)
+{
+    std::vector<float> med_L, med_a, med_b;
+    TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(rgb->colorSpace());
+    const auto mode = rgb->mode();
+    x = (x - offset_x) / scale;
+    y = (y - offset_y) / scale;
+    const int off = int(32.0 / scale + 0.5);
+    if (x < 0 || x >= rgb->getWidth() || y < 0 || y >= rgb->getHeight()) {
+        return false;
+    }
+    for (int i = max(y-off, 0), end = min(y+off, rgb->getHeight()); i < end; ++i) {
+        for (int j = max(x-off, 0), end = min(x+off, rgb->getWidth()); j < end; ++j) {
+            float L, a, b;
+            rgb2lab(mode, rgb->r(i, j), rgb->g(i, j), rgb->b(i, j), L, a, b, ws);
+            med_L.push_back(L);
+            med_a.push_back(a);
+            med_b.push_back(b);
+        }
+    }
+
+    std::sort(med_L.begin(), med_L.end());
+    std::sort(med_a.begin(), med_a.end());
+    std::sort(med_b.begin(), med_b.end());
+
+    auto idx = med_L.size()/2;
+    L = med_L[idx] / 32768.f;
+    float a = med_a[idx] / 42000.f;
+    float b = med_b[idx] / 42000.f;
+    C = sqrtf(SQR(a) + SQR(b));
+    H = xatan2f(b, a) * 360.f / (2.f * RT_PI);
+    return true;
 }
 
 } // namespace rtengine

@@ -308,6 +308,8 @@ public:
         return customTransformOut;
     }
 
+    bool getDeltaELCH(EditUniqueID id, int x, int y, float &L, float &C, float &H) override;
+
     /* struct DenoiseInfoStore { */
     /*     DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {} */
     /*     float chM; */

@@ -40,7 +40,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask) override
     {
         mask_list = parent_->EvList;
         h_mask = parent_->EvHueMask;
@@ -49,6 +49,7 @@ public:
         blur = parent_->EvMaskBlur;
         show = parent_->EvShowMask;
         area_mask = parent_->EvAreaMask;
+        deltaE_mask = parent_->EvDeltaEMask;
     }
 
     ToolPanelListener *listener() override
@@ -130,11 +131,12 @@ public:
             "%1 %2 %3", r.strength, r.edgeStopping, r.scale); 
     }
 
-    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) override
+    void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) override
     {
         hcurve = EUID_LabMasks_H4;
         ccurve = EUID_LabMasks_C4;
         lcurve = EUID_LabMasks_L4;
+        deltaE = EUID_LabMasks_DE4;
     }
 
 private:
@@ -156,6 +158,7 @@ TextureBoost::TextureBoost () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL")
     EvMaskBlur = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_MASKBLUR");
     EvShowMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_SHOWMASK");
     EvAreaMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_AREAMASK");
+    EvDeltaEMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_DELTAEMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
     edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));
@@ -308,4 +311,10 @@ void TextureBoost::regionShow(int idx)
 void TextureBoost::setAreaDrawListener(AreaDrawListener *l)
 {
     labMasks->setAreaDrawListener(l);
+}
+
+
+void TextureBoost::setDeltaEColorProvider(DeltaEColorProvider *p)
+{
+    labMasks->setDeltaEColorProvider(p);
 }

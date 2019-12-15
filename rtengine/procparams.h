@@ -113,6 +113,24 @@ struct AreaMask {
 };
 
 
+class DeltaEMask {
+public:
+    bool enabled;
+    double L;
+    double C;
+    double H;
+    double range;
+    double decay;
+    int weight_L;
+    int weight_C;
+    int weight_H;
+
+    DeltaEMask();
+    bool operator==(const DeltaEMask &other) const;
+    bool operator!=(const DeltaEMask &other) const;
+};
+
+
 class LabCorrectionMask {
 public:
     std::vector<double> hueMask;
@@ -122,6 +140,7 @@ public:
     bool inverted;
     bool areaEnabled;
     AreaMask areaMask;
+    DeltaEMask deltaEMask;
 
     LabCorrectionMask();
     bool operator==(const LabCorrectionMask &other) const;

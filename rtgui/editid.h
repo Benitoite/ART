@@ -57,7 +57,11 @@ enum EditUniqueID {
     EUID_LabMasks_L3,
     EUID_LabMasks_H4,
     EUID_LabMasks_C4,
-    EUID_LabMasks_L4
+    EUID_LabMasks_L4,
+    EUID_LabMasks_DE1, // color correction
+    EUID_LabMasks_DE2, // local contrast
+    EUID_LabMasks_DE3, // smoothing
+    EUID_LabMasks_DE4  // texture boost
 };
 
 /// @brief Editing mechanisms

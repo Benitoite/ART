@@ -31,6 +31,7 @@
 #include "iimage.h"
 #include "utils.h"
 #include "../rtgui/threadutils.h"
+#include "../rtgui/editid.h"
 #include "settings.h"
 #include "LUT.h"
 /**
@@ -382,8 +383,7 @@ public:
 };
 
 /** This is a staged, cached image processing manager with partial image update support.  */
-class StagedImageProcessor
-{
+class StagedImageProcessor {
 
 public:
     /** Returns the initial image corresponding to the image processor.
@@ -444,6 +444,8 @@ public:
     virtual void        getSpotWB  (int x, int y, int rectSize, double& temp, double& green) = 0;
     virtual void        getAutoCrop (double ratio, int &x, int &y, int &w, int &h) = 0;
     virtual bool        getFilmNegativeExponents(int xA, int yA, int xB, int yB, std::array<float, 3>& newExps) = 0;
+
+    virtual bool getDeltaELCH(EditUniqueID id, int x, int y, float &L, float &C, float &H) = 0;
 
     virtual void        saveInputICCReference (const Glib::ustring& fname, bool apply_wb) = 0;
 

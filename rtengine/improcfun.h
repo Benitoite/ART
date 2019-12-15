@@ -178,6 +178,21 @@ public:
     double getTransformAutoFill(int oW, int oH, const LensCorrection *pLCPMap = nullptr);
     //----------------------------------------------------------------------
 
+    class DeltaEData {
+    public:
+        bool ok;
+        float L;
+        float C;
+        float H;
+        double x;
+        double y;
+
+        DeltaEData():
+            ok(false), L(0), C(0), H(0), x(-1), y(-1) {}
+    };
+    DeltaEData deltaE;
+    int setDeltaEData(EditUniqueID id, double x, double y);
+
 private:
     cmsHTRANSFORM monitorTransform;
     std::unique_ptr<GamutWarning> gamutWarning;

@@ -42,6 +42,7 @@
 #include "StopWatch.h"
 #include "../rtgui/ppversion.h"
 #include "../rtgui/guiutils.h"
+#include "refreshmap.h"
 
 namespace rtengine {
 
@@ -876,6 +877,30 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         break;
     }
     return stop;
+}
+
+
+int ImProcFunctions::setDeltaEData(EditUniqueID id, double x, double y)
+{
+    deltaE.ok = false;
+    deltaE.x = x;
+    deltaE.y = y;
+    deltaE.L = 0;
+    deltaE.C = 0;
+    deltaE.H = 0;
+
+    switch (id) {
+    case EUID_LabMasks_DE1:
+        return LUMINANCECURVE | M_LUMACURVE;
+    case EUID_LabMasks_DE2:
+        return DISPLAY;
+    case EUID_LabMasks_DE3:
+        return LUMINANCECURVE | M_LUMACURVE;
+    case EUID_LabMasks_DE4:
+        return DISPLAY;
+    default:
+        return 0;
+    }
 }
 
 } // namespace rtengine

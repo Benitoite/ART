@@ -29,6 +29,7 @@
 #include "curveeditorgroup.h"
 #include "curveeditor.h"
 #include "clipboard.h"
+#include "thresholdadjuster.h"
 
 
 class LabMasksContentProvider {
@@ -36,7 +37,7 @@ public:
     virtual ~LabMasksContentProvider() {}
 
     virtual Gtk::Widget *getWidget() = 0;
-    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask) = 0;
+    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask) = 0;
 
     virtual ToolPanelListener *listener() = 0;
 
@@ -53,7 +54,7 @@ public:
     virtual Glib::ustring getColumnHeader(int col) = 0;
     virtual Glib::ustring getColumnContent(int col, int row) = 0;
 
-    virtual void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve) = 0;
+    virtual void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) = 0;
 };
 
 
@@ -85,13 +86,21 @@ public:
 };
 
 
+class DeltaEColorProvider {
+public:
+    virtual ~DeltaEColorProvider() = default;
+    virtual bool getDeltaELCH(EditUniqueID id, rtengine::Coord pos, float &L, float &C, float &H) = 0;
+};
+
+
 class LabMasksPanel:
     public Gtk::VBox,
     public AdjusterListener,
     public CurveListener,
     public ColorProvider,
     public AreaMask,
-    public AreaDrawUpdater {
+    public AreaDrawUpdater,
+    public ThresholdAdjusterListener {
 public:
     LabMasksPanel(LabMasksContentProvider *cp);
     ~LabMasksPanel();
@@ -110,7 +119,7 @@ public:
     void setEditProvider(EditDataProvider *provider);
     void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
 
-    void updateAreaMaskDefaults(const rtengine::procparams::ProcParams* params);
+    void updateAreaMaskDefaults(const rtengine::procparams::ProcParams *params);
 
     void setEdited(bool yes);
     bool getEdited();
@@ -120,6 +129,14 @@ public:
     void updateArea(AreaDrawUpdater::Phase phase, int x1, int y1, int x2, int y2) override;
     void cancelUpdateArea() override;
     void setAreaDrawListener(AreaDrawListener *l);
+
+    void setDeltaEColorProvider(DeltaEColorProvider *provider);
+
+    void adjusterChanged(ThresholdAdjuster *a, double newBottom, double newTop) override;
+    void adjusterChanged(ThresholdAdjuster *a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override {}
+    void adjusterChanged(ThresholdAdjuster *a, int newBottom, int newTop) override {}
+    void adjusterChanged(ThresholdAdjuster *a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override {}
+    void adjusterChanged2(ThresholdAdjuster *a, int newBottomL, int newTopL, int newBottomR, int newTopR) override {}
     
 private:
     void on_map() override;
@@ -147,6 +164,7 @@ private:
     void onAreaShapeModeChanged(int i);
     void onAreaMaskDrawChanged();
     void onAreaMaskDrawAddPressed();
+    void onDeltaEMaskEnableToggled();
     
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
@@ -161,6 +179,10 @@ private:
     void enableListener();
 
     const rtengine::ProcEvent &areaMaskEvent() const;
+    const rtengine::ProcEvent &deltaEMaskEvent() const;
+
+    void onDeltaESpotRequested(rtengine::Coord pos);
+    void onDeltaEPickClicked();
 
     LabMasksContentProvider *cp_;
     std::vector<rtengine::procparams::LabCorrectionMask> masks_;
@@ -174,6 +196,8 @@ private:
     rtengine::ProcEvent EvShowMask;
     rtengine::ProcEvent EvAreaMask;
     rtengine::ProcEvent EvAreaMaskVoid;
+    rtengine::ProcEvent EvDeltaEMask;
+    rtengine::ProcEvent EvDeltaEMaskVoid;
 
     MyExpander *mask_exp_;
     bool first_mask_exp_;
@@ -222,4 +246,15 @@ private:
     rtengine::procparams::AreaMask::Shape defaultAreaShape;
     bool listEdited;
     AreaDrawListener *adl_;
+
+    MyExpander *deltaEMask;
+    Gtk::DrawingArea *deltaEColor;
+    ThresholdAdjuster *deltaEL;
+    ThresholdAdjuster *deltaEC;
+    ThresholdAdjuster *deltaEH;
+    Adjuster *deltaERange;
+    Adjuster *deltaEDecay;
+    Gtk::Button *deltaEPick;
+
+    DeltaEColorProvider *deltaE_provider_;
 };

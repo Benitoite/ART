@@ -481,6 +481,40 @@ bool AreaMask::isTrivial() const
 }
 
 
+DeltaEMask::DeltaEMask():
+    enabled(false),
+    L(0.0),
+    C(0.0),
+    H(0.0),
+    range(1.0),
+    decay(1),
+    weight_L(50),
+    weight_C(75),
+    weight_H(100)
+{
+}
+
+
+bool DeltaEMask::operator==(const DeltaEMask &other) const
+{
+    return enabled == other.enabled
+        && L == other.L
+        && C == other.C
+        && H == other.H
+        && range == other.range
+        && decay == other.decay
+        && weight_L == other.weight_L
+        && weight_C == other.weight_C
+        && weight_H == other.weight_H;
+}
+
+
+bool DeltaEMask::operator!=(const DeltaEMask &other) const
+{
+    return !(*this == other);
+}
+
+
 LabCorrectionMask::LabCorrectionMask():
     hueMask{
         FCT_MinMaxCPoints,
@@ -518,7 +552,8 @@ LabCorrectionMask::LabCorrectionMask():
     maskBlur(0),
     inverted(false),
     areaEnabled(false),
-    areaMask()
+    areaMask(),
+    deltaEMask()
 {
 }
 
@@ -531,7 +566,8 @@ bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
         && maskBlur == other.maskBlur
         && inverted == other.inverted
         && areaEnabled == other.areaEnabled
-        && areaMask == other.areaMask;
+        && areaMask == other.areaMask
+        && deltaEMask == other.deltaEMask;
 }
 
 
@@ -610,6 +646,17 @@ bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_
     if (!s.empty()) {
         areaMask.shapes = std::move(s);
     }
+    
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskEnabled" + suffix, deltaEMask.enabled);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskL" + suffix, deltaEMask.L);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskC" + suffix, deltaEMask.C);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskH" + suffix, deltaEMask.H);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskRange" + suffix, deltaEMask.range);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskDecay" + suffix, deltaEMask.decay);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H);
+    
     return ret;
 }
 
@@ -635,6 +682,16 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
         putToKeyfile(group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness, keyfile);
         putToKeyfile(group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode2str(a.mode), keyfile);
     }
+
+    putToKeyfile(group_name, prefix + "DeltaEMaskEnabled" + suffix, deltaEMask.enabled, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskL" + suffix, deltaEMask.L, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskC" + suffix, deltaEMask.C, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskH" + suffix, deltaEMask.H, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskRange" + suffix, deltaEMask.range, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskDecay" + suffix, deltaEMask.decay, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H, keyfile);
 }
 
 

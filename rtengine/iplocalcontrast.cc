@@ -425,6 +425,12 @@ bool ImProcFunctions::localContrast(Imagefloat *rgb)
     if ((eid == EUID_LabMasks_H2 || eid == EUID_LabMasks_C2 || eid == EUID_LabMasks_L2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
+
+    if (eid == EUID_LabMasks_DE2) {
+        if (getDeltaEColor(rgb, deltaE.x, deltaE.y, offset_x, offset_y, full_width, full_height, scale, deltaE.L, deltaE.C, deltaE.H)) {
+            deltaE.ok = true;
+        }
+    }
     
     if (params->localContrast.enabled) {
         rgb->setMode(Imagefloat::Mode::LAB, multiThread);

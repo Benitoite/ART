@@ -33,8 +33,8 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-namespace rtengine
-{
+
+namespace rtengine {
 
 extern const Settings* settings;
 
@@ -1093,4 +1093,30 @@ void ImProcCoordinator::setHighQualComputed()
     highQualityComputed = true;
 }
 
+
+bool ImProcCoordinator::getDeltaELCH(EditUniqueID id, int x, int y, float &L, float &C, float &H)
+{
+    int change = ipf.setDeltaEData(id, x, y);
+    if (!change) {
+        return false;
+    }
+    startProcessing(change);
+
+    bool ret = false;
+    updaterThreadStart.lock();
+    if (updaterRunning && thread) {
+        thread->join();
+        if (ipf.deltaE.ok) {
+            ret = true;
+            L = ipf.deltaE.L;
+            C = ipf.deltaE.C;
+            H = ipf.deltaE.H;
+        }
+    }
+    ipf.setDeltaEData(EUID_None, -1, -1);
+    updaterThreadStart.unlock();
+
+    return ret;
 }
+
+} // namespace rtengine

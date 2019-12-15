@@ -149,9 +149,13 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb)
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
     
+    if (eid == EUID_LabMasks_DE4) {
+        if (getDeltaEColor(rgb, deltaE.x, deltaE.y, offset_x, offset_y, full_width, full_height, scale, deltaE.L, deltaE.C, deltaE.H)) {
+            deltaE.ok = true;
+        }
+    }
+    
     if (params->textureBoost.enabled) {
-        //rgb->assignColorSpace(params->icm.workingProfile);
-        
         if (editWhatever) {
             LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H4);
             fillPipetteLabMasks(rgb, editWhatever, id, multiThread);

@@ -41,6 +41,12 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
     if ((eid == EUID_LabMasks_H1 || eid == EUID_LabMasks_C1 || eid == EUID_LabMasks_L1) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
+
+    if (eid == EUID_LabMasks_DE1) {
+        if (getDeltaEColor(rgb, deltaE.x, deltaE.y, offset_x, offset_y, full_width, full_height, scale, deltaE.L, deltaE.C, deltaE.H)) {
+            deltaE.ok = true;
+        }
+    }
     
     if (!params->colorcorrection.enabled) {
         if (editWhatever) {

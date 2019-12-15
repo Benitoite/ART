@@ -50,6 +50,7 @@ public:
 
     void updateGeometry(int fullWidth, int fullHeight);
     void setAreaDrawListener(AreaDrawListener *l);
+    void setDeltaEColorProvider(DeltaEColorProvider *p);
 
 private:
     void regionGet(int idx);
@@ -68,6 +69,7 @@ private:
     rtengine::ProcEvent EvMaskBlur;
     rtengine::ProcEvent EvShowMask;
     rtengine::ProcEvent EvAreaMask;
+    rtengine::ProcEvent EvDeltaEMask;
 
     std::vector<rtengine::procparams::GuidedSmoothingParams::Region> data;
     int showMaskIdx;

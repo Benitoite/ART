@@ -33,4 +33,6 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<procparams::LabCorrecti
 enum class LabMasksEditID { H = 0, C, L };
 void fillPipetteLabMasks(Imagefloat *rgb, PlanarWhateverData<float> *editWhatever, LabMasksEditID id, bool multithread);
 
+bool getDeltaEColor(Imagefloat *rgb, int x, int y, int offset_x, int offset_y, int full_width, int full_height, double scale, float &L, float &C, float &H);
+
 } // namespace rtengine

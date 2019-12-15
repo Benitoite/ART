@@ -54,6 +54,7 @@ private:
     rtengine::ProcEvent EvMaskBlur;
     rtengine::ProcEvent EvShowMask;
     rtengine::ProcEvent EvAreaMask;
+    rtengine::ProcEvent EvDeltaEMask;
 
 public:
 
@@ -80,5 +81,6 @@ public:
 
     void updateGeometry(int fullWidth, int fullHeight);
     void setAreaDrawListener(AreaDrawListener *l);
+    void setDeltaEColorProvider(DeltaEColorProvider *p);
 };
 

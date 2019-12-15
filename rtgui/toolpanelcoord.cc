@@ -292,6 +292,11 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     icm->setICMPanelListener (this);
     filmNegative->setFilmNegProvider (this);
 
+    colorcorrection->setDeltaEColorProvider(this);
+    smoothing->setDeltaEColorProvider(this);
+    localContrast->setDeltaEColorProvider(this);
+    textureBoost->setDeltaEColorProvider(this);
+    
     toolBar = new ToolBar ();
     toolBar->setToolBarListener (this);
 }
@@ -1124,7 +1129,12 @@ void ToolPanelCoordinator::setAreaDrawListener(AreaDrawListener *listener)
 {
     colorcorrection->setAreaDrawListener(listener);
     smoothing->setAreaDrawListener(listener);
-    //cbdl->setAreaDrawListener(listener);
     localContrast->setAreaDrawListener(listener);
     textureBoost->setAreaDrawListener(listener);
+}
+
+
+bool ToolPanelCoordinator::getDeltaELCH(EditUniqueID id, rtengine::Coord pos, float &L, float &C, float &H)
+{
+    return ipc && ipc->getDeltaELCH(id, pos.x, pos.y, L, C, H);
 }

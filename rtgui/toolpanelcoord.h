@@ -17,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __TOOLPANELCCORD__
-#define __TOOLPANELCCORD__
+#pragma once
 
 #include "../rtengine/rtengine.h"
 #include "toolpanel.h"
@@ -104,6 +103,7 @@ class ToolPanelCoordinator :
     public rtengine::AutoExpListener,
     public FilmNegProvider,
     public AreaDrawListenerProvider,
+    public DeltaEColorProvider,
     public rtengine::NonCopyable
 {
 protected:
@@ -335,10 +335,10 @@ public:
     bool handleShortcutKey (GdkEventKey* event);
 
     // ToolBarListener interface
-    void toolSelected (ToolMode tool) override;
-    void editModeSwitchedOff () override;
+    void toolSelected(ToolMode tool) override;
+    void editModeSwitchedOff() override;
 
-    void setEditProvider (EditDataProvider *provider);
+    void setEditProvider(EditDataProvider *provider);
 
     // AutoExpListener interface
     void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons) override;
@@ -346,8 +346,10 @@ public:
 
     void setAreaDrawListener(AreaDrawListener *listener) override;
 
+    // DeltaEColorProvider interface
+    bool getDeltaELCH(EditUniqueID id, rtengine::Coord pos, float &L, float &C, float &H) override;
+
 private:
     IdleRegister idle_register;
 };
 
-#endif
