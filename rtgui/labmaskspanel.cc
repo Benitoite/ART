@@ -1096,9 +1096,9 @@ void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::El
             x += 1.f;
         }
         x = rtengine::log2lin(x, 3.f);
-        rtengine::Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
+        rtengine::Color::hsv2rgb01(x, 0.5f, 0.65f, R, G, B);
     } else if (callerId == ID_HUE_MASK+1) {
-        rtengine::Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);
+        rtengine::Color::hsv2rgb01(float(valY), float(valX), 0.8f, R, G, B);
     } else if (callerId == ID_HUE_MASK+2) {
         double dummy, w, h;
         deltaEH->getValue(dummy, h);
@@ -1108,12 +1108,12 @@ void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::El
     } else if (callerId == ID_HUE_MASK+3) {
         double dummy, w, h;
         deltaEH->getValue(dummy, h);
-        rtengine::Color::hsv2rgb01(hue(float(h / 360.0)), float(valX), 0.5f, R, G, B);
+        rtengine::Color::hsv2rgb01(hue(float(h / 360.0)), float(valX), 0.65f, R, G, B);
         deltaEC->getValue(w, dummy);
         alpha = rtengine::LIM01(1.0 - w/100.0);        
     } else if (callerId == ID_HUE_MASK+4) {
         double dummy, w;
-        rtengine::Color::hsv2rgb01(hue(float(valX)), 0.5f, 0.5f, R, G, B);
+        rtengine::Color::hsv2rgb01(hue(float(valX)), 0.5f, 0.65f, R, G, B);
         deltaEH->getValue(w, dummy);
         alpha = rtengine::LIM01(1.0 - w/100.0);        
     }

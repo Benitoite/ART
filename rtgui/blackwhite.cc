@@ -515,10 +515,9 @@ void BlackWhite::colorForValue(double valX, double valY, enum ColorCaller::ElemT
         };
 
     if (callerId == 1) {  // Slider 1 background
-        if (valY <= 0.5)
+        if (valY <= 0.5) {
             // the hue range
-        {
-            Color::hsv2rgb01(to_hue(valX), 1.0f, 0.5f, R, G, B);
+            Color::hsv2rgb01(to_hue(valX), 1.0f, 0.65f, R, G, B);
         } else {
             // the strength applied to the current hue
             double strength, hue;

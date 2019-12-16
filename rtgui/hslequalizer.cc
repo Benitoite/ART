@@ -54,7 +54,7 @@ HSLEqualizer::HSLEqualizer():
     for (int i = 0; i < 7; i++) {
         float R, G, B;
         float x = float(i) * (1.0f / 6.0);
-        hsv2rgb01(x, 0.5f, 0.5f, R, G, B);
+        hsv2rgb01(x, 0.5f, 0.6f, R, G, B);
         bottomMilestones.push_back(GradientMilestone(double(x), double(R), double(G), double(B)));
     }
     
@@ -188,11 +188,11 @@ void HSLEqualizer::colorForValue(double valX, double valY, enum ColorCaller::Ele
         } else if (h < 0.0f) {
             h += 1.0f;
         }
-        hsv2rgb01(h, 0.5f, 0.5f, R, G, B);
+        hsv2rgb01(h, 0.5f, 0.6f, R, G, B);
     } else if (callerId == 2) { // Saturation = f(Hue)
-        hsv2rgb01(valX, valY, 0.5f, R, G, B);
+        hsv2rgb01(valX, valY, 0.6f, R, G, B);
     } else if (callerId == 3) { // Value = f(Hue)
-        hsv2rgb01(valX, 0.5f, 0.5f + (valY - 0.5f) * 0.2, R, G, B);
+        hsv2rgb01(valX, 0.5f, 0.6f + (valY - 0.5f) * 0.2, R, G, B);
     }    
     caller->ccRed = R;
     caller->ccGreen = G;
