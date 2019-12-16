@@ -64,7 +64,7 @@ void sh(Imagefloat *img, const ProcParams *params, double scale, bool multithrea
             rtengine::guidedFilter(L, mask, mask, radius, 0.075, multithread, 4);
 
             const float base = std::pow(4.f, float(std::abs(amount))/100.f);
-            const float gamma = 3.f * (hl == (amount >= 0)) ? base : 1.f / base;
+            const float gamma = (hl == (amount >= 0)) ? base : 1.f / base;
 
             const float contrast = std::pow(3.f*(1.f-std::pow(float(amount)/100.f, 1.3f))+2.f, float(min(std::abs(amount), 50))/100.f);
             DiagonalCurve sh_contrast({
