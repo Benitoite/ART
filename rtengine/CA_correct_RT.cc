@@ -28,6 +28,7 @@
 #include "gauss.h"
 #include "median.h"
 #include "StopWatch.h"
+#include "settings.h"
 
 namespace
 {
@@ -114,6 +115,8 @@ bool LinEqSolve(int nDim, double* pfMatr, double* pfVect, double* pfSolution)
 //end of linear equation solver
 }
 
+namespace rtengine { extern const Settings *settings; } 
+
 using namespace std;
 using namespace rtengine;
 
@@ -128,11 +131,11 @@ float* RawImageSource::CA_correct_RT(
     bool fitParamsIn,
     bool fitParamsOut,
     float* buffer,
-    bool freeBuffer,
-    size_t chunkSize,
-    bool measure
+    bool freeBuffer
 )
 {
+    constexpr size_t chunkSize = 2;
+    constexpr bool measure = false;
 
     std::unique_ptr<StopWatch> stop;
 
