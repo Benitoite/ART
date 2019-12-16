@@ -1083,22 +1083,18 @@ void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::El
     const auto hue =
         [](float x) -> float
         {
-            x -= 1.f/6.f;
-            if (x < 0.f) {
-                x += 1.f;
+            if (x >= 0.5f) {
+                x -= 1.f;
             }
-            return x;
-            // if (x > 0.5f) {
-            //     x -= 1.f;
-            // }
-            // return rtengine::Color::huelab_to_huehsv2(x * rtengine::RT_PI_F);
+            x *= 2.f * rtengine::RT_PI_F;
+            return rtengine::Color::huelab_to_huehsv2(x);
         };
 
     if (callerId == ID_HUE_MASK) {
-        float x = hue(valX);// - 1.f/6.f;
-        // if (x < 0.f) {
-        //     x += 1.f;
-        // }
+        float x = valX - 1.f/6.f;
+        if (x < 0.f) {
+            x += 1.f;
+        }
         x = rtengine::log2lin(x, 3.f);
         rtengine::Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
     } else if (callerId == ID_HUE_MASK+1) {

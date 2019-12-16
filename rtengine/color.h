@@ -1847,9 +1847,9 @@ public:
             hr = 0.1125 * double(HH) - 0.0675;    //hr 0.00  0.09    red yellow orange
         } else if (HH >= 1.4f      && HH < 2.f     ) {
             hr = 0.2666 * double(HH) - 0.2833;    //hr 0.09  0.25    orange yellow
-        } else if (HH >= 2.f       && HH < 3.14159f) {
+        } else if (HH >= 2.f       && HH <= 3.14159f) {
             hr = 0.1489 * double(HH) - 0.04785;    //hr 0.25  0.42    yellow green green
-        } else if (HH >= -3.14159f && HH < -2.8f   ) {
+        } else if (HH >= -3.1416f && HH < -2.8f   ) {
             hr = 0.23419 * double(HH) + 1.1557;    //hr 0.42  0.50    green
         } else if (HH >= -2.8f     && HH < -2.3f   ) {
             hr = 0.16   * double(HH) + 0.948;    //hr 0.50  0.58    cyan
