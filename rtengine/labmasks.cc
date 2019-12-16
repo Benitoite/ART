@@ -576,6 +576,11 @@ bool getDeltaEColor(Imagefloat *rgb, int x, int y, int offset_x, int offset_y, i
     float b = med_b[idx] / 42000.f;
     C = sqrtf(SQR(a) + SQR(b));
     H = xatan2f(b, a) * 360.f / (2.f * RT_PI);
+    if (H < 0.f) {
+        H += 360.f;
+    } else if (H > 360.f) {
+        H -= 360.f;
+    }
     return true;
 }
 
