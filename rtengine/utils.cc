@@ -44,35 +44,36 @@ void poke255_uc(unsigned char*& dest, unsigned char r, unsigned char g, unsigned
 #endif
 }
 
-void poke01_d(unsigned char*& dest, double r, double g, double b)
+void poke01_d(unsigned char*& dest, double r, double g, double b, double a)
 {
+    double aa = (1.0 - a) * 255.;
 #if __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
-    *(dest++) = (unsigned char)(b * 255.);
-    *(dest++) = (unsigned char)(g * 255.);
-    *(dest++) = (unsigned char)(r * 255.);
-    *(dest++) = 0;
+    *(dest++) = (unsigned char)(b * aa);
+    *(dest++) = (unsigned char)(g * aa);
+    *(dest++) = (unsigned char)(r * aa);
+    *(dest++) = aa;
 #else
-    *(dest++) = 0;
-    *(dest++) = (unsigned char)(r * 255.);
-    *(dest++) = (unsigned char)(g * 255.);
-    *(dest++) = (unsigned char)(b * 255.);
+    *(dest++) = aa;
+    *(dest++) = (unsigned char)(r * aa);
+    *(dest++) = (unsigned char)(g * aa);
+    *(dest++) = (unsigned char)(b * aa);
 #endif
 }
 
-void poke01_f(unsigned char*& dest, float r, float g, float b)
-{
-#if __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
-    *(dest++) = (unsigned char)(b * 255.f);
-    *(dest++) = (unsigned char)(g * 255.f);
-    *(dest++) = (unsigned char)(r * 255.f);
-    *(dest++) = 0;
-#else
-    *(dest++) = 0;
-    *(dest++) = (unsigned char)(r * 255.f);
-    *(dest++) = (unsigned char)(g * 255.f);
-    *(dest++) = (unsigned char)(b * 255.f);
-#endif
-}
+// void poke01_f(unsigned char*& dest, float r, float g, float b)
+// {
+// #if __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
+//     *(dest++) = (unsigned char)(b * 255.f);
+//     *(dest++) = (unsigned char)(g * 255.f);
+//     *(dest++) = (unsigned char)(r * 255.f);
+//     *(dest++) = 0;
+// #else
+//     *(dest++) = 0;
+//     *(dest++) = (unsigned char)(r * 255.f);
+//     *(dest++) = (unsigned char)(g * 255.f);
+//     *(dest++) = (unsigned char)(b * 255.f);
+// #endif
+// }
 
 void bilinearInterp(const unsigned char* src, int sw, int sh, unsigned char* dst, int dw, int dh)
 {

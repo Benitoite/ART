@@ -44,8 +44,9 @@ public:
     double ccRed;
     double ccGreen;
     double ccBlue;
+    double ccAlpha;
 
-    ColorCaller() : colorCallerId(-1), colorProvider(nullptr), ccRed(0.), ccGreen(0.), ccBlue(0.) {}
+    ColorCaller() : colorCallerId(-1), colorProvider(nullptr), ccRed(0.), ccGreen(0.), ccBlue(0.), ccAlpha(0.) {}
     void setColorProvider (ColorProvider* p, int id)
     {
         colorProvider = p;

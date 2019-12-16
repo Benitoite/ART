@@ -149,7 +149,7 @@ void ColoredBar::updateBackBuffer(Gtk::DrawingArea &drawingArea)
                             double y01 = double(py) / double(h - 1);
                             colorProvider->colorForValue (x01, y01, CCET_BACKGROUND, colorCallerId, this);
 
-                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue);
+                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue, ccAlpha);
                         }
                     }
 
@@ -165,7 +165,7 @@ void ColoredBar::updateBackBuffer(Gtk::DrawingArea &drawingArea)
                             double y01 = double(py) / double(h - 1);
                             colorProvider->colorForValue (x01, y01, CCET_BACKGROUND, colorCallerId, this);
 
-                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue);
+                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue, ccAlpha);
                         }
                     }
 
@@ -181,7 +181,7 @@ void ColoredBar::updateBackBuffer(Gtk::DrawingArea &drawingArea)
                             double y01 = double(py) / double(h - 1);
                             colorProvider->colorForValue (y01, x01, CCET_BACKGROUND, colorCallerId, this);
 
-                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue);
+                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue, ccAlpha);
                         }
                     }
 
@@ -198,7 +198,7 @@ void ColoredBar::updateBackBuffer(Gtk::DrawingArea &drawingArea)
                             double y01 = y_ / double(h - 1);
                             colorProvider->colorForValue (y01, x01, CCET_BACKGROUND, colorCallerId, this);
 
-                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue);
+                            rtengine::poke01_d(pixel, ccRed, ccGreen, ccBlue, ccAlpha);
                         }
                     }
 

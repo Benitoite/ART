@@ -1078,33 +1078,54 @@ int LabMasksPanel::getSelected()
 void LabMasksPanel::colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller)
 {
     float R = 0.f, G = 0.f, B = 0.f;
+    double alpha = 0.f;
+
+    const auto hue =
+        [](float x) -> float
+        {
+            x -= 1.f/6.f;
+            if (x < 0.f) {
+                x += 1.f;
+            }
+            return x;
+            // if (x > 0.5f) {
+            //     x -= 1.f;
+            // }
+            // return rtengine::Color::huelab_to_huehsv2(x * rtengine::RT_PI_F);
+        };
 
     if (callerId == ID_HUE_MASK) {
-        float x = valX - 1.f/6.f;
-        if (x < 0.f) {
-            x += 1.f;
-        }
+        float x = hue(valX);// - 1.f/6.f;
+        // if (x < 0.f) {
+        //     x += 1.f;
+        // }
         x = rtengine::log2lin(x, 3.f);
         rtengine::Color::hsv2rgb01(x, 0.5f, 0.5f, R, G, B);        
     } else if (callerId == ID_HUE_MASK+1) {
         rtengine::Color::hsv2rgb01(float(valY), float(valX), 0.5f, R, G, B);
-    } else if (callerId == ID_HUE_MASK+2 && valY <= 0.75) {
-        double dummy, hue;
-        deltaEH->getValue(dummy, hue);
-        rtengine::Color::hsv2rgb01(float(hue / 360.0), 0.5f, float(valX), R, G, B);
-    } else if (callerId == ID_HUE_MASK+3 && valY <= 0.75) {
-        double dummy, hue;
-        deltaEH->getValue(dummy, hue);
-        rtengine::Color::hsv2rgb01(float(hue / 360.0), float(valX), 0.5f, R, G, B);
-    } else if (callerId == ID_HUE_MASK+4 && valY <= 0.75) {
-        rtengine::Color::hsv2rgb01(float(valX), 0.5f, 0.5f, R, G, B);
-    } else if(callerId >= ID_HUE_MASK+2 && callerId <= ID_HUE_MASK+4 && valY > 0.75) {
-        R = G = B = 1.f - valX;
+    } else if (callerId == ID_HUE_MASK+2) {
+        double dummy, w, h;
+        deltaEH->getValue(dummy, h);
+        rtengine::Color::hsv2rgb01(hue(float(h / 360.0)), 0.5f, float(valX), R, G, B);
+        deltaEL->getValue(w, dummy);
+        alpha = rtengine::LIM01(1.0 - w/100.0);
+    } else if (callerId == ID_HUE_MASK+3) {
+        double dummy, w, h;
+        deltaEH->getValue(dummy, h);
+        rtengine::Color::hsv2rgb01(hue(float(h / 360.0)), float(valX), 0.5f, R, G, B);
+        deltaEC->getValue(w, dummy);
+        alpha = rtengine::LIM01(1.0 - w/100.0);        
+    } else if (callerId == ID_HUE_MASK+4) {
+        double dummy, w;
+        rtengine::Color::hsv2rgb01(hue(float(valX)), 0.5f, 0.5f, R, G, B);
+        deltaEH->getValue(w, dummy);
+        alpha = rtengine::LIM01(1.0 - w/100.0);        
     }
 
     caller->ccRed = double(R);
     caller->ccGreen = double(G);
     caller->ccBlue = double(B);
+    caller->ccAlpha = alpha;
 }
 
 
