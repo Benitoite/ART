@@ -1066,7 +1066,43 @@ bool FileBrowser::keyPressed (GdkEventKey* event)
     bool alt   = event->state & GDK_MOD1_MASK;
 #ifdef __WIN32__
     bool altgr = event->state & GDK_MOD2_MASK;
+#else
+    bool altgr = false;
 #endif
+
+    const bool in_inspector = inspector && inspector->isActive();
+    if (in_inspector && !ctrl && !alt && !altgr) {
+        // shortcuts for the inspector mode
+        switch (event->keyval) {
+        case GDK_KEY_i:
+            inspector->toggleShowInfo();
+            return true;
+        case GDK_KEY_c:
+            inspector->toggleUseCms();
+            return true;
+        case GDK_KEY_z:
+            inspector->setZoomFit(false);
+            return true;
+        case GDK_KEY_x:
+            inspector->setZoomFit(true);
+            return true;
+        case GDK_KEY_j:
+            inspector->setDisplayMode(Inspector::DisplayMode::JPG);
+            return true;
+        case GDK_KEY_r:
+            inspector->setDisplayMode(Inspector::DisplayMode::RAW_LINEAR);
+            return true;
+        case GDK_KEY_f:
+            inspector->setDisplayMode(Inspector::DisplayMode::RAW_FILM_CURVE);
+            return true;
+        case GDK_KEY_s:
+            inspector->setDisplayMode(Inspector::DisplayMode::RAW_SHADOW_BOOST);
+            return true;
+        case GDK_KEY_w:
+            inspector->setDisplayMode(Inspector::DisplayMode::RAW_CLIP_WARNING);
+            return true;
+        }
+    }
 
     if ((event->keyval == GDK_KEY_C || event->keyval == GDK_KEY_c) && ctrl && shift) {
         menuItemActivated (copyTo);
@@ -1158,7 +1194,7 @@ bool FileBrowser::keyPressed (GdkEventKey* event)
     }
 
 #ifdef __WIN32__
-    else if (shift && !ctrl && !alt && !altgr) { // rank
+    else if ((shift || in_inspector) && !ctrl && !alt && !altgr) { // rank
         switch(event->hardware_keycode) {
         case 0x30:  // 0-key
             requestRanking (0);
@@ -1184,7 +1220,7 @@ bool FileBrowser::keyPressed (GdkEventKey* event)
             requestRanking (5);
             return true;
         }
-    } else if (shift && ctrl && !alt && !altgr) { // color labels
+    } else if ((shift || in_inspector) && ctrl && !alt && !altgr) { // color labels
         switch(event->hardware_keycode) {
         case 0x30:  // 0-key
             requestColorLabel (0);
@@ -1213,7 +1249,7 @@ bool FileBrowser::keyPressed (GdkEventKey* event)
     }
 
 #else
-    else if (shift && !ctrl && !alt) { // rank
+    else if ((shift || in_inspector) && !ctrl && !alt) { // rank
         switch(event->hardware_keycode) {
         case 0x13:
             requestRanking (0);
@@ -1239,7 +1275,7 @@ bool FileBrowser::keyPressed (GdkEventKey* event)
             requestRanking (5);
             return true;
         }
-    } else if (shift && ctrl && !alt) { // color labels
+    } else if ((shift || in_inspector) && ctrl && !alt) { // color labels
         switch(event->hardware_keycode) {
         case 0x13:
             requestColorLabel (0);

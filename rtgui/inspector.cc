@@ -662,3 +662,53 @@ void Inspector::cms_toggled()
     ins_.flushBuffers();
     ins_.switchImage(cur_image_);
 }
+
+
+void Inspector::toggleShowInfo()
+{
+    info_->set_active(!info_->get_active());
+}
+
+
+void Inspector::toggleUseCms()
+{
+    cms_->set_active(!cms_->get_active());
+}
+
+    enum class DisplayMode {
+        JPG,
+        RAW_LINEAR,
+        RAW_FILM_CURVE,
+        RAW_SHADOW_BOOST,
+        RAW_CLIP_WARNING
+    };
+void Inspector::setDisplayMode(DisplayMode m)
+{
+    switch (m) {
+    case DisplayMode::JPG:
+        jpg_->set_active(true);
+        break;
+    case DisplayMode::RAW_LINEAR:
+        rawlinear_->set_active(true);
+        break;
+    case DisplayMode::RAW_FILM_CURVE:
+        rawfilm_->set_active(true);
+        break;
+    case DisplayMode::RAW_SHADOW_BOOST:
+        rawshadow_->set_active(true);
+        break;
+    case DisplayMode::RAW_CLIP_WARNING:
+        rawclip_->set_active(true);
+        break;
+    }
+}
+
+
+void Inspector::setZoomFit(bool yes)
+{
+    if (yes) {
+        zoomfit_->set_active(true);
+    } else {
+        zoom11_->set_active(true);
+    }
+}

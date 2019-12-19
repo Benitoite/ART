@@ -900,13 +900,13 @@ ICCPROFCREATOR_SLOPE;Slope
 ICCPROFCREATOR_TRC_PRESET;Tone response curve:
 INSPECTOR_ENABLE_CMS;Enable color management.
 INSPECTOR_INFO;Quick info.
-INSPECTOR_PREVIEW;Embedded preview image.
-INSPECTOR_RAW_LINEAR;Fast raw rendering with a linear tone curve.
-INSPECTOR_RAW_FILM;Fast raw rendering with a film-like tone curve.
-INSPECTOR_RAW_CLIP;Raw clipped pixels
-INSPECTOR_RAW_SHADOW;Fast raw rendering with a shadow boosting tone curve.
-INSPECTOR_ZOOM_FIT;Fit to window.
-INSPECTOR_ZOOM_11;Zoom to 100%.
+INSPECTOR_PREVIEW;Embedded preview image.\nShortcut: <b>j</b>.
+INSPECTOR_RAW_LINEAR;Fast raw rendering with a linear tone curve.\nShortcut: <b>r</b>.
+INSPECTOR_RAW_FILM;Fast raw rendering with a film-like tone curve.\nShortcut: <b>f</b>.
+INSPECTOR_RAW_CLIP;Raw clipped pixels.\nShortcut: <b>w</b>.
+INSPECTOR_RAW_SHADOW;Fast raw rendering with a shadow boosting tone curve.\nShortcut: <b>s</b>.
+INSPECTOR_ZOOM_FIT;Fit to window.\nShortcut: <b>x</b>.
+INSPECTOR_ZOOM_11;Zoom to 100%.\nShortcut: <b>z</b>.
 IPTCPANEL_CATEGORY;Category
 IPTCPANEL_CATEGORYHINT;Identifies the subject of the image in the opinion of the provider.
 IPTCPANEL_CITY;City

@@ -113,6 +113,18 @@ public:
     bool isActive() const { return ins_.isActive(); };
 
     sigc::signal<void> signal_ready() { return ins_.signal_ready(); }
+
+    void toggleShowInfo();
+    void toggleUseCms();
+    enum class DisplayMode {
+        JPG,
+        RAW_LINEAR,
+        RAW_FILM_CURVE,
+        RAW_SHADOW_BOOST,
+        RAW_CLIP_WARNING
+    };
+    void setDisplayMode(DisplayMode m);
+    void setZoomFit(bool yes);
     
 private:
     Gtk::HBox *get_toolbar();
