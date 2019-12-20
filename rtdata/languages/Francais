@@ -1764,7 +1764,7 @@ TP_EXPOSURE_CURVEEDITOR1;Courbe Tonale 1
 TP_EXPOSURE_CURVEEDITOR2;Courbe Tonale 2
 TP_EXPOSURE_CURVEEDITOR2_TOOLTIP;Référez-vous à la section "Exposition > Courbes tonales" du manuel Rawpedia pour en savoir plus sur les manières d'obtenir les meilleurs résultats avec l'utilisation de deux courbes tonales
 TP_EXPOSURE_EXPCOMP;Compensation d'exposition
-TP_EXPOSURE_HISTMATCHING;Calcul auto. d'une Courbe Tonale à partir de l'image JPEG intégrée au fichier raw
+TP_EXPOSURE_HISTMATCHING;Calcul Courbe Tonale svt Aperçu
 TP_EXPOSURE_HISTMATCHING_TOOLTIP;Ajuster automatiquement les curseurs et courbes (excepté la compensation d'exposition) pour obtenir l'aspect de l'aperçu JPEG inclus.
 TP_EXPOSURE_LABEL;Exposition
 TP_EXPOSURE_TCMODE_FILMLIKE;Type Film
