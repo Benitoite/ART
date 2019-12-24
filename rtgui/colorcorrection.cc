@@ -128,23 +128,20 @@ public:
     Glib::ustring getColumnContent(int col, int row) override
     {
         auto &r = parent_->data[row];
-        const char *ch = "";
-        switch (r.channel) {
-        case rtengine::ColorCorrectionParams::Region::CHAN_R:
-            ch = " [R]"; break;
-        case rtengine::ColorCorrectionParams::Region::CHAN_G:
-            ch = " [G]"; break;
-        case rtengine::ColorCorrectionParams::Region::CHAN_B:
-            ch = " [B]"; break;
-        default:
-            ch = "";
+        if (r.rgb_channels) {
+            const auto lbl =
+                [](const std::array<double, 3> &v) -> Glib::ustring
+                {
+                    return Glib::ustring::compose("{%1,%2,%3}", v[0], v[1], v[2]);
+                };
+            return Glib::ustring::compose("s=%1 o=%2\np=%3 P=%4", lbl(r.slope), lbl(r.offset), lbl(r.power), lbl(r.pivot));
+        } else {
+            const auto round_ab = [](float v) -> float
+                                  {
+                                      return int(v * 1000) / 1000.f;
+                                  };
+            return Glib::ustring::compose("a=%1 b=%2 S=%3\ns=%4 o=%5 p=%6 P=%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope[0], r.offset[0], r.power[0], r.pivot[0]);
         }
-
-        const auto round_ab = [](float v) -> float
-            {
-                return int(v * 1000) / 1000.f;
-            };
-        return Glib::ustring::compose("a=%1 b=%2 S=%3%8\ns=%4 o=%5 p=%6 P=%7", round_ab(r.a), round_ab(r.b), r.saturation, r.slope, r.offset, r.power, r.pivot, ch);
     }
 
     void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) override
@@ -175,7 +172,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     EvOffset = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_OFFSET");
     EvPower = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_POWER");
     EvPivot = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_PIVOT");
-    EvChannel = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_CHANNEL");
+    EvRGBChannels = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_RGB_CHANNELS");
 
     EvList = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_LIST");
     EvHueMask = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_HUEMASK");
@@ -188,51 +185,94 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
 
     box = Gtk::manage(new Gtk::VBox());
 
+    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+    rgb_channels = Gtk::manage(new MyComboBoxText());
+    rgb_channels->append(M("TP_COLORCORRECTION_MODE_COMBINED"));
+    rgb_channels->append(M("TP_COLORCORRECTION_MODE_RGBCHANNELS"));
+    rgb_channels->set_active(0);
+    rgb_channels->signal_changed().connect(sigc::mem_fun(*this, &ColorCorrection::rgbChannelsChanged));
+    
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_COLORCORRECTION_MODE") + ": ")), Gtk::PACK_SHRINK);
+    hb->pack_start(*rgb_channels);
+    box->pack_start(*hb);
+    
+    box_combined = Gtk::manage(new Gtk::VBox());
+    box_rgb = Gtk::manage(new Gtk::VBox());
+
     gridAB = Gtk::manage(new LabGrid(EvAB, M("TP_COLORCORRECTION_ABVALUES"), false));
-    box->pack_start(*gridAB);
+    box_combined->pack_start(*gridAB);
 
     saturation = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_SATURATION"), -100, 100, 1, 0));
     saturation->setAdjusterListener(this);
-    box->pack_start(*saturation);
+    box_combined->pack_start(*saturation);
 
     slope = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_SLOPE"), 0.01, 10.0, 0.001, 1));
     slope->setLogScale(10, 1, true);
     slope->setAdjusterListener(this);
-    box->pack_start(*slope);
+    box_combined->pack_start(*slope);
     offset = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.001, 0));
     offset->setAdjusterListener(this);
-    box->pack_start(*offset);
+    box_combined->pack_start(*offset);
     power = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_POWER"), 0.1, 4.0, 0.001, 1));
     power->setAdjusterListener(this);
     power->setLogScale(10, 1, true);
-    box->pack_start(*power);
+    box_combined->pack_start(*power);
     pivot = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_PIVOT"), 0.001, 2.0, 0.001, 1));
     pivot->setAdjusterListener(this);
     pivot->setLogScale(100, 0.18, true);
-    box->pack_start(*pivot);
+    box_combined->pack_start(*pivot);
 
-    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
-    channel = Gtk::manage(new MyComboBoxText());
-    channel->append(M("TP_COLORCORRECTION_CHANNEL_ALL"));
-    channel->append(M("TP_COLORCORRECTION_CHANNEL_R"));
-    channel->append(M("TP_COLORCORRECTION_CHANNEL_G"));
-    channel->append(M("TP_COLORCORRECTION_CHANNEL_B"));
-    channel->set_active(0);
-    channel->signal_changed().connect(sigc::mem_fun(*this, &ColorCorrection::channelChanged));
+    for (int c = 0; c < 3; ++c) {
+        const char *chan = (c == 0 ? "R" : (c == 1 ? "G" : "B"));
+        const char *img = (c == 0 ? "red" : (c == 1 ? "green" : "blue"));
+        Gtk::Frame *f = Gtk::manage(new Gtk::Frame(""));//M(std::string("TP_COLORCORRECTION_CHANNEL_") + chan)));
+        Gtk::HBox *lbl = Gtk::manage(new Gtk::HBox());
+        lbl->pack_start(*Gtk::manage(new RTImage(std::string("circle-") + img + "-small.png")), Gtk::PACK_SHRINK, 2);
+        lbl->pack_start(*Gtk::manage(new Gtk::Label(M(std::string("TP_COLORCORRECTION_CHANNEL_") + chan))));
+        f->set_label_align(0.025, 0.5);
+        f->set_label_widget(*lbl);
+        Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
+        vb->set_spacing(2);
+        vb->set_border_width(2);
     
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_COLORCORRECTION_CHANNEL") + ": ")), Gtk::PACK_SHRINK);
-    hb->pack_start(*channel);
-    box->pack_start(*hb);
+        slope_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_SLOPE"), 0.01, 10.0, 0.001, 1));
+        slope_rgb[c]->setLogScale(10, 1, true);
+        slope_rgb[c]->setAdjusterListener(this);
+        vb->pack_start(*slope_rgb[c]);
+        offset_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.001, 0));
+        offset_rgb[c]->setAdjusterListener(this);
+        vb->pack_start(*offset_rgb[c]);
+        power_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_POWER"), 0.1, 4.0, 0.001, 1));
+        power_rgb[c]->setAdjusterListener(this);
+        power_rgb[c]->setLogScale(10, 1, true);
+        vb->pack_start(*power_rgb[c]);
+        pivot_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_PIVOT"), 0.001, 2.0, 0.001, 1));
+        pivot_rgb[c]->setAdjusterListener(this);
+        pivot_rgb[c]->setLogScale(100, 0.18, true);
+        vb->pack_start(*pivot_rgb[c]);
+
+        f->add(*vb);
+        box_rgb->pack_start(*f);
+    }
 
     saturation->delay = options.adjusterMaxDelay;
     slope->delay = options.adjusterMaxDelay;
     offset->delay = options.adjusterMaxDelay;
     power->delay = options.adjusterMaxDelay;
     pivot->delay = options.adjusterMaxDelay;
+    for (int c = 0; c < 3; ++c) {
+        slope_rgb[c]->delay = options.adjusterMaxDelay;
+        offset_rgb[c]->delay = options.adjusterMaxDelay;
+        power_rgb[c]->delay = options.adjusterMaxDelay;
+        pivot_rgb[c]->delay = options.adjusterMaxDelay;
+    }
 
     labMasksContentProvider.reset(new ColorCorrectionMasksContentProvider(this));
     labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
     pack_start(*labMasks, Gtk::PACK_EXPAND_WIDGET, 4);
+
+    box->pack_start(*box_combined);
+    box->pack_start(*box_rgb);
 
     show_all_children();
 }
@@ -251,6 +291,8 @@ void ColorCorrection::read(const ProcParams *pp)
     }
     labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->colorcorrection.showMask);
+
+    rgbChannelsChanged();
 
     enableListener();
 }
@@ -273,33 +315,52 @@ void ColorCorrection::write(ProcParams *pp)
 void ColorCorrection::setDefaults(const ProcParams *defParams)
 {
     saturation->setDefault(defParams->colorcorrection.regions[0].saturation);
-    slope->setDefault(defParams->colorcorrection.regions[0].slope);
-    offset->setDefault(defParams->colorcorrection.regions[0].offset);
-    power->setDefault(defParams->colorcorrection.regions[0].power);
-    pivot->setDefault(defParams->colorcorrection.regions[0].pivot);
+    slope->setDefault(defParams->colorcorrection.regions[0].slope[0]);
+    offset->setDefault(defParams->colorcorrection.regions[0].offset[0]);
+    power->setDefault(defParams->colorcorrection.regions[0].power[0]);
+    pivot->setDefault(defParams->colorcorrection.regions[0].pivot[0]);
+    for (int c = 0; c < 3; ++c) {
+        slope_rgb[c]->setDefault(defParams->colorcorrection.regions[0].slope[c]);
+        offset_rgb[c]->setDefault(defParams->colorcorrection.regions[0].offset[c]);
+        power_rgb[c]->setDefault(defParams->colorcorrection.regions[0].power[c]);
+        pivot_rgb[c]->setDefault(defParams->colorcorrection.regions[0].pivot[c]);
+    }
 }
 
 
 void ColorCorrection::adjusterChanged(Adjuster* a, double newval)
 {
     if (listener && getEnabled()) {
-        labMasks->setEdited(true);
-        
+        rtengine::ProcEvent evt;
         if (a == saturation) {
-            gridAB->setEdited(true);
-            listener->panelChanged(EvSaturation, a->getTextValue());
+            evt = EvSaturation;
         } else if (a == slope) {
-            gridAB->setEdited(true);
-            listener->panelChanged(EvSlope, a->getTextValue());
+            evt = EvSlope;
         } else if (a == offset) {
-            gridAB->setEdited(true);
-            listener->panelChanged(EvOffset, a->getTextValue());
+            evt = EvOffset;
         } else if (a == power) {
-            gridAB->setEdited(true);
-            listener->panelChanged(EvPower, a->getTextValue());
+            evt = EvPower;
         } else if (a == pivot) {
-            gridAB->setEdited(true);
-            listener->panelChanged(EvPivot, a->getTextValue());
+            evt = EvPivot;
+        } else {
+            for (int c = 0; c < 3; ++c) {
+                if (a == slope_rgb[c]) {
+                    evt = EvSlope;
+                    break;
+                } else if (a == offset_rgb[c]) {
+                    evt = EvOffset;
+                    break;
+                } else if (a == power_rgb[c]) {
+                    evt = EvPower;
+                    break;
+                } else if (a == pivot_rgb[c]) {
+                    evt = EvPivot;
+                    break;
+                }
+            }
+        }
+        if (evt != 0) {
+            listener->panelChanged(evt, a->getTextValue());
         }
     }
 }
@@ -348,14 +409,23 @@ void ColorCorrection::regionGet(int idx)
     }
     
     auto &r = data[idx];
-    double la, lb;
-    gridAB->getParams(la, lb, r.a, r.b);
-    r.saturation = saturation->getValue();
-    r.slope = slope->getValue();
-    r.offset = offset->getValue();
-    r.power = power->getValue();
-    r.pivot = pivot->getValue();
-    r.channel = channel->get_active_row_number() - 1;
+    r.rgb_channels = rgb_channels->get_active_row_number() > 0;
+    if (!r.rgb_channels) {
+        double la, lb;
+        gridAB->getParams(la, lb, r.a, r.b);
+        r.saturation = saturation->getValue();
+        r.slope[0] = slope->getValue();
+        r.offset[0] = offset->getValue();
+        r.power[0] = power->getValue();
+        r.pivot[0] = pivot->getValue();
+    } else {
+        for (int c = 0; c < 3; ++c) {
+            r.slope[c] = slope_rgb[c]->getValue();
+            r.offset[c] = offset_rgb[c]->getValue();
+            r.power[c] = power_rgb[c]->getValue();
+            r.pivot[c] = pivot_rgb[c]->getValue();
+        }
+    }
 }
 
 
@@ -366,24 +436,41 @@ void ColorCorrection::regionShow(int idx)
         disableListener();
     }
     auto &r = data[idx];
-    gridAB->setParams(0, 0, r.a, r.b, false);
-    saturation->setValue(r.saturation);
-    slope->setValue(r.slope);
-    offset->setValue(r.offset);
-    power->setValue(r.power);
-    pivot->setValue(r.pivot);
-    channel->set_active(r.channel+1);
+    rgb_channels->set_active(r.rgb_channels ? 1 : 0);
+    if (r.rgb_channels) {
+        gridAB->setParams(0, 0, r.a, r.b, false);
+        saturation->setValue(r.saturation);
+        slope->setValue(r.slope[0]);
+        offset->setValue(r.offset[0]);
+        power->setValue(r.power[0]);
+        pivot->setValue(r.pivot[0]);
+    } else {
+        for (int c = 0; c < 3; ++c) {
+            slope_rgb[c]->setValue(r.slope[c]);
+            offset_rgb[c]->setValue(r.offset[c]);
+            power_rgb[c]->setValue(r.power[c]);
+            pivot_rgb[c]->setValue(r.pivot[c]);
+        }
+    }
+    rgbChannelsChanged();
     if (disable) {
         enableListener();
     }
 }
 
 
-void ColorCorrection::channelChanged()
+void ColorCorrection::rgbChannelsChanged()
 {
-    if (listener && getEnabled() ) {
+    removeIfThere(box, box_combined);
+    removeIfThere(box, box_rgb);
+    if (rgb_channels->get_active_row_number() == 0) {
+        box->pack_start(*box_combined);
+    } else {
+        box->pack_start(*box_rgb);
+    }
+    if (listener && getEnabled()) {
         labMasks->setEdited(true);        
-        listener->panelChanged(EvChannel, channel->get_active_text());
+        listener->panelChanged(EvRGBChannels, rgb_channels->get_active_text());
     }
 }
 

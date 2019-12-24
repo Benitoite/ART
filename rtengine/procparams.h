@@ -1115,15 +1115,14 @@ struct GuidedSmoothingParams {
 
 struct ColorCorrectionParams {
     struct Region {
-        enum { CHAN_ALL = -1, CHAN_R, CHAN_G, CHAN_B };
         double a;
         double b;
         double saturation;
-        double slope;
-        double offset;
-        double power;
-        double pivot;
-        int channel;
+        std::array<double, 3> slope;
+        std::array<double, 3> offset;
+        std::array<double, 3> power;
+        std::array<double, 3> pivot;
+        bool rgb_channels;
 
         Region();
         bool operator==(const Region &other) const;

@@ -1921,11 +1921,11 @@ ColorCorrectionParams::Region::Region():
     a(0),
     b(0),
     saturation(0),
-    slope(1),
-    offset(0),
-    power(1),
-    pivot(1),
-    channel(ColorCorrectionParams::Region::CHAN_ALL)
+    slope{1,1,1},
+    offset{0,0,0},
+    power{1,1,1},
+    pivot{1,1,1},
+    rgb_channels(false)
 {
 }
 
@@ -1939,7 +1939,7 @@ bool ColorCorrectionParams::Region::operator==(const Region &other) const
         && offset == other.offset
         && power == other.power
         && pivot == other.pivot
-        && channel == other.channel;
+        && rgb_channels == other.rgb_channels;
 }
 
 
@@ -2881,14 +2881,24 @@ int ProcParams::save(bool save_general,
             for (size_t j = 0; j < colorcorrection.regions.size(); ++j) {
                 std::string n = std::to_string(j+1);
                 auto &l = colorcorrection.regions[j];
-                putToKeyfile("ColorCorrection", Glib::ustring("A_") + n, l.a, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("B_") + n, l.b, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("Saturation_") + n, l.saturation, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("Slope_") + n, l.slope, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("Offset_") + n, l.offset, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("Power_") + n, l.power, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("Pivot_") + n, l.pivot, keyFile);
-                putToKeyfile("ColorCorrection", Glib::ustring("Channel_") + n, l.channel, keyFile);
+                putToKeyfile("ColorCorrection", Glib::ustring("RGBChannels_") + n, l.rgb_channels, keyFile);
+                if (l.rgb_channels) {
+                    const char *chan[3] = { "R", "G", "B" };
+                    for (int c = 0; c < 3; ++c) {
+                        putToKeyfile("ColorCorrection", Glib::ustring("Slope") + chan[c] + "_" + n, l.slope[c], keyFile);
+                        putToKeyfile("ColorCorrection", Glib::ustring("Offset") + chan[c] + "_" + n, l.offset[c], keyFile);
+                        putToKeyfile("ColorCorrection", Glib::ustring("Power") + chan[c] + "_" + n, l.power[c], keyFile);
+                        putToKeyfile("ColorCorrection", Glib::ustring("Pivot") + chan[c] + "_" + n, l.pivot[0], keyFile);
+                    }
+                } else {
+                    putToKeyfile("ColorCorrection", Glib::ustring("A_") + n, l.a, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("B_") + n, l.b, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("Saturation_") + n, l.saturation, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("Slope_") + n, l.slope[0], keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("Offset_") + n, l.offset[0], keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("Power_") + n, l.power[0], keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("Pivot_") + n, l.pivot[0], keyFile);
+                }
                 colorcorrection.labmasks[j].save(keyFile, "ColorCorrection", "", Glib::ustring("_") + n);
             }
             saveToKeyfile("ColorCorrection", "showMask", colorcorrection.showMask, keyFile);
@@ -3852,45 +3862,72 @@ int ProcParams::load(bool load_general,
             std::vector<LabCorrectionMask> lm;
             bool found = false;
             bool done = false;
+
             for (int i = 1; !done; ++i) {
                 ColorCorrectionParams::Region cur;
                 LabCorrectionMask curmask;
                 done = true;
                 std::string n = std::to_string(i);
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("A_") + n, cur.a)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("B_") + n, cur.b)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Saturation_") + n, cur.saturation)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Slope_") + n, cur.slope)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Offset_") + n, cur.offset)) {
-                    found = true;
-                    done = false;
-                    if (ppVersion <= 1002) {
-                        cur.offset *= 2;
+
+                const auto get =
+                    [&](const Glib::ustring &key, double &val) -> bool
+                    {
+                        if (assignFromKeyfile(keyFile, ccgroup, prefix + key + n, val)) {
+                            found = true;
+                            done = false;
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    };
+            
+                
+                get("A_", cur.a);
+                get("B_", cur.b);
+                get("Saturation_", cur.saturation);
+                if (ppVersion < 1005) {
+                    int c = -1;
+                    if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Channel_") + n, c)) {
+                        found = true;
+                        done = false;
                     }
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Power_") + n, cur.power)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Pivot_") + n, cur.pivot)) {
-                    found = true;
-                    done = false;
-                }
-                if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Channel_") + n, cur.channel)) {
-                    found = true;
-                    done = false;
+                    if (c < 0) {
+                        cur.rgb_channels = false;
+                        c = 0;
+                    } else {
+                        cur.rgb_channels = true;
+                    }
+                    get("Slope_", cur.slope[c]);
+                    if (get("Offset_", cur.offset[c])) {
+                        if (ppVersion <= 1002) {
+                            cur.offset[c] *= 2;
+                        }
+                    }
+                    get("Power_", cur.power[c]);
+                    get("Pivot_", cur.pivot[c]);
+                } else {
+                    if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("RGBChannels_") + n, cur.rgb_channels)) {
+                        found = true;
+                        done = false;
+                    }
+                    if (!cur.rgb_channels) {
+                        get("Slope_", cur.slope[0]);
+                        cur.slope[1] = cur.slope[2] = cur.slope[0];
+                        get("Offset_", cur.offset[0]);
+                        cur.offset[1] = cur.offset[2] = cur.offset[0];
+                        get("Power_", cur.power[0]);
+                        cur.power[1] = cur.power[2] = cur.power[0];
+                        get("Pivot_", cur.pivot[0]);
+                        cur.pivot[1] = cur.pivot[2] = cur.pivot[0];
+                    } else {
+                        const char *chan[3] = { "R", "G", "B" };
+                        for (int c = 0; c < 3; ++c) {
+                            get(Glib::ustring("Slope") + chan[c] + "_", cur.slope[c]);
+                            get(Glib::ustring("Offset") + chan[c] + "_", cur.offset[c]);
+                            get(Glib::ustring("Power") + chan[c] + "_", cur.power[c]);
+                            get(Glib::ustring("Pivot") + chan[c] + "_", cur.pivot[c]);
+                        }
+                    }
                 }
                 if (curmask.load(keyFile, ccgroup, prefix, Glib::ustring("_") + n)) {
                     found = true;

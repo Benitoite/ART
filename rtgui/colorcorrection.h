@@ -57,7 +57,7 @@ public:
 private:
     void regionGet(int idx);
     void regionShow(int idx);
-    void channelChanged();
+    void rgbChannelsChanged();
     
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAB;
@@ -67,7 +67,7 @@ private:
     rtengine::ProcEvent EvOffset;
     rtengine::ProcEvent EvPower;    
     rtengine::ProcEvent EvPivot;    
-    rtengine::ProcEvent EvChannel;
+    rtengine::ProcEvent EvRGBChannels;
 
     rtengine::ProcEvent EvList;
     rtengine::ProcEvent EvHueMask;
@@ -86,12 +86,21 @@ private:
     LabMasksPanel *labMasks;
     
     Gtk::VBox *box;
+    MyComboBoxText *rgb_channels;
+
+    Gtk::VBox *box_combined;
+    Gtk::VBox *box_rgb;
+    
     LabGrid *gridAB;
     Adjuster *saturation;
     Adjuster *slope;
     Adjuster *offset;
     Adjuster *power;
     Adjuster *pivot;
-    MyComboBoxText *channel;
+
+    Adjuster *slope_rgb[3];
+    Adjuster *offset_rgb[3];
+    Adjuster *power_rgb[3];
+    Adjuster *pivot_rgb[3];
 };
 
