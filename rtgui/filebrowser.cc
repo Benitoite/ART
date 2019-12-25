@@ -1146,10 +1146,10 @@ bool FileBrowser::keyPressed (GdkEventKey* event)
     } else if (event->keyval == GDK_KEY_F4 && !(ctrl || shift || alt)) { // open Next image from FileBrowser perspective
         FileBrowser::openNextImage ();
         return true;
-    } else if (event->keyval == GDK_KEY_Left) {
+    } else if (event->keyval == GDK_KEY_Left || event->keyval == GDK_KEY_BackSpace) {
         selectPrev (1, shift);
         return true;
-    } else if (event->keyval == GDK_KEY_Right) {
+    } else if (event->keyval == GDK_KEY_Right || event->keyval == GDK_KEY_space) {
         selectNext (1, shift);
         return true;
     } else if (event->keyval == GDK_KEY_Up) {
