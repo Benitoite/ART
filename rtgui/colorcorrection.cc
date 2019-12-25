@@ -414,11 +414,15 @@ void ColorCorrection::regionGet(int idx)
         double la, lb;
         gridAB->getParams(la, lb, r.a, r.b);
         r.saturation = saturation->getValue();
-        r.slope[0] = slope->getValue();
-        r.offset[0] = offset->getValue();
-        r.power[0] = power->getValue();
-        r.pivot[0] = pivot->getValue();
+        for (int c = 0; c < 3; ++c) {
+            r.slope[c] = slope->getValue();
+            r.offset[c] = offset->getValue();
+            r.power[c] = power->getValue();
+            r.pivot[c] = pivot->getValue();
+        }
     } else {
+        r.saturation = 0.f;
+        r.a = r.b = 0.f;
         for (int c = 0; c < 3; ++c) {
             r.slope[c] = slope_rgb[c]->getValue();
             r.offset[c] = offset_rgb[c]->getValue();
@@ -437,7 +441,7 @@ void ColorCorrection::regionShow(int idx)
     }
     auto &r = data[idx];
     rgb_channels->set_active(r.rgb_channels ? 1 : 0);
-    if (r.rgb_channels) {
+    if (!r.rgb_channels) {
         gridAB->setParams(0, 0, r.a, r.b, false);
         saturation->setValue(r.saturation);
         slope->setValue(r.slope[0]);
