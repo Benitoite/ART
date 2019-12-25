@@ -1132,6 +1132,7 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
     const float wr = float(w2) / float(w);
 
     float scale = 65535.f;
+    float offset = 0.f;
     {
         float ratio = 0.f;
         int ww, hh;
@@ -1147,13 +1148,25 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
         Array2Df tmp(ww, hh);
         int sz = ww * hh;
         int idx = sz / 2;
+        int oidx = LIM(int(sz * 0.05f + 0.5f), 1, sz-1);
         rescale_nearest(Yr, tmp, multiThread);
         std::sort(tmp.data(), tmp.data() + sz);
         float oldMedian = tmp(idx);
+        float old_min = 0.f;
+        for (int i = 0; i <= oidx; ++i) {
+            old_min += tmp(i);
+        }
+        old_min /= oidx;
         rescale_nearest(L, tmp, multiThread);
         std::sort(tmp.data(), tmp.data() + sz);
         float newMedian = tmp(idx);
         scale = (oldMedian == 0.f || newMedian == 0.f) ? 65535.f : (oldMedian / newMedian); // avoid Nan
+        float new_min = 0.f;
+        for (int i = 0; i <= oidx; ++i) {
+            new_min += tmp(i);
+        }
+        new_min /= oidx;
+        offset = old_min - new_min;
     }
 
 #ifdef _OPENMP
@@ -1167,9 +1180,12 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
 
             float Y = std::max(Yr(x, y), epsilon);
             float l = std::max(L(xx, yy), epsilon) * (scale / Y);
-            rgb->r(y, x) *= l;
-            rgb->g(y, x) *= l;
-            rgb->b(y, x) *= l;
+            float &r = rgb->r(y, x);
+            float &g = rgb->g(y, x);
+            float &b = rgb->b(y, x);
+            r = r * l - offset;
+            g = g * l - offset;
+            b = b * l - offset;
 
             assert(std::isfinite(rgb->r(y, x)));
             assert(std::isfinite(rgb->g(y, x)));
