@@ -1183,9 +1183,9 @@ void ToneMapFattal02(Imagefloat *rgb, ImProcFunctions *ipf, const ProcParams *pa
             float &r = rgb->r(y, x);
             float &g = rgb->g(y, x);
             float &b = rgb->b(y, x);
-            r = r * l - offset;
-            g = g * l - offset;
-            b = b * l - offset;
+            r = max(r * l - offset, 0.f);
+            g = max(g * l - offset, 0.f);
+            b = max(b * l - offset, 0.f);
 
             assert(std::isfinite(rgb->r(y, x)));
             assert(std::isfinite(rgb->g(y, x)));
