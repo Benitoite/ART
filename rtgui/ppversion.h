@@ -1,11 +1,13 @@
 #pragma once
 
 // This number has to be incremented whenever the PP3 file format is modified or the behaviour of a tool changes
-#define PPVERSION 1005
+#define PPVERSION 1006
 #define PPVERSION_AEXP 301 //value of PPVERSION when auto exposure algorithm was modified
 
 /*
   Log of version changes
+  1006  2019-12-26
+        logenc: changed detail to preserveLocalContrast
   1005  2019-12-24
         added individual channel sliders for slope,offset,power in ColorCorrectionParams
   1004  2019-11-28

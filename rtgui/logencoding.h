@@ -31,7 +31,7 @@ protected:
     Adjuster *targetGray;
     Adjuster *blackEv;
     Adjuster *whiteEv;
-    Adjuster *detail;
+    Gtk::CheckButton *preserveLocalContrast;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAuto;
@@ -43,9 +43,11 @@ protected:
     rtengine::ProcEvent EvTargetGray;
     rtengine::ProcEvent EvBlackEv;
     rtengine::ProcEvent EvWhiteEv;
-    rtengine::ProcEvent EvDetail;
+    rtengine::ProcEvent EvPreserveLocalContrast;
 
     sigc::connection autoconn;
+
+    void preserveLocalContrastToggled();
     
 public:
     LogEncoding();

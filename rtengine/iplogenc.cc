@@ -93,7 +93,7 @@ float find_gray(float source_gray, float target_gray)
 // basic log encoding taken from ACESutil.Lin_to_Log2, from
 // https://github.com/ampas/aces-dev
 // (as seen on pixls.us)
-void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool multithread)
+void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full_width, int full_height, bool multithread)
 {
     if (!params->logenc.enabled) {
         return;
@@ -158,13 +158,14 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             // }
         };
 
-    const int detail = float(max(params->logenc.detail, 0)) / scale + 0.5f;
-    if (detail == 0) {
+    const int W = rgb->getWidth(), H = rgb->getHeight();
+    
+    if (!params->logenc.preserveLocalContrast) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
-        for (int y = 0; y < rgb->getHeight(); ++y) {
-            for (int x = 0; x < rgb->getWidth(); ++x) {
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
                 float r = rgb->r(y, x);
                 float g = rgb->g(y, x);
                 float b = rgb->b(y, x);
@@ -187,20 +188,27 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
             }
         }
     } else {
-        const int W = rgb->getWidth(), H = rgb->getHeight();
-        array2D<float> tmp(W, H);
+        array2D<float> Y(W, H);
+        {
+            constexpr float base_posterization = 20.f;
+            array2D<float> Y2(W, H);
+        
 #ifdef _OPENMP
-#       pragma omp parallel for if (multithread)
+#           pragma omp parallel for if (multithread)
 #endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                tmp[y][x] = norm(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    Y2[y][x] = norm(rgb->r(y, x), rgb->g(y, x), rgb->b(y, x)) / 65535.f;
+                    float l = xlogf(std::max(Y2[y][x], 1e-9f));
+                    float ll = round(l * base_posterization) / base_posterization;
+                    Y[y][x] = xexpf(ll);
+                }
             }
+            const float radius = max(max(full_width, W), max(full_height, H)) / 30.f;
+            const float epsilon = 0.005f;
+            rtengine::guidedFilter(Y2, Y, Y, radius, epsilon, multithread);
         }
-            
-        const float epsilon = 0.01f + 0.002f * max(detail - 3, 0);
-        guidedFilterLog(10.f, tmp, detail, epsilon, multithread);
-
+        
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
@@ -209,10 +217,9 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, bool mul
                 float &r = rgb->r(y, x);
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
-                float m = norm(r, g, b);
-                float t = intp(0.33f, m, tmp[y][x] * 65535.f);
+                float t = Y[y][x];
                 if (t > noise) {
-                    float c = apply(t);
+                    float c = apply(t, false);
                     float f = c / t;
                     r *= f;
                     g *= f;
@@ -304,7 +311,7 @@ void ImProcFunctions::logEncoding(Imagefloat *rgb)
 {
     if (params->logenc.enabled) {
         rgb->setMode(Imagefloat::Mode::RGB, multiThread);
-        log_encode(rgb, params, scale, multiThread);
+        log_encode(rgb, params, scale, full_width, full_height, multiThread);
     }
 }
 
