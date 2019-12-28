@@ -17,37 +17,29 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _SHADOWSHIGHLIGHTS_H_
-#define _SHADOWSHIGHLIGHTS_H_
+#pragma once
 
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
 
-class ShadowsHighlights : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
-{
-
+class ShadowsHighlights: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
 protected:
     Adjuster* highlights;
     Adjuster* h_tonalwidth;
     Adjuster* shadows;
     Adjuster* s_tonalwidth;
-    Adjuster* radius;
-
-    rtengine::ProcEvent EvSHColorspace;
 
 public:
 
     ShadowsHighlights();
 
-    void read(const rtengine::procparams::ProcParams* pp) override;
-    void write(rtengine::procparams::ProcParams* pp) override;
-    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void adjusterChanged (Adjuster* a, double newval) override;
-    void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void enabledChanged  () override;
+    void read(const rtengine::procparams::ProcParams *pp) override;
+    void write(rtengine::procparams::ProcParams *pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams *defParams) override;
+    void adjusterChanged(Adjuster *a, double newval) override;
+    void adjusterAutoToggled(Adjuster *a, bool newval) override;
+    void enabledChanged() override;
 
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams *pp) override;
 };
-
-#endif

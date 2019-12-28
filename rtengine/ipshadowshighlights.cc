@@ -28,14 +28,15 @@ namespace rtengine {
 
 namespace {
 
-void sh(Imagefloat *img, const ProcParams *params, double scale, bool multithread)
+void sh(Imagefloat *img, const ProcParams *params, int full_width, int full_height, bool multithread)
 {
     const int width = img->getWidth();
     const int height = img->getHeight();
 
     array2D<float> mask(width, height);
     array2D<float> L(width, height);
-    const float radius = float(params->sh.radius) * 10 / scale;
+    const int dim = max(max(full_width, width), max(full_height, height));
+    const float radius = dim / 15.0;
     LUTf f(32768);
 
     const auto apply =
@@ -99,7 +100,7 @@ void sh(Imagefloat *img, const ProcParams *params, double scale, bool multithrea
                             float &a = img->r(y, x);
                             float &b = img->b(y, x);
                             // when pushing shadows, scale also the chromaticity
-                            float s = max(ll / l * 0.5f, 1.f) * blend;
+                            float s = max(ll / l * 0.25f, 0.9f) * blend;
                             a = a * s + a * orig;
                             b = b * s + b * orig;
                         }
@@ -128,7 +129,7 @@ void ImProcFunctions::shadowsHighlights(Imagefloat *rgb)
     }
 
     rgb->setMode(Imagefloat::Mode::LAB, multiThread);
-    sh(rgb, params, scale, multiThread);
+    sh(rgb, params, full_width, full_height, multiThread);
 }
 
 } // namespace rtengine
