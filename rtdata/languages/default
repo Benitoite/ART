@@ -818,6 +818,7 @@ HISTORY_MSG_LOGENC_WHITE_EV;Log - White Ev
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Target gray point
 HISTORY_MSG_METADATA_MODE;Metadata copy mode
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontrast - Contrast threshold
+HISTORY_MSG_PCVIGNETTE_CENTER;VF - Center
 HISTORY_MSG_PERSPECTIVE_ENABLED;Perspective correction
 HISTORY_MSG_PERSPECTIVE_LENS;Perspective - lens data
 HISTORY_MSG_PIXELSHIFT_DEMOSAIC;PS - Demosaic method for motion
@@ -1979,6 +1980,8 @@ TP_METADATA_STRIP;Strip all metadata
 TP_METADATA_TUNNEL;Copy unchanged
 TP_NEUTRAL;Reset
 TP_NEUTRAL_TIP;Resets exposure sliders to neutral values.\nApplies to the same controls that Auto Levels applies to, regardless of whether you used Auto Levels or not.
+TP_PCVIGNETTE_CENTER_X;Center X
+TP_PCVIGNETTE_CENTER_Y;Center Y
 TP_PCVIGNETTE_FEATHER;Feather
 TP_PCVIGNETTE_FEATHER_TOOLTIP;Feathering:\n0 = corners only,\n50 = halfway to center,\n100 = to center.
 TP_PCVIGNETTE_LABEL;Vignette Filter

@@ -708,7 +708,8 @@ struct pcv_params {
     float oe_a, oe_b, oe1_a, oe1_b, oe2_a, oe2_b;
     float ie_mul, ie1_mul, ie2_mul;
     float sepmix, feather;
-    int w, h, x1, x2, y1, y2;
+    int x1, x2, y1, y2;
+    int ex, ey, ew, eh;
     int sep;
     bool is_super_ellipse_mode, is_portrait;
     float scale;
@@ -716,7 +717,7 @@ struct pcv_params {
 };
 
 
-void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParams& pcvignette, const CropParams &crop, struct pcv_params& pcv)
+void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParams& pcvignette, const CropParams &crop, pcv_params &pcv)
 {
 
     // ellipse formula: (x/a)^2 + (y/b)^2 = 1
@@ -724,22 +725,28 @@ void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParam
     pcv.feather = pcvignette.feather / 100.0;
 
     if (crop.enabled) {
-        pcv.w = (crop.w * oW) / fW;
-        pcv.h = (crop.h * oH) / fH;
-        pcv.x1 = (crop.x * oW) / fW;
-        pcv.y1 = (crop.y * oH) / fH;
-        pcv.x2 = pcv.x1 + pcv.w;
-        pcv.y2 = pcv.y1 + pcv.h;
+        float sW = float(oW) / fW;
+        float sH = float(oH) / fH;
+        pcv.ew = crop.w * sW;
+        pcv.eh = crop.h * sH;
+        pcv.x1 = crop.x * sW;
+        pcv.y1 = crop.y * sH;
     } else {
-        pcv.x1 = 0, pcv.y1 = 0;
-        pcv.x2 = oW, pcv.y2 = oH;
-        pcv.w = oW;
-        pcv.h = oH;
+        pcv.ew = oW;
+        pcv.eh = oH;
+        pcv.x1 = 0;
+        pcv.y1 = 0;
     }
+    float dW = pcvignette.centerX / 200.f * pcv.ew;
+    float dH = pcvignette.centerY / 200.f * pcv.eh;
+    pcv.ex = pcv.x1 + dW;
+    pcv.ey = pcv.y1 + dH;
+    pcv.x2 = pcv.x1 + pcv.ew + std::abs(dW);
+    pcv.y2 = pcv.y1 + pcv.eh + std::abs(dH);
 
     pcv.fadeout_mul = 1.0 / (0.05 * sqrtf (oW * oW + oH * oH));
-    float short_side = (pcv.w < pcv.h) ? pcv.w : pcv.h;
-    float long_side =  (pcv.w > pcv.h) ? pcv.w : pcv.h;
+    float short_side = (pcv.ew < pcv.eh) ? pcv.ew : pcv.eh;
+    float long_side =  (pcv.ew > pcv.eh) ? pcv.ew : pcv.eh;
 
     pcv.sep = 2;
     pcv.sepmix = 0;
@@ -747,7 +754,7 @@ void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParam
     pcv.oe_b = pcv.oe_a * short_side / long_side;
     pcv.ie_mul = (1.0 / sqrt (2.0)) * (1.0 - pcv.feather);
     pcv.is_super_ellipse_mode = false;
-    pcv.is_portrait = (pcv.w < pcv.h);
+    pcv.is_portrait = (pcv.ew < pcv.eh);
 
     if (roundness < 0.5) {
         // make super-ellipse of higher and higher degree
@@ -765,7 +772,7 @@ void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParam
 
     if (roundness > 0.5) {
         // scale from fitted ellipse towards circle
-        float rad = sqrtf (pcv.w * pcv.w + pcv.h * pcv.h) / 2.0;
+        float rad = sqrtf (pcv.ew * pcv.ew + pcv.eh * pcv.eh) / 2.0;
         float diff_a = rad - pcv.oe_a;
         float diff_b = rad - pcv.oe_b;
         pcv.oe_a = pcv.oe_a + diff_a * 2 * (roundness - 0.5);
@@ -780,7 +787,7 @@ void calcPCVignetteParams (int fW, int fH, int oW, int oH, const PCVignetteParam
 }
 
 
-float calcPCVignetteFactor (const struct pcv_params& pcv, int x, int y)
+float calcPCVignetteFactor (const pcv_params &pcv, int x, int y)
 {
 
     float fo = 1.f;
@@ -809,8 +816,8 @@ float calcPCVignetteFactor (const struct pcv_params& pcv, int x, int y)
         }
     }
 
-    float a = fabs ((x - pcv.x1) - pcv.w * 0.5f);
-    float b = fabs ((y - pcv.y1) - pcv.h * 0.5f);
+    float a = fabs ((x - pcv.ex) - pcv.ew * 0.5f);
+    float b = fabs ((y - pcv.ey) - pcv.eh * 0.5f);
 
     if (pcv.is_portrait) {
         std::swap (a, b);

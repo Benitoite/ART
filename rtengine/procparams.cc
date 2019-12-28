@@ -1517,7 +1517,9 @@ PCVignetteParams::PCVignetteParams() :
     enabled(false),
     strength(0.60),
     feather(50),
-    roundness(50)
+    roundness(50),
+    centerX(0),
+    centerY(0)
 {
 }
 
@@ -1527,7 +1529,9 @@ bool PCVignetteParams::operator ==(const PCVignetteParams& other) const
         enabled == other.enabled
         && strength == other.strength
         && feather == other.feather
-        && roundness == other.roundness;
+        && roundness == other.roundness
+        && centerX == other.centerX
+        && centerY == other.centerY;
 }
 
 bool PCVignetteParams::operator !=(const PCVignetteParams& other) const
@@ -2746,6 +2750,8 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("PCVignette", "Strength", pcvignette.strength, keyFile);
             saveToKeyfile("PCVignette", "Feather", pcvignette.feather, keyFile);
             saveToKeyfile("PCVignette", "Roundness", pcvignette.roundness, keyFile);
+            saveToKeyfile("PCVignette", "CenterX", pcvignette.centerX, keyFile);
+            saveToKeyfile("PCVignette", "CenterY", pcvignette.centerY, keyFile);
         }
 
 // C/A correction
@@ -3642,6 +3648,8 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "PCVignette", "Strength", pcvignette.strength);
             assignFromKeyfile(keyFile, "PCVignette", "Feather", pcvignette.feather);
             assignFromKeyfile(keyFile, "PCVignette", "Roundness", pcvignette.roundness);
+            assignFromKeyfile(keyFile, "PCVignette", "CenterX", pcvignette.centerX);
+            assignFromKeyfile(keyFile, "PCVignette", "CenterY", pcvignette.centerY);
         }
 
         if (keyFile.has_group("CACorrection") && RELEVANT_(cacorrection)) {

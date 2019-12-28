@@ -863,6 +863,8 @@ struct PCVignetteParams {
     double strength;
     int    feather;
     int    roundness;
+    int centerX;
+    int centerY;
 
     PCVignetteParams();
 
