@@ -500,6 +500,8 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     }
     vb->pack_start(*hb);
     
+    areaMaskRoundness = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ROUNDNESS"), 0, 100, 0.1, 0));
+    add_adjuster(areaMaskRoundness, vb);
     areaMaskX = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_X"), -100, 100, 0.1, 0));
     add_adjuster(areaMaskX, vb);
     areaMaskY = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_Y"), -100, 100, 0.1, 0));
@@ -512,8 +514,6 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     add_adjuster(areaMaskHeight, vb);
     areaMaskAngle = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ANGLE"), 0, 180, 0.1, 0));
     add_adjuster(areaMaskAngle, vb);
-    areaMaskRoundness = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_ROUNDNESS"), 0, 100, 0.1, 0));
-    add_adjuster(areaMaskRoundness, vb);
 
     areaFrame->add(*vb);
     vb = Gtk::manage(new Gtk::VBox());
