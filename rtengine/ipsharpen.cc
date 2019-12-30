@@ -159,6 +159,7 @@ BENCHFUN
     for (int i = 0; i < H; i++) {
         for(int j = 0; j < W; j++) {
             tmpI[i][j] = std::max(luminance[i][j], 0.f);
+            assert(std::isfinite(tmpI[i][j]));
             out[i][j] = RT_NAN;
         }
     }
@@ -171,6 +172,9 @@ BENCHFUN
     const auto get_output =
         [&](int i, int j) -> float
         {
+            if (UNLIKELY(std::isnan(tmpI[i][j]))) {
+                return luminance[i][j];
+            }
             float b = impulse[i][j] ? 0.f : blend[i][j] * amount;
             return intp(b, std::max(tmpI[i][j], 0.0f), luminance[i][j]);
         };
@@ -213,6 +217,7 @@ BENCHFUN
                 if (std::isnan(l)) {
                     l = get_output(i, j);
                 }
+                assert(std::isfinite(l));
                 luminance[i][j] = l;
             }
         }
