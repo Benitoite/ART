@@ -665,7 +665,7 @@ struct LogEncodingParams {
     double targetGray;
     double blackEv;
     double whiteEv;
-    bool preserveLocalContrast;
+    int localContrast;
 
     LogEncodingParams();
 

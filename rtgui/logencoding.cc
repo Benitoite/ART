@@ -39,7 +39,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     EvTargetGray = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_TARGET_GRAY");
     EvBlackEv = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_BLACK_EV");
     EvWhiteEv = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_WHITE_EV");
-    EvPreserveLocalContrast = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_PRESERVE_LOCAL_CONTRAST");
+    EvLocalContrast = m->newEvent(EVENT, "HISTORY_MSG_LOGENC_LOCAL_CONTRAST");
 
     autocompute = Gtk::manage(new Gtk::ToggleButton(M("TP_LOGENC_AUTO")));
     autoconn = autocompute->signal_toggled().connect(sigc::mem_fun(*this, &LogEncoding::autocomputeToggled));
@@ -49,7 +49,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     targetGray = Gtk::manage(new Adjuster(M("TP_LOGENC_TARGET_GRAY"), 5.0, 80.0, 0.1, 18.0));
     blackEv = Gtk::manage(new Adjuster(M("TP_LOGENC_BLACK_EV"), -16.0, 0.0, 0.1, -5.0));
     whiteEv = Gtk::manage(new Adjuster(M("TP_LOGENC_WHITE_EV"), 0.0, 32.0, 0.1, 10.0));
-    preserveLocalContrast = Gtk::manage(new Gtk::CheckButton(M("TP_LOGENC_PRESERVE_LOCAL_CONTRAST")));
+    localContrast = Gtk::manage(new Adjuster(M("TP_LOGENC_LOCAL_CONTRAST"), 0, 100, 1, 65));
 
     Gtk::Frame *evFrame = Gtk::manage(new Gtk::Frame(M("TP_LOGENC_EV_LEVELS")));
     evFrame->set_label_align(0.025, 0.5);
@@ -67,7 +67,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     sourceGray->setAdjusterListener(this);
     blackEv->setAdjusterListener(this);
     targetGray->setAdjusterListener(this);
-    preserveLocalContrast->signal_toggled().connect(sigc::mem_fun(this, &LogEncoding::preserveLocalContrastToggled));
+    localContrast->setAdjusterListener(this);
 
     whiteEv->setLogScale(16, 0);
     blackEv->setLogScale(2, -8);
@@ -85,7 +85,7 @@ LogEncoding::LogEncoding(): FoldableToolPanel(this, "log", M("TP_LOGENC_LABEL"),
     pack_start(*evFrame);
     pack_start(*sourceGray);
     pack_start(*targetGray);
-    pack_start(*preserveLocalContrast);
+    pack_start(*localContrast);
 }
 
 
@@ -102,7 +102,7 @@ void LogEncoding::read(const ProcParams *pp)
     blackEv->setValue(pp->logenc.blackEv);
     whiteEv->setValue(pp->logenc.whiteEv);
     targetGray->setValue(pp->logenc.targetGray);
-    preserveLocalContrast->set_active(pp->logenc.preserveLocalContrast);
+    localContrast->setValue(pp->logenc.localContrast);
 
     enableListener();
 }
@@ -116,7 +116,7 @@ void LogEncoding::write(ProcParams *pp)
     pp->logenc.blackEv = blackEv->getValue();
     pp->logenc.whiteEv = whiteEv->getValue();
     pp->logenc.targetGray = targetGray->getValue();
-    pp->logenc.preserveLocalContrast = preserveLocalContrast->get_active();
+    pp->logenc.localContrast = localContrast->getValue();
 }
 
 void LogEncoding::setDefaults(const ProcParams *defParams)
@@ -125,6 +125,7 @@ void LogEncoding::setDefaults(const ProcParams *defParams)
     blackEv->setDefault(defParams->logenc.blackEv);
     whiteEv->setDefault(defParams->logenc.whiteEv);
     targetGray->setDefault(defParams->logenc.targetGray);
+    localContrast->setDefault(defParams->logenc.localContrast);
 }
 
 void LogEncoding::adjusterChanged(Adjuster* a, double newval)
@@ -143,6 +144,8 @@ void LogEncoding::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvWhiteEv, a->getTextValue());
         } else if (a == targetGray) {
             listener->panelChanged(EvTargetGray, a->getTextValue());
+        } else if (a == localContrast) {
+            listener->panelChanged(EvLocalContrast, a->getTextValue());
         }
     }
 }
@@ -184,14 +187,6 @@ void LogEncoding::autocomputeToggled()
             // blackEv->setEnabled(true);
             // whiteEv->setEnabled(true);
         }
-    }
-}
-
-
-void LogEncoding::preserveLocalContrastToggled()
-{
-    if (listener) {
-        listener->panelChanged(EvPreserveLocalContrast, preserveLocalContrast->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }
 

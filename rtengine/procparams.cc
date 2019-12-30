@@ -1184,7 +1184,7 @@ LogEncodingParams::LogEncodingParams():
     targetGray(18.0),
     blackEv(-5.0),
     whiteEv(10.0),
-    preserveLocalContrast(true)
+    localContrast(65)
 {
 }
 
@@ -1198,7 +1198,7 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
         && blackEv == other.blackEv
         && whiteEv == other.whiteEv
         && targetGray == other.targetGray
-        && preserveLocalContrast == other.preserveLocalContrast;
+        && localContrast == other.localContrast;
 }
 
 bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
@@ -2652,7 +2652,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("LogEncoding", "TargetGray", logenc.targetGray, keyFile);
             saveToKeyfile("LogEncoding", "BlackEv", logenc.blackEv, keyFile);
             saveToKeyfile("LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
-            saveToKeyfile("LogEncoding", "PreserveLocalContrast", logenc.preserveLocalContrast, keyFile);
+            saveToKeyfile("LogEncoding", "LocalContrast", logenc.localContrast, keyFile);
         }
 
 // Shadows & highlights
@@ -3513,9 +3513,9 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "LogEncoding", "BlackEv", logenc.blackEv);
             assignFromKeyfile(keyFile, "LogEncoding", "WhiteEv", logenc.whiteEv);
             if (ppVersion >= 1006) {
-                assignFromKeyfile(keyFile, "LogEncoding", "PreserveLocalContrast", logenc.preserveLocalContrast);
+                assignFromKeyfile(keyFile, "LogEncoding", "LocalContrast", logenc.localContrast);
             } else {
-                logenc.preserveLocalContrast = false;
+                logenc.localContrast = 0;
             }
         }
 
