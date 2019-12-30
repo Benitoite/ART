@@ -31,18 +31,14 @@
 
 #define THEMEREGEXSTR      "^(.+)-GTK3-(\\d{1,2})?_(\\d{1,2})?\\.css$"
 
-// Default bundled profile name to use for Raw images
-#ifdef WIN32
-#define DEFPROFILE_RAW      "${G}\\Auto-Matched Curve"
-#else
-#define DEFPROFILE_RAW      "${G}/Auto-Matched Curve"
-#endif
-// Default bundled profile name to use for Standard images
-#define DEFPROFILE_IMG      "Neutral"
 // Profile name to use for internal values' profile
 #define DEFPROFILE_INTERNAL "Neutral"
 // Special name for the Dynamic profile
 #define DEFPROFILE_DYNAMIC  "Dynamic"
+// Default bundled profile name to use for Standard images
+#define DEFPROFILE_IMG DEFPROFILE_INTERNAL
+// Default bundled profile name to use for Raw images
+#define DEFPROFILE_RAW DEFPROFILE_DYNAMIC
 
 struct SaveFormat {
     SaveFormat(

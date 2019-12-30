@@ -103,6 +103,8 @@ int init (const Settings* s, Glib::ustring baseDir, Glib::ustring userSettingsDi
 
     Color::init ();
     Exiv2Metadata::init(baseDir);
+
+    DynamicProfileRules::init(baseDir);
     
     delete lcmsMutex;
     lcmsMutex = new MyMutex;

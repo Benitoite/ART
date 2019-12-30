@@ -75,6 +75,11 @@ public:
     bool storeRules();
     const std::vector<DynamicProfileRule> &getRules();
     void setRules (const std::vector<DynamicProfileRule> &r);
+
+    static void init(const Glib::ustring &base_dir);
+
+private:
+    static Glib::ustring builtin_rules_file_;
 };
 
 #endif // _DYNAMICPROFILE_H_

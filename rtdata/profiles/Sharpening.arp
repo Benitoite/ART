@@ -1,0 +1,6 @@
+[Sharpening]
+Enabled=true
+Contrast=20
+Method=rld
+DeconvAmount=100
+DeconvAutoRadius=true
