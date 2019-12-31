@@ -374,19 +374,12 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
     
         progress("Rotate / Distortion...", 100 * readyphase / numofphases);
         // Remove transformation if unneeded
-        bool needstransform = ipf.needsTransform();
-    
-        if (needstransform) {
+        if (ipf.needsTransform()) {
             assert(oprevi);
             Imagefloat *op = oprevi;
             oprevi = new Imagefloat(pW, pH, op);
-    
-            if (needstransform)
-                ipf.transform(op, oprevi, 0, 0, 0, 0, pW, pH, fw, fh,
-                              imgsrc->getMetaData(), imgsrc->getRotateDegree(), false);
-            else {
-                op->copyTo(oprevi);
-            }
+            ipf.transform(op, oprevi, 0, 0, 0, 0, pW, pH, fw, fh,
+                          imgsrc->getMetaData(), imgsrc->getRotateDegree(), false);
         }
     
         readyphase++;
