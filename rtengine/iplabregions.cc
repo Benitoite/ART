@@ -31,6 +31,7 @@
 #include "gauss.h"
 #include "labmasks.h"
 
+
 namespace rtengine {
 
 bool ImProcFunctions::colorCorrection(Imagefloat *rgb)

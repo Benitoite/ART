@@ -31,7 +31,6 @@
 #include "curves.h"
 #include "iccstore.h"
 
-
 namespace rtengine {
 
 using procparams::AreaMask;
@@ -57,7 +56,8 @@ void fastlin2log(float *x, float factor, float base, int w)
 }
 #endif
 
-bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &mask, const AreaMask &areaMask, bool enabled, float blur, bool multithread)
+
+bool generate_area_mask(int ox, int oy, int width, int height, const array2D<float> &guide, const AreaMask &areaMask, bool enabled, float blur, bool multithread, array2D<float> &mask)
 {
     if (!enabled || areaMask.shapes.empty() || areaMask.isTrivial()) {
         return false;
@@ -81,7 +81,7 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
     constexpr float fgcolor = 1.f - bgcolor;
 
     // first fill with background
-    array2D<float> guide(mask.width(), mask.height(), mask, 0);
+    mask(guide.width(), guide.height());
     float *maskdata = mask;
     std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
     array2D<float> intersect;
@@ -165,6 +165,7 @@ bool generate_area_mask(int ox, int oy, int width, int height, array2D<float> &m
     // guided feathering and contrast
     int radius = std::max(int(areaMask.feather / 100.0 * min_feather), 1);
     guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
+
     DiagonalCurve curve(areaMask.contrast);
     const auto contrast =
         [&curve](float x) -> float
@@ -329,54 +330,61 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
         }
     }
     
-    if (has_mask) {
-        // magic constant c_factor: normally chromaticity is in [0; 42000] (see color.h), but here we use the constant to match how the chromaticity pipette works (see improcfun.cc lines 4705-4706 and color.cc line 1930
-        constexpr float c_factor = 327.68f / 48000.f;
+    // magic constant c_factor: normally chromaticity is in [0; 42000] (see color.h), but here we use the constant to match how the chromaticity pipette works (see improcfun.cc lines 4705-4706 and color.cc line 1930
+    constexpr float c_factor = 327.68f / 48000.f;
 
-        DeltaEEvaluator dE(masks);
+    DeltaEEvaluator dE(masks);
 
 #ifdef _OPENMP
 #       pragma omp parallel if (multithread)
 #endif
-        {
+    {
 #ifdef __SSE2__
-            float cBuffer[W];
-            float hBuffer[W];
-            float lBuffer[W];
-            float aBuffer[W];
-            float bBuffer[W];
+        float cBuffer[W];
+        float hBuffer[W];
+        float lBuffer[W];
+        float aBuffer[W];
+        float bBuffer[W];
 #endif
 #ifdef _OPENMP
 #           pragma omp for schedule(dynamic, 16)
 #endif
-            for (int y = 0; y < H; ++y) {
+        for (int y = 0; y < H; ++y) {
 #ifdef __SSE2__
-                for (int x = 0; x < W; ++x) {
-                    rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), lBuffer[x], aBuffer[x], bBuffer[x], wp);
-                }
+            for (int x = 0; x < W; ++x) {
+                rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), lBuffer[x], aBuffer[x], bBuffer[x], wp);
+            }
+            if (has_mask) {
                 // vectorized precalculation
                 Color::Lab2Lch(aBuffer, bBuffer, cBuffer, hBuffer, W);
                 fastlin2log(cBuffer, c_factor, 10.f, W);
+            }
 #endif
-                for (int x = 0; x < W; ++x) {
+            for (int x = 0; x < W; ++x) {
 #ifdef __SSE2__
-                    const float l = lBuffer[x] / 32768.f;
-                    const float a = aBuffer[x] / 42000.f;
-                    const float b = bBuffer[x] / 42000.f;
+                const float l = lBuffer[x] / 32768.f;
+                const float a = aBuffer[x] / 42000.f;
+                const float b = bBuffer[x] / 42000.f;
+#else
+                float l, a, b;
+                rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), l, a, b, wp);
+                l /= 32768.f;
+                a /= 42000.f;
+                b /= 42000.f;
+#endif
+                guide[y][x] = LIM01(l);
+
+                if (has_mask) {
+#ifdef __SSE2__
                     // use precalculated values
                     const float c = cBuffer[x];
                     float h = hBuffer[x];
 #else
-                    float l, a, b;
-                    rgb2lab(mode, rgb->r(y, x), rgb->g(y, x), rgb->b(y, x), l, a, b, wp);
-                    l /= 32768.f;
-                    a /= 42000.f;
-                    b /= 42000.f;
                     float c, h;
                     Color::Lab2Lch(a, b, c, h);
                     c = xlin2log(c * c_factor, 10.f);
 #endif
-                    guide[y][x] = LIM01(l);
+                        
                     h = Color::huelab_to_huehsv2(h);
                     h += 1.f/6.f; // offset the hue because we start from purple instead of red
                     if (h > 1.f) {
@@ -399,7 +407,9 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
                 }
             }
         }
+    }
 
+    if (has_mask) {
         for (int i = begin_idx; i < end_idx; ++i) {
             float blur = masks[i].maskBlur;
             blur = blur < 0.f ? -1.f/blur : 1.f + blur;
@@ -437,18 +447,19 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
         full_height = H;
     }
 
+    array2D<float> amask;
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur, multithread)) {
+        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur, multithread, amask)) {
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
                     if (abmask) {
-                        (*abmask)[i][y][x] *= guide[y][x];
+                        (*abmask)[i][y][x] *= amask[y][x];
                     }
                     if (Lmask) {
-                        (*Lmask)[i][y][x] *= guide[y][x];
+                        (*Lmask)[i][y][x] *= amask[y][x];
                     }
                 }
             }
