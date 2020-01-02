@@ -810,7 +810,7 @@ HISTORY_MSG_LOCALCONTRAST_RADIUS;Contraste Local - Rayon
 HISTORY_MSG_LOCALCONTRAST_DELTAEMASK;Contraste Local - Masque ΔE
 HISTORY_MSG_LOGENC_AUTO;Log - Automatique
 HISTORY_MSG_LOGENC_AUTOGRAY;Log - Gris auto.
-HISTORY_MSG_LOGENC_DETAIL;Log - Détail
+HISTORY_MSG_LOGENC_LOCAL_CONTRAST;Log - Contraste local
 HISTORY_MSG_LOGENC_ENABLED;Encodage Logarithmique
 HISTORY_MSG_LOGENC_BLACK_EV;Log - EV Noir
 HISTORY_MSG_LOGENC_SOURCE_GRAY;Log - Point gris source
@@ -818,6 +818,7 @@ HISTORY_MSG_LOGENC_WHITE_EV;Log - EV Blanc
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Point gris cible
 HISTORY_MSG_METADATA_MODE;Mode de copie des métadonnées
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontraste - Seuil de contraste
+HISTORY_MSG_PCVIGNETTE_CENTER;VF - Centre
 HISTORY_MSG_PERSPECTIVE_ENABLED;Correction de perspective
 HISTORY_MSG_PERSPECTIVE_LENS;Perspective - Données de l'objectif
 HISTORY_MSG_PIXELSHIFT_DEMOSAIC;PS - Méthode de dématriçage pour les mouvements
@@ -1120,7 +1121,7 @@ PARTIALPASTE_RGBCURVES;Courbes RVB
 PARTIALPASTE_ROTATION;Rotation
 PARTIALPASTE_SHADOWSHIGHLIGHTS;Ombres/Hautes Lumières
 PARTIALPASTE_SHARPENEDGE;Bords
-PARTIALPASTE_SHARPENING;Netteté (USM/RL)
+PARTIALPASTE_SHARPENING;Netteté
 PARTIALPASTE_SHARPENMICRO;Microcontraste
 PARTIALPASTE_SMOOTHING;Lissage
 PARTIALPASTE_SOFTLIGHT;Lumière Douce
@@ -1967,18 +1968,20 @@ TP_LOCALCONTRAST_USM;Masque de flou
 TP_LOCALCONTRAST_WAVELETS;Ondelettes
 TP_LOGENC_AUTO;Automatique
 TP_LOGENC_BLACK_EV;EV Noir
-TP_LOGENC_EV_LEVELS;Niveaux d'Exposition Relatifs
-TP_LOGENC_SOURCE_GRAY;Point Gris de la source
+TP_LOGENC_EV_LEVELS;Niveaux d'exposition relatifs
+TP_LOGENC_SOURCE_GRAY;Point gris de la source
 TP_LOGENC_WHITE_EV;EV Blanc
-TP_LOGENC_TARGET_GRAY;Point Gris ciblé
+TP_LOGENC_TARGET_GRAY;Point gris ciblé
 TP_LOGENC_LABEL;Encodage Log
-TP_LOGENC_DETAIL;Détail
+TP_LOGENC_LOCAL_CONTRAST;Contraste local
 TP_METADATA_EDIT;Appliquer les modifications
 TP_METADATA_MODE;Mode de copie des métadonnées
 TP_METADATA_STRIP;Effacer toutes les métadonnées
 TP_METADATA_TUNNEL;Copier à l'identique
 TP_NEUTRAL;Réinitialiser
 TP_NEUTRAL_TIP;Réinitialise les curseur d'exposition à des valeurs neutres
+TP_PCVIGNETTE_CENTER_X;Centrer X
+TP_PCVIGNETTE_CENTER_Y;Centrer Y
 TP_PCVIGNETTE_FEATHER;Dégradé
 TP_PCVIGNETTE_FEATHER_TOOLTIP;Dégradé :\n0 = bords uniquement,\n50 = à mi-chemin du centre,\n100 = jusqu'au centre.
 TP_PCVIGNETTE_LABEL;Filtre Vignette
@@ -2000,10 +2003,10 @@ TP_PERSPECTIVE_SHEAR;Cisaillement
 TP_PERSPECTIVE_VERTICAL;Verticale
 TP_PFCURVE_CURVEEDITOR_CH;Teinte
 TP_PFCURVE_CURVEEDITOR_CH_TOOLTIP;Contrôle la force du défrangeage en fonction de la couleur.\nPlus grand = plus de correction, plus petit = moins de correction.
-TP_PREPROCESS_DEADPIXFILT;Filtrer les pixels morts
+TP_PREPROCESS_DEADPIXFILT;Filtrer pixels morts
 TP_PREPROCESS_DEADPIXFILT_TOOLTIP;Essaye de supprimer les pixels morts.
 TP_PREPROCESS_GREENEQUIL;Équilibrage du vert
-TP_PREPROCESS_HOTPIXFILT;Filtrer les pixels chauds
+TP_PREPROCESS_HOTPIXFILT;Filtrer pixels chauds
 TP_PREPROCESS_HOTPIXFILT_TOOLTIP;Essaie de supprimer les pixels chauds.
 TP_PREPROCESS_LABEL;Prétraitement
 TP_PREPROCESS_LINEDENOISE;Filtre de bruit en lignes
