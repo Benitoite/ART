@@ -31,7 +31,6 @@
 #include "exposure.h"
 #include "saturation.h"
 #include "tonecurve.h"
-#include "shadowshighlights.h"
 #include "toneequalizer.h"
 #include "impulsedenoise.h"
 #include "defringe.h"
@@ -127,7 +126,6 @@ protected:
     Exposure *exposure;
     Saturation *saturation;
     ToneCurve* toneCurve;
-    ShadowsHighlights* shadowshighlights;
     ToneEqualizer *toneEqualizer;
     LocalContrast *localContrast;
     Defringe* defringe;

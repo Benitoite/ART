@@ -122,7 +122,6 @@ set(NONCLISOURCEFILES
     saveformatpanel.cc
     sensorbayer.cc
     sensorxtrans.cc
-    shadowshighlights.cc
     toneequalizer.cc
     sharpening.cc
     shcselector.cc

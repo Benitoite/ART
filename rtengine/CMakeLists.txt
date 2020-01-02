@@ -121,7 +121,6 @@ set(RTENGINESOURCEFILES
     histmatching.cc
     pdaflinesfilter.cc
     gamutwarning.cc
-    ipshadowshighlights.cc
     iptoneequalizer.cc    
     ipsoftlight.cc
     xtrans_demosaic.cc

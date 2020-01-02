@@ -46,7 +46,6 @@ void ParamsEdited::set(bool v)
     fattal = v;
     logenc = v;
     impulseDenoise = v;
-    sh = v;
     toneEqualizer = v;
     crop = v;
     coarse = v;

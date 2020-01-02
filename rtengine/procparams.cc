@@ -1231,30 +1231,6 @@ bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) 
     return !(*this == other);
 }
 
-SHParams::SHParams() :
-    enabled(false),
-    highlights(0),
-    htonalwidth(70),
-    shadows(0),
-    stonalwidth(30)
-{
-}
-
-bool SHParams::operator ==(const SHParams& other) const
-{
-    return
-        enabled == other.enabled
-        && highlights == other.highlights
-        && htonalwidth == other.htonalwidth
-        && shadows == other.shadows
-        && stonalwidth == other.stonalwidth;
-}
-
-bool SHParams::operator !=(const SHParams& other) const
-{
-    return !(*this == other);
-}
-
 
 ToneEqualizerParams::ToneEqualizerParams():
     enabled(false),
@@ -2331,8 +2307,6 @@ void ProcParams::setDefaults()
 
     logenc = LogEncodingParams();
 
-    sh = SHParams();
-
     toneEqualizer = ToneEqualizerParams();
 
     crop = CropParams();
@@ -2657,15 +2631,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("LogEncoding", "BlackEv", logenc.blackEv, keyFile);
             saveToKeyfile("LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
             saveToKeyfile("LogEncoding", "LocalContrast", logenc.localContrast, keyFile);
-        }
-
-// Shadows & highlights
-        if (RELEVANT_(sh)) {
-            saveToKeyfile("Shadows & Highlights", "Enabled", sh.enabled, keyFile);
-            saveToKeyfile("Shadows & Highlights", "Highlights", sh.highlights, keyFile);
-            saveToKeyfile("Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth, keyFile);
-            saveToKeyfile("Shadows & Highlights", "Shadows", sh.shadows, keyFile);
-            saveToKeyfile("Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth, keyFile);
         }
 
 // ToneEqualizer
@@ -3523,14 +3488,6 @@ int ProcParams::load(bool load_general,
             }
         }
 
-        if (keyFile.has_group ("Shadows & Highlights") && ppVersion >= 333 && RELEVANT_(sh)) {
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Enabled", sh.enabled);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Highlights", sh.highlights);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "HighlightTonalWidth", sh.htonalwidth);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "Shadows", sh.shadows);
-            assignFromKeyfile(keyFile, "Shadows & Highlights", "ShadowTonalWidth", sh.stonalwidth);
-        }
-
         if (keyFile.has_group("ToneEqualizer") && RELEVANT_(toneEqualizer)) {
             assignFromKeyfile(keyFile, "ToneEqualizer", "Enabled", toneEqualizer.enabled);
             for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
@@ -4257,7 +4214,6 @@ bool ProcParams::operator ==(const ProcParams& other) const
         && fattal == other.fattal
         && logenc == other.logenc
         && defringe == other.defringe
-        && sh == other.sh
         && toneEqualizer == other.toneEqualizer
         && crop == other.crop
         && coarse == other.coarse

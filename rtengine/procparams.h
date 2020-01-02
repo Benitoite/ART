@@ -686,22 +686,6 @@ struct FattalToneMappingParams {
     bool operator !=(const FattalToneMappingParams& other) const;
 };
 
-/**
-  * Parameters of the shadow/highlight enhancement
-  */
-struct SHParams {
-    bool enabled;
-    int highlights;
-    int htonalwidth;
-    int shadows;
-    int stonalwidth;
-
-    SHParams();
-
-    bool operator ==(const SHParams& other) const;
-    bool operator !=(const SHParams& other) const;
-};
-
 
 struct ToneEqualizerParams {
     bool enabled;
@@ -1358,7 +1342,6 @@ public:
     TextureBoostParams      textureBoost;  ///< Edge Preserving Decomposition parameters
     FattalToneMappingParams fattal;          ///< Dynamic Range Compression
     LogEncodingParams       logenc;
-    SHParams                sh;              ///< Shadow/highlight enhancement parameters
     ToneEqualizerParams     toneEqualizer;
     CropParams              crop;            ///< Crop parameters
     CoarseTransformParams   coarse;          ///< Coarse transformation (90, 180, 270 deg rotation, h/v flipping) parameters

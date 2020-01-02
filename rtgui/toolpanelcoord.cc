@@ -46,7 +46,6 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     exposure = Gtk::manage(new Exposure());
     saturation = Gtk::manage(new Saturation());
     toneCurve           = Gtk::manage (new ToneCurve ());
-    shadowshighlights   = Gtk::manage (new ShadowsHighlights ());
     toneEqualizer = Gtk::manage(new ToneEqualizer());
     impulsedenoise      = Gtk::manage (new ImpulseDenoise ());
     defringe            = Gtk::manage (new Defringe ());
@@ -111,20 +110,18 @@ ToolPanelCoordinator::ToolPanelCoordinator (bool batch) : ipc (nullptr), favorit
     addfavoritePanel(exposurePanel, exposure);
     addfavoritePanel(exposurePanel, toneEqualizer);    
     addfavoritePanel(exposurePanel, toneCurve);
-    addfavoritePanel(exposurePanel, shadowshighlights);
     addfavoritePanel(exposurePanel, fattal);
     addfavoritePanel(exposurePanel, logenc);
 
     // details
     addfavoritePanel(detailsPanel, sharpening);
-    // addfavoritePanel(detailsPanel, localContrast);
     addfavoritePanel(detailsPanel, denoise);
     addfavoritePanel(detailsPanel, impulsedenoise);
     addfavoritePanel(detailsPanel, defringe);
 
     // color
     addfavoritePanel(colorPanel, whitebalance);
-    addfavoritePanel(colorPanel/*exposurePanel*/, saturation);
+    addfavoritePanel(colorPanel, saturation);
     addfavoritePanel(colorPanel, chmixer);
     addfavoritePanel(colorPanel, hsl);
     addfavoritePanel(colorPanel, rgbcurves);

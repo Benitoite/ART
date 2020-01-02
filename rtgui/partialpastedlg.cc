@@ -48,12 +48,10 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_EXPOSURE", &pedited.exposure, 0},
         {"PARTIALPASTE_TONE_EQUALIZER", &pedited.toneEqualizer, 0},
         {"PARTIALPASTE_TONECURVE", &pedited.toneCurve, 0},
-        {"PARTIALPASTE_SHADOWSHIGHLIGHTS", &pedited.sh, 0},
         {"PARTIALPASTE_TM_FATTAL", &pedited.fattal, 0},
         {"PARTIALPASTE_TM_LOG", &pedited.logenc, 0},
 
         {"PARTIALPASTE_SHARPENING", &pedited.sharpening, 1},
-        // {"PARTIALPASTE_LOCALCONTRAST", &pedited.localContrast, 1},
         {"PARTIALPASTE_DIRPYRDENOISE", &pedited.denoise, 1},
         {"PARTIALPASTE_IMPULSEDENOISE", &pedited.impulseDenoise, 1},
         {"PARTIALPASTE_DEFRINGE", &pedited.defringe, 1},
@@ -88,7 +86,6 @@ std::vector<ToggleInfo> get_toggles(ParamsEdited &pedited)
         {"PARTIALPASTE_COMMONTRANSFORMPARAMS", &pedited.commonTrans, 5},
         
         {"PARTIALPASTE_COLORCORRECTION", &pedited.colorcorrection, 6},
-        // {"PARTIALPASTE_DIRPYREQUALIZER", &pedited.dirpyrequalizer, 6},
         {"PARTIALPASTE_SMOOTHING", &pedited.smoothing, 6},
         {"PARTIALPASTE_LOCALCONTRAST", &pedited.localContrast, 6},
         {"PARTIALPASTE_TEXTUREBOOST", &pedited.textureBoost, 6},

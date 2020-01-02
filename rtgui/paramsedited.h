@@ -44,7 +44,6 @@ public:
     bool fattal;
     bool logenc;
     bool impulseDenoise;
-    bool sh;
     bool toneEqualizer;
     bool crop;
     bool coarse;

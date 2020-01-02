@@ -124,7 +124,6 @@ public:
     void dehaze(Imagefloat *rgb);
     void dynamicRangeCompression(Imagefloat *rgb);
     bool localContrast(Imagefloat *rgb);
-    void shadowsHighlights(Imagefloat *rgb);
     void toneEqualizer(Imagefloat *rgb);
     void softLight(Imagefloat *rgb);
     bool colorCorrection(Imagefloat *rgb);
