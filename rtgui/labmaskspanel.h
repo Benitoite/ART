@@ -165,6 +165,8 @@ private:
     void onAreaMaskDrawChanged();
     void onAreaMaskDrawAddPressed();
     void onDeltaEMaskEnableToggled();
+    void onListEnabledToggled(const Glib::ustring &path);
+    void setListEnabled(Gtk::CellRenderer *renderer, const Gtk::TreeModel::iterator &it);
     
     void updateAreaMask(bool from_mask);
     void maskGet(int idx);
@@ -199,9 +201,34 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvDeltaEMaskVoid;
 
+    class ListColumns: public Gtk::TreeModel::ColumnRecord {
+    public:
+        ListColumns(int n)
+        {
+            add(enabled);
+            add(id);
+            for (int i = 0; i < n; ++i) {
+                cols.push_back(Gtk::TreeModelColumn<Glib::ustring>());
+                add(cols.back());
+            }
+            add(mask);
+        }
+
+        Gtk::TreeModelColumn<bool> enabled;
+        Gtk::TreeModelColumn<int> id;
+        std::vector<Gtk::TreeModelColumn<Glib::ustring>> cols;
+        Gtk::TreeModelColumn<Glib::ustring> mask;
+    };
+
     MyExpander *mask_exp_;
     bool first_mask_exp_;
-    Gtk::ListViewText *list;
+    //Gtk::ListViewText *list;
+    Gtk::CellRendererToggle list_enabled_renderer_;
+    Gtk::TreeView::Column list_enabled_column_;
+    std::unique_ptr<ListColumns> list_model_columns_;
+    Glib::RefPtr<Gtk::ListStore> list_model_;
+    Gtk::TreeView *list;
+    
     Gtk::Button *reset;
     Gtk::Button *add;
     Gtk::Button *remove;

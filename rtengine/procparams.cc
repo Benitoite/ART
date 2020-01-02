@@ -516,6 +516,7 @@ bool DeltaEMask::operator!=(const DeltaEMask &other) const
 
 
 LabCorrectionMask::LabCorrectionMask():
+    enabled(true),
     hueMask{
         FCT_MinMaxCPoints,
             0.166666667,
@@ -560,7 +561,8 @@ LabCorrectionMask::LabCorrectionMask():
 
 bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
 {
-    return hueMask == other.hueMask
+    return enabled == other.enabled
+        && hueMask == other.hueMask
         && chromaticityMask == other.chromaticityMask
         && lightnessMask == other.lightnessMask
         && maskBlur == other.maskBlur
@@ -609,6 +611,7 @@ Glib::ustring mode2str(AreaMask::Shape::Mode mode)
 bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
 {
     bool ret = false;
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskEnabled" + suffix, enabled);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, hueMask);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, lightnessMask);
@@ -663,6 +666,7 @@ bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_
 
 void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
 {
+    putToKeyfile(group_name, prefix + "MaskEnabled" + suffix, enabled, keyfile);
     putToKeyfile(group_name, prefix + "HueMask" + suffix, hueMask, keyfile);
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask, keyfile);
     putToKeyfile(group_name, prefix + "LightnessMask" + suffix, lightnessMask, keyfile);

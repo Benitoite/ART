@@ -273,7 +273,7 @@ private:
 bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> *Lmask, std::vector<array2D<float>> *abmask)
 {
     int n = masks.size();
-    if (show_mask_idx >= n) {
+    if (show_mask_idx >= n || !masks[show_mask_idx].enabled) {
         show_mask_idx = -1;
     }
     std::vector<std::unique_ptr<FlatCurve>> hmask(n);

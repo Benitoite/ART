@@ -461,6 +461,10 @@ bool ImProcFunctions::localContrast(Imagefloat *rgb)
         array2D<float> L(W, H, rgb->g.ptrs);
 
         for (int i = 0; i < n; ++i) {
+            if (!params->localContrast.labmasks[i].enabled) {
+                continue;
+            }
+            
             auto &r = params->localContrast.regions[i];
             local_contrast_wavelets(L, r, scale, multiThread);
             const auto &blend = mask[i];

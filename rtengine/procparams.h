@@ -133,6 +133,7 @@ public:
 
 class LabCorrectionMask {
 public:
+    bool enabled;
     std::vector<double> hueMask;
     std::vector<double> chromaticityMask;
     std::vector<double> lightnessMask;

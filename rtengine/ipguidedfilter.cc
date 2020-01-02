@@ -230,6 +230,10 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
         TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
         
         for (int i = 0; i < n; ++i) {
+            if (!params->smoothing.labmasks[i].enabled) {
+                continue;
+            }
+            
             rgb->copyTo(&working);
             
             auto &r = params->smoothing.regions[i];

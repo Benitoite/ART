@@ -232,14 +232,30 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
         };
     
     int n = cp_->getColumnCount();
-    list = Gtk::manage(new Gtk::ListViewText(n+2));
+
+    list_model_columns_.reset(new ListColumns(n));
+    list_model_ = Gtk::ListStore::create(*list_model_columns_);
+
+    list_enabled_renderer_.property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
+    list_enabled_renderer_.signal_toggled().connect(sigc::mem_fun(this, &LabMasksPanel::onListEnabledToggled));
+    list_enabled_column_.pack_start(list_enabled_renderer_);
+    list_enabled_column_.set_cell_data_func(list_enabled_renderer_, sigc::mem_fun(this, &LabMasksPanel::setListEnabled));
+    {
+        auto img = Gtk::manage(new RTImage("power-on-small-faded.png"));
+        img->show();
+        list_enabled_column_.set_widget(*img);
+    }
+    list = Gtk::manage(new Gtk::TreeView());
+    list->set_model(list_model_);
     list->set_size_request(-1, 150);
     list->set_can_focus(false);
-    list->set_column_title(0, "#");
+    list->append_column("#", list_model_columns_->id);
     for (int i = 0; i < n; ++i) {
-        list->set_column_title(i+1, cp_->getColumnHeader(i));
+        list->append_column(cp_->getColumnHeader(i), list_model_columns_->cols[i]);
     }
-    list->set_column_title(n+1, M("TP_LABMASKS_MASK"));
+    int col = list->append_column(M("TP_LABMASKS_MASK"), list_model_columns_->mask);
+    list->get_column(col-1)->set_expand(true);
+    list->append_column(list_enabled_column_);
     list->set_activate_on_single_click(true);
     selectionConn = list->get_selection()->signal_changed().connect(sigc::mem_fun(this, &LabMasksPanel::onSelectionChanged));
     Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
@@ -284,14 +300,14 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     showMask = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_SHOW")));
     showMask->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onShowMaskChanged));
     hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*showMask);//, Gtk::PACK_EXPAND_WIDGET, 4);
+    hb->pack_start(*showMask);
 
     maskInverted = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_INVERTED")));
     maskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onMaskInvertedChanged));
-    hb->pack_start(*maskInverted);//, Gtk::PACK_EXPAND_WIDGET, 4);
+    hb->pack_start(*maskInverted);
     mask_box->pack_start(*hb);
     
-    maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, ""/*M("TP_LABMASKS_MASK")*/, 0.7));
+    maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, "", 0.7));
     maskEditorGroup->setCurveListener(this);
 
     rtengine::LabCorrectionMask default_params;
@@ -382,7 +398,6 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     ToolParamBlock *area = Gtk::manage(new ToolParamBlock());
     hb = Gtk::manage(new Gtk::HBox());
     areaMaskButtonsHb = hb;
-    //hb->pack_start(*Gtk::manage(new Gtk::Label("")), Gtk::PACK_EXPAND_WIDGET);
 
     areaMaskCopy = Gtk::manage(new Gtk::Button());
     areaMaskCopy->add(*Gtk::manage(new RTImage("copy.png")));
@@ -415,7 +430,6 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMaskToggle->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP"));
     areaMaskToggle->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onAreaMaskToggleChanged));
     add_button(areaMaskToggle, hb, 24);
-    //hb->pack_start(*areaMaskToggle, Gtk::PACK_SHRINK, 0);
     area->pack_start(*hb);
 
     const auto add_adjuster =
@@ -440,9 +454,6 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
         area->pack_start(*cg, Gtk::PACK_SHRINK, 2);
     }
     
-    // areaMaskContrast = Gtk::manage(new Adjuster(M("TP_EXPOSURE_CONTRAST"), 0, 100, 1, 0));
-    // add_adjuster(areaMaskContrast, area);
-
     Gtk::Frame *areaFrame = Gtk::manage(new Gtk::Frame(M("TP_LABMASKS_AREA_SHAPES")));
     areaFrame->set_label_align(0.025, 0.5);
     areaFrame->set_border_width(4);
@@ -566,9 +577,9 @@ void LabMasksPanel::enableListener()
 
 void LabMasksPanel::onSelectionChanged()
 {
-    auto s = list->get_selected();
+    auto s = list->get_selection()->get_selected_rows();
     if (!s.empty()) {
-        int idx = s[0];
+        int idx = s[0][0];
         // update the selected values
         maskGet(selected_);
         cp_->selectionChanging(selected_);
@@ -608,9 +619,6 @@ void LabMasksPanel::maskGet(int idx)
         a.mode = Shape::Mode(getAreaShapeMode());
     }
     r.deltaEMask.enabled = deltaEMask->getEnabled();
-    // r.deltaEMask.L = deltaEL->getValue();
-    // r.deltaEMask.C = deltaEC->getValue();
-    // r.deltaEMask.H = deltaEH->getValue();
     double b, t;
     deltaEL->getValue(b, t);
     r.deltaEMask.L = t;
@@ -623,9 +631,6 @@ void LabMasksPanel::maskGet(int idx)
     r.deltaEMask.weight_H = b;
     r.deltaEMask.range = deltaERange->getValue();
     r.deltaEMask.decay = deltaEDecay->getValue();
-    // r.deltaEMask.use_L = !deltaEL->getAutoValue();
-    // r.deltaEMask.use_C = !deltaEC->getAutoValue();
-    // r.deltaEMask.use_H = !deltaEH->getAutoValue();
 }
 
 
@@ -652,7 +657,7 @@ void LabMasksPanel::onAddPressed()
 
 void LabMasksPanel::onRemovePressed()
 {
-    if (list->size() <= 1 || !cp_->removePressed(selected_)) {
+    if (list_model_->children().size() <= 1 || !cp_->removePressed(selected_)) {
         return;
     }
     
@@ -750,29 +755,32 @@ void LabMasksPanel::onShowMaskChanged()
 void LabMasksPanel::populateList()
 {
     ConnectionBlocker b(selectionConn);
-    list->clear_items();
+    list_model_->clear();
     rtengine::procparams::LabCorrectionMask dflt;
 
     int n = cp_->getColumnCount();
     for (size_t i = 0; i < masks_.size(); ++i) {
         auto &r = masks_[i];
-        auto j = list->append(std::to_string(i+1));
+        auto j = list_model_->append();
+        auto row = *j;
+        row[list_model_columns_->enabled] = r.enabled;
+        row[list_model_columns_->id] = i+1;
         for (int c = 0; c < n; ++c) {
-            list->set_text(j, c+1, cp_->getColumnContent(c, j));
+            row[list_model_columns_->cols[c]] = cp_->getColumnContent(c, i);
         }
         Glib::ustring am("");
         if (r.areaEnabled && !r.areaMask.isTrivial()) {
             am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
         }
-        list->set_text(
-            j, n+1, Glib::ustring::compose(
+        row[list_model_columns_->mask] = 
+            Glib::ustring::compose(
                 "%1%2%3%4%5%6",
                 hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
                 hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
                 hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
                 r.deltaEMask.enabled ? "ΔE" : "",
                 r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "",
-                am));
+                am);
     }
 }
 
@@ -805,7 +813,6 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
             areaMaskHeight->setValue(a.height);
             areaMaskAngle->setValue(a.angle);
             areaMaskRoundness->setValue(a.roundness);
-            //areaMaskMode->set_active(int(a.mode));
             toggleAreaShapeMode(int(a.mode));
         }
         populateShapeList(idx, area_shape_index_);
@@ -816,31 +823,30 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         deltaEH->setValue(r.deltaEMask.weight_H, r.deltaEMask.H);
         deltaERange->setValue(r.deltaEMask.range);
         deltaEDecay->setValue(r.deltaEMask.decay);
-        // deltaEL->setAutoValue(!r.deltaEMask.use_L);
-        // deltaEC->setAutoValue(!r.deltaEMask.use_C);
-        // deltaEH->setAutoValue(!r.deltaEMask.use_H);
         static_cast<DeltaEArea *>(deltaEColor)->setColor(r.deltaEMask.L, r.deltaEMask.C, r.deltaEMask.H);
         
         updateAreaMask(false);
     }
 
     int n = cp_->getColumnCount();
+    auto row = list_model_->children()[idx];
+    row[list_model_columns_->enabled] = r.enabled;
     for (int c = 0; c < n; ++c) {
-        list->set_text(idx, c+1, cp_->getColumnContent(c, idx));
+        row[list_model_columns_->cols[c]] = cp_->getColumnContent(c, idx);
     }
     Glib::ustring am("");
     if (r.areaEnabled && !r.areaMask.isTrivial()) {
         am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
                                     r.areaMask.shapes.size() > 1 ? "s" : "");
     }
-    list->set_text(
-        idx, n+1, Glib::ustring::compose(
+    row[list_model_columns_->mask] = 
+        Glib::ustring::compose(
             "%1%2%3%4%5%6",
             hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
             hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
             hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
             r.deltaEMask.enabled ? "ΔE" : "",
-            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", am));
+            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", am);
     Gtk::TreePath pth;
     pth.push_back(idx);
     list->get_selection()->select(pth);
@@ -988,9 +994,6 @@ void LabMasksPanel::curveChanged(CurveEditor* ce)
 void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
 {
     auto l = getListener();
-    // if (!l) {
-    //     return;
-    // }
 
     if (a == maskBlur) {
         if (l) {
@@ -1002,8 +1005,7 @@ void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
         if (l) {
             l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
-    } else if (a == deltaERange || a == deltaEDecay) {//std::find(deltaEMaskAdjusters.begin(), deltaEMaskAdjusters.end(), a) != deltaEMaskAdjusters.end()) {
-        // static_cast<DeltaEArea *>(deltaEColor)->setColor(deltaEL->getValue(), deltaEC->getValue(), deltaEH->getValue());
+    } else if (a == deltaERange || a == deltaEDecay) {
         if (l) {
             l->panelChanged(deltaEMaskEvent(), M("GENERAL_CHANGED"));
         }
@@ -1030,10 +1032,6 @@ void LabMasksPanel::adjusterChanged(ThresholdAdjuster *a, double newBottom, doub
 
 void LabMasksPanel::adjusterAutoToggled(Adjuster *a, bool newval)
 {
-    // auto l = getListener();
-    // if (l && (a == deltaEL || a == deltaEC || a == deltaEH)) {
-    //     l->panelChanged(EvDeltaEMask, M("GENERAL_CHANGED"));
-    // }
 }
 
 
@@ -1195,7 +1193,6 @@ void LabMasksPanel::onAreaShapeSelectionChanged()
         s.height = height_;
         s.angle = angle_;
         s.roundness = areaMaskRoundness->getValue();
-        //s.mode = Shape::Mode(areaMaskMode->get_active_row_number());
         s.mode = Shape::Mode(getAreaShapeMode());
 
         auto sel = areaMaskShapes->get_selected();
@@ -1227,7 +1224,7 @@ void LabMasksPanel::onAreaShapeResetPressed()
         maskShow(selected_, true);        
         enableListener();
         auto l = getListener();
-        if (l) {// && areaMask->getEnabled()) {
+        if (l) {
             l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
@@ -1245,7 +1242,7 @@ void LabMasksPanel::onAreaShapeAddPressed()
         areaShapeSelect(am.shapes.size()-1, true);
         maskShow(selected_, true);        
         auto l = getListener();
-        if (l) {// && areaMask->getEnabled()) {
+        if (l) {
             l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
@@ -1261,7 +1258,7 @@ void LabMasksPanel::onAreaShapeRemovePressed()
         areaShapeSelect(area_shape_index_ > 0 ? area_shape_index_ - 1 : 0, true);
         maskShow(selected_, true);
         auto l = getListener();
-        if (l) {// && areaMask->getEnabled()) {
+        if (l) {
             l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
@@ -1368,15 +1365,13 @@ void LabMasksPanel::onAreaMaskPastePressed()
             areaMaskFeather->setValue(a.feather);
             areaMaskContrast->setCurve(a.contrast);
             areaMaskRoundness->setValue(s.roundness);
-            //areaMaskMode->set_active(int(s.mode));
             toggleAreaShapeMode(int(s.mode));
-            //areaMaskInverted->set_active(a.inverted);
         }
         populateShapeList(selected_, area_shape_index_);
         maskShow(selected_, true);        
         enableListener();
         auto l = getListener();
-        if (l) {// && areaMask->getEnabled()) {
+        if (l) {
             l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
@@ -1395,7 +1390,6 @@ void LabMasksPanel::areaShapeSelect(int sel, bool update_list)
     updateGeometry();
     updateAreaMask(true);
     areaMaskRoundness->setValue(ns.roundness);
-    //areaMaskMode->set_active(int(ns.mode));
     toggleAreaShapeMode(int(ns.mode));
     if (areaMaskToggle->get_active()) {
         areaMaskToggle->set_active(false);
@@ -1455,7 +1449,7 @@ void LabMasksPanel::updateArea(AreaDrawUpdater::Phase phase, int x1, int y1, int
         areaMaskToggle->set_active(true);
 
         auto l = getListener();
-        if (l) {// && areaMask->getEnabled()) {
+        if (l) {
             l->panelChanged(areaMaskEvent(), M("GENERAL_CHANGED"));
         }
     }
@@ -1560,4 +1554,28 @@ void LabMasksPanel::onDeltaESpotRequested(rtengine::Coord pos)
 void LabMasksPanel::setDeltaEColorProvider(DeltaEColorProvider *p)
 {
     deltaE_provider_ = p;
+}
+
+
+void LabMasksPanel::onListEnabledToggled(const Glib::ustring &path)
+{
+    auto it = list_model_->get_iter(path);
+    if (it) {
+        auto row = *it;
+        row[list_model_columns_->enabled] = !row[list_model_columns_->enabled];
+        auto idx = row[list_model_columns_->id] - 1;
+        auto &r = masks_[idx];
+        r.enabled = row[list_model_columns_->enabled];
+        auto l = getListener();
+        if (l) {
+            l->panelChanged(EvMaskList, M("HISTORY_CHANGED"));
+        }
+    }
+}
+
+
+void LabMasksPanel::setListEnabled(Gtk::CellRenderer *renderer, const Gtk::TreeModel::iterator &it)
+{
+    auto row = *it;
+    static_cast<Gtk::CellRendererToggle *>(renderer)->set_active(row[list_model_columns_->enabled]);
 }

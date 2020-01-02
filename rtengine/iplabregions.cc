@@ -218,6 +218,10 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                 vfloat vv = LVF(rgb->r(y, x));
 
                 for (int i = 0; i < n; ++i) {
+                    if (!params->colorcorrection.labmasks[i].enabled) {
+                        continue;
+                    }
+                    
                     vfloat blendv = LVFU(abmask[i][y][x]);
                     vfloat lblendv = LVFU(Lmask[i][y][x]);
                     vfloat fv = vmaxf(Yv, ZEROV);
@@ -241,6 +245,10 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                 float v = rgb->r(y, x);
 
                 for (int i = 0; i < n; ++i) {
+                    if (!params->colorcorrection.labmasks[i].enabled) {
+                        continue;
+                    }
+
                     float blend = abmask[i][y][x];
                     float lblend = Lmask[i][y][x];
 

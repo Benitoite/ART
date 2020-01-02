@@ -180,6 +180,10 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb)
         array2D<float> b(lab.W, lab.H, lab.b, 0);
 
         for (int i = 0; i < n; ++i) {
+            if (!params->textureBoost.labmasks[i].enabled) {
+                continue;
+            }
+            
             auto &r = params->textureBoost.regions[i];
             EPD(&lab, r, scale, multiThread);
             const auto &blend = mask[i];
