@@ -1079,7 +1079,7 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     // perform transform
     if (ipf.needsTransform()) {
         Imagefloat* trImg = new Imagefloat(fw, fh, baseImg);
-        ipf.transform (baseImg, trImg, 0, 0, 0, 0, fw, fh, origFW * tscale + 0.5, origFH * tscale + 0.5, metadata, 0, true); // Raw rotate degree not detectable here
+        ipf.transform (baseImg, trImg, 0, 0, 0, 0, fw, fh, origFW * tscale + 0.5, origFH * tscale + 0.5, metadata, 0, false); // Raw rotate degree not detectable here
         delete baseImg;
         baseImg = trImg;
     }

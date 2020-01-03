@@ -295,11 +295,11 @@ void Crop::update(int todo)
             transCrop = new Imagefloat(cropw, croph, baseCrop);
         }
 
-        if (needstransform)
+        if (needstransform) {
             parent->ipf.transform(baseCrop, transCrop, cropx / skip, cropy / skip, trafx / skip, trafy / skip, skips(parent->fw, skip), skips(parent->fh, skip), parent->getFullWidth(), parent->getFullHeight(),
                                   parent->imgsrc->getMetaData(),
                                   parent->imgsrc->getRotateDegree(), false);
-        else {
+        } else {
             baseCrop->copyData(transCrop);
         }
 

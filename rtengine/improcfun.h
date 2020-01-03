@@ -102,7 +102,7 @@ public:
 
     void labAdjustments(Imagefloat *rgb);
     bool sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask=false);
-    void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool fullImage);    
+    void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool highQuality);    
     void resize(Imagefloat* src, Imagefloat* dst, float dScale);
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
     void Lanczos(Imagefloat *src, Imagefloat *dst, float scale);

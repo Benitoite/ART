@@ -464,7 +464,7 @@ bool ImProcFunctions::transCoord (int W, int H, int x, int y, int w, int h, int&
 
 void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH,
                                  const FramesMetaData *metadata,
-                                 int rawRotationDeg, bool fullImage)
+                                 int rawRotationDeg, bool highQuality)
 {
     double focalLen = metadata->getFocalLen();
     double focalLen35mm = metadata->getFocalLen35mm();
@@ -489,7 +489,9 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
         }
     }
 
-    bool highQuality = needsCA() && scale == 1;
+    if (needsCA() || scale == 1) {
+        highQuality = true;
+    }
     bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
     bool needs_luminance = needsVignetting();
     bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
