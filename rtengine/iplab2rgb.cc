@@ -36,14 +36,8 @@ namespace {
 
 inline void copyAndClampLine(const float *src, unsigned char *dst, const int W)
 {
-    for (int j = 0, iy = 0; j < W; ++j) {
-        float r = src[iy] * MAXVALF;
-        float g = src[iy+1] * MAXVALF;
-        float b = src[iy+2] * MAXVALF;
-        dst[iy] = uint16ToUint8Rounded(CLIP(r));
-        dst[iy+1] = uint16ToUint8Rounded(CLIP(g));
-        dst[iy+2] = uint16ToUint8Rounded(CLIP(b));
-        iy += 3;
+    for (int j = 0; j < W * 3; ++j) {
+        dst[j] = uint16ToUint8Rounded(CLIP(src[j] * MAXVALF));
     }
 }
 
