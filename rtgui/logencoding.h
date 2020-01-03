@@ -31,7 +31,7 @@ protected:
     Adjuster *targetGray;
     Adjuster *blackEv;
     Adjuster *whiteEv;
-    Adjuster *localContrast;
+    Adjuster *regularization;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAuto;
@@ -43,7 +43,7 @@ protected:
     rtengine::ProcEvent EvTargetGray;
     rtengine::ProcEvent EvBlackEv;
     rtengine::ProcEvent EvWhiteEv;
-    rtengine::ProcEvent EvLocalContrast;
+    rtengine::ProcEvent EvRegularization;
 
     sigc::connection autoconn;
     

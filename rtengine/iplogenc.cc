@@ -160,7 +160,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full
 
     const int W = rgb->getWidth(), H = rgb->getHeight();
     
-    if (params->logenc.localContrast == 0) {
+    if (params->logenc.regularization == 0) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
@@ -208,7 +208,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full
             const float epsilon = 0.005f;
             rtengine::guidedFilter(Y2, Y, Y, radius, epsilon, multithread);
         }
-        const float blend = LIM01(float(params->logenc.localContrast) / 100.f);
+        const float blend = LIM01(float(params->logenc.regularization) / 100.f);
         
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)

@@ -810,7 +810,7 @@ HISTORY_MSG_LOCALCONTRAST_RADIUS;Contraste Local - Rayon
 HISTORY_MSG_LOCALCONTRAST_DELTAEMASK;Contraste Local - Masque ΔE
 HISTORY_MSG_LOGENC_AUTO;Log - Automatique
 HISTORY_MSG_LOGENC_AUTOGRAY;Log - Gris auto.
-HISTORY_MSG_LOGENC_LOCAL_CONTRAST;Log - Contraste local
+HISTORY_MSG_LOGENC_REGULARIZATION;Log - Régularisation
 HISTORY_MSG_LOGENC_ENABLED;Encodage Logarithmique
 HISTORY_MSG_LOGENC_BLACK_EV;Log - EV Noir
 HISTORY_MSG_LOGENC_SOURCE_GRAY;Log - Point gris source
@@ -1973,7 +1973,7 @@ TP_LOGENC_SOURCE_GRAY;Point gris de la source
 TP_LOGENC_WHITE_EV;EV Blanc
 TP_LOGENC_TARGET_GRAY;Point gris ciblé
 TP_LOGENC_LABEL;Encodage Log
-TP_LOGENC_LOCAL_CONTRAST;Contraste local
+TP_LOGENC_REGULARIZATION;Régularisation
 TP_METADATA_EDIT;Appliquer les modifications
 TP_METADATA_MODE;Mode de copie des métadonnées
 TP_METADATA_STRIP;Effacer toutes les métadonnées

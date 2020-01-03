@@ -1188,7 +1188,7 @@ LogEncodingParams::LogEncodingParams():
     targetGray(18.0),
     blackEv(-5.0),
     whiteEv(10.0),
-    localContrast(65)
+    regularization(65)
 {
 }
 
@@ -1202,7 +1202,7 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
         && blackEv == other.blackEv
         && whiteEv == other.whiteEv
         && targetGray == other.targetGray
-        && localContrast == other.localContrast;
+        && regularization == other.regularization;
 }
 
 bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
@@ -2630,7 +2630,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("LogEncoding", "TargetGray", logenc.targetGray, keyFile);
             saveToKeyfile("LogEncoding", "BlackEv", logenc.blackEv, keyFile);
             saveToKeyfile("LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
-            saveToKeyfile("LogEncoding", "LocalContrast", logenc.localContrast, keyFile);
+            saveToKeyfile("LogEncoding", "Regularization", logenc.regularization, keyFile);
         }
 
 // ToneEqualizer
@@ -3482,9 +3482,9 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "LogEncoding", "BlackEv", logenc.blackEv);
             assignFromKeyfile(keyFile, "LogEncoding", "WhiteEv", logenc.whiteEv);
             if (ppVersion >= 1006) {
-                assignFromKeyfile(keyFile, "LogEncoding", "LocalContrast", logenc.localContrast);
+                assignFromKeyfile(keyFile, "LogEncoding", "Regularization", logenc.regularization);
             } else {
-                logenc.localContrast = 0;
+                logenc.regularization = 0;
             }
         }
 
