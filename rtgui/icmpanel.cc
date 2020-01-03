@@ -31,7 +31,13 @@ using namespace rtengine::procparams;
 
 extern Options options;
 
-ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iunchanged(nullptr), icmplistener(nullptr), lastRefFilename(""), camName("")
+ICMPanel::ICMPanel():
+    FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")),
+    iunchanged(nullptr),
+    icmplistener(nullptr),
+    lastRefFilename(""),
+    camName(""),
+    filename("")
 {
     auto m = ProcEventMapper::getInstance();
     EvICMprimariMethod = m->newEvent(GAMMA, "HISTORY_MSG_ICM_OUTPUT_PRIMARIES");
@@ -46,8 +52,6 @@ ICMPanel::ICMPanel() : FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")), iuncha
     EvICMgamm = m->newEvent(AUTOEXP, "HISTORY_MSG_ICM_WORKING_GAMMA");
     EvICMslop = m->newEvent(AUTOEXP, "HISTORY_MSG_ICM_WORKING_SLOPE");
     EvICMtrcinMethod = m->newEvent(AUTOEXP, "HISTORY_MSG_ICM_WORKING_TRC_METHOD");
-
-    isBatchMode = lastToneCurve = lastApplyLookTable = lastApplyBaselineExposureOffset = lastApplyHueSatMap = false;
 
     ipDialog = Gtk::manage(new MyFileChooserButton(M("TP_ICM_INPUTDLGLABEL"), Gtk::FILE_CHOOSER_ACTION_OPEN));
     ipDialog->set_tooltip_text(M("TP_ICM_INPUTCUSTOM_TOOLTIP"));
@@ -319,38 +323,6 @@ void ICMPanel::updateDCP(int dcpIlluminant, Glib::ustring dcp_name)
 {
     ConnectionBlocker dcpillconn_(dcpillconn);
 
-    if (isBatchMode) {
-        dcpFrame->set_sensitive(true);
-        ckbToneCurve->set_sensitive(true);
-        ckbApplyLookTable->set_sensitive(true);
-        ckbApplyBaselineExposureOffset->set_sensitive(true);
-        ckbApplyHueSatMap->set_sensitive(true);
-        dcpIllLabel->set_sensitive(true);
-        dcpIll->set_sensitive(true);
-
-        if (dcpTemperatures[0] != 0 || dcpTemperatures[1] != 0) {
-            int curr_active = dcpIll->get_active_row_number();
-            dcpIll->remove_all();
-            dcpIll->append(M("TP_ICM_DCPILLUMINANT_INTERPOLATED"));
-            dcpIll->append(M("TP_ICM_DCPILLUMINANT") + " 1");
-            dcpIll->append(M("TP_ICM_DCPILLUMINANT") + " 2");
-            dcpIll->append(M("GENERAL_UNCHANGED"));
-            dcpTemperatures[0] = 0;
-            dcpTemperatures[1] = 0;
-            dcpIll->set_active(curr_active);
-        }
-
-        if (dcpIll->get_active_row_number() == -1 && dcpIlluminant == -1) {
-            dcpIll->set_active(0);
-        } else if (dcpIlluminant >= 0 && dcpIlluminant != dcpIll->get_active_row_number()) {
-            dcpIll->set_active(dcpIlluminant);
-        }
-
-        dcpIll->set_sensitive(true);
-        dcpIllLabel->set_sensitive(true);
-        return;
-    }
-
     ckbToneCurve->set_sensitive(false);
     ckbApplyLookTable->set_sensitive(false);
     ckbApplyBaselineExposureOffset->set_sensitive(false);
@@ -363,6 +335,8 @@ void ICMPanel::updateDCP(int dcpIlluminant, Glib::ustring dcp_name)
 
     if (dcp_name == "(cameraICC)") {
         dcp = DCPStore::getInstance()->getStdProfile(camName);
+    } else if (dcp_name == "(embedded)") {
+        dcp = DCPStore::getInstance()->getProfile(filename);
     } else if (ifromfile->get_active() && DCPStore::getInstance()->isValidDCPFileName(dcp_name)) {
         dcp = DCPStore::getInstance()->getProfile(dcp_name);
     }
@@ -429,10 +403,6 @@ void ICMPanel::updateDCP(int dcpIlluminant, Glib::ustring dcp_name)
             dcpIll->append(M("TP_ICM_DCPILLUMINANT_INTERPOLATED"));
             dcpIll->append(M("TP_ICM_DCPILLUMINANT") + " 1");
             dcpIll->append(M("TP_ICM_DCPILLUMINANT") + " 2");
-
-            if (isBatchMode) {
-                dcpIll->append(M("GENERAL_UNCHANGED"));
-            }
 
             dcpTemperatures[0] = 0;
             dcpTemperatures[1] = 0;
@@ -507,13 +477,9 @@ void ICMPanel::read(const ProcParams* pp)
 
     obpc->set_active(pp->icm.outputBPC);
     ckbToneCurve->set_active(pp->icm.toneCurve);
-    lastToneCurve = pp->icm.toneCurve;
     ckbApplyLookTable->set_active(pp->icm.applyLookTable);
-    lastApplyLookTable = pp->icm.applyLookTable;
     ckbApplyBaselineExposureOffset->set_active(pp->icm.applyBaselineExposureOffset);
-    lastApplyBaselineExposureOffset = pp->icm.applyBaselineExposureOffset;
     ckbApplyHueSatMap->set_active(pp->icm.applyHueSatMap);
-    lastApplyHueSatMap = pp->icm.applyHueSatMap;
 
     enableListener();
 }
@@ -733,8 +699,9 @@ void ICMPanel::setRawMeta(bool raw, const rtengine::FramesData* pMeta)
     iembedded->set_active(!raw);
     icamera->set_sensitive(raw);
     camName = pMeta->getCamera();
+    filename = pMeta->getFileName();
     icameraICC->set_sensitive(raw && (ICCStore::getInstance()->getStdProfile(pMeta->getCamera()) != nullptr || DCPStore::getInstance()->getStdProfile(pMeta->getCamera()) != nullptr));
-    iembedded->set_sensitive(!raw);
+    iembedded->set_sensitive(!raw || DCPStore::getInstance()->getProfile(filename));
 
     enableListener();
 }

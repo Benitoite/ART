@@ -51,17 +51,11 @@ protected:
 
 
     //bool freegamma;
-    bool lastToneCurve;
     sigc::connection tcurveconn;
-    bool lastApplyLookTable;
     sigc::connection ltableconn;
-    bool lastApplyBaselineExposureOffset;
     sigc::connection beoconn;
-    bool lastApplyHueSatMap;
     sigc::connection hsmconn;
-    bool lastobpc;
     sigc::connection obpcconn;
-    bool isBatchMode;
 
 private:
     rtengine::ProcEvent EvICMprimariMethod;
@@ -111,6 +105,7 @@ private:
     double dcpTemperatures[2];
     Glib::ustring lastRefFilename;
     Glib::ustring camName;
+    Glib::ustring filename;
     void updateDCP(int dcpIlluminant, Glib::ustring dcp_name);
     void updateRenderingIntent(const Glib::ustring &profile);
 public:
