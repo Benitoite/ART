@@ -178,8 +178,7 @@ Denoise::Denoise():
     lumaVBox = Gtk::manage(new Gtk::VBox());
     lumaVBox->set_spacing(2);
     
-    guidedLumaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 100, 1, 0));
-    guidedLumaRadius->setLogScale(100, 0);
+    guidedLumaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 5, 1, 0));
     guidedLumaRadius->setAdjusterListener(this);
     lumaVBox->pack_start(*guidedLumaRadius);
     
@@ -195,8 +194,7 @@ Denoise::Denoise():
     chromaVBox = Gtk::manage(new Gtk::VBox());
     chromaVBox->set_spacing(2);
     
-    guidedChromaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 100, 1, 0));
-    guidedChromaRadius->setLogScale(100, 0);
+    guidedChromaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 20, 1, 0));
     guidedChromaRadius->setAdjusterListener(this);
     chromaVBox->pack_start(*guidedChromaRadius);
 
