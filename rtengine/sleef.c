@@ -924,7 +924,11 @@ __inline float mulsignf(float x, float y) {
 
 __inline float signf(float d) { return copysign(1, d); }
 __inline float mlaf(float x, float y, float z) { return x * y + z; }
-__inline float xrintf(float x) { return x < 0 ? (int)(x - 0.5f) : (int)(x + 0.5f); }
+#ifdef __SSE2__
+__inline int xrintf(float x) { return _mm_cvt_ss2si(_mm_set_ss(x)); }
+#else
+__inline int xrintf(float x) { return x + (x < 0 ? -0.5f : 0.5f); }
+#endif
 
 __inline int xisnanf(float x) { return x != x; }
 __inline int xisinff(float x) { return x == rtengine::RT_INFINITY_F || x == -rtengine::RT_INFINITY_F; }
