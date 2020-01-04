@@ -251,10 +251,11 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     list->set_can_focus(false);
     list->append_column("#", list_model_columns_->id);
     for (int i = 0; i < n; ++i) {
-        list->append_column(cp_->getColumnHeader(i), list_model_columns_->cols[i]);
+        int col = list->append_column(cp_->getColumnHeader(i), list_model_columns_->cols[i]);
+        list->get_column(col-1)->set_expand(true);
     }
-    int col = list->append_column(M("TP_LABMASKS_MASK"), list_model_columns_->mask);
-    list->get_column(col-1)->set_expand(true);
+    /*int col =*/ list->append_column(M("TP_LABMASKS_MASK"), list_model_columns_->mask);
+    //list->get_column(col-1)->set_expand(true);
     list->append_column(list_enabled_column_);
     list->set_activate_on_single_click(true);
     selectionConn = list->get_selection()->signal_changed().connect(sigc::mem_fun(this, &LabMasksPanel::onSelectionChanged));

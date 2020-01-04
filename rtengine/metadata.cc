@@ -314,7 +314,7 @@ Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exc
         xmp.clear();
         g_remove(outname.c_str());
         return image;
-    } catch (Exiv2::AnyError &) {
+    } catch (std::exception &) {
         if (Glib::file_test(outname, Glib::FILE_TEST_EXISTS)) {
             g_remove(outname.c_str());
         }
@@ -396,7 +396,7 @@ void Exiv2Metadata::do_merge_xmp(Exiv2::Image *dst) const
         for (auto &datum : xmp) {
             dst->xmpData()[datum.key()] = datum;
         }
-    } catch (Exiv2::AnyError &exc) {
+    } catch (std::exception &exc) {
         if (settings->verbose) {
             std::cerr << "Error loading metadata from XMP sidecar: "
                       << exc.what() << std::endl;
@@ -451,7 +451,7 @@ void Exiv2Metadata::import_exif_pairs(Exiv2::ExifData &out) const
     for (auto &p : exif_) {
         try {
             out[p.first] = p.second;
-        } catch (Exiv2::AnyError &exc) {}
+        } catch (std::exception &exc) {}
     }
 }
 
@@ -469,7 +469,7 @@ void Exiv2Metadata::import_iptc_pairs(Exiv2::IptcData &out) const
                     out.add(d);
                 }
             }
-        } catch (Exiv2::AnyError &exc) {}
+        } catch (std::exception &exc) {}
     }
 }
 

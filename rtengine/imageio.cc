@@ -1335,7 +1335,7 @@ bool ImageIO::saveMetadata(const Glib::ustring &fname) const
         metadataInfo.load();
         metadataInfo.saveToImage(fname);
         return true;
-    } catch (Exiv2::AnyError &exc) {
+    } catch (std::exception &exc) {
         std::cout << "EXIF ERROR: " << exc.what() << std::endl;
         return false;
     }

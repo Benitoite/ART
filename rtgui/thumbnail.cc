@@ -1169,7 +1169,7 @@ void Thumbnail::saveRating()
             //     }
             //     std::cout << std::endl;
             // }
-        } catch (Exiv2::AnyError &exc) {
+        } catch (std::exception &exc) {
             std::cerr << "ERROR saving thumbnail rating data to " << fn
                       << ": " << exc.what() << std::endl;
         }
@@ -1209,7 +1209,7 @@ void Thumbnail::loadRating()
             if (pos != xmp.end()) {
                 rating_.color.value = xmp_label2color(pos->toString());
             }
-        } catch (Exiv2::AnyError &exc) {
+        } catch (std::exception &exc) {
             std::cerr << "ERROR loading thumbnail rating data from "
                       << getXmpSidecarPath(fname)
                       << ": " << exc.what() << std::endl;
@@ -1240,7 +1240,7 @@ void Thumbnail::saveMetadata()
             std::cout << "saved edited metadata for " << fname << " to "
                       << fn << std::endl;
         }
-    } catch (Exiv2::AnyError &exc) {
+    } catch (std::exception &exc) {
         std::cerr << "ERROR saving metadata for " << fname << " to " << fn
                   << ": " << exc.what() << std::endl;
     }

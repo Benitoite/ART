@@ -451,7 +451,7 @@ FramesData::FramesData(const Glib::ustring &fname):
 #endif
             }
         }
-    } catch(Exiv2::AnyError &e) {
+    } catch (std::exception &e) {
         if (settings->verbose) {
             std::cerr << "EXIV2 ERROR: " << e.what() << std::endl;
         }
