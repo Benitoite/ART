@@ -489,7 +489,7 @@ int main (int argc, char **argv)
         if ( ret <= 0 ) {
             fflush(stdout);
             if (consoleOpened) {
-                printf ("Press any key to exit RawTherapee\n");
+                printf ("Press any key to exit " RTNAME "\n");
                 FlushConsoleInputBuffer (GetStdHandle (STD_INPUT_HANDLE));
                 getch();
             }
@@ -588,7 +588,7 @@ int main (int argc, char **argv)
 #ifdef WIN32
 
     if (consoleOpened) {
-        printf ("Press any key to exit RawTherapee\n");
+        printf ("Press any key to exit " RTNAME "\n");
         fflush(stdout);
         FlushConsoleInputBuffer (GetStdHandle (STD_INPUT_HANDLE));
         getch();
