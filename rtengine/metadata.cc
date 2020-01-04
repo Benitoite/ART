@@ -219,10 +219,11 @@ bool exec_subprocess(const std::vector<Glib::ustring> &argv, std::string &out, s
 
     out = read_pipe(fds_from);
     err = read_pipe(fds_from_e);
-    
-    WaitForSingleObject(pi.hProcess, INFINITE);
+
     int status = -1;
-    if (!GetExitCodeProcess(pi.hProcess, (LPDWORD)&status)) { 
+    const DWORD wait_timeout_ms = 1000; // INFINITE
+    if (WaitForSingleObject(pi.hProcess, wait_timeout_ms) != WAIT_OBJECT_0 ||
+        !GetExitCodeProcess(pi.hProcess, (LPDWORD)&status)) {
         status = -1;
     }
 
@@ -280,10 +281,10 @@ Exiv2::Image::AutoPtr exiftool_import(const Glib::ustring &fname, const std::exc
     g_remove(templ.c_str());
     if (settings->verbose) {
         if (!out.empty()) {
-            std::cout << "  exiftool stdout: " << out;
+            std::cout << "  exiftool stdout: " << out << std::flush;
         }
         if (!err.empty()) {
-            std::cout << "  exiftool stderr: " << err;
+            std::cout << "  exiftool stderr: " << err << std::flush;
         }
     }
     if (!ok) {
@@ -356,6 +357,9 @@ void Exiv2Metadata::load() const
         CacheVal val;
         auto finfo = Gio::File::create_for_path(src_)->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED);
         if (cache_ && cache_->get(src_, val) && val.second >= finfo->modification_time()) {
+            if (settings->verbose) {
+                std::cout << "Metadata for " << src_ << " found in cache" << std::endl;
+            }
             image_ = val.first;
         } else {
             try {
