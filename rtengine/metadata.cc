@@ -66,6 +66,10 @@ Exiv2::Image::AutoPtr open_exiv2(const Glib::ustring &fname)
 #else
     auto image = Exiv2::ImageFactory::open(Glib::filename_from_utf8(fname));
 #endif
+    image->readMetadata();
+    if (!image->good()) {
+        throw Exiv2::Error(Exiv2::kerErrorMessage, "exiv2: invalid image");
+    }
     return image;
 }
 
@@ -220,11 +224,13 @@ bool exec_subprocess(const std::vector<Glib::ustring> &argv, std::string &out, s
     out = read_pipe(fds_from);
     err = read_pipe(fds_from_e);
 
-    int status = -1;
+    unsigned int status = 255;
     const DWORD wait_timeout_ms = 1000; // INFINITE
-    if (WaitForSingleObject(pi.hProcess, wait_timeout_ms) != WAIT_OBJECT_0 ||
-        !GetExitCodeProcess(pi.hProcess, (LPDWORD)&status)) {
-        status = -1;
+    if (WaitForSingleObject(pi.hProcess, wait_timeout_ms) != WAIT_OBJECT_0) {
+        TerminateProcess(pi.hProcess, status);
+    }
+    if (!GetExitCodeProcess(pi.hProcess, (LPDWORD)&status)) {
+        status = 255;
     }
 
     return status == 0;
@@ -365,7 +371,6 @@ void Exiv2Metadata::load() const
             try {
                 auto img = open_exiv2(src_);
                 image_.reset(img.release());
-                image_->readMetadata();
             } catch (std::exception &exc) {
                 auto img = exiftool_import(src_, exc);
                 image_.reset(img.release());
@@ -412,7 +417,6 @@ void Exiv2Metadata::do_merge_xmp(Exiv2::Image *dst) const
 void Exiv2Metadata::saveToImage(const Glib::ustring &path) const
 {
     auto dst = open_exiv2(path);
-    dst->readMetadata();
     if (image_.get()) {
         dst->setMetadata(*image_);
         if (merge_xmp_) {
@@ -538,7 +542,6 @@ Exiv2::XmpData Exiv2Metadata::getXmpSidecar(const Glib::ustring &path)
     auto fname = xmpSidecarPath(path);
     if (Glib::file_test(fname, Glib::FILE_TEST_EXISTS)) {
         auto image = open_exiv2(fname);
-        image->readMetadata();
         ret = image->xmpData();
     }
     return ret;
