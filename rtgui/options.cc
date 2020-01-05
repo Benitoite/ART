@@ -596,7 +596,11 @@ void Options::setDefaults()
     thumbnail_inspector_enable_cms = false;
 
     thumbnail_rating_mode = Options::ThumbnailRatingMode::XMP;
+#if defined WIN32 || defined __APPLE__
+    rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::STD;
+#else
     rtSettings.xmp_sidecar_style = rtengine::Settings::XmpSidecarStyle::EXT;
+#endif
     rtSettings.metadata_xmp_sync = rtengine::Settings::MetadataXmpSync::READ;
     rtSettings.exiftool_path = "exiftool";
 #ifdef WIN32
