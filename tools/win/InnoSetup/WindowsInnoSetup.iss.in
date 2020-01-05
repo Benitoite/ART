@@ -25,12 +25,12 @@
 #define MyAppURL "http://bitbucket.org/agriggio/ART/"
 #define MyAppExeName "ART.exe"
 #define MyAppCliExeName "ART-cli.exe"
-#define MyBuildBasePath "${CMAKE_INSTALL_PREFIX}"
+#define MyBuildBasePath "."
 #define MySourceBasePath "${PROJECT_SOURCE_DIR}"
 #define MyBitDepth "${BUILD_BIT_DEPTH}"
 #define MyTargetArchitecture "${ARCHITECTURE_ALLOWED}"
 #define MyInstallMode "${INSTALL_MODE}"
-#define MySystemName "${SYSTEM_NAME}"
+#define MySystemName "Win"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -61,29 +61,6 @@ PrivilegesRequired=none
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
-Name: "catalan"; MessagesFile: "compiler:Languages\Catalan.isl"
-Name: "corsican"; MessagesFile: "compiler:Languages\Corsican.isl"
-Name: "czech"; MessagesFile: "compiler:Languages\Czech.isl"
-Name: "danish"; MessagesFile: "compiler:Languages\Danish.isl"
-Name: "dutch"; MessagesFile: "compiler:Languages\Dutch.isl"
-Name: "finnish"; MessagesFile: "compiler:Languages\Finnish.isl"
-Name: "french"; MessagesFile: "compiler:Languages\French.isl"
-Name: "german"; MessagesFile: "compiler:Languages\German.isl"
-Name: "greek"; MessagesFile: "compiler:Languages\Greek.isl"
-Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"
-Name: "hungarian"; MessagesFile: "compiler:Languages\Hungarian.isl"
-Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
-Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
-Name: "norwegian"; MessagesFile: "compiler:Languages\Norwegian.isl"
-Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
-Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
-Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
-Name: "serbiancyrillic"; MessagesFile: "compiler:Languages\SerbianCyrillic.isl"
-Name: "serbianlatin"; MessagesFile: "compiler:Languages\SerbianLatin.isl"
-Name: "slovenian"; MessagesFile: "compiler:Languages\Slovenian.isl"
-Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
-Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Tasks]
 Name: "userinstall"; Description: "Only me (Single User Install)"; GroupDescription: "Install ART for:"; Flags: exclusive unchecked
@@ -97,7 +74,9 @@ Name: regOpenFile; Description: "Add ""Open with ART"" option to context menu wh
 
 [Files]
 Source: "{#MyBuildBasePath}\ART*.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyBuildBasePath}\camconst.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyBuildBasePath}\*.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyBuildBasePath}\dynamicprofile.cfg"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyBuildBasePath}\exiftool.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
 Source: "{#MyBuildBasePath}\dcpprofiles\*"; DestDir: "{app}\dcpprofiles\"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: "{#MyBuildBasePath}\etc\*"; DestDir: "{app}\etc\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyBuildBasePath}\iccprofiles\*"; DestDir: "{app}\iccprofiles\"; Flags: ignoreversion recursesubdirs createallsubdirs
