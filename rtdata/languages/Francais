@@ -1841,13 +1841,13 @@ TP_ICM_DCPILLUMINANT_INTERPOLATED;Interpolé
 TP_ICM_DCPILLUMINANT_TOOLTIP;Sélectionne quel illuminant DCP inclus utiliser. La valeur par défaut est "Interpolé", qui est un mix entre les 2 profils inclus, selon la Balance des Blancs choisie. Ce paramètre n'est actif que si un fichier DCP double-illuminant avec support de l'interpolation est choisi.
 TP_ICM_INPUTCAMERA;Celui de l'appareil photo
 TP_ICM_INPUTCAMERAICC;Sélection auto. du profil de l'appareil photo
-TP_ICM_INPUTCAMERAICC_TOOLTIP;Utiliser les profils d'entrée DCP ou ICC spécifiques à ART, qui sont plus précis qu'une simple matrice.\nDisponibles pour certains appareils photo, ces profils sont stockés dans les dossiers /iccprofiles/input et /dcpprofiles.\nLe profil dont le nom de fichier correspond au champ EXIF "Modèle" (de l'appareil) est automatiquement sélectionné.
-TP_ICM_INPUTCAMERA_TOOLTIP;Par ordre de préférence, utilise la matrice couleurs incluse dans le fichier RAW, la matrice couleurs simple fournie par ART ou celles de dcraw.
+TP_ICM_INPUTCAMERAICC_TOOLTIP;Utiliser les profils d'entrée DCP ou ICC spécifiques. Ces profils sont plus précis que de simples matrices mais pas disponibles pour tous les appareils photos.
+TP_ICM_INPUTCAMERA_TOOLTIP;Utilise une matrice couleurs simple spécifique de l'appareil. 
 TP_ICM_INPUTCUSTOM;Personnalisé
 TP_ICM_INPUTCUSTOM_TOOLTIP;Sélectionez votre propre profil DCP/ICC pour l'appareil photo
 TP_ICM_INPUTDLGLABEL;Choisir le profil DCP/ICC d'entrée...
-TP_ICM_INPUTEMBEDDED;Utiliser celui inclus, si possible
-TP_ICM_INPUTEMBEDDED_TOOLTIP;Utiliser le profil inclus dans les fichiers non-raw
+TP_ICM_INPUTEMBEDDED;Utiliser celui inclus
+TP_ICM_INPUTEMBEDDED_TOOLTIP;Utiliser le profil inclus dans les fichiers. \nSi non disponible utiliser celui de l'appareil photo.
 TP_ICM_INPUTNONE;Sans profil
 TP_ICM_INPUTNONE_TOOLTIP;N'utiliser aucun profil couleur d'entrée du tout. À n'utiliser que dans des cas spéciaux.
 TP_ICM_INPUTPROFILE;Profil d'entrée
