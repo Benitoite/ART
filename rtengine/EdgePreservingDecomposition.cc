@@ -4,7 +4,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 
 #define DIAGONALS 5

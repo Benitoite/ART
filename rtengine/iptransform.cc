@@ -23,7 +23,7 @@
 #endif
 #include "mytime.h"
 #include "rt_math.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "rtlensfun.h"
 #include "perspectivecorrection.h"
 

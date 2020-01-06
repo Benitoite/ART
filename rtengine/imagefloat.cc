@@ -28,7 +28,7 @@
 #include "rt_math.h"
 #include "color.h"
 #include "halffloat.h"
-#include "sleef.c"
+#include "sleef.h"
 
 namespace rtengine {
 

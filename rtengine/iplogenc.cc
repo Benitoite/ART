@@ -23,7 +23,7 @@
 #endif
 
 #include "improcfun.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "imagesource.h"
 #include "rt_algo.h"
 #include "curves.h"

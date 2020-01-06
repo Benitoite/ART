@@ -26,7 +26,7 @@
 #include "color.h"
 #include "../rtgui/multilangmgr.h"
 #include "procparams.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 #include "median.h"
 //#define BENCHMARK

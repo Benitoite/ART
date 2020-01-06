@@ -40,7 +40,7 @@
 #include <array>
 #include "improcfun.h"
 #include "gauss.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 #include "guidedfilter.h"
 //#define BENCHMARK

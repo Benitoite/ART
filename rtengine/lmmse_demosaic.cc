@@ -22,7 +22,7 @@
 #include "rt_math.h"
 #include "color.h"
 #include "../rtgui/multilangmgr.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 #include "median.h"
 

@@ -21,7 +21,7 @@
 #include "color.h"
 #include "iccmatrices.h"
 #include "mytime.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 #include "iccstore.h"
 

@@ -29,7 +29,7 @@
 
 #include "gauss.h"
 #include "improcfun.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "../rtgui/myflatcurve.h"
 #include "rt_math.h"
 #include "opthelper.h"

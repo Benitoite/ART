@@ -24,7 +24,7 @@
 
 #include "labmasks.h"
 #include "guidedfilter.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "coord.h"
 #include "gauss.h"
 #include "color.h"

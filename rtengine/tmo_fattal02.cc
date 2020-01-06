@@ -70,7 +70,7 @@
 #include "settings.h"
 #include "iccstore.h"
 #include "StopWatch.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 #include "rt_algo.h"
 #include "rescale.h"

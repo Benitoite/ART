@@ -30,7 +30,7 @@
 
 #include "guidedfilter.h"
 #include "boxblur.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "rescale.h"
 #include "imagefloat.h"
 

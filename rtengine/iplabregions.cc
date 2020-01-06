@@ -26,7 +26,7 @@
 #include "guidedfilter.h"
 //#define BENCHMARK
 #include "StopWatch.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "coord.h"
 #include "gauss.h"
 #include "labmasks.h"

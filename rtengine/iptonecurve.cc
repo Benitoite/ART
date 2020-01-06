@@ -21,7 +21,7 @@
 #include "improcfun.h"
 #include "curves.h"
 #include "color.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "curves.h"
 
 namespace rtengine {

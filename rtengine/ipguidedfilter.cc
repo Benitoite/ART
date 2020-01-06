@@ -24,7 +24,7 @@
 #include "rt_algo.h"
 #include "curves.h"
 #include "labmasks.h"
-#include "sleef.c"
+#include "sleef.h"
 #include <iostream>
 #include <queue>
 

@@ -33,7 +33,7 @@
 #include "boxblur.h"
 #include "rt_math.h"
 #include "mytime.h"
-#include "sleef.c"
+#include "sleef.h"
 #include "opthelper.h"
 #include "cplx_wavelet_dec.h"
 #include "median.h"
