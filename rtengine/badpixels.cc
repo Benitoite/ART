@@ -473,6 +473,11 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
     // counter for dead or hot pixels
     int counter = 0;
 
+#if defined __GNUC__ && !defined __clang__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+#endif
+
 #ifdef _OPENMP
     #pragma omp parallel reduction(+:counter)
 #endif
@@ -581,6 +586,10 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
         }
     }//end of parallel processing
 
+#if defined __GNUC__ && !defined __clang__
+#pragma GCC diagnostic pop
+#endif
+    
     return counter;
 }
 

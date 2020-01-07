@@ -33,8 +33,6 @@ public:
 private:
     ParamsEdited pedited_;
     
-    Gtk::ScrolledWindow *scrolledwindow_;
-
     Gtk::CheckButton *everything_;
     sigc::connection everything_conn_;
     

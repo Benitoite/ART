@@ -203,7 +203,7 @@ void FileBrowserEntry::procParamsChanged (Thumbnail* thm, int whoChangedIt)
 
     if (whoChangedIt == EDITOR) {
         update_refresh_status();
-        parent->redrawNeeded(this);
+        parent->redrawEntryNeeded(this);
     }
 }
 
@@ -276,7 +276,7 @@ void FileBrowserEntry::_updateImage(rtengine::IImage8* img, double s, const rten
         if (rotated) {
             parent->thumbRearrangementNeeded();
         } else if (redrawRequests == 0) {
-            parent->redrawNeeded (this);
+            parent->redrawEntryNeeded (this);
         }
     }
 }
@@ -319,31 +319,31 @@ bool FileBrowserEntry::motionNotify (int x, int y)
     if (state == SRotateSelecting) {
         action_x = x;
         action_y = y;
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeH1 && cropgl) {
         int oy = cropParams.y;
         cropParams.y = action_y + (y - press_y) / scale;
         cropParams.h += oy - cropParams.y;
         cropgl->cropHeight1Resized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeH2 && cropgl) {
         cropParams.h = action_y + (y - press_y) / scale;
         cropgl->cropHeight2Resized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeW1 && cropgl) {
         int ox = cropParams.x;
         cropParams.x = action_x + (x - press_x) / scale;
         cropParams.w += ox - cropParams.x;
         cropgl->cropWidth1Resized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeW2 && cropgl) {
         cropParams.w = action_x + (x - press_x) / scale;
         cropgl->cropWidth2Resized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeTL && cropgl) {
         int ox = cropParams.x;
         cropParams.x = action_x + (x - press_x) / scale;
@@ -353,7 +353,7 @@ bool FileBrowserEntry::motionNotify (int x, int y)
         cropParams.h += oy - cropParams.y;
         cropgl->cropTopLeftResized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeTR && cropgl) {
         cropParams.w = action_x + (x - press_x) / scale;
         int oy = cropParams.y;
@@ -361,7 +361,7 @@ bool FileBrowserEntry::motionNotify (int x, int y)
         cropParams.h += oy - cropParams.y;
         cropgl->cropTopRightResized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeBL && cropgl) {
         int ox = cropParams.x;
         cropParams.x = action_x + (x - press_x) / scale;
@@ -369,19 +369,19 @@ bool FileBrowserEntry::motionNotify (int x, int y)
         cropParams.h = action_y + (y - press_y) / scale;
         cropgl->cropBottomLeftResized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SResizeBR && cropgl) {
         cropParams.w = action_x + (x - press_x) / scale;
         cropParams.h = action_y + (y - press_y) / scale;
         cropgl->cropBottomRightResized (cropParams.x, cropParams.y, cropParams.w, cropParams.h, crop_custom_ratio);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SCropMove && cropgl) {
         cropParams.x = action_x + (x - press_x) / scale;
         cropParams.y = action_y + (y - press_y) / scale;
         cropgl->cropMoved (cropParams.x, cropParams.y, cropParams.w, cropParams.h);
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     } else if (state == SCropSelecting && cropgl) {
         int cx1 = press_x, cy1 = press_y;
         int cx2 = (ix - prex) / scale, cy2 = (iy - prey) / scale;
@@ -404,7 +404,7 @@ bool FileBrowserEntry::motionNotify (int x, int y)
         }
 
         updateBackBuffer ();
-        parent->redrawNeeded (this);
+        parent->redrawEntryNeeded (this);
     }
 
     return b;

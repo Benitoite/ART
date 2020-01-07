@@ -65,7 +65,6 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
 
     std::vector<rtengine::procparams::TextureBoostParams::Region> data;
-    int showMaskIdx;
 
     friend class EPDMasksContentProvider;
     std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;

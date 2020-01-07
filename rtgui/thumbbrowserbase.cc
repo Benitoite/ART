@@ -268,7 +268,7 @@ void ThumbBrowserBase::selectPrev (int distance, bool enlarge)
                         // clear current selection
                         for (size_t i = 0; i < selected.size (); ++i) {
                             selected[i]->selected = false;
-                            redrawNeeded (selected[i]);
+                            redrawEntryNeeded (selected[i]);
                         }
 
                         selected.clear ();
@@ -287,13 +287,13 @@ void ThumbBrowserBase::selectPrev (int distance, bool enlarge)
                             for (; front <= back; ++front) {
                                 if (!(*front)->filtered) {
                                     (*front)->selected = true;
-                                    redrawNeeded (*front);
+                                    redrawEntryNeeded (*front);
                                     selected.push_back (*front);
                                 }
                             }
                         } else {
                             (*curr)->selected = true;
-                            redrawNeeded (*curr);
+                            redrawEntryNeeded (*curr);
                             selected.push_back (*curr);
                         }
 
@@ -336,7 +336,7 @@ void ThumbBrowserBase::selectNext (int distance, bool enlarge)
                         // clear current selection
                         for (size_t i = 0; i < selected.size (); ++i) {
                             selected[i]->selected = false;
-                            redrawNeeded (selected[i]);
+                            redrawEntryNeeded (selected[i]);
                         }
 
                         selected.clear ();
@@ -355,13 +355,13 @@ void ThumbBrowserBase::selectNext (int distance, bool enlarge)
                             for (; front <= back && front != fd.end(); ++front) {
                                 if (!(*front)->filtered) {
                                     (*front)->selected = true;
-                                    redrawNeeded (*front);
+                                    redrawEntryNeeded (*front);
                                     selected.push_back (*front);
                                 }
                             }
                         } else {
                             (*curr)->selected = true;
-                            redrawNeeded (*curr);
+                            redrawEntryNeeded (*curr);
                             selected.push_back (*curr);
                         }
 
@@ -403,7 +403,7 @@ void ThumbBrowserBase::selectFirst (bool enlarge)
 
             if(selected.empty ()) {
                 (*first)->selected = true;
-                redrawNeeded (*first);
+                redrawEntryNeeded (*first);
                 selected.push_back (*first);
             } else {
                 std::vector<ThumbBrowserEntryBase*>::iterator back = std::find (fd.begin (), fd.end (), lastEntry ? lastEntry : selected.back ());
@@ -415,7 +415,7 @@ void ThumbBrowserBase::selectFirst (bool enlarge)
                 // clear current selection
                 for (size_t i = 0; i < selected.size (); ++i) {
                     selected[i]->selected = false;
-                    redrawNeeded (selected[i]);
+                    redrawEntryNeeded (selected[i]);
                 }
 
                 selected.clear ();
@@ -424,7 +424,7 @@ void ThumbBrowserBase::selectFirst (bool enlarge)
                 for (; first <= back; ++first) {
                     if (!(*first)->filtered) {
                         (*first)->selected = true;
-                        redrawNeeded (*first);
+                        redrawEntryNeeded (*first);
                         selected.push_back (*first);
                     }
 
@@ -467,7 +467,7 @@ void ThumbBrowserBase::selectLast (bool enlarge)
 
             if(selected.empty()) {
                 (*last)->selected = true;
-                redrawNeeded (*last);
+                redrawEntryNeeded (*last);
                 selected.push_back (*last);
             } else {
                 std::vector<ThumbBrowserEntryBase*>::iterator front = std::find (fd.begin (), fd.end (), lastEntry ? lastEntry : selected.front ());
@@ -479,7 +479,7 @@ void ThumbBrowserBase::selectLast (bool enlarge)
                 // clear current selection
                 for (size_t i = 0; i < selected.size (); ++i) {
                     selected[i]->selected = false;
-                    redrawNeeded (selected[i]);
+                    redrawEntryNeeded (selected[i]);
                 }
 
                 selected.clear ();
@@ -488,7 +488,7 @@ void ThumbBrowserBase::selectLast (bool enlarge)
                 for (; front <= last; --last) {
                     if (!(*last)->filtered) {
                         (*last)->selected = true;
-                        redrawNeeded (*last);
+                        redrawEntryNeeded (*last);
                         selected.push_back (*last);
                     }
 
@@ -1164,7 +1164,7 @@ int ThumbBrowserBase::getEffectiveHeight()
     return h;
 }
 
-void ThumbBrowserBase::redrawNeeded (ThumbBrowserEntryBase* entry)
+void ThumbBrowserBase::redrawEntryNeeded(ThumbBrowserEntryBase* entry)
 {
 
     // HOMBRE:DELETE ME?

@@ -19,7 +19,7 @@
 #include <iostream>
 #include "dcraw.h"
 
-#ifdef __GNUC__ // silence warning
+#if defined __GNUC__ && !defined __clang__ // silence warning
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -3115,6 +3115,6 @@ int DCraw::crxParseImageHeader(uchar *cmp1TagData, int nTrack)
 #undef libraw_inline
 #undef LIBRAW_CRXTRACKS_MAXCOUNT
 
-#ifdef __GNUC__ // silence warning
+#if defined __GNUC__ && !defined __clang__ // silence warning
 #pragma GCC diagnostic pop
 #endif

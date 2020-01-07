@@ -281,12 +281,12 @@ public:
         imageTypeListener = itl;
     }
 
-    void setAutoLogListener(AutoLogListener *l)
+    void setAutoLogListener(AutoLogListener *l) override
     {
         autoLogListener = l;
     }
 
-    void setAutoDeconvRadiusListener(AutoDeconvRadiusListener *l)
+    void setAutoDeconvRadiusListener(AutoDeconvRadiusListener *l) override
     {
         autoRadiusListener = l;
     }

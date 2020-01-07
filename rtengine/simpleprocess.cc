@@ -55,8 +55,6 @@ public:
         scale_factor(1.0),
         tr(0),
         pp(0, 0, 0, 0, 0),
-        tilesize(0),
-        overlap(0),
         dnstore(),
         pipeline_scale(1.0),
         stop(false)
@@ -507,9 +505,6 @@ private:
 
     int tr;
     PreviewProps pp;
-
-    int tilesize;
-    int overlap;
 
     ImProcFunctions::DenoiseInfoStore dnstore;
 

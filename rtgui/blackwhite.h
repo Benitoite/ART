@@ -83,7 +83,7 @@ private:
     Adjuster *gammaBlue;
     ThresholdAdjuster *colorCast;
     Gtk::HBox*        filterHBox;
-    Gtk::HSeparator*  filterSep, *filterSep2;
+    Gtk::HSeparator*  filterSep;
     MyComboBoxText*   filter;
     sigc::connection  filterconn;
     Gtk::HBox*        settingHBox;
@@ -94,9 +94,6 @@ private:
 
     Gtk::Image *imgIcon[11];
 
-    Gtk::HSeparator* enabledccSep;
-    Gtk::CheckButton* enabledcc;
-    bool lastEnabledcc, lastAuto;
     sigc::connection enaccconn, tcmodeconn, tcmodeconn2, autoconn, neutralconn;
 
     double nextredbw;

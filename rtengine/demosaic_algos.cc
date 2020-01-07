@@ -362,7 +362,7 @@ void RawImageSource::border_interpolate2( int winw, int winh, int lborders, cons
 void RawImageSource::jdl_interpolate_omp()  // from "Lassus"
 {
     int width = W, height = H;
-    int row, col, c, d, i, u = width, v = 2 * u, w = 3 * u, x = 4 * u, y = 5 * u, z = 6 * u, indx, (*dif)[2], (*chr)[2];
+    int row = 0, col = 0, c, d, i, u = width, v = 2 * u, w = 3 * u, x = 4 * u, y = 5 * u, z = 6 * u, indx, (*dif)[2], (*chr)[2];
     float f[4], g[4];
     float (*image)[4];
     image = (float (*)[4]) calloc (width * height, sizeof * image);

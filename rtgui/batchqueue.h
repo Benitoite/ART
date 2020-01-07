@@ -99,7 +99,7 @@ private:
     bool saveBatchQueue ();
     void notifyListener ();
 
-    using ThumbBrowserBase::redrawNeeded;
+    using ThumbBrowserBase::redrawEntryNeeded;
 
     BatchQueueEntry* processing;  // holds the currently processed image
     FileCatalog* fileCatalog;

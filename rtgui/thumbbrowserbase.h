@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -228,7 +229,7 @@ public:
     }
     virtual void selectionChanged () {}
 
-    virtual void redrawNeeded (ThumbBrowserEntryBase* entry);
+    virtual void redrawEntryNeeded(ThumbBrowserEntryBase* entry);
     virtual void thumbRearrangementNeeded () {}
 
     Gtk::Widget* getDrawingArea ()

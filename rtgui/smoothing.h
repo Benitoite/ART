@@ -30,13 +30,13 @@ public:
 
     Smoothing();
 
-    void read(const rtengine::procparams::ProcParams *pp);
-    void write(rtengine::procparams::ProcParams *pp);
-    void setDefaults(const rtengine::procparams::ProcParams *defParams);
+    void read(const rtengine::procparams::ProcParams *pp) override;
+    void write(rtengine::procparams::ProcParams *pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams *defParams) override;
 
-    void adjusterChanged(Adjuster *a, double newval);
-    void enabledChanged();
-    void adjusterAutoToggled(Adjuster *a, bool newval) {}
+    void adjusterChanged(Adjuster *a, double newval) override;
+    void enabledChanged() override;
+    void adjusterAutoToggled(Adjuster *a, bool newval) override {}
 
     void setEditProvider(EditDataProvider *provider) override;
 
@@ -72,7 +72,6 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
 
     std::vector<rtengine::procparams::GuidedSmoothingParams::Region> data;
-    int showMaskIdx;
 
     friend class SmoothingMasksContentProvider;
     std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;

@@ -30,7 +30,6 @@ using namespace rtengine::procparams;
 
 namespace {
 
-constexpr int ABS_RGB = 10;
 constexpr int REL_RGB = 11;
 
 const std::vector<std::array<const char *, 2>> presets = {

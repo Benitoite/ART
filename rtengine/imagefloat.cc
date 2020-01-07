@@ -662,20 +662,6 @@ void Imagefloat::setMode(Mode mode, bool multithread)
 }
 
 
-namespace {
-
-inline void get_ws(TMatrix ws, float out[3][3])
-{
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            out[i][j] = float(ws[i][j]);
-        }
-    }
-}
-
-} // namespace
-
-
 void Imagefloat::rgb_to_xyz(bool multithread)
 {
     get_ws();

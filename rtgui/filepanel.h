@@ -88,8 +88,6 @@ private:
     RecentBrowser* recentBrowser;
 
     Inspector* inspectorPanel;
-    Gtk::VPaned* tpcPaned;
-    History* history;
     RTWindow* parent;
     Gtk::Notebook* rightNotebook;
     sigc::connection rightNotebookSwitchConn;

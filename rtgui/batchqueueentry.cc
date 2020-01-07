@@ -260,7 +260,7 @@ void BatchQueueEntry::_updateImage (guint8* img, int w, int h)
         memcpy (preview, img, prew * preh * 3);
 
         if (parent) {
-            parent->redrawNeeded (this);
+            parent->redrawEntryNeeded(this);
         }
     }
 
