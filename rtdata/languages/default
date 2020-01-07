@@ -1,6 +1,6 @@
 #00 default translation file
 #01 Developers should add translations to this file and then run the 'generateTranslationDiffs' Bash script to update other locales.
-#02 Translators please append a comment here with the current date and your name(s) as used in the RawTherapee forum or GitHub page, e.g.:
+#02 Translators please append a comment here with the current date and your name(s) as used in the RawTherapee/ART forum or Bitbucket page, e.g.:
 #03 2525-12-24 Zager and Evans
 ABOUT_TAB_BUILD;Version
 ABOUT_TAB_CREDITS;Credits
@@ -241,7 +241,7 @@ GENERAL_SAVE_AS;Save as...
 GENERAL_SLIDER;Slider
 GENERAL_UNCHANGED;(Unchanged)
 GENERAL_WARNING;Warning
-GIMP_PLUGIN_INFO;Welcome to the RawTherapee GIMP plugin!\nOnce you are done editing, simply close the main RawTherapee window and the image will be automatically imported in GIMP.
+GIMP_PLUGIN_INFO;Welcome to the ART GIMP plugin!\nOnce you are done editing, simply close the main ART window and the image will be automatically imported in GIMP.
 HISTOGRAM_TOOLTIP_B;Show/Hide blue histogram.
 HISTOGRAM_TOOLTIP_BAR;Show/Hide RGB indicator bar.
 HISTOGRAM_TOOLTIP_CHRO;Show/Hide chromaticity histogram.
@@ -859,7 +859,7 @@ HISTORY_NEWSNAPSHOT_TOOLTIP;Shortcut: <b>Alt-s</b>
 HISTORY_SNAPSHOT;Snapshot
 HISTORY_SNAPSHOTS;Snapshots
 ICCPROFCREATOR_COPYRIGHT;Copyright:
-ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Reset to the default copyright, granted to "RawTherapee, CC0"
+ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Reset to the default copyright, granted to "ART, CC0"
 ICCPROFCREATOR_CUSTOM;Custom
 ICCPROFCREATOR_DESCRIPTION;Description:
 ICCPROFCREATOR_DESCRIPTION_ADDPARAM;Append gamma and slope values to the description
@@ -1786,7 +1786,7 @@ TP_FILMNEGATIVE_LABEL;Film Negative
 TP_FILMNEGATIVE_PICK;Pick white and black spots
 TP_FILMNEGATIVE_RED;Red ratio
 TP_FILMSIMULATION_LABEL;Film Simulation
-TP_FILMSIMULATION_SLOWPARSEDIR;RawTherapee is configured to look for Hald CLUT images, which are used for the Film Simulation tool, in a folder which is taking too long to load.\nGo to Preferences > Image Processing > Film Simulation\nto see which folder is being used. You should either point RawTherapee to a folder which contains only Hald CLUT images and nothing more, or to an empty folder if you don't want to use the Film Simulation tool.\n\nRead the Film Simulation article in RawPedia for more information.\n\nDo you want to cancel the scan now?
+TP_FILMSIMULATION_SLOWPARSEDIR;ART is configured to look for Hald CLUT images, which are used for the Film Simulation tool, in a folder which is taking too long to load.\nGo to Preferences > Image Processing > Film Simulation\nto see which folder is being used. You should either point ART to a folder which contains only Hald CLUT images and nothing more, or to an empty folder if you don't want to use the Film Simulation tool.\n\nRead the Film Simulation article in RawPedia for more information.\n\nDo you want to cancel the scan now?
 TP_FILMSIMULATION_STRENGTH;Strength
 TP_FILMSIMULATION_ZEROCLUTSFOUND;Set HaldCLUT directory in Preferences
 TP_FLATFIELD_AUTOSELECT;Auto-selection
@@ -2053,7 +2053,7 @@ TP_RAW_DMETHOD_PROGRESSBAR;%1 demosaicing...
 TP_RAW_DMETHOD_PROGRESSBAR_REFINE;Demosaicing refinement...
 TP_RAW_DMETHOD_TOOLTIP;Note: IGV and LMMSE are dedicated to high ISO images to aid in noise reduction without leading to maze patterns, posterization or a washed-out look.\nPixel Shift is for Pentax/Sony Pixel Shift files. It falls back to AMaZE for non-Pixel Shift files.
 TP_RAW_DUALDEMOSAICAUTOCONTRAST;Auto threshold
-TP_RAW_DUALDEMOSAICAUTOCONTRAST_TOOLTIP;If the checkbox is checked (recommended), RawTherapee calculates an optimum value based on flat regions in the image.\nIf there is no flat region in the image or the image is too noisy, the value will be set to 0.\nTo set the value manually, uncheck the checkbox first (reasonable values depend on the image).
+TP_RAW_DUALDEMOSAICAUTOCONTRAST_TOOLTIP;If the checkbox is checked (recommended), ART calculates an optimum value based on flat regions in the image.\nIf there is no flat region in the image or the image is too noisy, the value will be set to 0.\nTo set the value manually, uncheck the checkbox first (reasonable values depend on the image).
 TP_RAW_DUALDEMOSAICCONTRAST;Contrast threshold
 TP_RAW_EAHD;EAHD
 TP_RAW_FALSECOLOR;False color suppression steps
