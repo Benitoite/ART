@@ -31,12 +31,10 @@ namespace {
 
 const std::vector<double> default_satcurve{
     FCT_MinMaxCPoints,
-    0, 0.397626,
-    0.843827, 0,
-    0.5, 0.5,
+    0, 0,
     0.35, 0.35,
-    1, 0.231454,
-    0, 0.35
+    1, 1,
+    0.35, 0.35
 };
 
 } // namespace
