@@ -128,7 +128,6 @@ cd "${buildDir}" || exit 1
 
 cmake \
     -DCMAKE_BUILD_TYPE="$buildType"  \
-    -DCACHE_NAME_SUFFIX="5-dev" \
     -DPROC_TARGET_NUMBER="2" \
     -DBUILD_BUNDLE="ON" \
     -DBUNDLE_BASE_INSTALL_DIR="${installDir}" \
