@@ -32,7 +32,6 @@ private:
     void regionShow(int idx);
     
     std::vector<rtengine::procparams::LocalContrastParams::Region> regionData;
-    int showMaskIdx;
 
     friend class LocalContrastMasksContentProvider;
     std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
