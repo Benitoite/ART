@@ -659,7 +659,7 @@ void CropWindow::buttonRelease (int button, int num, int bstate, int x, int y)
         }
 
 //        state = SNormal;
-        reset_to_normal = false;
+        //reset_to_normal = false;
 
         for (auto listener : listeners) {
             listener->cropWindowSizeChanged (this);
