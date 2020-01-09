@@ -31,9 +31,9 @@ namespace {
 
 const std::vector<double> default_satcurve{
     FCT_MinMaxCPoints,
-    0, 0,
+    0, 0.5,
     0.35, 0.35,
-    1, 1,
+    1, 0.5,
     0.35, 0.35
 };
 
