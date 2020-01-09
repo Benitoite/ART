@@ -83,34 +83,34 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
     float abca[n];
     float abcb[n];
     float rs[n];
-    float slope[n][3];
-    float offset[n][3];
-    float power[n][3];
-    float pivot[n][3];
-    bool rgb_channels[n];
+    float rslope[n][3];
+    float roffset[n][3];
+    float rpower[n][3];
+    float rpivot[n][3];
+    bool rgbmode[n];
+    bool enabled[n];
     for (int i = 0; i < n; ++i) {
         auto &r = params->colorcorrection.regions[i];
-        rgb_channels[i] = r.rgb_channels;
-        if (rgb_channels[i]) {
+        rgbmode[i] = r.rgb_channels;
+        if (rgbmode[i]) {
             abca[i] = 0.f;
             abcb[i] = 0.f;
             rs[i] = 1.f;
-            for (int c = 0; c < 3; ++c) {
-                slope[i][c] = r.slope[c];
-                offset[i][c] = r.offset[c];
-                power[i][c] = r.power[c];
-                pivot[i][c] = r.pivot[c];
-            }
         } else {
             abca[i] = abcoord(r.a);
             abcb[i] = abcoord(r.b);
             rs[i] = 1.f + r.saturation / 100.f;
-            for (int c = 0; c < 3; ++c) {
-                slope[i][c] = r.slope[0];
-                offset[i][c] = r.offset[0];
-                power[i][c] = r.power[0];
-                pivot[i][c] = r.pivot[0];
-            }
+        }
+        enabled[i] = false;
+        for (int c = 0; c < 3; ++c) {
+            int j = rgbmode[i] ? c : 0;
+            rslope[i][c] = r.slope[j];
+            roffset[i][c] = r.offset[j];
+            rpower[i][c] = r.power[j];
+            rpivot[i][c] = r.pivot[j];
+            if (rslope[i][c] != 1.f || roffset[i][c] != 0.f || rpower[i][c] != 1.f) {
+                enabled[i] = true;
+            } 
         }
     }
 
@@ -122,36 +122,51 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
         }
     }
 
-    const auto enabled =
-        [](const float *slope, const float *offset, const float *power) -> bool
-        {
-            for (int i = 0; i < 3; ++i) {
-                if (slope[i] != 1.f || offset[i] != 0.f || power[i] != 1.f) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
     const auto CDL = 
-        [=, &ws](float &Y, float &u, float &v, const float *slope, const float *offset, const float *power, const float *pivot, float saturation) -> void
+        [&](int region, float &Y, float &u, float &v) -> void
         {
-            if (enabled(slope, offset, power)) {
-                float rgb[3];
-                Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], ws);
-                for (int i = 0; i < 3; ++i) {
-                    float v = (rgb[i] / 65535.f) * slope[i] + offset[i]/2.f;
-                    if (v > 0.f) {
-                        if (pivot[i] != 1.f) {
-                            v = pow_F(v / pivot[i], power[i]) * pivot[i];
-                        } else {
-                            v = pow_F(v, power[i]);
+            if (enabled[region]) {
+                const float *slope = rslope[region];
+                const float *offset = roffset[region];
+                const float *power = rpower[region];
+                const float *pivot = rpivot[region];
+                
+                if (rgbmode[region]) {
+                    float rgb[3];
+                    Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], ws);
+                    for (int i = 0; i < 3; ++i) {
+                        float v = (rgb[i] / 65535.f) * slope[i] + offset[i]/2.f;
+                        if (v > 0.f) {
+                            if (pivot[i] != 1.f) {
+                                v = pow_F(v / pivot[i], power[i]) * pivot[i];
+                            } else {
+                                v = pow_F(v, power[i]);
+                            }
                         }
+                        rgb[i] = v * 65535.f;
                     }
-                    rgb[i] = v * 65535.f;
+                    Color::rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v, ws);
+                } else {
+                    float v = (Y / 65535.f) * slope[0] + offset[0]/2.f;
+                    if (v > 0.f) {
+                        if (pivot[0] != 1.f) {
+                            v = pow_F(v / pivot[0], power[0]) * pivot[0];
+                        } else {
+                            v = pow_F(v, power[0]);
+                        }
+                        v *= 65535.f;
+                    }
+                    if (Y > 0.f) {
+                        float f = v / Y;
+                        Y = v;
+                        u *= f;
+                        v *= f;
+                    } else {
+                        Y = v;
+                    }
                 }
-                Color::rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v, ws);
             }
+            const float saturation = rs[region];
             if (saturation != 1.f) {
                 u *= saturation;
                 v *= saturation;
@@ -167,28 +182,53 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
     }
 
     const auto CDL_v =
-        [=](vfloat &Y, vfloat &u, vfloat &v, const float *slope, const float *offset, const float *power, const float *pivot, float saturation) -> void
+        [&](int region, vfloat &Y, vfloat &u, vfloat &v) -> void
         {
-            if (enabled(slope, offset, power)) {
-                vfloat rgb[3];
-                vfloat v65535 = F2V(65535.f);
-                Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], vws);
-                for (int i = 0; i < 3; ++i) {
-                    vfloat vslope = F2V(slope[i]);
-                    vfloat voffset = F2V(offset[i] / 2.f);
-                    vfloat vpower = F2V(power[i]);
-                    vfloat vpivot = F2V(pivot[i]);
+            if (enabled[region]) {
+                const float *slope = rslope[region];
+                const float *offset = roffset[region];
+                const float *power = rpower[region];
+                const float *pivot = rpivot[region];
                 
-                    vfloat v = (rgb[i] / v65535) * vslope + voffset;
-                    if (pivot[i] != 1.f) {
-                        v = vself(vmaskf_gt(v, ZEROV), pow_F(v / vpivot, vpower) * vpivot, v);
-                    } else {
-                        v = vself(vmaskf_gt(v, ZEROV), pow_F(v, vpower), v);
+                if (rgbmode[region]) {
+                    vfloat rgb[3];
+                    vfloat v65535 = F2V(65535.f);
+                    Color::yuv2rgb(Y, u, v, rgb[0], rgb[1], rgb[2], vws);
+                    for (int i = 0; i < 3; ++i) {
+                        vfloat vslope = F2V(slope[i]);
+                        vfloat voffset = F2V(offset[i] / 2.f);
+                        vfloat vpower = F2V(power[i]);
+                        vfloat vpivot = F2V(pivot[i]);
+                
+                        vfloat v = (rgb[i] / v65535) * vslope + voffset;
+                        if (pivot[i] != 1.f) {
+                            v = vself(vmaskf_gt(v, ZEROV), pow_F(v / vpivot, vpower) * vpivot, v);
+                        } else {
+                            v = vself(vmaskf_gt(v, ZEROV), pow_F(v, vpower), v);
+                        }
+                        rgb[i] = v * v65535;
                     }
-                    rgb[i] = v * v65535;
+                    Color::rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v, vws);
+                } else {
+                    vfloat vslope = F2V(slope[0]);
+                    vfloat voffset = F2V(offset[0] / 2.f);
+                    vfloat vpower = F2V(power[0]);
+                    vfloat vpivot = F2V(pivot[0]);
+                    vfloat v65535 = F2V(65535.f);
+                    vfloat YY = (Y / v65535) * vslope + voffset;
+                    if (pivot[0] != 1.f) {
+                        YY = vself(vmaskf_gt(YY, ZEROV), pow_F(YY / vpivot, vpower) * vpivot, YY);
+                    } else {
+                        YY = vself(vmaskf_gt(YY, ZEROV), pow_F(YY, vpower), YY);
+                    }
+                    YY *= v65535;
+                    vfloat f = vself(vmaskf_gt(Y, ZEROV), YY / Y, F2V(1.f));
+                    Y = YY;
+                    u *= f;
+                    v *= f;
                 }
-                Color::rgb2yuv(rgb[0], rgb[1], rgb[2], Y, u, v, vws);
             }
+            const float saturation = rs[region];
             if (saturation != 1.f) {
                 vfloat vsaturation = F2V(saturation);
                 u *= vsaturation;
@@ -229,7 +269,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     vfloat u_newv = uv + fv * F2V(abcb[i]);
                     vfloat v_newv = vv + fv * F2V(abca[i]);
 
-                    CDL_v(Y_newv, u_newv, v_newv, slope[i], offset[i], power[i], pivot[i], rs[i]);
+                    CDL_v(i, Y_newv, u_newv, v_newv);
                     Yv = vintpf(lblendv, Y_newv, Yv);
                     uv = vintpf(blendv, u_newv, uv);
                     vv = vintpf(blendv, v_newv, vv);
@@ -257,7 +297,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     float u_new = u + f * abcb[i];
                     float v_new = v + f * abca[i];
 
-                    CDL(Y_new, u_new, v_new, slope[i], offset[i], power[i], pivot[i], rs[i]);
+                    CDL(i, Y_new, u_new, v_new);
                     Y = intp(lblend, Y_new, Y);
                     u = intp(blend, u_new, u);
                     v = intp(blend, v_new, v);
