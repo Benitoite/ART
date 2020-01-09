@@ -1360,7 +1360,7 @@ void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
 }
 
 
-void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin, int numtiles, int numthreads, int denoiseNestedLevels, float **LbloxArray, float **fLbloxArray, size_t blox_array_size, float params_Ldetail, int detail_thresh, array2D<float> &tilemask_in, array2D<float> &tilemask_out, fftwf_plan *plan_forward_blox, fftwf_plan *plan_backward_blox, int max_numblox_W, double scale)
+void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin, int numtiles, int numthreads, int denoiseNestedLevels, float **LbloxArray, float **fLbloxArray, size_t blox_array_size, float params_Ldetail, int detail_thresh, array2D<float> &tilemask_in, array2D<float> &tilemask_out, fftwf_plan *plan_forward_blox, fftwf_plan *plan_backward_blox, int max_numblox_W, double scale, bool denoise_aggressive)
 {
     const auto compute_detail =
         [](float d) -> float
@@ -1507,7 +1507,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
     if (detail_thresh > 0) {
         mask(width, height);
         float s_scale = std::sqrt(scale);
-        float cthresh = 0.1f * s_scale;
+        float cthresh = (denoise_aggressive ? 0.1f : 0.3f) * s_scale;
         float amount = LIM01(float(detail_thresh)/100.f);
         float thr = 1.f - amount;
         buildBlendMask(labdn->L, mask, width, height, cthresh, amount, false, 2.f / s_scale);
@@ -1527,7 +1527,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
             }
         }
         guidedFilter(guide, mask, mask, 20.f / scale, 0.1f, numthreads > 1);
-#if 0
+#if 1
         {
             Imagefloat tmp(width, height);
             for (int i = 0; i < height; ++i) {
@@ -2318,7 +2318,7 @@ BENCHFUN
                                 // now do detail recovery using block DCT to detect
                                 // patterns missed by wavelet denoise
                                 // blocks are not the same thing as tiles!
-                                detail_recovery(width, height, labdn, Lin, numtiles, numthreads, denoiseNestedLevels, LbloxArray, fLbloxArray, blox_array_size, params_Ldetail, dnparams.luminanceDetailThreshold, tilemask_in, tilemask_out, plan_forward_blox, plan_backward_blox, max_numblox_W, scale);
+                                detail_recovery(width, height, labdn, Lin, numtiles, numthreads, denoiseNestedLevels, LbloxArray, fLbloxArray, blox_array_size, params_Ldetail, dnparams.luminanceDetailThreshold, tilemask_in, tilemask_out, plan_forward_blox, plan_backward_blox, max_numblox_W, scale, nrQuality == QUALITY_HIGH);
                             }
                             //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                             // transform denoised "Lab" to output RGB
