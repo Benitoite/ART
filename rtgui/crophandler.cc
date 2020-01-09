@@ -401,7 +401,6 @@ void CropHandler::setDetailedCrop(
                     return false;
                 }
             );
-            cropPixbuf.clear();            
         }
     }
 
