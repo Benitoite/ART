@@ -30,16 +30,14 @@ namespace {
 
 inline float sl(float blend, float x)
 {
-    if (!OOG(x)) {
-        const float orig = 1.f - blend;
-        float v = Color::gamma_srgb(x) / MAXVALF;
-        // Pegtop's formula from
-        // https://en.wikipedia.org/wiki/Blend_modes#Soft_Light
-        float v2 = v * v;
-        float v22 = v2 * 2.f;
-        v = v2 + v22 - v22 * v;
-        x = blend * Color::igamma_srgb(v * MAXVALF) + orig * x;
-    }
+    x = CLIP(x);
+    float v = Color::gamma_srgb(x) / MAXVALF;
+    // Pegtop's formula from
+    // https://en.wikipedia.org/wiki/Blend_modes#Soft_Light
+    float v2 = v * v;
+    float v22 = v2 * 2.f;
+    v = v2 + v22 - v22 * v;
+    x = intp(blend, Color::igamma_srgb(v * MAXVALF), x);
     return x;
 }
 
@@ -57,14 +55,19 @@ void ImProcFunctions::softLight(Imagefloat *rgb)
 
     const float blend = params->softlight.strength / 100.f;
 
+    LUTf f(65536);
+    for (int i = 0; i < 65536; ++i) {
+        f[i] = sl(blend, i);
+    }
+
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
     for (int y = 0; y < rgb->getHeight(); ++y) {
         for (int x = 0; x < rgb->getWidth(); ++x) {
-            rgb->r(y, x) = sl(blend, rgb->r(y, x));
-            rgb->g(y, x) = sl(blend, rgb->g(y, x));
-            rgb->b(y, x) = sl(blend, rgb->b(y, x));
+            rgb->r(y, x) = f[rgb->r(y, x)];
+            rgb->g(y, x) = f[rgb->g(y, x)];
+            rgb->b(y, x) = f[rgb->b(y, x)];
         }
     }
 }
