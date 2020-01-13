@@ -195,8 +195,52 @@ BENCHFUN
 #   pragma omp parallel if (multiThread)
 #endif
     {
+#ifdef __SSE2__
+        const vfloat onev = F2V(1.f);
+#endif
+
         for (int k = 0; k < maxiter; k++) {
-            gaussianBlur(tmpI, tmp, W, H, sigma, nullptr, GAUSS_DIV, luminance);
+            //gaussianBlur(tmpI, tmp, W, H, sigma, nullptr, GAUSS_DIV, luminance);
+            gaussianBlur(tmpI, tmp, W, H, sigma);
+
+            // apply the division "by hand" in order to avoid generating NaN
+            // values when the denominator gets very small
+#ifdef _OPENMP
+#           pragma omp for
+#endif
+            for (int y = 0; y < H; ++y) {
+                int x = 0;
+#ifdef __SSE2__
+                for (; x < W - 3; x += 4) {
+                    vfloat l = LVFU(luminance[y][x]);
+                    vfloat t = LVFU(tmp[y][x]);
+                    vmask cmp = vmaskf_lt(t, onev);
+                    if (_mm_movemask_ps((vfloat)cmp)) {
+                        for (int k = 0; k < 4; ++k) {
+                            float tt = tmp[y][x+k];
+                            float ll = luminance[y][x+k];
+                            if (tt < 1.f) {
+                                ll += 1000.f;
+                                tt += 1000.f;
+                            }
+                            tmp[y][x+k] = ll / tt;
+                        }
+                    } else {
+                        STVFU(tmp[y][x], l / t);
+                    }
+                }
+#endif
+                for (; x < W; ++x) {
+                    float t = tmp[y][x];
+                    float l = luminance[y][x];
+                    if (t < 1.f) {
+                        l += 1000.f;
+                        t += 1000.f;
+                    }
+                    tmp[y][x] = l / t;
+                }
+            }
+            
             gaussianBlur(tmp, tmpI, W, H, sigma, nullptr, GAUSS_MULT);
 #ifdef _OPENMP
 #           pragma omp for
