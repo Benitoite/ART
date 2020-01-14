@@ -149,6 +149,15 @@ void deconvsharpening(float **luminance, float **blend, char **impulse, int W, i
 BENCHFUN
     //apply_gamma<false, false>(luminance, W, H, 0.18f, 3.f, multiThread);
 
+    const double sigma = sharpenParam.deconvradius / scale;
+    const float amount = sharpenParam.deconvamount / 100.f;
+    const int maxiter = 20;
+    const float delta_factor = 0.2f;
+
+    if (sigma < 0.2f) {
+        return;
+    }
+    
     JaggedArray<float> tmp(W, H);
     JaggedArray<float> tmpI(W, H);
     JaggedArray<float> out(W, H);
@@ -164,11 +173,6 @@ BENCHFUN
         }
     }
 
-    const double sigma = sharpenParam.deconvradius / scale;
-    const float amount = sharpenParam.deconvamount / 100.f;
-    const int maxiter = 20;
-    const float delta_factor = 0.2f;
-    
     const auto get_output =
         [&](int i, int j) -> float
         {
