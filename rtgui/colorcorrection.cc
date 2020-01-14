@@ -255,6 +255,9 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
         box_rgb->pack_start(*f);
     }
 
+    sync_sliders = Gtk::manage(new Gtk::CheckButton(M("TP_COLORCORRECTION_SYNC_SLIDERS")));
+    box_rgb->pack_start(*sync_sliders, Gtk::PACK_SHRINK, 4);
+        
     saturation->delay = options.adjusterMaxDelay;
     slope->delay = options.adjusterMaxDelay;
     offset->delay = options.adjusterMaxDelay;
@@ -330,38 +333,49 @@ void ColorCorrection::setDefaults(const ProcParams *defParams)
 
 void ColorCorrection::adjusterChanged(Adjuster* a, double newval)
 {
-    if (listener && getEnabled()) {
-        rtengine::ProcEvent evt;
-        if (a == saturation) {
-            evt = EvSaturation;
-        } else if (a == slope) {
-            evt = EvSlope;
-        } else if (a == offset) {
-            evt = EvOffset;
-        } else if (a == power) {
-            evt = EvPower;
-        } else if (a == pivot) {
-            evt = EvPivot;
-        } else {
-            for (int c = 0; c < 3; ++c) {
-                if (a == slope_rgb[c]) {
-                    evt = EvSlope;
-                    break;
-                } else if (a == offset_rgb[c]) {
-                    evt = EvOffset;
-                    break;
-                } else if (a == power_rgb[c]) {
-                    evt = EvPower;
-                    break;
-                } else if (a == pivot_rgb[c]) {
-                    evt = EvPivot;
-                    break;
-                }
+    rtengine::ProcEvent evt;
+    if (a == saturation) {
+        evt = EvSaturation;
+    } else if (a == slope) {
+        evt = EvSlope;
+    } else if (a == offset) {
+        evt = EvOffset;
+    } else if (a == power) {
+        evt = EvPower;
+    } else if (a == pivot) {
+        evt = EvPivot;
+    } else {
+        Adjuster **targets = nullptr;
+        for (int c = 0; c < 3; ++c) {
+            if (a == slope_rgb[c]) {
+                evt = EvSlope;
+                targets = slope_rgb;
+                break;
+            } else if (a == offset_rgb[c]) {
+                evt = EvOffset;
+                targets = offset_rgb;
+                break;
+            } else if (a == power_rgb[c]) {
+                evt = EvPower;
+                targets = power_rgb;
+                break;
+            } else if (a == pivot_rgb[c]) {
+                evt = EvPivot;
+                targets = pivot_rgb;
+                break;
             }
         }
-        if (evt != 0) {
-            listener->panelChanged(evt, a->getTextValue());
+        if (targets && sync_sliders->get_active()) {
+            for (int c = 0; c < 3; ++c) {
+                targets[c]->setAdjusterListener(nullptr);
+                targets[c]->setValue(newval);
+                targets[c]->setAdjusterListener(this);
+            }
         }
+    }
+        
+    if (listener && getEnabled() && evt != 0) {
+            listener->panelChanged(evt, a->getTextValue());
     }
 }
 

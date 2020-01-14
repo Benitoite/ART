@@ -58,6 +58,7 @@ private:
     void regionGet(int idx);
     void regionShow(int idx);
     void rgbChannelsChanged();
+    void syncSlidersToggled();
     
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAB;
@@ -101,5 +102,7 @@ private:
     Adjuster *offset_rgb[3];
     Adjuster *power_rgb[3];
     Adjuster *pivot_rgb[3];
+
+    Gtk::CheckButton *sync_sliders;
 };
 
