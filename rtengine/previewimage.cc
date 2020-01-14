@@ -51,9 +51,16 @@ PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext,
     }
 
     if (img_) {
-        previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, img_->getWidth(), img_->getHeight());
-        previewImage->flush();
-        render(enable_cms);
+        try {
+            previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, img_->getWidth(), img_->getHeight());
+            previewImage->flush();
+            render(enable_cms);
+        } catch (std::exception &exc) {
+            if (settings->verbose) {
+                std::cout << "ERROR in creating PreviewImage: " << exc.what() << std::endl;
+            }
+            previewImage.clear();
+        }
     }    
 }
 
