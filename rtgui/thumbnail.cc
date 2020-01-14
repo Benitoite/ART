@@ -1187,13 +1187,13 @@ void Thumbnail::loadRating()
             rating_.trash.value = pparams.master.inTrash;
         }
     } else {
-        if (cfs.exifValid) {
-            if (cfs.rating < 0) {
-                rating_.trash.value = true;
-            } else {
-                rating_.rank.value = rtengine::LIM(cfs.rating, 0, 5);
-            }
-        }
+        // if (cfs.exifValid) {
+        //     if (cfs.rating < 0) {
+        //         rating_.trash.value = true;
+        //     } else {
+        //         rating_.rank.value = rtengine::LIM(cfs.rating, 0, 5);
+        //     }
+        // }
         try {
             auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
             auto pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Rating"));
