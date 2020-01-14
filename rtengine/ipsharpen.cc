@@ -162,11 +162,14 @@ BENCHFUN
     JaggedArray<float> tmpI(W, H);
     JaggedArray<float> out(W, H);
 
+    constexpr float offset = 1000.f;
+
 #ifdef _OPENMP
 #   pragma omp parallel for if (multiThread)
 #endif
     for (int i = 0; i < H; i++) {
         for(int j = 0; j < W; j++) {
+            luminance[i][j] += offset;
             tmpI[i][j] = std::max(luminance[i][j], 0.f);
             assert(std::isfinite(tmpI[i][j]));
             out[i][j] = RT_NAN;
@@ -222,7 +225,7 @@ BENCHFUN
                     l = get_output(i, j);
                 }
                 assert(std::isfinite(l));
-                luminance[i][j] = l;
+                luminance[i][j] = std::max(l - offset, 0.f);
             }
         }
     }
