@@ -1907,7 +1907,10 @@ ColorCorrectionParams::Region::Region():
     offset{0,0,0},
     power{1,1,1},
     pivot{1,1,1},
-    rgb_channels(false)
+    hue{0,0,0},
+    sat{0,0,0},
+    factor{0,0,0},
+    mode(ColorCorrectionParams::Mode::YUV)
 {
 }
 
@@ -1921,7 +1924,10 @@ bool ColorCorrectionParams::Region::operator==(const Region &other) const
         && offset == other.offset
         && power == other.power
         && pivot == other.pivot
-        && rgb_channels == other.rgb_channels;
+        && hue == other.hue
+        && sat == other.sat
+        && factor == other.factor
+        && mode == other.mode;
 }
 
 
@@ -2853,8 +2859,23 @@ int ProcParams::save(bool save_general,
             for (size_t j = 0; j < colorcorrection.regions.size(); ++j) {
                 std::string n = std::to_string(j+1);
                 auto &l = colorcorrection.regions[j];
-                putToKeyfile("ColorCorrection", Glib::ustring("RGBChannels_") + n, l.rgb_channels, keyFile);
-                if (l.rgb_channels) {
+                Glib::ustring mode = "YUV";
+                if (l.mode == ColorCorrectionParams::Mode::RGB) {
+                    mode = "RGB";
+                } else if (l.mode == ColorCorrectionParams::Mode::HSL) {
+                    mode = "HSL";
+                }
+                putToKeyfile("ColorCorrection", Glib::ustring("Mode_") + n, mode, keyFile);
+                {
+                    const char *chan[3] = { "Slope", "Offset", "Power" };
+                    for (int c = 0; c < 3; ++c) {
+                        Glib::ustring w = chan[c];
+                        putToKeyfile("ColorCorrection", w + "H" + "_" + n, l.hue[c], keyFile);
+                        putToKeyfile("ColorCorrection", w + "S" + "_" + n, l.sat[c], keyFile);
+                        putToKeyfile("ColorCorrection", w + "L" + "_" + n, l.factor[c], keyFile);
+                    }
+                }
+                {
                     const char *chan[3] = { "R", "G", "B" };
                     for (int c = 0; c < 3; ++c) {
                         putToKeyfile("ColorCorrection", Glib::ustring("Slope") + chan[c] + "_" + n, l.slope[c], keyFile);
@@ -2862,7 +2883,8 @@ int ProcParams::save(bool save_general,
                         putToKeyfile("ColorCorrection", Glib::ustring("Power") + chan[c] + "_" + n, l.power[c], keyFile);
                         putToKeyfile("ColorCorrection", Glib::ustring("Pivot") + chan[c] + "_" + n, l.pivot[0], keyFile);
                     }
-                } else {
+                }
+                {
                     putToKeyfile("ColorCorrection", Glib::ustring("A_") + n, l.a, keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("B_") + n, l.b, keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("Saturation_") + n, l.saturation, keyFile);
@@ -3861,10 +3883,10 @@ int ProcParams::load(bool load_general,
                         done = false;
                     }
                     if (c < 0) {
-                        cur.rgb_channels = false;
+                        cur.mode = ColorCorrectionParams::Mode::YUV;
                         c = 0;
                     } else {
-                        cur.rgb_channels = true;
+                        cur.mode = ColorCorrectionParams::Mode::RGB;
                     }
                     get("Slope_", cur.slope[c]);
                     if (get("Offset_", cur.offset[c])) {
@@ -3875,11 +3897,25 @@ int ProcParams::load(bool load_general,
                     get("Power_", cur.power[c]);
                     get("Pivot_", cur.pivot[c]);
                 } else {
-                    if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("RGBChannels_") + n, cur.rgb_channels)) {
+                    bool rgb_channels = false;
+                    Glib::ustring mode;
+                    if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("RGBChannels_") + n, rgb_channels)) {
+                        found = true;
+                        done = false;
+                        cur.mode = rgb_channels ? ColorCorrectionParams::Mode::RGB : ColorCorrectionParams::Mode::YUV;
+                    } else if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Mode_") + n, mode)) {
+                        if (mode == "YUV") {
+                            cur.mode = ColorCorrectionParams::Mode::YUV;
+                        } else if (mode == "RGB") {
+                            cur.mode = ColorCorrectionParams::Mode::RGB;
+                        } else if (mode == "HSL") {
+                            cur.mode = ColorCorrectionParams::Mode::HSL;
+                        }
                         found = true;
                         done = false;
                     }
-                    if (!cur.rgb_channels) {
+                        
+                    if (cur.mode != ColorCorrectionParams::Mode::RGB) {
                         get("Slope_", cur.slope[0]);
                         cur.slope[1] = cur.slope[2] = cur.slope[0];
                         get("Offset_", cur.offset[0]);
@@ -3895,6 +3931,15 @@ int ProcParams::load(bool load_general,
                             get(Glib::ustring("Offset") + chan[c] + "_", cur.offset[c]);
                             get(Glib::ustring("Power") + chan[c] + "_", cur.power[c]);
                             get(Glib::ustring("Pivot") + chan[c] + "_", cur.pivot[c]);
+                        }
+                    }
+                    {
+                        const char *chan[3] = { "Slope", "Offset", "Power" };
+                        for (int c = 0; c < 3; ++c) {
+                            Glib::ustring w = chan[c];
+                            get(w + "H_", cur.hue[c]);
+                            get(w + "S_", cur.sat[c]);
+                            get(w + "L_", cur.factor[c]);
                         }
                     }
                 }

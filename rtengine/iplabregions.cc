@@ -80,6 +80,14 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
             return SGN(x) * xlog2lin(std::abs(x), 4.f);
         };
 
+    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
+    float ws[3][3];
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            ws[i][j] = dws[i][j];
+        }
+    }
+
     float abca[n];
     float abcb[n];
     float rs[n];
@@ -91,7 +99,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
     bool enabled[n];
     for (int i = 0; i < n; ++i) {
         auto &r = params->colorcorrection.regions[i];
-        rgbmode[i] = r.rgb_channels;
+        rgbmode[i] = r.mode != ColorCorrectionParams::Mode::YUV;
         if (rgbmode[i]) {
             abca[i] = 0.f;
             abcb[i] = 0.f;
@@ -102,23 +110,53 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
             rs[i] = 1.f + r.saturation / 100.f;
         }
         enabled[i] = false;
-        for (int c = 0; c < 3; ++c) {
-            int j = rgbmode[i] ? c : 0;
-            rslope[i][c] = r.slope[j];
-            roffset[i][c] = r.offset[j];
-            rpower[i][c] = r.power[j];
-            rpivot[i][c] = r.pivot[j];
-            if (rslope[i][c] != 1.f || roffset[i][c] != 0.f || rpower[i][c] != 1.f) {
-                enabled[i] = true;
-            } 
-        }
-    }
-
-    TMatrix dws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
-    float ws[3][3];
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            ws[i][j] = dws[i][j];
+        if (r.mode == ColorCorrectionParams::Mode::HSL) {
+            float R, G, B;
+            float u, v;
+            for (int c = 0; c < 3; ++c) {
+                float hue = (float(r.hue[c]) / 180.f) * rtengine::RT_PI;
+                float sat = pow_F(float(r.sat[c]) / 100.f, 3.f);
+                float f = (r.factor[c] / 100.f) + 1.f;
+                Color::hsl2yuv(hue, sat, u, v);
+                Color::yuv2rgb(0.5f, u, v, R, G, B, ws);
+                R *= 2.f;
+                G *= 2.f;
+                B *= 2.f;
+                switch (c) {
+                case 0: // SLOPE
+                    rslope[i][0] = R * f;
+                    rslope[i][1] = G * f;
+                    rslope[i][2] = B * f;
+                    break;
+                case 1: // OFFSET
+                    roffset[i][0] = R + f - 2.f;
+                    roffset[i][1] = G + f - 2.f;
+                    roffset[i][2] = B + f - 2.f;
+                    break;
+                default: // POWER
+                    rpower[i][0] = (2.f - R) * (2.f - f);
+                    rpower[i][1] = (2.f - G) * (2.f - f);
+                    rpower[i][2] = (2.f - B) * (2.f - f);
+                    break;
+                }
+                rpivot[i][c] = 1.f;
+            }
+            for (int c = 0; c < 3; ++c) {
+                if (rslope[i][c] != 1.f || roffset[i][c] != 0.f || rpower[i][c] != 1.f) {
+                    enabled[i] = true;
+                }
+            }
+        } else {
+            for (int c = 0; c < 3; ++c) {
+                int j = rgbmode[i] ? c : 0;
+                rslope[i][c] = r.slope[j];
+                roffset[i][c] = r.offset[j];
+                rpower[i][c] = r.power[j];
+                rpivot[i][c] = r.pivot[j];
+                if (rslope[i][c] != 1.f || roffset[i][c] != 0.f || rpower[i][c] != 1.f) {
+                    enabled[i] = true;
+                }
+            }
         }
     }
 

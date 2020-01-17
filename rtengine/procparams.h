@@ -1100,6 +1100,11 @@ struct GuidedSmoothingParams {
 
 
 struct ColorCorrectionParams {
+    enum class Mode {
+        YUV,
+        RGB,
+        HSL
+    };
     struct Region {
         double a;
         double b;
@@ -1108,7 +1113,10 @@ struct ColorCorrectionParams {
         std::array<double, 3> offset;
         std::array<double, 3> power;
         std::array<double, 3> pivot;
-        bool rgb_channels;
+        std::array<double, 3> hue;
+        std::array<double, 3> sat;
+        std::array<double, 3> factor;
+        Mode mode;
 
         Region();
         bool operator==(const Region &other) const;

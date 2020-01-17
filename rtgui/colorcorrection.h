@@ -24,8 +24,16 @@
 #include "toolpanel.h"
 #include "labmaskspanel.h"
 #include "labgrid.h"
+#include "colorprovider.h"
+#include "thresholdadjuster.h"
 
-class ColorCorrection: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public PParamsChangeListener
+class ColorCorrection:
+    public ToolParamBlock,
+    public AdjusterListener,
+    public FoldableToolPanel,
+    public PParamsChangeListener,
+    public ThresholdAdjusterListener,
+    public ColorProvider
 {
 public:
 
@@ -54,10 +62,18 @@ public:
     void setAreaDrawListener(AreaDrawListener *l);
     void setDeltaEColorProvider(DeltaEColorProvider *p);
 
+    void adjusterChanged(ThresholdAdjuster *a, double newBottom, double newTop) override;
+    void adjusterChanged(ThresholdAdjuster *a, double newBottomLeft, double newTopLeft, double newBottomRight, double newTopRight) override {}
+    void adjusterChanged(ThresholdAdjuster *a, int newBottom, int newTop) override {}
+    void adjusterChanged(ThresholdAdjuster *a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override {}
+    void adjusterChanged2(ThresholdAdjuster *a, int newBottomL, int newTopL, int newBottomR, int newTopR) override {}
+
+    void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
+    
 private:
     void regionGet(int idx);
     void regionShow(int idx);
-    void rgbChannelsChanged();
+    void modeChanged();
     void syncSlidersToggled();
     
     rtengine::ProcEvent EvEnabled;
@@ -68,7 +84,7 @@ private:
     rtengine::ProcEvent EvOffset;
     rtengine::ProcEvent EvPower;    
     rtengine::ProcEvent EvPivot;    
-    rtengine::ProcEvent EvRGBChannels;
+    rtengine::ProcEvent EvMode;
 
     rtengine::ProcEvent EvList;
     rtengine::ProcEvent EvHueMask;
@@ -86,10 +102,11 @@ private:
     LabMasksPanel *labMasks;
     
     Gtk::VBox *box;
-    MyComboBoxText *rgb_channels;
+    MyComboBoxText *mode;
 
     Gtk::VBox *box_combined;
     Gtk::VBox *box_rgb;
+    Gtk::VBox *box_hsl;
     
     LabGrid *gridAB;
     Adjuster *saturation;
@@ -103,6 +120,9 @@ private:
     Adjuster *power_rgb[3];
     Adjuster *pivot_rgb[3];
 
-    Gtk::CheckButton *sync_sliders;
+    Gtk::CheckButton *sync_rgb_sliders;
+    
+    Adjuster *lfactor[3];
+    ThresholdAdjuster *huesat[3];
 };
 
