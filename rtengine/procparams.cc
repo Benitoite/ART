@@ -702,7 +702,8 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
 ExposureParams::ExposureParams():
     enabled(true),
     hrmode(HR_OFF),
-    expcomp(0)
+    expcomp(0),
+    black(0)
 {
 }
 
@@ -711,7 +712,8 @@ bool ExposureParams::operator==(const ExposureParams &other) const
 {
     return enabled == other.enabled
         && hrmode == other.hrmode
-        && expcomp == other.expcomp;
+        && expcomp == other.expcomp
+        && black == other.black;
 }
 
 
@@ -2431,6 +2433,7 @@ int ProcParams::save(bool save_general,
         if (RELEVANT_(exposure)) {
             saveToKeyfile("Exposure", "Enabled", exposure.enabled, keyFile);
             saveToKeyfile("Exposure", "Compensation", exposure.expcomp, keyFile);
+            saveToKeyfile("Exposure", "Black", exposure.black, keyFile);
             Glib::ustring hr = "Off";
             switch (exposure.hrmode) {
             case ExposureParams::HR_OFF: hr = "Off"; break;
@@ -3163,6 +3166,7 @@ int ProcParams::load(bool load_general,
             if (keyFile.has_group("Exposure") && RELEVANT_(exposure)) {
                 assignFromKeyfile(keyFile, "Exposure", "Enabled", exposure.enabled);
                 assignFromKeyfile(keyFile, "Exposure", "Compensation", exposure.expcomp);
+                assignFromKeyfile(keyFile, "Exposure", "Black", exposure.black);
                 if (ppVersion >= 1000) {
                     Glib::ustring hr;
                     assignFromKeyfile(keyFile, "Exposure", "HLRecovery", hr);

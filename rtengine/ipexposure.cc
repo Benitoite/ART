@@ -26,134 +26,6 @@
 
 namespace rtengine {
 
-namespace {
-
-void shadowToneCurve(const LUTf &shtonecurve, Imagefloat *rgb, bool multiThread)
-{
-    float **rtemp = rgb->r.ptrs;
-    float **gtemp = rgb->g.ptrs;
-    float **btemp = rgb->b.ptrs;
-    int W = rgb->getWidth();
-    int H = rgb->getHeight();
-
-#if defined( __SSE2__ ) && defined( __x86_64__ )
-    vfloat cr = F2V(0.299f);
-    vfloat cg = F2V(0.587f);
-    vfloat cb = F2V(0.114f);
-#endif
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multiThread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        int x = 0;
-#if defined( __SSE2__ ) && defined( __x86_64__ )
-        for (; x < W - 3; x += 4) {
-            vfloat rv = LVF(rtemp[y][x]);
-            vfloat gv = LVF(gtemp[y][x]);
-            vfloat bv = LVF(btemp[y][x]);
-
-            //shadow tone curve
-            vfloat Yv = cr * rv + cg * gv + cb * bv;
-            vfloat tonefactorv = shtonecurve(Yv);
-            STVF(rtemp[y][x], rv * tonefactorv);
-            STVF(gtemp[y][x], gv * tonefactorv);
-            STVF(btemp[y][x], bv * tonefactorv);
-        }
-#endif
-
-        for (; x < W; ++x) {
-            float r = rtemp[y][x];
-            float g = gtemp[y][x];
-            float b = btemp[y][x];
-
-            //shadow tone curve
-            float Y = (0.299f * r + 0.587f * g + 0.114f * b);
-            float tonefactor = shtonecurve[Y];
-            rtemp[y][x] = rtemp[y][x] * tonefactor;
-            gtemp[y][x] = gtemp[y][x] * tonefactor;
-            btemp[y][x] = btemp[y][x] * tonefactor;
-        }
-    }
-}
-
-
-void highlightToneCurve(const LUTf &hltonecurve, Imagefloat *rgb, float exp_scale, float comp, float hlrange, bool multiThread)
-{
-    float **rtemp = rgb->r.ptrs;
-    float **gtemp = rgb->g.ptrs;
-    float **btemp = rgb->b.ptrs;
-    int W = rgb->getWidth();
-    int H = rgb->getHeight();
-
-#if defined( __SSE2__ ) && defined( __x86_64__ )
-    vfloat threev = F2V(3.f);
-    vfloat maxvalfv = F2V(MAXVALF);
-#endif
-
-#ifdef _OPENMP
-#   pragma omp parallel for if (multiThread)
-#endif
-    for (int y = 0; y < H; ++y) {
-        int x = 0;
-#if defined( __SSE2__ ) && defined( __x86_64__ )
-        for (; x < W - 3; x += 4) {
-
-            vfloat rv = LVF(rtemp[y][x]);
-            vfloat gv = LVF(gtemp[y][x]);
-            vfloat bv = LVF(btemp[y][x]);
-
-            //TODO: proper treatment of out-of-gamut colors
-            //float tonefactor = hltonecurve[(0.299f*r+0.587f*g+0.114f*b)];
-            vmask maxMask = vmaskf_ge(vmaxf(rv, vmaxf(gv, bv)), maxvalfv);
-
-            if (_mm_movemask_ps((vfloat)maxMask)) {
-                for (int k = 0; k < 4; ++k) {
-                    float r = rtemp[y][x + k];
-                    float g = gtemp[y][x + k];
-                    float b = btemp[y][x + k];
-                    float tonefactor = ((r < MAXVALF ? hltonecurve[r] : CurveFactory::hlcurve(exp_scale, comp, hlrange, r)) +
-                                        (g < MAXVALF ? hltonecurve[g] : CurveFactory::hlcurve(exp_scale, comp, hlrange, g)) +
-                                        (b < MAXVALF ? hltonecurve[b] : CurveFactory::hlcurve(exp_scale, comp, hlrange, b))) / 3.0;
-
-                    // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-                    rtemp[y][x + k] = r * tonefactor;
-                    gtemp[y][x + k] = g * tonefactor;
-                    btemp[y][x + k] = b * tonefactor;
-                }
-            } else {
-                vfloat tonefactorv = (hltonecurve.cb(rv) + hltonecurve.cb(gv) + hltonecurve.cb(bv)) / threev;
-                // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-                STVF(rtemp[y][x], rv * tonefactorv);
-                STVF(gtemp[y][x], gv * tonefactorv);
-                STVF(btemp[y][x], bv * tonefactorv);
-            }
-        }
-
-#endif
-
-        for (; x < W; ++x) {
-            float r = rtemp[y][x];
-            float g = gtemp[y][x];
-            float b = btemp[y][x];
-
-            //TODO: proper treatment of out-of-gamut colors
-            //float tonefactor = hltonecurve[(0.299f*r+0.587f*g+0.114f*b)];
-            float tonefactor = ((r < MAXVALF ? hltonecurve[r] : CurveFactory::hlcurve(exp_scale, comp, hlrange, r)) +
-                                (g < MAXVALF ? hltonecurve[g] : CurveFactory::hlcurve(exp_scale, comp, hlrange, g)) +
-                                (b < MAXVALF ? hltonecurve[b] : CurveFactory::hlcurve(exp_scale, comp, hlrange, b))) / 3.0;
-
-            // note: tonefactor includes exposure scaling, that is here exposure slider and highlight compression takes place
-            rtemp[y][x] = r * tonefactor;
-            gtemp[y][x] = g * tonefactor;
-            btemp[y][x] = b * tonefactor;
-        }
-    }
-}
-
-} // namespace
-
-
 void ImProcFunctions::exposure(Imagefloat *img)
 {
     if (!params->exposure.enabled) {
@@ -162,37 +34,50 @@ void ImProcFunctions::exposure(Imagefloat *img)
     
     img->setMode(Imagefloat::Mode::RGB, multiThread);
 
-    LUTf hltonecurve(65536);
-    LUTf shtonecurve(65536);
-
-    const double expcomp = params->exposure.expcomp;
-    const int hlcompr = 0;//params->exposure.hlcompr;
-    const int hlcomprthresh = 0;//params->exposure.hlcomprthresh;
-
-    {
-        const int black = 0;//params->exposure.black;
-        const int shcompr = 0;//params->exposure.shcompr;
-        
-        LUTf tonecurve(65536);
-        LUTu vhist16(65536), histToneCurve(256);
-        ToneCurve customToneCurve1, customToneCurve2;
-        
-        CurveFactory::complexCurve(expcomp, black / 65535.0,
-                                   hlcompr, hlcomprthresh,
-                                   shcompr, 0, 0, 
-                                   { DCT_Linear }, { DCT_Linear },
-                                   vhist16, hltonecurve, shtonecurve, tonecurve,
-                                   histToneCurve, customToneCurve1,
-                                   customToneCurve2, scale);
+    LUTf expcomp(65536);
+    const float exp_scale = pow(2.f, params->exposure.expcomp);
+    const float black = params->exposure.black * 65535.f;
+    for (int i = 0; i < 65536; ++i) {
+        expcomp[i] = std::max(i * exp_scale - black, 0.f);
     }
 
-    const float exp_scale = pow(2.0, expcomp);
-    const float comp = (max(0.0, expcomp) + 1.0) * hlcompr / 100.0;
-    const float shoulder = ((65536.0 / max(1.0f, exp_scale)) * (hlcomprthresh / 200.0)) + 0.1;
-    const float hlrange = 65536.0 - shoulder;
+#ifdef __SSE2__
+    vfloat maxvalfv = F2V(MAXVALF);
+#endif
 
-    highlightToneCurve(hltonecurve, img, exp_scale, comp, hlrange, multiThread);
-    shadowToneCurve(shtonecurve, img, multiThread);    
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+
+    float **chan[3] = { img->r.ptrs, img->g.ptrs, img->b.ptrs };
+    
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W - 3; x += 4) {
+            for (int c = 0; c < 3; ++c) {
+                vfloat v = LVF(chan[c][y][x]);
+                vmask m = vmaskf_ge(v, maxvalfv);
+                if (_mm_movemask_ps((vfloat)m)) {
+                    for (int k = 0; k < 4; ++k) {
+                        float &vv = chan[c][y][x + k];
+                        vv = (vv < MAXVALF ? expcomp[vv] : std::max(vv * exp_scale + black, 0.f));
+                    }
+                } else {
+                    STVF(chan[c][y][x], expcomp[v]);
+                }
+            }
+        }
+#endif
+        for (; x < W; ++x) {
+            for (int c = 0; c < 3; ++c) {
+                float &v = chan[c][y][x];
+                v = (v < MAXVALF ? expcomp[v] : std::max(v * exp_scale + black, 0.f));
+            }
+        }
+    }
 }
 
 } // namespace rtengine

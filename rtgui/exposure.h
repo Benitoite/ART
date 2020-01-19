@@ -28,18 +28,16 @@
 #include "guiutils.h"
 
 class Exposure: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
-private:
-    IdleRegister idle_register;
-
 protected:
     MyComboBoxText *hrmode;
+    rtengine::ProcEvent EvBlack;
 
     Gtk::HBox *abox;
     Adjuster *expcomp;
+    Adjuster *black;
 
 public:
     Exposure();
-    ~Exposure() override;
 
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;

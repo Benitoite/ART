@@ -30,8 +30,9 @@ using namespace rtengine::procparams;
 Exposure::Exposure():
     FoldableToolPanel(this, "exposure", M("TP_EXPOSURE_LABEL"), false, true)
 {
-    // auto m = ProcEventMapper::getInstance();
+    auto m = ProcEventMapper::getInstance();
     EvToolEnabled.set_action(DARKFRAME);
+    EvBlack = m->newEvent(AUTOEXP, "HISTORY_MSG_EXPOSURE_BLACK");
 
 //-------------- Highlight Reconstruction -----------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
@@ -44,26 +45,25 @@ Exposure::Exposure():
     hrmode->set_active(ExposureParams::HR_OFF);
     Gtk::HBox *hlrbox = Gtk::manage(new Gtk::HBox());
     Gtk::Label* lab = Gtk::manage(new Gtk::Label(M("TP_HLREC_LABEL") + ": "));
-    hlrbox->pack_start(*lab, Gtk::PACK_SHRINK);//, 4);
+    hlrbox->pack_start(*lab, Gtk::PACK_SHRINK);
     hlrbox->pack_start(*hrmode);
     pack_start (*hlrbox);
 
     hrmode->signal_changed().connect ( sigc::mem_fun(*this, &Exposure::hrmodeChanged) );
 
     //----------- Exposure Compensation ---------------------
-    pack_start (*Gtk::manage (new  Gtk::HSeparator()));
+    pack_start(*Gtk::manage(new Gtk::HSeparator()));
 
-    expcomp   = Gtk::manage (new Adjuster (M("TP_EXPOSURE_EXPCOMP"), -12, 12, 0.05, 0));
+    expcomp = Gtk::manage(new Adjuster(M("TP_EXPOSURE_EXPCOMP"), -12, 12, 0.05, 0));
     expcomp->setLogScale(64, 0, true);
-    pack_start (*expcomp);
+    pack_start(*expcomp);
 
-    expcomp->setAdjusterListener (this);
-}
+    black = Gtk::manage(new Adjuster(M("TP_EXPOSURE_BLACK"), -2, 2, 0.001, 0));
+    black->setLogScale(100, 0, true);
+    pack_start(*black);
 
-
-Exposure::~Exposure ()
-{
-    idle_register.destroy();
+    expcomp->setAdjusterListener(this);
+    black->setAdjusterListener(this);
 }
 
 
@@ -72,45 +72,47 @@ void Exposure::read(const ProcParams* pp)
     disableListener();
 
     setEnabled(pp->exposure.enabled);
-    expcomp->setValue (pp->exposure.expcomp);
+    expcomp->setValue(pp->exposure.expcomp);
     hrmode->set_active(pp->exposure.hrmode);
+    black->setValue(pp->exposure.black);
 
-    enableListener ();
+    enableListener();
 }
 
 
 void Exposure::write(ProcParams *pp)
 {
     pp->exposure.enabled = getEnabled();
-    pp->exposure.expcomp = expcomp->getValue ();
+    pp->exposure.expcomp = expcomp->getValue();
     pp->exposure.hrmode = ExposureParams::HighlightReconstruction(hrmode->get_active_row_number());
+    pp->exposure.black = black->getValue();
 }
 
 void Exposure::hrmodeChanged ()
 {
     if (listener && getEnabled()) {
-        //setHistmatching(false);
         listener->panelChanged(EvHRMethod, hrmode->get_active_text());
     }
 }
 
 
-void Exposure::setRaw (bool raw)
+void Exposure::setRaw(bool raw)
 {
-    disableListener ();
+    disableListener();
     if (raw) {
         hrmode->set_sensitive(true);
     } else {
         hrmode->set_active(0);
         hrmode->set_sensitive(false);
     }
-    enableListener ();
+    enableListener();
 }
 
 
-void Exposure::setDefaults (const ProcParams* defParams)
+void Exposure::setDefaults(const ProcParams* defParams)
 {
-    expcomp->setDefault (defParams->exposure.expcomp);
+    expcomp->setDefault(defParams->exposure.expcomp);
+    black->setDefault(defParams->exposure.black);
 }
 
 
@@ -125,6 +127,8 @@ void Exposure::adjusterChanged(Adjuster* a, double newval)
     if (a == expcomp) {
         costr = Glib::ustring::format (std::setw(3), std::fixed, std::setprecision(2), a->getValue());
         listener->panelChanged (EvExpComp, costr);
+    } else if (a == black) {
+        listener->panelChanged(EvBlack, a->getTextValue());
     }
 }
 
@@ -137,6 +141,7 @@ void Exposure::adjusterAutoToggled(Adjuster* a, bool newval)
 void Exposure::trimValues (rtengine::procparams::ProcParams* pp)
 {
     expcomp->trimValue(pp->exposure.expcomp);
+    black->trimValue(pp->exposure.black);
 }
 
 

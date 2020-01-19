@@ -361,6 +361,7 @@ struct ExposureParams {
     };
     HighlightReconstruction hrmode;
     double expcomp;
+    double black;
 
     ExposureParams();
 
