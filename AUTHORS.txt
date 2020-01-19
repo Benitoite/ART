@@ -5,6 +5,13 @@ Developer/Maintainer:
 
   Alberto Griggio
 
+Other contributors (profiles, ideas, mockups, testing, forum activity, translations, etc.), in last name alphabetical order:
+
+  André Gauthier
+  Sebastien Guyader
+  Serge Moreau
+
+
 
 RawTherapee
 ===========
