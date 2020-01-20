@@ -36,7 +36,7 @@ void ImProcFunctions::exposure(Imagefloat *img)
 
     LUTf expcomp(65536);
     const float exp_scale = pow(2.f, params->exposure.expcomp);
-    const float black = params->exposure.black * 65535.f;
+    const float black = params->exposure.black * 2000.f;
     for (int i = 0; i < 65536; ++i) {
         expcomp[i] = std::max(i * exp_scale - black, 0.f);
     }
