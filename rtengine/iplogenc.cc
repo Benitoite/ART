@@ -202,6 +202,7 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full
                     float l = xlogf(std::max(Y2[y][x], 1e-9f));
                     float ll = round(l * base_posterization) / base_posterization;
                     Y[y][x] = xexpf(ll);
+                    assert(std::isfinite(Y[y][x]));
                 }
             }
             const float radius = max(max(full_width, W), max(full_height, H)) / 30.f;
@@ -219,15 +220,20 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full
                 float &g = rgb->g(y, x);
                 float &b = rgb->b(y, x);
                 float t = Y[y][x];
-                if (t > noise) {
+                float t2;
+                if (t > noise && (t2 = norm(r, g, b)) > noise) {
                     float c = apply(t, false);
                     float f = c / t;
-                    float t2 = norm(r, g, b);
+                    //float t2 = norm(r, g, b);
                     float f2 = apply(t2) / t2;
                     f = intp(blend, f, f2);
+                    assert(std::isfinite(f));
                     r *= f;
                     g *= f;
                     b *= f;
+                    assert(std::isfinite(r));
+                    assert(std::isfinite(g));
+                    assert(std::isfinite(b));                    
                 }
             }
         }
