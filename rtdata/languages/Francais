@@ -1762,7 +1762,7 @@ TP_EPD_SCALE;Échelle
 TP_EPD_STRENGTH;Force
 TP_EXPOSURE_AUTOLEVELS;Niveaux Auto
 TP_EXPOSURE_AUTOLEVELS_TIP;Bascule l'application de Niveaux auto. afin de régler automatiquement les valeurs basées sur l'analyse de l'image\nActive la Reconstruction des Hautes Lumières si nécessaire.
-TP_EXPOSURE_BLACK;Point noir
+TP_EXPOSURE_BLACK;Compensation du point noir
 TP_EXPOSURE_CLAMPOOG;Ecrêter les couleurs hors gamut
 TP_EXPOSURE_CLIP;% d'écrêtage
 TP_EXPOSURE_CLIP_TIP;Fraction de pixels que l'outil <b>Niveaux Auto.</b> va écrêter

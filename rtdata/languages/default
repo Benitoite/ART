@@ -1762,7 +1762,7 @@ TP_EPD_SCALE;Scale
 TP_EPD_STRENGTH;Strength
 TP_EXPOSURE_AUTOLEVELS;Auto Levels
 TP_EXPOSURE_AUTOLEVELS_TIP;Toggles execution of Auto Levels to automatically set Exposure slider values based on an image analysis.\nEnables Highlight Reconstruction if necessary.
-TP_EXPOSURE_BLACK;Black point
+TP_EXPOSURE_BLACK;Black point compensation
 TP_EXPOSURE_CLAMPOOG;Clip out-of-gamut colors
 TP_EXPOSURE_CLIP;Clip %
 TP_EXPOSURE_CLIP_TIP;The fraction of pixels to be clipped in Auto Levels operation.
