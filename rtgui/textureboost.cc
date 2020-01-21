@@ -196,7 +196,6 @@ void TextureBoost::read(const ProcParams *pp)
         data.emplace_back(rtengine::TextureBoostParams::Region());
         m.emplace_back(rtengine::LabCorrectionMask());
     }
-    labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->textureBoost.showMask);
 
     enableListener();
@@ -267,7 +266,6 @@ void TextureBoost::procParamsChanged(
     const Glib::ustring& descr,
     const ParamsEdited* paramsEdited)
 {
-    labMasks->updateAreaMaskDefaults(params);
 }
 
 

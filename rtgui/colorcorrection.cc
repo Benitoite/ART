@@ -332,7 +332,6 @@ void ColorCorrection::read(const ProcParams *pp)
         data.emplace_back(rtengine::ColorCorrectionParams::Region());
         m.emplace_back(rtengine::LabCorrectionMask());
     }
-    labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->colorcorrection.showMask);
 
     modeChanged();
@@ -471,7 +470,6 @@ void ColorCorrection::procParamsChanged(
     const Glib::ustring& descr,
     const ParamsEdited* paramsEdited)
 {
-    labMasks->updateAreaMaskDefaults(params);
 }
 
 

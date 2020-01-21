@@ -216,7 +216,6 @@ void LocalContrast::read(const ProcParams *pp)
         regionData.emplace_back(rtengine::LocalContrastParams::Region());
         m.emplace_back(rtengine::LabCorrectionMask());
     }
-    labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->localContrast.showMask);
 
     enableListener();
@@ -294,7 +293,6 @@ void LocalContrast::procParamsChanged(
     const Glib::ustring& descr,
     const ParamsEdited* paramsEdited)
 {
-    labMasks->updateAreaMaskDefaults(params);
 }
 
 

@@ -119,8 +119,6 @@ public:
     void setEditProvider(EditDataProvider *provider);
     void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
 
-    void updateAreaMaskDefaults(const rtengine::procparams::ProcParams *params);
-
     void setEdited(bool yes);
     bool getEdited();
 

@@ -943,38 +943,6 @@ void LabMasksPanel::onAreaMaskEnableToggled()
 }
 
 
-void LabMasksPanel::updateAreaMaskDefaults(const rtengine::procparams::ProcParams *params)
-{
-    EditDataProvider *provider = getEditProvider();
-
-    if (!provider) {
-        return;
-    }
-
-    int imW = 0, imH = 0;
-    provider->getImageSize(imW, imH);
-    if (!imW || !imH) {
-        return;
-    }
-
-    defaultAreaShape = Shape();
-    if (!params->crop.enabled) {
-        return;
-    }
-
-    defaultAreaShape.width = double(params->crop.w)/double(imW) * 100.0;
-    defaultAreaShape.height = double(params->crop.h)/double(imH) * 100.0;
-    defaultAreaShape.x = (double(params->crop.x + params->crop.w * 0.5) / (imW * 0.5) - 1) * 100.0;
-    defaultAreaShape.y = (double(params->crop.y + params->crop.h * 0.5) / (imH * 0.5) - 1) * 100.0;
-
-    if (masks_.size() == 1 && !masks_[0].areaEnabled && masks_[0].areaMask.isTrivial()) {
-        masks_[0].areaMask.shapes = {defaultAreaShape};
-        areaShapeSelect(0, false);
-        populateShapeList(selected_, area_shape_index_);
-    }
-}
-
-
 void LabMasksPanel::curveChanged(CurveEditor* ce)
 {
     auto l = getListener();

@@ -214,7 +214,6 @@ void Smoothing::read(const ProcParams *pp)
         data.emplace_back(rtengine::GuidedSmoothingParams::Region());
         m.emplace_back(rtengine::LabCorrectionMask());
     }
-    labMasks->updateAreaMaskDefaults(pp);
     labMasks->setMasks(m, pp->smoothing.showMask);
 
     enableListener();
@@ -281,7 +280,6 @@ void Smoothing::procParamsChanged(
     const Glib::ustring& descr,
     const ParamsEdited* paramsEdited)
 {
-    labMasks->updateAreaMaskDefaults(params);
 }
 
 
