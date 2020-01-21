@@ -1202,7 +1202,7 @@ void EditorPanel::setProgressStr(const Glib::ustring& str)
         {
             setprogressStrUI(-1.0, str, pl);
             return false;
-        }
+        }, G_PRIORITY_LOW
     );
 }
 

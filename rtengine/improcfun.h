@@ -71,6 +71,8 @@ public:
     {
         pipetteBuffer = pb;
     }
+
+    void setProgressListener(ProgressListener *pl, int num_previews);
     //----------------------------------------------------------------------
 
     //----------------------------------------------------------------------
@@ -101,7 +103,9 @@ public:
     void firstAnalysis(const Imagefloat* const working, const ProcParams &params, LUTu & vhist16);
 
     void labAdjustments(Imagefloat *rgb);
-    bool sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask=false);
+    bool doSharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask);
+    bool sharpening(Imagefloat *img);
+    bool prsharpening(Imagefloat *img);
     void transform(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, const FramesMetaData *metadata, int rawRotationDeg, bool highQuality);    
     void resize(Imagefloat* src, Imagefloat* dst, float dScale);
     void Lanczos(const LabImage* src, LabImage* dst, float scale);
@@ -217,6 +221,10 @@ private:
     LUTu *histLCurve;
 
     bool show_sharpening_mask;
+
+    ProgressListener *plistener;
+    int progress_step;
+    int progress_end;
     
 private:
     void transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH, bool creative);
@@ -231,6 +239,9 @@ private:
     bool needsVignetting();
     bool needsLCP();
     bool needsLensfun();
+
+    template <class Ret, class Method>
+    Ret apply(Method op, Imagefloat *img);
 };
 
 

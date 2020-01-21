@@ -645,6 +645,7 @@ void Crop::fullUpdate()
 
     if (parent->plistener) {
         parent->plistener->setProgressState(true);
+        parent->ipf.setProgressListener(parent->plistener, 1);
     }
 
     // If there are more update request, the following WHILE will collect it

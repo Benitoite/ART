@@ -1013,6 +1013,7 @@ void ImProcCoordinator::process()
 {
     if (plistener) {
         plistener->setProgressState(true);
+        ipf.setProgressListener(plistener, crops.size() + 1);
     }
 
     paramsUpdateMutex.lock();

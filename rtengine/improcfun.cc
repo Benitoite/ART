@@ -66,7 +66,10 @@ ImProcFunctions::ImProcFunctions(const ProcParams* iparams, bool imultiThread):
     histToneCurve(nullptr),
     histCCurve(nullptr),
     histLCurve(nullptr),
-    show_sharpening_mask(false)
+    show_sharpening_mask(false),
+    plistener(nullptr),
+    progress_step(0),
+    progress_end(1)
 {
 }
 
@@ -819,19 +822,52 @@ void ImProcFunctions::setShowSharpeningMask(bool yes)
 }
 
 
+namespace {
+
+constexpr int NUM_PIPELINE_STEPS = 23;
+
+} // namespace
+
+void ImProcFunctions::setProgressListener(ProgressListener *pl, int num_previews)
+{
+    plistener = pl;
+    progress_step = 0;
+    progress_end = NUM_PIPELINE_STEPS * std::max(num_previews, 1);
+    if (plistener) {
+        plistener->setProgressStr("PROGRESSBAR_PROCESSING");
+        plistener->setProgress(0);
+    }
+}
+
+
+template <class Ret, class Method>
+Ret ImProcFunctions::apply(Method op, Imagefloat *img)
+{
+    if (plistener) {
+        float percent = float(++progress_step) / float(progress_end);
+        plistener->setProgress(percent);
+    }
+    return (this->*op)(img);
+}
+
+
 bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
 {
     bool stop = false;
+
+#define STEP_(op) apply<void>(&ImProcFunctions::op, img)
+#define STEP_s_(op) apply<bool>(&ImProcFunctions::op, img)
+        
     switch (stage) {
     case Stage::STAGE_0:
-        dehaze(img);
-        dynamicRangeCompression(img);
+        STEP_(dehaze);
+        STEP_(dynamicRangeCompression);
         break;
     case Stage::STAGE_1:
-        channelMixer(img);
-        exposure(img);
-        hslEqualizer(img);
-        toneEqualizer(img);
+        STEP_(channelMixer);
+        STEP_(exposure);
+        STEP_(hslEqualizer);
+        STEP_(toneEqualizer);
         if (params->icm.workingProfile == "ProPhoto") {
             proPhotoBlue(img, multiThread);
         }
@@ -839,32 +875,32 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
     case Stage::STAGE_2:
         if (pipeline == Pipeline::OUTPUT ||
             (pipeline == Pipeline::PREVIEW /*&& scale == 1*/)) {
-            stop = sharpening(img, params->sharpening, show_sharpening_mask);
+            stop = STEP_s_(sharpening);
             if (!stop) {
-                impulsedenoise(img);
-                defringe(img);
+                STEP_(impulsedenoise);
+                STEP_(defringe);
             }
         }
-        stop = stop || colorCorrection(img);
-        stop = stop || guidedSmoothing(img);
+        stop = stop || STEP_s_(colorCorrection);
+        stop = stop || STEP_s_(guidedSmoothing);
         break;
     case Stage::STAGE_3:
-        creativeGradients(img);
-        logEncoding(img);
-        saturationVibrance(img);
+        STEP_(creativeGradients);
+        STEP_(logEncoding);
+        STEP_(saturationVibrance);
         dcpProfile(img, dcpProf, dcpApplyState, multiThread);
-        toneCurve(img);
-        rgbCurves(img);
-        labAdjustments(img);
-        stop = stop || textureBoost(img);
+        STEP_(toneCurve);
+        STEP_(rgbCurves);
+        STEP_(labAdjustments);
+        stop = stop || STEP_s_(textureBoost);
         if (!stop) { 
-            softLight(img);
+            STEP_(softLight);
         }
-        stop = stop || localContrast(img);
+        stop = stop || STEP_s_(localContrast);
         if (!stop) {
-            filmSimulation(img);
-            blackAndWhite(img);
-            filmGrain(img);
+            STEP_(filmSimulation);
+            STEP_(blackAndWhite);
+            STEP_(filmGrain);
         }
         break;
     }
@@ -894,5 +930,6 @@ int ImProcFunctions::setDeltaEData(EditUniqueID id, double x, double y)
         return 0;
     }
 }
+
 
 } // namespace rtengine

@@ -321,7 +321,7 @@ BENCHFUN
 
 namespace rtengine {
 
-bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
+bool ImProcFunctions::doSharpening(Imagefloat *rgb, const SharpeningParams &sharpenParam, bool showMask)
 {
     const int W = rgb->getWidth();
     const int H = rgb->getHeight();
@@ -364,6 +364,18 @@ bool ImProcFunctions::sharpening(Imagefloat *rgb, const SharpeningParams &sharpe
 
 
     return false;
+}
+
+
+bool ImProcFunctions::sharpening(Imagefloat *img)
+{
+    return doSharpening(img, params->sharpening, show_sharpening_mask);
+}
+
+
+bool ImProcFunctions::prsharpening(Imagefloat *img)
+{
+    return doSharpening(img, params->prsharpening, false);
 }
 
 } // namespace rtengine

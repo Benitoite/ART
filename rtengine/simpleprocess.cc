@@ -363,7 +363,7 @@ private:
             }
             if (params.prsharpening.enabled) {
                 ipf.setScale(1);
-                ipf.sharpening(img, params.prsharpening);
+                ipf.prsharpening(img);
             }
         }
 
