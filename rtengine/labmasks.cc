@@ -59,7 +59,7 @@ void fastlin2log(float *x, float factor, float base, int w)
 
 bool generate_area_mask(int ox, int oy, int width, int height, const array2D<float> &guide, const AreaMask &areaMask, bool enabled, float blur, bool multithread, array2D<float> &mask)
 {
-    if (!enabled || areaMask.shapes.empty() || areaMask.isTrivial()) {
+    if (!enabled || areaMask.shapes.empty() || (areaMask.isTrivial() && blur <= 0.f)) {
         return false;
     }
 
