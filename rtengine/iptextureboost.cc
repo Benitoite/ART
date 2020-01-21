@@ -38,8 +38,9 @@ void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &
     float stren = pp.strength; 
     float edgest = pp.edgeStopping; 
     float sca = pp.scale;
-    float gamm = 1.5f;
-    float rew = 1;
+    constexpr float gamm = 1.5f;
+    constexpr float rew = 1;
+    constexpr float noise_floor = 1e-8f * 32768.f;
     
     //Pointers to whole data and size of it.
     float *L = lab->L[0];
@@ -61,6 +62,8 @@ void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &
         #pragma omp for
 #endif
         for (size_t i = 0; i < N; i++) {
+            L[i] = std::max(L[i], noise_floor);
+            
             if (L[i] < lminL) {
                 lminL = L[i];
             }
@@ -168,13 +171,12 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb)
         }
         std::vector<array2D<float>> mask(n);
         if (!generateLabMasks(rgb, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
-            // lab2rgb(*lab, *rgb);
             return true; // show mask is active, nothing more to do
         }
 
         LabImage lab(rgb->getWidth(), rgb->getHeight());
         rgb2lab(*rgb, lab);
-        
+
         array2D<float> L(lab.W, lab.H, lab.L, 0);
         array2D<float> a(lab.W, lab.H, lab.a, 0);
         array2D<float> b(lab.W, lab.H, lab.b, 0);
