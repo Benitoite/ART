@@ -449,7 +449,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
 
     array2D<float> amask;
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur, multithread, amask)) {
+        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur / scale, multithread, amask)) {
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif
