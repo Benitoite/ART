@@ -381,6 +381,7 @@ void calculateFiMatrix (Array2Df* FI, Array2Df* gradients[],
 
         // only apply gradients to levels>=detail_level but at least to the coarsest
         if ((k >= detail_level || k == nlevels - 1) && beta != 1.f)  {
+            const float a = alfa * avgGrad[k];
             //DEBUG_STR << "calculateFiMatrix: apply gradient to level " << k << endl;
 #ifdef _OPENMP
             #pragma omp parallel for shared(fi,avgGrad) if(multithread)
@@ -388,7 +389,6 @@ void calculateFiMatrix (Array2Df* FI, Array2Df* gradients[],
             for ( int y = 0; y < height; y++ ) {
                 for ( int x = 0; x < width; x++ ) {
                     float grad = ((*gradients[k]) (x, y) < 1e-4f) ? 1e-4 : (*gradients[k]) (x, y);
-                    float a = alfa * avgGrad[k];
                     float value = pow ((grad + noise) / a, beta - 1.0f);
 
                     (*fi[k]) (x, y) *= value;
