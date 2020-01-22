@@ -1,0 +1,2232 @@
+# eenmaal klaar te bewaren als 'nederlands', plaats dat in /usr/local/share/ART/languages/ voor proeflezen
+
+#01 2007-12-26 Rens Duijsens en Brent Huisman
+#02 2008-03-14 updated by reggybe
+#03 2009-02-01 updated to RT2.4-RC by paul.matthijsse
+#04 2010-05-02 updated to rt3a1 by paul.matthijsse
+#05 2011-03-03 updated to rt3a2 by paul.matthijsse
+#06 2011-10-10 updated to rt4.0 by wim ter meer
+#07 2011-11-28 updated by pm
+#08 2012-05-17 updated to rt4.0.8 by wim ter meer
+#09 2013-03-27 updated to rt4.0.10 by wim ter meer
+#10 2013-11-27 updated to rt4.0.11 by wim ter meer
+#11 2014-03-24 updated to rt4.1 by wim ter meer
+#12 2014-10-19 updated to rt4.1.92 by wim ter meer
+#13 2015-03-03 updated to rt4.2.102 by wim ter meer
+#14 2015-11-23 update by wim ter meer
+#15 2016-07-21 update by wim ter meer
+#16 2017-04-21 update by wim ter meer
+
+#17 2020-01-22 First translation of ART v1.0 RC2 by paul.matthijsse/paulmatth, based on Dutch translation of RawTherapee 2007-2017
+
+ABOUT_TAB_BUILD;Versie
+ABOUT_TAB_CREDITS;Credits
+ABOUT_TAB_LICENSE;Licentie
+ABOUT_TAB_RELEASENOTES;Uitgave-opmerkingen
+ABOUT_TAB_SPLASH;Welkom
+ADJUSTER_RESET_TO_DEFAULT;<b>Klik</b> - terug naar standaardwaarde.\n<b>Ctrl+klik</b> - terug naar initiële waarde.
+BATCH_PROCESSING;Batch-verwerking
+
+CURVEEDITOR_AXIS_IN;I:
+CURVEEDITOR_AXIS_LEFT_TAN;LT:
+CURVEEDITOR_AXIS_OUT;O:
+CURVEEDITOR_AXIS_RIGHT_TAN;RT:
+CURVEEDITOR_CATMULLROM;Flexibel
+CURVEEDITOR_CURVE;Curve
+CURVEEDITOR_CURVES;Curven
+CURVEEDITOR_CUSTOM;Standaard
+CURVEEDITOR_DARKS;Schaduwen
+CURVEEDITOR_EDITPOINT_HINT;Activeer wijzigen van node in/uit-waarden.\n\nRechtsklik op een node om die te selecteren.\nRechtsklik in een leeg gebied om de node te deselecteren.
+CURVEEDITOR_HIGHLIGHTS;Hoge lichten
+CURVEEDITOR_LIGHTS;Lichten
+CURVEEDITOR_LINEAR;Lineair
+CURVEEDITOR_LOADDLGLABEL;Laad curve...
+CURVEEDITOR_MINMAXCPOINTS;Equalizer
+CURVEEDITOR_NURBS;Kooicurve
+CURVEEDITOR_PARAMETRIC;Parametrisch
+CURVEEDITOR_SAVEDLGLABEL;Bewaar curve...
+CURVEEDITOR_SHADOWS;Schaduwen
+CURVEEDITOR_TOOLTIPCOPY;Kopieer deze curve naar klembord
+CURVEEDITOR_TOOLTIPLINEAR;Zet curve terug naar lineair
+CURVEEDITOR_TOOLTIPLOAD;Laad curve uit bestand
+CURVEEDITOR_TOOLTIPPASTE;Plak curve van klembord
+CURVEEDITOR_TOOLTIPSAVE;Bewaar huidige curve
+CURVEEDITOR_TYPE;Type:
+
+DIRBROWSER_FOLDERS;Mappen
+DONT_SHOW_AGAIN;Dit bericht niet meer tonen
+
+DYNPROFILEEDITOR_DELETE;Verwijder
+DYNPROFILEEDITOR_EDIT;Bewerk
+DYNPROFILEEDITOR_EDIT_RULE;Bewerk dynamische profielregel
+DYNPROFILEEDITOR_ENTRY_TOOLTIP;Het zoeken is niet hoofdlettergevoelig.\nGebruik het "re:" voorvoegsel om\n een reguliere expressie uit te voeren
+DYNPROFILEEDITOR_IMGTYPE_ANY;Alles
+DYNPROFILEEDITOR_IMGTYPE_HDR;HDR
+DYNPROFILEEDITOR_IMGTYPE_PS;Pixel-shift
+DYNPROFILEEDITOR_IMGTYPE_STD;Standaard
+DYNPROFILEEDITOR_MOVE_DOWN;Naar beneden
+DYNPROFILEEDITOR_MOVE_UP;Naar boven
+DYNPROFILEEDITOR_NEW;Nieuw
+DYNPROFILEEDITOR_NEW_RULE;Nieuwe dynamische profielregel
+DYNPROFILEEDITOR_PROFILE;Profiel verwerken
+
+EDITWINDOW_TITLE;Bewerk afbeelding
+EDIT_OBJECT_TOOLTIP;Toont een widget in het voorbeeldscherm waarmee de werking van dit gereedschap aangepast kan worden
+EDIT_PIPETTE_TOOLTIP;Voeg een punt aan de curve toe met Ctrl+klik op de gewenste plek in het voorbeeld.\nOm dit punt te wijzigen, doe Ctrl+klik op het gewenste gebied in het voorbeeld, laat dan de Ctrl+toets los (behalve wanneer fijnmazige controle gewenst is), blijf de linkermuisknop ingedrukt houden en beweeg de muis naar boven of beneden om dit punt te verschuiven op de curve.
+
+EXIFFILTER_APERTURE;Diafragma
+EXIFFILTER_CAMERA;Camera
+EXIFFILTER_EXPOSURECOMPENSATION;Belichtingscompensatie (EV)
+EXIFFILTER_FILETYPE;Bestandstype
+EXIFFILTER_FOCALLEN;Brandpuntsafstand
+EXIFFILTER_IMAGETYPE;Type afbeelding
+EXIFFILTER_ISO;ISO
+EXIFFILTER_LENS;Objectief
+EXIFFILTER_METADATAFILTER;Activeer metadatafilters
+EXIFFILTER_SHUTTER;Sluitertijd
+
+EXIFPANEL_ADDEDIT;Voeg toe/bewerk
+EXIFPANEL_ADDEDITHINT;Voeg nieuwe tag toe of bewerk tag
+EXIFPANEL_ADDTAGDLG_ENTERVALUE;Geef waarde
+EXIFPANEL_ADDTAGDLG_SELECTTAG;Selecteer tag
+EXIFPANEL_ADDTAGDLG_TITLE;Voeg tag toe of bewerk
+EXIFPANEL_KEEP;Bewaar
+EXIFPANEL_KEEPHINT;Bewaar geselecteerde tags in doelbestand
+EXIFPANEL_REMOVE;Verwijder
+EXIFPANEL_REMOVEHINT;Verwijder geselecteerde tags als doelbestand wordt geschreven
+EXIFPANEL_RESET;Terug naar standaardwaarden
+EXIFPANEL_RESETALL;Alles terug naar standaardwaarden
+EXIFPANEL_RESETALLHINT;Zet alle tags terug naar oorspronkelijke waarden
+EXIFPANEL_RESETHINT;Zet geselecteerde tags terug naar oorspronkelijke waarden
+EXIFPANEL_SHOWALL;Toon alles
+EXIFPANEL_SUBDIRECTORY;Submap
+
+EXPORT_BYPASS;Verwerkingsstappen die worden overgeslagen
+EXPORT_BYPASS_ALL;Alles selecteren/deselecteren
+EXPORT_BYPASS_DEFRINGE;Verzachting niet toepassen
+EXPORT_BYPASS_DIRPYRDENOISE;Ruisonderdrukking niet toepassen
+EXPORT_BYPASS_LOCALCONTRAST;Lokaal contrast niet toepassen
+EXPORT_BYPASS_EQUALIZER;Wavelet-niveaus niet toepassen
+EXPORT_BYPASS_RAW_CA;Correctie Chromatische Aberratie niet toepassen [raw]
+EXPORT_BYPASS_RAW_CCSTEPS;Kleurfoutonderdrukking niet toepassen [raw]
+EXPORT_BYPASS_RAW_DCB_ENHANCE;DCB-verbetering niet toepassen [raw]
+EXPORT_BYPASS_RAW_DCB_ITERATIONS;DCB-herhalingen niet toepassen [raw]
+EXPORT_BYPASS_RAW_DF;Donkerframe niet toepassen [raw]
+EXPORT_BYPASS_RAW_FF;Vlakveld niet toepassen [raw]
+EXPORT_BYPASS_RAW_GREENTHRESH;Groenbalans niet toepassen [raw]
+EXPORT_BYPASS_RAW_LINENOISE;Lijnruisfilter niet toepassen [raw]
+EXPORT_BYPASS_RAW_LMMSE_ITERATIONS;LMMSE-verbetering niet toepassen [raw]
+EXPORT_BYPASS_SHARPENEDGE;Randenverscherping niet toepassen
+EXPORT_BYPASS_SHARPENING;Verscherping niet toepassen
+EXPORT_BYPASS_SHARPENMICRO;Microcontrast niet toepassen
+EXPORT_BYPASS_SH_HQ;Verscherpingsmasker schaduwen/hoge lichten niet toepassen
+
+EXPORT_FASTEXPORTOPTIONS;<b>Opties snelle export</b>
+EXPORT_INSTRUCTIONS;Snel-exporteren biedt de mogelijkheid om gereedschappen uit te schakelen die veel tijd en rekenkracht vergen tijdens het converteren. Deze methode wordt aanbevolen om snel foto's in lagere resoluties aan te maken als snelheid een prioriteit is, of wanneer de grootte moet worden aangepast voor één of vele afbeeldingen zonder de reeds opgeslagen ontwikkelinstellingen te wijzigen.
+EXPORT_MAXHEIGHT;Max. hoogte:
+EXPORT_MAXWIDTH;Max. breedte:
+EXPORT_PIPELINE;Verwerkingslijn
+EXPORT_PUTTOQUEUEFAST;Plaats in verwerkingsrij voor Snelle export
+EXPORT_RAW_DMETHOD;Demozaïekmethode
+EXPORT_USE_FAST_PIPELINE;Snel (volledige verwerking op gewijzigd formaat van de afbeelding)
+EXPORT_USE_FAST_PIPELINE_TIP;Gebruikt een speciale verwerkingslijn waarbij snelheid voorrang heeft op kwaliteit. Het formaat van de afbeelding wordt zo snel mogelijk gewijzigd in plaats van aan het eind van de verwerking, zoals gebruikelijk. De snelheidswinst is aanzienlijk, maar de kwaliteit van de afbeelding zal minder zijn.
+EXPORT_USE_NORMAL_PIPELINE;Standaard (wijzigt formaat aan het eind)
+
+EXTPROGTARGET_1;raw
+EXTPROGTARGET_2;verwerkingsrij
+
+FILEBROWSER_ADDDELTEMPLATE;Sjablonen toevoegen/verwijderen...
+FILEBROWSER_APPLYPROFILE;Pas profiel toe
+FILEBROWSER_APPLYPROFILE_PARTIAL;Pas profiel toe - gedeeltelijk
+FILEBROWSER_AUTODARKFRAME;Automatisch donkerframe
+FILEBROWSER_AUTOFLATFIELD;Automatisch vlakveld
+FILEBROWSER_BROWSEPATHBUTTONHINT;Klik om naar het gekozen pad te navigeren
+FILEBROWSER_BROWSEPATHHINT;Typ het pad naar de doelmap.\n\nSneltoetsen:\n<b>Ctrl+O</b> richt focus op tekstveld.\	n<b>Enter</b> / <b>Ctrl+Enter</b> open die map.\n<b>Esc</b> maak het tekstveld leeg.\n<b>Shift-Esc</b> haal focus weg.\n\n\nSneltoetsen:\n  <b>~</b> - thuismap gebruiker\n <b>!</b> - afbeeldingenmap gebruiker
+FILEBROWSER_CACHE;Cache
+FILEBROWSER_CACHECLEARFROMFULL;Wis alles inclusief opgeslagen profielen
+FILEBROWSER_CACHECLEARFROMPARTIAL;Wis alles behalve opgeslagen profielen
+FILEBROWSER_CLEARPROFILE;Wis
+FILEBROWSER_COLORLABEL_TOOLTIP;Labelkleur\n\nGebruik keuzemenu of sneltoets:\n<b>Shift+Ctrl+0</b> Geen kleur\n<b>Shift+Ctrl+1</b> Rood\n<b>Shift+Ctrl+2</b> Geel\n<b>Shift+Ctrl+3</b> Groen\n<b>Shift+Ctrl+4</b> Blauw\n<b>Shift+Ctrl+5</b> Paars
+FILEBROWSER_COPYPROFILE;Kopieer
+FILEBROWSER_CURRENT_NAME;Huidige naam:
+FILEBROWSER_DARKFRAME;Donkerframe:
+FILEBROWSER_DELETEDIALOG_HEADER;Verwijderen bestand bevestigen
+FILEBROWSER_DELETEDIALOG_ALL;Alle <b>%1</b> bestanden in de prullenbak verwijderen?
+FILEBROWSER_DELETEDIALOG_SELECTED;Geselecteerde <b>%1</b> bestanden verwijderen?
+FILEBROWSER_DELETEDIALOG_SELECTEDINCLPROC;Geselecteerde <b>%1</b> bestanden <b>inclusief</b> een versie die door de verwerkingsrij is gemaakt verwijderen?
+FILEBROWSER_EMPTYTRASH;Leeg prullenbak
+FILEBROWSER_EMPTYTRASHHINT;Alle bestanden in de prullenbak permanent verwijderen
+FILEBROWSER_EXTPROGMENU;Open met
+FILEBROWSER_FLATFIELD;Vlakveld
+FILEBROWSER_MOVETODARKFDIR;Verplaats naar map met donkerframes
+FILEBROWSER_MOVETOFLATFIELDDIR;Verplaats naar vlakveldmap
+FILEBROWSER_NEW_NAME;Nieuwe naam:
+FILEBROWSER_OPENDEFAULTVIEWER;Windows standaard viewer (verwerkingsrij)
+FILEBROWSER_PARTIALPASTEPROFILE;Gedeeltelijk plakken
+FILEBROWSER_PASTEPROFILE;Plak profiel
+FILEBROWSER_POPUPCANCELJOB;Annuleer opdracht
+FILEBROWSER_POPUPCOLORLABEL;Kleurlabel
+FILEBROWSER_POPUPCOLORLABEL0;Label: Geen
+FILEBROWSER_POPUPCOLORLABEL1;Label: Rood
+FILEBROWSER_POPUPCOLORLABEL2;Label: Geel
+FILEBROWSER_POPUPCOLORLABEL3;Label: Groen
+FILEBROWSER_POPUPCOLORLABEL4;Label: Blauw
+FILEBROWSER_POPUPCOLORLABEL5;Label: Paars
+FILEBROWSER_POPUPCOPYTO;Kopieer naar...
+FILEBROWSER_POPUPFILEOPERATIONS;Bestandsbewerkingen
+FILEBROWSER_POPUPMOVEEND;Verplaats naar eind verwerkingsrij
+FILEBROWSER_POPUPMOVEHEAD;Verplaats naar begin verwerkingsrij
+FILEBROWSER_POPUPMOVETO;Verplaats naar...
+FILEBROWSER_POPUPOPEN;Open
+FILEBROWSER_POPUPOPENINEDITOR;Open in Bewerkingsvenster
+FILEBROWSER_POPUPPROCESS;Plaats in verwerkingsrij
+FILEBROWSER_POPUPPROCESSFAST;Plaats in verwerkingsrij (snelle export)
+FILEBROWSER_POPUPPROFILEOPERATIONS;Profielbewerkingen
+FILEBROWSER_POPUPRANK;Waardering
+FILEBROWSER_POPUPRANK0;Geen
+FILEBROWSER_POPUPRANK1;Waardering 1 *
+FILEBROWSER_POPUPRANK2;Waardering 2 **
+FILEBROWSER_POPUPRANK3;Waardering 3 ***
+FILEBROWSER_POPUPRANK4;Waardering 4 ****
+FILEBROWSER_POPUPRANK5;Waardering 5 *****
+FILEBROWSER_POPUPREMOVE;Verwijder
+FILEBROWSER_POPUPREMOVEINCLPROC;Verwijder met output van verwerkingsrij
+FILEBROWSER_POPUPRENAME;Hernoem
+FILEBROWSER_POPUPSELECTALL;Alles selecteren
+FILEBROWSER_POPUPTRASH;Verplaats naar prullenbak
+FILEBROWSER_POPUPUNRANK;Verwijder sterwaardering
+FILEBROWSER_POPUPUNTRASH;Haal terug uit prullenbak
+FILEBROWSER_QUERYBUTTONHINT;Wis zoekopdracht
+FILEBROWSER_QUERYHINT;Zoeken op bestandsnamen. Ondersteunt gedeeltelijke bestandsnamen. Scheid zoektermen door komma's, zoals \n1001,1004,1199\n\nSluit zoektermen uit met een 'is niet' ofwel !=, zoals in\n!=1001,1004,1199\n\nSneltoetsen:\n<b>Ctrl+f</b> - focus op zoekveld,\n<b>Enter</b> - zoek,\n<b>Esc</b> - maak zoekveld leeg, \n<b>Shift+Esc</b> - verwijder focus van het zoekveld.
+FILEBROWSER_QUERYLABEL; Zoeken:
+FILEBROWSER_RANK1_TOOLTIP;Waardering 1 *\nSneltoets: Shift-1
+FILEBROWSER_RANK2_TOOLTIP;Waardering 2 *\nSneltoets: Shift-2
+FILEBROWSER_RANK3_TOOLTIP;Waardering 3 *\nSneltoets: Shift-3
+FILEBROWSER_RANK4_TOOLTIP;Waardering 4 *\nSneltoets: Shift-4
+FILEBROWSER_RANK5_TOOLTIP;Waardering 5 *\nSneltoets: Shift-5
+FILEBROWSER_RENAMEDLGLABEL;Hernoem bestand
+FILEBROWSER_RESETDEFAULTPROFILE;Terugzetten naar standaardwaarde
+FILEBROWSER_SELECTDARKFRAME;Selecteer donkerframe...
+FILEBROWSER_SELECTFLATFIELD;Kies vlakveldopname...
+FILEBROWSER_SHOWCOLORLABEL1HINT;Toon foto's met label Rood\nSneltoets <b>Alt-1</b>
+FILEBROWSER_SHOWCOLORLABEL2HINT;Toon foto's met label Geel\nSneltoets <b>Alt-2</b>
+FILEBROWSER_SHOWCOLORLABEL3HINT;Toon foto's met label Groen\nSneltoets <b>Alt-3</b>
+FILEBROWSER_SHOWCOLORLABEL4HINT;Toon foto's met label Blauw\nSneltoets <b>Alt-4</b>
+FILEBROWSER_SHOWCOLORLABEL5HINT;Toon foto's met label Paars\nSneltoets <b>Alt-5</b>
+FILEBROWSER_SHOWDIRHINT;Verwijder alle filters\nSneltoets: <b>d</b>
+FILEBROWSER_SHOWEDITEDHINT;Toon bewerkte foto's\nSneltoets: <b>7</b>
+FILEBROWSER_SHOWEDITEDNOTHINT;Toon niet-bewerkte foto's\nSneltoets: <b>6</b>
+FILEBROWSER_SHOWEXIFINFO;Toon Exif-info\n\nSneltoetsen:\n<b>i</b> - Multi-tab modus,\n<b>Alt-i</b> - Enkel-tab modus.
+FILEBROWSER_SHOWNOTTRASHHINT;Toon alleen niet-verwijderde afbeeldingen.
+FILEBROWSER_SHOWORIGINALHINT;Toon alleen originele afbeelding.\n\nAls er meerdere afbeeldingen zijn met dezelfde naam maar verschillende extensies, dan wordt de afbeelding waarvan de extensie het hoogst staat in de lijst met extensies in Voorkeuren > Bestandsnavigator > Extensies als het origineel beschouwd.
+FILEBROWSER_SHOWRANK1HINT;Toon foto's met 1 ster\nSneltoets: <b>1</b>
+FILEBROWSER_SHOWRANK2HINT;Toon foto's met 2 sterren\nSneltoets: <b>2</b>
+FILEBROWSER_SHOWRANK3HINT;Toon foto's met 3 sterren\nSneltoets: <b>3</b>
+FILEBROWSER_SHOWRANK4HINT;Toon foto's met 4 sterren\nSneltoets: <b>4</b>
+FILEBROWSER_SHOWRANK5HINT;Toon foto's met 5 sterren\nSneltoets: <b>5</b>
+FILEBROWSER_SHOWRECENTLYSAVEDHINT;Toon bewaarde/verwerkte afbeeldingen\nSneltoets: <b>Alt-7</b>
+FILEBROWSER_SHOWRECENTLYSAVEDNOTHINT;Toon niet-opgeslagen/verwerkte afbeeldingen\nSneltoets: <b>Alt-6</b>
+FILEBROWSER_SHOWTRASHHINT;Toon inhoud prullenbak\nSneltoets: <b>Ctrl+t</b>
+FILEBROWSER_SHOWUNCOLORHINT;Toon foto's zonder kleurlabel\nSneltoets: <b>Alt-0</b>
+FILEBROWSER_SHOWUNRANKHINT;Toon foto's zonder sterwaardering\nSneltoets: <b>0</b>
+FILEBROWSER_THUMBSIZE;Grootte miniaturen
+FILEBROWSER_UNRANK_TOOLTIP;Verwijder sterwaardering\nSneltoets: <b>Shift-0</b>
+FILEBROWSER_ZOOMINHINT;Vergroot miniaturen\n\nSneltoetsen:\n<b>+</b> - multi-tab modus,\n<b>Alt</b>-<b>+</b> - enkel-tab modus.
+FILEBROWSER_ZOOMOUTHINT;Verklein miniaturen\n\nSneltoetsen:\n<b>-</b> - multi-tab modus,\n<b>Alt</b>-<b>-</b> - enkel-tab modus.
+FILECHOOSER_FILTER_ANY;Alle bestanden
+FILECHOOSER_FILTER_COLPROF;Kleurprofielen (*.icc)
+FILECHOOSER_FILTER_CURVE;Curvebestanden
+FILECHOOSER_FILTER_LCP;Lenscorrectieprofielen
+FILECHOOSER_FILTER_PP;Verwerkingsprofielen
+FILECHOOSER_FILTER_SAME;Zelfde formaat als huidige foto
+FILECHOOSER_FILTER_TIFF;TIFF-bestanden
+
+GENERAL_ABOUT;Over ART
+GENERAL_AFTER;Na
+GENERAL_APPLY;Toepassen
+GENERAL_ASIMAGE;Als foto
+GENERAL_AUTO;Automatisch
+GENERAL_BEFORE;Voor
+GENERAL_CANCEL;Annuleren
+GENERAL_CHANGED;Veranderd
+GENERAL_CLOSE;Sluiten
+GENERAL_CURRENT;Huidig
+GENERAL_DISABLE;Deactiveer
+GENERAL_DISABLED;Gedeactiveerd
+GENERAL_ENABLE;Activeer
+GENERAL_ENABLED;Geactiveerd
+GENERAL_FILE;Bestand
+GENERAL_LANDSCAPE;Landschap
+GENERAL_NA;nvt.
+GENERAL_NO;Nee
+GENERAL_NONE;Geen
+GENERAL_OK;OK
+GENERAL_OPEN;Open
+GENERAL_PORTRAIT;Portret
+GENERAL_RESET;Terug naar standaardwaarden
+GENERAL_SAVE;Opslaan
+GENERAL_SAVE_AS;Opslaan als...
+GENERAL_SLIDER;Schuifregelaar
+GENERAL_UNCHANGED;(Onveranderd)
+GENERAL_WARNING;Waarschuwing
+GIMP_PLUGIN_INFO;Welkom bij de ART GIMP plug-in!\nAls uw bewerking gereed is, sluit dan het hoofdvenster van ART en uw afbeelding wordt automatisch in GIMP geladen.
+
+# Histogram
+HISTOGRAM_TOOLTIP_B;Toon/verberg blauw histogram
+HISTOGRAM_TOOLTIP_BAR;Toon/verberg RGB-indicator
+HISTOGRAM_TOOLTIP_CHRO;Toon/verberg chromaticiteitshistogram
+HISTOGRAM_TOOLTIP_G;Toon/verberg groen histogram
+HISTOGRAM_TOOLTIP_L;Toon/verberg CIELab-luminantiehistogram
+HISTOGRAM_TOOLTIP_MODE;Schakel histogram tussen lineair, log-lineair en log-log.\n(Huidige staat: %1)
+HISTOGRAM_TOOLTIP_MODE_LINEAR;lineair
+HISTOGRAM_TOOLTIP_MODE_LOG_X;log-lineair
+HISTOGRAM_TOOLTIP_MODE_LOG_XY;log-log
+HISTOGRAM_TOOLTIP_R;Toon/verberg rood histogram
+HISTOGRAM_TOOLTIP_RAW;Toon/verberg raw-histogram
+
+# History
+HISTORY_CHANGED;Veranderd
+HISTORY_CUSTOMCURVE;Handmatige curve
+HISTORY_FROMCLIPBOARD;Van klembord
+HISTORY_LABEL;Geschiedenis
+HISTORY_MSG_1;Foto geladen
+HISTORY_MSG_2;ARW-profiel geladen
+HISTORY_MSG_3;ARW-profiel aangepast
+HISTORY_MSG_4;Door geschiedenis bladeren
+HISTORY_MSG_5B, C &amp; S - ;Helderheid
+HISTORY_MSG_6;Tooncurve - contrast
+HISTORY_MSG_7;Belichting - schaduwen
+HISTORY_MSG_8;Belichting - compensatie
+HISTORY_MSG_9;Belichting - compressie hoge lichten
+HISTORY_MSG_10;Belichting - schaduwcompressie
+HISTORY_MSG_11;Tooncurve - curve 1
+HISTORY_MSG_12;Belichting - automatische niveaus
+HISTORY_MSG_13;Belichting - afknijpen
+HISTORY_MSG_14;L*a*b* - Helderheid
+HISTORY_MSG_15;L*a*b* - Contrast
+HISTORY_MSG_16;-
+HISTORY_MSG_17;-
+HISTORY_MSG_18;-
+HISTORY_MSG_19;L*a*b* - L*-curve
+HISTORY_MSG_20;Verscherpen
+HISTORY_MSG_21;OSM - Straal
+HISTORY_MSG_22;OSM - Hoeveelheid
+HISTORY_MSG_23;OSM - Drempel
+HISTORY_MSG_24;OSM - Alleen randen verscherpen
+HISTORY_MSG_25;OSM - Straal randdetectie
+HISTORY_MSG_26;OSM - Randtolerantie
+HISTORY_MSG_27;OSM - Halocontrole
+HISTORY_MSG_28;OSM - Halo hoeveelheid
+HISTORY_MSG_29;Verscherpingsmethode
+HISTORY_MSG_30;RL-verscherping - Straal
+HISTORY_MSG_31;RL-verscherping - Hoeveelheid
+HISTORY_MSG_32;RL-verscherping - Demping
+HISTORY_MSG_33;RL-verscherping - Herhaling
+HISTORY_MSG_34;Lenscorrectie - vervorming
+HISTORY_MSG_35;Lenscorrectie - vignettering
+HISTORY_MSG_36;Lenscorrectie - CA
+HISTORY_MSG_37;Belichting - automatische niveaus
+HISTORY_MSG_38;Witbalans - methode
+HISTORY_MSG_39;WB - temperatuur
+HISTORY_MSG_40;Witbalans tint
+HISTORY_MSG_41;Tooncurve - curve modus 1
+HISTORY_MSG_42;Tooncurve - curve 2
+HISTORY_MSG_43;Tooncurve - curve modus 2
+HISTORY_MSG_44;Lum. ruisond. straal
+HISTORY_MSG_45;Lum. ruisond. randtolerantie 
+HISTORY_MSG_46;Ruisonderdrukking kleur
+HISTORY_MSG_47;Meng ICC-hoge lichten met matrix
+HISTORY_MSG_48;DCP tooncurve
+HISTORY_MSG_49;DCP Illuminant
+HISTORY_MSG_50;Schaduwen/hoge lichten
+HISTORY_MSG_51;S/HL - Hoge lichten
+HISTORY_MSG_52;S/HL - Schaduwen
+HISTORY_MSG_53;S/HL - Toonomvang HL.
+HISTORY_MSG_54;S/HL - Toonomvang S.
+HISTORY_MSG_55;S/HL - Lokaal contrast
+HISTORY_MSG_56;S/HL - Straal
+HISTORY_MSG_57;Grof roteren
+HISTORY_MSG_58;Horizontaal spiegelen
+HISTORY_MSG_59;Verticaal spiegelen
+HISTORY_MSG_60;Roteren
+HISTORY_MSG_61;Automatisch uitvullen
+HISTORY_MSG_62;Corrigeer lensvervorming
+HISTORY_MSG_63;Snapshot gekozen
+HISTORY_MSG_64;Bijsnijden
+HISTORY_MSG_65;CA-correctie
+HISTORY_MSG_66;Belichting - herstel hoge lichten
+HISTORY_MSG_67;Belichting - HLR-reconstructie
+HISTORY_MSG_68;Belichting - HLR-reconstructie
+HISTORY_MSG_69;Kleurwerkruimte
+HISTORY_MSG_70;Uitvoerkleurruimte
+HISTORY_MSG_71;Invoerkleurruimte
+HISTORY_MSG_72;VC - Hoeveelheid
+HISTORY_MSG_73;Kanalenmixer
+HISTORY_MSG_74;Wijzig grootte - schaal
+HISTORY_MSG_75;Wijzig grootte - methode
+HISTORY_MSG_76;Exif-metadata
+HISTORY_MSG_77;IPTC-metadata
+HISTORY_MSG_78;-
+HISTORY_MSG_79;Schalen - Breedte
+HISTORY_MSG_80;Schalen - Hoogte
+HISTORY_MSG_81;Schalen
+HISTORY_MSG_82;Profiel veranderd
+HISTORY_MSG_83;S/HL - Verscherpingsmasker
+HISTORY_MSG_84;Perspectiefcorrectie
+HISTORY_MSG_85;Lenscorrectie - LCP-profiel
+HISTORY_MSG_86;RGB-curven - Luminos. modus
+HISTORY_MSG_87;Spot-ruisonderdrukking
+HISTORY_MSG_88;Spot-ruisond. drempel
+HISTORY_MSG_89;Ruisonderdrukking
+HISTORY_MSG_90;RO -Luminantie
+HISTORY_MSG_91;RO -Chrominantie leidend
+HISTORY_MSG_92;RO -Gamma
+HISTORY_MSG_93;DC waarde
+HISTORY_MSG_94;Detailcontrast
+HISTORY_MSG_95;L*a*b* - chromaticiteit
+HISTORY_MSG_96;L*a*b* - 'a*'-curve
+HISTORY_MSG_97;L*a*b* - 'b*'-curve
+HISTORY_MSG_98;Demozaïekmethode
+HISTORY_MSG_99;Hetepixelsfilter
+HISTORY_MSG_100;S&amp;V - verzadiging
+HISTORY_MSG_101;HSL - tint
+HISTORY_MSG_102;HSL - verzadiging
+HISTORY_MSG_103;HSL - lichtheid
+HISTORY_MSG_104;HSL-equalizer
+HISTORY_MSG_105;Randverzachting
+HISTORY_MSG_106;RV - Straal
+HISTORY_MSG_107;RV - Drempel
+HISTORY_MSG_108;Belichting - HLC-drempel
+HISTORY_MSG_109;Schalen - begrenzingsvak
+HISTORY_MSG_110;Schalen - toepassen op
+HISTORY_MSG_111;L*a*b* - Vermijd kleurversch.
+HISTORY_MSG_112;--ongebruikt--
+HISTORY_MSG_113;L*a*b* - Rood/huidbescherming
+HISTORY_MSG_114;DCB-Herhalingen
+HISTORY_MSG_115;Valse kleuren onderdrukken
+HISTORY_MSG_116;Verbeterd DCB
+HISTORY_MSG_117;Raw CA-correctie - Rood
+HISTORY_MSG_118;Raw CA-correctie - Blauw
+HISTORY_MSG_119;Lijnruisfilter
+HISTORY_MSG_120;Groenbalans
+HISTORY_MSG_121;Raw CA-correctie - Auto
+HISTORY_MSG_122;Donkerframe - Autom. selectie
+HISTORY_MSG_123;Donkerframe - Bestand
+HISTORY_MSG_124;Witpuntcorrectie
+HISTORY_MSG_126;Vlakveld - Bestand
+HISTORY_MSG_127;Vlakveld - Autom. selectie
+HISTORY_MSG_128;Vlakveld - Verzachten straal
+HISTORY_MSG_129;Vlakveld - Verzachten type
+HISTORY_MSG_130;Auto-correctie lensvervorming
+HISTORY_MSG_131;RO - Luma
+HISTORY_MSG_132;RO - Chroma
+HISTORY_MSG_133;Uitvoergamma
+HISTORY_MSG_134;Vrij gamma
+HISTORY_MSG_135;Vrij gamma
+HISTORY_MSG_136;Vrij gamma - helling
+HISTORY_MSG_137;Zwartniveau - Groen 1
+HISTORY_MSG_138;Zwartniveau - Rood
+HISTORY_MSG_139;Zwartniveau - Blauw
+HISTORY_MSG_140;Zwartniveau - Groen 2
+HISTORY_MSG_141;Zwartniveau - groenen vastkoppelen
+HISTORY_MSG_142;RV - Herhalingen
+HISTORY_MSG_143;RV - Hoeveelheid
+HISTORY_MSG_144;Microcontrast - Hoeveelheid
+HISTORY_MSG_145;Microcontrast - Uniformiteit
+HISTORY_MSG_146;Randverscherping
+HISTORY_MSG_147;RV - alleen luminantie
+HISTORY_MSG_148;Microcontrast
+HISTORY_MSG_149;Microcontrast - 3×3-matrix
+HISTORY_MSG_150;Nabewerking demozaïek
+HISTORY_MSG_151;Levendigheid
+HISTORY_MSG_152;LV - Pasteltinten
+HISTORY_MSG_153;LV - Verzadigde tinten
+HISTORY_MSG_154;LV - Bescherm huidtinten
+HISTORY_MSG_155;LV - Vermijd kleurverschuiving
+HISTORY_MSG_156;LV - Koppel pastel/verzadiging
+HISTORY_MSG_157;LV - P/S-drempel
+HISTORY_MSG_158;TK - Sterkte
+HISTORY_MSG_159;TK - Randen
+HISTORY_MSG_160;TK - Schaal
+HISTORY_MSG_161;TK - Herhaling
+HISTORY_MSG_162;Tekstuurversterking
+HISTORY_MSG_163;RGB-curve - R
+HISTORY_MSG_164;RGB-curve - G
+HISTORY_MSG_165;RGB-curve - B
+HISTORY_MSG_166;Belichting - Teruggezet
+HISTORY_MSG_167;Demozaïekmethode
+HISTORY_MSG_170;Levendigheid HH-curve
+HISTORY_MSG_171;L*a*b* - LC-curve
+HISTORY_MSG_172;L*a*b* - beperk LC
+HISTORY_MSG_173;RO - Behoud details
+HISTORY_MSG_174;CIECAM02
+HISTORY_MSG_175;CAM02 - CAT02-toepassing
+HISTORY_MSG_176;CAM02 - Weergave omgeving
+HISTORY_MSG_177;CAM02 - Luminositeit scène
+HISTORY_MSG_178;CAM02 - Luminositeit-weergave 
+HISTORY_MSG_179;CAM02 - Witpuntmodel
+HISTORY_MSG_180;CAM02 - Lichtheid (J)
+HISTORY_MSG_181;CAM02 - Chroma (C)
+HISTORY_MSG_182;CAM02 - Automatisch CAT02
+HISTORY_MSG_183;CAM02 - Contrast (J)
+HISTORY_MSG_184;CAM02 - Scène omgeving
+HISTORY_MSG_185;CAM02 - Gamutcontrole
+HISTORY_MSG_186;CAM02 - Algoritme
+HISTORY_MSG_187;CAM02 - Rode/Huidtint bescher.
+HISTORY_MSG_188;CAM02 - Helderheid (Q)
+HISTORY_MSG_189;CAM02 - Contrast (Q)
+HISTORY_MSG_190;CAM02 - Verzadiging (S)
+HISTORY_MSG_191;CAM02 - Kleurrijkheid (M)
+HISTORY_MSG_192;CAM02 - Tint (h)
+HISTORY_MSG_193;CAM02 - Tooncurve 1
+HISTORY_MSG_194;CAM02 - Tooncurve 2
+HISTORY_MSG_195;CAM02 - Tooncurve 1
+HISTORY_MSG_196;CAM02 - Tooncurve 2
+HISTORY_MSG_197;CAM02 - Kleurcurve
+HISTORY_MSG_198;CAM02 - Kleurcurve
+HISTORY_MSG_199;CAM02 - Toon in histogram
+HISTORY_MSG_200;CAM02 - Tonemapping
+HISTORY_MSG_201;RO - Chromin. R&amp;Gr
+HISTORY_MSG_202;RO - Chromin. B&amp;G
+HISTORY_MSG_203;RO - kleurruimte
+HISTORY_MSG_204;LMMSE verbeterstappen
+HISTORY_MSG_205;CAM02 hete/dode pixels
+HISTORY_MSG_206;CAT02 - Aut. scènehelderheid
+HISTORY_MSG_207;Verzachten - tintcurve
+HISTORY_MSG_208;WB - Blauw/Rood balans
+HISTORY_MSG_210;GF - Hoek
+HISTORY_MSG_211;Grijsverloopfilter
+HISTORY_MSG_212;VF - Kracht
+HISTORY_MSG_213;Vignetteringsfilter
+HISTORY_MSG_214;Zwartwit
+HISTORY_MSG_215;Z&W - KM - rood
+HISTORY_MSG_216;Z&W - KM - groen
+HISTORY_MSG_217;Z&W - KM - blauw
+HISTORY_MSG_218;Z&W - Gamma - rood
+HISTORY_MSG_219;Z&W - Gamma - groen
+HISTORY_MSG_220;Z&W - Gamma - blauw
+HISTORY_MSG_221;Z&W - Kleurefilter
+HISTORY_MSG_222;Z&W - Voorinstellingen
+HISTORY_MSG_223;Z&W - KM - Oranje
+HISTORY_MSG_224;Z&W - KM - Geel
+HISTORY_MSG_225;Z&W - KM - Cyaan
+HISTORY_MSG_226;Z&W - KM - Magenta
+HISTORY_MSG_227;Z&W - KM - Paars
+HISTORY_MSG_228;Z&W - Luminantiemixer
+HISTORY_MSG_229;Z&W - Luminantiemixer
+HISTORY_MSG_230;Z&W - Modus
+HISTORY_MSG_231;Z&W - 'Voor'-curve
+HISTORY_MSG_232;Z&W - 'Voor'-curvetype
+HISTORY_MSG_233;Z&W - 'Na'-curve
+HISTORY_MSG_234;Z&W - 'Na'-curvetype
+HISTORY_MSG_236;--ongebruikt--
+HISTORY_MSG_237;B&W - CM
+HISTORY_MSG_238;GF - Straal
+HISTORY_MSG_239;GF - Sterkte
+HISTORY_MSG_240;GF - Centrum
+HISTORY_MSG_241;VF - Straal
+HISTORY_MSG_242;VF - Vorm
+HISTORY_MSG_243;VC - Straal
+HISTORY_MSG_244;VC - Sterkte
+HISTORY_MSG_245;VC - Centrum
+HISTORY_MSG_246;L*a*b* - CL-curve
+HISTORY_MSG_247;L*a*b* - LH-curve
+HISTORY_MSG_248;L*a*b* - HH-curve
+HISTORY_MSG_249;DC - Drempel
+HISTORY_MSG_250;RO - Verbeteren
+HISTORY_MSG_251;ZW - Algoritme
+HISTORY_MSG_252;CbDL - Huidtonen
+HISTORY_MSG_253;CbDL - Verminder artefacten
+HISTORY_MSG_254;CbDL - Huidtint
+HISTORY_MSG_255;RV - Finale verzachting
+HISTORY_MSG_256;RV - Median - type
+HISTORY_MSG_257;Kleurtoning
+HISTORY_MSG_258;KT - Kleurcurve
+HISTORY_MSG_259;KT - Dekkingscurve
+HISTORY_MSG_260;KT - a*[b*]-dekking
+HISTORY_MSG_261;KT - Methode
+HISTORY_MSG_262;KT - b*-dekking
+HISTORY_MSG_263;KT - Schaduwen - Rood
+HISTORY_MSG_264;KT - Schaduwen - Groen
+HISTORY_MSG_265;KT - Schaduwen - Blauw
+HISTORY_MSG_266;KT - Midden - Rood
+HISTORY_MSG_267;KT - Midden - Groen
+HISTORY_MSG_268;KT - Midden - Blauw
+HISTORY_MSG_269;KT - Lichten - Rood
+HISTORY_MSG_270;KT - Lichten - Groen
+HISTORY_MSG_271;KT - Lichten - Blauw
+HISTORY_MSG_272;KT - Balans
+HISTORY_MSG_273;CT - Kleurbalans SML
+HISTORY_MSG_274;KT - Verz. schaduwen
+HISTORY_MSG_275;KT - Verz. hoge lichten
+HISTORY_MSG_276;KT - Dekking
+HISTORY_MSG_277;--ongebruikt--
+HISTORY_MSG_278;KT - Behoud luminantie
+HISTORY_MSG_279;KT - Schaduwen
+HISTORY_MSG_280;KT - Hoge lichten
+HISTORY_MSG_281;KT - Verz. sterkte
+HISTORY_MSG_282;KT - Verz. drempel
+HISTORY_MSG_283;KT - Sterkte
+HISTORY_MSG_284;KT - Auto verz. bescherming
+HISTORY_MSG_285;RO - Mediaan - Methode
+HISTORY_MSG_286;RO - Mediaan - Type
+HISTORY_MSG_287;RO - Mediaan - Herhalingen
+HISTORY_MSG_288;Vlakveld - afkapcontrole
+HISTORY_MSG_289;Vlakveld - afkapcontrole - auto
+HISTORY_MSG_290;Zwartniveau - Rood
+HISTORY_MSG_291;Zwartniveau - Groen
+HISTORY_MSG_292;Zwartniveau - Blauw
+HISTORY_MSG_293;Filmsimulatie
+HISTORY_MSG_294;Filmsimulatie - Sterkte
+HISTORY_MSG_295;Filmsimulatie - Film
+HISTORY_MSG_296;RO - Luminantiecurve
+HISTORY_MSG_297;NR - Modus
+HISTORY_MSG_298;Dodepixelsfilter
+HISTORY_MSG_299;RO - Chrominantiecurve
+HISTORY_MSG_300;-
+HISTORY_MSG_301;RO - Lumacontrole
+HISTORY_MSG_302;RO - Chromamethode
+HISTORY_MSG_303;RO - Chromamethode
+HISTORY_MSG_304;W - contrastniveaus
+HISTORY_MSG_305;Wavelet-niveaus
+HISTORY_MSG_306;W - proces
+HISTORY_MSG_307;W - proces
+HISTORY_MSG_308;W - procesrichting
+HISTORY_MSG_309;W - ES - detail
+HISTORY_MSG_310;W - Residu - lucht benadruk/bescherm
+HISTORY_MSG_311;W - Wavelet-niveaus
+HISTORY_MSG_312;W - Residu - schaduwdrempel
+HISTORY_MSG_313;W - Chroma - Pastel/verzadigd
+HISTORY_MSG_314;W - Gamut - verminder artefacten
+HISTORY_MSG_315;W - Residu - Contrast
+HISTORY_MSG_316;W - Gamut - huidstinten benadruk/bescherm
+HISTORY_MSG_317;W - Gamut - huidstint
+HISTORY_MSG_318;W - Contrast - niveaus hoge lichten
+HISTORY_MSG_319;W - Contrast - bereik hoge lichten 
+HISTORY_MSG_320;W - Contrast - bereik schaduwen
+HISTORY_MSG_321;W - Contrast - niveaus schaduwen
+HISTORY_MSG_322;W - Gamut - vermijd kleurverschuiving
+HISTORY_MSG_323;W - ES - lokaal contrast
+HISTORY_MSG_324;W - Chroma - pastel
+HISTORY_MSG_325;W - Chroma - verzadigd
+HISTORY_MSG_326;W - Chroma - methode
+HISTORY_MSG_327;W - Contrast - pas toe op
+HISTORY_MSG_328;W - Chroma - koppelsterkte
+HISTORY_MSG_329;W - Toning - dekking rood-groen
+HISTORY_MSG_330;W - Toning - dekking blauw-geel
+HISTORY_MSG_331;W - Contrastniveaus - extra
+HISTORY_MSG_332;W - Tegelmethode
+HISTORY_MSG_333;W - Residu - schaduwen
+HISTORY_MSG_334;W - Residu - Chroma
+HISTORY_MSG_335;W - Residu - hoge lichten
+HISTORY_MSG_336;W - Residu - drempel hoge lichten
+HISTORY_MSG_337;W - Residu - luchttint
+HISTORY_MSG_338;W - ES - straal
+HISTORY_MSG_339;W - ES - kracht
+HISTORY_MSG_340;W - Kracht
+HISTORY_MSG_341;W - Randprestaties ***?
+HISTORY_MSG_342;W - ES - eerste niveau
+HISTORY_MSG_343;W - Chroma-niveaus
+HISTORY_MSG_344;W - Meth chroma schuif/curve
+HISTORY_MSG_345;W - ES - lokaal contrast
+HISTORY_MSG_346;W - ES - lokaal contrast, methode
+HISTORY_MSG_347;W - RO - niveau 1
+HISTORY_MSG_348;W - RO - niveau 2
+HISTORY_MSG_349;W - RO - niveau 3
+HISTORY_MSG_350;W - ES - randdetectie
+HISTORY_MSG_351;W - Residu - HH-curve
+HISTORY_MSG_352;W - Achtergrond
+HISTORY_MSG_353;W - RV - gevoeligheid gradiënt
+HISTORY_MSG_354;W - RV - Verbeteren
+HISTORY_MSG_355;W - RV - Drempel laag
+HISTORY_MSG_356;W - RV - Drempel hoog
+HISTORY_MSG_357;W - RO - Koppel met RV
+HISTORY_MSG_358;W - Gamut - CH
+HISTORY_MSG_359;Hete/dode pxs - drempel
+HISTORY_MSG_360;TM Gamma
+HISTORY_MSG_361;W - Finale - Chromabalans
+HISTORY_MSG_362;W - Residu -compressiemethode
+HISTORY_MSG_363;W - Residu - compressiesterkte
+HISTORY_MSG_364;W - Finale - contrastbalans
+HISTORY_MSG_365;W - Finale - deltabalans
+HISTORY_MSG_366;W - Residu - gammacompressie
+HISTORY_MSG_367;W - Finale - 'na'-contrastcurve
+HISTORY_MSG_368;W - Finale - contrastbalans
+HISTORY_MSG_369;W - Finale - balansmethode
+HISTORY_MSG_370;W - Finale - Lokale contrastcurve
+HISTORY_MSG_371;Verscherpen na verkleinen
+HISTORY_MSG_372;PVV OSM - Straal
+HISTORY_MSG_373;PVV OSM - Hoeveelheid
+HISTORY_MSG_374;PVV OSM - Drempel
+HISTORY_MSG_375;PVV OSM - alleen randen verscherpen
+HISTORY_MSG_376;PVV OSM - randdetectie, straal
+HISTORY_MSG_377;PVV OSM - Randtolerantie
+HISTORY_MSG_378;PVV OSM - Halocontrole
+HISTORY_MSG_379;PVV OSM - Halocontrole, hoeveelheid
+HISTORY_MSG_380;PVV - Methode
+HISTORY_MSG_381;PVV RLV - Straal
+HISTORY_MSG_382;PVV RLV - Hoeveelheid
+HISTORY_MSG_383;PVV RLV - Demping
+HISTORY_MSG_384;PVV RLV - Herhalingen
+HISTORY_MSG_385;W - Residu - Kleurbalans
+HISTORY_MSG_386;W - Residu - KB groen hoog
+HISTORY_MSG_387;W - Residu - KB blauw hoog
+HISTORY_MSG_388;W - Residu - KB groen midden
+HISTORY_MSG_389;W - Residu - KB blauw midden
+HISTORY_MSG_390;W - Residu - KB groen laag
+HISTORY_MSG_391;W - Residu - KB blauw laag
+HISTORY_MSG_392;W - Residu - kleurbalans
+HISTORY_MSG_393;DCP - 'Look' tabel
+HISTORY_MSG_394;DCP - Basisbelichting
+HISTORY_MSG_395;DCP - Basistabel
+HISTORY_MSG_396;W - Contrast sub-tool
+HISTORY_MSG_397;W - Chroma sub-tool
+HISTORY_MSG_398;W - Randscherpte sub-tool
+HISTORY_MSG_399;W - Residu sub-tool
+HISTORY_MSG_400;W - Finale sub-tool
+HISTORY_MSG_401;W - Toning sub-tool
+HISTORY_MSG_402;W - RO sub-tool
+HISTORY_MSG_403;W - RS - Randgevoeligheid
+HISTORY_MSG_404;W - RS - Basisversterking
+HISTORY_MSG_405;W - RO - Niveau 4
+HISTORY_MSG_406;W - RS - Naburige pixels
+HISTORY_MSG_407;Retinex - Methode
+HISTORY_MSG_408;Retinex - Straal
+HISTORY_MSG_409;Retinex - Contrast
+HISTORY_MSG_410;Retinex - Verschuiving
+HISTORY_MSG_411;Retinex - Kracht
+HISTORY_MSG_412;Retinex - Gaussiaans verloop
+HISTORY_MSG_413;Retinex - Contrast
+HISTORY_MSG_414;Retinex - Histogram - Lab
+HISTORY_MSG_415;Retinex - Transmissie
+HISTORY_MSG_416;Retinex
+HISTORY_MSG_417;Retinex - Transmissiemediaan
+HISTORY_MSG_418;Retinex - Drempel
+HISTORY_MSG_419;Retinex - Kleurruimte
+HISTORY_MSG_420;Retinex - Histogram - HSL
+HISTORY_MSG_421;Retinex - Gamma
+HISTORY_MSG_422;Retinex - Gamma
+HISTORY_MSG_423;Retinex - Gammahelling
+HISTORY_MSG_424;Retinex - HL-drempel
+HISTORY_MSG_425;Retinex - Logbasis
+HISTORY_MSG_426;Retinex - Tint-equalizer
+HISTORY_MSG_427;Renderintentie uitvoer
+HISTORY_MSG_428;Renderintentie beeldscherm
+HISTORY_MSG_429;Retinex - Herhalingen
+HISTORY_MSG_430;Retinex - Transmissieverloop
+HISTORY_MSG_431;Retinex - Sterkteverloop
+HISTORY_MSG_432;Retinex - M - Hoge lichten
+HISTORY_MSG_433;Retinex - M - Hoge lichten TW
+HISTORY_MSG_434;Retinex - M - Schaduwen
+HISTORY_MSG_435;Retinex - M - Schaduwen TW
+HISTORY_MSG_436;Retinex - M - Straal
+HISTORY_MSG_437;Retinex - M - Methode
+HISTORY_MSG_438;Retinex - M - Equalizer
+HISTORY_MSG_439;Retinex - Verwerken
+HISTORY_MSG_440;CbDL - Methode
+HISTORY_MSG_441;Retinex - Sterktedoorgifte
+HISTORY_MSG_442;Retinex - Schaal
+HISTORY_MSG_443;Zwartpuntcompensatie uitvoer
+HISTORY_MSG_444;WB - Temp. nadruk
+HISTORY_MSG_445;Raw sub-afbeelding
+HISTORY_MSG_449;PV ISO-aanpassing
+HISTORY_MSG_452;PV Toon beweging
+HISTORY_MSG_453;PV Toon alleen masker
+HISTORY_MSG_457;PV Controleer rood/blauw
+HISTORY_MSG_462;PV Controleer groen
+HISTORY_MSG_464;PV Masker bewegingsvervaging
+HISTORY_MSG_465;PV Vervagen straal
+HISTORY_MSG_468;PV Vul holtes
+HISTORY_MSG_469;PV Mediaan
+HISTORY_MSG_471;PV Bewegingscorrectie
+HISTORY_MSG_472;PV Zachte overgang
+HISTORY_MSG_473;PV Gebruik LMMSE
+HISTORY_MSG_474;PV Balans
+HISTORY_MSG_475;PS - Kanaalbalans
+HISTORY_MSG_476;CAM02 - Temp. uit
+HISTORY_MSG_477;CAM02 - Groen uit
+HISTORY_MSG_478;CAM02 - Yb uit
+HISTORY_MSG_479;CAM02 - CAT02-adaptatie uit
+HISTORY_MSG_480;CAM02 - Automatisch CAT02 uit
+HISTORY_MSG_481;CAM02 - Temp. scène
+HISTORY_MSG_482;CAM02 - Groen scène
+HISTORY_MSG_483;CAM02 - Yb scène
+HISTORY_MSG_484;CAM02 - Auto Yb scène
+HISTORY_MSG_485;Lenscorrectie
+HISTORY_MSG_486;Lenscorrectie - Camera
+HISTORY_MSG_487;Lenscorrectie - Lens
+HISTORY_MSG_488;Compressie Dynamisch Bereik
+HISTORY_MSG_489;CDB - Detail
+HISTORY_MSG_490;CDB - Hoeveelheid
+HISTORY_MSG_491;Witbalans
+HISTORY_MSG_492;RGB-curven
+HISTORY_MSG_493;L*a*b*-aanpassingen
+HISTORY_MSG_BWMIX_COLORCAST;B&amp;W - Tint
+HISTORY_MSG_SATURATION_VIBRANCE;S&amp;V - Levendigheid
+HISTORY_MSG_LOCALCONTRAST_LIST;Lokaal contrast - gebieden
+HISTORY_MSG_LOCALCONTRAST_HUEMASK;Lokaal contrast - H-masker
+HISTORY_MSG_LOCALCONTRAST_CHROMATICITYMASK;Lokaal contrast - C-masker
+HISTORY_MSG_LOCALCONTRAST_LIGHTNESSMASK;Lokaal contrast - L-masker
+HISTORY_MSG_LOCALCONTRAST_MASKBLUR;Lokaal contrast - masker vervaging
+HISTORY_MSG_LOCALCONTRAST_SHOWMASK;Lokaal contrast - toon masker
+HISTORY_MSG_LOCALCONTRAST_AREAMASK;Lokaal contrast - gebiedsmasker
+HISTORY_MSG_CLAMPOOG;Kleuren afkappen die buiten het gamma vallen
+HISTORY_MSG_COLORCORRECTION_AB;CC - tintcorrectie
+HISTORY_MSG_COLORCORRECTION_AREAMASK;CC - gebiedsmasker
+HISTORY_MSG_COLORCORRECTION_RGB_CHANNELS;CC - modus
+HISTORY_MSG_COLORCORRECTION_CHROMATICITYMASK;CC - gebied C-masker
+HISTORY_MSG_COLORCORRECTION_ENABLED;Kleurcorrectie
+HISTORY_MSG_COLORCORRECTION_HUEMASK;CC - gebied H-masker
+HISTORY_MSG_COLORCORRECTION_LIGHTNESS;CC - helderheid
+HISTORY_MSG_COLORCORRECTION_LIGHTNESSMASK;CC - gebied L-masker
+HISTORY_MSG_COLORCORRECTION_LIST;CC - gebieden
+HISTORY_MSG_COLORCORRECTION_MASKBLUR;CC - vervaging gebiedsmasker
+HISTORY_MSG_COLORCORRECTION_OFFSET;CC - verschuiving gebied 
+HISTORY_MSG_COLORCORRECTION_PIVOT;CC - spil gebied
+HISTORY_MSG_COLORCORRECTION_POWER;CC - kracht gebied
+HISTORY_MSG_COLORCORRECTION_SATURATION;CC - verzadiging
+HISTORY_MSG_COLORCORRECTION_SHOWMASK;CC - toon masker gebied
+HISTORY_MSG_COLORCORRECTION_SLOPE;CC - helling gebied
+HISTORY_MSG_COLORCORRECTION_DELTAEMASK;CC- dE-masker
+HISTORY_MSG_COLORTONING_LABGRID_VALUE;CC - Kleurcorrectie
+HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR;RV - auto chroma kracht
+HISTORY_MSG_DENOISE_GUIDED_EPSILON;RV - GF-epsilon
+HISTORY_MSG_DENOISE_GUIDED_ITERATIONS;RV - GF-herhalingen
+HISTORY_MSG_DENOISE_GUIDED_LUMA_RADIUS;RV - GF L-radius
+HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS;RV - GF C-radius
+HISTORY_MSG_DENOISE_GUIDED_LUMA_STRENGTH;RV - GF L-kracht
+HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD;RV - Drempel detail
+HISTORY_MSG_DENOISE_LUMINANCE_CURVE;RV - Luminantiecurve
+HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH;RV - GF C-kracht
+HISTORY_MSG_DENOISE_SMOOTHING_METHOD;RV - Verzachtmethode
+HISTORY_MSG_DEHAZE_DEPTH;Waasverwijdering - diepte
+HISTORY_MSG_DEHAZE_ENABLED;Waasverwijdering
+HISTORY_MSG_DEHAZE_LUMINANCE;Waasverwijdering - alleen luminantie
+HISTORY_MSG_DEHAZE_SHOW_DEPTH_MAP;Waasverwijdering - Toon dieptemap
+HISTORY_MSG_DEHAZE_STRENGTH;Waasverwijdering - Kracht
+HISTORY_MSG_DUALDEMOSAIC_AUTO_CONTRAST;Dual-demozaïek - Auto-drempel
+HISTORY_MSG_DUALDEMOSAIC_CONTRAST;Dual-demozaïek - Contrastdrempel
+HISTORY_MSG_EPD_LIST;TB - gebieden
+HISTORY_MSG_EPD_HUEMASK;TB - H-masker
+HISTORY_MSG_EPD_CHROMATICITYMASK;TB - C-masker
+HISTORY_MSG_EPD_LIGHTNESSMASK;TB - L-masker
+HISTORY_MSG_EPD_MASKBLUR;TB - maskervervaging
+HISTORY_MSG_EPD_SHOWMASK;TB - toon masker
+HISTORY_MSG_EPD_AREAMASK;TB - gebiedsmasker
+HISTORY_MSG_EPD_DELTAEMASK;TB - dE-masker
+HISTORY_MSG_FILMNEGATIVE_ENABLED;Filmnegatief
+HISTORY_MSG_FILMNEGATIVE_VALUES;Filmnegatief waarden
+HISTORY_MSG_GRAIN_ENABLED;Filmkorrel
+HISTORY_MSG_GRAIN_ISO;Filmkorrel - ISO
+HISTORY_MSG_GRAIN_STRENGTH;Filmkorrel - Kracht
+HISTORY_MSG_GRAIN_SCALE;Filmkorrel - Schaal
+HISTORY_MSG_HISTMATCHING;Auto-matched tooncurve
+HISTORY_MSG_HSL_SMOOTHING;HSL - Verzachten
+HISTORY_MSG_ICM_OUTPUT_PRIMARIES;Uitvoer - Primaries
+HISTORY_MSG_ICM_OUTPUT_TEMP;Uitvoer - ICC-v4 illuminant D
+HISTORY_MSG_ICM_OUTPUT_TYPE;Uitvoer - Type
+HISTORY_MSG_ICM_WORKING_GAMMA;Working - Gamma
+HISTORY_MSG_ICM_WORKING_SLOPE;Working - Helling
+HISTORY_MSG_ICM_WORKING_TRC_METHOD;Working - TRC-methode
+HISTORY_MSG_LOCALCONTRAST_AMOUNT;Lokaal contrast - Amount
+HISTORY_MSG_LOCALCONTRAST_CONTRAST;Lokaal contrast - Residual contrast
+HISTORY_MSG_LOCALCONTRAST_CURVE;Lokaal contrast - Curve
+HISTORY_MSG_LOCALCONTRAST_DARKNESS;Lokaal contrast - Donker
+HISTORY_MSG_LOCALCONTRAST_ENABLED;Lokaal contrast
+HISTORY_MSG_LOCALCONTRAST_LIGHTNESS;Lokaal contrast - Licht
+HISTORY_MSG_LOCALCONTRAST_MODE;Lokaal contrast - Methode
+HISTORY_MSG_LOCALCONTRAST_RADIUS;Lokaal contrast - Straal
+HISTORY_MSG_LOCALCONTRAST_DELTAEMASK;Lokaal contrast - dE-masker
+HISTORY_MSG_LOGENC_AUTO;Log - Auto
+HISTORY_MSG_LOGENC_AUTOGRAY;Log - Auto-grijs
+HISTORY_MSG_LOGENC_REGULARIZATION;Log - Regularisatie
+HISTORY_MSG_LOGENC_ENABLED;Logcodering
+HISTORY_MSG_LOGENC_BLACK_EV;Log - Zwart Ev
+HISTORY_MSG_LOGENC_SOURCE_GRAY;Log - Bron grijspunt
+HISTORY_MSG_LOGENC_WHITE_EV;Log - Wit Ev
+HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Doel grijspunt
+HISTORY_MSG_METADATA_MODE;Metadata kopieermodus
+HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontrast - Contrastdrempel
+HISTORY_MSG_PCVIGNETTE_CENTER;VF - Centrum
+HISTORY_MSG_PERSPECTIVE_ENABLED;Perspectiefcorrectie
+HISTORY_MSG_PERSPECTIVE_LENS;Perspectief - lensgegevens
+HISTORY_MSG_PIXELSHIFT_DEMOSAIC;PS - Demozaïekmethode voor beweging
+HISTORY_MSG_PREPROCESS_LINEDENOISE_DIRECTION;Lijnruisfilter richting
+HISTORY_MSG_PREPROCESS_PDAFLINESFILTER;PDAF-lijnfilter
+HISTORY_MSG_PRSHARPEN_CONTRAST;PRS - Contrastdrempel
+HISTORY_MSG_RAWCACORR_AUTOIT;Raw CA-correctie - Herhalingen
+HISTORY_MSG_RAWCACORR_COLORSHIFT;Raw CA-correctie - Vermijd kleurverschuiving
+HISTORY_MSG_RAW_BORDER;Raw-rand
+HISTORY_MSG_RESIZE_ALLOWUPSCALING;Verander grootte - sta vergroting toe
+HISTORY_MSG_RESIZE_PPI;Resize - PPI
+HISTORY_MSG_RESIZE_UNIT;Resize - Eenheid
+HISTORY_MSG_SHARPENING_AUTORADIUS;Verscherpen - Auto RLD-radius
+HISTORY_MSG_SHARPENING_BLUR;Verscherpen - Vervagingsradius
+HISTORY_MSG_SHARPENING_CONTRAST;Verscherpen - Contrastdrempel
+HISTORY_MSG_SH_COLORSPACE;S/H - Kleurruimte
+HISTORY_MSG_SMOOTHING_ENABLED;Verzachten
+HISTORY_MSG_SMOOTHING_CHANNEL;Verzachten - kanaal
+HISTORY_MSG_SMOOTHING_RADIUS;Verzachten - straal
+HISTORY_MSG_SMOOTHING_EPSILON;Verzachten - detail
+HISTORY_MSG_SMOOTHING_LIST;Verzachten - gebieden
+HISTORY_MSG_SMOOTHING_HUEMASK;Verzachten - H-masker
+HISTORY_MSG_SMOOTHING_CHROMATICITYMASK;Verzachten - C-masker
+HISTORY_MSG_SMOOTHING_LIGHTNESSMASK;Verzachten - L-masker
+HISTORY_MSG_SMOOTHING_MASKBLUR;Verzachten - vervaging masker
+HISTORY_MSG_SMOOTHING_SHOWMASK;Verzachten - toon masker
+HISTORY_MSG_SMOOTHING_AREAMASK;Verzachten - gebiedsmasker
+HISTORY_MSG_SMOOTHING_DELTAEMASK;Verzachten - dE-masker
+HISTORY_MSG_SOFTLIGHT_ENABLED;Zacht licht
+HISTORY_MSG_SOFTLIGHT_STRENGTH;Zacht licht - Kracht
+HISTORY_MSG_TM_FATTAL_ANCHOR;DRC - Anker
+HISTORY_MSG_TONE_EQUALIZER_ENABLED;Toonequalizer
+HISTORY_MSG_TONE_EQUALIZER_BANDS;Toonequalizer - Banden
+HISTORY_MSG_TONE_EQUALIZER_REGULARIZATION;Toonequalizer - Regularisatie
+HISTORY_MSG_TONECURVE_SATCURVE;Tooncurve - Verzadiging
+HISTORY_NEWSNAPSHOT;Voeg toe
+HISTORY_NEWSNAPSHOT_TOOLTIP;Sneltoets: <b>Alt-s</b>
+HISTORY_SNAPSHOT;Snapshot
+HISTORY_SNAPSHOTS;Snapshots
+
+# ICC Profile Creator
+ICCPROFCREATOR_COPYRIGHT;Copyright:
+ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Zet terug naar standaard copyright, verleend aan "ART, CC0"
+ICCPROFCREATOR_CUSTOM;Handmatig
+ICCPROFCREATOR_DESCRIPTION;Beschrijving:
+ICCPROFCREATOR_DESCRIPTION_ADDPARAM;Voeg gamma- en hellingwaarden toe aan de beschrijving
+ICCPROFCREATOR_DESCRIPTION_TOOLTIP;Laat leeg voor de standaard beschrijving.
+ICCPROFCREATOR_GAMMA;Gamma
+ICCPROFCREATOR_ICCVERSION;ICC-versie:
+ICCPROFCREATOR_ILL;Illuminant:
+ICCPROFCREATOR_ILL_41;D41
+ICCPROFCREATOR_ILL_50;D50
+ICCPROFCREATOR_ILL_55;D55
+ICCPROFCREATOR_ILL_60;D60
+ICCPROFCREATOR_ILL_65;D65
+ICCPROFCREATOR_ILL_80;D80
+ICCPROFCREATOR_ILL_DEF;Standaard
+ICCPROFCREATOR_ILL_INC;StdA 2856K
+ICCPROFCREATOR_ILL_TOOLTIP;U kunt alleen de illuminant instellen voor ICC v4-profielen.
+ICCPROFCREATOR_PRIMARIES;Primaries:
+ICCPROFCREATOR_PRIM_ACESP0;ACES AP0
+ICCPROFCREATOR_PRIM_ACESP1;ACES AP1
+ICCPROFCREATOR_PRIM_ADOBE;Adobe RGB (1998)
+ICCPROFCREATOR_PRIM_BEST;BestRGB
+ICCPROFCREATOR_PRIM_BETA;BetaRGB
+ICCPROFCREATOR_PRIM_BLUX;Blauw X
+ICCPROFCREATOR_PRIM_BLUY;Blauw Y
+ICCPROFCREATOR_PRIM_BRUCE;BruceRGB
+ICCPROFCREATOR_PRIM_GREX;Groen X
+ICCPROFCREATOR_PRIM_GREY;Groen Y
+ICCPROFCREATOR_PRIM_PROPH;Prophoto
+ICCPROFCREATOR_PRIM_REC2020;Rec2020
+ICCPROFCREATOR_PRIM_REDX;Rood X
+ICCPROFCREATOR_PRIM_REDY;Rood Y
+ICCPROFCREATOR_PRIM_SRGB;sRGB
+ICCPROFCREATOR_PRIM_TOOLTIP;U kunt alleen aangepaste primaries voor ICC v4-profielen instellen.
+ICCPROFCREATOR_PRIM_WIDEG;Wide-gamut
+ICCPROFCREATOR_PROF_V2;ICC v2
+ICCPROFCREATOR_PROF_V4;ICC v4
+ICCPROFCREATOR_SAVEDIALOG_TITLE;Bewaar ICC-profiel als...
+ICCPROFCREATOR_SLOPE;Helling
+ICCPROFCREATOR_TRC_PRESET;Toonresponscurve:
+
+INSPECTOR_ENABLE_CMS;Activeer kleurbeheer.
+INSPECTOR_INFO;Snelle info.
+INSPECTOR_PREVIEW;Ingebed voorbeeld.\nSneltoets: <b>j</b>.
+INSPECTOR_RAW_LINEAR;Snelle raw-rendering met lineaire tooncurve.\nSneltoets: <b>r</b>.
+INSPECTOR_RAW_FILM;Snelle raw-rendering met filmachtige tooncurve.\nSneltoets: <b>f</b>.
+INSPECTOR_RAW_CLIP;Raw afgekapte pixels.\nSneltoets: <b>w</b>.
+INSPECTOR_RAW_SHADOW;Snelle raw-rendering met tooncurve die de schaduwen versterkt.\nSneltoets: <b>s</b>.
+INSPECTOR_ZOOM_FIT;Pas in venster.\nSneltoets: <b>x</b>.
+INSPECTOR_ZOOM_11;Zoom tot 100%.\nSneltoets: <b>z</b>.
+
+# IPTC
+IPTCPANEL_CATEGORY;Categorie
+IPTCPANEL_CATEGORYHINT;Het onderwerp van de foto.
+IPTCPANEL_CITY;Stad
+IPTCPANEL_CITYHINT;Stad waar de foto is genomen.
+IPTCPANEL_COPYHINT;Kopieer IPTC-instellingen naar klembord
+IPTCPANEL_COPYRIGHT;Copyright-melding
+IPTCPANEL_COPYRIGHTHINT;Melding over de huidige copyright-houder van de foto, bijvoorbeeld ©2020 Jane Doe.
+IPTCPANEL_COUNTRY;Land
+IPTCPANEL_COUNTRYHINT;Land waar de foto is genomen.
+IPTCPANEL_CREATOR;Maker
+IPTCPANEL_CREATORHINT;Naam van degene die deze foto maakte.
+IPTCPANEL_CREATORJOBTITLE;Zijn of haar functietitel.
+IPTCPANEL_CREATORJOBTITLEHINT;De functietitel van de persoon die in het Maker-veld staat vermeld.
+IPTCPANEL_CREDIT;Credit-regel
+IPTCPANEL_CREDITHINT;Naam aan wie de credits toegeschreven moeten worden als deze foto gepubliceerd wordt.
+IPTCPANEL_DATECREATED;Opnamedatum
+IPTCPANEL_DATECREATEDHINT;Datum waarop de foto is genomen.
+IPTCPANEL_DESCRIPTION;Beschrijving
+IPTCPANEL_DESCRIPTIONHINT;Bijschrift dat het wie, wat of waarom beschrijft van wat er gebeurt op de foto. Dit kunnen namen van de personen zijn en/of hun rol in de actie die plaatsvindt op de afbeelding.
+IPTCPANEL_DESCRIPTIONWRITER;Schrijver van de beschrijving.
+IPTCPANEL_DESCRIPTIONWRITERHINT;De naam van de persoon die is betrokken bij het schrijven, wijzigen of corrigeren van de beschrijving van de foto.
+IPTCPANEL_EMBEDDED;Ingebed
+IPTCPANEL_EMBEDDEDHINT;Keer terug naar IPTC-data die in de foto zijn opgeslagen.
+IPTCPANEL_HEADLINE;Titel
+IPTCPANEL_HEADLINEHINT;Een korte samenvatting van de inhoud van de foto.
+IPTCPANEL_INSTRUCTIONS;Instructies
+IPTCPANEL_INSTRUCTIONSHINT;Infomatie over embargo of andere beperkingen die buiten de Copyright-beschrijving vallen.
+IPTCPANEL_KEYWORDS;Steekwoorden
+IPTCPANEL_KEYWORDSHINT;Gebruik steekwoorden of zinnen om het onderwerp van de foto te beschrijven.
+IPTCPANEL_PASTEHINT;Plak IPTC-instellingen van klembord
+IPTCPANEL_PROVINCE;Provincie
+IPTCPANEL_PROVINCEHINT;Provincie waar de afbeelding is genomen.
+IPTCPANEL_RESET;Standaardwaarden
+IPTCPANEL_RESETHINT;Terug naar standaardwaarden.
+IPTCPANEL_SOURCE;Bron
+IPTCPANEL_SOURCEHINT;De naam van de persoon of de partij die verantwoordelijk is voor de verspreiding van de afbeelding, zoals de persoon of partij van wie de afbeelding afkomstig is.
+IPTCPANEL_SUPPCATEGORIES;Aanvullende categorieën
+IPTCPANEL_SUPPCATEGORIESHINT;Verfijnt het onderwerp van de afbeelding.
+IPTCPANEL_TITLE;Titel
+IPTCPANEL_TITLEHINT;Geef korte naam voor de foto op. Dit kan de bestandsnaam zijn.
+IPTCPANEL_TRANSREFERENCE;Referentienummer
+IPTCPANEL_TRANSREFERENCEHINT;Het nummer dat wordt gebruikt voor de 'workflow control' of voor de tracking.
+
+# Hoofdscherm
+MAIN_BUTTON_FULLSCREEN;Volledig scherm
+MAIN_BUTTON_ICCPROFCREATOR;ICC-profielmaker
+MAIN_BUTTON_NAVNEXT_TOOLTIP;Navigeer naar de volgende afbeelding relatief tov. de geopende afbeelding in de Editor\nSneltoets: <b>Shift+F4</b>\n\nNavigeer naar de volgende afbeelding relatief tov. de miniatuur geselecteerd in de Bestandsnavigator of de Filmstrook\nSneltoets: <b>F4</b>
+MAIN_BUTTON_NAVPREV_TOOLTIP;Navigeer naar de vorige afbeelding relatief tov. de geopende afbeelding in de Editor\nSneltoets: <b>Shift+F3</b> \n\nNavigeer naar de vorige afbeelding relatief tov. de miniatuur geselecteerd in de Bestandsnavigator of de Filmstrook\nSneltoets: <b>F3</b>
+MAIN_BUTTON_NAVSYNC_TOOLTIP;Synchroniseer de Bestandsnavigator of de Filmstrook met de Fotobewerker om de miniatuur te tonen van de huidig geopende afbeelding, en verwijder eventuele actieve filters.\nSneltoets: <b>x</b>\n\nAls voorgaand, maar zonder het verwijderen van actieve filters.\nSneltoets: <b>y</b>\n(NB: de miniatuur van de geopende afbeelding zal niet worden getoond indien eruit gefilterd).
+MAIN_BUTTON_PREFERENCES;Voorkeuren
+MAIN_BUTTON_PUTTOQUEUE_TOOLTIP;Plaats huidige foto in verwerkingsrij\nSneltoets: <b>Ctrl+b</b> (<b>Ctrl+Shift+b</b> voor snelle export)
+MAIN_BUTTON_SAVE_TOOLTIP;Bewaar huidige foto (Ctrl+klik voor snelle export)\nSneltoets: <b>Ctrl+s</b> (<b>Ctrl+Shift+s</b> voor snelle export)
+MAIN_BUTTON_SENDTOEDITOR;Stuur foto naar externe fotobewerker
+MAIN_BUTTON_SENDTOEDITOR_TOOLTIP;Stuur huidige foto naar extern fotobewerkingsprogramma\nSneltoets: <b>Ctrl+e</b>
+MAIN_BUTTON_SHOWHIDESIDEPANELS_TOOLTIP;Toon/verberg alle zijpanelen\nSneltoets: <b>m</b>
+MAIN_BUTTON_UNFULLSCREEN;Verlaat volledig scherm
+MAIN_FRAME_EDITOR;Fotobewerker
+MAIN_FRAME_EDITOR_TOOLTIP; Fotobewerker\nSneltoets: <b>Ctrl+F4</b>
+MAIN_FRAME_FILEBROWSER;Bestandsnavigator
+MAIN_FRAME_FILEBROWSER_TOOLTIP; Bestandsnavigator\nSneltoets: <b>Ctrl+F2</b>
+MAIN_FRAME_PLACES;Locaties
+MAIN_FRAME_PLACES_ADD;Voeg huidige locatie toe
+MAIN_FRAME_PLACES_DEL;Verwijder geselecteerde locatie 
+MAIN_FRAME_QUEUE;Verwerkingsrij
+MAIN_FRAME_QUEUE_TOOLTIP; Verwerkingsrij\nSneltoets: <b>Ctrl+F3</b>
+MAIN_FRAME_RECENT;Recente mappen
+MAIN_MSG_ALREADYEXISTS;Bestand bestaat reeds.
+MAIN_MSG_CANNOTLOAD;Fout bij laden
+MAIN_MSG_CANNOTSAVE;Fout bij opslaan van de afbeelding
+MAIN_MSG_CANNOTSTARTEDITOR;Kan fotobewerker niet starten.
+MAIN_MSG_CANNOTSTARTEDITOR_SECONDARY;Geef juiste pad op in Voorkeuren.
+MAIN_MSG_EMPTYFILENAME;Geen bestandsnaam opgegeven!
+MAIN_MSG_IMAGEUNPROCESSED;Deze opdracht vereist dat alle geselecteerde foto's eerst zijn verwerkt.
+MAIN_MSG_NAVIGATOR;Navigator
+MAIN_MSG_OPERATIONCANCELLED;Opdracht afgebroken
+MAIN_MSG_PATHDOESNTEXIST;Het pad\n\n<b>%1</b>\n\nbestaat niet. Stel een correct pad in bij Voorkeuren.
+MAIN_MSG_QOVERWRITE;Wilt u het bestand overschrijven?
+MAIN_MSG_SETPATHFIRST;Specificeer eerst een doelmap in Voorkeuren\nom deze functie te kunnen gebruiken!
+MAIN_MSG_TOOMANYOPENEDITORS;Teveel open fotobewerkers.\nSluit er een om verder te kunnen.
+MAIN_MSG_WRITEFAILED;Niet opgeslagen\n\n<b>"%1"</b>\n\nControleer of de map bestaat en of u schrijfrechten heeft.
+MAIN_TAB_COLOR;Kleur
+MAIN_TAB_COLOR_TOOLTIP;Sneltoets: <b>Alt+c</b>
+MAIN_TAB_DETAIL;Detail
+MAIN_TAB_DETAIL_TOOLTIP;Sneltoets: <b>Alt+d</b>
+MAIN_TAB_DEVELOP; Batch-verwerking
+MAIN_TAB_EFFECTS;Speciale effecten
+MAIN_TAB_EFFECTS_TOOLTIP;Sneltoets: <b>Alt+f</b>
+MAIN_TAB_EXIF;Exif
+MAIN_TAB_EXPORT; Snelle export
+MAIN_TAB_EXPOSURE;Belichting
+MAIN_TAB_EXPOSURE_TOOLTIP;Sneltoets: <b>Alt+e</b>
+MAIN_TAB_FAVORITES;Favorieten
+MAIN_TAB_FAVORITES_TOOLTIP;Sneltoets: <b>Alt+u</b>
+MAIN_TAB_FILTER; Filter 
+MAIN_TAB_INSPECT; Inspecteer 
+MAIN_TAB_IPTC;IPTC
+MAIN_TAB_LOCAL;Lokaal bewerken
+MAIN_TAB_LOCAL_TOOLTIP;Sneltoets: <b>Alt+x</b>
+MAIN_TAB_METADATA;Metadata
+MAIN_TAB_METADATA_TOOLTIP;Sneltoets: <b>Alt+m</b>
+MAIN_TAB_RAW;Raw
+MAIN_TAB_RAW_TOOLTIP;Sneltoets: <b>Alt+r</b>
+MAIN_TAB_TRANSFORM;Transformeer
+MAIN_TAB_TRANSFORM_TOOLTIP;Sneltoets: <b>Alt+t</b>
+MAIN_TOOLTIP_BACKCOLOR0;Achtergrondkleur van het voorbeeld: <b>themagebaseerd</b>\nSneltoets: <b>8</b>
+MAIN_TOOLTIP_BACKCOLOR1;Achtergrondkleur van het voorbeeld: <b>Zwart</b>\nSneltoets: <b>9</b>
+MAIN_TOOLTIP_BACKCOLOR2;Achtergrondkleur van het voorbeeld: <b>Wit</b>\nSneltoets: <b>9</b>
+MAIN_TOOLTIP_BACKCOLOR3;Achtergrondkleur van het voorbeeld: <b>middelgrijs</b>\nSneltoets: <b>9</b>
+MAIN_TOOLTIP_BEFOREAFTERLOCK;<b>Vergrendel</b>/<b>ontgrendel</b> de <b>Voor</b>-afbeelding.\n\n<b>Vergrendel</b>: laat de <b>Voor</b>-afbeelding ongewijzigd.\nDit is handig om het cumulatieve effect van meerdere gereedschappen te beoordelen.\nBovendien kan er worden vergeleken met elke stap in de geschiedenislijst.\n\n<b>Ontgrendel</b>: de <b>Voor</b>-afbeelding volgt een stap achter de <b>Na</b>-afbeelding en laat de afbeelding zien zonder het effect van het huidige gereedschap.
+MAIN_TOOLTIP_HIDEHP;Toon/verberg linkerpaneel (incl. geschiedenis)\nSneltoets: <b>l</b>
+MAIN_TOOLTIP_INDCLIPPEDH;Overbelichtingsindicatie.\nSneltoets: <b>&lt;</b>
+MAIN_TOOLTIP_INDCLIPPEDS;Onderbelichtingsindicatie.\nSneltoets: <b>&gt;</b>
+MAIN_TOOLTIP_PREVIEWB;Bekijk het <b>blauwe kanaal</b>.\nSneltoets: <b>b</b>
+MAIN_TOOLTIP_PREVIEWFOCUSMASK;Bekijk het <b>Focusmasker</b>.\nSneltoets: <b>Shift+f</b>\nAccurater bij afbeeldingen met geringe scherptediepte, weinig ruis en hogere zoomniveaus.\nZoom uit naar 10-30% om de accuratesse te verhogen bij afbeeldingen met veel ruis.
+MAIN_TOOLTIP_PREVIEWG;Bekijk het <b>groene kanaal</b>.\nSneltoets: <b>g</b>
+MAIN_TOOLTIP_PREVIEWL;Bekijk de <b>Luminositeit</b>.\nSneltoets: <b>v</b>\n\n0.299*R + 0.587*G + 0.114*B
+MAIN_TOOLTIP_PREVIEWR;Bekijk het <b>rode kanaal</b>.\nSneltoets: <b>r</b>
+MAIN_TOOLTIP_PREVIEWSHARPMASK;Bekijk het <b>scherptecontrastmasker</b>.\nSneltoets: <b>p</b>\nWerkt alleen als verscherping is geactiveerd en het zoomniveau >= 100%.
+MAIN_TOOLTIP_QINFO;Beknopte fotogegevens\nSneltoets: <b>i</b>
+MAIN_TOOLTIP_SHOWHIDELP1;Toon/verberg linkerpaneel.\nSneltoets: <b>l</b>
+MAIN_TOOLTIP_SHOWHIDERP1;Toon/verberg rechterpaneel\nSneltoets: <b>Ctrl+l</b>
+MAIN_TOOLTIP_SHOWHIDETP1;Toon/verberg bovenste paneel\nSneltoets: <b>Shift+l</b>
+MAIN_TOOLTIP_THRESHOLD;Drempel
+MAIN_TOOLTIP_TOGGLE;Schakel tussen <b>Voor</b>/<b>Na</b>-beeld\nSneltoets: <b>Shift+b</b>
+MONITOR_PROFILE_SYSTEM;Systeemstandaard
+NAVIGATOR_B;B:
+NAVIGATOR_C;C:
+NAVIGATOR_G;G:
+NAVIGATOR_H;H:
+NAVIGATOR_L;L:
+NAVIGATOR_LAB_A;a*:
+NAVIGATOR_LAB_B;b*:
+NAVIGATOR_LAB_L;L*:
+NAVIGATOR_NA; --
+NAVIGATOR_R;R:
+NAVIGATOR_XY_FULL;Breedte: %1, Hoogte: %2
+NAVIGATOR_XY_NA;x: --, y: --
+
+OPTIONS_BUNDLED_MISSING;Het gebundelde profiel "<b>%1</b>" werd niet gevonden!\n\nUw installatie kan beschadigd zijn.\n\nDaarom worden interne standaardwaarden gebruikt.
+OPTIONS_DEFIMG_MISSING;Het standaardprofiel voor <b>niet-raw- foto's</b> werd niet gevonden of is niet ingesteld.\n\nControleer de profielenmap, het kan ontbreken of beschadigd zijn.\n\n"<b>%1</b>" wordt daarom gebruikt.
+OPTIONS_DEFRAW_MISSING;Het standaardprofiel voor <b>raw-foto's</b> werd niet gevonden of is niet ingesteld.\n\nControleer de profielenmap, het kan ontbreken of beschadigd zijn.\n\n"<b>%1</b>" wordt daarom gebruikt.
+
+# Partial Paste
+PARTIALPASTE_ADVANCEDGROUP;Geavanceerde instellingen
+PARTIALPASTE_EFFECTSGROUP;Speciale effecten
+PARTIALPASTE_EXPOSUREGROUP;Belichtingsinstellingen
+PARTIALPASTE_SATURATION;Verzadiging en levendigheid
+PARTIALPASTE_TONECURVE;Tooncurves
+PARTIALPASTE_CACORRECTION;C/A-correctie
+PARTIALPASTE_CHANNELMIXER;Kleurkanaalmixer
+PARTIALPASTE_CHANNELMIXERBW;Zwart-wit
+PARTIALPASTE_COARSETRANS;90 graden roteren/spiegelen
+PARTIALPASTE_COLORAPP;CIE Color Appearance Model 2002
+PARTIALPASTE_COLORGROUP;Kleurgerelateerde instellingen
+PARTIALPASTE_COLORTONING;Kleurtinten
+PARTIALPASTE_COMMONTRANSFORMPARAMS;Automatisch uitvullen
+PARTIALPASTE_COMPOSITIONGROUP;Compositie-instellingen
+PARTIALPASTE_CROP;Bijsnijden
+PARTIALPASTE_DARKFRAMEAUTOSELECT;Donkerframe autom. selectie
+PARTIALPASTE_DARKFRAMEFILE;Donkerframe-opname
+PARTIALPASTE_DEFRINGE;Verzachten
+PARTIALPASTE_DEHAZE;Nevel verwijderen
+PARTIALPASTE_DETAILGROUP;Detailinstellingen
+PARTIALPASTE_DIALOGLABEL;Profiel gedeeltelijk plakken...
+PARTIALPASTE_DIRPYRDENOISE;Ruisonderdrukking
+PARTIALPASTE_DIRPYREQUALIZER;Detailcontrast
+PARTIALPASTE_DISTORTION;Corrigeer lensvervorming
+PARTIALPASTE_TEXTUREBOOST;Textuurversterking
+PARTIALPASTE_EQUALIZER;Wavelet-equalizer
+PARTIALPASTE_EVERYTHING;Alles
+PARTIALPASTE_EXIFCHANGES;Wijzig Exif-gegevens
+PARTIALPASTE_EXIFCHANGES;Exif
+PARTIALPASTE_EXPOSURE;Belichting
+PARTIALPASTE_FILMNEGATIVE;Filmnegatief
+PARTIALPASTE_FILMSIMULATION;Filmsimulatie
+PARTIALPASTE_FLATFIELDAUTOSELECT;Vlakveld autoselectie
+PARTIALPASTE_FLATFIELDBLURRADIUS;Vlakveldvervaging, straal
+PARTIALPASTE_FLATFIELDBLURTYPE;Vlakveld vervagingstype
+PARTIALPASTE_FLATFIELDCLIPCONTROL;Vlakveld afkap-controle
+PARTIALPASTE_FLATFIELDFILE;Vlakveldopname
+PARTIALPASTE_GRADIENT;Grijsverloopfilter
+PARTIALPASTE_GRAIN;Filmkorrel
+PARTIALPASTE_HSVEQUALIZER;HSV-balans
+PARTIALPASTE_ICMSETTINGS;Kleurbeheerinstellingen
+PARTIALPASTE_IMPULSEDENOISE;Spotruisonderdrukking
+PARTIALPASTE_IPTCINFO;IPTC-informatie
+PARTIALPASTE_LABCURVE;LAB-curve
+PARTIALPASTE_LENSGROUP;Lensgerelateerde instellingen
+PARTIALPASTE_LENSPROFILE;Lenscorrectieprofiel
+PARTIALPASTE_LOCALCONTRAST;Lokaal contrast
+PARTIALPASTE_LOCALGROUP;Instellingen lokaal bewerken
+PARTIALPASTE_METAGROUP;Metadata
+PARTIALPASTE_METAGROUP;Metadata-instellingen
+PARTIALPASTE_PCVIGNETTE;Vignetteringsfilter
+PARTIALPASTE_PERSPECTIVE;Perspectief
+PARTIALPASTE_PREPROCESS_DEADPIXFILT;Dode pixels filter
+PARTIALPASTE_PREPROCESS_GREENEQUIL;Groenbalans
+PARTIALPASTE_PREPROCESS_HOTPIXFILT;Hete pixels filter
+PARTIALPASTE_PREPROCESS_LINEDENOISE;Lijnruisfilter
+PARTIALPASTE_PREPROCESS_PDAFLINESFILTER;PDAF-lijnenfilter
+PARTIALPASTE_PRSHARPENING;Verscherp na verkleinen
+PARTIALPASTE_RAWCA;Raw CA-correctie
+PARTIALPASTE_RAW_DEMOSAIC;Demozaïek
+PARTIALPASTE_RAW_BLACK;Zwartniveaus
+PARTIALPASTE_RAW_WHITE;Witpuntcorrectie
+PARTIALPASTE_RAWGROUP;Raw-instellingen
+PARTIALPASTE_RAW_PREPROCESSING;Raw-voorverwerking
+PARTIALPASTE_HOT_DEAD_PIXEL_FILTER;Hete/dode-pixelsfilter
+PARTIALPASTE_DARKFRAME;Donkderframe
+PARTIALPASTE_FLATFIELD;Vlakveld
+PARTIALPASTE_RESIZE;Wijzig grootte
+PARTIALPASTE_RETINEX;Retinex
+PARTIALPASTE_RGBCURVES;RGB-curven
+PARTIALPASTE_ROTATION;Roteren
+PARTIALPASTE_SHADOWSHIGHLIGHTS;Schaduwen/hoge lichten
+PARTIALPASTE_SHARPENEDGE;Randen
+PARTIALPASTE_SHARPENING;Verscherping
+PARTIALPASTE_SHARPENMICRO;Microcontrast
+PARTIALPASTE_SMOOTHING;Verzachten
+PARTIALPASTE_SOFTLIGHT;Zacht licht
+PARTIALPASTE_TM_FATTAL;Compressie dynamisch bereik
+PARTIALPASTE_TM_LOG;Logcodering
+PARTIALPASTE_TONE_EQUALIZER;Toonequalizer
+PARTIALPASTE_VIBRANCE;Levendigheid
+PARTIALPASTE_VIGNETTING;Vignetteringscorrectie
+PARTIALPASTE_WHITEBALANCE;Witbalans
+
+# Voorkeuren
+PREFERENCES_ADD;Toevoegen
+PREFERENCES_APPEARANCE;Uiterlijk
+PREFERENCES_APPEARANCE_COLORPICKERFONT;Lettertype kleurenkiezer
+PREFERENCES_APPEARANCE_CROPMASKCOLOR;Kleur bijsnijdmasker
+PREFERENCES_APPEARANCE_MAINFONT;Standaard lettertype
+PREFERENCES_APPEARANCE_NAVGUIDECOLOR;Navigator kleur hulplijnen
+PREFERENCES_APPEARANCE_PSEUDOHIDPI;Pseudo-HiDPI modus
+PREFERENCES_APPEARANCE_THEME;Thema
+PREFERENCES_APPLNEXTSTARTUP;herstart vereist
+PREFERENCES_AUTOMONPROFILE;Gebruik standaard beelschermprofiel van het besturingsysteem
+PREFERENCES_AUTOSAVE_TP_OPEN;Bewaar positie gereedschappen (open/dicht) bij afsluiten
+PREFERENCES_BATCH_PROCESSING;Batch-verwerking
+PREFERENCES_BEHADDALL;Alles op 'Toevoegen'
+PREFERENCES_BEHADDALLHINT;Zet alle parameters in de <b>Toevoegen</b>-modus.\nWijzigingen van parameters in het batch-gereedschap zijn <b>delta's</b> op de opgeslagen waarden.
+PREFERENCES_BEHAVIOR;Gedrag
+PREFERENCES_BEHSETALL;Alles op 'Activeer'
+PREFERENCES_BEHSETALLHINT;Zet alle parameters in de <b>Activeer</b>-modus.\nWijzigingen van parameters in het batch-gereedschap zijn <b>absoluut</b>: de actuele waarden worden getoond.
+PREFERENCES_BLACKBODY;Wolfraam
+PREFERENCES_CACHECLEAR;Wissen
+PREFERENCES_CACHECLEAR_ALL;Wis alle bestanden in de cache:
+PREFERENCES_CACHECLEAR_ALLBUTPROFILES;Wis alle bestanden in de cache behalve verwerkingsprofielen:
+PREFERENCES_CACHECLEAR_ONLYPROFILES;Wis alleen verwerkingsprofielen in de cache:
+PREFERENCES_CACHECLEAR_SAFETY;Alleen bestanden in de cache worden gewist. Verwerkingsprofielen van de oorspronkelijke afbeeldingen blijven ongemoeid.
+PREFERENCES_CACHEMAXENTRIES;Maximaal aantal elementen in de cache
+PREFERENCES_CACHEOPTS;Cache-opties
+PREFERENCES_CACHETHUMBHEIGHT;Maximale hoogte miniaturen
+PREFERENCES_CLIPPINGIND;Indicatie over-/onderbelichting
+PREFERENCES_CLUTSCACHE;HaldCLUT-cache
+PREFERENCES_CLUTSCACHE_LABEL;Maximum aantal Cluts in de cache
+PREFERENCES_CLUTSDIR;HaldCLUT-map
+PREFERENCES_CMMBPC;Zwartpuntcompensatie
+PREFERENCES_CROP_AUTO_FIT;Automatisch zoomen tot de uitsnede
+PREFERENCES_CROP_GUIDES;Getoonde hulplijnen als uitsnede niet bewerkt wordt
+PREFERENCES_CROP_GUIDES_FRAME;Frame
+PREFERENCES_CROP_GUIDES_FULL;Origineel
+PREFERENCES_CROP_GUIDES_NONE;Geen
+PREFERENCES_CURVEBBOXPOS;Positie kopieer/plak-knoppen van curves
+PREFERENCES_CURVEBBOXPOS_ABOVE;Boven
+PREFERENCES_CURVEBBOXPOS_BELOW;Onder
+PREFERENCES_CURVEBBOXPOS_LEFT;Links
+PREFERENCES_CURVEBBOXPOS_RIGHT;Rechts
+PREFERENCES_CUSTPROFBUILD;Eigen/externe profielgenerator
+PREFERENCES_CUSTPROFBUILDHINT;Programma (of script) dat wordt aangeroepen om een initieel verwerkingsprofiel voor de foto te maken.\nHet pad van het communicatebestand (*.ini-stijl, of 'keyfile') wordt als parameter aan de opdrachtregel toegevoegd. Het bevat diverse parameters voor de scripts en de Exif-info waarmee regelgebaseerde verwerkingsprofielen kunnen worden gegenereerd.\n\n<b> WAARSCHUWING:</b> Indien een pad spaties bevat moeten er dubbele quotes om het pad worden gezet.
+PREFERENCES_CUSTPROFBUILDKEYFORMAT;Keys-formaat
+PREFERENCES_CUSTPROFBUILDKEYFORMAT_NAME;Naam
+PREFERENCES_CUSTPROFBUILDKEYFORMAT_TID;TagID
+PREFERENCES_CUSTPROFBUILDPATH;Pad naar uitvoerbaar of script
+PREFERENCES_D50;Instellingen in hoofdmenu
+PREFERENCES_D50_OLD;5000K
+PREFERENCES_D55;5500K
+PREFERENCES_D60;6000K
+PREFERENCES_D65;6500K
+PREFERENCES_DARKFRAMEFOUND;Gevonden
+PREFERENCES_DARKFRAMESHOTS;opnamen
+PREFERENCES_DARKFRAMETEMPLATES;sjablonen
+PREFERENCES_DATEFORMAT;Datumformaat
+PREFERENCES_DATEFORMATHINT;U kunt de volgende formaten gebruiken:\n<b>%y</b>  jaar\n<b>%m</b>  maand\n<b>%d</b> dag\nHet Nederlandse datumformaat is \n<b>%d/%m/%y</b>
+PREFERENCES_DENOISE_ZOOM_OUT;Toon effect ruisvermindering in voorbeeldvenster bij <100% zoom
+PREFERENCES_DENOISE_ZOOM_OUT_TOOLTIP;Maar dit is nog steeds niet volledig accuraat...
+PREFERENCES_DIRDARKFRAMES;Map met donkerframes
+PREFERENCES_DIRECTORIES;Mappen
+PREFERENCES_DIRHOME;Standaardmap
+PREFERENCES_DIRLAST;Laatst bezochte map
+PREFERENCES_DIROTHER;Anders
+PREFERENCES_DIRSELECTDLG;Selecteer standaardmap bij opstarten...
+PREFERENCES_DIRSOFTWARE;Installatiemap
+PREFERENCES_EDITORCMDLINE;Aangepaste opdrachtregel
+PREFERENCES_EDITORLAYOUT;Lay-out bewerkingsvenster
+PREFERENCES_EXTERNALEDITOR;Externe fotobewerker
+PREFERENCES_EXIFTOOL_PATH;Exiftool-commando
+PREFERENCES_EXIFTOOL_PATH_TOOLTIP;Exiftool wordt gebruikt voor formaten die nog niet door Exiv2 worden ondersteund
+PREFERENCES_FBROWSEROPTS;Opties bestandsnavigator/miniaturen
+PREFERENCES_FILEBROWSERTOOLBARSINGLEROW;Compacte gereedschapsbalken in bestandsnavigator
+PREFERENCES_FLATFIELDFOUND;Gevonden
+PREFERENCES_FLATFIELDSDIR;Vlakveldmap
+PREFERENCES_FLATFIELDSHOTS;foto's
+PREFERENCES_FLATFIELDTEMPLATES;sjablonen
+PREFERENCES_FLUOF2;Fluorescent F2
+PREFERENCES_FLUOF7;Fluorescent F7
+PREFERENCES_FLUOF11;Fluorescent F11
+PREFERENCES_FORIMAGE;Voor niet-raw-bestanden
+PREFERENCES_FORRAW;Voor raw-bestanden
+PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT;Zelfde hoogte miniaturen in Filmstrip en Bestandsnavigator
+PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT_HINT;Verschillende hoogtes voor miniaturen vereist meer verwerkingstijd wanneer je wisselt tussen het enkel-tabs Bewerkingsvenster en de Bestandsnavigator
+PREFERENCES_GIMPPATH;Installatiemap GIMP
+PREFERENCES_GREY;Uitvoerapparaat Yb-luminantie (%)
+PREFERENCES_GREY05;Yb=05 CIE L#30
+PREFERENCES_GREY10;Yb=10 CIE L#40
+PREFERENCES_GREY15;Yb=15 CIE L#45
+PREFERENCES_GREY18;Instellingen in hoofdmenu
+PREFERENCES_GREY18_OLD;Yb=18 CIE L#50
+PREFERENCES_GREY23;Yb=23 CIE L#55
+PREFERENCES_GREY30;Yb=30 CIE L#60
+PREFERENCES_GREY40;Yb=40 CIE L#70
+PREFERENCES_GREYSC;Scène Yb-luminantie (%)
+PREFERENCES_GREYSC18;Yb=18 CIE L#50
+PREFERENCES_GREYSCA;Automatisch
+
+PREFERENCES_HISTOGRAMPOSITIONLEFT;Histogram in linkerpaneel
+PREFERENCES_HISTOGRAM_TOOLTIP;Indien ingeschakeld wordt het werkprofiel gebruikt voor het Hoofdhistogram en de Navigator. In alle andere gevallen wordt het gamma-gecorrigeerde uitvoerprofiel gebruikt.
+PREFERENCES_HLTHRESHOLD;Grenswaarde overbelichting
+PREFERENCES_ICCDIR;Map met kleurprofielen
+PREFERENCES_IMG_RELOAD_NEEDED;Om deze veranderingen door te voeren moet de foto opnieuw geladen worden, of een nieuwe foto geopend.
+PREFERENCES_IMPROCPARAMS;Standaardprofiel
+PREFERENCES_INSPECT_LABEL;Inspecteren
+PREFERENCES_INSPECT_MAXBUFFERS_LABEL;Maximum aantal afbeeldingen in cache
+PREFERENCES_INSPECT_MAXBUFFERS_TOOLTIP;Het maximum aantal afbeeldingen in de cache wanneer je in de Bestandsnavigator met de cursor over de miniaturen beweegt. Op computers met weinig RAM-geheugen (2 GB) moet deze waarde op 1 of 2 worden gezet.
+PREFERENCES_INTENT_ABSOLUTE;Absolute colorimetrie
+PREFERENCES_INTENT_PERCEPTUAL;Waargenomen colorimetrie
+PREFERENCES_INTENT_RELATIVE;Relatieve colorimetrie
+PREFERENCES_INTENT_SATURATION;Verzadiging
+PREFERENCES_INTERNALTHUMBIFUNTOUCHED;Toon ingebedde  JPEG-miniatuur als de raw niet bewerkt is
+PREFERENCES_LANG;Taal
+PREFERENCES_LANGAUTODETECT;Gebruik systeemtaal pc
+PREFERENCES_MAXRECENTFOLDERS;Maximum aantal recente mappen
+PREFERENCES_MENUGROUPEXTPROGS;Groepeer 'open met'
+PREFERENCES_MENUGROUPFILEOPERATIONS;Groepeer 'bestandsbewerkingen'
+PREFERENCES_MENUGROUPLABEL;Groepeer 'kleurlabel'
+PREFERENCES_MENUGROUPPROFILEOPERATIONS;Groepeer 'profielbewerkingen'
+PREFERENCES_MENUGROUPRANK;Groepeer 'markering'
+PREFERENCES_MENUOPTIONS;Opties contextmenu
+PREFERENCES_METADATA;Metadata
+PREFERENCES_METADATA_SYNC;Synchroniseer metadata met XMP-sidecars
+PREFERENCES_METADATA_SYNC_NONE;Uit
+PREFERENCES_METADATA_SYNC_READ;Alleen lezen
+PREFERENCES_METADATA_SYNC_READWRITE;Bidirectioneel
+PREFERENCES_MONINTENT;Standaard renderintentie
+PREFERENCES_MONITOR;Beeldscherm
+PREFERENCES_MONPROFILE;Standaard kleurprofiel
+PREFERENCES_MONPROFILE_WARNOSX;Als gevolg van MacOS-beperkingen wordt alleen sRGB ondersteund.
+
+PREFERENCES_MULTITAB;Multi-tab: elke foto opent in nieuw tabvenster
+PREFERENCES_MULTITABDUALMON;Multi-tab, indien beschikbaar op tweede monitor
+PREFERENCES_NAVIGATIONFRAME;Navigatie
+PREFERENCES_OVERLAY_FILENAMES;Toon bestandsnamen over miniaturen
+PREFERENCES_OVERLAY_FILENAMES_FILMSTRIP;Toon bestandsnaam over miniaturen in het Bewerkingsvenster
+PREFERENCES_OVERWRITEOUTPUTFILE;Overschrijf bestaande uitvoerbestanden
+PREFERENCES_PANFACTORLABEL;Ratio panversterking
+PREFERENCES_PARSEDEXT;Verwerkte extensies
+PREFERENCES_PARSEDEXTADD;Voeg extensie toe
+PREFERENCES_PARSEDEXTADDHINT;Voeg opgegeven extensie toe aan lijst
+PREFERENCES_PARSEDEXTDELHINT;Verwijder geselecteerde extensie(s) uit lijst
+PREFERENCES_PARSEDEXTDOWNHINT;Verplaats extensie naar beneden
+PREFERENCES_PARSEDEXTUPHINT;Verplaats extensie naar boven
+PREFERENCES_PERFORMANCE_THREADS;Threads
+PREFERENCES_PERFORMANCE_THREADS_LABEL;Maximum aantal threads voor ruisvermindering (0 = Automatisch)
+PREFERENCES_PREVDEMO;Accuratesse voorbeeld
+PREFERENCES_PREVDEMO_FAST;Snel
+PREFERENCES_PREVDEMO_LABEL;Gebruikte demozaïekmethode voor het voorbeeld bij <100% zoom:
+PREFERENCES_PREVDEMO_SIDECAR;Gelijk aan pp3
+PREFERENCES_PRINTER;Printer (afdruksimulatie)
+PREFERENCES_PROFILEHANDLING;Verwerking profielen
+PREFERENCES_PROFILELOADPR;Laadprioriteit profielen
+PREFERENCES_PROFILEPRCACHE;Profiel in cache
+PREFERENCES_PROFILEPRFILE;Profiel naast uitvoerbestand
+PREFERENCES_PROFILESAVEBOTH;Bewaar verwerkingsprofiel zowel in de cache als naast het invoerbestand
+PREFERENCES_PROFILESAVECACHE;Bewaar profiel in cache
+PREFERENCES_PROFILESAVEINPUT;Bewaar profiel naast invoerbestand
+PREFERENCES_PROFILESAVELOCATION;Opslaglocatie profielen
+PREFERENCES_PROFILE_NONE;Geen
+PREFERENCES_PROPERTY;Eigenschap
+PREFERENCES_PRTINTENT;Renderintentie
+PREFERENCES_PRTPROFILE;Kleurprofiel
+PREFERENCES_PSPATH;Installatiemap Adobe Photoshop
+PREFERENCES_REMEMBERZOOMPAN;Onthoud zoom% en pan-verschuiving
+PREFERENCES_REMEMBERZOOMPAN_TOOLTIP;Onthoud het zoom% en pan-startpunt van de huidige afbeelding als er een nieuwe afbeelding wordt geopend.\n\nDeze optie werkt alleen in 'Enkel-tab modus' en wanneer 'Demozaïekmethode van het voorbeeld bij <100% zoom' is ingesteld als 'Als in pp3'.
+PREFERENCES_SAVE_TP_OPEN_NOW;Bewaar open/dicht-status van de gereedschappen nu
+PREFERENCES_SELECTLANG;Selecteer taal
+PREFERENCES_SERIALIZE_TIFF_READ;Leesopties TIFF 
+PREFERENCES_SERIALIZE_TIFF_READ_LABEL;Serieel lezen van TIFF-bestanden
+PREFERENCES_SERIALIZE_TIFF_READ_TOOLTIP;Als een map veel ongecomprimeerde TIFF-bestanden bevat dan versnelt deze optie het genereren van de miniaturen.
+PREFERENCES_SET;Activeer
+PREFERENCES_SHOWBASICEXIF;Toon standaard Exif-info
+PREFERENCES_SHOWDATETIME;Toon datum en tijd
+PREFERENCES_SHOWEXPOSURECOMPENSATION;Toon belichtingscompensatie
+PREFERENCES_SHOWFILMSTRIPTOOLBAR;Toon filmstripwerkbalk
+PREFERENCES_SHTHRESHOLD;Grenswaarde onderbelichting
+PREFERENCES_SINGLETAB;Enkel-tab modus
+PREFERENCES_SINGLETABVERTAB;Enkel-tab modus, verticale tabs
+PREFERENCES_SND_HELP;Typ volledig pad naar geluidsbestanden, laat leeg voor geen geluid.\nWindows: gebruik 'SystemDefault', 'SystemAsterisk', etc., en op Linux gebruik 'complete', 'window-attention' etc.
+PREFERENCES_SND_LNGEDITPROCDONE;Bewerking klaar
+PREFERENCES_SND_QUEUEDONE;Verwerkingsrij klaar
+PREFERENCES_SND_THRESHOLDSECS;na seconden
+PREFERENCES_STARTUPIMDIR;Standaardmap bij opstarten
+PREFERENCES_TAB_BROWSER;Bestandsnavigator
+PREFERENCES_TAB_COLORMGR;Kleurbeheer
+PREFERENCES_TAB_DYNAMICPROFILE;Dynamische profielregel
+PREFERENCES_TAB_FASTEXPORT;Snelle export
+PREFERENCES_TAB_GENERAL;Algemeen
+PREFERENCES_TAB_IMPROC;Beeldverwerking
+PREFERENCES_TAB_PERFORMANCE;Prestaties
+PREFERENCES_TAB_SOUND;Geluiden
+PREFERENCES_THUMBNAIL_INSPECTOR_JPEG;Ingebed JPEG-voorbeeld
+PREFERENCES_THUMBNAIL_INSPECTOR_MODE;Te tonen afbeelding
+PREFERENCES_THUMBNAIL_INSPECTOR_RAW;Snelle raw-rendering
+PREFERENCES_THUMBNAIL_INSPECTOR_RAW_IF_NO_JPEG_FULLSIZE;Ingebedde JPEG indien vol formaat, anders snel raw
+PREFERENCES_THUMBNAIL_INSPECTOR_RAW_FILM_CURVE;Gebruik standaard filmcurve voor de raw-rendering
+PREFERENCES_THUMBNAIL_RATING;Laad/bewaar miniatuurmarkeringen van/naar XMP-sidecars
+PREFERENCES_TP_LABEL;Gereedschapspaneel:
+PREFERENCES_TP_VSCROLLBAR;Verberg verticale schuifbalk
+PREFERENCES_TUNNELMETADATA;Kopieer Exif/IPTC/XMP onveranderd naar uitvoerbestand
+PREFERENCES_USEBUNDLEDPROFILES;Gebruik gebundelde profielen
+PREFERENCES_VIEW;Witbalans uitvoerapparaat (monitor, TV, projector, etc.)
+PREFERENCES_WORKFLOW;Lay-out
+PREFERENCES_XMP_SIDECAR_MODE;XMP sidecar-stijl
+PREFERENCES_XMP_SIDECAR_MODE_STD;Standaard (FILENAME.xmp voor FILENAME.ext)
+PREFERENCES_XMP_SIDECAR_MODE_EXT;zoals in Darktable/Digikam (FILENAME.ext.xmp voor FILENAME.ext)
+
+# Profielen
+PROFILEPANEL_COPYPPASTE;Te kopiëren parameters
+PROFILEPANEL_GLOBALPROFILES;Gebundelde profielen
+PROFILEPANEL_LABEL;Profielen
+PROFILEPANEL_LOADDLGLABEL;Kies profiel...
+PROFILEPANEL_LOADPPASTE;Te laden parameters
+PROFILEPANEL_MODE_TIP;Profiel aanvullen.\n\nKnop ingedrukt: gedeeltelijke profielen worden omgezet naar volledige profielen. De ontbrekende waarden worden vervangen door hardgecodeerde standaardwaarden.\n\nKnop losgelaten: profielen worden toegepast zo als ze zijn, alleen de aanwezige waarden worden gewijzigd.
+PROFILEPANEL_MYPROFILES;Mijn profielen
+PROFILEPANEL_PASTEPPASTE;Te plakken parameters
+PROFILEPANEL_PCUSTOM;Handmatig
+PROFILEPANEL_PDYNAMIC;Dynamisch
+PROFILEPANEL_PDEFAULT;Standaard
+PROFILEPANEL_PFILE;Uit bestand
+PROFILEPANEL_PINTERNAL;Neutraal
+PROFILEPANEL_PLASTSAVED;Laatst opgeslagen
+PROFILEPANEL_SAVEDLGLABEL;Bewaar profiel...
+PROFILEPANEL_SAVEPPASTE;Te bewaren parameters
+PROFILEPANEL_TOOLTIPCOPY;Kopieer huidig profiel naar klembord.\n<b>Ctrl+klik</b> om de te kopiëren parameters te selecteren.
+PROFILEPANEL_TOOLTIPLOAD;Laad profiel uit bestand.\n<b>Ctrl+klik</b> om de te laden parameters te selecteren.
+PROFILEPANEL_TOOLTIPPASTE; Plak profiel van klembord.\n<b>Ctrl+klik</b> om de te plakken parameters te selecteren.
+PROFILEPANEL_TOOLTIPSAVE;Bewaar huidig profiel.\n<b>Ctrl+klik</b> om de te bewaren parameters te selecteren.
+PROGRESSBAR_HLREC;Reconstructie hoge lichten...
+PROGRESSBAR_LOADING;Afbeelding laden...
+PROGRESSBAR_LOADINGTHUMBS;Miniaturen laden...
+PROGRESSBAR_LOADJPEG;Laden JPEG-bestand...
+PROGRESSBAR_LOADPNG;Laden PNG-bestand...
+PROGRESSBAR_LOADTIFF;Laden TIFF-bestand...
+PROGRESSBAR_NOIMAGES;Geen afbeeldingen gevonden
+PROGRESSBAR_PROCESSING;Foto verwerken...
+PROGRESSBAR_PROCESSING_PROFILESAVED;Verwerkingsprofiel opgeslagen
+PROGRESSBAR_READY;Gereed
+PROGRESSBAR_SAVEJPEG;Opslaan JPEG-bestand...
+PROGRESSBAR_SAVEPNG;Opslaan PNG-bestand...
+PROGRESSBAR_SAVETIFF;Opslaan TIFF-bestand...
+PROGRESSBAR_SNAPSHOT_ADDED;Snapshot toegevoegd
+PROGRESSDLG_PROFILECHANGEDINBROWSER;Profiel veranderd in bestandsnavigator
+
+QINFO_FRAMECOUNT;%2 frames
+QINFO_HDR;HDR / %2 frame(s)
+QINFO_ISO;ISO
+QINFO_NOEXIF;Exif-data niet beschikbaar.
+QINFO_PIXELSHIFT;Pixel-shift / %2 frame(s)
+
+QUEUE_AUTOSTART;Auto-start
+QUEUE_AUTOSTART_TOOLTIP;Auto-start verwerking wanneer nieuwe foto arriveert
+QUEUE_DESTFILENAME;Pad en bestandsnaam
+QUEUE_FORMAT_TITLE;Bestandsformaat
+QUEUE_LOCATION_FOLDER;Sla op in map
+QUEUE_LOCATION_TEMPLATE;Gebruik sjabloon
+QUEUE_LOCATION_TEMPLATE_TOOLTIP;Geef uitvoerlocatie op, gebaseerd op  locatie, waardering, prullenbakpositie of positie in de verwerkingsrij.\n\nAls voorbeeld nemen we de volgende padnaam:\n<b>/home/tom/fotoos/2020-10-31/foto1.raw</b>\nDe betekenis van de formatteeropties zijn als volgt:\n\n<b>%d4</b> = <i>home</i>\n<b>%d3</b> = <i>tom</i>\n<b>%d2</b> = <i>fotoos</i>\n<b>%d1</b> = <i>2020-10-31</i>\n<b>%f</b> = <i>foto1</i>\n<b>%p1</b> = <i>/home/tom/fotoos/2020-10-31/</i>\n<b>%p2</b> = <i>/home/tom/fotoos/</i>\n<b>%p3</b> = <i>/home/tom/</i>\n<b>%p4</b> = <i>/home/</i>\n\n<b>%r</b> wordt vervangen door de waardering van de foto. Heeft de foto geen waardering, dan wordt'0' gebruikt. Als de foto in de prullenbak zit wordt 'x' gebruikt.\n\n<b>%s1 ... %s9</b> wordt vervangen door de initiële plek van de foto in de verwerkingsrij wanneer deze gestart wordt. Het getal bepaalt de getalruimte: <b>%s3</b> resulteert in <i>001</i>.\n\nWilt u het uitvoerbestand naast het oorspronkelijke bestand bewaren, schrijf dan:\n<b>%p1/%f</b>\n\nAls u de uitvoer in een map genaamd <i>geconverteerd</i> wilt bewaren die in dezelfde map staat als de oorspronkelijke foto, zegt u :\n<b>%p1/geconverteerd/%f</b>\n\nAls u het resulterende bestand wilt bewaren in \n<i>/home/tom/fotoos/geconverteerd/2020-10-31</i>, schrijft u:\n<b>%p2/geconverteerd/%d1/%f</b>
+QUEUE_LOCATION_TITLE;Uitvoerlocatie
+QUEUE_STARTSTOP_TOOLTIP;Start of stop de verwerking van foto's in de rij.\n\nSneltoets: <b>Ctrl+s</b>
+
+SAMPLEFORMAT_0;Onbekend dataformaat
+SAMPLEFORMAT_1;8-bit unsigned
+SAMPLEFORMAT_2;16-bit unsigned
+SAMPLEFORMAT_4;24-bit LogLuv
+SAMPLEFORMAT_8;32-bit LogLuv
+SAMPLEFORMAT_16;16-bit drijvendekomma
+SAMPLEFORMAT_32;24-bit drijvendekomma
+SAMPLEFORMAT_64;32-bit drijvendekomma
+
+# Opslaan
+SAVEDLG_AUTOSUFFIX;Voeg automatisch ophogend nummer (-1, -2..) toe als bestand al bestaat
+SAVEDLG_FILEFORMAT;Bestandstype
+SAVEDLG_FILEFORMAT_FLOAT; drijvendekomma
+SAVEDLG_FORCEFORMATOPTS;Forceer opties voor opslaan
+SAVEDLG_JPEGQUAL;JPEG-kwaliteit
+SAVEDLG_PUTTOQUEUE;Plaats in verwerkingsrij
+SAVEDLG_PUTTOQUEUEHEAD;Plaats vooraan in verwerkingsrij
+SAVEDLG_PUTTOQUEUETAIL;Plaats achteraan in verwerkingsrij
+SAVEDLG_SAVEIMMEDIATELY;Bewaar meteen
+SAVEDLG_SAVESPP;Bewaar afbeelding met profiel
+SAVEDLG_SUBSAMP;Subsampling
+SAVEDLG_SUBSAMP_1;Beste compressie
+SAVEDLG_SUBSAMP_2;Gebalanceerd
+SAVEDLG_SUBSAMP_3;Beste kwaliteit
+SAVEDLG_SUBSAMP_TOOLTIP;Beste compressie:\nJ:a:b 4:2:0\nh/v 2/2\nChroma horizontaal en verticaal gehalveerd\n\nGebalanceerd:\nJ:a:b 4:2:2\nh/v 2/1\nChroma horizontaal gehalveerd.\n\nBeste kwaliteit:\nJ:a:b 4:4:4\nh/v 1/1\nGeen chroma-subsampling.
+SAVEDLG_TIFFUNCOMPRESSED;Geen TIFF-compressie
+SAVEDLG_WARNFILENAME;Bestandsnaam wordt
+
+SHCSELECTOR_TOOLTIP;Rechtsklik om de drie schuiven terug te zetten naar hun standaardpositie
+
+SOFTPROOF_GAMUTCHECK_TOOLTIP;Markeer pixels waarvan de kleuren buiten het kleurgamma vallen, relatief aan:\n- het printerprofiel, indien opgegeven en soft-proofing is ingeschakeld,\n- het uitvoerprofiel, indien geen printerprofiel is gekozen en soft-proofing is ingeschakeld,\n- het beeldschermprofiel, indien soft-proofing is uitgeschakeld.
+SOFTPROOF_TOOLTIP;Soft-proofing simuleert hoe een foto wordt getoond:\n- als deze wordt afgedrukt, indien een printerprofiel is opgegeven in Voorkeuren > Kleurbeheer,\n- als de foto getoond wordt op een beeldscherm dat het huidige uitvoerprofiel gebruikt en een printerprofiel niet is opgegeven.
+
+THRESHOLDSELECTOR_B;Onderkant
+THRESHOLDSELECTOR_BL;Onderkant-links
+THRESHOLDSELECTOR_BR;Onderkant-rechts
+THRESHOLDSELECTOR_HINT;Houd de <b>Shift</b>-toets ingedrukt om individuele controlepunten te verschuiven.
+THRESHOLDSELECTOR_T;Bovenkant
+THRESHOLDSELECTOR_TL;Bovenkant-links
+THRESHOLDSELECTOR_TR;Bovenkant-rechts
+
+# Gereedschapsbalk
+TOOLBAR_TOOLTIP_COLORPICKER;Vergrendelbare kleurenkiezer\n\nIndien geactiveerd:\nVoeg kiezer toe: <b>linksklik</b>\nVerplaats  kiezer:<b>linksklik en sleep</b>\nVerwijder kiezer: <b>rechtsklik</b>\nVerwijder alle kiezers:<b>Ctrl+Shift+rechtsklik</b>b\nTerug naar handgereedschap: <b>rechtsklik</b> buiten een kiezer.
+TOOLBAR_TOOLTIP_CROP;Bijsnijden.\nSneltoets: <b>c</b>\nVerplaats uitsnede met <b>Shift+muis</b>\nGrootte uitsnede wijzigen: <b>Ctrl+muis</b>.
+TOOLBAR_TOOLTIP_HAND;Handgereedschap.\nSneltoets: <b>h</b>
+TOOLBAR_TOOLTIP_STRAIGHTEN;<b>Rechtzetten</b> / <b>Kleine rotaties</b>.\nSneltoets: <b>s</b>\n\nBepaal de verticale of horizontale as door een hulplijn over de foto te trekken. De rotatiehoek wordt naast de hulplijn getoond. Het draaicentrum is het geometrische midden van de afbeelding.
+TOOLBAR_TOOLTIP_WB;Spot-witbalans.\nSneltoets: <b>w</b>
+TP_SATURATION_LABEL;Verzadiging en levendigheid
+TP_BRIGHTCONTRSAT_BRIGHTNESS;Helderheid
+TP_BRIGHTCONTRSAT_CONTRAST;Contrast
+TP_SATURATION_SATURATION;Verzadiging
+TP_SATURATION_VIBRANCE;Levendigheid
+
+TP_BWMIX_COLORCAST;Tint
+TP_BWMIX_HUE;Tint
+TP_BWMIX_SATURATION;Verzadiging
+
+TP_BWMIX_FILTER;Filterkleur 
+TP_BWMIX_FILTER_BLUE;Blauw
+TP_BWMIX_FILTER_BLUEGREEN;Blauw-groen
+TP_BWMIX_FILTER_GREEN;Groen
+TP_BWMIX_FILTER_GREENYELLOW;Groen-geel
+TP_BWMIX_FILTER_NONE;Geen
+TP_BWMIX_FILTER_PURPLE;Paars
+TP_BWMIX_FILTER_RED;Rood
+TP_BWMIX_FILTER_REDYELLOW;Rood-geel
+TP_BWMIX_FILTER_TOOLTIP;Het kleurfilter heeft hetzelfde effect als een voor de lens geplaatst filter. Kleurfilters in zwart-witfotografie laten hun eigen kleur beter door en houden de complementaire kleur tegen. Zo maakt bijvoorbeeld een roodfilter een blauwe lucht donkerder.
+TP_BWMIX_FILTER_YELLOW;Geel
+TP_BWMIX_GAMMA;Gammacorrectie
+TP_BWMIX_GAM_TOOLTIP;Corrigeer gamma voor elk RGB-kanaal
+TP_BWMIX_LABEL;Zwart-wit
+TP_BWMIX_NEUTRAL;Standaardwaarden
+TP_BWMIX_RGBLABEL;R: %1%%   G: %2%%   B: %3%%   Totaal: %4%%
+TP_BWMIX_RGBLABEL_HINT;RGB-omrekeningsfactoren. Hierin zijn alle gekozen opties verwerkt.\nHet totaal is de som van de uit te voeren RGB-factoren:\n- dit is altijd 100% in relatieve RGB-modus\n- hoger (lichter) of lager (donkerder) dan 100% in absolute RGB-modus.
+TP_BWMIX_RGB_TOOLTIP;Mix de RGB-kanalen, handmatig of via  Voorinstellingen.\nNegatieve waarden kunnen artefacten of onregelmatigheden veroorzaken.
+TP_BWMIX_SETTING;Voorinstelling
+TP_BWMIX_SETTING_TOOLTIP;Verschillende voorinstellingen zoals portret, landschap, infrarood, etc.
+TP_BWMIX_SET_HIGHCONTAST;Hoog contrast
+TP_BWMIX_SET_HIGHSENSIT;Hoge gevoeligheid
+TP_BWMIX_SET_HYPERPANCHRO;Hyper-panchromatisch
+TP_BWMIX_SET_INFRARED;Infrarood
+TP_BWMIX_SET_LANDSCAPE;Landschap
+TP_BWMIX_SET_LOWSENSIT;Lage gevoeligheid
+TP_BWMIX_SET_LUMINANCE;Luminantie
+TP_BWMIX_SET_NORMCONTAST;Normaal contrast
+TP_BWMIX_SET_ORTHOCHRO;Orthochromatisch
+TP_BWMIX_SET_PANCHRO;Panchromatisch
+TP_BWMIX_SET_PORTRAIT;Portret
+TP_BWMIX_SET_RGBREL;Relatief RGB
+TP_BWMIX_SET_RGBABS;Absoluut RGB
+TP_CHMIXER_BLUE;Blauw
+TP_CHMIXER_GREEN;Groen
+TP_CHMIXER_LABEL;Kanalenmixer
+TP_CHMIXER_RED;Rood
+
+TP_COARSETRAF_TOOLTIP_HFLIP;Horizontaal spiegelen
+TP_COARSETRAF_TOOLTIP_ROTLEFT;Roteer naar links.\nSneltoets:\n<b>[</b> in Multi-tab modus\n<b>Alt-[</b> in Enkel-tab modus.
+TP_COARSETRAF_TOOLTIP_ROTRIGHT;Roteer naar rechts.\nSneltoets:\n<b>]</b> in Multi-tab modus\n<b>Alt-]</b> in Enkel-tab modus.
+TP_COARSETRAF_TOOLTIP_VFLIP;Verticaal spiegelen
+
+# module Color Correction / Kleurcorrectie
+TP_COLORCORRECTION_ABVALUES;a=%1 b=%2
+TP_COLORCORRECTION_MODE;Modus
+TP_COLORCORRECTION_MODE_COMBINED;Standaard
+TP_COLORCORRECTION_MODE_RGBCHANNELS;Aparte RGB-kanalen
+TP_COLORCORRECTION_CHANNEL_B;Blauw
+TP_COLORCORRECTION_CHANNEL_G;Groen
+TP_COLORCORRECTION_CHANNEL_R;Rood
+TP_COLORCORRECTION_LABEL;Kleurcorrectie
+> TP_COLORCORRECTION_LIGHTNESS;Lightness		??
+TP_COLORCORRECTION_LIST_TITLE;Correctie
+TP_COLORCORRECTION_MASK;Masker
+TP_COLORCORRECTION_OFFSET;Verschuiving
+TP_COLORCORRECTION_PIVOT;Middelpunt
+TP_COLORCORRECTION_POWER;Kracht
+TP_COLORCORRECTION_SATURATION;Verzadiging
+TP_COLORCORRECTION_SLOPE;Helling
+TP_COLORCORRECTION_SYNC_SLIDERS;Koppel corresponderende schuiven
+TP_COLORTONING_AUTOSAT;Automatisch	??
+TP_COLORTONING_BALANCE;Balans		??
+
+# Area mask
+TP_LABMASKS_AREA;Gebiedsmasker
+TP_LABMASKS_AREA_FEATHER;Verdoezelen
+TP_LABMASKS_AREA_MASK_COPY_TOOLTIP;Kopieer het huidige masker naar het klembord
+TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP;Bewerk het huidige masker door te tekenen op het voorbeeld
+TP_LABMASKS_AREA_MASK_DRAW_ADD_TOOLTIP;Voeg een gebiedsvorm toe door te tekenen op het voorbeeld
+TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP;Toon de huidige gebiedsvorm op het voorbeeld
+TP_LABMASKS_AREA_MASK_PASTE_TOOLTIP;Plak een gebiedsmasker van het klembord
+TP_LABMASKS_AREA_SHAPES;Vormen
+TP_LABMASKS_BLUR;Vervaging
+TP_LABMASKS_DELTAE_DECAY;Verval
+TP_LABMASKS_DELTAE;ΔE-masker
+TP_LABMASKS_DELTAE_RANGE;Bereik
+TP_LABMASKS_DELTAE_PICK;Kies
+TP_LABMASKS_INVERTED;Omgekeerd
+TP_LABMASKS_MASK;Masker
+TP_LABMASKS_SHOW;Toon masker
+TP_SMOOTHING_CHANNEL;Kanaal
+TP_SMOOTHING_LABEL;Verzachten
+TP_SMOOTHING_LIST_TITLE;Parameters
+TP_SMOOTHING_CHANNEL_L;Luminantie
+TP_SMOOTHING_CHANNEL_C;Chrominantie
+TP_SMOOTHING_CHANNEL_RGB;RGB
+TP_SMOOTHING_RADIUS;Straal
+TP_SMOOTHING_EPSILON;Detail
+
+# module Local Contrast
+TP_LOCALCONTRAST_CONTRAST;Residueel contrast
+TP_LOCALCONTRAST_CURVE;Lokaalcontrast-curve
+TP_LOCALCONTRAST_LABEL;Lokaal contrast
+
+#module Crop / Bijsnijden
+TP_CROP_FIXRATIO;Verhouding:
+TP_CROP_GTDIAGONALS;Diagonaalregel
+TP_CROP_GTEPASSPORT;Biometrisch paspoort
+TP_CROP_GTFRAME;Kader
+TP_CROP_GTGRID;Raster
+TP_CROP_GTHARMMEANS;Gulden snede
+TP_CROP_GTNONE;Geen
+TP_CROP_GTRULETHIRDS;Regel van derden
+TP_CROP_GTTRIANGLE1;Gouden driehoek 1
+TP_CROP_GTTRIANGLE2;Gouden driehoek 2
+TP_CROP_GUIDETYPE;Hulplijnen:
+TP_CROP_H;Hoogte
+TP_CROP_LABEL;Bijsnijden
+TP_CROP_RESETCROP;Terug
+TP_CROP_SELECTCROP;Selecteer
+TP_CROP_W;Breedte
+TP_CROP_X;X
+TP_CROP_Y;Y
+
+# module Dark-Frame
+TP_DARKFRAME_AUTOSELECT;Automatische selectie
+TP_DARKFRAME_LABEL;Donkerframe
+
+# module Defringe / Verzachten
+TP_DEFRINGE_LABEL;Verzachten
+TP_DEFRINGE_RADIUS;Straal
+TP_DEFRINGE_THRESHOLD;Drempel
+
+# module Dehaze
+TP_DEHAZE_DEPTH;Diepte
+TP_DEHAZE_LABEL;Nevelvermindering
+TP_DEHAZE_MODE;Modus
+TP_DEHAZE_RGB;RGB
+TP_DEHAZE_LUMINANCE;Luminantie
+TP_DEHAZE_SHOW_DEPTH_MAP;Toon dieptekaart
+TP_DEHAZE_STRENGTH;Kracht
+
+# Filmkorrel
+TP_GRAIN_ISO;Korreligheid (ISO)
+TP_GRAIN_LABEL;Filmkorrel
+TP_GRAIN_SCALE;Schaal
+TP_GRAIN_STRENGTH;Kracht
+
+# module Noise Reduction / Ruisvermindering
+TP_DENOISE_SMOOTHING;Finale verzachting
+TP_DENOISE_SMOOTHING_MEDIAN;Mediaanfilter
+TP_DENOISE_SMOOTHING_METHOD;Methode
+TP_DENOISE_SMOOTHING_GUIDED;Luma/chroma
+TP_DENOISE_GUIDED_RADIUS;Straal
+TP_DENOISE_GUIDED_STRENGTH;Kracht
+
+TP_DIRPYRDENOISE_CHROMINANCE_AUTO_FACTOR;Autom. reductiekracht
+TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL;Automatisch
+TP_DIRPYRDENOISE_CHROMINANCE_BLUEYELLOW;Chroma - Blauw-Geel
+TP_DIRPYRDENOISE_CHROMINANCE_FRAME;Chrominantie
+TP_DIRPYRDENOISE_CHROMINANCE_MANUAL;Handmatig
+TP_DIRPYRDENOISE_CHROMINANCE_MASTER;Chroma - Maestro
+TP_DIRPYRDENOISE_CHROMINANCE_METHOD;Methode
+TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN;Chroma - Rood-Groen
+TP_DIRPYRDENOISE_LABEL;Ruisvermindering
+TP_DIRPYRDENOISE_LUMINANCE_CONTROL;Luminantiecontrole
+TP_DIRPYRDENOISE_LUMINANCE_DETAIL;Detailherstel
+TP_DIRPYRDENOISE_LUMINANCE_FRAME;Luminantie
+TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Detaildrempel
+TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING;Luminantie
+TP_DIRPYRDENOISE_MAIN_MODE_AGGRESSIVE;Agressief
+TP_DIRPYRDENOISE_MAIN_MODE_CONSERVATIVE;Conservatief
+TP_DIRPYRDENOISE_MAIN_MODE_TOOLTIP;"Conservatief" behoudt laagfrequente chroma-patronen, "agressief" niet of minder.
+TP_DIRPYRDENOISE_MEDIAN_METHOD;Mediaanmethode
+TP_DIRPYRDENOISE_MEDIAN_METHOD_CHROMINANCE;Alleen chroma
+TP_DIRPYRDENOISE_MEDIAN_METHOD_LAB;L*a*b*
+TP_DIRPYRDENOISE_MEDIAN_METHOD_LUMINANCE;Alleen luma
+TP_DIRPYRDENOISE_MEDIAN_METHOD_RGB;RGB
+TP_DIRPYRDENOISE_MEDIAN_METHOD_WEIGHTED;Gewogen L* (klein) + a*b* (normaal)
+TP_DIRPYRDENOISE_MEDIAN_PASSES;Mediaanherhalingen
+TP_DIRPYRDENOISE_MEDIAN_PASSES_TOOLTIP;Applying three median filter iterations with a 3x3 window size often leads to better results than using one median filter iteration with a 7x7 window size.
+TP_DIRPYRDENOISE_MEDIAN_TYPE;Mediaantype
+TP_DIRPYRDENOISE_SLI;Slider
+TP_DIRPYRDENOISE_TYPE_3X3;3x3
+TP_DIRPYRDENOISE_TYPE_3X3SOFT;3x3 zacht
+TP_DIRPYRDENOISE_TYPE_5X5;5x5
+TP_DIRPYRDENOISE_TYPE_5X5SOFT;5x5 zacht
+TP_DIRPYRDENOISE_TYPE_7X7;7x7
+TP_DIRPYRDENOISE_TYPE_9X9;9x9
+
+# module Vervormingscorrectie
+TP_DISTORTION_AMOUNT;Hoeveelheid
+TP_DISTORTION_AUTO_TIP;Corrigeert automatisch de lensvervorming in raw-bestanden door deze te vergelijken met de ingebedde JPG. Op voorwaarde dat in de camera was aangegeven dat lensvervorming automatisch gecorrigeerd moest worden.
+TP_DISTORTION_LABEL;Vervormingscorrectie
+TP_EPD_EDGESTOPPING;Randbehandeling
+TP_EPD_REWEIGHTINGITERATES;Herhaling
+TP_EPD_SCALE;Schaal
+TP_EPD_STRENGTH;Sterkte
+TP_EXPOSURE_AUTOLEVELS;Autom. niveaus
+TP_EXPOSURE_AUTOLEVELS_TIP;Activeer automatische niveaus\nActiveer Herstel Hoge lichten indien nodig.
+TP_EXPOSURE_BLACKLEVEL;Schaduwen
+TP_EXPOSURE_BRIGHTNESS;Helderheid
+
+# Texture boost
+TP_EPD_EDGESTOPPING;Randbehandeling
+TP_EPD_LABEL;Textuurversterking
+TP_EPD_SCALE;Schaal
+TP_EPD_STRENGTH;Kracht
+
+# Soft Light
+TP_SOFTLIGHT_LABEL;Zacht licht
+TP_SOFTLIGHT_STRENGTH;Kracht
+
+TP_EXPOSURE_CLIP_TIP;Het deel van de pixels dat moet worden hersteld bij gebruik van automatische niveaus.
+TP_EXPOSURE_COMPRHIGHLIGHTS;Comprimeer hoge lichten
+TP_EXPOSURE_COMPRHIGHLIGHTSTHRESHOLD;Drempel hoge-lichtencompressie
+TP_EXPOSURE_COMPRSHADOWS;Schaduwcompressie
+TP_EXPOSURE_CONTRAST;Contrast
+TP_EXPOSURE_CURVEEDITOR;Tooncurve
+TP_EXPOSURE_CURVEEDITOR1;Tooncurve 1
+TP_EXPOSURE_CURVEEDITOR2;Tooncurve 2
+TP_EXPOSURE_CURVEEDITOR2_TOOLTIP;Raadpleeg de volgende paragraaf van de handleiding om te leren hoe U het beste resultaat kunt boeken bij het werken met dubbele curven:\n The Toolbox > Exposure Tab > Exposure Panel > Tone Curve
+TP_EXPOSURE_EXPCOMP;Belichtingscompensatie
+TP_EXPOSURE_LABEL;Belichting
+TP_EXPOSURE_SATURATION;Verzadiging
+TP_EXPOSURE_TCMODE_FILMLIKE;Filmachtig
+TP_EXPOSURE_TCMODE_LABEL1;Curve modus 1
+TP_EXPOSURE_TCMODE_LABEL2;Curve modus 2
+TP_EXPOSURE_TCMODE_LUMINANCE;Luminantie
+TP_EXPOSURE_TCMODE_PERCEPTUAL;Perceptueel
+TP_EXPOSURE_TCMODE_SATANDVALBLENDING;Verzadiging en waarde mengen
+TP_EXPOSURE_TCMODE_STANDARD;Standaard
+TP_EXPOSURE_TCMODE_WEIGHTEDSTD;Gewogen standaard
+
+TP_EXPOS_WHITEPOINT_LABEL;Raw-witpunten
+TP_FILMSIMULATION_LABEL;Filmsimulatie
+TP_FILMSIMULATION_SLOWPARSEDIR;Map met HaldCLUT-afbeeldingen. Deze worden gebruikt voor Filmsimulatie.\nGa naar Voorkeuren > Beeldverwerking > Filmsimulatie\nDe aanbeveling is om een map te gebruiken die alleen HaldCLUT-afbeeldingen bevat.\n\nLees het artikel over Filmsimulatie in RawPedia voor meer informatie.\n\nWilt u de scan afbreken?
+TP_FILMSIMULATION_STRENGTH;Sterkte
+TP_FILMSIMULATION_ZEROCLUTSFOUND;Specificeer HaldCLUT-map in Voorkeuren
+
+# RAW - module Flat-Field / Vlakveld
+TP_FLATFIELD_AUTOSELECT;Automatische selectie
+TP_FLATFIELD_BLURRADIUS;Verzachten, straal
+TP_FLATFIELD_BLURTYPE;Verzachten, type
+TP_FLATFIELD_BT_AREA;Gebied
+TP_FLATFIELD_BT_HORIZONTAL;Horizontaal
+TP_FLATFIELD_BT_VERTHORIZ;Verticaal + horizontaal
+TP_FLATFIELD_BT_VERTICAL;Verticaal
+TP_FLATFIELD_CLIPCONTROL;Afkapcontrole
+TP_FLATFIELD_CLIPCONTROL_TOOLTIP;Afkapcontrole vermijdt uitgevreten hoge lichten veroorzaakt door het toepassen van het vlakveld. Als er al uitgevreten hoge lichten waren voor het toepassen van het vlakveld dan kan de afkapcontroleeen  kleurzweem veroorzaken.
+TP_FLATFIELD_LABEL;Vlakveld
+
+TP_GENERAL_11SCALE_TOOLTIP;De werking is alleen zichtbaar op schaal 1:1 van het voorbeeld
+
+# Grijsverloop
+TP_GRADIENT_CENTER;Centrum
+TP_GRADIENT_CENTER_X;Centrum X
+TP_GRADIENT_CENTER_X_TOOLTIP;Rotatiepunt X-as: \n-100 = linkerkant \n0 = centrum \n+100 = rechterkant
+TP_GRADIENT_CENTER_Y;Centrum Y
+TP_GRADIENT_CENTER_Y_TOOLTIP;Rotatiepunt Y-as: \n-100 = bovenkant \n0 = centrum \n+100 = onderkant
+TP_GRADIENT_DEGREE;Hoek
+TP_GRADIENT_DEGREE_TOOLTIP;Rotatiehoek in graden
+TP_GRADIENT_FEATHER;Verloop
+TP_GRADIENT_FEATHER_TOOLTIP;Verloop als percentage van de afbeeldingsdiagonaal
+TP_GRADIENT_LABEL;Grijsverloopfilter
+TP_GRADIENT_STRENGTH;Sterkte
+TP_GRADIENT_STRENGTH_TOOLTIP;Filtersterkte in stops
+
+TP_HLREC_BLEND;Mengen
+TP_HLREC_CIELAB;CIELab-blending
+TP_HLREC_COLOR;Kleurherstel
+TP_HLREC_OFF;Uit
+TP_HLREC_ENA_TOOLTIP;Kan worden geactiveerd door automatische niveaus
+TP_HLREC_LABEL;Hoge lichten herstellen
+TP_HLREC_LUMINANCE;Lichtherstel
+TP_HLREC_METHOD;Methode:
+
+# module HSV Equalizer
+TP_HSVEQUALIZER_CHANNEL;HSV-equalizer
+TP_HSVEQUALIZER_HUE;Tint
+TP_HSVEQUALIZER_LABEL;HSV-balans
+TP_HSVEQUALIZER_SAT;Verzadiging
+TP_HSVEQUALIZER_VAL;Waarde
+TP_HSL_SMOOTHING;Verzachten
+
+TP_EXPOSURE_HISTMATCHING;Auto-tooncurve
+TP_EXPOSURE_HISTMATCHING_TOOLTIP;Automatische aanpassing van schuiven en curves (behalve belichtingscompensatie) om de toon van de ingebedde JPG-miniatuur te bereiken.
+
+# RAW - Film Negative / Filmnegatief
+TP_FILMNEGATIVE_BLUE;Blauwe ratio
+TP_FILMNEGATIVE_GREEN;Referentie-exponent (contrast)
+TP_FILMNEGATIVE_GUESS_TOOLTIP;Berekent exponenten door twee neutrale referentieplekken in het beeld te kiezen: een witte (lichtgrijs) en een zwarte (donkergrijs). De volgorde doet er niet toe. De exponenten worden opgewaardeerd nadat het tweede punt is gekozen.
+TP_FILMNEGATIVE_LABEL;Filmnegatief
+TP_FILMNEGATIVE_PICK;Kies witte en zwarte punten
+TP_FILMNEGATIVE_RED;Rode ratio
+
+# module Color Management / Kleurbeheer
+TP_ICM_APPLYBASELINEEXPOSUREOFFSET;DCP-basisbelichting
+TP_ICM_APPLYBASELINEEXPOSUREOFFSET_TOOLTIP;Gebruik de ingebedde DCP-basisbelichting. De instelling is alleen actief als de DCP er een heeft.
+TP_ICM_APPLYHUESATMAP;DCP-basistabel
+TP_ICM_APPLYHUESATMAP_TOOLTIP;Gebruik de ingebedde DCP-basistabel (HueSatMap). De instelling is alleen actief als de DCP er een heeft.
+TP_ICM_APPLYLOOKTABLE;DCP-'look'-tabel
+TP_ICM_APPLYLOOKTABLE_TOOLTIP;Gebruik de ingebedde DCP 'look'-tabel. De instelling is alleen actief als de DCP er een heeft.
+TP_ICM_BPC;Zwartpuntcompensatie
+TP_ICM_DCPILLUMINANT_INTERPOLATED;Interpoleren
+TP_ICM_DCPILLUMINANT_TOOLTIP;Kies welk ingebed DCP-illuminant moet worden gebruikt. Standaard is dit "interpoleren". Dit is een mix van de twee gebaseerd op de witbalans. De instelling is alleen actief als een Dual-Illuminant DCP met interpolatie is geselecteerd.
+TP_ICM_INPUTCAMERA;Camera standaard
+TP_ICM_INPUTCAMERAICC;Camera-specifiek kleurprofiel
+TP_ICM_INPUTCAMERAICC_TOOLTIP;Gebruik RawTherapee's camera-specifieke DCP- of ICC-kleurprofiel dat preciezer is dan een eenvoudige matrix. Beschikbaar voor sommige camera's. Deze profielen zijn opgeslagen in de map /iccprofiles/input en worden automatisch opgehaald gebaseerd op de exacte overeenkomst van bestandsnaam met de modelnaam van de camera.
+TP_ICM_INPUTCAMERA_TOOLTIP;Gebruik de eenvoudige kleurenmatrix van dcraw of de uitgebreidere RawTherapee-versie (indien aanwezig voor het cameramodel), of gebruik het ingebedde profiel in de DNG.
+TP_ICM_INPUTCUSTOM;Handmatig
+TP_ICM_INPUTCUSTOM_TOOLTIP;Selecteer eigen DCP/ICC-kleurenprofiel voor uw camera.
+TP_ICM_INPUTDLGLABEL;Selecteer invoer-ICC-profiel...
+TP_ICM_INPUTEMBEDDED;Gebruik ingebed profiel, indien mogelijk
+TP_ICM_INPUTEMBEDDED_TOOLTIP;Gebruik het ingebedde kleurenprofiel van de foto.\nIndien niet beschikbaar wordt 'Camera standaard' gebruikt
+TP_ICM_INPUTNONE;Geen profiel
+TP_ICM_INPUTNONE_TOOLTIP;Gebruik geen invoerprofiel. Alleen toepassen in speciale gevallen.
+TP_ICM_INPUTPROFILE;Invoerprofiel
+TP_ICM_LABEL;Kleurbeheer
+TP_ICM_NOICM;Geen ICM: sRGB-uitvoer
+TP_ICM_NOPROFILE;Geen profiel (doorgeefmodus)
+TP_ICM_OUTPUTPROFILE;Uitvoerprofiel
+TP_ICM_PROFILEINTENT;Grafische weergave
+TP_ICM_SAVEREFERENCE;Bewaar referentie-afbeelding
+TP_ICM_SAVEREFERENCE_APPLYWB;Toepassen witbalans
+TP_ICM_SAVEREFERENCE_APPLYWB_TOOLTIP;Gebruik witbalans bij het opslaan van foto's voor het maken van ICC-profielen. Gebruik geen witbalans bij het maken van DCP-profielen.
+TP_ICM_SAVEREFERENCE_TOOLTIP;Sla de lineaire TIFF-afbeelding op voordat het invoerprofiel is toegepast. Het resultaat kan worden gebruikt voor kalibratie en voor het genereren van een cameraprofiel.
+TP_ICM_TONECURVE;Gebruik DCP's tooncurve
+TP_ICM_TONECURVE_TOOLTIP;Gebruik de ingebedde DCP-tooncurve. De instelling is alleen actief als de geselecteerde DCP er een heeft.
+TP_ICM_WORKINGPROFILE;Werkprofiel
+
+TP_IMPULSEDENOISE_LABEL;Spot-ruisonderdrukking
+TP_IMPULSEDENOISE_THRESH;Drempel
+TP_LABCURVE_AVOIDCOLORSHIFT;Vermijd kleurverschuiving
+TP_LABCURVE_AVOIDCOLORSHIFT_TOOLTIP;Plaats de kleuren in het gamut van de kleurruimte van het werkprofiel\nen pas Munsell correctie toe
+TP_LABCURVE_BRIGHTNESS;Helderheid
+TP_LABCURVE_CHROMATICITY;Chromaticiteit
+TP_LABCURVE_CHROMA_TOOLTIP;Voor Z-W tonen, zet Chromaticiteit op -100
+TP_LABCURVE_CURVEEDITOR;Luminantiecurve
+TP_LABCURVE_CURVEEDITOR_A_RANGE1;Groen verzadigd
+TP_LABCURVE_CURVEEDITOR_A_RANGE2;Groen pastel
+TP_LABCURVE_CURVEEDITOR_A_RANGE3;Rood pastel
+TP_LABCURVE_CURVEEDITOR_A_RANGE4;Rood verzadigd
+TP_LABCURVE_CURVEEDITOR_B_RANGE1;Blauw verzadigd
+TP_LABCURVE_CURVEEDITOR_B_RANGE2;Blauw pastel
+TP_LABCURVE_CURVEEDITOR_B_RANGE3;Geel pastel
+TP_LABCURVE_CURVEEDITOR_B_RANGE4;Geel verzadigd
+TP_LABCURVE_CURVEEDITOR_CC_RANGE1;Neutraal
+TP_LABCURVE_CURVEEDITOR_CC_RANGE2;Saai
+TP_LABCURVE_CURVEEDITOR_CC_RANGE4;Verzadigd
+TP_LABCURVE_CURVEEDITOR_CC_TOOLTIP;Chromaticiteit volgens chromaticeit C=f(C)
+TP_LABCURVE_CURVEEDITOR_CH_TOOLTIP;Chromaticiteit volgens Tint C=f(H)
+TP_LABCURVE_CURVEEDITOR_CL_TOOLTIP;Chromaticiteit volgens Luminantie C=f(L)
+TP_LABCURVE_CURVEEDITOR_HH_TOOLTIP;Hue volgens hue H=f(H)
+TP_LABCURVE_CURVEEDITOR_LC_TOOLTIP;Luminantie volgens chromaticiteit L=f(C)
+TP_LABCURVE_CURVEEDITOR_LH_TOOLTIP;Luminantie volgens hue L=f(H)
+TP_LABCURVE_CURVEEDITOR_LL_TOOLTIP;Luminantie volgens luminantie L=f(L)
+TP_LABCURVE_LABEL;Lab
+TP_LABCURVE_LCREDSK;Beperkt LC tot Rode en Huidtinten
+TP_LABCURVE_LCREDSK_TIP;Indien ingeschakeld, beïnvloed de LC Curve alleen rode en huidtinten\nIndien uitgeschakeld, is het van toepassing op all tinten
+TP_LABCURVE_RSTPROTECTION;Rode en huidtinten Bescherming
+TP_LABCURVE_RSTPRO_TOOLTIP;Kan worden gebruikt met de chromaticiteits schuifbalk en de CC curve.
+TP_LENSGEOM_AUTOCROP;Automatisch bijsnijden
+TP_LENSGEOM_FILL;Automatisch uitvullen
+TP_LENSGEOM_LABEL;Objectief / Geometrie
+
+# module Lenscorrectieprofielen
+TP_LENSPROFILE_CORRECTION_AUTOMATCH;Automatisch
+TP_LENSPROFILE_CORRECTION_MANUAL;Handmatig
+TP_LENSPROFILE_CORRECTION_LCPFILE;LCP-bestand
+TP_LENSPROFILE_MODE_HEADER;Selecteer lensprofiel:
+TP_LENSPROFILE_LABEL;Lenscorrectieprofielen
+TP_LENSPROFILE_MODE_HEADER;Select the lens profile:
+TP_LENSPROFILE_USE_CA;Chromatische aberratie
+TP_LENSPROFILE_USE_GEOMETRIC;Geometrie
+TP_LENSPROFILE_USE_HEADER;Welke vervormingen corrigeren:
+TP_LENSPROFILE_USE_VIGNETTING;Vignettering
+
+TP_NEUTRAL;Terugzetten
+TP_NEUTRAL_TIP;Alle belichtingsinstellingen naar 0
+
+# Vignettering
+TP_PCVIGNETTE_CENTER_X;Centrum X
+TP_PCVIGNETTE_CENTER_Y;Centrum Y
+TP_PCVIGNETTE_FEATHER;Straal
+TP_PCVIGNETTE_FEATHER_TOOLTIP;Straal: \n0=alleen hoeken \n50=halverwege tot het centrum \n100=tot aan het centrum
+TP_PCVIGNETTE_LABEL;Vignettering
+TP_PCVIGNETTE_ROUNDNESS;Rondheid
+TP_PCVIGNETTE_ROUNDNESS_TOOLTIP;Vorm: \n0 = rechthoek \n50 = ellips \n100 = cirkel
+TP_PCVIGNETTE_STRENGTH;Sterkte
+TP_PCVIGNETTE_STRENGTH_TOOLTIP;Filtersterkte in stops (bereikt in de hoeken).
+
+# module Perspectief
+TP_PERSPECTIVE_ANGLE;Hoek
+TP_PERSPECTIVE_ASPECT;Aanpassing verhouding
+TP_PERSPECTIVE_AUTO;Autocorrectie
+TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP;Horizontaal en verticaal
+TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP;Horizontaal
+TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP;Verticaal
+TP_PERSPECTIVE_CROPFACTOR;Bijsnijdfactor
+TP_PERSPECTIVE_FLENGTH;Brandpuntsafstand
+TP_PERSPECTIVE_HORIZONTAL;Horizontaal
+TP_PERSPECTIVE_LABEL;Perspectief
+TP_PERSPECTIVE_SHEAR;Scheeftrekken
+TP_PERSPECTIVE_VERTICAL;Verticaal
+
+TP_PFCURVE_CURVEEDITOR_CH;Tint
+TP_PFCURVE_CURVEEDITOR_CH_TOOLTIP;Bepaalt de mate van verzachten per kleur. Hoger = meer, lager = minder.
+
+# module RAW - Voorbewerking
+TP_PREPROCESS_DEADPIXFILT;Dodepixels-filter
+TP_PREPROCESS_DEADPIXFILT_TOOLTIP;Onderdrukt dode pixels
+TP_PREPROCESS_HOTPIXFILT;Hetepixels-filter
+TP_PREPROCESS_HOTPIXFILT_TOOLTIP;Onderdrukt hete pixels
+TP_PREPROCESS_LABEL;Voorbewerking
+
+TP_PREPROCESS_LINEDENOISE;Lijnruisfilter
+TP_PREPROCESS_NO_FOUND;Niet gevonden
+TP_PRSHARPENING_LABEL;Verscherp na verkleinen
+TP_PRSHARPENING_TOOLTIP;Verscherp na verkleinen. Omdat 'verkleinen' geen effect heeft op het voorbeeld, heeft 'Verscherpen na verkleinen' ook geen effect op het voorbeeld.
+
+# RAW - Corrigeer CA
+TP_RAWCACORR_AUTO;Automatische CA-correctie
+TP_RAWCACORR_AUTOIT;Herhalen
+TP_RAWCACORR_AUTOIT_TOOLTIP;Deze schuif is alleen actief als Automatische CA-correctie is aangevinkt.\nAuto-correctie werkt conservatief en corrigeert meestal niet alle chromatische aberratie.\nOm de resterende CA te corrigeren, kunt u dit proces tot vijf keer herhalen.\nElke herhaling vermindert de CA van de vorige herhaling, maar gaat wel ten koste van extra rekentijd. 
+TP_RAWCACORR_AVOIDCOLORSHIFT;Vermijd kleurverschuiving
+TP_RAWCACORR_CABLUE;Blauw
+TP_RAWCACORR_CARED;Rood
+TP_RAWCACORR_LABEL;Corrigeer chromatische aberratie
+
+# RAW - Raw-zwartpunten
+TP_RAWEXPOS_BLACK_0;Groen 1 (leidend)
+TP_RAWEXPOS_BLACK_1;Rood
+TP_RAWEXPOS_BLACK_2;Blauw
+TP_RAWEXPOS_BLACK_3;Groen 2
+TP_RAWEXPOS_BLACK_BLUE;Blauw
+TP_RAWEXPOS_BLACK_GREEN;Groen
+TP_RAWEXPOS_BLACK_RED;Rood
+TP_EXPOS_BLACKPOINT_LABEL;Raw-zwartpunten
+
+TP_RAWEXPOS_LINEAR;Witpuntcorrectie
+TP_RAWEXPOS_RGB;Rood, Groen, Blauw
+TP_RAWEXPOS_TWOGREEN;Koppel Groen 1 en 2
+TP_RAW_1PASSMEDIUM;1 keer (Gemiddeld)
+TP_RAW_3PASSBEST;3 keer (Beste)
+
+# module Log Encoding
+TP_LOGENC_AUTO;Automatisch
+TP_LOGENC_BLACK_EV;Zwart EV
+TP_LOGENC_EV_LEVELS;Relatieve belichtingsniveaus
+TP_LOGENC_SOURCE_GRAY;Grijspunt bron
+TP_LOGENC_WHITE_EV;Wit EV
+TP_LOGENC_TARGET_GRAY;Grijspunt doel
+TP_LOGENC_LABEL;Logcodering
+TP_LOGENC_REGULARIZATION;Regularisatie
+
+# Meta
+TP_METADATA_EDIT;Pas wijzigingen toe
+TP_METADATA_MODE;Kopieermodus metadata
+TP_METADATA_STRIP;Verwijder alle metadata
+TP_METADATA_TUNNEL;Kopieer onveranderd
+
+# Demozaïek-module, Bayer-matrix
+TP_RAW_BORDER;Rand
+TP_RAW_DCBENHANCE;DCB-verbetering
+TP_RAW_DCBITERATIONS;Aantal DCB-iteraties
+TP_RAW_DMETHOD;Methode
+TP_RAW_DMETHOD_PROGRESSBAR;%1 Demozaïeken...
+TP_RAW_DMETHOD_PROGRESSBAR_REFINE;Demozaïekverfijning...
+TP_RAW_DMETHOD_TOOLTIP;IGV en LMMSE zijn speciaal bedoeld voor foto's met hoge ISO-waarden en helpen ruis te verminderen zonder dat dit leidt tot ongewenste patroonvorming, posterisatie of een uitgewassen resultaat.\nPixel-shift is voor Pentax/Sony pixel-shiftbestanden. Voor non-pixel-shift foto's wordt teruggevallen op AMaZE.
+TP_RAW_DUALDEMOSAICCONTRAST;Contrastdrempel
+TP_RAW_LMMSEITERATIONS;LMMSE-verbeterstappen
+TP_RAW_LMMSE_TOOLTIP;Voegt gamma (stap 1), mediaan (stappen 2-4) en verfijnen (stappen 5-6) toe om onregelmatigheden te verwijderen en de signaal/ruis-ratio te verbeteren.
+TP_RAW_FALSECOLOR;Stappen kleurfoutonderdrukking
+TP_RAW_PIXELSHIFTEQUALBRIGHT;Balanceer helderheid frames
+TP_RAW_PIXELSHIFTEQUALBRIGHT_TOOLTIP;Breng de helderheid van de frames in balans met de helderheid van het geselecteerde frame.\nAls er overbelichte gebieden zijn in de frames, selecteer dan het helderste frame om een magentakleurzweem in overbelichte gebieden te vermijden of activeer Bewegingscorrectie.
+TP_RAW_PIXELSHIFTEQUALBRIGHTCHANNEL;Balanceer per kanaal
+TP_RAW_PIXELSHIFTMOTIONMETHOD;Bewegingscorrectie
+TP_RAW_PIXELSHIFTNONGREENCROSS;Controleer rood/blauwkanaal voor beweging
+TP_RAW_PIXELSHIFTSHOWMOTION;Toon beweging
+TP_RAW_PIXELSHIFTSHOWMOTIONMASKONLY;Toon alleen masker
+TP_RAW_PIXELSHIFTSHOWMOTIONMASKONLY_TOOLTIP;Toont het bewegingsmasker zonder de afbeelding
+TP_RAW_PIXELSHIFT;Pixel-shift
+TP_RAW_PIXELSHIFTBLUR;Vervaag bewegingsmasker
+TP_RAW_PIXELSHIFTGREEN;Controleer groenkanaal voor beweging
+TP_RAW_PIXELSHIFTHOLEFILL;Vul holtes in verschuivingsmasker
+TP_RAW_PIXELSHIFTHOLEFILL_TOOLTIP;Vul holtes in het verschuivingsmasker op
+TP_RAW_PIXELSHIFTMEDIAN;Mediaan
+TP_RAW_PIXELSHIFTMEDIAN_TOOLTIP;Gebruik de mediaan van alle frames in plaats van alleen het geselecteerde frame voor gebieden met beweging.\nVerwijdert objecten op verschillende plekken in alle frames.\nGeeft bewegingseffect voor langzaam bewegende (overlappende) objecten.
+TP_RAW_PIXELSHIFTMM_AUTO;Automatisch
+TP_RAW_PIXELSHIFTMM_CUSTOM;Handmatig
+TP_RAW_PIXELSHIFTMM_OFF;Uit
+TP_RAW_NONE;Geen (toont sensorpatroon)
+TP_RAW_PIXELSHIFTSIGMA;Vervagen straal
+TP_RAW_PIXELSHIFTSIGMA_TOOLTIP;De standaardstraal van 1.0 is goed voor lage ISO-waarden. Verhoog de waarde voor hogere ISO-waarden, 5.0 is een goed startpunt.\nControleer het bewegingsmasker bij het veranderen van de waarde.
+TP_RAW_PIXELSHIFTSMOOTH;Zachte overgang
+TP_RAW_PIXELSHIFTSMOOTH_TOOLTIP;Zachte overgang tussen gebieden met en zonder beweging.\n0: uitzetten\n1: voor Amaze/lmmse of Mediaan
+TP_RAW_PIXELSHIFTDMETHOD;Demozaïek voor beweging
+TP_RAW_PIXELSHIFTEPERISO;Gevoeligheid
+TP_RAW_PIXELSHIFTEPERISO_TOOLTIP;De standaardwaarde 0 werkt goed voor lage ISO-waarden.\nHogere waarden vergroten de gevoeligheid van bewegingsdetectie.\nWijzig in kleine stappen en controleer het bewegingsmasker.\nVerhoog gevoeligheid voor onderbelichte foto's of foto's met hoge ISO-waarden.
+TP_RAW_PIXELSHIFTSHOWMOTION_TOOLTIP;Toont foto met een groen masker met de bewegingsgebieden.
+TP_RAW_PIXELSHIFTEQUALBRIGHTCHANNEL_TOOLTIP;Ingeschakeld: balanceer de RGB-kanalen elk apart.\nUitgeschakeld: gebruik zelfde balansfactor voor alle kanalen.
+TP_RAW_DUALDEMOSAICAUTOCONTRAST_TOOLTIP;Als checkbox is aangevinkt (aanbevolen), berekent ART een optimale waarde gebaseerd op vlakke gebieden in de foto.\nIndien die niet gevonden worden of de foto bevat veel ruis, wordt de waarde op 0 gezet.\nOm de waarde handmatig in te voeren moet u eerst de checkbox uitvinken (redelijke waarden zijn afhankelijk van het soort foto).
+
+# RAW - Voorbewerking
+TP_PREPROCESS_LINEDENOISE_DIRECTION;Richting
+TP_PREPROCESS_LINEDENOISE_DIRECTION_BOTH;Beide
+TP_PREPROCESS_LINEDENOISE_DIRECTION_HORIZONTAL;Horizontaal
+TP_PREPROCESS_LINEDENOISE_DIRECTION_PDAF_LINES;Horizontaal alleen op PDAF-rijen
+TP_PREPROCESS_LINEDENOISE_DIRECTION_VERTICAL;Verticaal
+TP_PREPROCESS_PDAFLINESFILTER;PDAF-lijnenfilter
+
+
+
+
+
+> TP_RAW_DCBVNG4;DCB+VNG4
+> TP_RAW_DMETHOD;Method
+> TP_RAW_DMETHOD_PROGRESSBAR;%1 demosaicing...
+> TP_RAW_DMETHOD_PROGRESSBAR_REFINE;Demosaicing refinement...
+> TP_RAW_DUALDEMOSAICAUTOCONTRAST;Auto threshold
+
+
+
+TP_RAW_FAST;Snel
+TP_RAW_HD;Drempel
+TP_RAW_HD_TOOLTIP;Lagere waarden maken Hete/Dode pixel detectie agressiever, maar valse positieven kunnen leiden tot meer artefacten. Als er artefacten verschijnen bij het gebruik van de Hete/Dode Pixel Filters verminder dan geleidelijk de drempelwaarde totdat ze verdwijnen.
+
+> TP_RAW_FALSECOLOR;False color suppression steps
+> TP_RAW_FAST;Fast
+> TP_RAW_HD;Threshold
+> TP_RAW_HD_TOOLTIP;Lower values make hot/dead pixel detection more aggressive, but false positives may lead to artifacts. If you notice any artifacts appearing when enabling the Hot/Dead Pixel Filters, gradually increase the threshold value until they disappear.
+
+TP_RAW_IMAGENUM;Sub-afbeelding
+TP_RAW_LABEL;Demozaïek
+
+> TP_RAW_IMAGENUM_TOOLTIP;Some raw files consist of several sub-images (Pentax/Sony Pixel Shift, Pentax 3-in-1 HDR, Canon Dual Pixel, Fuji EXR).\n\nWhen using any demosaicing method other than Pixel Shift, this selects which sub-image is used.\n\nWhen using the Pixel Shift demosaicing method on a Pixel Shift raw, all sub-images are used, and this selects which sub-image should be used for moving parts.
+
+TP_RAW_SENSOR_BAYER_LABEL;Sensor met Bayer-matrix
+TP_RAW_SENSOR_XTRANS_DMETHOD_TOOLTIP;3-pass geeft het beste resultaat (aanbevolen voor lage ISO afbeeldingen)\n1-pass geeft hetzelfde resultaat als 3-pass voor hoge ISO afbeeldingen en is sneller.
+TP_RAW_SENSOR_XTRANS_LABEL;Sensor met X-Trans matrix
+TP_RAW_NONE;None (Shows sensor pattern)
+
+TP_RESIZE_APPLIESTO;Toepassen op:
+TP_RESIZE_ALLOW_UPSCALING;Sta opschalen toe
+TP_RESIZE_CROPPEDAREA;Uitsnede
+TP_RESIZE_FITBOX;Breedte en hoogte
+TP_RESIZE_FULLIMAGE;Hele foto
+TP_RESIZE_H;H:
+TP_RESIZE_HEIGHT;Hoogte
+TP_RESIZE_LABEL;Grootte wijzigen
+TP_RESIZE_SCALE;Schaal
+TP_RESIZE_SPECIFY;Specificeer:
+TP_RESIZE_UNIT;Eenheid
+TP_RESIZE_PX;px
+TP_RESIZE_CM;cm
+TP_RESIZE_IN;inch
+TP_RESIZE_W;Breedte:
+TP_RESIZE_WIDTH;Breedte
+
+TP_RETINEX_CONTEDIT_HSL;Histogram balans HSL
+TP_RETINEX_CONTEDIT_LAB;Histogram balans L*a*b*
+TP_RETINEX_CONTEDIT_LH;Tint balans
+
+TP_RETINEX_CURVEEDITOR_CD_TOOLTIP;Luminantie volgens luminantie L=f(L)\nCorrigeert ruwe data om halo's and artefacte te verminderen.
+TP_RETINEX_CURVEEDITOR_LH;Sterkte=f(H)
+TP_RETINEX_CURVEEDITOR_LH_TOOLTIP;Sterkte volgens tint Sterkte=f(H)\nDeze curve wijzigt ook chroma wanneer de "Hooglicht" retinex methode wordt gebruikt.
+
+TP_RETINEX_CURVEEDITOR_MAP_TOOLTIP;Deze curve kan zowel alleen worden gebruikt of in combinatie met een Gaussiaans masker of wavelet masker.\nHou rekening met artefacten!
+TP_RETINEX_EQUAL;Mixer
+TP_RETINEX_FREEGAMMA;Vrij gamma
+TP_RETINEX_GAIN;Verbeteren
+
+TP_RETINEX_GAMMA_FREE;Vrij
+TP_RETINEX_GAMMA_HIGH;Hoog
+TP_RETINEX_GAMMA_LOW;Laag
+TP_RETINEX_GAMMA_MID;Midden
+TP_RETINEX_GAMMA_NONE;Geen
+TP_RETINEX_GAMMA_TOOLTIP;Hersteld tinten door gamma voor en na Retinex toe te passen. Verschilt van Retinex curves en andere curves (Lab, Exposure, etc.).
+TP_RETINEX_GRAD;Transmissie verloop
+TP_RETINEX_GRADS;Sterkte verloop
+TP_RETINEX_GRADS_TOOLTIP;Indien schuifbalk=0: alle herhalingen zijn gelijk.\nIndien > 0 Sterkte verminderd en herhaling vergroot, en omgekeerd.
+TP_RETINEX_GRAD_TOOLTIP;Indien schuifbalk=0: alle herhalingen zijn gelijk.\nIndien > 0 Variantie en Drempel worden verkleind als herhaling toeneemt, en omgekeerd.
+TP_RETINEX_HIGH;Hoog
+TP_RETINEX_HIGHLIG;Hooglicht
+TP_RETINEX_HIGHLIGHT;Drempel hooglicht
+TP_RETINEX_HIGHLIGHT_TOOLTIP;Versterkt de werking van de Hooglicht methode.\nMogelijk moet de "Naburige pixels" worden aangepast en moet de "Witpunt Correctie" in de Raw tab -> Raw Witpuntent worden vergroot.
+TP_RETINEX_HSLSPACE_LOG;HSL-Logaritmisch
+TP_RETINEX_ITER;Herhalingen (Tonemapping)
+TP_RETINEX_ITERF;Tonemapping
+TP_RETINEX_ITER_TOOLTIP;Simuleert tonemapping.\nHoge waarden verlengen de bewerkingstijd.
+
+TP_RETINEX_LABEL_MASK;Masker
+TP_RETINEX_LOW;Laag
+TP_RETINEX_MAP_GAUS;Gaussiaans masker
+TP_RETINEX_MAP_MAPP;Verscherp masker (wavelet gedeeltelijk)
+TP_RETINEX_MAP_MAPT;Verscherp masker (wavelet totaal)
+TP_RETINEX_MAP_METHOD_TOOLTIP;Gebruik het masker dat is aangemaakt door de bovenstaande Gausiaanse functie (Straal, Methode) om halo’s en artefacten te verminderen.\n\nCurve: past een diagonale contrast curve toe op het masker.\nHou rekening met artefacten!\n\n Gausiaans: genereerd en gebruikt een ‘Gausiaanse blur’ op het masker.\nVerscherpen: genereert en gebruikt een ‘wavelet’ op het masker.\nLangzaam.
+TP_RETINEX_MAP_NONE;Geen
+TP_RETINEX_MEDIAN;Transmissie mediaan filter
+TP_RETINEX_METHOD;Methode
+TP_RETINEX_METHOD_TOOLTIP;Laag = versterk lage lichten,\nUniform = gelijkmatig,\nHoog = versterk hoge lichten,\nHooglicht = verwijder magenta in hooglicht.
+TP_RETINEX_MLABEL;Teruggeplaatst sluier-vrij Min=%1 Max=%2
+TP_RETINEX_MLABEL_TOOLTIP;Zou min=0 en max=32768 moeten benaderen\nTeruggeplaatste afbeelding zonder mixture.
+TP_RETINEX_NEIGHBOR;Naburige pixels
+TP_RETINEX_NEUTRAL;Beginwaarde
+TP_RETINEX_NEUTRAL_TIP;Zet alles terug naar de beginwaarde.
+TP_RETINEX_OFFSET;Beginpunt
+TP_RETINEX_SCALES;Gaussiaans verloop
+TP_RETINEX_SCALES_TOOLTIP;Indien schuifbalk=0: alle herhalingen zijn gelijk.\nIndien > 0 Schaal en straal worden verkleind als herhaling toeneemt, en omgekeerd.
+TP_RETINEX_SETTINGS;Instellingen
+TP_RETINEX_SKAL;Schaal
+TP_RETINEX_SLOPE;Vrij gamma helling
+TP_RETINEX_STRENGTH;Sterkte
+TP_RETINEX_THRESHOLD;Drempel
+TP_RETINEX_THRESHOLD_TOOLTIP;Beperkt in/uit.\nIn = afbeelding,\nUit = afbeeldings gauss.
+TP_RETINEX_TLABEL;TM Min=%1 Max=%2 Gemiddeld=%3 Sigma=%4
+TP_RETINEX_TLABEL_TOOLTIP;Transmissie resultaat.\nMin en Max worden gebruikt door Variantie.\nMeeste en Sigma\nTm=Min TM=Max van de transmissie.
+TP_RETINEX_TRANF;Transmissie
+TP_RETINEX_TRANSMISSION;Transmissie plan
+TP_RETINEX_TRANSMISSION_TOOLTIP;Transmissie volgens transmissie.\nAbscis: transmissie van negatieve waarden (min), gemiddelde, en positieve waarden (max).\nOrdinaat: versterken of verminderen.
+TP_RETINEX_VARIANCE;Variantie
+TP_RETINEX_VARIANCE_TOOLTIP;Lage variantie versterkt lokaal contrast en verzadiging, maar dit kan artefacten veroorzaken.
+TP_RETINEX_VIEW;Proces
+TP_RETINEX_VIEW_MASK;Masker
+TP_RETINEX_VIEW_METHOD_TOOLTIP;Standaard - Normale afbeelding.\nMasker -  Toont het masker.\nOnscherp masker - Toont de afbeelding met een hoge straal.\nTransmissie - Auto/Vast - Toont de transmissie-map, voor enige actie op kontrast en helderheid.\n\nLet op: het masker komt niet overeen met de werkelijkheid, maar is versterkt om het effect beter zichtbaar te maken.
+TP_RETINEX_VIEW_NONE;Standaard
+TP_RETINEX_VIEW_TRAN;Transmissie - Auto
+TP_RETINEX_VIEW_TRAN2;Transmissie - Vast
+TP_RETINEX_VIEW_UNSHARP;Onscherpmasker
+TP_RGBCURVES_CHANNEL;Kanaal
+
+TP_RGBCURVES_LABEL;RGB-curven
+TP_RGBCURVES_LUMAMODE;Luminositeitsmodus
+TP_RGBCURVES_LUMAMODE_TOOLTIP;<b>Luminositeit Mode</b>Varieert de toewijzing van de R, G en B kanalen aan de Luminositeit van de afbeelding, zonder dat de kleur van de afbeelding wijzigt.
+
+TP_ROTATE_DEGREE;Graden
+TP_ROTATE_LABEL;Roteren
+TP_ROTATE_SELECTLINE;Bepaal rechte lijn
+TP_SAVEDIALOG_OK_TIP;Sneltoets: <b>Ctrl+Enter</b>
+TP_SHADOWSHLIGHTS_HIGHLIGHTS;Hoge lichten
+TP_SHADOWSHLIGHTS_HLTONALW;Toonomvang
+TP_SHADOWSHLIGHTS_LABEL;Schaduwen/hoge lichten
+TP_SHADOWSHLIGHTS_RADIUS;Straal
+TP_SHADOWSHLIGHTS_SHADOWS;Schaduwen
+TP_SHADOWSHLIGHTS_SHTONALW;Toonomvang
+TP_SHARPENEDGE_AMOUNT;Hoeveelheid
+TP_SHARPENEDGE_LABEL;Randen
+TP_SHARPENEDGE_PASSES;Herhaling
+TP_SHARPENEDGE_THREE;Alleen luminantie
+
+# module Sharpening / Verscherpen
+TP_SHARPENING_AMOUNT;Hoeveelheid
+TP_SHARPENING_CONTRAST;Contrastdrempel
+TP_SHARPENING_EDRADIUS;Straal
+TP_SHARPENING_EDTOLERANCE;Randtolerantie
+TP_SHARPENING_HALOCONTROL;Halo-controle
+TP_SHARPENING_HCAMOUNT;Hoeveelheid
+TP_SHARPENING_LABEL;Verscherpen
+TP_SHARPENING_METHOD;Methode
+TP_SHARPENING_ONLYEDGES;Alleen randen verscherpen
+TP_SHARPENING_RADIUS;Straal
+TP_SHARPENING_RLD;RL-verscherping
+TP_SHARPENING_RLD_AMOUNT;Hoeveelheid
+TP_SHARPENING_THRESHOLD;Drempel
+TP_SHARPENING_USM;Onscherpmasker
+
+TP_SHARPENMICRO_AMOUNT;Hoeveelheid
+TP_SHARPENMICRO_LABEL;Microcontrast (Lab/CIECAM02)
+TP_SHARPENMICRO_MATRIX;3×3-matrix ipv. 5×5
+TP_SHARPENMICRO_UNIFORMITY;Uniformiteit
+TP_VIBRANCE_AVOIDCOLORSHIFT;Vermijd kleurverschuiving
+TP_TM_FATTAL_AMOUNT;Hoeveelheid
+TP_TM_FATTAL_LABEL;Compressie dynamisch bereik
+TP_TM_FATTAL_THRESHOLD;Detail
+
+TP_TONECURVE_LABEL;Tooncurven
+TP_TONECURVE_SATCURVE;Verzadiging
+TP_TONE_EQUALIZER_BAND_0;Zwarten
+TP_TONE_EQUALIZER_BAND_1;Schaduwen
+TP_TONE_EQUALIZER_BAND_2;Middentinten
+TP_TONE_EQUALIZER_BAND_3;Hoge lichten
+TP_TONE_EQUALIZER_BAND_4;Witten
+TP_TONE_EQUALIZER_DETAIL;Regularisatie
+TP_TONE_EQUALIZER_LABEL;Toon-equalizer
+
+TP_VIBRANCE_CURVEEDITOR_SKINTONES_LABEL;Huidtinten
+TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE1;Rood/Paars
+TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE2;Rood
+TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE3;Rood/Geel
+TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE4;Geel
+TP_VIBRANCE_CURVEEDITOR_SKINTONES_TOOLTIP;Tint volgens Tint
+TP_VIBRANCE_LABEL;Levendigheid
+TP_VIBRANCE_PASTELS;Pasteltinten
+TP_VIBRANCE_PASTSATTOG;Koppel pastel- en verzadigde tinten
+TP_VIBRANCE_PROTECTSKINS;Bescherm huidtinten
+TP_VIBRANCE_PSTHRESHOLD;Drempel pastel/verzadiging
+TP_VIBRANCE_PSTHRESHOLD_SATTHRESH;Drempel Verzadiging
+TP_VIBRANCE_PSTHRESHOLD_TOOLTIP;De verticale as vertegenwoordigt aan de onderkant de pastel tinten en aan de bovenkanten de verzadigde tinten.\nDe horizontale as vertegenwoordigt de verzadigde reeks.
+TP_VIBRANCE_PSTHRESHOLD_WEIGTHING;Pastel/verzadigings transitie weging
+TP_VIBRANCE_SATURATED;Verzadigde tinten
+
+# module Vignetteringscorrectie
+TP_VIGNETTING_AMOUNT;Hoeveelheid
+TP_VIGNETTING_CENTER;Centrum
+TP_VIGNETTING_CENTER_X;Centrum X
+TP_VIGNETTING_CENTER_Y;Centrum Y
+TP_VIGNETTING_LABEL;Vignetteringscorrectie
+TP_VIGNETTING_RADIUS;Straal
+TP_VIGNETTING_STRENGTH;Sterkte
+
+TP_WBALANCE_CLOUDY;Bewolkt
+TP_WBALANCE_CUSTOM;Handmatig
+TP_WBALANCE_DAYLIGHT;Daglicht (zonnig)
+TP_WBALANCE_EQBLUERED;Blauw/Rood Balans
+TP_WBALANCE_EQBLUERED_TOOLTIP;Wijzigt het normale gedrag van "witbalans" door de blauw/rood balans te verschuiven.\nToepassen wanneer de opname-omstandigheden sterk afwijken van: \na) standaard belichting (bv. onderwater)\nb) de condities waar de kalibraties zijn uitgevoerd\nc) de matrices of ICC profielen.
+TP_WBALANCE_FLASH60;Standaard, Canon, Pentax, Olympus
+TP_WBALANCE_FLASH_HEADER;Flits
+TP_WBALANCE_FLUO1;F1 - Daglicht
+TP_WBALANCE_FLUO2;F2 - Koel wit
+TP_WBALANCE_FLUO3;F3 - Wit
+TP_WBALANCE_FLUO4;F4 - Warm wit
+TP_WBALANCE_FLUO5;F5 - Daglicht
+TP_WBALANCE_FLUO6;F6 - Licht wit
+TP_WBALANCE_FLUO7;F7 - D65 Daglicht simuleren
+TP_WBALANCE_FLUO9;F9 - Koelwit DeLuxe
+
+TP_WBALANCE_FLUO_HEADER;Fluorescent(TL)
+TP_WBALANCE_GREEN;Groentint
+TP_WBALANCE_LABEL;Witbalans
+
+TP_WBALANCE_METHOD;Methode
+TP_WBALANCE_PICKER;Kies
+TP_WBALANCE_SHADE;Schaduw
+TP_WBALANCE_SIZE;Grootte:
+TP_WBALANCE_SOLUX47;Solux 4700K (leverancier)
+TP_WBALANCE_SPOTWB;Wijs WB aan
+TP_WBALANCE_TEMPBIAS;AWB temperatuur afwijking
+TP_WBALANCE_TEMPBIAS_TOOLTIP;Wijzigt de berekening van "auto wit balans"\ndoor een afwijking naar warmere of koelere temperatuur \nDe afwijking wordt uitgedrukt als percentage van de berekende temperatuur,\nszodat het resultaat is "computedTemp + computedTemp * afwijking".
+TP_WBALANCE_TEMPERATURE;Kleurtemperatuur
+TP_WBALANCE_TUNGSTEN;Tungsten (wolfraam)
+TP_WBALANCE_WATER1;Onderwater 1
+TP_WBALANCE_WATER2;Onderwater 2
+TP_WBALANCE_WATER_HEADER;Onderwater
+ZOOMPANEL_NEWCROPWINDOW;Open (nieuw) detailvenster
+ZOOMPANEL_ZOOM100;Zoom naar 100%\nSneltoets: <b>z</b>
+ZOOMPANEL_ZOOMFITCROPSCREEN;Maak uitsnede passend in het scherm\nSneltoets: <b>f</b>
+ZOOMPANEL_ZOOMFITSCREEN;Passend in venster\nSneltoets: <b>Alt+f</b>
+ZOOMPANEL_ZOOMIN;Zoom in\nSneltoets: <b>+</b>
+ZOOMPANEL_ZOOMOUT;Zoom uit\nSneltoets: <b>-</b>
+
