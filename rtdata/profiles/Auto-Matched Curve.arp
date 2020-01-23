@@ -4,7 +4,7 @@ HLRecovery=Blend
 [ToneCurve]
 Enabled=true
 HistogramMatching=true
-CurveMode=Standard
+CurveMode=FilmLike
 Curve2=0;
 
 [LensProfile]
