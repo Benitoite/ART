@@ -1462,7 +1462,7 @@ TP_BWMIX_FILTER_TOOLTIP;Le filtre coloré simule des prises de vue avec un filtr
 TP_BWMIX_FILTER_YELLOW;Jaune
 TP_BWMIX_GAMMA;Correction Gamma
 TP_BWMIX_GAM_TOOLTIP;Corrige le Gamma pour chaque canal RVB
-TP_BWMIX_LABEL;Noir &amp; Blanc
+TP_BWMIX_LABEL;Noir & Blanc
 TP_BWMIX_MET;Méthode
 TP_BWMIX_MET_CHANMIX;Mixeur de Canaux
 TP_BWMIX_MET_DESAT;Désaturation
