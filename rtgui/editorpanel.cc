@@ -2247,6 +2247,17 @@ void EditorPanel::beforeAfterToggled ()
         iareapanel->setBeforeAfterViews (beforeIarea, iareapanel);
         beforeIarea->setBeforeAfterViews (beforeIarea, iareapanel);
 
+        {
+            auto cw = new CropWindow(beforeIarea->imageArea, false, false);
+            cw->setDecorated(false);
+            cw->setFitZoomEnabled(true);
+            cw->addCropWindowListener(beforeIarea->imageArea);
+            cw->setPosition(0, 0);
+            cw->enable();
+            cw->cropHandler.cropParams = iareapanel->imageArea->mainCropWindow->cropHandler.cropParams;
+            beforeIarea->imageArea->mainCropWindow = cw;
+        }
+        
         rtengine::procparams::ProcParams params;
 
         if (history->getBeforeLineParams (params)) {
