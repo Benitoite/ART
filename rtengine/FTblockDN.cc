@@ -1527,7 +1527,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
             }
         }
         guidedFilter(guide, mask, mask, 20.f / scale, 0.1f, numthreads > 1);
-#if 1
+#if 0
         {
             Imagefloat tmp(width, height);
             for (int i = 0; i < height; ++i) {
