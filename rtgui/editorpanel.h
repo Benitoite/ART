@@ -52,7 +52,7 @@ class EditorPanel final :
     public PParamsChangeListener,
     public rtengine::ProgressListener,
     public ThumbnailListener,
-    public HistoryBeforeLineListener,
+    public HistoryBeforeAfterListener,
     public rtengine::HistogramListener
 {
 public:
@@ -105,8 +105,8 @@ public:
     // thumbnaillistener interface
     void procParamsChanged (Thumbnail* thm, int whoChangedIt) override;
 
-    // HistoryBeforeLineListener
-    void historyBeforeLineChanged (const rtengine::procparams::ProcParams& params) override;
+    // HistoryBeforeAfterListener
+    void historyBeforeAfterChanged(const rtengine::procparams::ProcParams& params) override;
 
     // HistogramListener
     void histogramChanged(

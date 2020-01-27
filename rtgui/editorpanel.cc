@@ -802,7 +802,7 @@ EditorPanel::EditorPanel (FilePanel* filePanel)
     // connect listeners
     profilep->setProfileChangeListener (tpc);
     history->setProfileChangeListener (tpc);
-    history->setHistoryBeforeLineListener (this);
+    history->setHistoryBeforeAfterListener (this);
     tpc->addPParamsChangeListener (profilep);
     tpc->addPParamsChangeListener (history);
     tpc->addPParamsChangeListener (this);
@@ -851,7 +851,7 @@ EditorPanel::~EditorPanel ()
 {
     idle_register.destroy();
 
-    history->setHistoryBeforeLineListener (nullptr);
+    history->setHistoryBeforeAfterListener (nullptr);
     // the order is important!
     iareapanel->setBeforeAfterViews (nullptr, iareapanel);
     delete iareapanel;
@@ -2139,7 +2139,7 @@ bool EditorPanel::idle_sentToGimp (ProgressConnector<int> *pc, rtengine::IImagef
     return false;
 }
 
-void EditorPanel::historyBeforeLineChanged (const rtengine::procparams::ProcParams& params)
+void EditorPanel::historyBeforeAfterChanged(const rtengine::procparams::ProcParams& params)
 {
 
     if (beforeIpc) {
@@ -2260,8 +2260,8 @@ void EditorPanel::beforeAfterToggled ()
         
         rtengine::procparams::ProcParams params;
 
-        if (history->getBeforeLineParams (params)) {
-            historyBeforeLineChanged (params);
+        if (history->getBeforeAfterParams(params)) {
+            historyBeforeAfterChanged(params);
         }
     }
 }

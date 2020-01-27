@@ -26,11 +26,11 @@
 #include "profilechangelistener.h"
 #include "paramsedited.h"
 
-class HistoryBeforeLineListener
+class HistoryBeforeAfterListener
 {
 public:
-    virtual ~HistoryBeforeLineListener() = default;
-    virtual void historyBeforeLineChanged(const rtengine::procparams::ProcParams& params) = 0;
+    virtual ~HistoryBeforeAfterListener() = default;
+    virtual void historyBeforeAfterChanged(const rtengine::procparams::ProcParams& params) = 0;
 };
 
 class History : public Gtk::VBox, public PParamsChangeListener
@@ -86,7 +86,7 @@ protected:
     sigc::connection        selchangehist;
     sigc::connection        selchangebm;
 
-    HistoryBeforeLineListener * blistener;
+    HistoryBeforeAfterListener * blistener;
     ProfileChangeListener* tpc;
     //ParamsEdited defParamsEdited;
     int bmnum;
@@ -105,7 +105,7 @@ public:
     {
         tpc = tpc_;
     }
-    void setHistoryBeforeLineListener (HistoryBeforeLineListener* bll)
+    void setHistoryBeforeAfterListener (HistoryBeforeAfterListener* bll)
     {
         blistener = bll;
     }
@@ -123,7 +123,7 @@ public:
     void bookmarkSelectionChanged ();
     void initHistory ();
 
-    bool getBeforeLineParams (rtengine::procparams::ProcParams& params);
+    bool getBeforeAfterParams(rtengine::procparams::ProcParams& params);
 
     void addBookmarkWithText (Glib::ustring text);
     void addBookmarkPressed ();

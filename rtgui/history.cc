@@ -181,12 +181,12 @@ void History::historySelectionChanged ()
         }
 
         if (blistener && !blistenerLock) {
-            Gtk::TreeModel::Path path = historyModel->get_path (iter);
-            path.prev ();
-            iter = historyModel->get_iter (path);
+            // Gtk::TreeModel::Path path = historyModel->get_path (iter);
+            // path.prev ();
+            // iter = historyModel->get_iter (path);
 
             if (blistener && iter) {
-                blistener->historyBeforeLineChanged (iter->get_value (historyColumns.params));
+                blistener->historyBeforeAfterChanged (iter->get_value (historyColumns.params));
             }
         }
     }
@@ -271,10 +271,10 @@ void History::procParamsChanged(
             selection->select (newrow);
         }
 
-        if (blistener && row && !blistenerLock) {
-            blistener->historyBeforeLineChanged (row[historyColumns.params]);
-        } else if (blistener && size == 0 && !blistenerLock) {
-            blistener->historyBeforeLineChanged (newrow[historyColumns.params]);
+        if (blistener && /*row &&*/ !blistenerLock) {
+        //     blistener->historyBeforeAfterChanged (row[historyColumns.params]);
+        // } else if (blistener && size == 0 && !blistenerLock) {
+            blistener->historyBeforeAfterChanged (newrow[historyColumns.params]);
         }
     }
     // else just update it
@@ -287,6 +287,9 @@ void History::procParamsChanged(
 
         if (ev != EvBookmarkSelected) {
             selection->select (row);
+        }
+        if (blistener && /*row &&*/ !blistenerLock) {
+            blistener->historyBeforeAfterChanged (row[historyColumns.params]);
         }
     }
 
@@ -417,7 +420,7 @@ void History::resized (Gtk::Allocation& req)
 }
 */
 
-bool History::getBeforeLineParams (rtengine::procparams::ProcParams& params)
+bool History::getBeforeAfterParams(rtengine::procparams::ProcParams& params)
 {
 
     int size = historyModel->children().size ();
@@ -427,7 +430,7 @@ bool History::getBeforeLineParams (rtengine::procparams::ProcParams& params)
     }
 
     Gtk::TreeModel::Row row;
-    row = historyModel->children()[size == 1 ? 0 : size - 2];
+    row = historyModel->children()[size - 1];//size == 1 ? 0 : size - 2];
     params = row[historyColumns.params];
     return true;
 }
