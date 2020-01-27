@@ -1371,7 +1371,7 @@ Camera constants:
 
     { // Quality C, only raw crop
         "make_model": [ "FUJIFILM X-T3", "FUJIFILM X-T30", "FUJIFILM X-PRO3" ],
-        "raw_crop": [ 0, 5, 6252, 4176]
+        "raw_crop": [ 0, 5, 6258, 4176]
     },
 
     { // Quality B
