@@ -1083,6 +1083,7 @@ struct GuidedSmoothingParams {
         Channel channel;
         int radius;
         int epsilon;
+        int iterations;
 
         Region();
         bool operator==(const Region &other) const;

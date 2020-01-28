@@ -130,9 +130,9 @@ public:
         auto &r = parent_->data[row];
 
         return Glib::ustring::compose(
-            "%1 %2 [%3]", r.radius, r.epsilon, 
+            "%1 %2 %4 [%3]", r.radius, r.epsilon, 
             r.channel == GuidedSmoothingParams::Region::Channel::LUMINANCE ? "L" :
-            (r.channel == GuidedSmoothingParams::Region::Channel::CHROMINANCE ? "C" : "RGB"));
+            (r.channel == GuidedSmoothingParams::Region::Channel::CHROMINANCE ? "C" : "RGB"), r.iterations);
     }
 
     void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) override
@@ -160,6 +160,7 @@ Smoothing::Smoothing(): FoldableToolPanel(this, "smoothing", M("TP_SMOOTHING_LAB
     EvChannel = m->newEvent(EVENT, "HISTORY_MSG_SMOOTHING_CHANNEL");
     EvRadius = m->newEvent(EVENT, "HISTORY_MSG_SMOOTHING_RADIUS");
     EvEpsilon = m->newEvent(EVENT, "HISTORY_MSG_SMOOTHING_EPSILON");
+    EvIterations = m->newEvent(EVENT, "HISTORY_MSG_SMOOTHING_ITERATIONS");
 
     EvList = m->newEvent(EVENT, "HISTORY_MSG_SMOOTHING_LIST");
     EvHueMask = m->newEvent(EVENT, "HISTORY_MSG_SMOOTHING_HUEMASK");
@@ -191,9 +192,14 @@ Smoothing::Smoothing(): FoldableToolPanel(this, "smoothing", M("TP_SMOOTHING_LAB
     epsilon = Gtk::manage(new Adjuster(M("TP_SMOOTHING_EPSILON"), -10, 10, 1, 0));
     epsilon->setAdjusterListener(this);
     box->pack_start(*epsilon);
+
+    iterations = Gtk::manage(new Adjuster(M("TP_SMOOTHING_ITERATIONS"), 1, 10, 1, 1));
+    iterations->setAdjusterListener(this);
+    box->pack_start(*iterations);
     
     radius->delay = options.adjusterMaxDelay;
     epsilon->delay = options.adjusterMaxDelay;
+    iterations->delay = options.adjusterMaxDelay;
 
     labMasksContentProvider.reset(new SmoothingMasksContentProvider(this));
     labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
@@ -237,6 +243,7 @@ void Smoothing::setDefaults(const ProcParams *defParams)
 {
     radius->setDefault(defParams->smoothing.regions[0].radius);
     epsilon->setDefault(defParams->smoothing.regions[0].epsilon);
+    iterations->setDefault(defParams->smoothing.regions[0].iterations);
 }
 
 
@@ -249,6 +256,8 @@ void Smoothing::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvRadius, a->getTextValue());
         } else if (a == epsilon) {
             listener->panelChanged(EvEpsilon, a->getTextValue());
+        } else if (a == iterations) {
+            listener->panelChanged(EvIterations, a->getTextValue());
         }
     }
 }
@@ -299,6 +308,7 @@ void Smoothing::regionGet(int idx)
     r.channel = GuidedSmoothingParams::Region::Channel(channel->get_active_row_number());
     r.radius = radius->getValue();
     r.epsilon = epsilon->getValue();
+    r.iterations = iterations->getValue();
 }
 
 
@@ -313,6 +323,7 @@ void Smoothing::regionShow(int idx)
     channel->set_active(int(r.channel));
     radius->setValue(r.radius);
     epsilon->setValue(r.epsilon);
+    iterations->setValue(r.iterations);
     
     if (disable) {
         enableListener();

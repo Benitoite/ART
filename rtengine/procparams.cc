@@ -1858,7 +1858,8 @@ bool GrainParams::operator!=(const GrainParams &other) const
 GuidedSmoothingParams::Region::Region():
     channel(Channel::RGB),
     radius(0),
-    epsilon(0)
+    epsilon(0),
+    iterations(1)
 {
 }
 
@@ -1867,7 +1868,8 @@ bool GuidedSmoothingParams::Region::operator==(const Region &other) const
 {
     return channel == other.channel
         && radius == other.radius
-        && epsilon == other.epsilon;
+        && epsilon == other.epsilon
+        && iterations == other.iterations;
 }
 
 
@@ -2851,6 +2853,7 @@ int ProcParams::save(bool save_general,
                 putToKeyfile("GuidedSmoothing", Glib::ustring("Channel_") + n, int(r.channel), keyFile);
                 putToKeyfile("GuidedSmoothing", Glib::ustring("Radius_") + n, r.radius, keyFile);
                 putToKeyfile("GuidedSmoothing", Glib::ustring("Epsilon_") + n, r.epsilon, keyFile);
+                putToKeyfile("GuidedSmoothing", Glib::ustring("Iterations_") + n, r.iterations, keyFile);
                 smoothing.labmasks[j].save(keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n);
             }
             saveToKeyfile("GuidedSmoothing", "ShowMask", smoothing.showMask, keyFile);
@@ -3829,6 +3832,10 @@ int ProcParams::load(bool load_general,
                     done = false;
                 }
                 if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("Epsilon_") + n, cur.epsilon)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("Iterations_") + n, cur.iterations)) {
                     found = true;
                     done = false;
                 }

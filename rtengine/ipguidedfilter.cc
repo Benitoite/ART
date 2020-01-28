@@ -228,7 +228,7 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
 
         TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
         TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
-        
+
         for (int i = 0; i < n; ++i) {
             if (!params->smoothing.labmasks[i].enabled) {
                 continue;
@@ -242,7 +242,10 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
             array2D<float> B(W, H, working.b.ptrs, ARRAY2D_BYREFERENCE);
 
             const float epsilon = 0.001f * std::pow(2, -r.epsilon);
-            guided_smoothing(R, G, B, ws, iws, Channel(int(r.channel)), r.radius, epsilon, 100, scale, multiThread);
+            Channel ch = Channel(int(r.channel));
+            for (int i = 0; i < r.iterations; ++i) {
+                guided_smoothing(R, G, B, ws, iws, ch, r.radius, epsilon, 100, scale, multiThread);
+            }
             
             const auto &blend = mask[i];
             

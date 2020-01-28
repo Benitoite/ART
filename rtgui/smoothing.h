@@ -61,6 +61,7 @@ private:
     rtengine::ProcEvent EvChannel;
     rtengine::ProcEvent EvRadius;
     rtengine::ProcEvent EvEpsilon;
+    rtengine::ProcEvent EvIterations;
 
     rtengine::ProcEvent EvList;
     rtengine::ProcEvent EvHueMask;
@@ -80,6 +81,7 @@ private:
     MyComboBoxText *channel;
     Adjuster *radius;
     Adjuster *epsilon;
+    Adjuster *iterations;
     Gtk::VBox *box;
 };
 
