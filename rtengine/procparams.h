@@ -142,6 +142,7 @@ public:
     bool areaEnabled;
     AreaMask areaMask;
     DeltaEMask deltaEMask;
+    int contrastThresholdMask;
 
     LabCorrectionMask();
     bool operator==(const LabCorrectionMask &other) const;

@@ -99,9 +99,9 @@ float tileVariance(float **data, size_t tileY, size_t tileX, size_t tilesize, fl
     return var / (rtengine::SQR(tilesize) * avg);
 }
 
-float calcContrastThreshold(float** luminance, int tileY, int tileX, int tilesize) {
+float calcContrastThreshold(float** luminance, int tileY, int tileX, int tilesize, float factor) {
 
-    constexpr float scale = 0.0625f / 327.68f;
+    const float scale = 0.0625f / 327.68f * factor;
     std::vector<std::vector<float>> blend(tilesize - 4, std::vector<float>(tilesize - 4));
 
 #ifdef __SSE2__
@@ -298,11 +298,11 @@ void findMinMaxPercentile(const float* data, size_t size, float minPrct, float& 
     maxOut = rtengine::LIM(maxOut, minVal, maxVal);
 }
 
-void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount, bool autoContrast, float blur_radius)
+void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount, bool autoContrast, float blur_radius, float luminance_factor)
 {
     if (autoContrast) {
-        constexpr float minLuminance = 2000.f;
-        constexpr float maxLuminance = 20000.f;
+        const float minLuminance = 2000.f / luminance_factor;
+        const float maxLuminance = 20000.f / luminance_factor;
         constexpr float minTileVariance = 0.5f;
         for (int pass = 0; pass < 2; ++pass) {
             const int tilesize = 80 / (pass + 1);
@@ -348,7 +348,7 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
                 const int minX = skip * minJ;
                 if (pass == 0) {
                     // a variance <= 1 means we already found a flat region and can skip second pass
-                    contrastThreshold = calcContrastThreshold(luminance, minY, minX, tilesize);
+                    contrastThreshold = calcContrastThreshold(luminance, minY, minX, tilesize, luminance_factor);
                     break;
                 } else {
                     // in second pass we allow a variance of 4
@@ -393,7 +393,7 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
                         }
                     }
 
-                    contrastThreshold = minvar <= 8.f ? calcContrastThreshold(luminance, topLeftYStart + minI, topLeftXStart + minJ, tilesize) : 0.f;
+                    contrastThreshold = minvar <= 8.f ? calcContrastThreshold(luminance, topLeftYStart + minI, topLeftXStart + minJ, tilesize, luminance_factor) : 0.f;
                 }
             }
         }
@@ -406,7 +406,7 @@ void buildBlendMask(float** luminance, float **blend, int W, int H, float &contr
             }
         }
     } else {
-        constexpr float scale = 0.0625f / 327.68f;
+        const float scale = 0.0625f / 327.68f * luminance_factor;
 #ifdef _OPENMP
         #pragma omp parallel
 #endif

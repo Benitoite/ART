@@ -26,7 +26,7 @@ namespace rtengine {
 
 void findMinMaxPercentile(const float* data, size_t size, float minPrct, float& minOut, float maxPrct, float& maxOut, bool multiThread = true);
 
-void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount=1.f, bool autoContrast=false, float blur_radius=2.f);
+void buildBlendMask(float** luminance, float **blend, int W, int H, float &contrastThreshold, float amount=1.f, bool autoContrast=false, float blur_radius=2.f, float luminance_factor=1.f);
 
 void markImpulse(int W, int H, float **const src, char **impulse, float thresh);
 

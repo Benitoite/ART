@@ -212,7 +212,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     deltaE_provider_(nullptr)
 {
     Gtk::Widget *child = cp_->getWidget();
-    cp_->getEvents(EvMaskList, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask, EvDeltaEMask);
+    cp_->getEvents(EvMaskList, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask, EvDeltaEMask, EvContrastThresholdMask);
     EvAreaMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvAreaMask.get_message());
     EvDeltaEMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvDeltaEMask.get_message());
     
@@ -347,6 +347,10 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     maskBlur->setLogScale(10, -10);
     maskBlur->setAdjusterListener(this);
     mask_box->pack_start(*maskBlur);
+
+    contrastThreshold = Gtk::manage(new Adjuster(M("TP_LABMASKS_CONTRASTTHRESHOLDMASK"), 0, 200, 1, 0));
+    contrastThreshold->setAdjusterListener(this);
+    mask_box->pack_start(*contrastThreshold);
 
     //-------------------------------------------------------------------------
     deltaEMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_DELTAE")));
@@ -632,6 +636,7 @@ void LabMasksPanel::maskGet(int idx)
     r.deltaEMask.weight_H = b;
     r.deltaEMask.range = deltaERange->getValue();
     r.deltaEMask.decay = deltaEDecay->getValue();
+    r.contrastThresholdMask = contrastThreshold->getValue();
 }
 
 
@@ -775,13 +780,13 @@ void LabMasksPanel::populateList()
         }
         row[list_model_columns_->mask] = 
             Glib::ustring::compose(
-                "%1%2%3%4%5%6",
+                "%1%2%3%4%7%5%6",
                 hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
                 hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
                 hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
                 r.deltaEMask.enabled ? "ΔE" : "",
                 r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "",
-                am);
+                am, r.contrastThresholdMask > 0 ? Glib::ustring::compose(" c=%1", r.contrastThresholdMask) : "");
     }
 }
 
@@ -825,6 +830,8 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         deltaERange->setValue(r.deltaEMask.range);
         deltaEDecay->setValue(r.deltaEMask.decay);
         static_cast<DeltaEArea *>(deltaEColor)->setColor(r.deltaEMask.L, r.deltaEMask.C, r.deltaEMask.H);
+
+        contrastThreshold->setValue(r.contrastThresholdMask);
         
         updateAreaMask(false);
     }
@@ -842,12 +849,13 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
     }
     row[list_model_columns_->mask] = 
         Glib::ustring::compose(
-            "%1%2%3%4%5%6",
+            "%1%2%3%4%7%5%6",
             hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
             hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
             hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
             r.deltaEMask.enabled ? "ΔE" : "",
-            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", am);
+            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", am,
+            r.contrastThresholdMask ? Glib::ustring::compose(" c=%1", r.contrastThresholdMask) : "");
     Gtk::TreePath pth;
     pth.push_back(idx);
     list->get_selection()->select(pth);
@@ -977,6 +985,10 @@ void LabMasksPanel::adjusterChanged(Adjuster *a, double newval)
     } else if (a == deltaERange || a == deltaEDecay) {
         if (l) {
             l->panelChanged(deltaEMaskEvent(), M("GENERAL_CHANGED"));
+        }
+    } else if (a == contrastThreshold) {
+        if (l) {
+            l->panelChanged(EvContrastThresholdMask, a->getTextValue());
         }
     }
     maskShow(selected_, true);

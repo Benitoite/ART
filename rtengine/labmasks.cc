@@ -30,6 +30,7 @@
 #include "color.h"
 #include "curves.h"
 #include "iccstore.h"
+#include "rt_algo.h"
 
 namespace rtengine {
 
@@ -466,6 +467,29 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
         }
     }
 
+    float s_scale = std::sqrt(scale);
+    for (int i = begin_idx; i < end_idx; ++i) {
+        if (masks[i].contrastThresholdMask > 0) {
+            amask(W, H);
+            float thresh = float(masks[i].contrastThresholdMask)/100.f * s_scale;
+            float blur = std::max(masks[i].maskBlur, 2.0) / s_scale;
+            buildBlendMask(guide, amask, W, H, thresh, 1.f, false, blur, 32768.f);
+#ifdef _OPENMP
+#           pragma omp parallel for if (multithread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    if (abmask) {
+                        (*abmask)[i][y][x] *= amask[y][x];
+                    }
+                    if (Lmask) {
+                        (*Lmask)[i][y][x] *= amask[y][x];
+                    }
+                }
+            }
+        }       
+    }
+    
     for (int i = begin_idx; i < end_idx; ++i) {
         if (masks[i].inverted) {
 #ifdef _OPENMP

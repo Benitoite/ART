@@ -554,7 +554,8 @@ LabCorrectionMask::LabCorrectionMask():
     inverted(false),
     areaEnabled(false),
     areaMask(),
-    deltaEMask()
+    deltaEMask(),
+    contrastThresholdMask(0)
 {
 }
 
@@ -569,7 +570,8 @@ bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
         && inverted == other.inverted
         && areaEnabled == other.areaEnabled
         && areaMask == other.areaMask
-        && deltaEMask == other.deltaEMask;
+        && deltaEMask == other.deltaEMask
+        && contrastThresholdMask == other.contrastThresholdMask;
 }
 
 
@@ -659,6 +661,7 @@ bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ContrastThresholdMask" + suffix, contrastThresholdMask);
     
     return ret;
 }
@@ -696,6 +699,7 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H, keyfile);
+    putToKeyfile(group_name, prefix + "ContrastThresholdMask" + suffix, contrastThresholdMask, keyfile);
 }
 
 

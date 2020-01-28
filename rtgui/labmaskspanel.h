@@ -37,7 +37,7 @@ public:
     virtual ~LabMasksContentProvider() {}
 
     virtual Gtk::Widget *getWidget() = 0;
-    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask) = 0;
+    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask) = 0;
 
     virtual ToolPanelListener *listener() = 0;
 
@@ -198,6 +198,7 @@ private:
     rtengine::ProcEvent EvAreaMaskVoid;
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvDeltaEMaskVoid;
+    rtengine::ProcEvent EvContrastThresholdMask;
 
     class ListColumns: public Gtk::TreeModel::ColumnRecord {
     public:
@@ -280,6 +281,8 @@ private:
     Adjuster *deltaERange;
     Adjuster *deltaEDecay;
     Gtk::Button *deltaEPick;
+
+    Adjuster *contrastThreshold;
 
     DeltaEColorProvider *deltaE_provider_;
 };
