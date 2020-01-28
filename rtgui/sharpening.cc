@@ -30,6 +30,7 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     // EvSharpenBlur = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_BLUR");
     EvAutoRadiusOn = m->newEvent(SHARPENING | M_AUTOEXP, "HISTORY_MSG_SHARPENING_AUTORADIUS");
     EvAutoRadiusOff = m->newEvent(M_VOID, "HISTORY_MSG_SHARPENING_AUTORADIUS");
+    EvDeconvCornerBoost = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_RLD_CORNERBOOST");
 
     Gtk::HBox* hb = Gtk::manage (new Gtk::HBox ());
     hb->show ();
@@ -56,8 +57,10 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     dradius = Gtk::manage (new Adjuster (M("TP_SHARPENING_EDRADIUS"), 0.4, 2.5, 0.01, 0.75));
     dradius->addAutoButton(M("TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP"));
     damount = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_AMOUNT"), 0.0, 100, 1, 100));
-    rld->pack_start (*dradius);
-    rld->pack_start (*damount);
+    deconvCornerBoost = Gtk::manage(new Adjuster(M("TP_SHARPENING_RLD_CORNERBOOST"), 0.0, 0.8, 0.01, 0));
+    rld->pack_start(*dradius);
+    rld->pack_start(*damount);
+    rld->pack_start(*deconvCornerBoost);
     dradius->show ();
     damount->show ();
     rld->show ();
@@ -125,6 +128,7 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     eradius->setAdjusterListener (this);
     etolerance->setAdjusterListener (this);
     hcamount->setAdjusterListener (this);
+    deconvCornerBoost->setAdjusterListener(this);
 
     edgebox->reference ();
     hcbox->reference ();
@@ -175,6 +179,7 @@ void Sharpening::read(const ProcParams* pp)
     dradius->setValue       (pp->sharpening.deconvradius);
     damount->setValue       (pp->sharpening.deconvamount);
     dradius->setAutoValue(pp->sharpening.deconvAutoRadius);
+    deconvCornerBoost->setValue(pp->sharpening.deconvCornerBoost);
 
     removeIfThere (edgebin, edgebox, false);
 
@@ -214,6 +219,7 @@ void Sharpening::write(ProcParams* pp)
     pp->sharpening.deconvradius     = dradius->getValue ();
     pp->sharpening.deconvamount     = (int)damount->getValue ();
     pp->sharpening.deconvAutoRadius = dradius->getAutoValue();
+    pp->sharpening.deconvCornerBoost = deconvCornerBoost->getValue();
 
     if (method->get_active_row_number() == 0) {
         pp->sharpening.method = "usm";
@@ -234,6 +240,7 @@ void Sharpening::setDefaults(const ProcParams* defParams)
     hcamount->setDefault (defParams->sharpening.halocontrol_amount);
     damount->setDefault (defParams->sharpening.deconvamount);
     dradius->setDefault (defParams->sharpening.deconvradius);
+    deconvCornerBoost->setDefault(defParams->sharpening.deconvCornerBoost);
 }
 
 void Sharpening::adjusterChanged(Adjuster* a, double newval)
@@ -268,6 +275,8 @@ void Sharpening::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged (EvShrDRadius, costr);
         } else if (a == damount) {
             listener->panelChanged (EvShrDAmount, costr);
+        } else if (a == deconvCornerBoost) {
+            listener->panelChanged(EvDeconvCornerBoost, a->getTextValue());
         }
     }
 }
@@ -385,6 +394,7 @@ void Sharpening::trimValues (rtengine::procparams::ProcParams* pp)
     eradius->trimValue(pp->sharpening.edges_radius);
     etolerance->trimValue(pp->sharpening.edges_tolerance);
     hcamount->trimValue(pp->sharpening.halocontrol_amount);
+    deconvCornerBoost->trimValue(pp->sharpening.deconvCornerBoost);
 }
 
 

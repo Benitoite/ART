@@ -479,7 +479,6 @@ struct RGBCurvesParams {
 struct SharpeningParams {
     bool           enabled;
     double         contrast;
-    double         blurradius;
     double         radius;
     int            amount;
     Threshold<int> threshold;
@@ -492,6 +491,7 @@ struct SharpeningParams {
     int            deconvamount;
     double         deconvradius;
     bool deconvAutoRadius;
+    double deconvCornerBoost;
 
     SharpeningParams();
 

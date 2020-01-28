@@ -910,7 +910,6 @@ bool LocalContrastParams::operator!=(const LocalContrastParams &other) const
 SharpeningParams::SharpeningParams() :
     enabled(false),
     contrast(20.0),
-    blurradius(0),//.2),
     radius(0.5),
     amount(200),
     threshold(20, 80, 2000, 1200, false),
@@ -922,7 +921,8 @@ SharpeningParams::SharpeningParams() :
     method("usm"),
     deconvamount(100),
     deconvradius(0.75),
-    deconvAutoRadius(false)
+    deconvAutoRadius(false),
+    deconvCornerBoost(0.0)
 {
 }
 
@@ -942,7 +942,8 @@ bool SharpeningParams::operator ==(const SharpeningParams& other) const
         && method == other.method
         && deconvamount == other.deconvamount
         && deconvradius == other.deconvradius
-        && deconvAutoRadius == other.deconvAutoRadius;
+        && deconvAutoRadius == other.deconvAutoRadius
+        && deconvCornerBoost == other.deconvCornerBoost;
 }
 
 bool SharpeningParams::operator !=(const SharpeningParams& other) const
@@ -2306,6 +2307,7 @@ void ProcParams::setDefaults()
     prsharpening.deconvamount = 100;
     prsharpening.deconvradius = 0.45;
     prsharpening.deconvAutoRadius = false;
+    prsharpening.deconvCornerBoost = 0;
 
     wb = WBParams();
 
@@ -2545,7 +2547,6 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "Contrast", sharpening.contrast, keyFile);
             saveToKeyfile("Sharpening", "Method", sharpening.method, keyFile);
             saveToKeyfile("Sharpening", "Radius", sharpening.radius, keyFile);
-            // saveToKeyfile("Sharpening", "BlurRadius", sharpening.blurradius, keyFile);
             saveToKeyfile("Sharpening", "Amount", sharpening.amount, keyFile);
             saveToKeyfile("Sharpening", "Threshold", sharpening.threshold.toVector(), keyFile);
             saveToKeyfile("Sharpening", "OnlyEdges", sharpening.edgesonly, keyFile);
@@ -2556,6 +2557,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "DeconvRadius", sharpening.deconvradius, keyFile);
             saveToKeyfile("Sharpening", "DeconvAmount", sharpening.deconvamount, keyFile);
             saveToKeyfile("Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius, keyFile);
+            saveToKeyfile("Sharpening", "DeconvCornerBoost", sharpening.deconvCornerBoost, keyFile);
         }
 
 // WB
@@ -3327,7 +3329,6 @@ int ProcParams::load(bool load_general,
                 sharpening.contrast = 0;
             }
             assignFromKeyfile(keyFile, "Sharpening", "Radius", sharpening.radius);
-            // assignFromKeyfile(keyFile, "Sharpening", "BlurRadius", sharpening.blurradius);
             assignFromKeyfile(keyFile, "Sharpening", "Amount", sharpening.amount);
 
             if (keyFile.has_key("Sharpening", "Threshold")) {
@@ -3352,6 +3353,7 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Sharpening", "DeconvRadius", sharpening.deconvradius);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvAmount", sharpening.deconvamount);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius);
+            assignFromKeyfile(keyFile, "Sharpening", "DeconvCornerBoost", sharpening.deconvCornerBoost);
         }
 
         if (keyFile.has_group("White Balance") && RELEVANT_(wb)) {

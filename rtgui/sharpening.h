@@ -34,6 +34,7 @@ protected:
     MyComboBoxText* method;
     Adjuster* dradius;
     Adjuster* damount;
+    Adjuster *deconvCornerBoost;
     Gtk::VBox* usm;
     Gtk::VBox* rld;
 
@@ -58,6 +59,7 @@ protected:
     rtengine::ProcEvent EvSharpenBlur;
     rtengine::ProcEvent EvAutoRadiusOn;
     rtengine::ProcEvent EvAutoRadiusOff;
+    rtengine::ProcEvent EvDeconvCornerBoost;
 
     IdleRegister idle_register;
     

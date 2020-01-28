@@ -27,6 +27,8 @@
 //#define BENCHMARK
 #include "StopWatch.h"
 #include "rt_algo.h"
+#include "coord.h"
+
 using namespace std;
 
 
@@ -141,16 +143,14 @@ void sharpenHaloCtrl(float** luminance, float** blurmap, float** base, float** b
 }
 
 
-void deconvsharpening(float **luminance, float **blend, char **impulse, int W, int H, const SharpeningParams &sharpenParam, double scale, bool multiThread)
+void deconvsharpening(float **luminance, float **blend, char **impulse, int W, int H, double sigma, float amount, bool multiThread)
 {
-    if (sharpenParam.deconvamount == 0) {
+    if (amount <= 0) {
         return;
     }
 BENCHFUN
     //apply_gamma<false, false>(luminance, W, H, 0.18f, 3.f, multiThread);
 
-    const double sigma = sharpenParam.deconvradius / scale;
-    const float amount = sharpenParam.deconvamount / 100.f;
     const int maxiter = 20;
     const float delta_factor = 0.2f;
 
@@ -317,6 +317,71 @@ BENCHFUN
 }
 
 
+void generate_vignette_mask(int ox, int oy, int width, int height, array2D<float> &mask, bool multithread)
+{
+    float w2 = float(width) / 2;
+    float h2 = float(height) / 2;
+
+    Coord origin(ox, oy);
+
+    const auto inside =
+        [&](int x, int y) -> bool
+        {
+            return (x >= 0 && x < mask.width() &&
+                    y >= 0 && y < mask.height());
+        };
+
+    const int dir[] = { 1, 1, 1, -1, -1, 1, -1, -1 };
+
+    constexpr float bgcolor = 1.f;
+    constexpr float fgcolor = 1.f - bgcolor;
+
+    float *maskdata = mask;
+    std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
+
+    Coord center(w2, h2);
+    float area_w = std::min(width, height);
+    float area_h = area_w;
+    
+    float a_min = area_w / 2;
+    float b_min = area_h / 2;
+    float r = b_min / a_min;
+    float a = a_min;
+
+    const auto get =
+        [&](int x, int y) -> Coord
+        {
+            Coord ret(x, y);
+            ret += center;
+            ret -= origin;
+            return ret;
+        };
+
+    // draw the (bounded) ellipse
+    for (int x = 0, n = int(a_min); x < n; ++x) {
+        int yy = r * std::sqrt(a*a - float(x*x));
+        for (int y = 0, m = std::min(yy, int(b_min)); y < m; ++y) {
+            for (int d = 0; d < 4; ++d) {
+                int dx = dir[2*d], dy = dir[2*d+1];
+                Coord point = get(dx * x, dy * y);
+                for (int i = -1; i < 2; ++i) {
+                    for (int j = -1; j < 2; ++j) {
+                        if (inside(point.x+i, point.y+j)) {
+                            mask[point.y+j][point.x+i] = fgcolor;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    float blur = area_w / 8.f;
+#ifdef _OPENMP
+#   pragma omp parallel if (multithread)
+#endif
+    gaussianBlur(mask, mask, mask.width(), mask.height(), blur);
+}
+
 } // namespace
 
 namespace rtengine {
@@ -357,7 +422,28 @@ bool ImProcFunctions::doSharpening(Imagefloat *rgb, const SharpeningParams &shar
     
     
     if (sharpenParam.method == "rld") {
-        deconvsharpening(Y, blend, *impulse, W, H, sharpenParam, scale, multiThread);
+        double sigma = sharpenParam.deconvradius / scale;
+        float amount = sharpenParam.deconvamount / 100.f;
+        float delta = sharpenParam.deconvCornerBoost / scale;
+        if (delta > 0.1f) {
+            array2D<float> YY(W, H, Y, 0);
+            deconvsharpening(Y, blend, *impulse, W, H, sigma, amount, multiThread);
+            deconvsharpening(YY, blend, *impulse, W, H, sigma + delta, amount, multiThread);
+            array2D<float> mask(W, H);
+            int fw = full_width > 0 ? full_width : W;
+            int fh = full_height > 0 ? full_height : H;
+            generate_vignette_mask(offset_x, offset_y, fw, fh, mask, multiThread);
+#ifdef _OPENMP
+#           pragma omp parallel for if (multiThread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    Y[y][x] = intp(mask[y][x], YY[y][x], Y[y][x]);
+                }
+            }
+        } else {
+            deconvsharpening(Y, blend, *impulse, W, H, sigma, amount, multiThread);
+        }
     } else {
         unsharp_mask(Y, blend, W, H, sharpenParam, scale, multiThread);
     }
