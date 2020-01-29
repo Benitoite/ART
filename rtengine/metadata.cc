@@ -245,9 +245,16 @@ bool exec_subprocess(const std::vector<Glib::ustring> &argv, std::string &out, s
     for (auto &s : argv) {
         args.push_back(Glib::filename_from_utf8(s));
     }
-    int exit_status = -1;
-    Glib::spawn_sync("", args, Glib::SPAWN_DEFAULT|Glib::SPAWN_SEARCH_PATH, Glib::SlotSpawnChildSetup(), &out, &err, &exit_status);
-    return WIFEXITED(exit_status) && WEXITSTATUS(exit_status) == 0;
+    try {
+        int exit_status = -1;
+        Glib::spawn_sync("", args, Glib::SPAWN_DEFAULT|Glib::SPAWN_SEARCH_PATH, Glib::SlotSpawnChildSetup(), &out, &err, &exit_status);
+        return WIFEXITED(exit_status) && WEXITSTATUS(exit_status) == 0;
+    } catch (Glib::Exception &e) {
+        if (settings->verbose) {
+            std::cout << "Glib::spawn_sync error: " << e.what() << std::endl;
+        }
+        return false;
+    }
 }
 
 #endif // WIN32
