@@ -280,6 +280,8 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
         vabcb[i] = F2V(abcb[i]);
         vabca[i] = F2V(abca[i]);
     }
+
+    vfloat zerov = F2V(0.0);
 #endif
 
     const int H = rgb->getHeight();
@@ -310,19 +312,23 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     vfloat blendv = LVFU(abmask[i][y][x]);
                     vfloat lblendv = LVFU(Lmask[i][y][x]);
 
-                    vfloat Y_newv = Yv;
-                    vfloat u_newv = uv;
-                    vfloat v_newv = vv;
+                    vmask some_blend = vmaskf_gt(blendv, zerov);
+                    vmask some_lblend = vmaskf_gt(lblendv, zerov);
+                    if (_mm_movemask_ps((vfloat)some_blend) || _mm_movemask_ps((vfloat)some_lblend)) {
+                        vfloat Y_newv = Yv;
+                        vfloat u_newv = uv;
+                        vfloat v_newv = vv;
 
-                    CDL_v(i, Y_newv, u_newv, v_newv);
+                        CDL_v(i, Y_newv, u_newv, v_newv);
                     
-                    vfloat fv = vmaxf(Y_newv, ZEROV);
-                    u_newv += fv * vabcb[i];
-                    v_newv += fv * vabca[i];
+                        vfloat fv = vmaxf(Y_newv, ZEROV);
+                        u_newv += fv * vabcb[i];
+                        v_newv += fv * vabca[i];
                     
-                    Yv = vintpf(lblendv, Y_newv, Yv);
-                    uv = vintpf(blendv, u_newv, uv);
-                    vv = vintpf(blendv, v_newv, vv);
+                        Yv = vintpf(lblendv, Y_newv, Yv);
+                        uv = vintpf(blendv, u_newv, uv);
+                        vv = vintpf(blendv, v_newv, vv);
+                    }
                 }
                 STVF(rgb->g(y, x), Yv);
                 STVF(rgb->b(y, x), uv);
@@ -342,19 +348,21 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     float blend = abmask[i][y][x];
                     float lblend = Lmask[i][y][x];
 
-                    float Y_new = Y;
-                    float u_new = u;
-                    float v_new = v;
+                    if (blend > 0.f || lblend > 0.f) {
+                        float Y_new = Y;
+                        float u_new = u;
+                        float v_new = v;
 
-                    CDL(i, Y_new, u_new, v_new);
+                        CDL(i, Y_new, u_new, v_new);
                     
-                    float f = max(Y_new, 0.f);
-                    u_new += f * abcb[i];
-                    v_new += f * abca[i];
+                        float f = max(Y_new, 0.f);
+                        u_new += f * abcb[i];
+                        v_new += f * abca[i];
                     
-                    Y = intp(lblend, Y_new, Y);
-                    u = intp(blend, u_new, u);
-                    v = intp(blend, v_new, v);
+                        Y = intp(lblend, Y_new, Y);
+                        u = intp(blend, u_new, u);
+                        v = intp(blend, v_new, v);
+                    }
                 }
 
                 rgb->g(y, x) = Y;

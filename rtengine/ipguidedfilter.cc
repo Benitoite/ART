@@ -154,6 +154,31 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
     }
 }
 
+void find_region(const array2D<float> &mask, int &min_x, int &min_y, int &max_x, int &max_y)
+{
+    const int W = mask.width();
+    const int H = mask.height();
+    
+    min_x = W - 1;
+    min_y = H - 1;
+    max_x = 0;
+    max_y = 0;
+
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            if (mask[y][x] > 0.f) {
+                min_x = std::min(min_x, x);
+                max_x = std::max(max_x, x);
+                min_y = std::min(min_y, y);
+                max_y = std::max(max_y, y);
+            }
+        }
+    }
+
+    ++max_x;
+    ++max_y;
+}
+
 } // namespace
 
 
@@ -184,6 +209,7 @@ void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb)
     
     rgb->normalizeFloatTo65535(im.multiThread);
 }
+
 
 } // namespace denoise
 
@@ -222,7 +248,7 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
         const int W = rgb->getWidth();
         const int H = rgb->getHeight();
 
-        Imagefloat working(W, H);
+        Imagefloat working;
         rgb->setMode(Imagefloat::Mode::RGB, multiThread);
         rgb->normalizeFloatTo1(multiThread);
 
@@ -233,13 +259,43 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
             if (!params->smoothing.labmasks[i].enabled) {
                 continue;
             }
-            
-            rgb->copyTo(&working);
-            
+
+            int min_x, min_y, max_x, max_y;
+            const auto &blend = mask[i];
+
+            find_region(blend, min_x, min_y, max_x, max_y);
+            int ww = max_x - min_x;
+            int hh = max_y - min_y;
+
+            if (ww * hh < (W * H) / 2) {
+                working.allocate(ww, hh);
+#ifdef _OPENMP
+#               pragma omp parallel for if (multiThread)
+#endif
+                for (int y = min_y; y < max_y; ++y) {
+                    int yy = y - min_y;
+                    for (int x = min_x; x < max_x; ++x) {
+                        int xx = x - min_x;
+                        working.r(yy, xx) = rgb->r(y, x);
+                        working.g(yy, xx) = rgb->g(y, x);
+                        working.b(yy, xx) = rgb->b(y, x);
+                    }
+                }
+            } else {
+                min_x = 0;
+                min_y = 0;
+                max_x = W;
+                max_y = H;
+                ww = W;
+                hh = H;
+
+                rgb->copyTo(&working);
+            }
+
             auto &r = params->smoothing.regions[i];
-            array2D<float> R(W, H, working.r.ptrs, ARRAY2D_BYREFERENCE);
-            array2D<float> G(W, H, working.g.ptrs, ARRAY2D_BYREFERENCE);
-            array2D<float> B(W, H, working.b.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> R(ww, hh, working.r.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> G(ww, hh, working.g.ptrs, ARRAY2D_BYREFERENCE);
+            array2D<float> B(ww, hh, working.b.ptrs, ARRAY2D_BYREFERENCE);
 
             const float epsilon = 0.001f * std::pow(2, -r.epsilon);
             Channel ch = Channel(int(r.channel));
@@ -247,16 +303,16 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
                 guided_smoothing(R, G, B, ws, iws, ch, r.radius, epsilon, 100, scale, multiThread);
             }
             
-            const auto &blend = mask[i];
-            
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
 #endif
-            for (int y = 0; y < H; ++y) {
-                for (int x = 0; x < W; ++x) {
-                    rgb->r(y, x) = intp(blend[y][x], working.r(y, x), rgb->r(y, x));
-                    rgb->g(y, x) = intp(blend[y][x], working.g(y, x), rgb->g(y, x));
-                    rgb->b(y, x) = intp(blend[y][x], working.b(y, x), rgb->b(y, x));
+            for (int y = min_y; y < max_y; ++y) {
+                int yy = y - min_y;
+                for (int x = min_x; x < max_x; ++x) {
+                    int xx = x - min_x;
+                    rgb->r(y, x) = intp(blend[y][x], working.r(yy, xx), rgb->r(y, x));
+                    rgb->g(y, x) = intp(blend[y][x], working.g(yy, xx), rgb->g(y, x));
+                    rgb->b(y, x) = intp(blend[y][x], working.b(yy, xx), rgb->b(y, x));
                 }
             }
         }
