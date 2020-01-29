@@ -30,7 +30,8 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     // EvSharpenBlur = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_BLUR");
     EvAutoRadiusOn = m->newEvent(SHARPENING | M_AUTOEXP, "HISTORY_MSG_SHARPENING_AUTORADIUS");
     EvAutoRadiusOff = m->newEvent(M_VOID, "HISTORY_MSG_SHARPENING_AUTORADIUS");
-    EvDeconvCornerBoost = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_RLD_CORNERBOOST");
+    EvDeconvCornerBoost = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_RLD_CORNERRADIUS");
+    EvDeconvCornerLatitude = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_RLD_CORNERLATITUDE");
 
     Gtk::HBox* hb = Gtk::manage (new Gtk::HBox ());
     hb->show ();
@@ -57,13 +58,19 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     dradius = Gtk::manage (new Adjuster (M("TP_SHARPENING_EDRADIUS"), 0.4, 2.5, 0.01, 0.75));
     dradius->addAutoButton(M("TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP"));
     damount = Gtk::manage (new Adjuster (M("TP_SHARPENING_RLD_AMOUNT"), 0.0, 100, 1, 100));
-    deconvCornerBoost = Gtk::manage(new Adjuster(M("TP_SHARPENING_RLD_CORNERBOOST"), 0.0, 0.8, 0.01, 0));
+    deconvCornerBoost = Gtk::manage(new Adjuster(M("TP_SHARPENING_RLD_CORNERRADIUS"), 0.0, 1.0, 0.01, 0));
+    deconvCornerLatitude = Gtk::manage(new Adjuster(M("TP_SHARPENING_RLD_CORNERLATITUDE"), 0, 100, 1, 25));
     rld->pack_start(*dradius);
     rld->pack_start(*damount);
-    rld->pack_start(*deconvCornerBoost);
-    dradius->show ();
-    damount->show ();
-    rld->show ();
+    Gtk::Frame *cf = Gtk::manage(new Gtk::Frame(M("TP_SHARPENING_RLD_CORNERBOOST")));
+    cf->set_label_align(0.025, 0.5);
+    Gtk::VBox *cfb = Gtk::manage(new Gtk::VBox());
+    cfb->pack_start(*deconvCornerBoost);
+    cfb->pack_start(*deconvCornerLatitude);
+    cf->add(*cfb);
+    rld->pack_start(*cf);
+    rld->show_all_children();
+    rld->show();
 
     usm = new Gtk::VBox ();
     usm->show ();
@@ -129,6 +136,7 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     etolerance->setAdjusterListener (this);
     hcamount->setAdjusterListener (this);
     deconvCornerBoost->setAdjusterListener(this);
+    deconvCornerLatitude->setAdjusterListener(this);
 
     edgebox->reference ();
     hcbox->reference ();
@@ -180,6 +188,7 @@ void Sharpening::read(const ProcParams* pp)
     damount->setValue       (pp->sharpening.deconvamount);
     dradius->setAutoValue(pp->sharpening.deconvAutoRadius);
     deconvCornerBoost->setValue(pp->sharpening.deconvCornerBoost);
+    deconvCornerLatitude->setValue(pp->sharpening.deconvCornerLatitude);
 
     removeIfThere (edgebin, edgebox, false);
 
@@ -220,6 +229,7 @@ void Sharpening::write(ProcParams* pp)
     pp->sharpening.deconvamount     = (int)damount->getValue ();
     pp->sharpening.deconvAutoRadius = dradius->getAutoValue();
     pp->sharpening.deconvCornerBoost = deconvCornerBoost->getValue();
+    pp->sharpening.deconvCornerLatitude = deconvCornerLatitude->getValue();
 
     if (method->get_active_row_number() == 0) {
         pp->sharpening.method = "usm";
@@ -241,6 +251,7 @@ void Sharpening::setDefaults(const ProcParams* defParams)
     damount->setDefault (defParams->sharpening.deconvamount);
     dradius->setDefault (defParams->sharpening.deconvradius);
     deconvCornerBoost->setDefault(defParams->sharpening.deconvCornerBoost);
+    deconvCornerLatitude->setDefault(defParams->sharpening.deconvCornerLatitude);
 }
 
 void Sharpening::adjusterChanged(Adjuster* a, double newval)
@@ -277,6 +288,8 @@ void Sharpening::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged (EvShrDAmount, costr);
         } else if (a == deconvCornerBoost) {
             listener->panelChanged(EvDeconvCornerBoost, a->getTextValue());
+        } else if (a == deconvCornerLatitude) {
+            listener->panelChanged(EvDeconvCornerLatitude, a->getTextValue());
         }
     }
 }
@@ -395,6 +408,7 @@ void Sharpening::trimValues (rtengine::procparams::ProcParams* pp)
     etolerance->trimValue(pp->sharpening.edges_tolerance);
     hcamount->trimValue(pp->sharpening.halocontrol_amount);
     deconvCornerBoost->trimValue(pp->sharpening.deconvCornerBoost);
+    deconvCornerLatitude->trimValue(pp->sharpening.deconvCornerLatitude);
 }
 
 

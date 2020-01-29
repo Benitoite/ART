@@ -317,70 +317,32 @@ BENCHFUN
 }
 
 
-void generate_vignette_mask(int ox, int oy, int width, int height, array2D<float> &mask, bool multithread)
-{
-    float w2 = float(width) / 2;
-    float h2 = float(height) / 2;
-
-    Coord origin(ox, oy);
-
-    const auto inside =
-        [&](int x, int y) -> bool
-        {
-            return (x >= 0 && x < mask.width() &&
-                    y >= 0 && y < mask.height());
-        };
-
-    const int dir[] = { 1, 1, 1, -1, -1, 1, -1, -1 };
-
-    constexpr float bgcolor = 1.f;
-    constexpr float fgcolor = 1.f - bgcolor;
-
-    float *maskdata = mask;
-    std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
-
-    Coord center(w2, h2);
-    float area_w = std::min(width, height);
-    float area_h = area_w;
-    
-    float a_min = area_w / 2;
-    float b_min = area_h / 2;
-    float r = b_min / a_min;
-    float a = a_min;
-
-    const auto get =
-        [&](int x, int y) -> Coord
-        {
-            Coord ret(x, y);
-            ret += center;
-            ret -= origin;
-            return ret;
-        };
-
-    // draw the (bounded) ellipse
-    for (int x = 0, n = int(a_min); x < n; ++x) {
-        int yy = r * std::sqrt(a*a - float(x*x));
-        for (int y = 0, m = std::min(yy, int(b_min)); y < m; ++y) {
-            for (int d = 0; d < 4; ++d) {
-                int dx = dir[2*d], dy = dir[2*d+1];
-                Coord point = get(dx * x, dy * y);
-                for (int i = -1; i < 2; ++i) {
-                    for (int j = -1; j < 2; ++j) {
-                        if (inside(point.x+i, point.y+j)) {
-                            mask[point.y+j][point.x+i] = fgcolor;
-                        }
-                    }
-                }
-            }
-        }
+class CornerBoostMask {
+public:
+    CornerBoostMask(int ox, int oy, int width, int height, int latitude):
+        ox_(ox), oy_(oy), w2_(width / 2), h2_(height / 2)
+    {
+        float radius = std::max(w2_, h2_);
+        r2_ = (radius - radius * LIM01(float(latitude)/150.f)) / 2.f;
+        sigma_ = 2.f * SQR(radius * 0.3f);
     }
 
-    float blur = area_w / 8.f;
-#ifdef _OPENMP
-#   pragma omp parallel if (multithread)
-#endif
-    gaussianBlur(mask, mask, mask.width(), mask.height(), blur);
-}
+    float operator()(int x, int y) const
+    {
+        int xx = x + ox_ - w2_;
+        int yy = y + oy_ - h2_;
+        float distance = std::sqrt(float(SQR(xx) + SQR(yy)));
+        return 1.f - LIM01(xexpf((-SQR(std::max(distance - r2_, 0.f)) / sigma_)));
+    }
+
+private:
+    int ox_;
+    int oy_;
+    int w2_;
+    int h2_;
+    float r2_;
+    float sigma_;
+};
 
 } // namespace
 
@@ -429,16 +391,29 @@ bool ImProcFunctions::doSharpening(Imagefloat *rgb, const SharpeningParams &shar
             array2D<float> YY(W, H, Y, 0);
             deconvsharpening(Y, blend, *impulse, W, H, sigma, amount, multiThread);
             deconvsharpening(YY, blend, *impulse, W, H, sigma + delta, amount, multiThread);
-            array2D<float> mask(W, H);
             int fw = full_width > 0 ? full_width : W;
             int fh = full_height > 0 ? full_height : H;
-            generate_vignette_mask(offset_x, offset_y, fw, fh, mask, multiThread);
+            CornerBoostMask mask(offset_x, offset_y, fw, fh, sharpenParam.deconvCornerLatitude);
+//             {
+//                 Imagefloat tmp(W, H);
+// #ifdef _OPENMP
+// #               pragma omp parallel for if (multiThread)
+// #endif
+//                 for (int y = 0; y < H; ++y) {
+//                     for (int x = 0; x < W; ++x) {
+//                         float b = mask(x, y);
+//                         tmp.r(y, x) = tmp.g(y, x) = tmp.b(y, x) = b * 65535.f;
+//                     }
+//                 }
+//                 tmp.saveTIFF("/tmp/mask.tif", 16);
+//             }
 #ifdef _OPENMP
 #           pragma omp parallel for if (multiThread)
 #endif
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
-                    Y[y][x] = intp(mask[y][x], YY[y][x], Y[y][x]);
+                    float blend = mask(x, y);
+                    Y[y][x] = intp(blend, YY[y][x], Y[y][x]);
                 }
             }
         } else {

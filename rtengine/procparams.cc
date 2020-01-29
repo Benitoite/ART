@@ -922,7 +922,8 @@ SharpeningParams::SharpeningParams() :
     deconvamount(100),
     deconvradius(0.75),
     deconvAutoRadius(false),
-    deconvCornerBoost(0.0)
+    deconvCornerBoost(0.0),
+    deconvCornerLatitude(25)
 {
 }
 
@@ -943,7 +944,8 @@ bool SharpeningParams::operator ==(const SharpeningParams& other) const
         && deconvamount == other.deconvamount
         && deconvradius == other.deconvradius
         && deconvAutoRadius == other.deconvAutoRadius
-        && deconvCornerBoost == other.deconvCornerBoost;
+        && deconvCornerBoost == other.deconvCornerBoost
+        && deconvCornerLatitude == other.deconvCornerLatitude;
 }
 
 bool SharpeningParams::operator !=(const SharpeningParams& other) const
@@ -2558,6 +2560,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "DeconvAmount", sharpening.deconvamount, keyFile);
             saveToKeyfile("Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius, keyFile);
             saveToKeyfile("Sharpening", "DeconvCornerBoost", sharpening.deconvCornerBoost, keyFile);
+            saveToKeyfile("Sharpening", "DeconvCornerLatitude", sharpening.deconvCornerLatitude, keyFile);
         }
 
 // WB
@@ -3354,6 +3357,7 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Sharpening", "DeconvAmount", sharpening.deconvamount);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvCornerBoost", sharpening.deconvCornerBoost);
+            assignFromKeyfile(keyFile, "Sharpening", "DeconvCornerLatitude", sharpening.deconvCornerLatitude);
         }
 
         if (keyFile.has_group("White Balance") && RELEVANT_(wb)) {

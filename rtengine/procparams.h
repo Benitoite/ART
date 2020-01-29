@@ -492,6 +492,7 @@ struct SharpeningParams {
     double         deconvradius;
     bool deconvAutoRadius;
     double deconvCornerBoost;
+    int deconvCornerLatitude;
 
     SharpeningParams();
 

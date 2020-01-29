@@ -35,6 +35,7 @@ protected:
     Adjuster* dradius;
     Adjuster* damount;
     Adjuster *deconvCornerBoost;
+    Adjuster *deconvCornerLatitude;
     Gtk::VBox* usm;
     Gtk::VBox* rld;
 
@@ -60,6 +61,7 @@ protected:
     rtengine::ProcEvent EvAutoRadiusOn;
     rtengine::ProcEvent EvAutoRadiusOff;
     rtengine::ProcEvent EvDeconvCornerBoost;
+    rtengine::ProcEvent EvDeconvCornerLatitude;
 
     IdleRegister idle_register;
     
