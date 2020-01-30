@@ -120,7 +120,7 @@ private:
 
     MyMutex parseMutex;
     StoreState storeState;
-    rtengine::procparams::FilePartialProfile internalDefaultProfile;
+    rtengine::procparams::FilePartialProfile *internalDefaultProfile;
     ProfileStoreEntry *internalDefaultEntry;
     ProfileStoreEntry *internalDynamicEntry;
 

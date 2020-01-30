@@ -27,13 +27,11 @@ using namespace rtengine::procparams;
 
 ProfileStore::ProfileStore():
     storeState(STORESTATE_NOTINITIALIZED),
-    internalDefaultProfile("", true),
+    internalDefaultProfile(nullptr),
     internalDefaultEntry(nullptr),
     internalDynamicEntry(nullptr),
     loadAll(true)
 {
-    // internalDefaultProfile = new AutoPartialProfile();
-    // internalDefaultProfile->set (true);
 }
 
 ProfileStore* ProfileStore::getInstance()
@@ -76,9 +74,9 @@ ProfileStore::~ProfileStore ()
         clearProfileList ();
         partProfiles.clear ();
         clearFileList();
-        // delete internalDefaultProfile;
         delete internalDefaultEntry;
         delete internalDynamicEntry;
+        delete internalDefaultProfile;
     }
 }
 
@@ -144,11 +142,13 @@ void ProfileStore::_parseProfiles ()
 
     // entries and partProfiles are empty, but the entry and profiles already exist (they have survived to clearFileList and clearProfileList)
     if (!internalDefaultEntry) {
+        assert(!internalDefaultProfile);
+        internalDefaultProfile = new rtengine::procparams::FilePartialProfile("", true);
         internalDefaultEntry = new ProfileStoreEntry (Glib::ustring ("(") + M ("PROFILEPANEL_PINTERNAL") + Glib::ustring (")"), PSET_FILE, 0, 0);
     }
 
     entries.push_back (internalDefaultEntry);
-    partProfiles[internalDefaultEntry] = internalDefaultProfile; 
+    partProfiles[internalDefaultEntry] = *internalDefaultProfile; 
 
     if (!internalDynamicEntry) {
         internalDynamicEntry = new ProfileStoreEntry (Glib::ustring ("(") + M ("PROFILEPANEL_PDYNAMIC") + Glib::ustring (")"), PSET_FILE, 0, 0);
@@ -435,7 +435,7 @@ const PartialProfile *ProfileStore::getDefaultPartialProfile (bool isRaw)
     const PartialProfile* pProf = getProfile (isRaw ? options.defProfRaw : options.defProfImg);
 
     if (!pProf) {
-        pProf = &internalDefaultProfile;
+        pProf = internalDefaultProfile;
     }
 
     return pProf;
@@ -461,12 +461,6 @@ void ProfileStore::clearFileList()
 
 void ProfileStore::clearProfileList()
 {
-    // for (auto partProfile : partProfiles) {
-    //     if (partProfile.second != internalDefaultProfile) {
-    //         delete partProfile.second;
-    //     }
-    // }
-
     partProfiles.clear();
 }
 
