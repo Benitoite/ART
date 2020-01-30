@@ -8,7 +8,6 @@ ABOUT_TAB_LICENSE;Licence
 ABOUT_TAB_RELEASENOTES;Notes de version
 ABOUT_TAB_SPLASH;Splash
 ADJUSTER_RESET_TO_DEFAULT;<b>Clic</b> - réinitialise à la valeur par défaut.\n<b>Ctrl</b>+<b>clic</b> - réinitialise à la valeur initiale.
-BATCH_PROCESSING;Traitement par lot
 CURVEEDITOR_AXIS_IN;E :
 CURVEEDITOR_AXIS_LEFT_TAN;TG :
 CURVEEDITOR_AXIS_OUT;S :
@@ -67,22 +66,14 @@ EXIFPANEL_ADDEDITHINT;Ajouter ou éditer une étiquette
 EXIFPANEL_ADDTAGDLG_ENTERVALUE;Saisir une valeur
 EXIFPANEL_ADDTAGDLG_SELECTTAG;Choisir une étiquette
 EXIFPANEL_ADDTAGDLG_TITLE;Ajouter/Éditer une étiquette
-EXIFPANEL_KEEP;Conserver
-EXIFPANEL_KEEPHINT;Conserver les étiquettes sélectionnées lors de l'écriture du fichier de sortie
-EXIFPANEL_REMOVE;Retirer
-EXIFPANEL_REMOVEHINT;Retirer les étiquettes sélectionnées lors de l'écriture du fichier de sortie
 EXIFPANEL_RESET;Réinitialiser
 EXIFPANEL_RESETALL;Tout réinitialiser
 EXIFPANEL_RESETALLHINT;Réinitialiser toutes les étiquettes à leur valeur initiale
 EXIFPANEL_RESETHINT;Réinitialiser les étiquettes sélectionnées à la valeur initiale
-EXIFPANEL_SHOWALL;Tout voir
-EXIFPANEL_SUBDIRECTORY;Sous-répertoire
 EXPORT_BYPASS;Étapes de traitement à ignorer
 EXPORT_BYPASS_ALL;Sélectionner / Désélectionner tout
 EXPORT_BYPASS_DEFRINGE;Ignorer la Correction des Franges Colorées
 EXPORT_BYPASS_DIRPYRDENOISE;Ignorer la Réduction du Bruit
-EXPORT_BYPASS_DIRPYREQUALIZER;Ignorer le Contraste par Niveaux de Détail
-EXPORT_BYPASS_EQUALIZER;Ignorer les Niveaux d'Ondelettes
 EXPORT_BYPASS_RAW_CA;Ignorer la Correction d'Aberration Chromatique [raw]
 EXPORT_BYPASS_RAW_CCSTEPS;Ignorer la Suppression des Fausses Couleurs [raw]
 EXPORT_BYPASS_RAW_DCB_ENHANCE;Ignorer les Etapes d'Amélioration DCB [raw]
@@ -92,10 +83,7 @@ EXPORT_BYPASS_RAW_FF;Ignorer le Champ Uniforme [raw]
 EXPORT_BYPASS_RAW_GREENTHRESH;Ignorer l'Equilibrage du Vert [raw]
 EXPORT_BYPASS_RAW_LINENOISE;Ignorer le Filtre de Bruit en Lignes [raw]
 EXPORT_BYPASS_RAW_LMMSE_ITERATIONS;Ignorer les Etapes d'Amélioration LMMSE [raw]
-EXPORT_BYPASS_SHARPENEDGE;Ignorer Netteté des Bords
 EXPORT_BYPASS_SHARPENING;Ignorer la Netteté
-EXPORT_BYPASS_SHARPENMICRO;Ignorer le Microcontraste
-EXPORT_BYPASS_SH_HQ;Ignorer le Sharp Mask Ombres/Hautes lumiéres
 EXPORT_FASTEXPORTOPTIONS;<b>Options d'Export Rapide</b>
 EXPORT_INSTRUCTIONS;Les options d'Export Rapide permettent de forcer le contournement de certains outils très consommateurs de temps et de ressources, et d'utiliser ces options rapides dans la file de traitement. Cette méthode est recommandée pour la génération rapide d'images de basse résolution quand la vitesse est une priorité ou lorsqu'on désire une version redimensionnée d'une ou plusieurs images de sortie sans avoir à modifier leurs paramètres de développement.
 EXPORT_MAXHEIGHT;Hauteur maximum :
@@ -106,9 +94,6 @@ EXPORT_RAW_DMETHOD;Méthode de dématriçage
 EXPORT_USE_FAST_PIPELINE;Dédié (traitement complet sur une image redimmensionnée)
 EXPORT_USE_FAST_PIPELINE_TIP;Utiliser une chaîne de traitement dédiée pour les images en Export Rapide, qui privilégie la vitesse sur la qualité. Le redimensionnement des images est fait le plus en amont possible, au lieu d'être fait à la fin comme dans le pipeline normal. L'accélération peut être significative, mais soyez prêt à voir des artéfacts et une dégradation générale de la qualité de sortie.
 EXPORT_USE_NORMAL_PIPELINE;Standard (ignorer certaines étapes, redimensionner à la fin)
-EXTPROGTARGET_1;raw
-EXTPROGTARGET_2;file de traitement
-FILEBROWSER_ADDDELTEMPLATE;Ajouter/Effacer le(s) modèle(s)..
 FILEBROWSER_APPLYPROFILE;Appliquer le profil
 FILEBROWSER_APPLYPROFILE_PARTIAL;Appliquer le profil (partiel)
 FILEBROWSER_AUTODARKFRAME;Soustraction auto. de Trame Noire
@@ -127,7 +112,6 @@ FILEBROWSER_DELETEDIALOG_HEADER;Confirmation de la suppression de fichier
 FILEBROWSER_DELETEDIALOG_ALL;Etes-vous sûr de vouloir effacer tous les <b>%1</b> fichiers de la corbeille ?
 FILEBROWSER_DELETEDIALOG_SELECTED;Etes-vous sûr de voulor effacer les <b>%1</b> fichiers sélectionnés ?
 FILEBROWSER_DELETEDIALOG_SELECTEDINCLPROC;Etes-vous sûr de vouloir effacer les fichiers <b>%1</b> sélectionnés <b>y-compris</b> une version en file de traitement ?
-FILEBROWSER_EMPTYTRASH;Vider la corbeille
 FILEBROWSER_EMPTYTRASHHINT;Effacer définitivement les fichiers de la corbeille.
 FILEBROWSER_EXTPROGMENU;Ouvrir avec
 FILEBROWSER_FLATFIELD;Champ Uniforme
@@ -1150,12 +1134,6 @@ PREFERENCES_APPLNEXTSTARTUP;Redémarrage requis
 PREFERENCES_AUTOMONPROFILE;Utiliser le profil d'écran réglé dans le système d'exploitation
 PREFERENCES_AUTOSAVE_TP_OPEN;Sauvegarder l'état ouvert/fermé des outils en quittant
 PREFERENCES_BATCH_PROCESSING;Traitement par lot
-PREFERENCES_BEHADDALL;Tout vers 'Ajouter'
-PREFERENCES_BEHADDALLHINT;Règler tous les paramètres sur le mode <b>Ajouter</b>.\nLa modification des paramètres dans le panneau d'édition par lot sera des <b>deltas</b> par-rapport aux valeurs existantes
-PREFERENCES_BEHAVIOR;Comportement
-PREFERENCES_BEHSETALL;Tout vers 'Remplacer'
-PREFERENCES_BEHSETALLHINT;Régler tous les paramètres sur le mode <b>Remplacer</b>.\nLa modification des paramètres dans le panneau d'édition par lot sera <b>absolue</b>, les valeurs réelles seront affichées
-PREFERENCES_BLACKBODY;Tungsten
 PREFERENCES_CACHECLEAR;Effacer
 PREFERENCES_CACHECLEAR_ALL;Effacer tous les fichiers mis en cache : 
 PREFERENCES_CACHECLEAR_ALLBUTPROFILES;Effacer tous les fichiers mis en cache excepté les profils de traitement : 
@@ -1169,12 +1147,6 @@ PREFERENCES_CLUTSCACHE;Cache HaldCLUT
 PREFERENCES_CLUTSCACHE_LABEL;Nombre maximum de CLUTs dans le cache
 PREFERENCES_CLUTSDIR;Dossier HaldCLUT
 PREFERENCES_CMMBPC;Compensation du point noir
-PREFERENCES_CROP;Édition du rognage
-PREFERENCES_CROP_AUTO_FIT;Zoomer automatiquement sur la zone rognée
-PREFERENCES_CROP_GUIDES;Guides affichés en dehors de l'édition du rognage
-PREFERENCES_CROP_GUIDES_FRAME;Cadre
-PREFERENCES_CROP_GUIDES_FULL;Original
-PREFERENCES_CROP_GUIDES_NONE;Aucun
 PREFERENCES_CURVEBBOXPOS;Position des boutons copier/coller des courbes
 PREFERENCES_CURVEBBOXPOS_ABOVE;Au-dessus
 PREFERENCES_CURVEBBOXPOS_BELOW;En-dessous
@@ -1186,11 +1158,6 @@ PREFERENCES_CUSTPROFBUILDKEYFORMAT;Format des clés
 PREFERENCES_CUSTPROFBUILDKEYFORMAT_NAME;Nom
 PREFERENCES_CUSTPROFBUILDKEYFORMAT_TID;TagID
 PREFERENCES_CUSTPROFBUILDPATH;Chemin de l'exécutable
-PREFERENCES_D50;Paramètres dans le menu principal
-PREFERENCES_D50_OLD;5000K
-PREFERENCES_D55;5500K
-PREFERENCES_D60;6000K
-PREFERENCES_D65;6500K
 PREFERENCES_DARKFRAMEFOUND;Trouvé
 PREFERENCES_DARKFRAMESHOTS;Image(s)
 PREFERENCES_DARKFRAMETEMPLATES;Modèle(s)
@@ -1216,32 +1183,15 @@ PREFERENCES_FLATFIELDFOUND;Trouvé
 PREFERENCES_FLATFIELDSDIR;Dossier des images de Champ Uniforme
 PREFERENCES_FLATFIELDSHOTS;Image(s)
 PREFERENCES_FLATFIELDTEMPLATES;Modèle(s)
-PREFERENCES_FLUOF2;Fluorescent F2
-PREFERENCES_FLUOF7;Fluorescent F7
-PREFERENCES_FLUOF11;Fluorescent F11
 PREFERENCES_FORIMAGE;Pour les images non-raw
 PREFERENCES_FORRAW;Pour les images raw
 PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT;Taille de vignette identique entre la Pellicule et le Navigateur de Fichiers
 PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT_HINT;Avoir une hauteur de vignettes différente demandera plus de temp de traitement à chaque fois que vous baculerez entre le mode Éditeur Onglet Unique et le Navigateur de Fichiers.
 PREFERENCES_GIMPPATH;Dossier d'intallation de GIMP
-PREFERENCES_GREY;Luminance Yb (%) du dispositif de visualition
-PREFERENCES_GREY05;Yb=05 CIE L#30
-PREFERENCES_GREY10;Yb=10 CIE L#40
-PREFERENCES_GREY15;Yb=15 CIE L#45
-PREFERENCES_GREY18;Réglages dans le menu principal
-PREFERENCES_GREY18_OLD;Yb=18 CIE L#50
-PREFERENCES_GREY23;Yb=23 CIE L#55
-PREFERENCES_GREY30;Yb=30 CIE L#60
-PREFERENCES_GREY40;Yb=40 CIE L#70
-PREFERENCES_GREYSC;Luminance Yb (%) de la scène
-PREFERENCES_GREYSC18;Yb=18 CIE L#50
-PREFERENCES_GREYSCA;Automatique
 PREFERENCES_HISTOGRAMPOSITIONLEFT;Histogramme dans le panneau de gauche
-PREFERENCES_HISTOGRAMWORKING;Utiliser le profil colorimétrique de travail pour l'histogramme et le navigateur
 PREFERENCES_HISTOGRAM_TOOLTIP;Si activé, le profil colorimétrique de travail est utilisé pour les données d'histogramme et le panneau Navigateur, sinon le profil colorimétrique de travail de sortie "gamma-corrigé" est utilisé.
 PREFERENCES_HLTHRESHOLD;Seuil pour l'écrêtage des Hautes Lumières
 PREFERENCES_ICCDIR;Dossier des profils colorimétriques
-PREFERENCES_IMG_RELOAD_NEEDED;Ces changements nécessitent de recharger l'image ou d'ouvrir une nouvelle image pour prendre effet
 PREFERENCES_IMPROCPARAMS;Profil de traitement par défaut
 PREFERENCES_INSPECT_LABEL;Inspecter
 PREFERENCES_INSPECT_MAXBUFFERS_LABEL;Nombre maximum d'images mises en cache
@@ -1298,7 +1248,6 @@ PREFERENCES_PROFILESAVECACHE;Enregistrer le profil de traitement dans le cache
 PREFERENCES_PROFILESAVEINPUT;Enregistrer le profil de traitement accolé au fichier d'entrée
 PREFERENCES_PROFILESAVELOCATION;Destination de sauvegarde du profil de traitement
 PREFERENCES_PROFILE_NONE;Aucun
-PREFERENCES_PROPERTY;Propriété
 PREFERENCES_PRTINTENT;Intention de rendu
 PREFERENCES_PRTPROFILE;Profil colorimétrique
 PREFERENCES_PSPATH;Dossier d'installation d'Adobe Photoshop
@@ -1309,7 +1258,6 @@ PREFERENCES_SELECTLANG;Choix de la langue
 PREFERENCES_SERIALIZE_TIFF_READ;Réglages de lecture des images TIFF
 PREFERENCES_SERIALIZE_TIFF_READ_LABEL;Sérialiser la lecture des fichiers TIFF
 PREFERENCES_SERIALIZE_TIFF_READ_TOOLTIP;Activer cette option lors du travail dans un dossier contenant des images TIFF non compressées peut augmenter la performance de génération des vignettes.
-PREFERENCES_SET;Valider
 PREFERENCES_SHOWBASICEXIF;Afficher les infos EXIF basiques
 PREFERENCES_SHOWDATETIME;Afficher la date et l'heure
 PREFERENCES_SHOWEXPOSURECOMPENSATION;Ajouter la compensation d'exposition
@@ -1338,9 +1286,7 @@ PREFERENCES_THUMBNAIL_INSPECTOR_RAW_FILM_CURVE;Utilise une courbe film standard 
 PREFERENCES_THUMBNAIL_RATING;Charger/Enregister le classement des vignettes depuis/vers les fichiers XMP
 PREFERENCES_TP_LABEL;Panneau Outils :
 PREFERENCES_TP_VSCROLLBAR;Cacher la barre de défilement vertical
-PREFERENCES_TUNNELMETADATA; Copier Exif/IPTC/XMP inchangés dans le fichier de sortie
 PREFERENCES_USEBUNDLEDPROFILES;Utiliser les profils de traitement fournis
-PREFERENCES_VIEW;Balance des Blancs du dispositif de sortie (écran, TV, projecteur, etc.)
 PREFERENCES_WORKFLOW;Agencement
 PREFERENCES_XMP_SIDECAR_MODE;Style des fichiers XMP associés
 PREFERENCES_XMP_SIDECAR_MODE_STD;Standard (NOMDEFICHIER.xmp pour NOMDEFICHIER.ext)
@@ -1435,26 +1381,12 @@ TOOLBAR_TOOLTIP_HAND;Outil de navigation\nRaccourci : <b>h</b>
 TOOLBAR_TOOLTIP_STRAIGHTEN;Réglage de l'horizon\nRaccourci : <b>s</b>\n\nIndiquez la verticale ou l'horizontale en dessinant une ligne à travers l'image. L'angle de rotation sera affiché près de la ligne guide. Le centre de rotation est le centre géométrique de l'image.
 TOOLBAR_TOOLTIP_WB;Choix du point déterminant la Balance des Blancs\nRaccourci : <b>w</b>
 TP_SATURATION_LABEL;Luminosité, Contraste & Saturation
-TP_BRIGHTCONTRSAT_BRIGHTNESS;Luminosité
 TP_BRIGHTCONTRSAT_CONTRAST;Contraste
 TP_SATURATION_SATURATION;Saturation
 TP_SATURATION_VIBRANCE;Vibrance
-TP_BWMIX_ALGO;Algorithme OJCPM
-TP_BWMIX_ALGO_LI;Linéaire
-TP_BWMIX_ALGO_SP;Effets spéciaux
-TP_BWMIX_ALGO_TOOLTIP;Linéaire: produira une réponse normale <b>linéaire</b>.\nEffets spéciaux : produira des effets spéciaux en mixant les canaux de manière <b>non linéaire</b>.
-TP_BWMIX_AUTOCH;Auto
-TP_BWMIX_CC_ENABLED;Ajuster les couleurs complémentaires
-TP_BWMIX_CC_TOOLTIP;Activer pour permettre l'ajustage automatique des couleurs complémentaires dans le mode ROJVCBPM.
-TP_BWMIX_CHANNEL;Égaliseur de Luminance
 TP_BWMIX_COLORCAST;Dominante couleur
 TP_BWMIX_HUE;Teinte
 TP_BWMIX_SATURATION;Saturation
-TP_BWMIX_CURVEEDITOR1;Courbe 'Avant'
-TP_BWMIX_CURVEEDITOR2;Courbe 'Après'
-TP_BWMIX_CURVEEDITOR_AFTER_TOOLTIP;Courbe tonale, après la conversion en N&amp;B, à la fin du traitement.
-TP_BWMIX_CURVEEDITOR_BEFORE_TOOLTIP;Courbe tonale, juste avant la conversion en N&amp;B\nPeut prendre en compte les composantes couleur.
-TP_BWMIX_CURVEEDITOR_LH_TOOLTIP;Modifie la luminance en fonction de la teinte L=f(H).\nAttention aux valeurs extrêmes qui peuvent causer des artefacts.
 TP_BWMIX_FILTER;Filtre coloré
 TP_BWMIX_FILTER_BLUE;Bleu
 TP_BWMIX_FILTER_BLUEGREEN;Bleu-Vert
@@ -1469,11 +1401,6 @@ TP_BWMIX_FILTER_YELLOW;Jaune
 TP_BWMIX_GAMMA;Correction Gamma
 TP_BWMIX_GAM_TOOLTIP;Corrige le Gamma pour chaque canal RVB
 TP_BWMIX_LABEL;Noir & Blanc
-TP_BWMIX_MET;Méthode
-TP_BWMIX_MET_CHANMIX;Mixeur de Canaux
-TP_BWMIX_MET_DESAT;Désaturation
-TP_BWMIX_MET_LUMEQUAL;Égaliseur de la Luminance
-TP_BWMIX_MIXC;Mixeur de canaux
 TP_BWMIX_NEUTRAL;Réinitialiser
 TP_BWMIX_RGBLABEL;R: %1%%   V: %2%%   B: %3%%   Total: %4%%
 TP_BWMIX_RGBLABEL_HINT;Coefficients RVB finaux tenant compte de toutes les options du mixeur.\n'Total' affiche la somme des valeurs RVB actuellement appliquées:\n- toujours 100% en mode relatif\n- supérieur (plus clair) ou inférieur (plus sombre) à 100% en mode absolu.
@@ -1493,13 +1420,6 @@ TP_BWMIX_SET_PANCHRO;Panchromatique
 TP_BWMIX_SET_PORTRAIT;Portrait
 TP_BWMIX_SET_RGBABS;RVB Absolu
 TP_BWMIX_SET_RGBREL;RVB Relatif
-TP_BWMIX_SET_ROYGCBPMABS;ROJVCBPM Absolu
-TP_BWMIX_SET_ROYGCBPMREL;ROJVCBPM Relatif
-TP_BWMIX_TCMODE_FILMLIKE;N&amp;B Similaire Film
-TP_BWMIX_TCMODE_SATANDVALBLENDING;N&amp;B Mélange Saturation et Valeur
-TP_BWMIX_TCMODE_STANDARD;N&amp;B Standard
-TP_BWMIX_TCMODE_WEIGHTEDSTD;N&amp;B Standard Pondéré
-TP_BWMIX_VAL;L
 TP_CACORRECTION_BLUE;Bleu
 TP_CACORRECTION_LABEL;Aberration Chromatique
 TP_CACORRECTION_RED;Rouge
@@ -1512,77 +1432,6 @@ TP_COARSETRAF_TOOLTIP_HFLIP;Miroir horizontal.
 TP_COARSETRAF_TOOLTIP_ROTLEFT;Rotation antihoraire\nRaccourci : <b>[</b> - Mode Onglets Éditeurs Multiples,\n<b>Alt-[</b> - Mode Onglet Éditeur nique.
 TP_COARSETRAF_TOOLTIP_ROTRIGHT;Rotation horaire\nRaccourci : <b>]</b> - Mode Onglets Éditeurs Multiples,\n<b>Alt-]</b> - Mode Onglet Éditeur nique.
 TP_COARSETRAF_TOOLTIP_VFLIP;Miroir vertical.
-TP_COLORAPP_ABSOLUTELUMINANCE;Luminance absolue
-TP_COLORAPP_ALGO;Algorithme
-TP_COLORAPP_ALGO_ALL;Tout
-TP_COLORAPP_ALGO_JC;Luminosité + Chroma (JC)
-TP_COLORAPP_ALGO_JS;Luminosité + Saturation (JS)
-TP_COLORAPP_ALGO_QM;Brillance + Niveau de Couleur (QM)
-TP_COLORAPP_ALGO_TOOLTIP;Permet de choisir entre des jeux réduits de paramètres ou tous les paramètres
-TP_COLORAPP_BADPIXSL;Filtrer les pixels chauds/défectueux
-TP_COLORAPP_BADPIXSL_TOOLTIP;Suppression des pixels chauds/défectueux (colorés de manière intense).\n0 = Aucun effet\n1 = Médiane\n2 = Gaussien.\nAutrement, adjuster l'image en évitant les ombres très profondes.\n\nCes artefacts sont dus aux limitations de CIECAM02.
-TP_COLORAPP_BRIGHT;Brillance (Q)
-TP_COLORAPP_BRIGHT_TOOLTIP;Brillance dans CIECAM02 prend en compte la luminosité du point blanc, et diffère celle de L*a*b* et RVB
-TP_COLORAPP_CAT02ADAPTATION_TOOLTIP;Lorsque réglée manuellement, une valeur au-dessus de 65 est recommandée.
-TP_COLORAPP_CHROMA;Chroma (C)
-TP_COLORAPP_CHROMA_M;Niveau de Couleur (M)
-TP_COLORAPP_CHROMA_M_TOOLTIP;Niveau de Couleur dans CIECAM02 diffère de celui de L*a*b* et RVB
-TP_COLORAPP_CHROMA_S;Saturation (S)
-TP_COLORAPP_CHROMA_S_TOOLTIP;Saturation dans CIECAM02 ; elle diffère de celle L*a*b* et RVB
-TP_COLORAPP_CHROMA_TOOLTIP;Chroma dans CIECAM02 ; il diffère de celui de L*a*b* et RVB
-TP_COLORAPP_CIECAT_DEGREE;Adaptation CAT02
-TP_COLORAPP_CONTRAST;Contraste (J)
-TP_COLORAPP_CONTRAST_Q;Contraste (Q)
-TP_COLORAPP_CONTRAST_Q_TOOLTIP;Contraste dans CIECAM02 pour le curseur (Q) ; il diffère du contraste L*a*b* et RVB
-TP_COLORAPP_CONTRAST_TOOLTIP;Contraste dans CIECAM02 pour le curseur (J) ; il diffère du contraste L*a*b* et RVB
-TP_COLORAPP_CURVEEDITOR1;Courbe tonale 1
-TP_COLORAPP_CURVEEDITOR1_TOOLTIP;Affiche l'histogramme de L* (L*a*b*) avant CIECAM02.\nSi la case "Afficher les histogrammes de sortie CIECAM02 sous les courbes" est cochée, affiche l'histogramme de J ou Q après CIECAM02.\n\nJ et Q ne sont pas affichés dans le panneau histogramme principal.
-TP_COLORAPP_CURVEEDITOR2;Courbe tonale 2
-TP_COLORAPP_CURVEEDITOR2_TOOLTIP;Utilisation similaire aux courbes tonales exposition.
-TP_COLORAPP_CURVEEDITOR3;Courbes chroma
-TP_COLORAPP_CURVEEDITOR3_TOOLTIP;Réglage pour Chroma, Saturation ou Niveau de  Couleur.\n\nAffiche l'histogramme de la chromaticité (L*a*b*) avant CIECAM.\nSi la case "Afficher les histogrammes de sortie CIECAM02 sous les courbes" est cochée, montre l'histogramme de C, s, ou M après  CIECAM02.\n\nC, s et M ne sont pas affichés dans le panneau histogramme principal. Pour la sortie finale, se référer à l'istogramme principal.
-TP_COLORAPP_DATACIE;Histogrammes de sortie CIECAM02 sous les courbes
-TP_COLORAPP_DATACIE_TOOLTIP;Quand activé, les histogrammes sous les courbes CIECAM02 montrent des valeurs/amplitudes approximatives de J/Q, ou de C/s/M après les ajustements CIECAM02.\nCette sélection n'a pas d'incidence sur l'histogramme général.\n\nQuand désactivé, les histogrammes sous les courbes CIECAM02 affichent les valeurs L*a*b* avant les ajustements CIECAM02.
-TP_COLORAPP_FREE;Température libre + Vert + CAT02 + [sortie]
-TP_COLORAPP_GAMUT;Contrôle du gamut (L*a*b*)
-TP_COLORAPP_GAMUT_TOOLTIP;Permet le contrôle du gamut en mode L*a*b*.
-TP_COLORAPP_HUE;Teinte (H)
-TP_COLORAPP_HUE_TOOLTIP;Teinte (H) - angle entre 0° et 360°
-TP_COLORAPP_LABEL;Modèle d'apparence de la couleur CIE 2002
-TP_COLORAPP_LABEL_CAM02;Réglages de l'image
-TP_COLORAPP_LABEL_SCENE;Conditions de la scène
-TP_COLORAPP_LABEL_VIEWING;Conditions de visionnage
-TP_COLORAPP_LIGHT;Luminosité (J)
-TP_COLORAPP_LIGHT_TOOLTIP;Luminosité dans CIECAM02 diffère de celle de L*a*b* et RVB
-TP_COLORAPP_MEANLUMINANCE;Luminance moyenne (Yb%)
-TP_COLORAPP_MODEL;Modèle de Point Blanc
-TP_COLORAPP_MODEL_TOOLTIP;Modèle de Point Blanc\n\n<b>BB [RT] + [sortie]:</b>\nLa Balance des Blancs de ART est utilisée pour la scène, CIECAM02 est réglé sur D50, et la Balance des Blancs du périphérique de sortie utilise la valeur réglée dans Conditions de Visionnage\n\n<b>BB [RT+CAT02] + [sortie]:</b>\nLes réglages de Balance des Blancs de ART sont utilisés par CAT02 et la Balance des Blancs du périphérique de sortie utilise la valeur réglée dans Conditions de Visionnage.
-TP_COLORAPP_NEUTRAL;Réinitialiser
-TP_COLORAPP_NEUTRAL_TIP;Réinitialiser tous les curseurs, cases à cocher et courbes à leurs valeur par défaut.
-TP_COLORAPP_RSTPRO;Protection des tons rouge/chair
-TP_COLORAPP_RSTPRO_TOOLTIP;Protection des tons rouge/chair affecte à la fois les curseurs et les courbes.
-TP_COLORAPP_SURROUND;Environnement
-TP_COLORAPP_SURROUND_AVER;Moyen
-TP_COLORAPP_SURROUND_DARK;Sombre
-TP_COLORAPP_SURROUND_DIM;Tamisé
-TP_COLORAPP_SURROUND_EXDARK;Extrêmement Sombre
-TP_COLORAPP_SURROUND_TOOLTIP;Change les tons et couleurs pour prendre en compte les conditions de visionnage autour du périphérique de sortie.\n\n<b>Moyen :</b>\nEnvironnement moyennement lumineux (standard). L'image ne va pas changer.\n\n<b>Tamisé :</b>\nEnvironnement légèrement sombre (TV). L'image sera légèrement assombrie.\n\n<b>Sombre :</b>\nEntourage sombre (projecteur). L'image sera davantage assombrie.\n\n<b>Extrêmement sombre :</b>\nEnvironnement presque noir (transparents). L'image sera très assombrie.
-TP_COLORAPP_SURSOURCE;Entourage Sombre
-TP_COLORAPP_SURSOURCE_TOOLTIP;Peut être utilisé si l'image a une bordure sombre.
-TP_COLORAPP_TCMODE_BRIGHTNESS;Brillance
-TP_COLORAPP_TCMODE_CHROMA;Chroma
-TP_COLORAPP_TCMODE_COLORF;Niveau de Couleur
-TP_COLORAPP_TCMODE_LABEL1;Mode courbe 1
-TP_COLORAPP_TCMODE_LABEL2;Mode courbe 2
-TP_COLORAPP_TCMODE_LABEL3;Mode courbe Chroma
-TP_COLORAPP_TCMODE_LIGHTNESS;Luminosité
-TP_COLORAPP_TCMODE_SATUR;Saturation
-TP_COLORAPP_TEMP_TOOLTIP;Pour sélectionner un illuminant, toujours régler Dominante Couleur=1.\n\nA temp=2856\nD50 temp=5003\nD55 temp=5503\nD65 temp=6504\nD75 temp=7504
-TP_COLORAPP_TONECIE;Compression Tonale utilisant CIECAM02
-TP_COLORAPP_TONECIE_TOOLTIP;Si cette option est désactivée, la compression tonale est faite dans l'espace L*a*b*.\nSi cette options est activée, la compression tonale est réalisée par CIECAM02.\nL'outil Compression Tonale doit être activé pour que ce réglage prenne effet
-TP_COLORAPP_VIEWING_ABSOLUTELUMINANCE_TOOLTIP;Luminance absolue de l'environnement de visionnage\n(souvent 16cd/m²)
-TP_COLORAPP_WBCAM;BB [RT+CAT02] + [sortie]
-TP_COLORAPP_WBRT;BB [RT] + [sortie]
 TP_COLORCORRECTION_ABVALUES;a=%1 b=%2
 TP_COLORCORRECTION_MODE;Mode
 TP_COLORCORRECTION_MODE_COMBINED;Standard
@@ -1592,9 +1441,7 @@ TP_COLORCORRECTION_CHANNEL_B;Bleu
 TP_COLORCORRECTION_CHANNEL_G;Vert
 TP_COLORCORRECTION_CHANNEL_R;Rouge
 TP_COLORCORRECTION_LABEL;Correction des Couleurs
-TP_COLORCORRECTION_LIGHTNESS;Luminosité
 TP_COLORCORRECTION_LIST_TITLE;Correction
-TP_COLORCORRECTION_MASK;Masque
 TP_COLORCORRECTION_OFFSET;Décalage (Ombres/Déboucher)
 TP_COLORCORRECTION_PIVOT;Pivot
 TP_COLORCORRECTION_POWER;Puissance (Tons moyens/Gamma)
@@ -1605,44 +1452,6 @@ TP_COLORCORRECTION_L;Luminosité
 TP_COLORCORRECTION_H;Teinte
 TP_COLORCORRECTION_S;Saturation
 TP_COLORCORRECTION_HUESAT;Teinte/Saturation
-TP_COLORTONING_AB;o C/L
-TP_COLORTONING_AUTOSAT;Automatique
-TP_COLORTONING_BALANCE;Balance
-TP_COLORTONING_BY;o C/L
-TP_COLORTONING_CHROMAC;Opacité
-TP_COLORTONING_COLOR;Couleur
-TP_COLORTONING_CURVEEDITOR_CL_TOOLTIP;Opacité Chroma en fonction de la luminance oC=f(L)
-TP_COLORTONING_HIGHLIGHT;Hautes Lumières
-TP_COLORTONING_HUE;Teinte
-TP_COLORTONING_LAB;Mélange L*a*b*
-TP_COLORTONING_LABEL;Virage Partiel
-TP_COLORTONING_LABGRID;Grille de correction L*a*b*
-TP_COLORTONING_LABGRID_VALUES;HL: a=%1 b=%2\nO: a=%3 b=%4
-TP_COLORTONING_LUMA;Luminance
-TP_COLORTONING_LUMAMODE;Préserver la luminance
-TP_COLORTONING_LUMAMODE_TOOLTIP;Si activé, lorsque vous changez la couleur (rouge, vert, cyan, bleu, etc.), la luminance de chaque pixel est préservée.
-TP_COLORTONING_METHOD;Méthode
-TP_COLORTONING_METHOD_TOOLTIP;"Mélange L*a*b*", "Curseurs RVB" et "Courbes RVB" utilisent un mélange de couleurs interpolé.\n"Balance couleur(Ombres / Tons Moyens / Hautes Lumières)" et "Saturation 2 couleurs" utilisent des couleurs directes.\n\nL'outil Noir et Blanc peut être activé conjointement à chacune des méthodes, permettant le viarage partiel.
-TP_COLORTONING_MIDTONES;Tons Moyens
-TP_COLORTONING_NEUTRAL;Réinitialiser curseurs
-TP_COLORTONING_NEUTRAL_TIP;Réinitialiser toutes les valeurs (Ombres, Tons Moyens, Hautes Lumières) à leur valeur par défaut.
-TP_COLORTONING_OPACITY;Opacité
-TP_COLORTONING_RGBCURVES;RVB - Courbes
-TP_COLORTONING_RGBSLIDERS;RVB - Curseurs
-TP_COLORTONING_SA;Protection de la Saturation
-TP_COLORTONING_SATURATEDOPACITY;Force
-TP_COLORTONING_SATURATIONTHRESHOLD;Seuil
-TP_COLORTONING_SHADOWS;Ombres
-TP_COLORTONING_SPLITCO;Ombres / Tons moyens / Hautes lumières
-TP_COLORTONING_SPLITCOCO;Balance Couleur Ombres / Tons Moyens / Hautes Lumières
-TP_COLORTONING_SPLITLR;Saturation 2 couleurs
-TP_COLORTONING_STR;Force
-TP_COLORTONING_STRENGTH;Force
-TP_COLORTONING_TWO2;Chroma Spécial '2 couleurs'
-TP_COLORTONING_TWOALL;Chroma Spécial
-TP_COLORTONING_TWOBY;Chroma Spécial a* et b*
-TP_COLORTONING_TWOCOLOR_TOOLTIP;Chroma Standard : réponse linéaire, a* = b*.\n\nChroma Spécial : réponse linéaire, a* = b*, mais non limitée - essayez en-dessous de la diagonale.\n\nChroma Spécial a* et b* :\nréponse linéaire non limitée avec des courbes séparées a* et b*. Destiné à des effets spéciaux.\n\nChroma Spécial '2 couleurs' :\ndavantage prévisible.
-TP_COLORTONING_TWOSTD;Chroma Standard
 TP_CROP_FIXRATIO;Rapport fixé
 TP_CROP_GTDIAGONALS;Règle des diagonales
 TP_CROP_GTEPASSPORT;Passeport biométrique
@@ -1680,40 +1489,20 @@ TP_DENOISE_SMOOTHING;Lissage final
 TP_DENOISE_SMOOTHING_MEDIAN;Filtre médian
 TP_DENOISE_SMOOTHING_METHOD;Méthode
 TP_DENOISE_SMOOTHING_GUIDED;Filtre guidé
-TP_DIRPYRDENOISE_CHROMINANCE_AMZ;Multi-zones auto.
 TP_DIRPYRDENOISE_CHROMINANCE_AUTO_FACTOR;Réduction de force automatique
 TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL;Global automa.
-TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL_TOOLTIP;Essayez d'évaluer le bruit chromatique\nAttention, ce calcul est moyen et assez subjectif !
 TP_DIRPYRDENOISE_CHROMINANCE_BLUEYELLOW;Chrominance - Bleu-Jaune
-TP_DIRPYRDENOISE_CHROMINANCE_CURVE;Courbe de Chrominance
-TP_DIRPYRDENOISE_CHROMINANCE_CURVE_TOOLTIP;Augmente (multiplie) la valeur de tous les curseurs de chrominance.\nCette courbe vous permet d'ajuster la force de la réduction de bruit chromatique en fonction de la chromaticité, par exemple pour augmenter l'action dans les zones faiblement saturées et pour la diminuer dans celles fortement saturées.
 TP_DIRPYRDENOISE_CHROMINANCE_FRAME;Chrominance
 TP_DIRPYRDENOISE_CHROMINANCE_MANUAL;Manuel
 TP_DIRPYRDENOISE_CHROMINANCE_MASTER;Chrominance - Maître
 TP_DIRPYRDENOISE_CHROMINANCE_METHOD;Méthode
-TP_DIRPYRDENOISE_CHROMINANCE_METHODADVANCED_TOOLTIP;Manuel\nAgit sur l'image entière.\nVous contrôlez manuellement les paramètres de réduction du bruit.\n\nGlobal automatique\nAgit sur l'image entière.\n9 zones sont utilisées pour calculer un réglage global de réduction de bruit de chrominance.\n\nAperçu\nAgit sur l'image entière.\nLa partie visible de l'image dans l'aperçu est utilisée pour calculer un réglage global de réduction de bruit de chrominance.
 TP_DIRPYRDENOISE_CHROMINANCE_METHOD_TOOLTIP;Manuel\nAgit sur l'image entière.\nVous contrôlez manuellement les paramètres de réduction de bruit.\n\nGlobal automatique\nAgit sur l'image entière.\n9 zones sont utilisées pour calculer un réglage global de réduction de bruit de chrominance.\n\nAutomatique multi-zones\nPas d'aperçu - ne fonctionne qu'au moment de l'enregistrement, mais utilise la méthode "Aperçu" en faisant correspondre la taille et le centre de la tuile à la taille et au centre de l'aperçu, permet d'avoir une idée des résultats attendus.\nL'image est divisée en tuiles (entre 10 et 70 selon la taille de l'image) et chaque tuile reçoit son propre réglage de réduction de bruit de chrominance.\n\nAperçu\nAgit sur l'image entière.\nLa partie de l'image visible dans l'aperçu est utilisée pour calculer un réglage global de réduction de bruit de chrominance.
-TP_DIRPYRDENOISE_CHROMINANCE_PMZ;Aperçu multi-zones
-TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW;Aperçu
-TP_DIRPYRDENOISE_CHROMINANCE_PREVIEWRESIDUAL_INFO_TOOLTIP;Affiche les niveaux de bruit résiduels de la partie de l'image visible dans l'<b>aperçu</b> après les ondelettes.\n\n>300 Très bruité\n100-300 Bruité\n50-100 Peu bruité\n<50 Très peu bruité\n\nAttention, les valeurs diffèreront entre le mode RVB et L*a*b*. Les valeurs RVB sont moins précises car le mode RVB ne séparent pas complètement la luminance et la chrominance.
-TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW_INFO;Taille de l'aperçu=%1, Centre: Px=%2  Py=%3
-TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW_NOISEINFO;Bruit de l'aperçu: Moyen=%1  Haut=%2
-TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW_NOISEINFO_EMPTY;Bruit de l'aperçu: Moyen= -   Haut= -
-TP_DIRPYRDENOISE_CHROMINANCE_PREVIEW_TILEINFO;Taille des tuiles =%1, Centre: Tx=%2  Ty=%3
 TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN;Chrominance - Rouge-Vert
-TP_DIRPYRDENOISE_ENH;Mode de renforcement
-TP_DIRPYRDENOISE_ENH_TOOLTIP;Augmente la qualité de réduction du bruit au dépend d'une augmentation de 20% du temps de traitement
 TP_DIRPYRDENOISE_LABEL;Réduction de Bruit
-TP_DIRPYRDENOISE_LUMINANCE_CONTROL;Contrôle de luminance
-TP_DIRPYRDENOISE_LUMINANCE_CURVE;Courbe de luminance
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL;Niveau de détails de Luminance
 TP_DIRPYRDENOISE_LUMINANCE_FRAME;Luminance
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Detail seuil
 TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING;Luminance
-TP_DIRPYRDENOISE_MAIN_COLORSPACE;Espace colorimétrique
-TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB;L*a*b*
-TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB;RVB
-TP_DIRPYRDENOISE_MAIN_COLORSPACE_TOOLTIP;Pour les images raw, les méthodes RVB ou Lab peuvent être utilisées.\n\nPour les images non-raw la méthode Lab sera utilisée, indépendamment de la sélection.
 TP_DIRPYRDENOISE_MAIN_GAMMA;Gamma
 TP_DIRPYRDENOISE_MAIN_GAMMA_TOOLTIP;Gamma fait varier la quantité de réduction de bruit sur l'échelle des tons. Les plus petites valeurs cibleront les ombres, les plus hautes valeurs cibleront les tons les plus clairs.
 TP_DIRPYRDENOISE_MAIN_MODE;Mode
@@ -1723,7 +1512,6 @@ TP_DIRPYRDENOISE_MAIN_MODE_TOOLTIP;"Conservatif" préserve les motifs chromatiqu
 TP_DIRPYRDENOISE_MEDIAN_METHOD;Méthode médiane
 TP_DIRPYRDENOISE_MEDIAN_METHOD_CHROMINANCE;Chroma uniquement
 TP_DIRPYRDENOISE_MEDIAN_METHOD_LAB;L*a*b*
-TP_DIRPYRDENOISE_MEDIAN_METHOD_LABEL;Filtre Médian
 TP_DIRPYRDENOISE_MEDIAN_METHOD_LUMINANCE;Luminance seulement
 TP_DIRPYRDENOISE_MEDIAN_METHOD_RGB;RVB
 TP_DIRPYRDENOISE_MEDIAN_METHOD_TOOLTIP;Lorsque vous utilisez les méthodes "Luminance seulement" et "Lab", un filtrage médian sera effectué juste après l'étape des ondelettes dans le pipeline de la réduction de bruit.\nEm mode "RVB", il sera effectué à la toute fin du pipeline de la réduction de bruit.
@@ -1732,49 +1520,21 @@ TP_DIRPYRDENOISE_MEDIAN_PASSES;Itérations médianes
 TP_DIRPYRDENOISE_MEDIAN_PASSES_TOOLTIP;Appliquer trois itérations avec une taille de fenêtre de 3×3 aboutit souvent à de meilleurs résultats qu'une seule itération avec une taille de fenêtre de 7×7.
 TP_DIRPYRDENOISE_MEDIAN_TYPE;Type de médiane
 TP_DIRPYRDENOISE_MEDIAN_TYPE_TOOLTIP;Applique un filtre médian de la taille de "fenêtre" désirée. Plus cette taille est grande, plus cela prendra de temps.\n\n3×3 doux: traite 5 pixels dans une fenêtre de 3×3 pixels.\n3×3: traite 9 pixels dans une fenêtre de 3×3 pixels.\n5×5 doux: traite 13 pixels dans une fenêtre de 5×5 pixels.\n5×5: traite 25 pixels dans une fenêtre de 5×5 pixels.\n7×7: traite 49 pixels dans une fenêtre de 7×7 pixels.\n9×9: traite 81 pixels dans une fenêtre 9×9 pixels.\n\nIl est parfois possible d'atteindre une meilleurs qualité en appliquant plusieurs itérations d'une petite fenêtre qu'une seule itération d'une grande.
-TP_DIRPYRDENOISE_SLI;Curseur
 TP_DIRPYRDENOISE_TYPE_3X3;3×3
 TP_DIRPYRDENOISE_TYPE_3X3SOFT;3×3 doux
 TP_DIRPYRDENOISE_TYPE_5X5;5×5
 TP_DIRPYRDENOISE_TYPE_5X5SOFT;5×5 doux
 TP_DIRPYRDENOISE_TYPE_7X7;7×7
 TP_DIRPYRDENOISE_TYPE_9X9;9×9
-TP_DIRPYREQUALIZER_ALGO;Domaine des tons chairs
-TP_DIRPYREQUALIZER_ALGO_TOOLTIP;Fin : plus proche des tons chairs, minimisant l'actions sur les autres couleurs\nLarge : évite plus d'artéfacts
-TP_DIRPYREQUALIZER_ARTIF;Réduire les artéfacts
-TP_DIRPYREQUALIZER_HUESKIN;Tons chair
-TP_DIRPYREQUALIZER_HUESKIN_TOOLTIP;Cette pyramide est pour la partie supérieure, où l'algorithme est à son efficacité maximum.\nDans la partie inférieure, zones de transition.\nSi vous avez beson de déplacer significativement la zone vers la gauche ou la droite - ou s'il y a des artéfacts, alors la <b>balance est incorrecte</b>\nVous pouvez réduire légèrement la zone pour éviter d'affecter le reste de l'image.
-TP_DIRPYREQUALIZER_LABEL;Contraste par niveaux de détail
-TP_DIRPYREQUALIZER_LUMACOARSEST;Les plus grossiers
-TP_DIRPYREQUALIZER_LUMACONTRAST_MINUS;Contraste -
-TP_DIRPYREQUALIZER_LUMACONTRAST_PLUS;Contraste +
-TP_DIRPYREQUALIZER_LUMAFINEST;Les plus fins
-TP_DIRPYREQUALIZER_LUMANEUTRAL;Neutre
-TP_DIRPYREQUALIZER_SKIN;Protection/ciblage des tons Chair
-TP_DIRPYREQUALIZER_SKIN_TOOLTIP;A -100, les tons chairs sont ciblés.\nA 0 tous les tons sont traités de maière équivalentes.\nA +100, les tons chairs sont protégés et tous les autres tons sont traités.
-TP_DIRPYREQUALIZER_THRESHOLD;Seuil
-TP_DIRPYREQUALIZER_TOOLTIP;tentatives pour réduire les artéfacts dus à la transition entre les couleurs (teinte, chromaticité, luminosité) de la peau et du rest de l'image.
 TP_DISTORTION_AMOUNT;Quantité
 TP_DISTORTION_AUTO_TIP;Corrige automatiquement la distortion optique dans les fichiers raw en opérant une mise en correspondance avec le fichier JPEG incorporé, si il existe, et sur lequel la correction de la distortion a été appliqué par le boitier.
 TP_DISTORTION_LABEL;Correction de la distorsion
-TP_DR_COMP_METHOD_FATTAL;HDR Game de Tonalité
-TP_DR_COMP_METHOD_LOG;Encodage Log
 TP_EPD_EDGESTOPPING;Arrêt des bords
-TP_EPD_GAMMA;Gamma
 TP_EPD_LABEL;Amplifier la Texture
 TP_EPD_LIST_TITLE;Paramètres
-TP_EPD_REWEIGHTINGITERATES;Itérations de la pondération
 TP_EPD_SCALE;Échelle
 TP_EPD_STRENGTH;Force
-TP_EXPOSURE_AUTOLEVELS;Niveaux Auto
-TP_EXPOSURE_AUTOLEVELS_TIP;Bascule l'application de Niveaux auto. afin de régler automatiquement les valeurs basées sur l'analyse de l'image\nActive la Reconstruction des Hautes Lumières si nécessaire.
 TP_EXPOSURE_BLACK;Compensation du point noir
-TP_EXPOSURE_CLAMPOOG;Ecrêter les couleurs hors gamut
-TP_EXPOSURE_CLIP;% d'écrêtage
-TP_EXPOSURE_CLIP_TIP;Fraction de pixels que l'outil <b>Niveaux Auto.</b> va écrêter
-TP_EXPOSURE_COMPRHIGHLIGHTS;Compression Hautes Lumières
-TP_EXPOSURE_COMPRHIGHLIGHTSTHRESHOLD;Seuil de compression des Hautes Lumières
-TP_EXPOSURE_COMPRSHADOWS;Compression des Ombres
 TP_EXPOSURE_CURVEEDITOR1;Courbe Tonale 1
 TP_EXPOSURE_CURVEEDITOR2;Courbe Tonale 2
 TP_EXPOSURE_CURVEEDITOR2_TOOLTIP;Référez-vous à la section "Exposition > Courbes tonales" du manuel Rawpedia pour en savoir plus sur les manières d'obtenir les meilleurs résultats avec l'utilisation de deux courbes tonales
@@ -1813,7 +1573,6 @@ TP_FLATFIELD_CLIPCONTROL;Control de l'écrêtage
 TP_FLATFIELD_CLIPCONTROL_TOOLTIP;"Contrôle de l'écrêtage" évite l'écrêtage des Hautes Lumière dû à l'application du Champ Uniforme. S'il y a déjà des Hautes Lumières brûlées avant l'application du Champ Uniforme, "Contrôle de l'écrêtage" peut conduire à une dérive couleur.
 TP_FLATFIELD_LABEL;Champ Uniforme
 TP_GENERAL_11SCALE_TOOLTIP;Les effets de cet outil ne sont visibles ou fiables qu'à une échelle d'aperçu de 1:1.
-TP_GRADIENT_CENTER;Centre
 TP_GRADIENT_CENTER_X;Centre X
 TP_GRADIENT_CENTER_X_TOOLTIP;Décaler le gradient vers la gauche (valeurs négatives) ou la droite (valeurs positives)
 TP_GRADIENT_CENTER_Y;Centre Y
@@ -1832,7 +1591,6 @@ TP_GRAIN_STRENGTH;Force
 TP_HLREC_BLEND;Blend (mélange)
 TP_HLREC_COLOR;Propagation de la couleur
 TP_HLREC_OFF;Inactif
-TP_HLREC_ENA_TOOLTIP;Peut être activé par le bouton Niveaux Auto.
 TP_HLREC_LABEL;Reconstruction des Hautes Lumières
 TP_HSVEQUALIZER_CHANNEL;Canal
 TP_HSVEQUALIZER_HUE;T
@@ -1846,8 +1604,6 @@ TP_ICM_APPLYHUESATMAP;Table de base
 TP_ICM_APPLYHUESATMAP_TOOLTIP;Utiliser la table de base (HueSatMap) contenue dans le profil DCP. Ce réglage n'est possible que si le profil DCP sélectionné en contient une.
 TP_ICM_APPLYLOOKTABLE;Table de correspondance
 TP_ICM_APPLYLOOKTABLE_TOOLTIP;Utiliser la table de correspondance (LUT) contenu dans le profil DCP. Ce réglage n'est possible que si le profil DCP sélectionné en contient une.
-TP_ICM_BLENDCMSMATRIX;Mélanger les Hautes Lumières ICC avec la matrice
-TP_ICM_BLENDCMSMATRIX_TOOLTIP;Permettre la récupération les Hautes Lumières écrêtées en utilisant les profils ICC basés sur une table LUT.
 TP_ICM_BPC;Compensation du  Point Noir
 TP_ICM_DCPILLUMINANT;Illuminant
 TP_ICM_DCPILLUMINANT_INTERPOLATED;Interpolé
@@ -1876,21 +1632,12 @@ TP_ICM_SAVEREFERENCE_TOOLTIP;Sauvegarder une image TIFF linéaire avant que le p
 TP_ICM_TONECURVE;Courbe tonale
 TP_ICM_TONECURVE_TOOLTIP;Utiliser la courbe tonale DCP incluse. Ce paramètre ne sera actif que si le profil DCP en contient une.
 TP_ICM_WORKINGPROFILE;Profil colorimétrique de Travail
-TP_ICM_WORKING_TRC;Courbe de réponse tonale :
-TP_ICM_WORKING_TRC_CUSTOM;Personnalisé
-TP_ICM_WORKING_TRC_GAMMA;Gamma
-TP_ICM_WORKING_TRC_NONE;Aucune
-TP_ICM_WORKING_TRC_SLOPE;Pente
-TP_ICM_WORKING_TRC_TOOLTIP;Seulement pour les profils internes.
 TP_IMPULSEDENOISE_LABEL;Réduction du Bruit d'Impulsion
 TP_IMPULSEDENOISE_THRESH;Seuil
-TP_LABCURVE_AVOIDCOLORSHIFT;Éviter la dérive de couleur
-TP_LABCURVE_AVOIDCOLORSHIFT_TOOLTIP;Ramener les données dans le gamut de l'espace colorimétrique de travail\npuis applique la correction de Munsell.
 TP_LABCURVE_BRIGHTNESS;Luminosité
 TP_LABCURVE_CHROMATICITY;Chromaticité
 TP_LABCURVE_CHROMA_TOOLTIP;Pour appliquer un virage couleur partiel sur N&amp;B par les courbes 'a' et 'b', réglez la Chromaticité sur -100
 TP_LABCURVE_CONTRAST;Contraste
-TP_LABCURVE_CURVEEDITOR;Courbe de Luminance
 TP_LABCURVE_CURVEEDITOR_A_RANGE1;Vert saturé
 TP_LABCURVE_CURVEEDITOR_A_RANGE2;Vert pastel
 TP_LABCURVE_CURVEEDITOR_A_RANGE3;Rouge pastel
@@ -1899,28 +1646,8 @@ TP_LABCURVE_CURVEEDITOR_B_RANGE1;Bleu saturé
 TP_LABCURVE_CURVEEDITOR_B_RANGE2;Bleu pastel
 TP_LABCURVE_CURVEEDITOR_B_RANGE3;Jaune pastel
 TP_LABCURVE_CURVEEDITOR_B_RANGE4;Jaune saturé
-TP_LABCURVE_CURVEEDITOR_CC;CC
-TP_LABCURVE_CURVEEDITOR_CC_RANGE1;Neutre
-TP_LABCURVE_CURVEEDITOR_CC_RANGE2;Terne
-TP_LABCURVE_CURVEEDITOR_CC_RANGE3;Pastel
-TP_LABCURVE_CURVEEDITOR_CC_RANGE4;Saturé
-TP_LABCURVE_CURVEEDITOR_CC_TOOLTIP;Chromaticité en fonction de la Chromaticité C=f(C)
-TP_LABCURVE_CURVEEDITOR_CH;CT
-TP_LABCURVE_CURVEEDITOR_CH_TOOLTIP;Chromaticité en fonction de la Teinte C=f(T)
-TP_LABCURVE_CURVEEDITOR_CL;CL
-TP_LABCURVE_CURVEEDITOR_CL_TOOLTIP;Chromaticité en fonction de la Luminance C=f(L)
-TP_LABCURVE_CURVEEDITOR_HH;TT
-TP_LABCURVE_CURVEEDITOR_HH_TOOLTIP;Teinte en fonction de la Teinte T=f(T)
-TP_LABCURVE_CURVEEDITOR_LC;LC
-TP_LABCURVE_CURVEEDITOR_LC_TOOLTIP;Luminance en fonction de la Chromaticité L=f(C)
-TP_LABCURVE_CURVEEDITOR_LH;LT
-TP_LABCURVE_CURVEEDITOR_LH_TOOLTIP;Luminance en fonction de la Teinte L=f(T)
 TP_LABCURVE_CURVEEDITOR_LL_TOOLTIP;Luminance en fonction de la Luminance L=f(L)
 TP_LABCURVE_LABEL;Ajustements L*a*b*
-TP_LABCURVE_LCREDSK;Restreindre LC aux tons rouge/chair
-TP_LABCURVE_LCREDSK_TIP;Si activé, la courbe LC est limitée au tons rouge et chair.\nSi désactivé, elle s'applique à toutes les teintes.
-TP_LABCURVE_RSTPROTECTION;Protection des tons rouge/chair
-TP_LABCURVE_RSTPRO_TOOLTIP;Peut être utilisé avec le curseur Chromaticité et la courbe CC.
 TP_LABMASKS_AREA;Masque de zone
 TP_LABMASKS_AREA_ANGLE;Angle
 TP_LABMASKS_AREA_CONTRAST;Courbe Contraste
@@ -1970,16 +1697,9 @@ TP_LENSPROFILE_USE_CA;Aberration chromatique
 TP_LENSPROFILE_USE_GEOMETRIC;Géometrique
 TP_LENSPROFILE_USE_HEADER;Selectionner les distortions à corriger:
 TP_LENSPROFILE_USE_VIGNETTING;Vignetage
-TP_LOCALCONTRAST_AMOUNT;Quantité
 TP_LOCALCONTRAST_CONTRAST;Contraste résiduel
 TP_LOCALCONTRAST_CURVE;Courbe de contraste local
-TP_LOCALCONTRAST_DARKNESS;Niveau des ombres
 TP_LOCALCONTRAST_LABEL;Contraste Local
-TP_LOCALCONTRAST_LIGHTNESS;Niveau des lumières
-TP_LOCALCONTRAST_MODE;Méthode
-TP_LOCALCONTRAST_RADIUS;Rayon
-TP_LOCALCONTRAST_USM;Masque de flou
-TP_LOCALCONTRAST_WAVELETS;Ondelettes
 TP_LOGENC_AUTO;Automatique
 TP_LOGENC_BLACK_EV;EV Noir
 TP_LOGENC_EV_LEVELS;Niveaux d'exposition relatifs
@@ -1992,8 +1712,6 @@ TP_METADATA_EDIT;Appliquer les modifications
 TP_METADATA_MODE;Mode de copie des métadonnées
 TP_METADATA_STRIP;Effacer toutes les métadonnées
 TP_METADATA_TUNNEL;Copier à l'identique
-TP_NEUTRAL;Réinitialiser
-TP_NEUTRAL_TIP;Réinitialise les curseur d'exposition à des valeurs neutres
 TP_PCVIGNETTE_CENTER_X;Centrer X
 TP_PCVIGNETTE_CENTER_Y;Centrer Y
 TP_PCVIGNETTE_FEATHER;Dégradé
@@ -2048,7 +1766,6 @@ TP_RAWEXPOS_BLACK_BLUE;Bleu
 TP_RAWEXPOS_BLACK_GREEN;Vert
 TP_RAWEXPOS_BLACK_RED;Rouge
 TP_RAWEXPOS_LINEAR;Corr. du Point Blanc
-TP_RAWEXPOS_RGB;Rouge, Vert, Bleu
 TP_RAWEXPOS_TWOGREEN;Lier les Verts
 TP_RAW_1PASSMEDIUM;1 passe (algo. Markesteijn)
 TP_RAW_2PASS;1 passe + Rapide
@@ -2130,9 +1847,6 @@ TP_RESIZE_FULLIMAGE;L'image entière
 TP_RESIZE_H;Hauteur :
 TP_RESIZE_HEIGHT;Hauteur
 TP_RESIZE_LABEL;Redimensionnement
-TP_RESIZE_LANCZOS;Lanczos
-TP_RESIZE_METHOD;Méthode : 
-TP_RESIZE_NEAREST;Au plus proche
 TP_RESIZE_SCALE;Échelle
 TP_RESIZE_SPECIFY;Préciser :
 TP_RESIZE_UNIT;Unité
@@ -2141,109 +1855,15 @@ TP_RESIZE_CM;cm
 TP_RESIZE_IN;in
 TP_RESIZE_W;Largeur :
 TP_RESIZE_WIDTH;Largeur
-TP_RETINEX_CONTEDIT_HSL;Histogramme TSV
-TP_RETINEX_CONTEDIT_LAB;Histogramme L*a*b*
-TP_RETINEX_CONTEDIT_LH;Teinte
-TP_RETINEX_CONTEDIT_MAP;Égaliseur
-TP_RETINEX_CURVEEDITOR_CD;L=f(L)
-TP_RETINEX_CURVEEDITOR_CD_TOOLTIP;Luminance en fonction de la luminance L=f(L)\nCorrige les données raw pour réduire halos et artéfacts.
-TP_RETINEX_CURVEEDITOR_LH;Force=f(T)
-TP_RETINEX_CURVEEDITOR_LH_TOOLTIP;Force en fonction de la Teinte Force=f(T)\nCette courbe agit également sur le chroma lors de l'utilisation de la méthode Retinex "Hautes Lumières".
-TP_RETINEX_CURVEEDITOR_MAP;L=f(L)
-TP_RETINEX_CURVEEDITOR_MAP_TOOLTIP;Cette courbe peut être appliquée seule, ou avec un masque Gaussien ou un masque d'ondelettes.\nAttention aux artéfacts !
-TP_RETINEX_EQUAL;Égaliseur
-TP_RETINEX_FREEGAMMA;Gamma personnalisé
-TP_RETINEX_GAIN;Gain
-TP_RETINEX_GAINOFFS;Gain et Décalage (brillance)
-TP_RETINEX_GAINTRANSMISSION;Transmission du Gain
-TP_RETINEX_GAINTRANSMISSION_TOOLTIP;Amplifie ou réduit le canal transmission pour atteindre la luminance souhaitée.\nAbscisses : transmission.\nOrdonnées : gain.
-TP_RETINEX_GAIN_TOOLTIP;Agit sur l'image restaurée.\n\n Ceci est très différent des autres réglages. Utilisé pour les pixels noirs ou blancs, pour aider à l'équilibre de l'histogramme.
-TP_RETINEX_GAMMA;Gamma
-TP_RETINEX_GAMMA_FREE;Personnalisé
-TP_RETINEX_GAMMA_HIGH;Haute
-TP_RETINEX_GAMMA_LOW;Bas
-TP_RETINEX_GAMMA_MID;Milieu
-TP_RETINEX_GAMMA_NONE;Aucun
-TP_RETINEX_GAMMA_TOOLTIP;Restaurer les tonalités en appliquant une transformation gamma avant et après Retinex. Différent des courbes Retinex ou autres courbes (L*a*b*, Exposition, etc...).
-TP_RETINEX_GRAD;Gradient de transmission
-TP_RETINEX_GRADS;Gradient de force
-TP_RETINEX_GRADS_TOOLTIP;Si curseur à 0, toutes les itérations sont identiques.\nSi > 0, la Force est réduite à chaque nouvelle itération, et inversement.
-TP_RETINEX_GRAD_TOOLTIP;Si curseur à 0, toutes les itérations sont identiques.\nSi > 0, la Variance et le Seuil sont réduits à chaque nouvelle itération, et inversement.
-TP_RETINEX_HIGH;Haut
-TP_RETINEX_HIGHLIG;Hautes Lumières
-TP_RETINEX_HIGHLIGHT;Seuil des Hautes Lumières
-TP_RETINEX_HIGHLIGHT_TOOLTIP;Augment l'action de l'algoritme "Haut".\nPeut nécessiter un réajustement de "Pixels environnants" et d'augmenter la "Correction du point blanc" dans l'onglet Raw -> Point Blanc raw.
-TP_RETINEX_HSLSPACE_LIN;TSV-Linéaire
-TP_RETINEX_HSLSPACE_LOG;TSV-Logarithmique
-TP_RETINEX_ITER;Itérations (Compression tonale)
-TP_RETINEX_ITERF;Compression tonale
-TP_RETINEX_ITER_TOOLTIP;Simule un opérateur de Compression tonale.\nLes valeurs élevées augmentent le temps de traitement.
-TP_RETINEX_LABEL;Retinex
-TP_RETINEX_LABEL_MASK;Masque
-TP_RETINEX_LABSPACE;L*a*b*
-TP_RETINEX_LOW;Bas
-TP_RETINEX_MAP;Méthode
-TP_RETINEX_MAP_GAUS;Masque gaussien
-TP_RETINEX_MAP_MAPP;Masque net (ondelettes partielles)
-TP_RETINEX_MAP_MAPT;Masque net (ondelettes totales)
-TP_RETINEX_MAP_METHOD_TOOLTIP;Utilise le masque généré par la fonction Gaussienne ci-dessus (Rayon, Méthode) pour réduire les halos et artéfacts.\n\nCourbe seulement : applique une courbe de contraste diagonale sur le masque.\nAttention aux artéfacts !\n\nMasque gaussien : génère et utilise le masque original modifié par flou gaussien.\nRapide.\n\nMasque net : génère et utilise une ondelette sur le masque original.\nLent.
-TP_RETINEX_MAP_NONE;Aucune
-TP_RETINEX_MEDIAN;Filtre médian de Transmission
-TP_RETINEX_METHOD;Méthode
-TP_RETINEX_METHOD_TOOLTIP;Bas = Renforce les basses lumières.\nUniforme = Action uniforme.\nHaut = Renforce les Hautes Lumières.\nHautes Lumières = Retire le magenta dans les Hautes Lumières.
-TP_RETINEX_MLABEL;Restaurée 'sans brume' Min=%1 Max=%2
-TP_RETINEX_MLABEL_TOOLTIP;Devrait être proche de min=0 max=32768\nImage restaurée sans mélange.
-TP_RETINEX_NEIGHBOR;Rayon
-TP_RETINEX_NEUTRAL;Réinit.
-TP_RETINEX_NEUTRAL_TIP;Réinitialise tous les curseurs et courbes à leur valeur par défaut.
-TP_RETINEX_OFFSET;Décalage (brillance)
-TP_RETINEX_SCALES;Gradient gaussien
-TP_RETINEX_SCALES_TOOLTIP;Si le curseur est à 0, toutes les itérations sont identiques.\nSi > 0, Échelle et Rayon sont réduits à chaque nouvelle itération, et inversement.
-TP_RETINEX_SETTINGS;Réglages
-TP_RETINEX_SKAL;Échelle
-TP_RETINEX_SLOPE;Pente du gamma personnalisée
-TP_RETINEX_STRENGTH;Force
-TP_RETINEX_THRESHOLD;Seuil
-TP_RETINEX_THRESHOLD_TOOLTIP;Limiter entrée/sortie.\nEntrée = image source,\nSortie = image gaussienne.
-TP_RETINEX_TLABEL;CT Min=%1 Max=%2 Moyen=%3 Sigma=%4
-TP_RETINEX_TLABEL2;CT Tm=%1 TM=%2
-TP_RETINEX_TLABEL_TOOLTIP;Résultat du canal Tansmission.\nMin et Max sont utilisés par Variance.\nMoyen et Sigma.\nTm=Min TM=Niveau maximum de transmission.
-TP_RETINEX_TRANF;Transmission
-TP_RETINEX_TRANSMISSION;Modulation du canal Transmission
-TP_RETINEX_TRANSMISSION_TOOLTIP;Transmission en fonction de la Transmission.\nAbscisses: Transmission à partir des valeurs négatives (min), moyennes, et positives (max).\nOrdonnées: amplification ou réduction.
-TP_RETINEX_UNIFORM;Uniforme
-TP_RETINEX_VARIANCE;Contraste
-TP_RETINEX_VARIANCE_TOOLTIP;Une faible variance augmente le contraste local et la saturation, mais peut conduire à des artéfacts.
-TP_RETINEX_VIEW;Traitement
-TP_RETINEX_VIEW_MASK;Masque
-TP_RETINEX_VIEW_METHOD_TOOLTIP;Standard - Affichage normal.\nMasque - Affiche le masque.\nMasque flou - Affiche l'image avec un masque flou à grand rayon.\nTransmission - Auto/Fixé - Affiche les données du canal Transmission, avant toute action sur le contraste et la brillance.\n\nAttention: le masque ne correspond pas au rendu final, mais est amplifié pour le rendre plus visible.
-TP_RETINEX_VIEW_NONE;Standard
-TP_RETINEX_VIEW_TRAN;Transmission - Auto.
-TP_RETINEX_VIEW_TRAN2;Transmission - Fixe
-TP_RETINEX_VIEW_UNSHARP;Masque flou
 TP_RGBCURVES_BLUE;B
 TP_RGBCURVES_CHANNEL;Canal
 TP_RGBCURVES_GREEN;V
 TP_RGBCURVES_LABEL;Courbes RVB
-TP_RGBCURVES_LUMAMODE;Mode Luminosité
-TP_RGBCURVES_LUMAMODE_TOOLTIP;<b>Le Mode Luminosité</b> permet de faire varier la contribution des canaux R, V et B à la luminosité de l'image, sans altérer les couleurs de l'image.
 TP_RGBCURVES_RED;R
 TP_ROTATE_DEGREE;Degré
 TP_ROTATE_LABEL;Rotation
 TP_ROTATE_SELECTLINE;Choisir la ligne d'horizon
 TP_SAVEDIALOG_OK_TIP;Raccourci : <b>Ctrl-Entrée</b>
-TP_SHADOWSHLIGHTS_HIGHLIGHTS;Hautes Lumières
-TP_SHADOWSHLIGHTS_HLTONALW;Amplitude tonale des\nHautes Lumières
-TP_SHADOWSHLIGHTS_LABEL;Ombres/Hautes Lumières
-TP_SHADOWSHLIGHTS_LOCALCONTR;Contraste local
-TP_SHADOWSHLIGHTS_RADIUS;Rayon
-TP_SHADOWSHLIGHTS_SHADOWS;Ombres
-TP_SHADOWSHLIGHTS_SHARPMASK;Masque net
-TP_SHADOWSHLIGHTS_SHTONALW;Amplitude tonale des ombres
-TP_SHARPENEDGE_AMOUNT;Quantité
-TP_SHARPENEDGE_LABEL;Bords
-TP_SHARPENEDGE_PASSES;Itérations
-TP_SHARPENEDGE_THREE;Luminance uniquement
 TP_SHARPENING_AMOUNT;Quantité
 TP_SHARPENING_BLUR;Rayon de floutage
 TP_SHARPENING_CONTRAST;Seuil de contraste
@@ -2258,18 +1878,11 @@ TP_SHARPENING_RADIUS;Rayon
 TP_SHARPENING_RLD;Déconvolution RL
 TP_SHARPENING_RLD_AMOUNT;Quantité
 TP_SHARPENING_RLD_AUTORADIUS_TOOLTIP;Calcul auto. basé sur les données raw
-TP_SHARPENING_RLD_DAMPING;Amortissement
 TP_SHARPENING_RLD_CORNERBOOST;Amplifier dans les angles
 TP_SHARPENING_RLD_CORNERLATITUDE;Echelle
 TP_SHARPENING_RLD_CORNERRADIUS;Augmentation du rayon
-TP_SHARPENING_RLD_ITERATIONS;Itérations
 TP_SHARPENING_THRESHOLD;Seuil
 TP_SHARPENING_USM;Masque flou (USM)
-TP_SHARPENMICRO_AMOUNT;Quantité
-TP_SHARPENMICRO_CONTRAST;Seuil de contraste
-TP_SHARPENMICRO_LABEL;Microcontraste
-TP_SHARPENMICRO_MATRIX;Matrice 3×3 au lieu de 5×5
-TP_SHARPENMICRO_UNIFORMITY;Uniformité
 TP_SMOOTHING_LABEL;Lissage
 TP_SMOOTHING_LIST_TITLE;Pamamétres de lissage
 TP_SMOOTHING_CHANNEL;Canal
@@ -2282,7 +1895,6 @@ TP_SMOOTHING_ITERATIONS;Itérations
 TP_SOFTLIGHT_LABEL;Lumière douce
 TP_SOFTLIGHT_STRENGTH;Force
 TP_TM_FATTAL_AMOUNT;Quantité
-TP_TM_FATTAL_ANCHOR;Point d'ancrage
 TP_TM_FATTAL_LABEL;Compression de la Plage Dynamique
 TP_TM_FATTAL_THRESHOLD;Détail
 TP_TONECURVE_LABEL;Courbes Tonales
@@ -2294,193 +1906,12 @@ TP_TONE_EQUALIZER_BAND_3;Hautes lumières
 TP_TONE_EQUALIZER_BAND_4;Blancs
 TP_TONE_EQUALIZER_DETAIL;Régularisation
 TP_TONE_EQUALIZER_LABEL;Egaliseur Tonal
-TP_VIBRANCE_AVOIDCOLORSHIFT;Éviter la dérive des couleurs
-TP_VIBRANCE_CURVEEDITOR_SKINTONES;TT
-TP_VIBRANCE_CURVEEDITOR_SKINTONES_LABEL;Tons chair
-TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE1;Rouge/Violet
-TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE2;Rouge
-TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE3;Rouge/Jaune
-TP_VIBRANCE_CURVEEDITOR_SKINTONES_RANGE4;Jaune
-TP_VIBRANCE_CURVEEDITOR_SKINTONES_TOOLTIP;Teinte en fonction de la teinte H=f(H)
-TP_VIBRANCE_LABEL;Vibrance
-TP_VIBRANCE_PASTELS;Tons pastels
-TP_VIBRANCE_PASTSATTOG;Lier Pastels et Saturés
-TP_VIBRANCE_PROTECTSKINS;Protéger les tons chairs
-TP_VIBRANCE_PSTHRESHOLD;Seuil entre tons pastels/saturés
-TP_VIBRANCE_PSTHRESHOLD_SATTHRESH;Seuil de saturation
-TP_VIBRANCE_PSTHRESHOLD_TOOLTIP;L'axe vertical représente les tons pastels en bas et les tons saturés en haut.\nL'axe horizontal représente l'étendue de la saturation.
-TP_VIBRANCE_PSTHRESHOLD_WEIGTHING;Pondération de la transition pastels/saturés
-TP_VIBRANCE_SATURATED;Tons saturés
 TP_VIGNETTING_AMOUNT;Quantité
-TP_VIGNETTING_CENTER;Centre
 TP_VIGNETTING_CENTER_X;Centre X
 TP_VIGNETTING_CENTER_Y;Centre Y
 TP_VIGNETTING_LABEL;Correction du Vignetage
 TP_VIGNETTING_RADIUS;Rayon
 TP_VIGNETTING_STRENGTH;Force
-TP_WAVELET_1;Niveau 1
-TP_WAVELET_2;Niveau 2
-TP_WAVELET_3;Niveau 3
-TP_WAVELET_4;Niveau 4
-TP_WAVELET_5;Niveau 5
-TP_WAVELET_6;Niveau 6
-TP_WAVELET_7;Niveau 7
-TP_WAVELET_8;Niveau 8
-TP_WAVELET_9;Niveau 9
-TP_WAVELET_APPLYTO;Appliquer À
-TP_WAVELET_AVOID;Éviter la dérive des couleurs
-TP_WAVELET_B0;Noir
-TP_WAVELET_B1;Gris
-TP_WAVELET_B2;Résiduel
-TP_WAVELET_BACKGROUND;Fond
-TP_WAVELET_BACUR;Courbe
-TP_WAVELET_BALANCE;Balance du contraste d/v-h
-TP_WAVELET_BALANCE_TOOLTIP;Altère la balance entre les directions des ondelettes : verticale-horizontale et diagonale.\nSi le contraste, le chroma ou la compression tonale résiduelle sont activés, l'effet dû à la balance est amplifié.
-TP_WAVELET_BALCHRO;Balance chromatique
-TP_WAVELET_BALCHRO_TOOLTIP;Si activé, la courbe ou le curseur de 'Balance chroma' modifie également la balance du chroma.
-TP_WAVELET_BANONE;Aucun
-TP_WAVELET_BASLI;Curseur
-TP_WAVELET_BATYPE;Méthode de Balance du contraste
-TP_WAVELET_CBENAB;Virage Partiel et Balance des Couleurs
-TP_WAVELET_CB_TOOLTIP;Pour les valeurs élevées, produit un virage partiel en les combinant ou non avec les valeurs (courbes) spécifiées dans 'Virage'\nPour les faible valeurs, vous pouvez changer la balance des blancs du fond (ciel, ...) sans changer celui du premier plan, généralement plus contrasté.
-TP_WAVELET_CCURVE;Contraste local
-TP_WAVELET_CH1;Plage chromatique complète
-TP_WAVELET_CH2;Saturé/pastel
-TP_WAVELET_CH3;Lier avec les niveaux de contraste
-TP_WAVELET_CHCU;Courbe
-TP_WAVELET_CHR;Force du lien chroma/contrast
-TP_WAVELET_CHRO;Seuil saturé/pastel
-TP_WAVELET_CHRO_TOOLTIP;Règle le niveau d'ondelettes qui sera le seuil entre les couleurs saturées et pastels.\n1-x: saturé\nx-9: pastel\n\nSi la valeur excède le nombre de niveaux d'ondelettes en cours d'utilisation, alors ce paramètre sera ignoré.
-TP_WAVELET_CHR_TOOLTIP;Ajuste le chroma en fonction des "Niveaux de contraste" et de la "Force du lien chroma/contrast"
-TP_WAVELET_CHSL;Curseurs
-TP_WAVELET_CHTYPE;Méthode de Chrominance
-TP_WAVELET_COLORT;Opacité Rouge-Vert
-TP_WAVELET_COMPCONT;Contraste
-TP_WAVELET_COMPGAMMA;Gamma de la Compression
-TP_WAVELET_COMPGAMMA_TOOLTIP;Ajuster le gamma de l'image résiduelle permet d'équiilibrer les données et l'histogramme.
-TP_WAVELET_COMPTM;Compression tonale
-TP_WAVELET_CONTEDIT;Courbe de contraste 'Après'
-TP_WAVELET_CONTR;Gamut
-TP_WAVELET_CONTRA;Contraste
-TP_WAVELET_CONTRAST_MINUS;Contraste -
-TP_WAVELET_CONTRAST_PLUS;Contraste +
-TP_WAVELET_CONTRA_TOOLTIP;Change le contraste de l'image résiduelle.
-TP_WAVELET_CTYPE;Contrôle de la Chrominance
-TP_WAVELET_CURVEEDITOR_CC_TOOLTIP;Modifie le contraste local en fonction du contraste original (abscisse).\nLa partie basse des abscisses correspond à un contraste local faible (valeurs réelles entre 10 et 20).\nL'abscisse 50% représente un contraste local moyen (valeurs réelles entre 100 et 300).\nL'abscisse 66% représente l'écart-type du contraste local (valeurs réeles entre 300 et 800).\n100% représente le contraste maximum (valeurs réelles entre 3000 et 8000)
-TP_WAVELET_CURVEEDITOR_CH;Contraste=f(Teinte)
-TP_WAVELET_CURVEEDITOR_CH_TOOLTIP;Modifie le contraste de chaque niveau en fonction de la teinte.\nFaites attention de ne pas écraser les changement faits avec les contrôles de Teinte dans "Gamut".\nLa courbe ne produira un effet que si les curseurs de contraste des ondelettes ne sont pas à zéro.
-TP_WAVELET_CURVEEDITOR_CL;L
-TP_WAVELET_CURVEEDITOR_CL_TOOLTIP;Applique une courbe de contraste de la luminance à la fin du traitement des ondelettes.
-TP_WAVELET_CURVEEDITOR_HH;TT
-TP_WAVELET_CURVEEDITOR_HH_TOOLTIP;Modifie la teinte de l'image résiduelle en fonction de la teinte.
-TP_WAVELET_DALL;Toutes les directions
-TP_WAVELET_DAUB;Performance des bords
-TP_WAVELET_DAUB2;D2 - bas
-TP_WAVELET_DAUB4;D4 - standard
-TP_WAVELET_DAUB6;D6 - standard plus
-TP_WAVELET_DAUB10;D10 - moyen
-TP_WAVELET_DAUB14;D14 - haut
-TP_WAVELET_DAUB_TOOLTIP;Change les coéfficients de Daubechies:\nD4 = Standard,\nD14 = Souvent les meilleurs performances, demande 10% de temps de traitement supplémentaire.\n\nAffecte la détection des bords ainsi que la qualité générale des premiers niveaux. Cependant la qualité n'est pas strcitement liée à ces coéficients et peut varier en fonction des images et des ustilisations.
-TP_WAVELET_DONE;Vertical
-TP_WAVELET_DTHR;Diagonal
-TP_WAVELET_DTWO;Horizontal
-TP_WAVELET_EDCU;Courbe
-TP_WAVELET_EDGCONT;Contraste local
-TP_WAVELET_EDGCONT_TOOLTIP;Ajuster les points vers la gauche diminue le contraste, et vers la droite l'augmente.\nBas-gauche, Haut-gauche, Haut-droit, Bas-droit représentent respectivement le contraste local pour les valeurs faibles, moyennes, moyennes + éctart type, maximum.
-TP_WAVELET_EDGE;Netteté des bords
-TP_WAVELET_EDGEAMPLI;Amplification de base
-TP_WAVELET_EDGEDETECT;Sensibilité du gradient
-TP_WAVELET_EDGEDETECTTHR;Seuil bas (bruit)
-TP_WAVELET_EDGEDETECTTHR2;Seuil haut (détection)
-TP_WAVELET_EDGEDETECTTHR_TOOLTIP;Ce curseur vous permet de cibler la détection des bords, par ex. pour éviter d'augmenter la netteté de fins détails tels que le bruit dans le ciel.
-TP_WAVELET_EDGEDETECT_TOOLTIP;Déplacer ce curseur vers la droite augmente la sensibilité des bords. Cela affecte le contraste local, les paramètres de bords et le bruit.
-TP_WAVELET_EDGESENSI;Sensibilité des bords
-TP_WAVELET_EDGREINF_TOOLTIP;Renforce ou réduit l'action du premier niveau, réalise l'opposé sur le second niveau, et laisse le reste inchangé.
-TP_WAVELET_EDGTHRESH;Détail
-TP_WAVELET_EDGTHRESH_TOOLTIP;Change la répartition entre les premiers niveaux et les autres. Plus le seuil est haut plus l'action est centrée sur les premiers niveaux. Faites attention aux valeurs négatives, elles augmentent l'action sur les niveaux élevés et peut introduire des artéfacts.
-TP_WAVELET_EDRAD;Rayon
-TP_WAVELET_EDRAD_TOOLTIP;Ce paramètre de rayon est très différent de celui des autres outils de netteté. Sa valeur est comparée à chaque niveau par une fonction complexe, aussi une valeur de zéro produira aussi un effet.
-TP_WAVELET_EDSL;Curseurs de Seuil
-TP_WAVELET_EDTYPE;Méthode de contraste local
-TP_WAVELET_EDVAL;Force
-TP_WAVELET_FINAL;Touche finale
-TP_WAVELET_FINEST;Les plus fins
-TP_WAVELET_HIGHLIGHT;Plage de luminance des hautes lumières
-TP_WAVELET_HS1;Plage complète de luminance
-TP_WAVELET_HS2;Ombres/hautes lumières
-TP_WAVELET_HUESKIN;Tons chair
-TP_WAVELET_HUESKIN_TOOLTIP;Les points inférieurs règlent le début de la zone de transition, les points supérieurs sa fin, où l'effet sera à son maximum.\n\nSi vous avez besoin de modifier cette zone significativement, ou s'il y a des artéfacts, alors la <b>balance des blancs est incorrecte</b>.
-TP_WAVELET_HUESKY;Ton ciel
-TP_WAVELET_HUESKY_TOOLTIP;Les points inférieurs règlent le début de la zone de transition, les points supérieurs sa fin, où l'effet sera à son maximum.\n\nSi vous avez besoin de modifier cette zone significativement, ou s'il y a des artéfacts, alors la <b>balance des blancs est incorrecte</b>.
-TP_WAVELET_ITER;Niveaux de balance des deltas
-TP_WAVELET_ITER_TOOLTIP;Gauche : augmente les bas niveaux et réduit les hauts niveaux,\nDroite : réduit les bas niveaux et augmente les hauts niveaux.
-TP_WAVELET_LABEL;Niveaux d'Ondelettes
-TP_WAVELET_LARGEST;Plus grossier
-TP_WAVELET_LEVCH;Chroma
-TP_WAVELET_LEVDIR_ALL;Tous les niveaux dans toutes les directions
-TP_WAVELET_LEVDIR_INF;En-dessous ou égal au niveau
-TP_WAVELET_LEVDIR_ONE;Un niveau
-TP_WAVELET_LEVDIR_SUP;Au-dessus du niveau
-TP_WAVELET_LEVELS;Niveaux d'Ondelettes
-TP_WAVELET_LEVELS_TOOLTIP;Définit en combien de niveaux de détail l'image sera décomposée. PLus il y a de niveaux plus cela nécessitera de RAM et de temps de traitement.
-TP_WAVELET_LEVF;Contraste
-TP_WAVELET_LEVLABEL;Nombre maximum de niveau\npossibles pour l'aperçu = %1
-TP_WAVELET_LEVONE;Niveau 2
-TP_WAVELET_LEVTHRE;Niveau 4
-TP_WAVELET_LEVTWO;Niveau 3
-TP_WAVELET_LEVZERO;Niveau 1
-TP_WAVELET_LINKEDG;Lier au paramètre 'Force' de la 'Netteté des bords'
-TP_WAVELET_LIPST;Algorithme amélioré
-TP_WAVELET_LOWLIGHT;Plage de luminance des ombres
-TP_WAVELET_MEDGREINF;Premier niveau
-TP_WAVELET_MEDI;Réduire les artéfacts dans les ciels bleus
-TP_WAVELET_MEDILEV;Détection des bords
-TP_WAVELET_MEDILEV_TOOLTIP;Lorsque vous activez la Détection des Bords, il est recommandé :\n- de désactiver les niveaux de faible contraste pour éviter les artéfacts,\n- d'utiliser de fortes valeurs de Sensibilité du Gradient.\n\nVous pouvez moduler la force avec "Affiner" de "Débruiter et affiner".
-TP_WAVELET_NEUTRAL;Neutre
-TP_WAVELET_NOIS;Débruiter
-TP_WAVELET_NOISE;Débruiter et affiner
-TP_WAVELET_NPHIGH;Haut
-TP_WAVELET_NPLOW;Bas
-TP_WAVELET_NPNONE;Aucun
-TP_WAVELET_NPTYPE;Pixels voisins
-TP_WAVELET_NPTYPE_TOOLTIP;Cet algorithme utilise la proximité d'un pixel et de ses huit plus proches voisins. Si moins de différence, les bords sont renforcés.
-TP_WAVELET_OPACITY;Opacité Bleu-Jaune
-TP_WAVELET_OPACITYW;Courbe balance du contraste d/v-h
-TP_WAVELET_OPACITYWL;Contraste local final
-TP_WAVELET_OPACITYWL_TOOLTIP;Modifie le contraste local final à la fin du traitement par ondelettes.\n\nLe côté gauche représente le contraste local le plus faible, progressant jusqu'aux plus grands contrastes locaux vers la droite.
-TP_WAVELET_PASTEL;Chroma des tons pastels
-TP_WAVELET_PROC;Processus
-TP_WAVELET_RE1;Renforcé
-TP_WAVELET_RE2;Inchangé
-TP_WAVELET_RE3;Réduit
-TP_WAVELET_RESCHRO;Chroma
-TP_WAVELET_RESCON;Ombres
-TP_WAVELET_RESCONH;Hautes Lumières
-TP_WAVELET_RESID;Image résiduelle
-TP_WAVELET_SAT;Chroma saturé
-TP_WAVELET_SETTINGS;Réglage des Ondelettes
-TP_WAVELET_SKIN;Ciblage/protection des tons chair
-TP_WAVELET_SKIN_TOOLTIP;À -100 les tons chair seront ciblés.\nÀ 0 tous les tons seront traités de manière égale.\nÀ +100 les tons chair seront protégés alors que tous les autres tons seront affectés.
-TP_WAVELET_SKY;Ciblage/protection du ciel
-TP_WAVELET_SKY_TOOLTIP;À -100 les tons ciel seront ciblés.\nÀ 0 tous les tons seront traités de manière égale.\nÀ +100 les tons ciel seront protégés alors que tous les autres tons seront affectés.
-TP_WAVELET_STREN;Force
-TP_WAVELET_STRENGTH;Force
-TP_WAVELET_SUPE;Extra
-TP_WAVELET_THR;Seuil des Ombres
-TP_WAVELET_THRESHOLD;Niveaux des Hautes Lumières
-TP_WAVELET_THRESHOLD2;Niveaux des ombres
-TP_WAVELET_THRESHOLD2_TOOLTIP;Seuls les niveaux entre [9] et [9 moins la valeur] seront affectés par la plage de luminance des ombres. Les autres niveaux seront entièrement traités. La plus haute valeur possible est limitée par la valeur du niveau des hautes lumières [9 moins la valeur du niveau des hautes lumières].
-TP_WAVELET_THRESHOLD_TOOLTIP;Seuls les niveaux au-delà de la valeur choisie seront affectés par la plage de luminance des hautes lumières. Les autres niveaux seront traités entièrement. La valeur choisie ici limite la plus haute valeur possible de niveau d'ombre.
-TP_WAVELET_THRH;Seuil des Hautes Lumières
-TP_WAVELET_TILESBIG;Grandes tuiles
-TP_WAVELET_TILESFULL;Image entière
-TP_WAVELET_TILESIZE;Méthode de découpage en tuiles
-TP_WAVELET_TILESLIT;Petites tuiles
-TP_WAVELET_TILES_TOOLTIP;Traiter l'image entière donnera les meilleurs résulats et est l'option recommandée, tandis que l'utilisation de tuiles est une alternative recommandée pour les utilisateurs disposant de peu de RAM. Cf. RawPedia pour la configuration mémoire requise.
-TP_WAVELET_TMSTRENGTH;Force de la Compression
-TP_WAVELET_TMSTRENGTH_TOOLTIP;Contrôle la force de la compression tonale ou de la compression de contraste de l'image résiduelle. Lorsque la valeur est différente de 0, les curseurs Force et Gamma de l'outil Compression Tonale dans l'onglet Exposition seront grisés.
-TP_WAVELET_TMTYPE;Méthode de compression
-TP_WAVELET_TON;Virage couleur
 TP_WBALANCE_AUTO;Auto
 TP_WBALANCE_CAMERA;Appareil photo
 TP_WBALANCE_CLOUDY;Nuageux
@@ -2523,8 +1954,6 @@ TP_WBALANCE_SOLUX41;Solux 4100K
 TP_WBALANCE_SOLUX47;Solux 4700K (fabricant)
 TP_WBALANCE_SOLUX47_NG;Solux 4700K (Nat. Gallery)
 TP_WBALANCE_SPOTWB;Utiliser la pipette pour échantillonner la balance des blancs à partir d'une zone neutre de l'image.
-TP_WBALANCE_TEMPBIAS;Dériver de la température calculée auto.
-TP_WBALANCE_TEMPBIAS_TOOLTIP;Permet d'ajuster le calcul de la "Balance des blancs auto" en recherchant une température plus chaude ou plus froide. L'ajustement est éxprimé comme un poucentage de la température calculée, de manière à ce que le résultat soit "tempCalculé + tempCalculé * ajustement".
 TP_WBALANCE_TEMPERATURE;Température
 TP_WBALANCE_TUNGSTEN;Tungstène
 TP_WBALANCE_WATER1;Sous-marin 1

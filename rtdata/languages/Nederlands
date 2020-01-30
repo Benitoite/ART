@@ -24,7 +24,6 @@ ABOUT_TAB_RELEASENOTES;Uitgave-opmerkingen
 ABOUT_TAB_SPLASH;Welkom
 
 ADJUSTER_RESET_TO_DEFAULT;<b>Klik</b> - terug naar standaardwaarde.\n<b>Ctrl+klik</b> - terug naar initiële waarde.
-BATCH_PROCESSING;Batch-verwerking
 
 CURVEEDITOR_AXIS_IN;I:
 CURVEEDITOR_AXIS_LEFT_TAN;LT:
@@ -89,16 +88,10 @@ EXIFPANEL_ADDEDITHINT;Voeg nieuwe tag toe of bewerk tag
 EXIFPANEL_ADDTAGDLG_ENTERVALUE;Geef waarde
 EXIFPANEL_ADDTAGDLG_SELECTTAG;Selecteer tag
 EXIFPANEL_ADDTAGDLG_TITLE;Voeg tag toe of bewerk
-EXIFPANEL_KEEP;Bewaar
-EXIFPANEL_KEEPHINT;Bewaar geselecteerde tags in doelbestand
-EXIFPANEL_REMOVE;Verwijder
-EXIFPANEL_REMOVEHINT;Verwijder geselecteerde tags als doelbestand wordt geschreven
 EXIFPANEL_RESET;Terug naar standaardwaarden
 EXIFPANEL_RESETALL;Alles terug naar standaardwaarden
 EXIFPANEL_RESETALLHINT;Zet alle tags terug naar oorspronkelijke waarden
 EXIFPANEL_RESETHINT;Zet geselecteerde tags terug naar oorspronkelijke waarden
-EXIFPANEL_SHOWALL;Toon alles
-EXIFPANEL_SUBDIRECTORY;Submap
 
 # Voorkeuren - Snelle export
 EXPORT_BYPASS;Verwerkingsstappen die worden overgeslagen
@@ -127,11 +120,8 @@ EXPORT_USE_FAST_PIPELINE;Snel (volledige verwerking op gewijzigd formaat van de 
 EXPORT_USE_FAST_PIPELINE_TIP;Gebruikt een speciale verwerkingslijn waarbij snelheid voorrang heeft op kwaliteit. Het formaat van de afbeelding wordt zo snel mogelijk gewijzigd in plaats van aan het eind van de verwerking, zoals gebruikelijk. De snelheidswinst is aanzienlijk, maar de kwaliteit van de afbeelding zal minder zijn.
 EXPORT_USE_NORMAL_PIPELINE;Standaard (wijzigt formaat aan het eind)
 
-EXTPROGTARGET_1;raw
-EXTPROGTARGET_2;verwerkingsrij
 
 # Filebrowser / Bestandsnavigator
-FILEBROWSER_ADDDELTEMPLATE;Sjablonen toevoegen/verwijderen...
 FILEBROWSER_APPLYPROFILE;Pas profiel toe
 FILEBROWSER_APPLYPROFILE_PARTIAL;Pas profiel toe - gedeeltelijk
 FILEBROWSER_AUTODARKFRAME;Automatisch donkerframe
@@ -150,7 +140,6 @@ FILEBROWSER_DELETEDIALOG_HEADER;Verwijderen bestand bevestigen
 FILEBROWSER_DELETEDIALOG_ALL;Alle <b>%1</b> bestanden in de prullenbak verwijderen?
 FILEBROWSER_DELETEDIALOG_SELECTED;Geselecteerde <b>%1</b> bestanden verwijderen?
 FILEBROWSER_DELETEDIALOG_SELECTEDINCLPROC;Geselecteerde <b>%1</b> bestanden <b>inclusief</b> een versie die door de verwerkingsrij is gemaakt verwijderen?
-FILEBROWSER_EMPTYTRASH;Leeg prullenbak
 FILEBROWSER_EMPTYTRASHHINT;Alle bestanden in de prullenbak permanent verwijderen
 FILEBROWSER_EXTPROGMENU;Open met
 FILEBROWSER_FLATFIELD;Vlakveld
@@ -290,7 +279,6 @@ HISTORY_MSG_1;Foto geladen
 HISTORY_MSG_2;arw-profiel geladen
 HISTORY_MSG_3;arw-profiel aangepast
 HISTORY_MSG_4;Door geschiedenis bladeren
-HISTORY_MSG_5B, C &amp; S - ;Helderheid
 HISTORY_MSG_6;Tooncurve - contrast
 HISTORY_MSG_7;Belichting - schaduwen
 HISTORY_MSG_8;Belichting - compensatie
@@ -545,7 +533,6 @@ HISTORY_MSG_SATURATION_VIBRANCE;Verz/Lev.- Levendigheid
 HISTORY_MSG_CLAMPOOG;Kleuren afkappen die buiten het gamma vallen
 HISTORY_MSG_COLORCORRECTION_AB;CC - tintcorrectie
 HISTORY_MSG_COLORCORRECTION_AREAMASK;CC - gebiedsmasker
-HISTORY_MSG_COLORCORRECTION_RGB_CHANNELS;CC - modus
 HISTORY_MSG_COLORCORRECTION_CHROMATICITYMASK;CC - gebied C-masker
 HISTORY_MSG_COLORCORRECTION_ENABLED;Kleurcorrectie
 HISTORY_MSG_COLORCORRECTION_HUEMASK;CC - gebied H-masker
@@ -926,12 +913,6 @@ PREFERENCES_APPLNEXTSTARTUP;herstart vereist
 PREFERENCES_AUTOMONPROFILE;Gebruik standaard beeldschermprofiel van het besturingsysteem
 PREFERENCES_AUTOSAVE_TP_OPEN;Bewaar positie gereedschappen (open/dicht) bij afsluiten
 PREFERENCES_BATCH_PROCESSING;Batch-verwerking
-PREFERENCES_BEHADDALL;Alles op 'Toevoegen'
-PREFERENCES_BEHADDALLHINT;Zet alle parameters in de <b>Toevoegen</b>-modus.\nWijzigingen van parameters in het batch-gereedschap zijn <b>delta's</b> op de opgeslagen waarden.
-PREFERENCES_BEHAVIOR;Gedrag
-PREFERENCES_BEHSETALL;Alles op 'Activeer'
-PREFERENCES_BEHSETALLHINT;Zet alle parameters in de <b>Activeer</b>-modus.\nWijzigingen van parameters in het batch-gereedschap zijn <b>absoluut</b>: de actuele waarden worden getoond.
-PREFERENCES_BLACKBODY;Wolfraam
 PREFERENCES_CACHECLEAR;Wissen
 PREFERENCES_CACHECLEAR_ALL;Wis alle bestanden in de cache:
 PREFERENCES_CACHECLEAR_ALLBUTPROFILES;Wis alle bestanden in de cache behalve verwerkingsprofielen:
@@ -945,11 +926,6 @@ PREFERENCES_CLUTSCACHE;HaldCLUT-cache
 PREFERENCES_CLUTSCACHE_LABEL;Maximum aantal Cluts in de cache
 PREFERENCES_CLUTSDIR;HaldCLUT-map
 PREFERENCES_CMMBPC;Zwartpuntcompensatie
-PREFERENCES_CROP_AUTO_FIT;Automatisch zoomen tot de uitsnede
-PREFERENCES_CROP_GUIDES;Getoonde hulplijnen als uitsnede niet bewerkt wordt
-PREFERENCES_CROP_GUIDES_FRAME;Frame
-PREFERENCES_CROP_GUIDES_FULL;Origineel
-PREFERENCES_CROP_GUIDES_NONE;Geen
 PREFERENCES_CURVEBBOXPOS;Positie kopieer/plak-knoppen van curves
 PREFERENCES_CURVEBBOXPOS_ABOVE;Boven
 PREFERENCES_CURVEBBOXPOS_BELOW;Onder
@@ -962,11 +938,6 @@ PREFERENCES_CUSTPROFBUILDKEYFORMAT_NAME;Naam
 PREFERENCES_CUSTPROFBUILDKEYFORMAT_TID;TagID
 PREFERENCES_CUSTPROFBUILDPATH;Pad naar uitvoerbaar of script
 
-PREFERENCES_D50;Instellingen in hoofdmenu
-PREFERENCES_D50_OLD;5000K
-PREFERENCES_D55;5500K
-PREFERENCES_D60;6000K
-PREFERENCES_D65;6500K
 
 PREFERENCES_DARKFRAMEFOUND;Gevonden
 PREFERENCES_DARKFRAMESHOTS;opnamen
@@ -994,9 +965,6 @@ PREFERENCES_FLATFIELDSDIR;Vlakveldmap
 PREFERENCES_FLATFIELDSHOTS;foto's
 PREFERENCES_FLATFIELDTEMPLATES;sjablonen
 
-PREFERENCES_FLUOF2;Fluorescent F2
-PREFERENCES_FLUOF7;Fluorescent F7
-PREFERENCES_FLUOF11;Fluorescent F11
 
 PREFERENCES_FORIMAGE;Voor niet-raw-bestanden
 PREFERENCES_FORRAW;Voor raw-bestanden
@@ -1004,24 +972,11 @@ PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT;Zelfde hoogte miniaturen in Filmstrip en Be
 PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT_HINT;Verschillende hoogtes voor miniaturen vereist meer verwerkingstijd wanneer je wisselt tussen het enkel-tabs Bewerkingsvenster en de Bestandsnavigator
 PREFERENCES_GIMPPATH;Installatiemap GIMP
 
-PREFERENCES_GREY;Uitvoerapparaat Yb-luminantie (%)
-PREFERENCES_GREY05;Yb=05 CIE L#30
-PREFERENCES_GREY10;Yb=10 CIE L#40
-PREFERENCES_GREY15;Yb=15 CIE L#45
-PREFERENCES_GREY18;Instellingen in hoofdmenu
-PREFERENCES_GREY18_OLD;Yb=18 CIE L#50
-PREFERENCES_GREY23;Yb=23 CIE L#55
-PREFERENCES_GREY30;Yb=30 CIE L#60
-PREFERENCES_GREY40;Yb=40 CIE L#70
-PREFERENCES_GREYSC;Scène Yb-luminantie (%)
-PREFERENCES_GREYSC18;Yb=18 CIE L#50
-PREFERENCES_GREYSCA;Automatisch
 
 PREFERENCES_HISTOGRAMPOSITIONLEFT;Histogram in linkerpaneel
 PREFERENCES_HISTOGRAM_TOOLTIP;Indien ingeschakeld wordt het werkprofiel gebruikt voor het Hoofdhistogram en de Navigator. In alle andere gevallen wordt het gamma-gecorrigeerde uitvoerprofiel gebruikt.
 PREFERENCES_HLTHRESHOLD;Grenswaarde overbelichting
 PREFERENCES_ICCDIR;Map met kleurprofielen
-PREFERENCES_IMG_RELOAD_NEEDED;Om deze veranderingen door te voeren moet de foto opnieuw geladen worden, of een nieuwe foto geopend.
 PREFERENCES_IMPROCPARAMS;Standaardprofiel
 PREFERENCES_INSPECT_LABEL;Inspecteren
 PREFERENCES_INSPECT_MAXBUFFERS_LABEL;Maximum aantal afbeeldingen in cache
@@ -1078,7 +1033,6 @@ PREFERENCES_PROFILESAVECACHE;Bewaar profiel in cache
 PREFERENCES_PROFILESAVEINPUT;Bewaar profiel naast invoerbestand
 PREFERENCES_PROFILESAVELOCATION;Opslaglocatie profielen
 PREFERENCES_PROFILE_NONE;Geen
-PREFERENCES_PROPERTY;Eigenschap
 PREFERENCES_PRTINTENT;Renderintentie
 PREFERENCES_PRTPROFILE;Kleurprofiel
 PREFERENCES_PSPATH;Installatiemap Adobe Photoshop
@@ -1089,7 +1043,6 @@ PREFERENCES_SELECTLANG;Selecteer taal
 PREFERENCES_SERIALIZE_TIFF_READ;Leesopties TIFF 
 PREFERENCES_SERIALIZE_TIFF_READ_LABEL;Serieel lezen van TIFF-bestanden
 PREFERENCES_SERIALIZE_TIFF_READ_TOOLTIP;Als een map veel ongecomprimeerde TIFF-bestanden bevat dan versnelt deze optie het genereren van de miniaturen.
-PREFERENCES_SET;Activeer
 PREFERENCES_SHOWBASICEXIF;Toon standaard Exif-info
 PREFERENCES_SHOWDATETIME;Toon datum en tijd
 PREFERENCES_SHOWEXPOSURECOMPENSATION;Toon belichtingscompensatie
@@ -1099,7 +1052,6 @@ PREFERENCES_SINGLETAB;Enkel-tab modus
 PREFERENCES_SINGLETABVERTAB;Enkel-tab modus, verticale tabs
 PREFERENCES_SND_HELP;Typ volledig pad naar geluidsbestanden, laat leeg voor geen geluid.\nWindows: gebruik 'SystemDefault', 'SystemAsterisk', etc., en op Linux gebruik 'complete', 'window-attention' etc.
 PREFERENCES_SND_LNGEDITPROCDONE;Bewerking klaar
-PREFERENCES_SND_QUEUEDONE;Verwerkingsrij klaar
 PREFERENCES_SND_THRESHOLDSECS;na seconden
 PREFERENCES_STARTUPIMDIR;Standaardmap bij opstarten
 PREFERENCES_TAB_BROWSER;Bestandsnavigator
@@ -1120,9 +1072,7 @@ PREFERENCES_THUMBNAIL_INSPECTOR_RAW_FILM_CURVE;Gebruik standaard filmcurve voor 
 PREFERENCES_THUMBNAIL_RATING;Laad/bewaar miniatuurmarkeringen van/naar XMP-sidecars
 PREFERENCES_TP_LABEL;Gereedschapspaneel:
 PREFERENCES_TP_VSCROLLBAR;Verberg verticale schuifbalk
-PREFERENCES_TUNNELMETADATA;Kopieer Exif/IPTC/XMP onveranderd naar uitvoerbestand
 PREFERENCES_USEBUNDLEDPROFILES;Gebruik gebundelde profielen
-PREFERENCES_VIEW;Witbalans uitvoerapparaat (monitor, TV, projector, etc.)
 PREFERENCES_WORKFLOW;Lay-out
 PREFERENCES_XMP_SIDECAR_MODE;XMP sidecar-stijl
 PREFERENCES_XMP_SIDECAR_MODE_STD;Standaard (FILENAME.xmp voor FILENAME.ext)
@@ -1230,7 +1180,6 @@ TOOLBAR_TOOLTIP_HAND;Handgereedschap.\nSneltoets: <b>h</b>
 TOOLBAR_TOOLTIP_STRAIGHTEN;<b>Rechtzetten</b> / <b>Kleine rotaties</b>.\nSneltoets: <b>s</b>\n\nBepaal de verticale of horizontale as door een hulplijn over de foto te trekken. De rotatiehoek wordt naast de hulplijn getoond. Het draaicentrum is het geometrische midden van de afbeelding.
 TOOLBAR_TOOLTIP_WB;Spot-witbalans.\nSneltoets: <b>w</b>
 TP_SATURATION_LABEL;Verzadiging en levendigheid
-TP_BRIGHTCONTRSAT_BRIGHTNESS;Helderheid
 TP_BRIGHTCONTRSAT_CONTRAST;Contrast
 TP_SATURATION_SATURATION;Verzadiging
 TP_SATURATION_VIBRANCE;Levendigheid
@@ -1294,15 +1243,12 @@ TP_COLORCORRECTION_CHANNEL_G;Groen
 TP_COLORCORRECTION_CHANNEL_R;Rood
 TP_COLORCORRECTION_LABEL;Kleurcorrectie
 TP_COLORCORRECTION_LIST_TITLE;Correctie
-TP_COLORCORRECTION_MASK;Masker
 TP_COLORCORRECTION_OFFSET;Verschuiving
 TP_COLORCORRECTION_PIVOT;Middelpunt
 TP_COLORCORRECTION_POWER;Kracht
 TP_COLORCORRECTION_SATURATION;Verzadiging
 TP_COLORCORRECTION_SLOPE;Helling
 TP_COLORCORRECTION_SYNC_SLIDERS;Koppel corresponderende schuiven
-TP_COLORTONING_AUTOSAT;Automatisch	??
-TP_COLORTONING_BALANCE;Balans		??
 
 # Area mask
 TP_LABMASKS_AREA;Gebiedsmasker
@@ -1388,7 +1334,6 @@ TP_DENOISE_GUIDED_RADIUS;Straal
 TP_DENOISE_GUIDED_STRENGTH;Kracht
 TP_DIRPYRDENOISE_CHROMINANCE_AUTO_FACTOR;Autom. reductiekracht
 TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL;Automatisch
-TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL_TOOLTIP;Probeert chromaruis te evalueren.\nWees voorzichtig, deze berekening is een gemiddelde en behoorlijk subjectief!
 TP_DIRPYRDENOISE_CHROMINANCE_BLUEYELLOW;Chroma - Blauw-Geel
 TP_DIRPYRDENOISE_CHROMINANCE_FRAME;Chrominantie
 TP_DIRPYRDENOISE_CHROMINANCE_MANUAL;Handmatig
@@ -1396,7 +1341,6 @@ TP_DIRPYRDENOISE_CHROMINANCE_MASTER;Chroma - Maestro
 TP_DIRPYRDENOISE_CHROMINANCE_METHOD;Methode
 TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN;Chroma - Rood-Groen
 TP_DIRPYRDENOISE_LABEL;Ruisvermindering
-TP_DIRPYRDENOISE_LUMINANCE_CONTROL;Luminantiecontrole
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL;Detailherstel
 TP_DIRPYRDENOISE_LUMINANCE_FRAME;Luminantie
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Detaildrempel
@@ -1430,13 +1374,8 @@ TP_DISTORTION_AMOUNT;Hoeveelheid
 TP_DISTORTION_AUTO_TIP;Corrigeert automatisch de lensvervorming in raw-bestanden door deze te vergelijken met de ingebedde JPG. Op voorwaarde dat in de camera was aangegeven dat lensvervorming automatisch gecorrigeerd moest worden.
 TP_DISTORTION_LABEL;Vervormingscorrectie
 TP_EPD_EDGESTOPPING;Randbehandeling
-TP_EPD_REWEIGHTINGITERATES;Herhaling
 TP_EPD_SCALE;Schaal
 TP_EPD_STRENGTH;Sterkte
-TP_EXPOSURE_AUTOLEVELS;Autom. niveaus
-TP_EXPOSURE_AUTOLEVELS_TIP;Activeert automatische niveaus\nActiveert Herstel Hoge lichten indien nodig.
-TP_EXPOSURE_BLACKLEVEL;Schaduwen
-TP_EXPOSURE_BRIGHTNESS;Helderheid
 
 # Texture boost
 TP_EPD_EDGESTOPPING;Randbehandeling
@@ -1449,14 +1388,11 @@ TP_SOFTLIGHT_LABEL;Zacht licht
 TP_SOFTLIGHT_STRENGTH;Kracht
 
 # Module Exposure / Belichting
-TP_EXPOSURE_CONTRAST;Contrast
-TP_EXPOSURE_CURVEEDITOR;Tooncurve
 TP_EXPOSURE_CURVEEDITOR1;Tooncurve 1
 TP_EXPOSURE_CURVEEDITOR2;Tooncurve 2
 TP_EXPOSURE_CURVEEDITOR2_TOOLTIP;Raadpleeg het artikel in RawPedia genaamd "Tone Curves" (Engelstalig) om te leren hoe u het beste resultaat bereikt met het werken met dubbele curven.
 TP_EXPOSURE_EXPCOMP;Belichtingscompensatie
 TP_EXPOSURE_LABEL;Belichting
-TP_EXPOSURE_SATURATION;Verzadiging
 TP_EXPOSURE_TCMODE_FILMLIKE;Filmachtig
 TP_EXPOSURE_TCMODE_LABEL1;Curve modus 1
 TP_EXPOSURE_TCMODE_LABEL2;Curve modus 2
@@ -1489,7 +1425,6 @@ TP_FLATFIELD_LABEL;Vlakveld
 TP_GENERAL_11SCALE_TOOLTIP;De werking is alleen zichtbaar op schaal 1:1 van het voorbeeld
 
 # Grijsverloop
-TP_GRADIENT_CENTER;Centrum
 TP_GRADIENT_CENTER_X;Centrum X
 TP_GRADIENT_CENTER_X_TOOLTIP;Rotatiepunt X-as: \n-100 = linkerkant \n0 = centrum \n+100 = rechterkant
 TP_GRADIENT_CENTER_Y;Centrum Y
@@ -1503,13 +1438,9 @@ TP_GRADIENT_STRENGTH;Sterkte
 TP_GRADIENT_STRENGTH_TOOLTIP;Filtersterkte in stops
 
 TP_HLREC_BLEND;Mengen
->TP_HLREC_CIELAB;CIELab-blending
 TP_HLREC_COLOR;Kleurherstel
 TP_HLREC_OFF;Uit
->TP_HLREC_ENA_TOOLTIP;Kan worden geactiveerd door automatische niveaus
 TP_HLREC_LABEL;Hoge lichten herstellen
->TP_HLREC_LUMINANCE;Lichtherstel
->TP_HLREC_METHOD;Methode:
 
 # module HSV Equalizer
 TP_HSVEQUALIZER_CHANNEL;Kanaal
@@ -1573,7 +1504,6 @@ TP_IMPULSEDENOISE_THRESH;Drempel
 TP_LABCURVE_BRIGHTNESS;Helderheid
 TP_LABCURVE_CHROMATICITY;Chromaticiteit
 TP_LABCURVE_CHROMA_TOOLTIP;Voor zwart-wit, zet Chromaticiteit op -100
-TP_LABCURVE_CURVEEDITOR;Luminantiecurve
 TP_LABCURVE_CURVEEDITOR_LL_TOOLTIP;Luminantie volgens luminantie L=f(L)
 TP_LABCURVE_LABEL;Lab
 
@@ -1592,8 +1522,6 @@ TP_LENSPROFILE_USE_GEOMETRIC;Geometrie
 TP_LENSPROFILE_USE_HEADER;Welke vervormingen corrigeren:
 TP_LENSPROFILE_USE_VIGNETTING;Vignettering
 
-TP_NEUTRAL;Terugzetten
-TP_NEUTRAL_TIP;Alle belichtingsinstellingen naar 0
 
 # Vignettering
 TP_PCVIGNETTE_CENTER_X;Centrum X
@@ -1652,7 +1580,6 @@ TP_RAWEXPOS_BLACK_GREEN;Groen
 TP_RAWEXPOS_BLACK_RED;Rood
 TP_EXPOS_BLACKPOINT_LABEL;Raw-zwartpunten
 TP_RAWEXPOS_LINEAR;Witpuntcorrectie
-TP_RAWEXPOS_RGB;Rood, Groen, Blauw
 TP_RAWEXPOS_TWOGREEN;Koppel Groen 1 en 2
 
 # RAW - Sensor met X-Trans-matrix
@@ -1740,7 +1667,6 @@ TP_RAW_HD_TOOLTIP;Lagere waarden maken hete/dodepixel-detectie agressiever, maar
 TP_RAW_IMAGENUM;Sub-afbeelding
 TP_RAW_LABEL;Demozaïek
 
-> TP_RAW_IMAGENUM_TOOLTIP;Some raw files consist of several sub-images (Pentax/Sony Pixel Shift, Pentax 3-in-1 HDR, Canon Dual Pixel, Fuji EXR).\n\nWhen using any demosaicing method other than Pixel Shift, this selects which sub-image is used.\n\nWhen using the Pixel Shift demosaicing method on a Pixel Shift raw, all sub-images are used, and this selects which sub-image should be used for moving parts.
 
 TP_RAW_SENSOR_BAYER_LABEL;Sensor met Bayer-matrix
 TP_RAW_SENSOR_XTRANS_DMETHOD_TOOLTIP;3-pass geeft het beste resultaat (aanbevolen voor lage ISO-waarden)\n1-pass geeft hetzelfde resultaat als 3-pass voor hoge ISO-waarden en is sneller.
@@ -1788,7 +1714,6 @@ TP_SHARPENING_RLD_AMOUNT;Hoeveelheid
 TP_SHARPENING_THRESHOLD;Drempel
 TP_SHARPENING_USM;Onscherpmasker
 
-TP_VIBRANCE_AVOIDCOLORSHIFT;Vermijd kleurverschuiving
 TP_TM_FATTAL_AMOUNT;Hoeveelheid
 TP_TM_FATTAL_LABEL;Compressie dynamisch bereik
 TP_TM_FATTAL_THRESHOLD;Detail
@@ -1807,7 +1732,6 @@ TP_TONE_EQUALIZER_LABEL;Toon-equalizer
 
 # module Vignetteringscorrectie
 TP_VIGNETTING_AMOUNT;Hoeveelheid
-TP_VIGNETTING_CENTER;Centrum
 TP_VIGNETTING_CENTER_X;Centrum X
 TP_VIGNETTING_CENTER_Y;Centrum Y
 TP_VIGNETTING_LABEL;Vignetteringscorrectie
