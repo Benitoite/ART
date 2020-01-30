@@ -55,6 +55,7 @@ ImProcFunctions::ImProcFunctions(const ProcParams* iparams, bool imultiThread):
     params(iparams),
     scale(1),
     multiThread(imultiThread),
+    cur_pipeline(Pipeline::OUTPUT),
     dcpProf(nullptr),
     dcpApplyState(nullptr),
     pipetteBuffer(nullptr),
@@ -854,6 +855,7 @@ Ret ImProcFunctions::apply(Method op, Imagefloat *img)
 bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
 {
     bool stop = false;
+    cur_pipeline = pipeline;
 
 #define STEP_(op) apply<void>(&ImProcFunctions::op, img)
 #define STEP_s_(op) apply<bool>(&ImProcFunctions::op, img)

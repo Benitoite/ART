@@ -166,7 +166,7 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb)
         
         int n = params->textureBoost.regions.size();
         int show_mask_idx = params->textureBoost.showMask;
-        if (show_mask_idx >= n) {
+        if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW && cur_pipeline != Pipeline::OUTPUT)) {
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);

@@ -447,7 +447,7 @@ bool ImProcFunctions::localContrast(Imagefloat *rgb)
         
         int n = params->localContrast.regions.size();
         int show_mask_idx = params->localContrast.showMask;
-        if (show_mask_idx >= n) {
+        if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW && cur_pipeline != Pipeline::OUTPUT)) {
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);

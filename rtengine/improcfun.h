@@ -203,6 +203,7 @@ private:
     const ProcParams* params;
     double scale;
     bool multiThread;
+    Pipeline cur_pipeline;
 
     DCPProfile *dcpProf;
     const DCPProfile::ApplyState *dcpApplyState;
@@ -225,6 +226,7 @@ private:
     ProgressListener *plistener;
     int progress_step;
     int progress_end;
+
     
 private:
     void transformLuminanceOnly(Imagefloat* original, Imagefloat* transformed, int cx, int cy, int oW, int oH, int fW, int fH, bool creative);

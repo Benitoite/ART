@@ -63,7 +63,7 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
     
     int n = params->colorcorrection.regions.size();
     int show_mask_idx = params->colorcorrection.showMask;
-    if (show_mask_idx >= n) {
+    if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW && cur_pipeline != Pipeline::OUTPUT)) {
         show_mask_idx = -1;
     }
 
