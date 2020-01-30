@@ -30,7 +30,7 @@ class Clipboard {
 private:
     bool _hasIPTC;
     rtengine::procparams::IPTCPairs iptc;
-    rtengine::procparams::ProcParams pparams;
+    std::unique_ptr<rtengine::procparams::ProcParams> pparams;
     ParamsEdited pedited;
     bool has_pparams_;
     bool has_pedited_;
@@ -60,13 +60,20 @@ public:
     void setProcParams(const rtengine::procparams::ProcParams &pp)
 
     {
-        pparams = pp;
+        if (!pparams) {
+            pparams.reset(new rtengine::procparams::ProcParams(pp));
+        } else {
+            *pparams = pp;
+        }
         has_pparams_ = true;
     }
     
     const rtengine::procparams::ProcParams &getProcParams()
     {
-        return pparams;
+        if (!pparams) {
+            pparams.reset(new rtengine::procparams::ProcParams());
+        }
+        return *pparams;
     }
 
     void setParamsEdited(const ParamsEdited &pe)
