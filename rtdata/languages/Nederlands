@@ -15,7 +15,7 @@
 #15 2016-07-21 update by wim ter meer
 #16 2017-04-21 update by wim ter meer
 
-#17 2020-01-15 First translation of ART v1.0 RC2 by paul.matthijsse/paulmatth, based on Dutch translation of RawTherapee 2007-2017
+#17 2020-01-28 First translation of ART v1.0 by paul.matthijsse/paulmatth, based on existing Dutch translation of RawTherapee 2007-2017, see above for credits
 
 ABOUT_TAB_BUILD;Versie
 ABOUT_TAB_CREDITS;Credits
@@ -26,7 +26,6 @@ ABOUT_TAB_SPLASH;Welkom
 ADJUSTER_RESET_TO_DEFAULT;<b>Klik</b> - terug naar standaardwaarde.\n<b>Ctrl+klik</b> - terug naar initiële waarde.
 BATCH_PROCESSING;Batch-verwerking
 
-# zoek op
 CURVEEDITOR_AXIS_IN;I:
 CURVEEDITOR_AXIS_LEFT_TAN;LT:
 CURVEEDITOR_AXIS_OUT;O:
@@ -231,7 +230,6 @@ FILEBROWSER_UNRANK_TOOLTIP;Verwijder sterwaardering\nSneltoets: <b>Shift+0</b>
 FILEBROWSER_ZOOMINHINT;Vergroot miniaturen\n\nSneltoetsen:\n<b>+</b> - multi-tab modus,\n<b>Alt++</b> - enkel-tab modus.
 FILEBROWSER_ZOOMOUTHINT;Verklein miniaturen\n\nSneltoetsen:\n<b>-</b> - multi-tab modus,\n<b>Alt+-</b> - enkel-tab modus.
 
-# where's this?
 FILECHOOSER_FILTER_ANY;Alle bestanden
 FILECHOOSER_FILTER_COLPROF;Kleurprofielen (*.icc)
 FILECHOOSER_FILTER_CURVE;Curvebestanden
@@ -407,7 +405,7 @@ HISTORY_MSG_137;Zwartniveau - Groen 1
 HISTORY_MSG_138;Zwartniveau - Rood
 HISTORY_MSG_139;Zwartniveau - Blauw
 HISTORY_MSG_140;Zwartniveau - Groen 2
-HISTORY_MSG_141;Zwartniveau - groenen vastkoppelen
+HISTORY_MSG_141;Zwartniveau - koppel groenen
 HISTORY_MSG_143;RV - Hoeveelheid
 HISTORY_MSG_146;Randverscherping
 HISTORY_MSG_147;RV - alleen luminantie
@@ -415,12 +413,8 @@ HISTORY_MSG_148;Microcontrast
 HISTORY_MSG_149;Microcontrast - 3×3-matrix
 HISTORY_MSG_150;Nabewerking demozaïek
 HISTORY_MSG_151;Levendigheid
-HISTORY_MSG_152;LV - Pasteltinten
-HISTORY_MSG_153;LV - Verzadigde tinten
-HISTORY_MSG_154;LV - Bescherm huidtinten
-HISTORY_MSG_155;LV - Vermijd kleurverschuiving
-HISTORY_MSG_156;LV - Koppel pastel/verzadiging
-HISTORY_MSG_157;LV - P/S-drempel
+HISTORY_MSG_152;L&V - Pasteltinten
+HISTORY_MSG_153;L&V - Verzadigde tinten
 HISTORY_MSG_158;TK - Sterkte
 HISTORY_MSG_159;TK - Randen
 HISTORY_MSG_160;TK - Schaal
@@ -431,17 +425,15 @@ HISTORY_MSG_164;RGB-curve - G
 HISTORY_MSG_165;RGB-curve - B
 HISTORY_MSG_166;Belichting - Teruggezet
 HISTORY_MSG_167;Demozaïekmethode
-HISTORY_MSG_170;Levendigheid HH-curve
 HISTORY_MSG_171;Lab - LC-curve
 HISTORY_MSG_173;Ruisv. - Behoud details
-HISTORY_MSG_201;RO - Chromin. R&amp;Gr
-HISTORY_MSG_202;RO - Chromin. B&amp;G
+HISTORY_MSG_201;RO - Chromin. R&Gr
+HISTORY_MSG_202;RO - Chromin. B&Ge
 HISTORY_MSG_203;RO - kleurruimte
 HISTORY_MSG_204;LMMSE verbeterstappen
 HISTORY_MSG_205;CAM02 hete/dode pixels
-HISTORY_MSG_206;CAT02 - Aut. scènehelderheid
 HISTORY_MSG_207;Verzachten - tintcurve
-HISTORY_MSG_208;WB - Blauw/Rood balans
+HISTORY_MSG_208;WB - Blauw/Rood-balans
 HISTORY_MSG_210;GF - Hoek
 HISTORY_MSG_211;Grijsverloopfilter
 HISTORY_MSG_212;VF - Kracht
@@ -547,9 +539,9 @@ HISTORY_MSG_487;Lenscorrectie - Lens
 HISTORY_MSG_488;Compressie Dynamisch Bereik
 HISTORY_MSG_491;Witbalans
 HISTORY_MSG_492;RGB-curven
-HISTORY_MSG_493;Lab geactiveerd
+HISTORY_MSG_493;Lab-aanpassingen
 HISTORY_MSG_BWMIX_COLORCAST;B&amp;W - Tint
-HISTORY_MSG_SATURATION_VIBRANCE;S&amp;V - Levendigheid
+HISTORY_MSG_SATURATION_VIBRANCE;Verz/Lev.- Levendigheid
 HISTORY_MSG_CLAMPOOG;Kleuren afkappen die buiten het gamma vallen
 HISTORY_MSG_COLORCORRECTION_AB;CC - tintcorrectie
 HISTORY_MSG_COLORCORRECTION_AREAMASK;CC - gebiedsmasker
@@ -661,7 +653,7 @@ HISTORY_SNAPSHOTS;Snapshots
 
 # ICC Profile Creator
 ICCPROFCREATOR_COPYRIGHT;Copyright:
-ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Zet terug naar standaard copyright, verleend aan "ART, CC0"
+ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Zet terug naar standaard copyright, verleend aan "RawTherapee, CC0"
 ICCPROFCREATOR_CUSTOM;Handmatig
 ICCPROFCREATOR_DESCRIPTION;Beschrijving:
 ICCPROFCREATOR_DESCRIPTION_ADDPARAM;Voeg gamma- en hellingwaarden toe aan de beschrijving
@@ -970,7 +962,6 @@ PREFERENCES_CUSTPROFBUILDKEYFORMAT_NAME;Naam
 PREFERENCES_CUSTPROFBUILDKEYFORMAT_TID;TagID
 PREFERENCES_CUSTPROFBUILDPATH;Pad naar uitvoerbaar of script
 
-# waaro?
 PREFERENCES_D50;Instellingen in hoofdmenu
 PREFERENCES_D50_OLD;5000K
 PREFERENCES_D55;5500K
@@ -1003,7 +994,6 @@ PREFERENCES_FLATFIELDSDIR;Vlakveldmap
 PREFERENCES_FLATFIELDSHOTS;foto's
 PREFERENCES_FLATFIELDTEMPLATES;sjablonen
 
-#waaro?
 PREFERENCES_FLUOF2;Fluorescent F2
 PREFERENCES_FLUOF7;Fluorescent F7
 PREFERENCES_FLUOF11;Fluorescent F11
@@ -1014,7 +1004,6 @@ PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT;Zelfde hoogte miniaturen in Filmstrip en Be
 PREFERENCES_FSTRIP_SAME_THUMB_HEIGHT_HINT;Verschillende hoogtes voor miniaturen vereist meer verwerkingstijd wanneer je wisselt tussen het enkel-tabs Bewerkingsvenster en de Bestandsnavigator
 PREFERENCES_GIMPPATH;Installatiemap GIMP
 
-# waaro?
 PREFERENCES_GREY;Uitvoerapparaat Yb-luminantie (%)
 PREFERENCES_GREY05;Yb=05 CIE L#30
 PREFERENCES_GREY10;Yb=10 CIE L#40
@@ -1192,7 +1181,6 @@ QUEUE_LOCATION_TEMPLATE_TOOLTIP;Geef uitvoerlocatie op, gebaseerd op  locatie, w
 QUEUE_LOCATION_TITLE;Uitvoerlocatie
 QUEUE_STARTSTOP_TOOLTIP;Start of stop de verwerking van foto's in de rij.\n\nSneltoets: <b>Ctrl+s</b>
 
->?
 SAMPLEFORMAT_0;Onbekend dataformaat
 SAMPLEFORMAT_1;8-bit unsigned
 SAMPLEFORMAT_2;16-bit unsigned
@@ -1268,7 +1256,7 @@ TP_BWMIX_LABEL;Zwart-wit
 TP_BWMIX_NEUTRAL;Standaardwaarden
 TP_BWMIX_RGBLABEL;R: %1%%   G: %2%%   B: %3%%   Totaal: %4%%
 TP_BWMIX_RGBLABEL_HINT;RGB-omrekeningsfactoren. Hierin zijn alle gekozen opties verwerkt.\nHet totaal is de som van de uit te voeren RGB-factoren:\n- dit is altijd 100% in relatieve RGB-modus\n- hoger (lichter) of lager (donkerder) dan 100% in absolute RGB-modus.
-TP_BWMIX_RGB_TOOLTIP;Mix de RGB-kanalen, handmatig of via  Voorinstellingen.\nNegatieve waarden kunnen artefacten of onregelmatigheden veroorzaken.
+TP_BWMIX_RGB_TOOLTIP;Mix de RGB-kanalen, handmatig of via  Voorinstellingen.\nNegatieve waarden kunnen onregelmatigheden ('artefacten') veroorzaken.
 TP_BWMIX_SETTING;Voorinstelling
 TP_BWMIX_SETTING_TOOLTIP;Verschillende voorinstellingen zoals portret, landschap, infrarood, etc.
 TP_BWMIX_SET_HIGHCONTAST;Hoog contrast
@@ -1400,6 +1388,7 @@ TP_DENOISE_GUIDED_RADIUS;Straal
 TP_DENOISE_GUIDED_STRENGTH;Kracht
 TP_DIRPYRDENOISE_CHROMINANCE_AUTO_FACTOR;Autom. reductiekracht
 TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL;Automatisch
+TP_DIRPYRDENOISE_CHROMINANCE_AUTOGLOBAL_TOOLTIP;Probeert chromaruis te evalueren.\nWees voorzichtig, deze berekening is een gemiddelde en behoorlijk subjectief!
 TP_DIRPYRDENOISE_CHROMINANCE_BLUEYELLOW;Chroma - Blauw-Geel
 TP_DIRPYRDENOISE_CHROMINANCE_FRAME;Chrominantie
 TP_DIRPYRDENOISE_CHROMINANCE_MANUAL;Handmatig
@@ -1445,7 +1434,7 @@ TP_EPD_REWEIGHTINGITERATES;Herhaling
 TP_EPD_SCALE;Schaal
 TP_EPD_STRENGTH;Sterkte
 TP_EXPOSURE_AUTOLEVELS;Autom. niveaus
-TP_EXPOSURE_AUTOLEVELS_TIP;Activeer automatische niveaus\nActiveer Herstel Hoge lichten indien nodig.
+TP_EXPOSURE_AUTOLEVELS_TIP;Activeert automatische niveaus\nActiveert Herstel Hoge lichten indien nodig.
 TP_EXPOSURE_BLACKLEVEL;Schaduwen
 TP_EXPOSURE_BRIGHTNESS;Helderheid
 
@@ -1662,7 +1651,6 @@ TP_RAWEXPOS_BLACK_BLUE;Blauw
 TP_RAWEXPOS_BLACK_GREEN;Groen
 TP_RAWEXPOS_BLACK_RED;Rood
 TP_EXPOS_BLACKPOINT_LABEL;Raw-zwartpunten
-
 TP_RAWEXPOS_LINEAR;Witpuntcorrectie
 TP_RAWEXPOS_RGB;Rood, Groen, Blauw
 TP_RAWEXPOS_TWOGREEN;Koppel Groen 1 en 2
