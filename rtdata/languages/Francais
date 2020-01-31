@@ -74,6 +74,7 @@ EXPORT_BYPASS;Étapes de traitement à ignorer
 EXPORT_BYPASS_ALL;Sélectionner / Désélectionner tout
 EXPORT_BYPASS_DEFRINGE;Ignorer la Correction des Franges Colorées
 EXPORT_BYPASS_DIRPYRDENOISE;Ignorer la Réduction du Bruit
+EXPORT_BYPASS_LOCALCONTRAST;Ignorer le Contraste Local
 EXPORT_BYPASS_RAW_CA;Ignorer la Correction d'Aberration Chromatique [raw]
 EXPORT_BYPASS_RAW_CCSTEPS;Ignorer la Suppression des Fausses Couleurs [raw]
 EXPORT_BYPASS_RAW_DCB_ENHANCE;Ignorer les Etapes d'Amélioration DCB [raw]
