@@ -348,7 +348,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     maskBlur->setAdjusterListener(this);
     mask_box->pack_start(*maskBlur);
 
-    contrastThreshold = Gtk::manage(new Adjuster(M("TP_LABMASKS_CONTRASTTHRESHOLDMASK"), 0, 200, 1, 0));
+    contrastThreshold = Gtk::manage(new Adjuster(M("TP_LABMASKS_CONTRASTTHRESHOLDMASK"), -150, 150, 1, 0));
     contrastThreshold->setAdjusterListener(this);
     mask_box->pack_start(*contrastThreshold);
 

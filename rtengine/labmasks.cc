@@ -469,21 +469,23 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
 
     float s_scale = std::sqrt(scale);
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (masks[i].contrastThresholdMask > 0) {
+        if (masks[i].contrastThresholdMask != 0) {
             amask(W, H);
-            float thresh = float(masks[i].contrastThresholdMask)/100.f * s_scale;
+            float thresh = float(std::abs(masks[i].contrastThresholdMask))/100.f * s_scale;
             float blur = std::max(masks[i].maskBlur, 2.0) / s_scale;
+            bool neg = masks[i].contrastThresholdMask < 0;
             buildBlendMask(guide, amask, W, H, thresh, 1.f, false, blur, 32768.f);
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
+                    float f = neg ? 1.f - amask[y][x] : amask[y][x];
                     if (abmask) {
-                        (*abmask)[i][y][x] *= amask[y][x];
+                        (*abmask)[i][y][x] *= f;
                     }
                     if (Lmask) {
-                        (*Lmask)[i][y][x] *= amask[y][x];
+                        (*Lmask)[i][y][x] *= f;
                     }
                 }
             }
