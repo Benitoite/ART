@@ -1708,7 +1708,7 @@ TP_LOGENC_EV_LEVELS;Relative exposure levels
 TP_LOGENC_SOURCE_GRAY;Source gray point
 TP_LOGENC_WHITE_EV;White Ev
 TP_LOGENC_TARGET_GRAY;Target gray point
-TP_LOGENC_LABEL;Log Encoding
+TP_LOGENC_LABEL;Log Tone Mapping
 TP_LOGENC_REGULARIZATION;Regularization
 TP_METADATA_EDIT;Apply modifications
 TP_METADATA_MODE;Metadata copy mode
