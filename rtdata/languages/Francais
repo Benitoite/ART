@@ -831,6 +831,7 @@ HISTORY_MSG_SMOOTHING_CHANNEL;Lissage - Canal
 HISTORY_MSG_SMOOTHING_CONTRASTTHRESHOLDMASK;Lissage - Seuil de contraste du masque
 HISTORY_MSG_SMOOTHING_RADIUS;Lissage - Rayon
 HISTORY_MSG_SMOOTHING_EPSILON;Lissage - Détail
+HISTORY_MSG_SMOOTHING_ITERATIONS;Smoothing - itérations
 HISTORY_MSG_SMOOTHING_LIST;Lissage - Régions
 HISTORY_MSG_SMOOTHING_HUEMASK;Lissage - Masque T
 HISTORY_MSG_SMOOTHING_CHROMATICITYMASK;Lissage - Masque C
@@ -1707,7 +1708,7 @@ TP_LOGENC_EV_LEVELS;Niveaux d'exposition relatifs
 TP_LOGENC_SOURCE_GRAY;Point gris de la source
 TP_LOGENC_WHITE_EV;EV Blanc
 TP_LOGENC_TARGET_GRAY;Point gris ciblé
-TP_LOGENC_LABEL;Encodage Log
+TP_LOGENC_LABEL;Mappage de tonalité Log
 TP_LOGENC_REGULARIZATION;Régularisation
 TP_METADATA_EDIT;Appliquer les modifications
 TP_METADATA_MODE;Mode de copie des métadonnées
