@@ -41,6 +41,7 @@ enum class Channel {
 };
 
 
+template <bool use_blending>
 void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, const TMatrix &ws, const TMatrix &iws, Channel chan, int radius, float epsilon, int strength, double scale, bool multithread)
 {
     const auto rgb2yuv =
@@ -67,11 +68,15 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
         const float blend = LIM01(float(strength) / 100.f);
         const bool rgb = (chan == Channel::LC);
         const bool luminance = (chan == Channel::L);
+        const bool do_blend = use_blending && strength < 100;
 
         if (rgb) {
             rtengine::guidedFilterLog(10.f, R, r, epsilon, multithread);
             rtengine::guidedFilterLog(10.f, G, r, epsilon, multithread);
             rtengine::guidedFilterLog(10.f, B, r, epsilon, multithread);
+            if (!do_blend) {
+                return;
+            }
         } else {
             array2D<float> guide(W, H);
 #ifdef _OPENMP
@@ -86,34 +91,6 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
             rtengine::guidedFilterLog(guide, 10.f, R, r, epsilon, multithread);
             rtengine::guidedFilterLog(guide, 10.f, G, r, epsilon, multithread);
             rtengine::guidedFilterLog(guide, 10.f, B, r, epsilon, multithread);
-
-//         const auto gf =
-//             [&](array2D<float> &chan) -> void
-//             {
-//                 constexpr float base = 10.f;
-// #ifdef _OPENMP
-// #               pragma omp parallel for if (multithread)
-// #endif
-//                 for (int y = 0; y < chan.height(); ++y) {
-//                     for (int x = 0; x < chan.width(); ++x) {
-//                         chan[y][x] = xlin2log(max(chan[y][x], 0.f), base);
-//                     }
-//                 }
-//                 rtengine::guidedFilter(guide, chan, chan, r, epsilon, multithread);
-// #ifdef _OPENMP
-// #               pragma omp parallel for if (multithread)
-// #endif
-//                 for (int y = 0; y < chan.height(); ++y) {
-//                     for (int x = 0; x < chan.width(); ++x) {
-//                         chan[y][x] = xlog2lin(max(chan[y][x], 0.f), base);
-//                     }
-//                 }
-//             };
-        
-//         gf(R);
-//         gf(G);
-//         gf(B);
-
         }
 
 #ifdef _OPENMP
@@ -127,6 +104,7 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                 float ir = iR[y][x];
                 float ig = iG[y][x];
                 float ib = iB[y][x];
+                
                 const float bf = blend;
                 if (rgb) {
                     R[y][x] = intp(bf, rr, ir);
@@ -138,13 +116,20 @@ void guided_smoothing(array2D<float> &R, array2D<float> &G, array2D<float> &B, c
                     rgb2yuv(ir, ig, ib, iY, iu, iv);
                     rgb2yuv(rr, gg, bb, oY, ou, ov);
                     if (luminance) {
-                        oY = intp(bf, oY, iY);
+                        if (do_blend) {
+                            oY = intp(bf, oY, iY);
+                        }
                         ou = iu;
                         ov = iv;
                     } else {
                         float bump = oY > 1e-5f ? iY / oY : 1.f;
-                        ou = intp(bf, ou, iu) * bump;
-                        ov = intp(bf, ov, iv) * bump;
+                        if (do_blend) {
+                            ou = intp(bf, ou, iu) * bump;
+                            ov = intp(bf, ov, iv) * bump;
+                        } else {
+                            ou *= bump;
+                            ov *= bump;
+                        }
                         oY = iY;
                     }
                     yuv2rgb(oY, ou, ov, R[y][x], G[y][x], B[y][x]);
@@ -202,10 +187,10 @@ void denoiseGuidedSmoothing(ImProcData &im, Imagefloat *rgb)
     TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(im.params->icm.workingProfile);
 
     const float c_eps = 0.001f;
-    const float l_eps = 0.000125f;
+    const float l_eps = c_eps;//0.000125f;
 
-    guided_smoothing(R, G, B, ws, iws, Channel::C, im.params->denoise.guidedChromaRadius, c_eps, im.params->denoise.guidedChromaStrength, im.scale, im.multiThread);
-    guided_smoothing(R, G, B, ws, iws, Channel::L, im.params->denoise.guidedLumaRadius, l_eps, im.params->denoise.guidedLumaStrength, im.scale, im.multiThread);
+    guided_smoothing<true>(R, G, B, ws, iws, Channel::C, im.params->denoise.guidedChromaRadius, c_eps, im.params->denoise.guidedChromaStrength, im.scale, im.multiThread);
+    guided_smoothing<true>(R, G, B, ws, iws, Channel::L, im.params->denoise.guidedLumaRadius, l_eps, im.params->denoise.guidedLumaStrength, im.scale, im.multiThread);
     
     rgb->normalizeFloatTo65535(im.multiThread);
 }
@@ -300,7 +285,7 @@ bool ImProcFunctions::guidedSmoothing(Imagefloat *rgb)
             const float epsilon = 0.001f * std::pow(2, -r.epsilon);
             Channel ch = Channel(int(r.channel));
             for (int i = 0; i < r.iterations; ++i) {
-                guided_smoothing(R, G, B, ws, iws, ch, r.radius, epsilon, 100, scale, multiThread);
+                guided_smoothing<false>(R, G, B, ws, iws, ch, r.radius, epsilon, 100, scale, multiThread);
             }
             
 #ifdef _OPENMP
