@@ -191,7 +191,7 @@ Smoothing::Smoothing(): FoldableToolPanel(this, "smoothing", M("TP_SMOOTHING_LAB
     radius->setAdjusterListener(this);
     box->pack_start(*radius);
     
-    epsilon = Gtk::manage(new Adjuster(M("TP_SMOOTHING_EPSILON"), -10, 10, 1, 0));
+    epsilon = Gtk::manage(new Adjuster(M("TP_SMOOTHING_EPSILON"), -10, 10, 0.1, 0));
     epsilon->setAdjusterListener(this);
     box->pack_start(*epsilon);
 
