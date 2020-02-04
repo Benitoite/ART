@@ -128,12 +128,11 @@ set(RTENGINESOURCEFILES
     ipsoftlight.cc
     guidedfilter.cc
     ipdehaze.cc
-    iplabregions.cc
+    ipcolorcorrection.cc
     lj92.c
     ipguidedfilter.cc
     iplogenc.cc
     labmasks.cc
-    #ipcbdl.cc
     ipgrain.cc
     ipdenoise.cc
     iptextureboost.cc
