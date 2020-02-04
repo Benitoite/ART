@@ -354,6 +354,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     //-------------------------------------------------------------------------
     deltaEMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_DELTAE")));
+    deltaEMask->getLabelWidget()->set_tooltip_text(M("TP_LABMASKS_DELTAE_TOOLTIP"));
     DeltaEArea *dE_area = Gtk::manage(new DeltaEArea());
     deltaEColor = dE_area;
     const auto deltaAdj =
