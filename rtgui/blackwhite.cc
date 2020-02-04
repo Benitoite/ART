@@ -86,14 +86,25 @@ BlackWhite::BlackWhite():
     mixerVBox = Gtk::manage (new Gtk::VBox ());
     mixerVBox->set_spacing(4);
 
-    neutral = Gtk::manage (new Gtk::Button (M("TP_BWMIX_NEUTRAL")));
+    Gtk::Button *reset = Gtk::manage(new Gtk::Button());
+    reset->set_tooltip_markup(M("TP_BWMIX_NEUTRAL"));
+    reset->add(*Gtk::manage(new RTImage("undo-small.png", "redo-small.png")));
+
+    setExpandAlignProperties(reset, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_START);
+    reset->set_relief(Gtk::RELIEF_NONE);
+    reset->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
+    reset->set_can_focus(false);
+    reset->set_size_request(-1, 20);
+
+    neutral = reset;
+    // neutral = Gtk::manage (new Gtk::Button (M("TP_BWMIX_NEUTRAL")));
     neutralconn = neutral->signal_pressed().connect( sigc::mem_fun(*this, &BlackWhite::neutral_pressed) );
     neutral->show();
-    mixerVBox->pack_start(*neutral);
+    // mixerVBox->pack_start(*neutral);
 
     //----------- Presets combobox ------------------------------
 
-    mixerVBox->pack_start (*Gtk::manage (new  Gtk::HSeparator()));
+    // mixerVBox->pack_start (*Gtk::manage (new  Gtk::HSeparator()));
 
     settingHBox = Gtk::manage (new Gtk::HBox ());
     settingHBox->set_spacing (2);
@@ -107,6 +118,9 @@ BlackWhite::BlackWhite():
     }
     setting->set_active (REL_RGB);
     settingHBox->pack_start (*setting);
+
+    settingHBox->pack_start(*neutral, Gtk::PACK_SHRINK);
+    
     mixerVBox->pack_start (*settingHBox);
     settingconn = setting->signal_changed().connect ( sigc::mem_fun(*this, &BlackWhite::settingChanged) );
 
