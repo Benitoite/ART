@@ -5823,6 +5823,20 @@ get2_256:
       //   if (sraw_mul[1] == 1170) break;
       // }
         // -- ALB -- adapted from LibRaw --------------------------------------
+/* 
+ * Copyright 2019 LibRaw LLC (info@libraw.org)
+ *
+
+ LibRaw is free software; you can redistribute it and/or modify
+ it under the terms of the one of two licenses as you choose:
+
+1. GNU LESSER GENERAL PUBLIC LICENSE version 2.1
+   (See file LICENSE.LGPL provided in LibRaw distribution archive for details).
+
+2. COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
+   (See file LICENSE.CDDL provided in LibRaw distribution archive for details).
+
+ */
     int bls = 0;
     long int offsetChannelBlackLevel = 0L;
     long int offsetChannelBlackLevel2 = 0L;

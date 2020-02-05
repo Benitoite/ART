@@ -28,8 +28,12 @@
 
 // Code adapted from libraw
 /* -*- C++ -*-
- * Copyright 2019 LibRaw LLC (info@libraw.org)
+ * File: libraw_crxdec.cpp
+ * Copyright (C) 2018-2019 Alexey Danilchenko
+ * Copyright (C) 2019 Alex Tutubalin, LibRaw LLC
  *
+   Canon CR3 file decoder
+
  LibRaw is free software; you can redistribute it and/or modify
  it under the terms of the one of two licenses as you choose:
 

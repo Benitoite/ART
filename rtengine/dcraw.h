@@ -168,6 +168,23 @@ protected:
     PanasonicRW2Info RT_pana_info;
 
 public:
+    //------------------------------------------------------------------------
+/*
+ * Copyright (C) 2018-2019 Alexey Danilchenko
+ * Copyright (C) 2019 Alex Tutubalin, LibRaw LLC
+ *
+   Canon CR3 file decoder
+
+ LibRaw is free software; you can redistribute it and/or modify
+ it under the terms of the one of two licenses as you choose:
+
+1. GNU LESSER GENERAL PUBLIC LICENSE version 2.1
+   (See file LICENSE.LGPL provided in LibRaw distribution archive for details).
+
+2. COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
+   (See file LICENSE.CDDL provided in LibRaw distribution archive for details).
+
+*/
     struct CanonCR3Data {
         // contents of tag CMP1 for relevant track in CR3 file
         struct crx_data_header_t {
@@ -194,6 +211,7 @@ public:
         int crx_track_selected;
         short CR3_CTMDtag;
     };
+    //------------------------------------------------------------------------
 protected:
     CanonCR3Data RT_canon_CR3_data;
 
@@ -565,6 +583,23 @@ void nikon_14bit_load_raw(); // ported from LibRaw
 //-----------------------------------------------------------------------------
 // Canon CR3 support ported from LibRaw
 //-----------------------------------------------------------------------------
+/* -*- C++ -*-
+ * 
+ * Copyright (C) 2018-2019 Alexey Danilchenko
+ * Copyright (C) 2019 Alex Tutubalin, LibRaw LLC
+ *
+   Canon CR3 file decoder
+
+ LibRaw is free software; you can redistribute it and/or modify
+ it under the terms of the one of two licenses as you choose:
+
+1. GNU LESSER GENERAL PUBLIC LICENSE version 2.1
+   (See file LICENSE.LGPL provided in LibRaw distribution archive for details).
+
+2. COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
+   (See file LICENSE.CDDL provided in LibRaw distribution archive for details).
+
+*/
 void parse_canon_cr3();
 void selectCRXTrack(short maxTrack);
 int parseCR3(unsigned long long oAtomList,
