@@ -387,7 +387,7 @@ bool ImProcFunctions::doSharpening(Imagefloat *rgb, const SharpeningParams &shar
         double sigma = sharpenParam.deconvradius / scale;
         float amount = sharpenParam.deconvamount / 100.f;
         float delta = sharpenParam.deconvCornerBoost / scale;
-        if (delta > 0.1f) {
+        if (delta > 0.01f) {
             array2D<float> YY(W, H, Y, 0);
             deconvsharpening(Y, blend, *impulse, W, H, sigma, amount, multiThread);
             deconvsharpening(YY, blend, *impulse, W, H, sigma + delta, amount, multiThread);
