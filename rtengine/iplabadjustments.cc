@@ -166,7 +166,7 @@ void lab_adjustments(const ImProcData &im, Imagefloat *img, LUTf &lcurve, LUTf &
     if (pipetteBuffer) {
         editID = pipetteBuffer->getEditID();
 
-        if (editID != EUID_None &&
+        if ((editID == EUID_Lab_LCurve || editID == EUID_Lab_aCurve || editID == EUID_Lab_bCurve) &&
             pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
             editPipette = true;
             editWhatever = pipetteBuffer->getSinglePlaneBuffer();
@@ -174,7 +174,7 @@ void lab_adjustments(const ImProcData &im, Imagefloat *img, LUTf &lcurve, LUTf &
     }
 
     if (!params->labCurve.enabled) {
-        if (editPipette && (editID == EUID_Lab_LCurve || editID == EUID_Lab_aCurve || editID == EUID_Lab_bCurve)) {
+        if (editPipette) {
             // fill pipette buffer with zeros to avoid crashes
             editWhatever->fill(0.f);
         }
