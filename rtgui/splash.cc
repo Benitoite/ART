@@ -96,9 +96,6 @@ void SplashImage::get_preferred_width_for_height_vfunc (int height, int &minimum
 
 Splash::Splash (Gtk::Window& parent) : Gtk::Dialog(M("GENERAL_ABOUT"), parent, true)
 {
-
-    releaseNotesSW = nullptr;
-
     nb = Gtk::manage (new Gtk::Notebook ());
     nb->set_name ("AboutNotebook");
     get_content_area()->pack_start (*nb);
@@ -212,39 +209,6 @@ Splash::Splash (Gtk::Window& parent) : Gtk::Dialog(M("GENERAL_ABOUT"), parent, t
         }
     }
 
-    // Tab 5: the Release Notes
-    std::string releaseNotesFileName = Glib::build_filename (creditsPath, "RELEASE_NOTES.txt");
-
-    if ( Glib::file_test(releaseNotesFileName, (Glib::FILE_TEST_EXISTS)) ) {
-        FILE *f = g_fopen (releaseNotesFileName.c_str (), "rt");
-
-        if (f != nullptr) {
-            char* buffer = new char[1024];
-            std::ostringstream ostr;
-
-            while (fgets (buffer, 1024, f)) {
-                ostr << buffer;
-            }
-
-            delete [] buffer;
-            fclose (f);
-
-            Glib::RefPtr<Gtk::TextBuffer> textBuffer = Gtk::TextBuffer::create();
-            textBuffer->set_text((Glib::ustring)(ostr.str()));
-
-            releaseNotesSW = Gtk::manage (new Gtk::ScrolledWindow());
-            Gtk::TextView *releaseNotesTV = Gtk::manage (new Gtk::TextView (textBuffer));
-
-            releaseNotesTV->set_left_margin (10);
-            releaseNotesTV->set_right_margin (3);
-            releaseNotesTV->set_editable(false);
-            releaseNotesTV->set_wrap_mode(Gtk::WRAP_WORD);
-            releaseNotesSW->add(*releaseNotesTV);
-            nb->append_page (*releaseNotesSW, M("ABOUT_TAB_RELEASENOTES"));
-        }
-    }
-
-
     set_position (Gtk::WIN_POS_CENTER);
     //add_events(Gdk::BUTTON_RELEASE_MASK);
     set_resizable (true);
@@ -260,22 +224,6 @@ bool Splash::on_timer ()
 
     hide ();
     return false;
-}
-
-/*
- * removed as it seem to be too sensitive in some OS
-bool Splash::on_button_release_event (GdkEventButton* event) {
-
-    hide ();
-    return true;
-}
-*/
-
-void Splash::showReleaseNotes()
-{
-    if (releaseNotesSW) {
-        nb->set_current_page(nb->page_num(*releaseNotesSW));
-    }
 }
 
 void Splash::closePressed()

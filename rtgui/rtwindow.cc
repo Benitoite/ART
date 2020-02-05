@@ -491,14 +491,8 @@ void RTWindow::on_realize ()
         splash->set_transient_for (*this);
         splash->signal_delete_event().connect ( sigc::mem_fun (*this, &RTWindow::splashClosed) );
 
-        if (splash->hasReleaseNotes()) {
-            waitForSplash = true;
-            splash->showReleaseNotes();
-            splash->show ();
-        } else {
-            delete splash;
-            splash = nullptr;
-        }
+        waitForSplash = true;
+        splash->show ();
     }
 
     if (!waitForSplash) {

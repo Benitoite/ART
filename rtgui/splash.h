@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -45,18 +46,11 @@ class Splash : public Gtk::Dialog
 private:
     SplashImage* splashImage;
     Gtk::Notebook* nb;
-    Gtk::ScrolledWindow* releaseNotesSW;
 
 public:
     explicit Splash (Gtk::Window& parent);
 
-    bool hasReleaseNotes()
-    {
-        return releaseNotesSW != nullptr;
-    };
-    void showReleaseNotes();
     bool on_timer ();
-    //virtual bool on_button_release_event (GdkEventButton* event);
     void closePressed();
 };
 
