@@ -918,10 +918,10 @@ SharpeningParams::SharpeningParams() :
     edges_tolerance(1800),
     halocontrol(false),
     halocontrol_amount(85),
-    method("usm"),
+    method("rld"),
     deconvamount(100),
     deconvradius(0.75),
-    deconvAutoRadius(false),
+    deconvAutoRadius(true),
     deconvCornerBoost(0.0),
     deconvCornerLatitude(25)
 {
@@ -1100,12 +1100,12 @@ DenoiseParams::DenoiseParams() :
     chrominanceRedGreen(0),
     chrominanceBlueYellow(0),
     smoothingEnabled(false),
-    smoothingMethod(SmoothingMethod::MEDIAN),
+    smoothingMethod(SmoothingMethod::GUIDED),
     medianType(MedianType::TYPE_3X3_SOFT),
     medianMethod(MedianMethod::CHROMINANCE),
     medianIterations(1),
     guidedLumaRadius(2),
-    guidedChromaRadius(4),
+    guidedChromaRadius(3),
     guidedLumaStrength(0),
     guidedChromaStrength(100)
 {
@@ -2304,12 +2304,8 @@ void ProcParams::setDefaults()
     sharpening = SharpeningParams();
 
     prsharpening = SharpeningParams();
-    prsharpening.contrast = 15.0;
-    prsharpening.method = "rld";
-    prsharpening.deconvamount = 100;
-    prsharpening.deconvradius = 0.45;
-    prsharpening.deconvAutoRadius = false;
-    prsharpening.deconvCornerBoost = 0;
+    prsharpening.contrast = 25.0;
+    prsharpening.method = "usm";
 
     wb = WBParams();
 
