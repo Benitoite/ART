@@ -1512,13 +1512,14 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
         float thr = 1.f - amount;
         buildBlendMask(labdn->L, mask, width, height, cthresh, amount, false, 2.f / s_scale);
         array2D<float> guide(width, height);
-        LUTf ll(65536);
-        for (int i = 0; i < 65536; ++i) {
-            ll[i] = xlin2log(float(i) / 65535.f, 25.f);
-        }
+        // LUTf ll(65536);
+        // for (int i = 0; i < 65536; ++i) {
+        //     ll[i] = xlin2log(float(i) / 65535.f, 25.f);
+        // }
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                guide[i][j] = ll[labdn->L[i][j]];
+                //guide[i][j] = ll[labdn->L[i][j]];
+                guide[i][j] = (labdn->L[i][j] + Ldetail[i][j]/totwt[i][j]) / 65535.f;
             }
         }
         for (int i = 0; i < height; ++i) {
@@ -1526,7 +1527,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
                 mask[i][j] = LIM01(mask[i][j] + thr);
             }
         }
-        guidedFilter(guide, mask, mask, 20.f / scale, 0.1f, numthreads > 1);
+        guidedFilter(guide, mask, mask, 100.f / scale, 0.01f, numthreads > 1);
 #if 0
         {
             Imagefloat tmp(width, height);
