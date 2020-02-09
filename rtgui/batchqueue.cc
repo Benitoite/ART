@@ -39,7 +39,12 @@
 using namespace std;
 using namespace rtengine;
 
-BatchQueue::BatchQueue (FileCatalog* aFileCatalog) : processing(nullptr), fileCatalog(aFileCatalog), sequence(0), listener(nullptr)
+BatchQueue::BatchQueue (FileCatalog* aFileCatalog):
+    processing(nullptr),
+    fileCatalog(aFileCatalog),
+    sequence(0),
+    listener(nullptr),
+    batch_profile_(nullptr)
 {
 
     location = THLOC_BATCHQUEUE;
@@ -706,6 +711,9 @@ rtengine::ProcessingJob* BatchQueue::imageReady(rtengine::IImagefloat* img)
             // We keep the extension to avoid overwriting the profile when we have
             // the same output filename with different extension
             //processing->params.save (removeExtension(fname) + paramFileExtension);
+            if (batch_profile_) {
+                batch_profile_->applyTo(processing->params);
+            }
             processing->params.save (fname + ".out" + paramFileExtension);
         }
 
@@ -1007,4 +1015,16 @@ void BatchQueue::redrawNeeded (LWButton* button)
 {
     GThreadLock lock;
     queue_draw ();
+}
+
+
+const rtengine::procparams::PartialProfile *BatchQueue::getBatchProfile()
+{
+    return batch_profile_;
+}
+
+
+void BatchQueue::setBatchProfile(const rtengine::procparams::PartialProfile *bp)
+{
+    batch_profile_ = bp;
 }

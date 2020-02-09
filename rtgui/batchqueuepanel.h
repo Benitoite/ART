@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -25,6 +26,7 @@
 #include "batchqueue.h"
 #include "saveformatpanel.h"
 #include "guiutils.h"
+#include "profilestorecombobox.h"
 
 class RTWindow;
 class FileCatalog;
@@ -52,6 +54,9 @@ class BatchQueuePanel : public Gtk::VBox,
     BatchQueue* batchQueue;
     Gtk::HBox* bottomBox;
     Gtk::HBox* topBox;
+
+    Gtk::CheckButton *apply_batch_profile_;
+    ProfileStoreComboBox *profiles_cb_;
 
     std::atomic<bool> queueShouldRun;
 
@@ -82,6 +87,7 @@ private:
     void pathFolderButtonPressed ();
     void formatChanged(const Glib::ustring& format) override;
     void updateTab (int qsize, int forceOrientation = 0); // forceOrientation=0: base on options / 1: horizontal / 2: vertical
+    void applyBatchProfileToggled();
 };
 #endif
 
