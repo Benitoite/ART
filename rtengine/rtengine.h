@@ -542,6 +542,8 @@ public:
                    * @param img is the result of the last ProcessingJob
                    * @return the next ProcessingJob to process */
     virtual ProcessingJob* imageReady(IImagefloat* img) = 0;
+
+    virtual const procparams::PartialProfile *getBatchProfile() = 0;
 };
 /** This function performs all the image processing steps corresponding to the given ProcessingJob. It runs in the background, thus it returns immediately,
    * When it finishes, it calls the BatchProcessingListener with the resulting image and asks for the next job. It the listener gives a new job, it goes on

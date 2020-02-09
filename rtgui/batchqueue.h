@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *
@@ -89,6 +90,9 @@ public:
     static Glib::ustring calcAutoFileNameBase (const Glib::ustring& origFileName, int sequence = 0);
     static int calcMaxThumbnailHeight();
 
+    void setBatchProfile(const rtengine::procparams::PartialProfile *bp);
+    const rtengine::procparams::PartialProfile *getBatchProfile() override;
+
 private:
     int getMaxThumbnailHeight() const override;
     void saveThumbnailHeight (int height) override;
@@ -121,6 +125,8 @@ private:
     MyMutex mutex_removable_batch_queue_entries;
 
     IdleRegister idle_register;
+
+    const rtengine::procparams::PartialProfile *batch_profile_;
 };
 
 #endif

@@ -530,6 +530,11 @@ void batchProcessingThread (ProcessingJob* job, BatchProcessingListener* bpl)
     ProcessingJob* currentJob = job;
 
     while (currentJob) {
+        auto p = bpl->getBatchProfile();
+        if (p) {
+            p->applyTo(static_cast<ProcessingJobImpl *>(currentJob)->pparams);
+        }
+
         int errorCode;
         IImagefloat* img = processImage (currentJob, errorCode, bpl, true);
 

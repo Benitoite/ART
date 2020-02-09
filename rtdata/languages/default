@@ -1333,6 +1333,7 @@ QINFO_HDR;HDR / %2 frame(s)
 QINFO_ISO;ISO
 QINFO_NOEXIF;Exif data not available.
 QINFO_PIXELSHIFT;Pixel Shift / %2 frame(s)
+QUEUE_APPLY_BATCH_PROFILE;Apply the following profile on export
 QUEUE_AUTOSTART;Auto-start
 QUEUE_AUTOSTART_TOOLTIP;Start processing automatically when a new job arrives.
 QUEUE_DESTFILENAME;Path and file name
