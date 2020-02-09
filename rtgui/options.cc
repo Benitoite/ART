@@ -260,7 +260,6 @@ Glib::ustring Options::findProfilePath(Glib::ustring &profName)
 
 void Options::setDefaults()
 {
-
     windowWidth = 1200;
     windowHeight = 680;
     windowX = 0;
@@ -608,6 +607,9 @@ void Options::setDefaults()
 #endif
 
     browser_width_for_inspector = 0;
+
+    batch_queue_use_profile = false;
+    batch_queue_profile_path = "";
 }
 
 Options* Options::copyFrom(Options* other)
@@ -828,6 +830,14 @@ void Options::readFromFile(Glib::ustring fname)
 
                 if (keyFile.has_key("Output", "OverwriteOutputFile")) {
                     overwriteOutputFile = keyFile.get_boolean("Output", "OverwriteOutputFile");
+                }
+
+                if (keyFile.has_key("Output", "BatchQueueUseProfile")) {
+                    batch_queue_use_profile = keyFile.get_boolean("Output", "BatchQueueUseProfile");
+                }
+                    
+                if (keyFile.has_key("Output", "BatchQueueProfile")) {
+                    batch_queue_profile_path = keyFile.get_string("Output", "BatchQueueProfile");
                 }
             }
 
@@ -1961,6 +1971,8 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean("Output", "UsePathTemplate", saveUsePathTemplate);
         keyFile.set_string("Output", "LastSaveAsPath", lastSaveAsPath);
         keyFile.set_boolean("Output", "OverwriteOutputFile", overwriteOutputFile);
+        keyFile.set_boolean("Output", "BatchQueueUseProfile", batch_queue_use_profile);
+        keyFile.set_string("Output", "BatchQueueProfile", batch_queue_profile_path);
 
         keyFile.set_string("Profiles", "Directory", profilePath);
         keyFile.set_boolean("Profiles", "UseBundledProfiles", useBundledProfiles);

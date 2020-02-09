@@ -133,7 +133,24 @@ BatchQueuePanel::BatchQueuePanel (FileCatalog* aFileCatalog) : parent(nullptr)
     topBox->set_name("BatchQueueButtonsMainContainer");
 
     topBox->pack_start (*bbox, Gtk::PACK_SHRINK, 4);
-    topBox->pack_start (*fdir, Gtk::PACK_EXPAND_WIDGET, 4);
+    Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
+    vb->pack_start(*fdir);
+
+    {
+        apply_batch_profile_ = Gtk::manage(new Gtk::CheckButton(M("QUEUE_APPLY_BATCH_PROFILE") + ": "));
+        apply_batch_profile_->set_active(false);
+        profiles_cb_ = Gtk::manage(new ProfileStoreComboBox());
+        Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+        hb->pack_start(*apply_batch_profile_, Gtk::PACK_SHRINK);
+        hb->pack_start(*profiles_cb_, Gtk::PACK_SHRINK);
+        vb->pack_start(*hb, Gtk::PACK_SHRINK, 4);
+        apply_batch_profile_->set_active(options.batch_queue_use_profile);
+        profiles_cb_->updateProfileList();
+        profiles_cb_->setActiveRowFromFullPath(options.batch_queue_profile_path);
+        apply_batch_profile_->signal_toggled().connect(sigc::mem_fun(*this, &BatchQueuePanel::applyBatchProfileToggled));
+    }
+    
+    topBox->pack_start (*vb, Gtk::PACK_EXPAND_WIDGET, 4);
     topBox->pack_start (*fformat, Gtk::PACK_EXPAND_WIDGET, 4);
 
     // add middle browser area
@@ -279,6 +296,15 @@ void BatchQueuePanel::startBatchProc ()
         // callback in response to the *reported* state.
         queueShouldRun = true;
 
+        const rtengine::procparams::PartialProfile *bp = nullptr;
+        if (apply_batch_profile_->get_active()) {
+            auto entry = profiles_cb_->getSelectedEntry();
+            if (entry) {
+                bp = ProfileStore::getInstance()->getProfile(entry);
+            }
+        }
+        batchQueue->setBatchProfile(bp);
+        
         saveOptions();
         batchQueue->startProcessing ();
     }
@@ -323,10 +349,11 @@ void BatchQueuePanel::addBatchQueueJobs(const std::vector<BatchQueueEntry*>& ent
 
 void BatchQueuePanel::saveOptions ()
 {
-
     options.savePathTemplate    = outdirTemplate->get_text();
     options.saveUsePathTemplate = useTemplate->get_active();
     options.procQueueEnabled    = qAutoStart->get_active();
+    options.batch_queue_use_profile = apply_batch_profile_->get_active();
+    options.batch_queue_profile_path = profiles_cb_->getFullPathFromActiveRow();
 }
 
 bool BatchQueuePanel::handleShortcutKey (GdkEventKey* event)
@@ -384,4 +411,10 @@ void BatchQueuePanel::pathFolderChanged ()
 void BatchQueuePanel::formatChanged(const Glib::ustring& format)
 {
     options.saveFormatBatch = saveFormatPanel->getFormat();
+}
+
+
+void BatchQueuePanel::applyBatchProfileToggled()
+{
+    profiles_cb_->updateProfileList();
 }
