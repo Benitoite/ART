@@ -341,7 +341,7 @@ function CreateDmg {
 
     msg "Preparing disk image sources at ${srcDir}:"
     cp -R "${APP}" "${srcDir}"
-    ditto AboutThisBuild.txt "${srcDir}"
+    ditto Resources/AboutThisBuild.txt "${srcDir}"
     ln -s /Applications "${srcDir}"
 
     # Web bookmarks
@@ -399,7 +399,7 @@ function CreateDmg {
 # Zip disk image for redistribution
     msg "Zipping disk image for redistribution:"
 
-    zip "${dmg_name}.zip" "${dmg_name}.dmg" AboutThisBuild.txt
+    zip "${dmg_name}.zip" "${dmg_name}.dmg" Resources/AboutThisBuild.txt
     rm "${dmg_name}.dmg"
 
     msg "Removing disk image caches:"
