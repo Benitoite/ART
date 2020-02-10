@@ -34,6 +34,22 @@ function CheckLink {
     done
 }
 
+function ModifyInstallNames {
+    find -E "${CONTENTS}" -type f -regex '.*/(ART-cli|ART|.*\.(dylib|so))' | while read -r x; do
+        msg "Modifying install names: ${x}"
+        {
+            # id
+            if [ ${x:(-6)} == ".dylib" ]; then
+                echo "   install_name_tool -id '@rpath/$(basename "${x}")' '${x}'"
+            fi
+            GetDependencies "${x}" | while read -r y
+                do
+                    echo "   install_name_tool -change '${y}' '@rpath/$(basename "${y}")' '${x}'"
+                done
+        } | bash -v
+    done
+}
+
 # Source check
 if [[ ! -d "${CMAKE_BUILD_TYPE}" ]]; then
     msgError "${PWD}/${CMAKE_BUILD_TYPE} folder does not exist. Please execute 'make install' first."
@@ -71,15 +87,12 @@ if [[ -x "$(which git)" && -d "${PROJECT_SOURCE_DIR}/.git" ]]; then
 
 fi
 
-MINIMUM_SYSTEM_VERSION="$(otool -l "${CMAKE_BUILD_TYPE}"/MacOS/rawtherapee | grep -A2 'LC_VERSION_MIN_MACOSX' | awk '$1 ~ /version/ { printf $2 }')"
+MINIMUM_SYSTEM_VERSION="$(otool -l "${CMAKE_BUILD_TYPE}"/MacOS/ART | grep -A2 'LC_VERSION_MIN_MACOSX' | awk '$1 ~ /version/ { printf $2 }')"
 if [[ -z "${MINIMUM_SYSTEM_VERSION}" ]]; then
     MINIMUM_SYSTEM_VERSION="$(sw_vers -productVersion | cut -d. -f-2)"
 fi
 
-case ${PROC_BIT_DEPTH} in
-    64) arch=x86_64;;
-    32) arch=i386;;
-esac
+arch=x86_64
 
 cat <<__EOS__
 PROJECT_NAME:           ${PROJECT_NAME}
@@ -92,6 +105,9 @@ GTK_PREFIX:             ${GTK_PREFIX}
 PWD:                    ${PWD}
 __EOS__
 
+LOCAL_PREFIX="$(cmake .. -LA -N | grep "LOCAL_PREFIX" | cut -d "=" -f2)"
+EXPATLIB="$(cmake .. -LA -N | grep "pkgcfg_lib_EXPAT_expat" | cut -d "=" -f2)"
+ 
 APP="${PROJECT_NAME}.app"
 CONTENTS="${APP}/Contents"
 RESOURCES="${CONTENTS}/Resources"
@@ -99,126 +115,217 @@ MACOS="${CONTENTS}/MacOS"
 LIB="${CONTENTS}/Frameworks"
 ETC="${RESOURCES}/etc"
 EXECUTABLE="${MACOS}/ART"
+GDK_PREFIX="${LOCAL_PREFIX}/local/"
 
 msg "Removing old files:"
-rm -rf "${APP}" "${PROJECT_NAME}_*.dmg"
+rm -rf "${APP}" "${PROJECT_NAME}_*.dmg" "*zip"
 
 msg "Creating bundle container:"
 install -d  "${RESOURCES}" \
     "${MACOS}" \
     "${LIB}" \
     "${ETC}"
+    
+echo "\n--------\n" >> Resources/AboutThisBuild.txt
+echo "Bundle system: $(sysctl -n machdep.cpu.brand_string)" >> Resources/AboutThisBuild.txt
+echo "Bundle OS:     $(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion) $(uname -mrs)" >> Resources/AboutThisBuild.txt
+echo "Bundle date:   $(date -Ru) ZULU" >> Resources/AboutThisBuild.txt
+echo "Bundle epoch:  $(date +%s)" >> Resources/AboutThisBuild.txt
+echo "Bundle UUID:   $(uuidgen)" >> Resources/AboutThisBuild.txt
 
 msg "Copying release files:"
 ditto "${CMAKE_BUILD_TYPE}/MacOS" "${MACOS}"
-ditto "${CMAKE_BUILD_TYPE}/Resources" "${RESOURCES}"
+ditto "Resources" "${RESOURCES}"
+
+# Copy libexiv2 into the app bundle
+ditto ${LOCAL_PREFIX}/local/lib/libexiv2.27.dylib "${CONTENTS}/Frameworks/libexiv2.27.dylib"
+
+# Copy the Lensfun database into the app bundle
+mkdir -p "${RESOURCES}/share/lensfun"
+ditto ${LOCAL_PREFIX}/local/share/lensfun/version_2/* "${RESOURCES}/share/lensfun"
+
+# Copy liblensfun to Frameworks
+ditto ${LOCAL_PREFIX}/local/lib/liblensfun.2.dylib "${CONTENTS}/Frameworks/liblensfun.2.dylib"
+
+# Copy libomp to Frameworks
+ditto ${LOCAL_PREFIX}/local/lib/libomp.dylib "${CONTENTS}/Frameworks"
 
 msg "Copying dependencies from ${GTK_PREFIX}:"
 CheckLink "${EXECUTABLE}"
 
-msg "Copying library modules from ${GTK_PREFIX}:"
-ditto --arch "${arch}" {"${GTK_PREFIX}/lib","${LIB}"}/gdk-pixbuf-2.0
-ditto --arch "${arch}" {"${GTK_PREFIX}/lib","${LIB}"}/gtk-3.0
+# dylib install names
+ModifyInstallNames
 
-msg "Removing static libraries and cache files:"
-find -E "${LIB}" -type f -regex '.*\.(a|la|cache)$' | while read -r; do rm "${REPLY}"; done
+# Copy libjpeg-turbo ("62") into the app bundle
+ditto ${LOCAL_PREFIX}/local/lib/libjpeg.62.dylib "${CONTENTS}/Frameworks/libjpeg.62.dylib"
 
-msg "Copying configuration files from ${GTK_PREFIX}:"
-install -d "${ETC}/gtk-3.0"
+# Copy libexpat into the app bundle (which is keg-only)
+if [[ -d /usr/local/Cellar/expat ]]; then ditto /usr/local/Cellar/expat/*/lib/libexpat.1.dylib "${CONTENTS}/Frameworks"; else ditto "${EXPATLIB}" "${CONTENTS}/Frameworks/libexpat.1.dylib"; fi
 
-# Make Frameworks folder flat
-mv "${LIB}"/gdk-pixbuf-2.0/2*/loaders/*.so "${LIB}"
-mv "${LIB}"/gtk-3.0/3*/immodules/*.so "${LIB}"
-rm -r "${LIB}"/gtk-3.0
-rm -r "${LIB}"/gdk-pixbuf-2.0
+# Copy libz into the app bundle
+ditto ${LOCAL_PREFIX}/local/lib/libz.1.dylib "${CONTENTS}/Frameworks"
 
-"${GTK_PREFIX}/bin/gdk-pixbuf-query-loaders" "${LIB}"/libpix*.so > "${ETC}/gtk-3.0/gdk-pixbuf.loaders"
-"${GTK_PREFIX}/bin/gtk-query-immodules-3.0"  "${LIB}"/{im*.so,libprint*.so}      > "${ETC}/gtk-3.0/gtk.immodules"
-sed -i "" -e "s|${PWD}/RawTherapee.app/Contents/|@executable_path/../|" "${ETC}/gtk-3.0/gdk-pixbuf.loaders" "${ETC}/gtk-3.0/gtk.immodules"
+# Copy libpng16 to the app bundle
+ditto ${LOCAL_PREFIX}/local/lib/libpng16.16.dylib "${CONTENTS}/Frameworks/libpng16.16.dylib"
 
-ditto {"${GTK_PREFIX}","${RESOURCES}"}/share/glib-2.0/schemas
-"${GTK_PREFIX}/bin/glib-compile-schemas" "${RESOURCES}/share/glib-2.0/schemas"
-
-msg "Copying shared files from ${GTK_PREFIX}:"
-ditto {"${GTK_PREFIX}","${RESOURCES}"}/share/mime
-# GTK3 themes
-ditto {"${GTK_PREFIX}","${RESOURCES}"}/share/themes/Mac/gtk-3.0/gtk-keys.css
-ditto {"${GTK_PREFIX}","${RESOURCES}"}/share/themes/Default/gtk-3.0/gtk-keys.css
-# Adwaita icons
-iconfolders=("16x16/actions" "16x16/devices" "16x16/mimetypes" "16x16/places" "16x16/status" "48x48/devices")
-for f in "${iconfolders[@]}"; do
-    ditto {"${GTK_PREFIX}","${RESOURCES}"}/share/icons/Adwaita/"$f"
-done
-ditto {"${GTK_PREFIX}","${RESOURCES}"}/share/icons/Adwaita/index.theme
-"${GTK_PREFIX}/bin/gtk-update-icon-cache-3.0" "${RESOURCES}/share/icons/Adwaita"
-
-# Copy libjpeg-turbo into the app bundle
-cp /opt/local/lib/libjpeg.62.dylib "${RESOURCES}/../Frameworks"
-
-# Copy libtiff into the app bundle
-cp /opt/local/lib/libtiff.5.dylib "${RESOURCES}/../Frameworks"
+# Copy libtiff 5 into the app bundle
+ditto ${LOCAL_PREFIX}/local/lib/libtiff.5.dylib "${CONTENTS}/Frameworks/libtiff.5.dylib"
 
 # Copy the Lensfun database into the app bundle
 mkdir -p "${RESOURCES}/share/lensfun"
-cp /opt/local/share/lensfun/version_2/* "${RESOURCES}/share/lensfun"
+ditto ${LOCAL_PREFIX}/local/share/lensfun/version_2/* "${RESOURCES}/share/lensfun"
 
 # Copy liblensfun to Frameworks
-cp /opt/local/lib/liblensfun.2.dylib "${RESOURCES}/../Frameworks"
+ditto ${LOCAL_PREFIX}/local/lib/liblensfun.2.dylib "${CONTENTS}/Frameworks/liblensfun.2.dylib"
 
-# Copy libopm to Frameworks
-cp /opt/local/lib/libomp.dylib "${RESOURCES}/../Frameworks"
+# Copy libomp to Frameworks
+ditto ${LOCAL_PREFIX}/local/lib/libomp.dylib "${CONTENTS}/Frameworks"
 
-# Copy libexiv2 to Frameworks
-cp /opt/local/lib/libexiv2.27.dylib "${RESOURCES}/../Frameworks"
+# Prepare GTK+3 installation
+msg "Copying configuration files from ${GTK_PREFIX}:"
+install -d "${ETC}/gtk-3.0"
+msg "Copying library modules from ${GTK_PREFIX}:"
+ditto --arch "${arch}" {"${GTK_PREFIX}/lib","${LIB}"}/gdk-pixbuf-2.0
+ditto --arch "${arch}" {"${GTK_PREFIX}/lib","${LIB}"}/gtk-3.0
+msg "Removing static libraries and cache files:"
+find -E "${LIB}" -type f -regex '.*\.(a|la|cache)$' | while read -r; do rm "${REPLY}"; done
 
-# Copy the libiomp5 license into the app bundle
-#cp "${PROJECT_SOURCE_DIR}/licenses/osx_libiomp5_LICENSE.txt" "${RESOURCES}"
+# Make Frameworks folder flat
+msg "Flattening the Frameworks folder"
+ditto "${LIB}"/gdk-pixbuf-2.0/2*/loaders/*.so "${LIB}"
+ditto "${LIB}"/gtk-3.0/3*/immodules/*.{dylib,so} "${LIB}"
+rm -r "${LIB}"/gtk-3.0
+rm -r "${LIB}"/gdk-pixbuf-2.0
+
+msg "Build glib database:"
+mkdir -p ${RESOURCES}/share/glib-2.0
+ditto {"${LOCAL_PREFIX}/local","${RESOURCES}"}/share/glib-2.0/schemas
+"${LOCAL_PREFIX}/local/bin/glib-compile-schemas" "${RESOURCES}/share/glib-2.0/schemas"
+
+# GTK+3 themes
+msg "Copy GTK+3 theme and icon resources:"
+ditto {"${LOCAL_PREFIX}/local","${RESOURCES}"}/share/themes/Mac/gtk-3.0/gtk-keys.css
+ditto {"${LOCAL_PREFIX}/local","${RESOURCES}"}/share/themes/Default/gtk-3.0/gtk-keys.css
+
+# Adwaita icons
+msg "Copy Adwaita icons"
+iconfolders=("16x16/actions" "16x16/devices" "16x16/mimetypes" "16x16/places" "16x16/status" "48x48/devices")
+for f in "${iconfolders[@]}"; do
+    mkdir -p ${RESOURCES}/share/icons/Adwaita/${f}
+    ditto ${LOCAL_PREFIX}/local/share/icons/Adwaita/${f}/* "${RESOURCES}"/share/icons/Adwaita/${f}
+done
+ditto {"${LOCAL_PREFIX}/local","${RESOURCES}"}/share/icons/Adwaita/index.theme
+"${LOCAL_PREFIX}/local/bin/gtk-update-icon-cache" "${RESOURCES}/share/icons/Adwaita"
+ditto "${LOCAL_PREFIX}/local/share/icons/hicolor" "${RESOURCES}/share/icons/hicolor"
+
+# pixbuf loaders & immodules
+msg "Build GTK3 databases:"
+"${LOCAL_PREFIX}"/local/bin/gdk-pixbuf-query-loaders "${LIB}"/libpix*.so > "${ETC}"/gtk-3.0/gdk-pixbuf.loaders
+"${LOCAL_PREFIX}"/local/bin/gtk-query-immodules-3.0 "${LIB}"/im-* > "${ETC}"/gtk-3.0/gtk.immodules
+sed -i "" -e "s|${PWD}/ART.app/Contents/|/Applications/ART.app/Contents/|" "${ETC}/gtk-3.0/gdk-pixbuf.loaders" "${ETC}/gtk-3.0/gtk.immodules"
+sed -i "" -e "s|/opt/local/|/usr/|" "${ETC}/gtk-3.0/gtk.immodules"
 
 # Install names
-find -E "${CONTENTS}" -type f -regex '.*/(ART-cli|ART|.*\.(dylib|so))' | while read -r x; do
-    msg "Modifying install names: ${x}"
-    {
-        # id
-        case ${x} in *.dylib) echo "   install_name_tool -id '@rpath/$(basename "${x}")' '${x}'";; esac
-        # names
-        GetDependencies "${x}" | while read -r y; do
-            echo "   install_name_tool -change '${y}' '@rpath/$(basename "${y}")' '${x}'"
-        done
-    } | bash -v
+ModifyInstallNames        
+
+# fix @rpath in Frameworks
+msg "Registering @rpath in Frameworks folder:"
+for frameworklibs in ${CONTENTS}/Frameworks/* ; do
+    echo "   install_name_tool -delete_rpath /opt/local/lib '${frameworklibs}'" | bash -v
+    echo "   install_name_tool -add_rpath /Applications/ART.app/Contents/Frameworks '${frameworklibs}'" | bash -v
 done
 
-msg "Registering @loader_path into the executable:"
-echo "   install_name_tool -add_rpath @loader_path/../Frameworks '${EXECUTABLE}'" | bash -v
-echo "   install_name_tool -add_rpath @loader_path/../Frameworks '${EXECUTABLE}-cli'" | bash -v
+# Mime directory
+msg "Copying shared files from ${GTK_PREFIX}:"
+ditto {"${LOCAL_PREFIX}/local","${RESOURCES}"}/share/mime
 
 msg "Installing required application bundle files:"
 PROJECT_SOURCE_DATA_DIR="${PROJECT_SOURCE_DIR}/tools/osx"
-
+ditto "${PROJECT_SOURCE_DIR}/build/Resources" "${RESOURCES}"
 # Executable loader
-# Note: executable is renamed to 'rawtherapee-bin'.
-mv "${MACOS}/ART" "${MACOS}/rawtherapee-bin"
-install -m 0755 "${PROJECT_SOURCE_DATA_DIR}/executable_loader.in" "${MACOS}/rawtherapee"
+# Note: executable is renamed to 'ART-bin'.
+mkdir "${MACOS}/bin"
+ditto "${MACOS}/ART" "${MACOS}/bin/ART-bin"
+rm "${MACOS}/ART"
+install -m 0755 "${PROJECT_SOURCE_DATA_DIR}/executable_loader.in" "${MACOS}/ART"
 # App bundle resources
-cp "${PROJECT_SOURCE_DATA_DIR}/"{rawtherapee,profile}.icns "${RESOURCES}"
-cp "${PROJECT_SOURCE_DATA_DIR}/PkgInfo" "${CONTENTS}"
+ditto "${PROJECT_SOURCE_DATA_DIR}/"{art,profile}.icns "${RESOURCES}"
+ditto "${PROJECT_SOURCE_DATA_DIR}/PkgInfo" "${CONTENTS}"
 install -m 0644 "${PROJECT_SOURCE_DATA_DIR}/Info.plist.in" "${CONTENTS}/Info.plist"
+install -m 0644 "${PROJECT_SOURCE_DATA_DIR}/Info.plist-bin.in" "${CONTENTS}/MacOS/bin/Info.plist"
 sed -i "" -e "s|@version@|${PROJECT_FULL_VERSION}|
 s|@shortVersion@|${PROJECT_VERSION}|
 s|@arch@|${arch}|" \
     "${CONTENTS}/Info.plist"
-plutil -convert binary1 "${CONTENTS}/Info.plist"
+plutil -convert xml1 "${CONTENTS}/Info.plist"
+plutil -convert xml1 "${CONTENTS}/MacOS/bin/Info.plist"
+update-mime-database -V  "${CONTENTS}/Resources/share/mime"
+
+# Append an LC_RPATH
+msg "Registering @rpath into the executable:"
+echo "   install_name_tool -add_rpath /Applications/ART.app/Contents/Frameworks '${MACOS}/bin/ART-bin'" | bash -v
+echo "   install_name_tool -add_rpath /Applications/ART.app/Contents/Frameworks '${EXECUTABLE}-cli'" | bash -v
+
+# Install names
+ModifyInstallNames
+
+# fix @rpath in Frameworks
+msg "Registering @rpath in Frameworks folder:"
+for frameworklibs in ${CONTENTS}/Frameworks/* ; do
+    echo "   install_name_tool -delete_rpath /opt/local/lib '${frameworklibs}'" | bash -v
+    echo "   install_name_tool -add_rpath /Applications/ART.app/Contents/Frameworks '${frameworklibs}'" | bash -v
+done
 
 # Sign the app
+msg "Codesigning:"
 CODESIGNID="$(cmake .. -LA -N | grep "CODESIGNID" | cut -d "=" -f2)"
-codesign --deep --force -v -s "${CODESIGNID}"  "${APP}"
+if ! test -z "$CODESIGNID" ; then
+install -m 0644 "${PROJECT_SOURCE_DATA_DIR}/art.entitlements" "${CONTENTS}/Entitlements.plist"
+plutil -convert xml1 "${CONTENTS}/Entitlements.plist"
+install -m 0644 "${PROJECT_SOURCE_DATA_DIR}/art-bin.entitlements" "${CONTENTS}/MacOS/bin/Entitlements.plist"
+plutil -convert xml1 "${CONTENTS}/MacOS/bin/Entitlements.plist"
+codesign -v -s "${CODESIGNID}" -i "us.pixls.art.ART-bin" -o runtime --timestamp --entitlements "${APP}/Contents/MacOS/bin/Entitlements.plist" "${APP}/Contents/MacOS/bin/ART-bin"
+for frameworklibs in ${CONTENTS}/Frameworks/* ; do
+    codesign -v -s "${CODESIGNID}" -i "us.pixls.art.ART-bin" -o runtime --timestamp "${frameworklibs}"
+done
+codesign --deep --preserve-metadata=identifier,entitlements,runtime --timestamp --strict -v -s "${CODESIGNID}" -i "us.pixls.art.ART" -o runtime --entitlements "${CONTENTS}/Entitlements.plist" "${APP}"
 spctl -a -vvvv "${APP}"
- 
+fi
+
+# Notarize the app
+NOTARY="$(cmake .. -LA -N | grep "NOTARY" | cut -d "=" -f2)"
+if ! test -z "$NOTARY" ; then
+    msg "Notarizing the application:"
+    ditto -c -k --sequesterRsrc --keepParent "${APP}" "${APP}.zip"
+    uuid=`xcrun altool --notarize-app --primary-bundle-id "us.pixls.art.ART" ${NOTARY} --file "${APP}.zip" 2>&1 | grep 'RequestUUID' | awk '{ print $3 }'`
+    echo "Result= $uuid" # Display identifier string
+    sleep 15
+    while :
+        do
+        fullstatus=`xcrun altool --notarization-info "$uuid" ${NOTARY}  2>&1`  # get the status
+        status1=`echo "$fullstatus" | grep 'Status\:' | awk '{ print $2 }'`
+        if [ "$status1" = "success" ]; then
+            xcrun stapler staple *app   #  staple the ticket
+            xcrun stapler validate -v *app
+            echo "Notarization success"
+            break
+        elif [ "$status1" = "in" ]; then
+            echo "Notarization still in progress, sleeping for 15 seconds and trying again"
+            sleep 15
+        else
+            echo "Notarization failed fullstatus below"
+            echo "$fullstatus"
+            exit 1
+        fi
+    done
+fi
+
 function CreateDmg {
     local srcDir="$(mktemp -dt $$)"
 
     msg "Preparing disk image sources at ${srcDir}:"
     cp -R "${APP}" "${srcDir}"
-    cp AboutThisBuild.txt "${srcDir}"
+    ditto Resources/AboutThisBuild.txt "${srcDir}"
     ln -s /Applications "${srcDir}"
 
     # Web bookmarks
@@ -226,8 +333,9 @@ function CreateDmg {
         defaults write "${srcDir}/$1" URL "$2"
         mv "${srcDir}/$1".{plist,webloc}
     }
-    CreateWebloc 'Website' 'http://www.rawtherapee.com/'
-    CreateWebloc 'Manual'  'http://rawpedia.rawtherapee.com/'
+    CreateWebloc 'Website'    'https://bitbucket.org/agriggio/art/wiki/Home'
+    CreateWebloc 'Manual'     'http://rawpedia.rawtherapee.com/'
+    CreateWebloc 'Discuss'    'https://discuss.pixls.us/tags/c/software/9/art'
 
     # Disk image name
     dmg_name="${PROJECT_NAME// /_}_OSX_${MINIMUM_SYSTEM_VERSION}_${PROC_BIT_DEPTH}_${PROJECT_FULL_VERSION}"
@@ -240,13 +348,47 @@ function CreateDmg {
     hdiutil create -format UDBZ -fs HFS+ -srcdir "${srcDir}" -volname "${PROJECT_NAME}_${PROJECT_FULL_VERSION}" "${dmg_name}.dmg"
 
     # Sign disk image
-    codesign --deep --force -v -s "${CODESIGNID}" "${dmg_name}.dmg"
+        if ! test -z "$CODESIGNID" ; then
+            codesign --deep --force -v -s "${CODESIGNID}" --timestamp "${dmg_name}.dmg"
+        fi
 
-    # Zip disk image for redistribution
-    zip "${dmg_name}.zip" "${dmg_name}.dmg" AboutThisBuild.txt
+    # Notarize the dmg
+      
+        if ! test -z "$NOTARY" ; then
+        msg "Notarizing the dmg:"
+        zip "${dmg_name}.dmg.zip" "${dmg_name}.dmg"
+        uuid=`xcrun altool --notarize-app --primary-bundle-id "us.pixls.art" ${NOTARY} --file "${dmg_name}.dmg.zip" 2>&1 | grep 'RequestUUID' | awk '{ print $3 }'`
+        echo "dmg Result= $uuid" # Display identifier string
+        sleep 15
+        while :
+        do
+            fullstatus=`xcrun altool --notarization-info "$uuid" ${NOTARY} 2>&1`  # get the status
+            status1=`echo "$fullstatus" | grep 'Status\:' | awk '{ print $2 }'`
+            if [ "$status1" = "success" ]; then
+                xcrun stapler staple "${dmg_name}.dmg"   #  staple the ticket
+                xcrun stapler validate -v "${dmg_name}.dmg"
+                echo "dmg Notarization success"
+                break
+            elif [ "$status1" = "in" ]; then
+                echo "dmg Notarization still in progress, sleeping for 15 seconds and trying again"
+                sleep 15
+            else
+                echo "dmg Notarization failed fullstatus below"
+                echo "$fullstatus"
+            exit 1
+            fi
+        done
+    fi
+    
+# Zip disk image for redistribution
+    msg "Zipping disk image for redistribution:"
+
+    zip "${dmg_name}.zip" "${dmg_name}.dmg" Resources/AboutThisBuild.txt
     rm "${dmg_name}.dmg"
 
     msg "Removing disk image caches:"
     rm -rf "${srcDir}"
 }
 CreateDmg
+msg "Finishing build:"
+echo "Script complete."
