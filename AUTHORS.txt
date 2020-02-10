@@ -7,11 +7,11 @@ Developer/Maintainer:
 
 Other contributors (profiles, ideas, mockups, testing, forum activity, translations, etc.), in last name alphabetical order:
 
+  Felipe Bouabci Simões
   André Gauthier
   Sebastien Guyader
   Paul Matthijsse
   Serge Moreau
-
 
 RawTherapee
 ===========

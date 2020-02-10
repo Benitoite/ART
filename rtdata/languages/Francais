@@ -1333,6 +1333,7 @@ QINFO_HDR;HDR / %2 trame(s)
 QINFO_ISO;ISO
 QINFO_NOEXIF;Données Exif non disponibles.
 QINFO_PIXELSHIFT;Pixel Shift / %2 trame(s)
+QUEUE_APPLY_BATCH_PROFILE;Appliquer les profils suivants à l'export
 QUEUE_AUTOSTART;Démarrage auto.
 QUEUE_AUTOSTART_TOOLTIP;Démarrer automatiquement le traitement à l'arrivée d'une nouvelle tâche
 QUEUE_DESTFILENAME;Chemin et nom du fichier
@@ -1686,6 +1687,7 @@ TP_LABMASKS_DELTAE_RANGE;Etendue
 TP_LABMASKS_DELTAE_DECAY;Decroissance
 TP_LABMASKS_DELTAE_PICK;Choisir
 TP_LABMASKS_DELTAE_CHAN_WEIGHT;Pondération dans le calcul du ΔE
+TP_LABMASKS_DELTAE_TOOLTIP;Sélectionne des régions de couleurs similaires\n(selon la définition de la métrique CIELAB ΔE*)
 TP_LENSGEOM_AUTOCROP;Rognage auto
 TP_LENSGEOM_FILL;Remplir automatiquement
 TP_LENSGEOM_LABEL;Objectif / Géométrie
