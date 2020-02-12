@@ -1018,6 +1018,7 @@ void ImProcCoordinator::process()
 
     paramsUpdateMutex.lock();
 
+    bool changed = false;
     while (changeSinceLast) {
         const bool panningRelatedChange = true;
         params = nextParams;
@@ -1028,6 +1029,7 @@ void ImProcCoordinator::process()
         // M_VOID means no update, and is a bit higher that the rest
         if (change & (M_VOID - 1)) {
             updatePreviewImage(change, panningRelatedChange);
+            changed = true;
         }
 
         paramsUpdateMutex.lock();
@@ -1037,6 +1039,9 @@ void ImProcCoordinator::process()
     updaterRunning = false;
 
     if (plistener) {
+        if (!changed) {
+            plistener->setProgressStr("PROGRESSBAR_READY");
+        }
         plistener->setProgressState(false);
     }
 }
