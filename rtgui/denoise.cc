@@ -64,7 +64,7 @@ Denoise::Denoise():
     colorSpace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB"));
     colorSpace->set_active(0);
     hb->pack_start(*colorSpace, Gtk::PACK_EXPAND_WIDGET, 1);
-//    pack_start(*hb, Gtk::PACK_SHRINK, 1);
+    pack_start(*hb, Gtk::PACK_SHRINK, 1);
     
     gamma = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_MAIN_GAMMA"), 1.0, 3.0, 0.01, 1.7));
     gamma->set_tooltip_text(M("TP_DIRPYRDENOISE_MAIN_GAMMA_TOOLTIP"));
