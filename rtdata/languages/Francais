@@ -1506,6 +1506,9 @@ TP_DIRPYRDENOISE_LUMINANCE_DETAIL;Niveau de détails de Luminance
 TP_DIRPYRDENOISE_LUMINANCE_FRAME;Luminance
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Detail seuil
 TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING;Luminance
+TP_DIRPYRDENOISE_MAIN_COLORSPACE;Espace colorimétrique
+TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB;Lab
+TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB;RVB
 TP_DIRPYRDENOISE_MAIN_GAMMA;Gamma
 TP_DIRPYRDENOISE_MAIN_GAMMA_TOOLTIP;Gamma fait varier la quantité de réduction de bruit sur l'échelle des tons. Les plus petites valeurs cibleront les ombres, les plus hautes valeurs cibleront les tons les plus clairs.
 TP_DIRPYRDENOISE_MAIN_MODE;Mode

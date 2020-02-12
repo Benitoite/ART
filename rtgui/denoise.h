@@ -58,6 +58,7 @@ private:
     void medianMethodChanged();
     void smoothingEnabledToggled();
     void smoothingMethodChanged();
+    void colorSpaceChanged();
     
     rtengine::ProcEvent EvSmoothingMethod;
     rtengine::ProcEvent EvGuidedLumaRadius;
@@ -66,8 +67,10 @@ private:
     rtengine::ProcEvent EvGuidedChromaStrength;
     rtengine::ProcEvent EvChrominanceAutoFactor;
     rtengine::ProcEvent EvLuminanceDetailThreshold;
+    rtengine::ProcEvent EvColorSpace;
 
     MyComboBoxText *aggressive;
+    MyComboBoxText *colorSpace;
     Adjuster *gamma;
     Adjuster *luminance;
     Adjuster *luminanceDetail;

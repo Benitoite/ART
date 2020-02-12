@@ -38,6 +38,7 @@ Denoise::Denoise():
     EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
     EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
     EvLuminanceDetailThreshold = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD");
+    EvColorSpace = m->newEvent(ALLNORAW, "HISTORY_MSG_203");
 
     Gtk::Frame *lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
     lumaFrame->set_label_align(0.025, 0.5);
@@ -56,6 +57,16 @@ Denoise::Denoise():
     hb->pack_start(*aggressive, Gtk::PACK_EXPAND_WIDGET, 1);
     pack_start(*hb, Gtk::PACK_SHRINK, 1);
 
+    hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE") + ": ")), Gtk::PACK_SHRINK, 1);
+
+    colorSpace = Gtk::manage(new MyComboBoxText ());
+    colorSpace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB"));
+    colorSpace->append(M("TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB"));
+    colorSpace->set_active(0);
+    hb->pack_start(*colorSpace, Gtk::PACK_EXPAND_WIDGET, 1);
+    pack_start(*hb, Gtk::PACK_SHRINK, 1);
+    
     gamma = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_MAIN_GAMMA"), 1.0, 3.0, 0.01, 1.7));
     gamma->set_tooltip_text(M("TP_DIRPYRDENOISE_MAIN_GAMMA_TOOLTIP"));
     gamma->setAdjusterListener(this);
@@ -211,6 +222,7 @@ Denoise::Denoise():
     pack_start(*smoothingEnabled);
 
     aggressive->signal_changed().connect(sigc::mem_fun(*this, &Denoise::aggressiveChanged));
+    colorSpace->signal_changed().connect(sigc::mem_fun(*this, &Denoise::colorSpaceChanged));
     chrominanceMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::chrominanceMethodChanged));
     medianType->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianTypeChanged));
     medianMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianMethodChanged));
@@ -262,6 +274,7 @@ void Denoise::read(const ProcParams *pp)
     setEnabled(pp->denoise.enabled);
     
     aggressive->set_active(pp->denoise.aggressive ? 1 : 0);
+    colorSpace->set_active(pp->denoise.colorSpace == rtengine::procparams::DenoiseParams::ColorSpace::LAB ? 1 : 0);
     gamma->setValue(pp->denoise.gamma);
     luminance->setValue(pp->denoise.luminance);
     luminanceDetail->setValue(pp->denoise.luminanceDetail);
@@ -297,6 +310,7 @@ void Denoise::write(ProcParams *pp)
     if (aggressive->get_active_row_number() < 2) {
         pp->denoise.aggressive = aggressive->get_active_row_number();
     }
+    pp->denoise.colorSpace = colorSpace->get_active_row_number() == 1 ? rtengine::procparams::DenoiseParams::ColorSpace::LAB : rtengine::procparams::DenoiseParams::ColorSpace::RGB;
     pp->denoise.gamma = gamma->getValue();
     pp->denoise.luminance = luminance->getValue();
     pp->denoise.luminanceDetail = luminanceDetail->getValue();
@@ -344,6 +358,14 @@ void Denoise::aggressiveChanged()
 {
     if (listener && getEnabled() ) {
         listener->panelChanged(EvDPDNsmet, aggressive->get_active_text());
+    }
+}
+
+
+void Denoise::colorSpaceChanged()
+{
+    if (listener && getEnabled() ) {
+        listener->panelChanged(EvColorSpace, colorSpace->get_active_text());
     }
 }
 

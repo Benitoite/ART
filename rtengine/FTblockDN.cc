@@ -1620,6 +1620,14 @@ BENCHFUN
         {static_cast<float>(wprofi[1][0]), static_cast<float>(wprofi[1][1]), static_cast<float>(wprofi[1][2])},
         {static_cast<float>(wprofi[2][0]), static_cast<float>(wprofi[2][1]), static_cast<float>(wprofi[2][2])}
     };
+
+    TMatrix wprofi_inverse = ICCStore::getInstance()->workingSpaceInverseMatrix(params->icm.workingProfile);
+
+    const float wpi_inverse[3][3] = {
+        {static_cast<float>(wprofi_inverse[0][0]), static_cast<float>(wprofi_inverse[0][1]), static_cast<float>(wprofi_inverse[0][2])},
+        {static_cast<float>(wprofi_inverse[1][0]), static_cast<float>(wprofi_inverse[1][1]), static_cast<float>(wprofi_inverse[1][2])},
+        {static_cast<float>(wprofi_inverse[2][0]), static_cast<float>(wprofi_inverse[2][1]), static_cast<float>(wprofi_inverse[2][2])}
+    };
     
     //printf("NL=%f \n",noisevarL);
     if (useNoiseLCurve || useNoiseCCurve) {
@@ -1890,6 +1898,8 @@ BENCHFUN
                 {static_cast<float>(wprof[2][0]), static_cast<float>(wprof[2][1]), static_cast<float>(wprof[2][2])}
             };
 
+            const bool lab_mode = dnparams.colorSpace == procparams::DenoiseParams::ColorSpace::LAB;
+
             // begin tile processing of image
 #ifdef _OPENMP
             #pragma omp parallel num_threads(numthreads) if (numthreads>1)
@@ -1985,6 +1995,13 @@ BENCHFUN
                                     float X = gain * src->r(i, j);
                                     float Y = gain * src->g(i, j);
                                     float Z = gain * src->b(i, j);
+
+                                    if (lab_mode) {
+                                        X = Color::denoiseIGammaTab[X];
+                                        Y = Color::denoiseIGammaTab[Y];
+                                        Z = Color::denoiseIGammaTab[Z];
+                                    }
+                                    
                                     //conversion colorspace to determine luminance with no gamma
                                     X = X < 65535.f ? gamcurve[X] : (Color::gammaf(X / 65535.f, gam, gamthresh, gamslope) * 65535.f);
                                     Y = Y < 65535.f ? gamcurve[Y] : (Color::gammaf(Y / 65535.f, gam, gamthresh, gamslope) * 65535.f);
@@ -1994,7 +2011,11 @@ BENCHFUN
                                     // labdn->a[i1][j1] = (X - Y);
                                     // labdn->b[i1][j1] = (Y - Z);
                                     float l, u, v;
-                                    Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
+                                    if (lab_mode) {
+                                        Color::rgb2lab(X, Y, Z, l, v, u, wpi);
+                                    } else {
+                                        Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
+                                    }
                                     labdn->L[i1][j1] = l;
                                     labdn->a[i1][j1] = v;
                                     labdn->b[i1][j1] = u;
@@ -2045,7 +2066,11 @@ BENCHFUN
                                     // labdn->a[i1][j1] = a;
                                     // labdn->b[i1][j1] = b;
                                     float Y, u, v;
-                                    Color::rgb2yuv(rtmp, gtmp, btmp, Y, u, v, wpi);
+                                    if (lab_mode) {
+                                        Color::rgb2lab(rtmp, gtmp, btmp, Y, v, u, wpi);
+                                    } else {
+                                        Color::rgb2yuv(rtmp, gtmp, btmp, Y, u, v, wpi);
+                                    }
                                     labdn->L[i1][j1] = Y;
                                     labdn->a[i1][j1] = v;
                                     labdn->b[i1][j1] = u;
@@ -2388,12 +2413,22 @@ BENCHFUN
                                         // float X = (labdn->a[i1][j1]) + Y;
                                         // float Z = Y - (labdn->b[i1][j1]);
                                         float X, Y, Z;
-                                        Color::yuv2rgb(labdn->L[i1][j1], labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
+                                        if (lab_mode) {
+                                            Color::lab2rgb(labdn->L[i1][j1], labdn->a[i1][j1], labdn->b[i1][j1], X, Y, Z, wpi_inverse);
+                                        } else {
+                                            Color::yuv2rgb(labdn->L[i1][j1], labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
+                                        }
 
 
                                         X = X < 65536.f ? igamcurve[X] : (Color::gammaf(X / 65535.f, igam, igamthresh, igamslope) * 65535.f);
                                         Y = Y < 65536.f ? igamcurve[Y] : (Color::gammaf(Y / 65535.f, igam, igamthresh, igamslope) * 65535.f);
                                         Z = Z < 65536.f ? igamcurve[Z] : (Color::gammaf(Z / 65535.f, igam, igamthresh, igamslope) * 65535.f);
+
+                                        if (lab_mode) {
+                                            X = Color::denoiseGammaTab[X];
+                                            Y = Color::denoiseGammaTab[Y];
+                                            Z = Color::denoiseGammaTab[Z];
+                                        }
 
                                         if (numtiles == 1) {
                                             dsttmp->r(i, j) = newGain * X;
@@ -2434,7 +2469,11 @@ BENCHFUN
 
                                         float r_, g_, b_;
                                         // Color::xyz2rgb(X, Y, Z, r_, g_, b_, wip);
-                                        Color::yuv2rgb(Y, u, v, r_, g_, b_, wpi);
+                                        if (lab_mode) {
+                                            Color::lab2rgb(Y, v, u, r_, g_, b_, wpi_inverse);
+                                        } else {
+                                            Color::yuv2rgb(Y, u, v, r_, g_, b_, wpi);
+                                        }
                                         //gamma slider is different from Raw
                                         r_ = r_ < 65536.f ? igamcurve[r_] : (Color::gammanf(r_ / 65535.f, igam) * 65535.f);
                                         g_ = g_ < 65536.f ? igamcurve[g_] : (Color::gammanf(g_ / 65535.f, igam) * 65535.f);

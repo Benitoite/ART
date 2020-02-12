@@ -603,8 +603,14 @@ struct DenoiseParams {
         MEDIAN,
         GUIDED
     };
+
+    enum class ColorSpace {
+        RGB,
+        LAB
+    };
     
     bool enabled;
+    ColorSpace colorSpace;
 
     bool aggressive;
     double gamma;

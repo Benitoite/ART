@@ -1089,6 +1089,7 @@ bool ImpulseDenoiseParams::operator !=(const ImpulseDenoiseParams& other) const
 
 DenoiseParams::DenoiseParams() :
     enabled(false),
+    colorSpace(ColorSpace::RGB),
     aggressive(false),
     gamma(1.7),
     luminance(0),
@@ -1116,6 +1117,7 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
 {
     return
         enabled == other.enabled
+        && colorSpace == other.colorSpace
         && aggressive == other.aggressive
         && gamma == other.gamma
         && luminance == other.luminance
@@ -2595,6 +2597,7 @@ int ProcParams::save(bool save_general,
 // Denoising
         if (RELEVANT_(denoise)) {
             saveToKeyfile("Denoise", "Enabled", denoise.enabled, keyFile);
+            saveToKeyfile("Denoise", "ColorSpace", denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? "LAB" : "RGB", keyFile);
             saveToKeyfile("Denoise", "Aggressive", denoise.aggressive, keyFile);
             saveToKeyfile("Denoise", "Gamma", denoise.gamma, keyFile);
             saveToKeyfile("Denoise", "Luminance", denoise.luminance, keyFile);
@@ -3425,6 +3428,13 @@ int ProcParams::load(bool load_general,
         } else {
             if (keyFile.has_group("Denoise") && RELEVANT_(denoise)) {
                 assignFromKeyfile(keyFile, "Denoise", "Enabled", denoise.enabled);
+                Glib::ustring cs = "RGB";
+                assignFromKeyfile(keyFile, "Denoise", "ColorSpace", cs);
+                if (cs == "LAB") {
+                    denoise.colorSpace = DenoiseParams::ColorSpace::LAB;
+                } else {
+                    denoise.colorSpace = DenoiseParams::ColorSpace::RGB;
+                }
                 int val;
                 assignFromKeyfile(keyFile, "Denoise", "Aggressive", denoise.aggressive);
                 assignFromKeyfile(keyFile, "Denoise", "Gamma", denoise.gamma);
