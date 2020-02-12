@@ -40,6 +40,7 @@
 #include "iccstore.h"
 #include "imagesource.h"
 #include "rt_algo.h"
+#include "guidedfilter.h"
 #include "gauss.h"
 #include "ipdenoise.h"
 #ifdef _OPENMP
@@ -572,7 +573,7 @@ float MadRgb(float * DataList, const int datalen)
 
     //computes Median Absolute Deviation
     //DataList values should mostly have abs val < 65536 because we are in RGB mode
-    int histo[65536];
+    int * histo = new int[65536];
 
     for (int i = 0; i < 65536; ++i) {
         histo[i] = 0;
@@ -596,6 +597,7 @@ float MadRgb(float * DataList, const int datalen)
     int count_ = count - histo[median - 1];
 
     // interpolate
+    delete[] histo;
     return (((median - 1) + (datalen / 2 - count_) / (static_cast<float>(count - count_))) / 0.6745);
 }
 
@@ -1358,9 +1360,15 @@ void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
 }
 
 
-void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin, int numtiles, int numthreads, int denoiseNestedLevels, float **LbloxArray, float **fLbloxArray, size_t blox_array_size, float params_Ldetail, int detail_thresh, array2D<float> &tilemask_in, array2D<float> &tilemask_out, fftwf_plan *plan_forward_blox, fftwf_plan *plan_backward_blox, int max_numblox_W, double scale)
+void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin, int numtiles, int numthreads, int denoiseNestedLevels, float **LbloxArray, float **fLbloxArray, size_t blox_array_size, float params_Ldetail, int detail_thresh, array2D<float> &tilemask_in, array2D<float> &tilemask_out, fftwf_plan *plan_forward_blox, fftwf_plan *plan_backward_blox, int max_numblox_W, double scale, bool denoise_aggressive)
 {
-    const float detail = SQR(static_cast<float>(SQR(100. - params_Ldetail) + 50.*(100. - params_Ldetail)) * TS * 0.5f);
+    const auto compute_detail =
+        [](float d) -> float
+        {
+            return SQR(static_cast<float>(SQR(100. - d) + 50.*(100. - d)) * TS * 0.5f);
+        };
+    const float detail_hi = compute_detail(params_Ldetail);
+    const float detail_lo = compute_detail(0.f);
     
     // calculation for detail recovery blocks
     const int numblox_W = ceil((static_cast<float>(width)) / (offset)) + 2 * blkrad;
@@ -1373,6 +1381,10 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
 
     //residual between input and denoised L channel
     array2D<float> Ldetail(width, height, ARRAY2D_CLEAR_DATA);
+    array2D<float> Ldetail2;
+    // if (detail_thresh > 0) {
+    //     Ldetail2(width, height, ARRAY2D_CLEAR_DATA);
+    // }
     //pixel weight
     array2D<float> totwt(width, height, ARRAY2D_CLEAR_DATA); //weight for combining DCT blocks
 
@@ -1420,7 +1432,7 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
                 }
 
                 for (int j = 0; j < labdn->W; ++j) {
-                    datarow[j] = (*Lin)[rr][j] - labdn->L[rr][j];
+                    datarow[j] = ((*Lin)[rr][j] - labdn->L[rr][j]);
                 }
 
                 for (int j = -blkrad * offset; j < 0; ++j) {
@@ -1463,22 +1475,27 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
 
             //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             //fftwf_print_plan (plan_forward_blox);
-            int plan_idx = int(numblox_W != max_numblox_W);
-            fftwf_execute_r2r(plan_forward_blox[plan_idx], Lblox, fLblox);    // DCT an entire row of tiles
-            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            // now process the vblk row of blocks for noise reduction
-            for (int hblk = 0; hblk < numblox_W; ++hblk) {
-                RGBtile_denoise(scale, fLblox, hblk, detail, nbrwt, blurbuffer);
-            }//end of horizontal block loop
+            float *block_out[] = { fLblox, Lblox };
+            float **Lout[] = { static_cast<float **>(Ldetail), static_cast<float **>(Ldetail2) };
+            float detail[] = { detail_hi, detail_lo };
+            for (int k = 0; k < 1/*(detail_thresh > 0 ? 2 : 1)*/; ++k) {
+                int plan_idx = int(numblox_W != max_numblox_W);
+                fftwf_execute_r2r(plan_forward_blox[plan_idx], Lblox, block_out[k]);    // DCT an entire row of tiles
+                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                // now process the vblk row of blocks for noise reduction
+                for (int hblk = 0; hblk < numblox_W; ++hblk) {
+                    RGBtile_denoise(scale, block_out[k], hblk, detail[k], nbrwt, blurbuffer);
+                }//end of horizontal block loop
 
-            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            //now perform inverse FT of an entire row of blocks
-            fftwf_execute_r2r(plan_backward_blox[plan_idx], fLblox, Lblox);    //for DCT
-            int topproc = (vblk - blkrad) * offset;
-            //add row of blocks to output image tile
-            RGBoutput_tile_row(scale, Lblox, Ldetail, tilemask_out, height, width, topproc);
-            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                //now perform inverse FT of an entire row of blocks
+                fftwf_execute_r2r(plan_backward_blox[plan_idx], block_out[k], block_out[k]);    //for DCT
+                int topproc = (vblk - blkrad) * offset;
+                //add row of blocks to output image tile
+                RGBoutput_tile_row(scale, block_out[k], Lout[k], tilemask_out, height, width, topproc);
+                //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            }
         }//end of vertical block loop
 
         //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1486,13 +1503,59 @@ void detail_recovery(int width, int height, LabImage *labdn, array2D<float> *Lin
     }
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+    array2D<float> mask;
+    if (detail_thresh > 0) {
+        mask(width, height);
+        float s_scale = std::sqrt(scale);
+        float cthresh = (denoise_aggressive ? 0.1f : 0.3f) * s_scale;
+        float amount = LIM01(float(detail_thresh)/100.f);
+        float thr = 1.f - amount;
+        buildBlendMask(labdn->L, mask, width, height, cthresh, amount, false, 2.f / s_scale);
+        array2D<float> guide(width, height);
+        // LUTf ll(65536);
+        // for (int i = 0; i < 65536; ++i) {
+        //     ll[i] = xlin2log(float(i) / 65535.f, 25.f);
+        // }
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                //guide[i][j] = ll[labdn->L[i][j]];
+                guide[i][j] = (labdn->L[i][j] + Ldetail[i][j]/totwt[i][j]) / 65535.f;
+            }
+        }
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                mask[i][j] = LIM01(mask[i][j] + thr);
+            }
+        }
+        guidedFilter(guide, mask, mask, 100.f / scale, 0.01f, numthreads > 1);
+#if 0
+        {
+            Imagefloat tmp(width, height);
+            for (int i = 0; i < height; ++i) {
+                for (int j = 0; j < width; ++j) {
+                    tmp.r(i, j) = tmp.g(i, j) = tmp.b(i, j) = mask[i][j] * 65535.f;
+                }
+            }
+            tmp.saveTIFF("/tmp/mask.tif", 16);
+        }
+#endif
+    }   
+
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(denoiseNestedLevels) if (denoiseNestedLevels>1)
 #endif
+
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
             //may want to include masking threshold for large hipass data to preserve edges/detail
-            labdn->L[i][j] += Ldetail[i][j] / totwt[i][j];
+            float d = Ldetail[i][j] / totwt[i][j];
+            if (detail_thresh > 0) {
+                //float d2 = Ldetail2[i][j] / totwt[i][j];
+                //d = intp(mask[i][j], d, d2);
+                d *= mask[i][j];
+            }
+            //labdn->L[i][j] += Ldetail[i][j] / totwt[i][j]; //note that labdn initially stores the denoised hipass data
+            labdn->L[i][j] += d;
         }
     }
 }
@@ -1638,13 +1701,13 @@ BENCHFUN
         float gam = dnparams.gamma;
         float gamthresh = 0.001f;
 
-        // if (!isRAW) {//reduce gamma under 1 for Lab mode ==> TIF and JPG
-        //     if (gam < 1.9f) {
-        //         gam = 1.f - (1.9f - gam) / 3.f;    //minimum gamma 0.7
-        //     } else if (gam >= 1.9f && gam <= 3.f) {
-        //         gam = (1.4f / 1.1f) * gam - 1.41818f;
-        //     }
-        // }
+        if (!isRAW) {//reduce gamma under 1 for Lab mode ==> TIF and JPG
+            if (gam < 1.9f) {
+                gam = 1.f - (1.9f - gam) / 3.f;    //minimum gamma 0.7
+            } else if (gam >= 1.9f && gam <= 3.f) {
+                gam = (1.4f / 1.1f) * gam - 1.41818f;
+            }
+        }
 
 
         LUTf gamcurve(65536, LUT_CLIP_BELOW);
@@ -1658,20 +1721,6 @@ BENCHFUN
 
         LUTf igamcurve(65536, LUT_CLIP_BELOW);
         Color::gammaf2lut(igamcurve, igam, igamthresh, igamslope, 65535.f, 65535.f);
-
-        LUTf detail_gamma(65536, 0);
-        LUTf detail_igamma(65536, 0);
-        if (dnparams.luminanceDetailThreshold > 0) {
-            float gamthresh = 0.002f;
-            float gam = 1.f + float(dnparams.luminanceDetailThreshold)/100.f * 2.f;
-            float gamslope = exp(log(double(gamthresh)) / gam) / gamthresh;
-
-            Color::gammaf2lut(detail_gamma, gam, gamthresh, gamslope, 65535.f, 65535.f);
-            Color::gammaf2lut(detail_igamma, 1.f / gam, gamthresh * gamslope, 1.f / gamslope, 65535.f, 65535.f);
-        } else {
-            detail_gamma.makeIdentity();
-            detail_igamma.makeIdentity();
-        }
 
         const float gain = pow(2.0f, float(expcomp));
         float params_Ldetail = min(float(dnparams.luminanceDetail), 99.9f); // max out to avoid div by zero when using noisevar_Ldetail as divisor
@@ -1946,7 +1995,6 @@ BENCHFUN
                                     // labdn->b[i1][j1] = (Y - Z);
                                     float l, u, v;
                                     Color::rgb2yuv(X, Y, Z, l, u, v, wpi);
-                                    l = detail_igamma[l];
                                     labdn->L[i1][j1] = l;
                                     labdn->a[i1][j1] = v;
                                     labdn->b[i1][j1] = u;
@@ -1979,9 +2027,9 @@ BENCHFUN
                                     //use gamma sRGB, not good if TIF (JPG) Output profil not with gamma sRGB  (eg : gamma =1.0, or 1.8...)
                                     //very difficult to solve !
                                     // solution ==> save TIF with gamma sRGB and re open
-                                    float rtmp = src->r(i, j);
-                                    float gtmp = src->g(i, j);
-                                    float btmp = src->b(i, j);
+                                    float rtmp = Color::igammatab_srgb[ src->r(i, j) ];
+                                    float gtmp = Color::igammatab_srgb[ src->g(i, j) ];
+                                    float btmp = Color::igammatab_srgb[ src->b(i, j) ];
                                     //modification Jacques feb 2013
                                     // gamma slider different from raw
                                     rtmp = rtmp < 65535.f ? gamcurve[rtmp] : (Color::gammanf(rtmp / 65535.f, gam) * 65535.f);
@@ -1998,7 +2046,7 @@ BENCHFUN
                                     // labdn->b[i1][j1] = b;
                                     float Y, u, v;
                                     Color::rgb2yuv(rtmp, gtmp, btmp, Y, u, v, wpi);
-                                    labdn->L[i1][j1] = detail_igamma[Y];
+                                    labdn->L[i1][j1] = Y;
                                     labdn->a[i1][j1] = v;
                                     labdn->b[i1][j1] = u;
 
@@ -2271,7 +2319,7 @@ BENCHFUN
                                 // now do detail recovery using block DCT to detect
                                 // patterns missed by wavelet denoise
                                 // blocks are not the same thing as tiles!
-                                detail_recovery(width, height, labdn, Lin, numtiles, numthreads, denoiseNestedLevels, LbloxArray, fLbloxArray, blox_array_size, params_Ldetail, dnparams.luminanceDetailThreshold, tilemask_in, tilemask_out, plan_forward_blox, plan_backward_blox, max_numblox_W, scale);
+                                detail_recovery(width, height, labdn, Lin, numtiles, numthreads, denoiseNestedLevels, LbloxArray, fLbloxArray, blox_array_size, params_Ldetail, dnparams.luminanceDetailThreshold, tilemask_in, tilemask_out, plan_forward_blox, plan_backward_blox, max_numblox_W, scale, nrQuality == QUALITY_HIGH);
                             }
                             //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                             // transform denoised "Lab" to output RGB
@@ -2340,9 +2388,7 @@ BENCHFUN
                                         // float X = (labdn->a[i1][j1]) + Y;
                                         // float Z = Y - (labdn->b[i1][j1]);
                                         float X, Y, Z;
-                                        float l = labdn->L[i1][j1];
-                                        l = detail_gamma[l];
-                                        Color::yuv2rgb(l, labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
+                                        Color::yuv2rgb(labdn->L[i1][j1], labdn->b[i1][j1], labdn->a[i1][j1], X, Y, Z, wpi);
 
 
                                         X = X < 65536.f ? igamcurve[X] : (Color::gammaf(X / 65535.f, igam, igamthresh, igamslope) * 65535.f);
@@ -2388,7 +2434,6 @@ BENCHFUN
 
                                         float r_, g_, b_;
                                         // Color::xyz2rgb(X, Y, Z, r_, g_, b_, wip);
-                                        Y = detail_gamma[Y];
                                         Color::yuv2rgb(Y, u, v, r_, g_, b_, wpi);
                                         //gamma slider is different from Raw
                                         r_ = r_ < 65536.f ? igamcurve[r_] : (Color::gammanf(r_ / 65535.f, igam) * 65535.f);
@@ -2447,6 +2492,20 @@ BENCHFUN
                 }
 
                 delete dsttmp;
+            }
+
+            if (!isRAW && !memoryAllocationFailed) {//restore original image gamma
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
+
+                for (int i = 0; i < dst->getHeight(); ++i) {
+                    for (int j = 0; j < dst->getWidth(); ++j) {
+                        dst->r(i, j) = Color::gammatab_srgb[ dst->r(i, j) ];
+                        dst->g(i, j) = Color::gammatab_srgb[ dst->g(i, j) ];
+                        dst->b(i, j) = Color::gammatab_srgb[ dst->b(i, j) ];
+                    }
+                }
             }
 
             if (denoiseLuminance) {
