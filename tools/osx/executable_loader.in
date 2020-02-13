@@ -18,8 +18,8 @@ export GSETTINGS_SCHEMA_DIR="${resources}/share/glib-2.0/schemas"
 export GDK_PIXBUF_MODULE_FILE="${etc}/gtk-3.0/gdk-pixbuf.loaders"
 export GDK_PIXBUF_MODULEDIR="${lib}"
 
-export RT_SETTINGS="${HOME}/Library/Application Support/ART/config"
-export RT_CACHE="${HOME}/Library/Application Support/ART/cache"
+export ART_SETTINGS="${HOME}/Library/Application Support/ART/config"
+export ART_CACHE="${HOME}/Library/Application Support/ART/cache"
 
 # Strip out system argument
 case "$1" in

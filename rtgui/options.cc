@@ -2219,7 +2219,7 @@ void Options::load(bool lightweight)
     const gchar* path;
     Glib::ustring dPath;
 
-    path = g_getenv("RT_SETTINGS");
+    path = g_getenv("ART_SETTINGS");
 
     if (path != nullptr) {
         rtdir = Glib::ustring(path);
@@ -2261,8 +2261,8 @@ void Options::load(bool lightweight)
         rtdir = Glib::build_filename(argv0, "mysettings");
     }
 
-    // Modify the path of the cache folder to the one provided in RT_CACHE environment variable
-    path = g_getenv("RT_CACHE");
+    // Modify the path of the cache folder to the one provided in ART_CACHE environment variable
+    path = g_getenv("ART_CACHE");
 
     if (path != nullptr) {
         cacheBaseDir = Glib::ustring(path);
