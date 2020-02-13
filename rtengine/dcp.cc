@@ -1059,13 +1059,13 @@ DCPProfile::DCPProfile(const Glib::ustring& filename) :
     FILE* const file = g_fopen(filename.c_str(), "rb");
 
     if (file == nullptr) {
-        printf ("Unable to load DCP profile '%s' !", filename.c_str());
+        //printf ("Unable to load DCP profile '%s' !", filename.c_str());
         return;
     }
 
     DCPMetadata md(file);
     if (!md.parse()) {
-        printf ("Unable to load DCP profile '%s' !", filename.c_str());
+        //printf ("Unable to load DCP profile '%s' !", filename.c_str());
         return;
     }
 
