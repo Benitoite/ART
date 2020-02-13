@@ -59,10 +59,19 @@ BatchQueuePanel::BatchQueuePanel (FileCatalog* aFileCatalog) : parent(nullptr)
 
     queueShouldRun = false;
 
+    const auto set_style =
+        [](Gtk::Frame *f) -> void
+        {
+#if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 20
+            f->set_name("ExpanderBox2");
+#endif
+        };
+
     batchQueueButtonBox->pack_start (*qStartStop, Gtk::PACK_SHRINK, 4);
     batchQueueButtonBox->pack_start (*qAutoStart, Gtk::PACK_SHRINK, 4);
     Gtk::Frame *bbox = Gtk::manage(new Gtk::Frame(M("MAIN_FRAME_QUEUE")));
     bbox->add(*batchQueueButtonBox);
+    set_style(bbox);
 
     // Output directory selection
     fdir = Gtk::manage (new Gtk::Frame (M("QUEUE_LOCATION_TITLE")));
@@ -110,12 +119,14 @@ BatchQueuePanel::BatchQueuePanel (FileCatalog* aFileCatalog) : parent(nullptr)
     Gtk::RadioButton::Group g = useTemplate->get_group();
     useFolder->set_group (g);
     fdir->add (*odvb);
+    set_style(fdir);
 
     // Output file format selection
     fformat = Gtk::manage (new Gtk::Frame (M("QUEUE_FORMAT_TITLE")));
     saveFormatPanel = Gtk::manage (new SaveFormatPanel ());
     setExpandAlignProperties(saveFormatPanel, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
     fformat->add (*saveFormatPanel);
+    set_style(fformat);
 
     outdirTemplate->set_text (options.savePathTemplate);
     useTemplate->set_active (options.saveUsePathTemplate);
@@ -129,7 +140,7 @@ BatchQueuePanel::BatchQueuePanel (FileCatalog* aFileCatalog) : parent(nullptr)
 
     // setup button bar
     topBox = Gtk::manage (new Gtk::HBox ());
-    pack_start (*topBox, Gtk::PACK_SHRINK);
+    pack_start (*topBox, Gtk::PACK_SHRINK, 4);
     topBox->set_name("BatchQueueButtonsMainContainer");
 
     topBox->pack_start (*bbox, Gtk::PACK_SHRINK, 4);
