@@ -23,7 +23,7 @@
 #endif
 #include "mytime.h"
 #include "rt_math.h"
-#include "sleef.h"
+#include "opthelper.h"
 #include "rtlensfun.h"
 #include "perspectivecorrection.h"
 
@@ -68,6 +68,7 @@ float pown (float x, int n)
     }
 }
 
+
 float normn (float a, float b, int n)
 {
     switch (n) {
@@ -104,118 +105,168 @@ inline T1 CLIPTOC(T1 a, T2 b, T2 c, bool &clipped)
     }
 }
 
-inline void interpolateTransformCubic(Imagefloat* src, int xs, int ys, double Dx, double Dy, float *r, float *g, float *b, double mul)
+
+void logEncode(rtengine::Imagefloat *src, rtengine::Imagefloat *dest, bool multiThread)
 {
-    const double A = -0.85;
-
-    double w[4];
-
-    {
-        double t1, t2;
-        t1 = -A * (Dx - 1.0) * Dx;
-        t2 = (3.0 - 2.0 * Dx) * Dx * Dx;
-        w[3] = t1 * Dx;
-        w[2] = t1 * (Dx - 1.0) + t2;
-        w[1] = -t1 * Dx + 1.0 - t2;
-        w[0] = -t1 * (Dx - 1.0);
-    }
-
-    double rd, gd, bd;
-    double yr[4] = {0.0}, yg[4] = {0.0}, yb[4] = {0.0};
-
-    for (int k = ys, kx = 0; k < ys + 4; k++, kx++) {
-        rd = gd = bd = 0.0;
-
-        for (int i = xs, ix = 0; i < xs + 4; i++, ix++) {
-            rd += src->r(k, i) * w[ix];
-            gd += src->g(k, i) * w[ix];
-            bd += src->b(k, i) * w[ix];
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic, 16) if(multiThread)
+#endif
+    for (int y = 0; y < src->getHeight(); ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < src->getWidth() - 3; x += 4) {
+            STVFU(dest->r(y, x), xlogf1(LVFU(src->r(y, x))));
+            STVFU(dest->g(y, x), xlogf1(LVFU(src->g(y, x))));
+            STVFU(dest->b(y, x), xlogf1(LVFU(src->b(y, x))));
         }
-
-        yr[kx] = rd;
-        yg[kx] = gd;
-        yb[kx] = bd;
-    }
-
-
-    {
-        double t1, t2;
-
-        t1 = -A * (Dy - 1.0) * Dy;
-        t2 = (3.0 - 2.0 * Dy) * Dy * Dy;
-        w[3] = t1 * Dy;
-        w[2] = t1 * (Dy - 1.0) + t2;
-        w[1] = -t1 * Dy + 1.0 - t2;
-        w[0] = -t1 * (Dy - 1.0);
-    }
-
-    rd = gd = bd = 0.0;
-
-    for (int i = 0; i < 4; i++) {
-        rd += yr[i] * w[i];
-        gd += yg[i] * w[i];
-        bd += yb[i] * w[i];
-    }
-
-    *r = rd * mul;
-    *g = gd * mul;
-    *b = bd * mul;
-
-    //  if (xs==100 && ys==100)
-    //    printf ("r=%g, g=%g\n", *r, *g);
-}
-
-inline void interpolateTransformChannelsCubic(float** src, int xs, int ys, double Dx, double Dy, float *r, double mul)
-{
-    const double A = -0.85;
-
-    double w[4];
-
-    {
-        double t1, t2;
-        t1 = -A * (Dx - 1.0) * Dx;
-        t2 = (3.0 - 2.0 * Dx) * Dx * Dx;
-        w[3] = t1 * Dx;
-        w[2] = t1 * (Dx - 1.0) + t2;
-        w[1] = -t1 * Dx + 1.0 - t2;
-        w[0] = -t1 * (Dx - 1.0);
-    }
-
-    double rd;
-    double yr[4] = {0.0};
-
-    for (int k = ys, kx = 0; k < ys + 4; k++, kx++) {
-        rd = 0.0;
-
-        for (int i = xs, ix = 0; i < xs + 4; i++, ix++) {
-            rd += src[k][i] * w[ix];
+#endif
+        for (; x < src->getWidth(); ++x) {
+            dest->r(y, x) = xlogf1(src->r(y, x));
+            dest->g(y, x) = xlogf1(src->g(y, x));
+            dest->b(y, x) = xlogf1(src->b(y, x));
         }
-
-        yr[kx] = rd;
     }
-
-
-    {
-        double t1, t2;
-        t1 = -A * (Dy - 1.0) * Dy;
-        t2 = (3.0 - 2.0 * Dy) * Dy * Dy;
-        w[3] = t1 * Dy;
-        w[2] = t1 * (Dy - 1.0) + t2;
-        w[1] = -t1 * Dy + 1.0 - t2;
-        w[0] = -t1 * (Dy - 1.0);
-    }
-
-    rd = 0.0;
-
-    for (int i = 0; i < 4; i++) {
-        rd += yr[i] * w[i];
-    }
-
-    *r = rd * mul;
 }
 
 
-void transform_perspective(const ProcParams *params, const FramesMetaData *metadata, Imagefloat *orig, Imagefloat *dest, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
+void linEncode(rtengine::Imagefloat *img, bool multiThread)
+{
+    const auto lin = [](float f) -> float { return f < 0.f ? 0.f : xexpf(f); };
+    
+#ifdef _OPENMP
+#   pragma omp parallel for schedule(dynamic, 16) if(multiThread)
+#endif
+    for (int y = 0; y < img->getHeight(); ++y) {
+        for (int x = 0; x < img->getWidth(); ++x) {
+            img->r(y, x) = lin(img->r(y, x));
+            img->g(y, x) = lin(img->g(y, x));
+            img->b(y, x) = lin(img->b(y, x));
+        }
+    }
+}
+
+
+#ifdef __SSE2__
+
+inline void interpolateTransformCubic(rtengine::Imagefloat* src, int xs, int ys, float Dx, float Dy, float &r, float &g, float &b)
+{
+    constexpr float A = -0.85f;
+
+    // Vertical
+    const float t1Vert = A * (Dy - Dy * Dy);
+    const float t2Vert = (3.f - 2.f * Dy) * Dy * Dy;
+    const vfloat w3Vert = F2V(t1Vert * Dy);
+    const vfloat w2Vert = F2V(t1Vert * Dy - t1Vert + t2Vert);
+    const vfloat w1Vert = F2V(1.f - (t1Vert * Dy) - t2Vert);
+    const vfloat w0Vert = F2V(t1Vert - (t1Vert * Dy));
+
+    const vfloat rv = (w0Vert * LVFU(src->r(ys, xs)) + w1Vert * LVFU(src->r(ys + 1, xs))) + (w2Vert * LVFU(src->r(ys + 2, xs)) + w3Vert * LVFU(src->r(ys + 3, xs)));
+    const vfloat gv = (w0Vert * LVFU(src->g(ys, xs)) + w1Vert * LVFU(src->g(ys + 1, xs))) + (w2Vert * LVFU(src->g(ys + 2, xs)) + w3Vert * LVFU(src->g(ys + 3, xs)));
+    const vfloat bv = (w0Vert * LVFU(src->b(ys, xs)) + w1Vert * LVFU(src->b(ys + 1, xs))) + (w2Vert * LVFU(src->b(ys + 2, xs)) + w3Vert * LVFU(src->b(ys + 3, xs)));
+
+    // Horizontal
+    const float t1Hor = A * (Dx - Dx * Dx);
+    const float t2Hor = (3.f - 2.f * Dx) * Dx * Dx;
+    const vfloat weight = _mm_set_ps(t1Hor * Dx, t1Hor * Dx - t1Hor + t2Hor, 1.f - (t1Hor * Dx) - t2Hor, t1Hor - (t1Hor * Dx));
+    r = vhadd(weight * rv);
+    g = vhadd(weight * gv);
+    b = vhadd(weight * bv);
+}
+
+#else // __SSE2__
+
+inline void interpolateTransformCubic(rtengine::Imagefloat* src, int xs, int ys, float Dx, float Dy, float &r, float &g, float &b)
+{
+    constexpr float A = -0.85f;
+
+    // Vertical
+    const float t1Vert = A * (Dy - Dy * Dy);
+    const float t2Vert = (3.f - 2.f * Dy) * Dy * Dy;
+    const float w3Vert = t1Vert * Dy;
+    const float w2Vert = t1Vert * Dy - t1Vert + t2Vert;
+    const float w1Vert = 1.f - (t1Vert * Dy) - t2Vert;
+    const float w0Vert = t1Vert - (t1Vert * Dy);
+
+    float rv[4], gv[4], bv[4];
+    for (int i = 0; i < 4; ++i) {
+        rv[i] = w0Vert * src->r(ys, xs + i) + w1Vert * src->r(ys + 1, xs + i) + w2Vert * src->r(ys + 2, xs + i) + w3Vert * src->r(ys + 3, xs + i);
+        gv[i] = w0Vert * src->g(ys, xs + i) + w1Vert * src->g(ys + 1, xs + i) + w2Vert * src->g(ys + 2, xs + i) + w3Vert * src->g(ys + 3, xs + i);
+        bv[i] = w0Vert * src->b(ys, xs + i) + w1Vert * src->b(ys + 1, xs + i) + w2Vert * src->b(ys + 2, xs + i) + w3Vert * src->b(ys + 3, xs + i);
+    }
+
+    // Horizontal
+    const float t1Hor = A * (Dx - Dx * Dx);
+    const float t2Hor = (3.f - 2.f * Dx) * Dx * Dx;
+    const float w3Hor = t1Hor * Dx;
+    const float w2Hor = t1Hor * Dx - t1Hor + t2Hor;
+    const float w1Hor = 1.f - (t1Hor * Dx) - t2Hor;
+    const float w0Hor = t1Hor - (t1Hor * Dx);
+
+    r = (rv[0] * w0Hor + rv[1] * w1Hor + rv[2] * w2Hor + rv[3] * w3Hor);
+    g = (gv[0] * w0Hor + gv[1] * w1Hor + gv[2] * w2Hor + gv[3] * w3Hor);
+    b = (bv[0] * w0Hor + bv[1] * w1Hor + bv[2] * w2Hor + bv[3] * w3Hor);
+}
+
+#endif // __SSE2__
+
+
+#ifdef __SSE2__
+
+inline void interpolateTransformChannelsCubic(const float* const* src, int xs, int ys, float Dx, float Dy, float& dest)
+{
+    constexpr float A = -0.85f;
+
+    // Vertical
+    const float t1Vert = A * (Dy - Dy * Dy);
+    const float t2Vert = (3.f - 2.f * Dy) * Dy * Dy;
+    const vfloat w3Vert = F2V(t1Vert * Dy);
+    const vfloat w2Vert = F2V(t1Vert * Dy - t1Vert + t2Vert);
+    const vfloat w1Vert = F2V(1.f - (t1Vert * Dy) - t2Vert);
+    const vfloat w0Vert = F2V(t1Vert - (t1Vert * Dy));
+
+    const vfloat cv = (w0Vert * LVFU(src[ys][xs]) + w1Vert * LVFU(src[ys + 1][xs])) + (w2Vert * LVFU(src[ys + 2][xs]) + w3Vert * LVFU(src[ys + 3][xs]));
+
+    // Horizontal
+    const float t1Hor = A * (Dx - Dx * Dx);
+    const float t2Hor = (3.f - 2.f * Dx) * Dx * Dx;
+    const vfloat weight = _mm_set_ps(t1Hor * Dx, t1Hor * Dx - t1Hor + t2Hor, 1.f - (t1Hor * Dx) - t2Hor, t1Hor - (t1Hor * Dx));
+    dest = vhadd(weight * cv);
+}
+
+#else // __SSE2__
+
+inline void interpolateTransformChannelsCubic(const float* const* src, int xs, int ys, float Dx, float Dy, float& dest)
+{
+    constexpr float A = -0.85f;
+
+    // Vertical
+    const float t1Vert = A * (Dy - Dy * Dy);
+    const float t2Vert = (3.f - 2.f * Dy) * Dy * Dy;
+    const float w3Vert = t1Vert * Dy;
+    const float w2Vert = t1Vert * Dy - t1Vert + t2Vert;
+    const float w1Vert = 1.f - (t1Vert * Dy) - t2Vert;
+    const float w0Vert = t1Vert - (t1Vert * Dy);
+
+    float cv[4];
+    for (int i = 0; i < 4; ++i) {
+        cv[i] = w0Vert * src[ys][xs + i] + w1Vert * src[ys + 1][xs + i] + w2Vert * src[ys + 2][xs + i] + w3Vert * src[ys + 3][xs + i];
+    }
+
+    // Horizontal
+    const float t1Hor = A * (Dx - Dx * Dx);
+    const float t2Hor = (3.f - 2.f * Dx) * Dx * Dx;
+    const float w3Hor = t1Hor * Dx;
+    const float w2Hor = t1Hor * Dx - t1Hor + t2Hor;
+    const float w1Hor = 1.f - (t1Hor * Dx) - t2Hor;
+    const float w0Hor = t1Hor - (t1Hor * Dx);
+
+    dest = (cv[0] * w0Hor + cv[1] * w1Hor + cv[2] * w2Hor + cv[3] * w3Hor);
+}
+
+#endif // __SSE2__
+
+
+void transform_perspective(bool log_enc, const ProcParams *params, const FramesMetaData *metadata, Imagefloat *orig, Imagefloat *dest, int cx, int cy, int sx, int sy, int oW, int oH, int fW, int fH, bool multiThread)
 {
     PerspectiveCorrection pc;
     pc.init(fW, fH, params->perspective, params->commonTrans.autofill, metadata);
@@ -225,6 +276,8 @@ void transform_perspective(const ProcParams *params, const FramesMetaData *metad
     int H = dest->getHeight();
     int orig_W = orig->getWidth();
     int orig_H = orig->getHeight();
+
+    const float invalid = log_enc ? -1.f : 0.f;
 
 #ifdef _OPENMP
     #pragma omp parallel for if (multiThread)
@@ -249,7 +302,7 @@ void transform_perspective(const ProcParams *params, const FramesMetaData *metad
             if (yc >= 0 && yc < orig_H && xc >= 0 && xc < orig_W) {
                 if (yc > 0 && yc < orig_H - 2 && xc > 0 && xc < orig_W - 2) {
                     // all interpolation pixels inside image
-                    interpolateTransformCubic(orig, xc - 1, yc - 1, Dx, Dy, &(dest->r(y, x)), &(dest->g(y, x)), &(dest->b(y, x)), 1.0);
+                    interpolateTransformCubic(orig, xc - 1, yc - 1, Dx, Dy, dest->r(y, x), dest->g(y, x), dest->b(y, x));
                 } else {
                     // edge pixels
                     int y1 = LIM (yc, 0, H - 1);
@@ -262,9 +315,9 @@ void transform_perspective(const ProcParams *params, const FramesMetaData *metad
                     dest->b (y, x) = (orig->b (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + orig->b (y1, x2) * Dx * (1.0 - Dy) + orig->b (y2, x1) * (1.0 - Dx) * Dy + orig->b (y2, x2) * Dx * Dy);
                 }
             } else {
-                dest->r(y, x) = 0;
-                dest->g(y, x) = 0;
-                dest->b(y, x) = 0;
+                dest->r(y, x) = invalid;
+                dest->g(y, x) = invalid;
+                dest->b(y, x) = invalid;
             }
         }
     }
@@ -492,15 +545,23 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
     if (needsCA() || scale == 1) {
         highQuality = true;
     }
-    bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
-    bool needs_luminance = needsVignetting();
-    bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
-    bool needs_perspective = needsPerspective() || needs_lcp_ca;
-    bool needs_transform_general = needs_dist_rot_ca || needs_luminance;
+    const bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
+    const bool needs_luminance = needsVignetting();
+    const bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
+    const bool needs_perspective = needsPerspective() || needs_lcp_ca;
+    const bool needs_transform_general = needs_dist_rot_ca || needs_luminance;
+    const bool log_encode = highQuality && (needs_transform_general || needs_perspective || needs_lcp_ca);
 
     if (! (needs_dist_rot_ca || needs_perspective) && needs_luminance) {
         transformLuminanceOnly(original, transformed, cx, cy, oW, oH, fW, fH, false);
     } else {
+        std::unique_ptr<Imagefloat> logimg;
+        if (log_encode) {
+            logimg.reset(new Imagefloat(original->getWidth(), original->getHeight()));
+            logEncode(original, logimg.get(), multiThread);
+            original = logimg.get();
+        }
+        
         std::unique_ptr<Imagefloat> tmpimg;
         Imagefloat *dest = transformed;
         int dest_x = cx, dest_y = cy;
@@ -520,17 +581,25 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
         
         if (needs_lcp_ca) {
             Imagefloat *out = transformed;
+            dest_x = cx;
+            dest_y = cy;
             if (needs_perspective) {
                 out = new Imagefloat(dest->getWidth(), dest->getHeight());
+                dest_x = sx;
+                dest_y = sy;
             }
-            transformLCPCAOnly(dest, out, cx, cy, pLCPMap.get());
+            transformLCPCAOnly(dest, out, dest_x, dest_y, pLCPMap.get());
             if (needs_perspective) {
                 tmpimg.reset(out);
                 dest = out;
             }
         }
         if (needs_perspective) {
-            transform_perspective(params, metadata, dest, transformed, cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
+            transform_perspective(log_encode, params, metadata, dest, transformed, cx, cy, sx, sy, oW, oH, fW, fH, multiThread);
+        }
+
+        if (log_encode) {
+            linEncode(transformed, multiThread);
         }
     }
 }
@@ -946,7 +1015,7 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
 {
     // set up stuff, depending on the mode we are
     bool enableLCPDist = pLCPMap && params->lensProf.useDist;
-    bool enableCA = highQuality && needsCA();
+    const bool enableCA = highQuality && needsCA();
     constexpr bool enableGradient = false;
     constexpr bool enablePCVignetting = false;
     bool enableVignetting = needsVignetting();
@@ -994,6 +1063,9 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     get_rotation(params, cost, sint);
 
     double ascale = params->commonTrans.autofill ? getTransformAutoFill (oW, oH, pLCPMap) : 1.0;
+
+    const bool useLog = highQuality;
+    const float invalid = useLog ? -1.f : 0.f;
 
 #if defined( __GNUC__ ) && __GNUC__ >= 7// silence warning
 #pragma GCC diagnostic push
@@ -1087,16 +1159,22 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
                         vignmul *= calcPCVignetteFactor (pcv, cx + x, cy + y);
                     }
 
+                    float vignmul_log = useLog ? xlog(std::max(vignmul, 1e-5)) : 0.0;
+
                     if (yc > 0 && yc < original->getHeight() - 2 && xc > 0 && xc < original->getWidth() - 2) {
                         // all interpolation pixels inside image
-                        if (enableCA) {
-                            interpolateTransformChannelsCubic (chOrig[c], xc - 1, yc - 1, Dx, Dy, & (chTrans[c][y][x]), vignmul);
-                        } else if (!highQuality) {
-                            transformed->r (y, x) = vignmul * (original->r (yc, xc) * (1.0 - Dx) * (1.0 - Dy) + original->r (yc, xc + 1) * Dx * (1.0 - Dy) + original->r (yc + 1, xc) * (1.0 - Dx) * Dy + original->r (yc + 1, xc + 1) * Dx * Dy);
-                            transformed->g (y, x) = vignmul * (original->g (yc, xc) * (1.0 - Dx) * (1.0 - Dy) + original->g (yc, xc + 1) * Dx * (1.0 - Dy) + original->g (yc + 1, xc) * (1.0 - Dx) * Dy + original->g (yc + 1, xc + 1) * Dx * Dy);
-                            transformed->b (y, x) = vignmul * (original->b (yc, xc) * (1.0 - Dx) * (1.0 - Dy) + original->b (yc, xc + 1) * Dx * (1.0 - Dy) + original->b (yc + 1, xc) * (1.0 - Dx) * Dy + original->b (yc + 1, xc + 1) * Dx * Dy);
+                        if (!highQuality) {
+                            transformed->r(y, x) = vignmul * (original->r (yc, xc) * (1.0 - Dx) * (1.0 - Dy) + original->r (yc, xc + 1) * Dx * (1.0 - Dy) + original->r (yc + 1, xc) * (1.0 - Dx) * Dy + original->r (yc + 1, xc + 1) * Dx * Dy);
+                            transformed->g(y, x) = vignmul * (original->g (yc, xc) * (1.0 - Dx) * (1.0 - Dy) + original->g (yc, xc + 1) * Dx * (1.0 - Dy) + original->g (yc + 1, xc) * (1.0 - Dx) * Dy + original->g (yc + 1, xc + 1) * Dx * Dy);
+                            transformed->b(y, x) = vignmul * (original->b (yc, xc) * (1.0 - Dx) * (1.0 - Dy) + original->b (yc, xc + 1) * Dx * (1.0 - Dy) + original->b (yc + 1, xc) * (1.0 - Dx) * Dy + original->b (yc + 1, xc + 1) * Dx * Dy);
+                        } else if (enableCA) {
+                            interpolateTransformChannelsCubic(chOrig[c], xc - 1, yc - 1, Dx, Dy, chTrans[c][y][x]);
+                            chTrans[c][y][x] += vignmul_log;
                         } else {
-                            interpolateTransformCubic (original, xc - 1, yc - 1, Dx, Dy, & (transformed->r (y, x)), & (transformed->g (y, x)), & (transformed->b (y, x)), vignmul);
+                            interpolateTransformCubic(original, xc - 1, yc - 1, Dx, Dy, transformed->r(y, x), transformed->g(y, x), transformed->b(y, x));
+                            transformed->r(y, x) += vignmul_log;
+                            transformed->g(y, x) += vignmul_log;
+                            transformed->b(y, x) += vignmul_log;
                         }
                     } else {
                         // edge pixels
@@ -1106,21 +1184,30 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
                         int x2 = LIM (xc + 1, 0, original->getWidth() - 1);
 
                         if (enableCA) {
-                            chTrans[c][y][x] = vignmul * (chOrig[c][y1][x1] * (1.0 - Dx) * (1.0 - Dy) + chOrig[c][y1][x2] * Dx * (1.0 - Dy) + chOrig[c][y2][x1] * (1.0 - Dx) * Dy + chOrig[c][y2][x2] * Dx * Dy);
+                            chTrans[c][y][x] = vignmul_log + (chOrig[c][y1][x1] * (1.0 - Dx) * (1.0 - Dy) + chOrig[c][y1][x2] * Dx * (1.0 - Dy) + chOrig[c][y2][x1] * (1.0 - Dx) * Dy + chOrig[c][y2][x2] * Dx * Dy);
                         } else {
-                            transformed->r (y, x) = vignmul * (original->r (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + original->r (y1, x2) * Dx * (1.0 - Dy) + original->r (y2, x1) * (1.0 - Dx) * Dy + original->r (y2, x2) * Dx * Dy);
-                            transformed->g (y, x) = vignmul * (original->g (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + original->g (y1, x2) * Dx * (1.0 - Dy) + original->g (y2, x1) * (1.0 - Dx) * Dy + original->g (y2, x2) * Dx * Dy);
-                            transformed->b (y, x) = vignmul * (original->b (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + original->b (y1, x2) * Dx * (1.0 - Dy) + original->b (y2, x1) * (1.0 - Dx) * Dy + original->b (y2, x2) * Dx * Dy);
+                            transformed->r(y, x) = (original->r (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + original->r (y1, x2) * Dx * (1.0 - Dy) + original->r (y2, x1) * (1.0 - Dx) * Dy + original->r (y2, x2) * Dx * Dy);
+                            transformed->g(y, x) = (original->g (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + original->g (y1, x2) * Dx * (1.0 - Dy) + original->g (y2, x1) * (1.0 - Dx) * Dy + original->g (y2, x2) * Dx * Dy);
+                            transformed->b(y, x) = (original->b (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + original->b (y1, x2) * Dx * (1.0 - Dy) + original->b (y2, x1) * (1.0 - Dx) * Dy + original->b (y2, x2) * Dx * Dy);
+                            if (useLog) {
+                                transformed->r(y, x) += vignmul_log;
+                                transformed->g(y, x) += vignmul_log;
+                                transformed->b(y, x) += vignmul_log;
+                            } else {
+                                transformed->r(y, x) *= vignmul;
+                                transformed->g(y, x) *= vignmul;
+                                transformed->b(y, x) *= vignmul;
+                            }
                         }
                     }
                 } else {
                     if (enableCA) {
                         // not valid (source pixel x,y not inside source image, etc.)
-                        chTrans[c][y][x] = 0;
+                        chTrans[c][y][x] = invalid;
                     } else {
-                        transformed->r (y, x) = 0;
-                        transformed->g (y, x) = 0;
-                        transformed->b (y, x) = 0;
+                        transformed->r(y, x) = invalid;
+                        transformed->g(y, x) = invalid;
+                        transformed->b(y, x) = invalid;
                     }
                 }
             }
@@ -1167,7 +1254,7 @@ void ImProcFunctions::transformLCPCAOnly(Imagefloat *original, Imagefloat *trans
                     // multiplier for vignetting correction
                     if (yc > 0 && yc < original->getHeight() - 2 && xc > 0 && xc < original->getWidth() - 2) {
                         // all interpolation pixels inside image
-                        interpolateTransformChannelsCubic (chOrig[c], xc - 1, yc - 1, Dx, Dy, & (chTrans[c][y][x]), 1.0);
+                        interpolateTransformChannelsCubic(chOrig[c], xc - 1, yc - 1, Dx, Dy, chTrans[c][y][x]);
                     } else {
                         // edge pixels
                         int y1 = LIM (yc,   0, original->getHeight() - 1);
@@ -1175,11 +1262,11 @@ void ImProcFunctions::transformLCPCAOnly(Imagefloat *original, Imagefloat *trans
                         int x1 = LIM (xc,   0, original->getWidth() - 1);
                         int x2 = LIM (xc + 1, 0, original->getWidth() - 1);
 
-                        chTrans[c][y][x] = (chOrig[c][y1][x1] * (1.0 - Dx) * (1.0 - Dy) + chOrig[c][y1][x2] * Dx * (1.0 - Dy) + chOrig[c][y2][x1] * (1.0 - Dx) * Dy + chOrig[c][y2][x2] * Dx * Dy);
+                        chTrans[c][y][x] = chOrig[c][y1][x1] * (1.0 - Dx) * (1.0 - Dy) + chOrig[c][y1][x2] * Dx * (1.0 - Dy) + chOrig[c][y2][x1] * (1.0 - Dx) * Dy + chOrig[c][y2][x2] * Dx * Dy;
                     }
                 } else {
                     // not valid (source pixel x,y not inside source image, etc.)
-                    chTrans[c][y][x] = 0;
+                    chTrans[c][y][x] = -1.f;
                 }
             }
         }
