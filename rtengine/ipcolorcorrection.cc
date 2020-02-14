@@ -180,6 +180,8 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                             } else {
                                 v = pow_F(v, power[i]);
                             }
+                        } else {
+                            v = 0.f;
                         }
                         rgb[i] = v * 65535.f;
                     }
@@ -193,6 +195,8 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                             v = pow_F(v, power[0]);
                         }
                         v *= 65535.f;
+                    } else {
+                        v = 0.f;
                     }
                     if (Y > 0.f) {
                         float f = v / Y;
@@ -240,9 +244,9 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                 
                         vfloat v = (rgb[i] / v65535) * vslope + voffset;
                         if (pivot[i] != 1.f) {
-                            v = vself(vmaskf_gt(v, ZEROV), pow_F(v / vpivot, vpower) * vpivot, v);
+                            v = vself(vmaskf_gt(v, ZEROV), pow_F(v / vpivot, vpower) * vpivot, ZEROV);
                         } else {
-                            v = vself(vmaskf_gt(v, ZEROV), pow_F(v, vpower), v);
+                            v = vself(vmaskf_gt(v, ZEROV), pow_F(v, vpower), ZEROV);
                         }
                         rgb[i] = v * v65535;
                     }
@@ -255,9 +259,9 @@ bool ImProcFunctions::colorCorrection(Imagefloat *rgb)
                     vfloat v65535 = F2V(65535.f);
                     vfloat YY = (Y / v65535) * vslope + voffset;
                     if (pivot[0] != 1.f) {
-                        YY = vself(vmaskf_gt(YY, ZEROV), pow_F(YY / vpivot, vpower) * vpivot, YY);
+                        YY = vself(vmaskf_gt(YY, ZEROV), pow_F(YY / vpivot, vpower) * vpivot, ZEROV);
                     } else {
-                        YY = vself(vmaskf_gt(YY, ZEROV), pow_F(YY, vpower), YY);
+                        YY = vself(vmaskf_gt(YY, ZEROV), pow_F(YY, vpower), ZEROV);
                     }
                     YY *= v65535;
                     vfloat f = vself(vmaskf_gt(Y, ZEROV), YY / Y, F2V(1.f));
