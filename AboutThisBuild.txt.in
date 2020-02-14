@@ -16,5 +16,3 @@ OpenMP support: ${OPTION_OMP}
 MMAP support: ${WITH_MYFILE_MMAP}
 Build OS: ${BUILDINFO_OS}
 Build date: ${BUILDINFO_DATE}
-Epoch: ${BUILDINFO_EPOCH}
-UUID: ${BUILDINFO_UUID}
