@@ -123,7 +123,6 @@ if(REL_INFO_FILE STREQUAL REL_INFO_FILE-NOTFOUND)
         set(GIT_NUMERIC_VERSION_BS "${GIT_NUMERIC_VERSION_BS}.${GIT_COMMITS_SINCE_TAG}")
     endif()
 
-    set(BUILDINFO_OS "${SYSTEM}")
     string(TIMESTAMP BUILDINFO_DATE UTC)
 
     message(STATUS "Git checkout information:")
