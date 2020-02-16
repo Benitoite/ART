@@ -55,6 +55,7 @@ private:
     rtengine::ProcEvent EvAreaMask;
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvContrastThresholdMask;
+    rtengine::ProcEvent EvDrawnMask;
 
 public:
 

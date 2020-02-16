@@ -72,6 +72,7 @@ private:
     rtengine::ProcEvent EvAreaMask;
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvContrastThresholdMask;
+    rtengine::ProcEvent EvDrawnMask;
 
     std::vector<rtengine::procparams::GuidedSmoothingParams::Region> data;
 

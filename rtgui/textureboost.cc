@@ -40,7 +40,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
     {
         mask_list = parent_->EvList;
         h_mask = parent_->EvHueMask;
@@ -51,6 +51,7 @@ public:
         area_mask = parent_->EvAreaMask;
         deltaE_mask = parent_->EvDeltaEMask;
         contrastThreshold_mask = parent_->EvContrastThresholdMask;
+        drawn_mask = parent_->EvDrawnMask;
     }
 
     ToolPanelListener *listener() override
@@ -92,7 +93,7 @@ public:
     bool resetPressed() override
     {
         parent_->data = { TextureBoostParams::Region() };
-        parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
+        parent_->labMasks->setMasks({ Mask() }, -1);
         return true;
     }
     
@@ -161,6 +162,7 @@ TextureBoost::TextureBoost () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL")
     EvAreaMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_AREAMASK");
     EvDeltaEMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_DELTAEMASK");
     EvContrastThresholdMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_CONTRASTTHRESHOLDMASK");
+    EvDrawnMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_DRAWNMASK");
 
     strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
     edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));
@@ -196,7 +198,7 @@ void TextureBoost::read(const ProcParams *pp)
     auto m = pp->textureBoost.labmasks;
     if (data.empty()) {
         data.emplace_back(rtengine::TextureBoostParams::Region());
-        m.emplace_back(rtengine::LabCorrectionMask());
+        m.emplace_back(rtengine::Mask());
     }
     labMasks->setMasks(m, pp->textureBoost.showMask);
 

@@ -31,11 +31,13 @@
 #include "curves.h"
 #include "iccstore.h"
 #include "rt_algo.h"
+#include "opthelper.h"
 
 namespace rtengine {
 
 using procparams::AreaMask;
-using procparams::LabCorrectionMask;
+using procparams::Mask;
+using procparams::DrawnMask;
 
 namespace {
 
@@ -198,6 +200,118 @@ bool generate_area_mask(int ox, int oy, int width, int height, const array2D<flo
     return true;
 }
 
+
+bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask &drawnMask, const array2D<float> &guide, bool multithread, array2D<float> &mask)
+{
+    if (drawnMask.isTrivial()) {
+        return false;
+    }
+
+    const int mask_w = guide.width();
+    const int mask_h = guide.height();
+
+    mask(mask_w, mask_h);
+    float *maskdata = mask;
+    std::fill(maskdata, maskdata + (mask.width() * mask.height()), 0.f);
+
+    struct StrokeEval {
+        StrokeEval(const DrawnMask::Stroke &s,
+                   int ox, int oy, int width, int height,
+                   int mask_w, int mask_h)
+        {
+            cx = width * s.x - ox;
+            cy = height * s.y - oy;
+            radius = std::min(width, height) * s.radius * 0.25;
+            neg = s.erase;
+
+            lx = std::max(cx - radius, 0);
+            ly = std::max(cy - radius, 0);
+            ux = std::min(cx + radius, mask_w-1);
+            uy = std::min(cy + radius, mask_h-1);
+        }
+
+        bool operator()(int x, int y, float &val) const
+        {
+            if (x < lx || x > ux || y < ly || y > uy) {
+                return false;
+            }
+            float d = std::sqrt(SQR(x - cx) + SQR(y - cy));
+            if (d <= radius) {
+                if (neg) {
+                    val = 0.f;
+                } else {
+                    val = 1.f;
+                }
+                return true;
+            }
+            
+            return false;
+        }
+
+        int cx;
+        int cy;
+        int radius;
+        int lx;
+        int ly;
+        int ux;
+        int uy;
+        float alpha;
+        float sigma;
+        float r2;
+        bool neg;
+    };
+
+    const float alpha = 1.f - LIM01(drawnMask.transparency);
+    double maxradius = 0.0;
+
+#ifdef _OPENMP
+#   pragma omp parallel for if (multithread)
+#endif
+    for (size_t i = 0; i < drawnMask.strokes.size(); ++i) {
+        const auto &s = drawnMask.strokes[i];
+        StrokeEval se(s, ox, oy, width, height, mask_w, mask_h);
+        maxradius = std::max(maxradius, s.radius);
+        for (int y = se.ly; y <= se.uy; ++y) {
+            for (int x = se.lx; x <= se.ux; ++x) {
+                float v;
+                if (se(x, y, v)) {
+                    mask[y][x] = alpha * v;
+                }
+            }
+        }
+    }
+
+    if (drawnMask.smoothness > 0.f) {
+        float sigma = std::min(width, height) * maxradius * 0.2f * drawnMask.smoothness;
+#ifdef _OPENMP
+#       pragma omp parallel if (multithread)
+#endif
+        gaussianBlur(mask, mask, mask_w, mask_h, sigma);
+    }
+
+    if (drawnMask.feather > 0) {
+        int radius = int(drawnMask.feather / 100.0 * std::min(width, height) * 0.1 + 0.5);
+        if (radius > 0) {
+            guidedFilter(guide, mask, mask, radius, 1e-7, multithread);
+        }
+    }
+
+    DiagonalCurve curve(drawnMask.contrast);
+    if (!curve.isIdentity()) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < mask_h; ++y) {
+            for (int x = 0; x < mask_w; ++x) {
+                mask[y][x] = curve.getVal(mask[y][x]);
+            }
+        }
+    }
+    
+    return true;
+}
+
+
 template <class T>
 void rgb2lab(Imagefloat::Mode mode, float R, float G, float B, float &L, float &a, float &b, const T ws[3][3])
 {
@@ -223,7 +337,7 @@ void rgb2lab(Imagefloat::Mode mode, float R, float G, float B, float &L, float &
 
 class DeltaEEvaluator {
 public:
-    DeltaEEvaluator(const std::vector<LabCorrectionMask> &masks)
+    DeltaEEvaluator(const std::vector<Mask> &masks)
     {
         masks_.reserve(masks.size());
         for (auto &m : masks) {
@@ -271,7 +385,7 @@ private:
 } // namespace
 
 
-bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> *Lmask, std::vector<array2D<float>> *abmask)
+bool generateLabMasks(Imagefloat *rgb, const std::vector<Mask> &masks, int offset_x, int offset_y, int full_width, int full_height, double scale, bool multithread, int show_mask_idx, std::vector<array2D<float>> *Lmask, std::vector<array2D<float>> *abmask)
 {
     int n = masks.size();
     if (show_mask_idx >= n || !masks[show_mask_idx].enabled) {
@@ -285,7 +399,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
     const int H = rgb->getHeight();
     const auto mode = rgb->mode();
 
-    const LabCorrectionMask dflt;
+    const Mask dflt;
 
     const int begin_idx = max(show_mask_idx, 0);
     const int end_idx = (show_mask_idx < 0 ? n : show_mask_idx+1);
@@ -449,6 +563,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
     }
 
     array2D<float> amask;
+
     for (int i = begin_idx; i < end_idx; ++i) {
         if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur / scale, multithread, amask)) {
 #ifdef _OPENMP
@@ -467,6 +582,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
         }
     }
 
+    
     float s_scale = std::sqrt(scale);
     for (int i = begin_idx; i < end_idx; ++i) {
         if (masks[i].contrastThresholdMask != 0) {
@@ -489,7 +605,25 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<LabCorrectionMask> &mas
                     }
                 }
             }
-        }       
+        }
+    }
+
+    for (int i = begin_idx; i < end_idx; ++i) {
+        if (generate_drawn_mask(offset_x, offset_y, full_width, full_height, masks[i].drawnMask, guide, multithread, amask)) {
+#ifdef _OPENMP
+#           pragma omp parallel for if (multithread)
+#endif
+            for (int y = 0; y < H; ++y) {
+                for (int x = 0; x < W; ++x) {
+                    if (abmask) {
+                        (*abmask)[i][y][x] *= amask[y][x];
+                    }
+                    if (Lmask) {
+                        (*Lmask)[i][y][x] *= amask[y][x];
+                    }
+                }
+            }
+        }
     }
     
     for (int i = begin_idx; i < end_idx; ++i) {

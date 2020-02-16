@@ -37,7 +37,7 @@ public:
     virtual ~LabMasksContentProvider() {}
 
     virtual Gtk::Widget *getWidget() = 0;
-    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask) = 0;
+    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) = 0;
 
     virtual ToolPanelListener *listener() = 0;
 
@@ -105,8 +105,8 @@ public:
     LabMasksPanel(LabMasksContentProvider *cp);
     ~LabMasksPanel();
 
-    void setMasks(const std::vector<rtengine::procparams::LabCorrectionMask> &masks, int show_mask_idx);
-    void getMasks(std::vector<rtengine::procparams::LabCorrectionMask> &masks, int &show_mask_idx);
+    void setMasks(const std::vector<rtengine::procparams::Mask> &masks, int show_mask_idx);
+    void getMasks(std::vector<rtengine::procparams::Mask> &masks, int &show_mask_idx);
     int getSelected();
 
     void adjusterChanged(Adjuster *a, double newval) override;
@@ -183,9 +183,10 @@ private:
 
     void onDeltaESpotRequested(rtengine::Coord pos);
     void onDeltaEPickClicked();
+    void onDrawnMaskUpdated();
 
     LabMasksContentProvider *cp_;
-    std::vector<rtengine::procparams::LabCorrectionMask> masks_;
+    std::vector<rtengine::procparams::Mask> masks_;
     unsigned int selected_;
 
     rtengine::ProcEvent EvMaskList;
@@ -199,6 +200,7 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvDeltaEMaskVoid;
     rtengine::ProcEvent EvContrastThresholdMask;
+    rtengine::ProcEvent EvDrawnMask;
 
     class ListColumns: public Gtk::TreeModel::ColumnRecord {
     public:
@@ -285,4 +287,6 @@ private:
     Adjuster *contrastThreshold;
 
     DeltaEColorProvider *deltaE_provider_;
+
+    MyExpander *drawnMask;
 };

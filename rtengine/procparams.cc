@@ -263,6 +263,17 @@ void getFromKeyfile(
     rtengine::sanitizeCurve(value);
 }
 
+void getFromKeyfile(
+    const KeyFile& keyfile,
+    const Glib::ustring& group_name,
+    const Glib::ustring& key,
+    std::vector<float>& value
+)
+{
+    std::vector<double> tmpval = keyfile.get_double_list(group_name, key);
+    value.assign(tmpval.begin(), tmpval.end());
+}
+
 template<typename T>
 bool assignFromKeyfile(const KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, T &value)
 {
@@ -515,7 +526,120 @@ bool DeltaEMask::operator!=(const DeltaEMask &other) const
 }
 
 
-LabCorrectionMask::LabCorrectionMask():
+DrawnMask::Stroke::Stroke():
+    x(0),
+    y(0),
+    radius(1),
+    erase(false)
+{
+}
+
+
+bool DrawnMask::Stroke::operator==(const Stroke &other) const
+{
+    return x == other.x
+        && y == other.y
+        && radius == other.radius
+        && erase == other.erase;
+}
+
+
+bool DrawnMask::Stroke::operator!=(const Stroke &other) const
+{
+    return !(*this == other);
+}
+
+
+DrawnMask::DrawnMask():
+    enabled(false),
+    feather(0.0),
+    transparency(0),
+    smoothness(0),
+    contrast{DCT_Linear},
+    strokes()
+{
+}
+
+
+bool DrawnMask::operator==(const DrawnMask &other) const
+{
+    return enabled == other.enabled
+        && feather == other.feather
+        && transparency == other.transparency
+        && smoothness == other.smoothness
+        && contrast == other.contrast
+        && strokes == other.strokes;
+}
+
+
+bool DrawnMask::operator!=(const DrawnMask &other) const
+{
+    return !(*this == other);
+}
+
+
+bool DrawnMask::isTrivial() const
+{
+    return !enabled;
+}
+
+
+void DrawnMask::strokes_to_list(std::vector<double> &out) const
+{
+    if (strokes.empty()) {
+        return;
+    }
+
+    const auto same =
+        [](const Stroke &a, const Stroke &b) -> bool
+        {
+            return a.radius == b.radius
+                && a.erase == b.erase;
+        };
+
+    auto cur = strokes[0];
+    size_t pos = 0;
+    while (true) {
+        int n = 0;
+        while (pos + n < strokes.size() && same(strokes[pos + n], cur)) {
+            ++n;
+        }
+        out.push_back(n);
+        out.push_back(cur.radius);
+        out.push_back(int(!cur.erase));
+        for (int i = 0; i < n; ++i) {
+            out.push_back(strokes[pos].x);
+            out.push_back(strokes[pos].y);
+            ++pos;
+        }
+        if (pos >= strokes.size()) {
+            break;
+        } else {
+            cur = strokes[pos];
+        }
+    }
+}
+
+
+void DrawnMask::strokes_from_list(const std::vector<double> &v)
+{
+    strokes.clear();
+    size_t pos = 0;
+    while (pos + 3 < v.size()) {
+        int n = v[pos++];
+        Stroke s;
+        s.radius = v[pos++];
+        s.erase = !bool(v[pos++]);
+        for (int i = 0; i < n && pos + 1 < v.size(); ++i) {
+            strokes.push_back(s);
+            strokes.back().x = v[pos++];
+            strokes.back().y = v[pos++];
+        }
+    }
+}
+
+
+Mask::Mask():
     enabled(true),
     hueMask{
         FCT_MinMaxCPoints,
@@ -555,12 +679,13 @@ LabCorrectionMask::LabCorrectionMask():
     areaEnabled(false),
     areaMask(),
     deltaEMask(),
-    contrastThresholdMask(0)
+    contrastThresholdMask(0),
+    drawnMask()
 {
 }
 
 
-bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
+bool Mask::operator==(const Mask &other) const
 {
     return enabled == other.enabled
         && hueMask == other.hueMask
@@ -571,11 +696,12 @@ bool LabCorrectionMask::operator==(const LabCorrectionMask &other) const
         && areaEnabled == other.areaEnabled
         && areaMask == other.areaMask
         && deltaEMask == other.deltaEMask
-        && contrastThresholdMask == other.contrastThresholdMask;
+        && contrastThresholdMask == other.contrastThresholdMask
+        && drawnMask == other.drawnMask;
 }
 
 
-bool LabCorrectionMask::operator!=(const LabCorrectionMask &other) const
+bool Mask::operator!=(const Mask &other) const
 {
     return !(*this == other);
 }
@@ -610,7 +736,7 @@ Glib::ustring mode2str(AreaMask::Shape::Mode mode)
 } // namespace
 
 
-bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
+bool Mask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
 {
     bool ret = false;
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskEnabled" + suffix, enabled);
@@ -662,12 +788,23 @@ bool LabCorrectionMask::load(const KeyFile &keyfile, const Glib::ustring &group_
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "ContrastThresholdMask" + suffix, contrastThresholdMask);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast);
+    std::vector<float> v; // important: use vector<float> to avoid calling rtengine::sanitizeCurve -- need to think of a better way
+    if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskStrokes" + suffix, v)) {
+        ret = true;
+        std::vector<double> vv(v.begin(), v.end());
+        drawnMask.strokes_from_list(vv);
+    }
     
     return ret;
 }
 
 
-void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
+void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
 {
     putToKeyfile(group_name, prefix + "MaskEnabled" + suffix, enabled, keyfile);
     putToKeyfile(group_name, prefix + "HueMask" + suffix, hueMask, keyfile);
@@ -700,6 +837,14 @@ void LabCorrectionMask::save(KeyFile &keyfile, const Glib::ustring &group_name, 
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H, keyfile);
     putToKeyfile(group_name, prefix + "ContrastThresholdMask" + suffix, contrastThresholdMask, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast, keyfile);
+    std::vector<double> v;
+    drawnMask.strokes_to_list(v);
+    putToKeyfile(group_name, prefix + "DrawnMaskStrokes" + suffix, v, keyfile);
 }
 
 
@@ -885,7 +1030,7 @@ bool LocalContrastParams::Region::operator!=(const Region &other) const
 LocalContrastParams::LocalContrastParams():
     enabled(false),
     regions{Region()},
-    labmasks{LabCorrectionMask()},
+    labmasks{Mask()},
     showMask(-1)
 {
 }
@@ -1171,7 +1316,7 @@ bool TextureBoostParams::Region::operator!=(const Region &other) const
 TextureBoostParams::TextureBoostParams() :
     enabled(false),
     regions{Region()},
-    labmasks{LabCorrectionMask()},
+    labmasks{Mask()},
     showMask(-1)
 {
 }
@@ -1891,7 +2036,7 @@ bool GuidedSmoothingParams::Region::operator!=(const Region &other) const
 GuidedSmoothingParams::GuidedSmoothingParams():
     enabled(false),
     regions{Region()},
-    labmasks{LabCorrectionMask()},
+    labmasks{Mask()},
     showMask(-1)
 {
 }
@@ -1953,7 +2098,7 @@ bool ColorCorrectionParams::Region::operator!=(const Region &other) const
 ColorCorrectionParams::ColorCorrectionParams():
     enabled(false),
     regions{Region()},
-    labmasks{LabCorrectionMask()},
+    labmasks{Mask()},
     showMask(-1)
 {
 }
@@ -3280,12 +3425,12 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Local Contrast", "Enabled", localContrast.enabled);
                 
             std::vector<LocalContrastParams::Region> ll;
-            std::vector<LabCorrectionMask> lm;
+            std::vector<Mask> lm;
             bool found = false;
             bool done = false;
             for (int i = 0; !done; ++i) {
                 LocalContrastParams::Region cur;
-                LabCorrectionMask curmask;
+                Mask curmask;
                 done = true;
                 std::string n = i ? std::string("_") + std::to_string(i) : std::string("");
                 if (assignFromKeyfile(keyFile, "Local Contrast", Glib::ustring("Contrast") + n, cur.contrast)) {
@@ -3471,12 +3616,12 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, tbgroup, "Enabled", textureBoost.enabled);
                 
             std::vector<TextureBoostParams::Region> ll;
-            std::vector<LabCorrectionMask> lm;
+            std::vector<Mask> lm;
             bool found = false;
             bool done = false;
             for (int i = 0; !done; ++i) {
                 TextureBoostParams::Region cur;
-                LabCorrectionMask curmask;
+                Mask curmask;
                 done = true;
                 std::string n = i ? std::string("_") + std::to_string(i) : std::string("");
                 if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("Strength") + n, cur.strength)) {
@@ -3829,12 +3974,12 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "GuidedSmoothing", "Enabled", smoothing.enabled);
                 
             std::vector<GuidedSmoothingParams::Region> ll;
-            std::vector<LabCorrectionMask> lm;
+            std::vector<Mask> lm;
             bool found = false;
             bool done = false;
             for (int i = 1; !done; ++i) {
                 GuidedSmoothingParams::Region cur;
-                LabCorrectionMask curmask;
+                Mask curmask;
                 done = true;
                 std::string n = std::to_string(i);
                 int c;
@@ -3877,13 +4022,13 @@ int ProcParams::load(bool load_general,
             const Glib::ustring prefix = "";
             assignFromKeyfile(keyFile, ccgroup, "Enabled", colorcorrection.enabled);
             std::vector<ColorCorrectionParams::Region> lg;
-            std::vector<LabCorrectionMask> lm;
+            std::vector<Mask> lm;
             bool found = false;
             bool done = false;
 
             for (int i = 1; !done; ++i) {
                 ColorCorrectionParams::Region cur;
-                LabCorrectionMask curmask;
+                Mask curmask;
                 done = true;
                 std::string n = std::to_string(i);
 

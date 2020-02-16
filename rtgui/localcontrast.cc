@@ -41,7 +41,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
     {
         mask_list = parent_->EvList;
         h_mask = parent_->EvHueMask;
@@ -52,6 +52,7 @@ public:
         area_mask = parent_->EvAreaMask;
         deltaE_mask = parent_->EvDeltaEMask;
         contrastThreshold_mask = parent_->EvContrastThresholdMask;
+        drawn_mask = parent_->EvDrawnMask;
     }
 
     ToolPanelListener *listener() override
@@ -93,7 +94,7 @@ public:
     bool resetPressed() override
     {
         parent_->regionData = { LocalContrastParams::Region() };
-        parent_->labMasks->setMasks({ LabCorrectionMask() }, -1);
+        parent_->labMasks->setMasks({ Mask() }, -1);
         return true;
     }
     
@@ -180,6 +181,7 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     EvAreaMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_AREAMASK");
     EvDeltaEMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DELTAEMASK");
     EvContrastThresholdMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CONTRASTTHRESHOLDMASK");
+    EvDrawnMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DRAWNMASK");
     
     box = Gtk::manage(new Gtk::VBox());
 
@@ -216,7 +218,7 @@ void LocalContrast::read(const ProcParams *pp)
     auto m = pp->localContrast.labmasks;
     if (regionData.empty()) {
         regionData.emplace_back(rtengine::LocalContrastParams::Region());
-        m.emplace_back(rtengine::LabCorrectionMask());
+        m.emplace_back(rtengine::Mask());
     }
     labMasks->setMasks(m, pp->localContrast.showMask);
 

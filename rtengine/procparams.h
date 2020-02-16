@@ -131,7 +131,34 @@ public:
 };
 
 
-class LabCorrectionMask {
+struct DrawnMask {
+    struct Stroke {
+        double x; // [0,1], with 0 as leftmost point of the image
+        double y; // [0,1]
+        double radius; // [0,1], with 1 as 10% of the image smallest dimension
+        bool erase;
+        Stroke();
+        bool operator==(const Stroke &other) const;
+        bool operator!=(const Stroke &other) const;
+    };
+    bool enabled;
+    double feather; // [0,100]    
+    double transparency; // [0,1] (0 = opaque, 1 = fully transparent)
+    double smoothness; // [0,1] (0 = harsh edges, 1 = fully blurred)
+    std::vector<double> contrast; // curve
+    std::vector<Stroke> strokes;
+        
+    DrawnMask();
+    bool operator==(const DrawnMask &other) const;
+    bool operator!=(const DrawnMask &other) const;
+    bool isTrivial() const;
+
+    void strokes_to_list(std::vector<double> &out) const;
+    void strokes_from_list(const std::vector<double> &v);
+};
+
+
+class Mask {
 public:
     bool enabled;
     std::vector<double> hueMask;
@@ -143,18 +170,17 @@ public:
     AreaMask areaMask;
     DeltaEMask deltaEMask;
     int contrastThresholdMask;
+    DrawnMask drawnMask;
 
-    LabCorrectionMask();
-    bool operator==(const LabCorrectionMask &other) const;
-    bool operator!=(const LabCorrectionMask &other) const;
+    Mask();
+    bool operator==(const Mask &other) const;
+    bool operator!=(const Mask &other) const;
 
     bool load(const KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix);
     void save(KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix) const;
 };
-
-
 
 
 
@@ -447,7 +473,7 @@ struct LocalContrastParams {
 
     bool enabled;
     std::vector<Region> regions;
-    std::vector<LabCorrectionMask> labmasks;
+    std::vector<Mask> labmasks;
     int showMask;
 
     LocalContrastParams();
@@ -657,7 +683,7 @@ struct TextureBoostParams {
 
     bool   enabled;
     std::vector<Region> regions;
-    std::vector<LabCorrectionMask> labmasks;
+    std::vector<Mask> labmasks;
     int showMask;
 
     TextureBoostParams();
@@ -1099,7 +1125,7 @@ struct GuidedSmoothingParams {
     };
     bool enabled;
     std::vector<Region> regions;
-    std::vector<LabCorrectionMask> labmasks;
+    std::vector<Mask> labmasks;
     int showMask;
 
     GuidedSmoothingParams();
@@ -1135,7 +1161,7 @@ struct ColorCorrectionParams {
 
     bool enabled;
     std::vector<Region> regions;
-    std::vector<LabCorrectionMask> labmasks;
+    std::vector<Mask> labmasks;
     int showMask;
 
     ColorCorrectionParams();
