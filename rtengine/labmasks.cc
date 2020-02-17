@@ -218,60 +218,85 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
     std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
 
     struct StrokeEval {
-        StrokeEval(const DrawnMask::Stroke &s,
-                   int ox, int oy, int width, int height,
-                   int mask_w, int mask_h)
+        StrokeEval(int ox, int oy, int width, int height,
+                   int mask_w, int mask_h, bool addmode):
+            ox_(ox), oy_(oy),
+            width_(width), height_(height),
+            mask_w_(mask_w), mask_h_(mask_h),
+            addmode_(addmode),
+            radius_(-1), neg_(false)
         {
-            cx = width * s.x - ox;
-            cy = height * s.y - oy;
-            radius = std::min(width, height) * s.radius * 0.25;
-            neg = s.erase;
+        }
 
-            lx = std::max(cx - radius, 0);
-            ly = std::max(cy - radius, 0);
-            ux = std::min(cx + radius, mask_w-1);
-            uy = std::min(cy + radius, mask_h-1);
+        void update(const DrawnMask::Stroke &s)
+        {
+            int r = std::min(width_, height_) * s.radius * 0.25;
+
+            if (r != radius_ || neg_ != s.erase) {
+                radius_ = r;
+                neg_ = s.erase;
+            
+                int w = 2*radius_ + 1;
+                int h = 2*radius_ + 1;
+                buf_(w, h);
+
+                for (int y = 0; y < h; ++y) {
+                    for (int x = 0; x < w; ++x) {
+                        float d = std::sqrt(SQR(x - radius_) + SQR(y - radius_));
+                        if (d <= radius_) {
+                            buf_[y][x] = neg_ ? 0.f : 1.f;
+                        } else {
+                            buf_[y][x] = -1.f;
+                        }
+                    }
+                }
+            }
+
+            int cx = width_ * s.x - ox_;
+            int cy = height_ * s.y - oy_;
+            lx = std::max(cx - radius_, 0);
+            ly = std::max(cy - radius_, 0);
+            ux = std::min(cx + radius_, mask_w_-1);
+            uy = std::min(cy + radius_, mask_h_-1);
         }
 
         bool operator()(int x, int y, float &val) const
         {
-            if (x < lx || x > ux || y < ly || y > uy) {
-                return false;
-            }
-            float d = std::sqrt(SQR(x - cx) + SQR(y - cy));
-            if (d <= radius) {
-                if (neg) {
-                    val = -1.f;
-                } else {
-                    val = 1.f;
-                }
-                return true;
-            }
-            
-            return false;
+            val = buf_[y - ly][x - lx];
+            return val >= 0.f;
         }
 
-        int cx;
-        int cy;
-        int radius;
         int lx;
         int ly;
         int ux;
         int uy;
-        bool neg;
+
+    private:
+        int ox_;
+        int oy_;
+        int width_;
+        int height_;
+        int mask_w_;
+        int mask_h_;
+        bool addmode_;
+        int radius_;
+        bool neg_;
+        
+        array2D<float> buf_;
     };
 
     double maxradius = 0.0;
+    StrokeEval se(ox, oy, width, height, mask_w, mask_h, add);
 
     for (size_t i = 0; i < drawnMask.strokes.size(); ++i) {
         const auto &s = drawnMask.strokes[i];
-        StrokeEval se(s, ox, oy, width, height, mask_w, mask_h);
+        se.update(s);
         maxradius = std::max(maxradius, s.radius);
         for (int y = se.ly; y <= se.uy; ++y) {
             for (int x = se.lx; x <= se.ux; ++x) {
                 float v;
                 if (se(x, y, v)) {
-                    mask[y][x] = (v + 1.f) / 2.f;
+                    mask[y][x] = v;
                 }
             }
         }

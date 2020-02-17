@@ -289,7 +289,8 @@ public:
         Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
         f->add(*vb);
 
-        radius_ = Gtk::manage(new Adjuster(M("TP_LABMASKS_DRAWNMASK_RADIUS"), 1, 100, 0.1, 10));
+        radius_ = Gtk::manage(new Adjuster(M("TP_LABMASKS_DRAWNMASK_RADIUS"), 0.1, 100, 0.1, 10));
+        radius_->setLogScale(2, 0);
         vb->pack_start(*radius_);
 
         erase_ = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_DRAWNMASK_ERASE")));
