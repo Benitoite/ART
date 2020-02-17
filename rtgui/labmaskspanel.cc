@@ -221,50 +221,70 @@ public:
         imgRect->filled = true;
         mouseOverGeometry.push_back(imgRect);
 
+
+        const auto set_btn_style =
+            [](Gtk::Button *w) -> void
+            {
+                w->set_relief(Gtk::RELIEF_NONE);
+                w->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
+                w->set_can_focus(false);
+            };
+
         auto tb = Gtk::manage(new ToolParamBlock());
         add(*tb, false);
         setLevel(1);
 
+        Gtk::VBox *vbg = Gtk::manage(new Gtk::VBox());
         Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
 
+        Gtk::Button *btncopy = Gtk::manage(new Gtk::Button());
+        btncopy->add(*Gtk::manage(new RTImage("copy.png")));
+        btncopy->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_COPY_TOOLTIP"));
+        btncopy->signal_clicked().connect(sigc::mem_fun(*this, &DrawnMaskPanel::on_copy_pressed));
+        set_btn_style(btncopy);
+        hb->pack_start(*btncopy, Gtk::PACK_SHRINK);
+
+        Gtk::Button *btnpaste = Gtk::manage(new Gtk::Button());
+        btnpaste->add(*Gtk::manage(new RTImage("paste.png")));
+        btnpaste->set_tooltip_text(M("TP_LABMASKS_AREA_MASK_PASTE_TOOLTIP"));
+        btnpaste->signal_clicked().connect(sigc::mem_fun(*this, &DrawnMaskPanel::on_paste_pressed));
+        set_btn_style(btnpaste);
+        hb->pack_start(*btnpaste, Gtk::PACK_SHRINK);
+
         info_ = Gtk::manage(new Gtk::Label(M("TP_LABMASKS_DRAWNMASK_INFO")));
-        info_->set_alignment(Gtk::ALIGN_START);
         hb->pack_start(*info_, Gtk::PACK_EXPAND_WIDGET, 4);
-                        
+        
         const char *img[2] = {
             "area-shape-intersect.png",
             "area-shape-add.png"
+        };
+        const char *tips[2] = {
+            "TP_LABMASKS_DRAWNMASK_INTERSECT_TOOLTIP",
+            "TP_LABMASKS_DRAWNMASK_ADD_TOOLTIP"
         };
         for (int i = 0; i < 2; ++i) {
             mode_[i] = Gtk::manage(new Gtk::ToggleButton());
             mode_[i]->add(*Gtk::manage(new RTImage(img[i])));
             modeconn_[i] = mode_[i]->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &DrawnMaskPanel::on_mode_changed), i));
-            mode_[i]->set_relief(Gtk::RELIEF_NONE);
-            mode_[i]->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
-            mode_[i]->set_can_focus(false);
-            hb->pack_start(*mode_[i], Gtk::PACK_SHRINK, 1);
+            set_btn_style(mode_[i]);
+            mode_[i]->set_tooltip_text(M(tips[i]));
         }
 
         toggle_ = Gtk::manage(new Gtk::ToggleButton());
         toggle_->add(*Gtk::manage(new RTImage("edit-point.png")));
-        toggle_->set_relief(Gtk::RELIEF_NONE);
-        toggle_->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
-        toggle_->set_can_focus(false);
+        set_btn_style(toggle_);
         toggle_->set_tooltip_text(M("TP_LABMASKS_DRAWNMASK_TOGGLE_TIP"));
-        hb->pack_start(*toggle_, Gtk::PACK_SHRINK, 4);
         toggle_->signal_toggled().connect(sigc::mem_fun(this, &DrawnMaskPanel::on_toggled));
 
         reset_ = Gtk::manage(new Gtk::Button());
         reset_->add(*Gtk::manage(new RTImage("undo.png")));
-        reset_->set_relief(Gtk::RELIEF_NONE);
-        reset_->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
-        reset_->set_can_focus(false);
+        set_btn_style(reset_);
         reset_->set_tooltip_text(M("TP_LABMASKS_DRAWNMASK_RESET_TIP"));
-        hb->pack_start(*reset_, Gtk::PACK_SHRINK, 4);
         reset_->signal_clicked().connect(sigc::mem_fun(this, &DrawnMaskPanel::on_reset));
 
-        tb->pack_start(*hb);
-
+        vbg->pack_start(*hb);
+        hb = Gtk::manage(new Gtk::HBox());
+        
         Gtk::Frame *f = Gtk::manage(new Gtk::Frame(M("TP_LABMASKS_DRAWNMASK_PEN_SETTINGS")));
         Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
         f->add(*vb);
@@ -274,7 +294,19 @@ public:
 
         erase_ = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_DRAWNMASK_ERASE")));
         vb->pack_start(*erase_);
-        tb->pack_start(*f);
+
+        vbg->pack_start(*f);
+        hb->pack_start(*vbg);
+
+        Gtk::Grid *grid = Gtk::manage(new Gtk::Grid());
+        setExpandAlignProperties(grid, false, true, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
+        grid->attach(*reset_, 0, 1, 1, 1);
+        grid->attach(*toggle_, 0, 2, 1, 1);
+        grid->attach(*mode_[0], 0, 3, 1, 1);
+        grid->attach(*mode_[1], 0, 4, 1, 1);
+        hb->pack_start(*grid, Gtk::PACK_SHRINK, 2);
+        
+        tb->pack_start(*hb);
         
         feather_ = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_FEATHER"), 0, 100, 0.1, 0));
         tb->pack_start(*feather_);
@@ -372,7 +404,7 @@ public:
     {
         mask_ = mask;
         if (mask_) {
-            info_->set_text(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
+            info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
             setEnabled(mask_->enabled);
             feather_->setValue(mask_->feather);
             transparency_->setValue(mask_->transparency * 100.0);
@@ -401,7 +433,7 @@ private:
     {
         if (mask_) {
             mask_->strokes.clear();
-            info_->set_text(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
+            info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
             sig_draw_updated_.emit();
         }
     }
@@ -432,7 +464,7 @@ private:
         s.y = double(p.y) / double(h);
         s.radius = radius_->getValue() / 100.0;
         s.erase = erase_->get_active();
-        info_->set_text(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
+        info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
     }
 
     void update_pen(bool dragging)
@@ -465,6 +497,21 @@ private:
         set_mode(i);
         if (mask_) {
             mask_->addmode = mode_[1]->get_active();
+            sig_draw_updated_.emit();
+        }
+    }
+
+    void on_copy_pressed()
+    {
+        if (mask_) {
+            clipboard.setDrawnMask(*mask_);
+        }
+    }
+
+    void on_paste_pressed()
+    {
+        if (mask_ && clipboard.hasDrawnMask()) {
+            *mask_ = clipboard.getDrawnMask();
             sig_draw_updated_.emit();
         }
     }
@@ -1076,6 +1123,14 @@ void LabMasksPanel::populateList()
         if (r.areaEnabled && !r.areaMask.isTrivial()) {
             am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
         }
+        if (!r.drawnMask.isTrivial()) {
+            if (am.empty()) {
+                am = "\n";
+            } else {
+                am += " ";
+            }
+            am += Glib::ustring::compose("%1 stroke%2", r.drawnMask.strokes.size(), r.drawnMask.strokes.size() == 1 ? "" : "s");
+        }
         row[list_model_columns_->mask] = 
             Glib::ustring::compose(
                 "%1%2%3%4%7%5%6",
@@ -1145,6 +1200,14 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
     if (r.areaEnabled && !r.areaMask.isTrivial()) {
         am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
                                     r.areaMask.shapes.size() > 1 ? "s" : "");
+    }
+    if (!r.drawnMask.isTrivial()) {
+        if (am.empty()) {
+            am = "\n";
+        } else {
+            am += " ";
+        }
+        am += Glib::ustring::compose("%1 stroke%2", r.drawnMask.strokes.size(), r.drawnMask.strokes.size() == 1 ? "" : "s");
     }
     row[list_model_columns_->mask] = 
         Glib::ustring::compose(

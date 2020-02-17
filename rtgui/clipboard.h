@@ -39,6 +39,7 @@ private:
     std::vector<double> diagonalCurve;
     std::vector<double> flatCurve;
     rtengine::procparams::AreaMask areaMask;
+    rtengine::procparams::DrawnMask drawnMask;
 
 public:
     void setIPTC(const rtengine::procparams::IPTCPairs& iptcc)
@@ -136,9 +137,19 @@ public:
         return !areaMask.isTrivial();
     }
 
+    bool hasDrawnMask()
+    {
+        return !drawnMask.isTrivial();
+    }
+    
     const rtengine::procparams::AreaMask &getAreaMask()
     {
         return areaMask;
+    }
+
+    const rtengine::procparams::DrawnMask &getDrawnMask()
+    {
+        return drawnMask;
     }
 
     void setAreaMask(const rtengine::procparams::AreaMask &am)
@@ -146,6 +157,11 @@ public:
         areaMask = am;
     }
 
+    void setDrawnMask(const rtengine::procparams::DrawnMask &dm)
+    {
+        drawnMask = dm;
+    }
+    
     Clipboard();
     ~Clipboard();
 };
