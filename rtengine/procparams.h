@@ -147,6 +147,7 @@ struct DrawnMask {
     double smoothness; // [0,1] (0 = harsh edges, 1 = fully blurred)
     std::vector<double> contrast; // curve
     std::vector<Stroke> strokes;
+    bool addmode;
         
     DrawnMask();
     bool operator==(const DrawnMask &other) const;

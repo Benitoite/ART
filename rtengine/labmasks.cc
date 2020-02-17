@@ -210,9 +210,12 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
     const int mask_w = guide.width();
     const int mask_h = guide.height();
 
+    const bool add = drawnMask.addmode;
+
     mask(mask_w, mask_h);
     float *maskdata = mask;
-    std::fill(maskdata, maskdata + (mask.width() * mask.height()), 0.f);
+    const float bgcolor = add ? 0.5f : 0.f;
+    std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
 
     struct StrokeEval {
         StrokeEval(const DrawnMask::Stroke &s,
@@ -238,7 +241,7 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
             float d = std::sqrt(SQR(x - cx) + SQR(y - cy));
             if (d <= radius) {
                 if (neg) {
-                    val = 0.f;
+                    val = -1.f;
                 } else {
                     val = 1.f;
                 }
@@ -255,18 +258,11 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
         int ly;
         int ux;
         int uy;
-        float alpha;
-        float sigma;
-        float r2;
         bool neg;
     };
 
-    const float alpha = 1.f - LIM01(drawnMask.transparency);
     double maxradius = 0.0;
 
-#ifdef _OPENMP
-#   pragma omp parallel for if (multithread)
-#endif
     for (size_t i = 0; i < drawnMask.strokes.size(); ++i) {
         const auto &s = drawnMask.strokes[i];
         StrokeEval se(s, ox, oy, width, height, mask_w, mask_h);
@@ -275,7 +271,7 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
             for (int x = se.lx; x <= se.ux; ++x) {
                 float v;
                 if (se(x, y, v)) {
-                    mask[y][x] = alpha * v;
+                    mask[y][x] = (v + 1.f) / 2.f;
                 }
             }
         }
@@ -307,6 +303,29 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
             }
         }
     }
+
+    if (add) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < mask_h; ++y) {
+            for (int x = 0; x < mask_w; ++x) {
+                mask[y][x] = (mask[y][x] * 2.f - 1.f);
+            }
+        }
+    }
+
+#if 1
+    if (mask_w > 400) {
+        Imagefloat tmp(mask_w, mask_h);
+        for (int y = 0; y < mask_h; ++y) {
+            for (int x = 0; x < mask_w; ++x) {
+                tmp.r(y, x) = tmp.g(y, x) = tmp.b(y, x) = (mask[y][x] + 1.f) / 2.f * 65535.f;
+            }
+        }
+        tmp.saveTIFF("/tmp/drawnmask.tif", 16);
+    }
+#endif
     
     return true;
 }
@@ -610,16 +629,28 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<Mask> &masks, int offse
 
     for (int i = begin_idx; i < end_idx; ++i) {
         if (generate_drawn_mask(offset_x, offset_y, full_width, full_height, masks[i].drawnMask, guide, multithread, amask)) {
+            const bool add = masks[i].drawnMask.addmode;
+            const float alpha = 1.f - LIM01(masks[i].drawnMask.transparency);
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif
             for (int y = 0; y < H; ++y) {
                 for (int x = 0; x < W; ++x) {
-                    if (abmask) {
-                        (*abmask)[i][y][x] *= amask[y][x];
-                    }
-                    if (Lmask) {
-                        (*Lmask)[i][y][x] *= amask[y][x];
+                    const float f = alpha * amask[y][x];
+                    if (add) {
+                        if (abmask) {
+                            (*abmask)[i][y][x] = LIM01((*abmask)[i][y][x] + f);
+                        }
+                        if (Lmask) {
+                            (*Lmask)[i][y][x] = LIM01((*Lmask)[i][y][x] + f);
+                        }
+                    } else {
+                        if (abmask) {
+                            (*abmask)[i][y][x] *= f;
+                        }
+                        if (Lmask) {
+                            (*Lmask)[i][y][x] *= f;
+                        }
                     }
                 }
             }

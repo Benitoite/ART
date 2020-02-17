@@ -556,7 +556,8 @@ DrawnMask::DrawnMask():
     transparency(0),
     smoothness(0),
     contrast{DCT_Linear},
-    strokes()
+    strokes(),
+    addmode(false)
 {
 }
 
@@ -568,7 +569,8 @@ bool DrawnMask::operator==(const DrawnMask &other) const
         && transparency == other.transparency
         && smoothness == other.smoothness
         && contrast == other.contrast
-        && strokes == other.strokes;
+        && strokes == other.strokes
+        && addmode == other.addmode;
 }
 
 
@@ -793,6 +795,7 @@ bool Mask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const G
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskAddMode" + suffix, drawnMask.addmode);
     std::vector<float> v; // important: use vector<float> to avoid calling rtengine::sanitizeCurve -- need to think of a better way
     if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskStrokes" + suffix, v)) {
         ret = true;
@@ -842,6 +845,7 @@ void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::u
     putToKeyfile(group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskAddMode" + suffix, drawnMask.addmode, keyfile);
     std::vector<double> v;
     drawnMask.strokes_to_list(v);
     putToKeyfile(group_name, prefix + "DrawnMaskStrokes" + suffix, v, keyfile);

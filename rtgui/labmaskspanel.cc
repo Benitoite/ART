@@ -222,7 +222,7 @@ public:
         mouseOverGeometry.push_back(imgRect);
 
         auto tb = Gtk::manage(new ToolParamBlock());
-        add(*tb);//, false);
+        add(*tb, false);
         setLevel(1);
 
         Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
@@ -230,7 +230,21 @@ public:
         info_ = Gtk::manage(new Gtk::Label(M("TP_LABMASKS_DRAWNMASK_INFO")));
         info_->set_alignment(Gtk::ALIGN_START);
         hb->pack_start(*info_, Gtk::PACK_EXPAND_WIDGET, 4);
-                
+                        
+        const char *img[2] = {
+            "area-shape-intersect.png",
+            "area-shape-add.png"
+        };
+        for (int i = 0; i < 2; ++i) {
+            mode_[i] = Gtk::manage(new Gtk::ToggleButton());
+            mode_[i]->add(*Gtk::manage(new RTImage(img[i])));
+            modeconn_[i] = mode_[i]->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &DrawnMaskPanel::on_mode_changed), i));
+            mode_[i]->set_relief(Gtk::RELIEF_NONE);
+            mode_[i]->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
+            mode_[i]->set_can_focus(false);
+            hb->pack_start(*mode_[i], Gtk::PACK_SHRINK, 1);
+        }
+
         toggle_ = Gtk::manage(new Gtk::ToggleButton());
         toggle_->add(*Gtk::manage(new RTImage("edit-point.png")));
         toggle_->set_relief(Gtk::RELIEF_NONE);
@@ -282,8 +296,6 @@ public:
         tb->pack_start(*cg, Gtk::PACK_SHRINK, 2);
         
         signal_enabled_toggled().connect(sigc::mem_fun(*this, &DrawnMaskPanel::on_enabled_toggled));
-
-        show_all_children();
     }
 
     ~DrawnMaskPanel()
@@ -366,6 +378,7 @@ public:
             transparency_->setValue(mask_->transparency * 100.0);
             smoothness_->setValue(mask_->smoothness * 100.0);
             contrast_->setCurve(mask_->contrast);
+            set_mode(mask_->addmode ? 1 : 0);
         }
     }
 
@@ -432,7 +445,29 @@ private:
             pen_->center += provider->deltaImage;
         }
         pen_->radius = radius_->getValue() / 100.0 * std::min(w, h) * 0.25;
-    }        
+    }
+
+    void set_mode(int i)
+    {
+        for (int j = 0; j < 2; ++j) {
+            ConnectionBlocker blocker(modeconn_[j]);
+            mode_[j]->set_active(i == j);
+        }
+    }
+
+    void on_mode_changed(int i)
+    {
+        if (!mode_[i]->get_active()) {
+            ConnectionBlocker blocker(modeconn_[i]);
+            mode_[i]->set_active(true);
+            return;
+        }
+        set_mode(i);
+        if (mask_) {
+            mask_->addmode = mode_[1]->get_active();
+            sig_draw_updated_.emit();
+        }
+    }
     
     rtengine::procparams::DrawnMask *mask_;
     Circle *pen_;
@@ -445,6 +480,8 @@ private:
     Adjuster *smoothness_;
     Gtk::CheckButton *erase_;
     DiagonalCurveEditor *contrast_;
+    Gtk::ToggleButton *mode_[2];
+    sigc::connection modeconn_[2];
 
     SigDrawUpdated sig_draw_updated_;
 };
