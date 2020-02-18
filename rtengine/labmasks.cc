@@ -340,7 +340,7 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
         }
     }
 
-#if 1
+#if 0
     if (mask_w > 400) {
         Imagefloat tmp(mask_w, mask_h);
         for (int y = 0; y < mask_h; ++y) {
