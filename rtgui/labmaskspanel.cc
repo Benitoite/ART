@@ -405,6 +405,9 @@ public:
     {
         mask_ = mask;
         if (mask_) {
+            if (toggle_->get_active()) {
+                toggle_->set_active(false);
+            }
             info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
             setEnabled(mask_->enabled);
             feather_->setValue(mask_->feather);
