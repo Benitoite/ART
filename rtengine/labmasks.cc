@@ -214,42 +214,51 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
 
     mask(mask_w, mask_h);
     float *maskdata = mask;
-    const float bgcolor = add ? 0.5f : 0.f;
+    const float bgcolor = 0.f;
     std::fill(maskdata, maskdata + (mask.width() * mask.height()), bgcolor);
 
     struct StrokeEval {
         StrokeEval(int ox, int oy, int width, int height,
-                   int mask_w, int mask_h, bool addmode):
+                   int mask_w, int mask_h):
             ox_(ox), oy_(oy),
             width_(width), height_(height),
             mask_w_(mask_w), mask_h_(mask_h),
-            addmode_(addmode),
             radius_(-1), neg_(false)
         {
+            curflag_ = 1;
+            flag_.resize(mask_w_ * mask_h_, 0);
         }
 
         void update(const DrawnMask::Stroke &s)
         {
             int r = std::min(width_, height_) * s.radius * 0.25;
 
-            if (r != radius_ || neg_ != s.erase) {
+            if (r != radius_ || neg_ != s.erase || hardness_ != s.hardness) {
                 radius_ = r;
                 neg_ = s.erase;
-            
+                hardness_ = s.hardness;
+
                 int w = 2*radius_ + 1;
                 int h = 2*radius_ + 1;
+                const float val = (neg_ ? -1.f : 1.f) + (1.f - LIM01(hardness_)) * (neg_ ? 0.9f : -0.9f);
+                
                 buf_(w, h);
-
                 for (int y = 0; y < h; ++y) {
                     for (int x = 0; x < w; ++x) {
                         float d = std::sqrt(SQR(x - radius_) + SQR(y - radius_));
                         if (d <= radius_) {
-                            buf_[y][x] = neg_ ? 0.f : 1.f;
+                            buf_[y][x] = val;
                         } else {
-                            buf_[y][x] = -1.f;
+                            buf_[y][x] = RT_NAN;
                         }
                     }
                 }
+
+                // for (auto i : flagmods_) {
+                //     flag_[i] = curflag_;
+                // }
+                ++curflag_;
+                // flagmods_.clear();
             }
 
             int cx = width_ * s.x - ox_;
@@ -260,10 +269,21 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
             uy = std::min(cy + radius_, mask_h_-1);
         }
 
-        bool operator()(int x, int y, float &val) const
+        bool operator()(int x, int y, float &val)
         {
             val = buf_[y - ly][x - lx];
-            return val >= 0.f;
+            size_t idx = y * mask_w_ + x;
+            if (!xisnanf(val) && flag_[idx] != curflag_) {
+                flag_[idx] = curflag_;
+                // flagmods_.push_back(idx);
+                return true;
+            }
+            return false;
+        }
+
+        bool is_bg(int x, int y) const
+        {
+            return flag_[y * mask_w_ + x] == 0;
         }
 
         int lx;
@@ -278,15 +298,18 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
         int height_;
         int mask_w_;
         int mask_h_;
-        bool addmode_;
         int radius_;
         bool neg_;
+        double hardness_;
         
         array2D<float> buf_;
+        std::vector<uint16_t> flag_;
+        std::vector<size_t> flagmods_;
+        uint16_t curflag_;
     };
 
     double maxradius = 0.0;
-    StrokeEval se(ox, oy, width, height, mask_w, mask_h, add);
+    StrokeEval se(ox, oy, width, height, mask_w, mask_h);
 
     for (size_t i = 0; i < drawnMask.strokes.size(); ++i) {
         const auto &s = drawnMask.strokes[i];
@@ -296,7 +319,34 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
             for (int x = se.lx; x <= se.ux; ++x) {
                 float v;
                 if (se(x, y, v)) {
-                    mask[y][x] = v;
+                    //mask[y][x] = LIM(mask[y][x] + v, -1.f, 1.f);
+                    if (add) {
+                        if (signf(mask[y][x]) == signf(v)) {
+                            mask[y][x] = LIM(mask[y][x] + v, -1.f, 1.f);
+                        } else {
+                            mask[y][x] = LIM(LIM01(mask[y][x]) + v, -1.f, 1.f);
+                        }
+                    } else {
+                        mask[y][x] = LIM01(mask[y][x] + v);
+                    }
+                }
+            }
+        }
+    }
+
+    DiagonalCurve ccurve(drawnMask.contrast);
+    const bool needscale = add && (drawnMask.smoothness > 0.f || drawnMask.feather > 0 || !ccurve.isIdentity());
+    
+    if (needscale) {
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < mask_h; ++y) {
+            for (int x = 0; x < mask_w; ++x) {
+                if (se.is_bg(x, y)) {
+                    mask[y][x] = 0.5f;
+                } else {
+                    mask[y][x] = (mask[y][x] + 1.f) / 2.f;
                 }
             }
         }
@@ -317,19 +367,18 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
         }
     }
 
-    DiagonalCurve curve(drawnMask.contrast);
-    if (!curve.isIdentity()) {
+    if (!ccurve.isIdentity()) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
         for (int y = 0; y < mask_h; ++y) {
             for (int x = 0; x < mask_w; ++x) {
-                mask[y][x] = curve.getVal(mask[y][x]);
+                mask[y][x] = ccurve.getVal(mask[y][x]);
             }
         }
     }
 
-    if (add) {
+    if (needscale) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif

@@ -530,6 +530,7 @@ DrawnMask::Stroke::Stroke():
     x(0),
     y(0),
     radius(1),
+    hardness(1),
     erase(false)
 {
 }
@@ -540,7 +541,8 @@ bool DrawnMask::Stroke::operator==(const Stroke &other) const
     return x == other.x
         && y == other.y
         && radius == other.radius
-        && erase == other.erase;
+        && erase == other.erase
+        && hardness == other.hardness;
 }
 
 
@@ -596,7 +598,8 @@ void DrawnMask::strokes_to_list(std::vector<double> &out) const
         [](const Stroke &a, const Stroke &b) -> bool
         {
             return a.radius == b.radius
-                && a.erase == b.erase;
+                && a.erase == b.erase
+                && a.hardness == b.hardness;
         };
 
     auto cur = strokes[0];
@@ -609,6 +612,7 @@ void DrawnMask::strokes_to_list(std::vector<double> &out) const
         out.push_back(n);
         out.push_back(cur.radius);
         out.push_back(int(!cur.erase));
+        out.push_back(cur.hardness);
         for (int i = 0; i < n; ++i) {
             out.push_back(strokes[pos].x);
             out.push_back(strokes[pos].y);
@@ -627,11 +631,12 @@ void DrawnMask::strokes_from_list(const std::vector<double> &v)
 {
     strokes.clear();
     size_t pos = 0;
-    while (pos + 3 < v.size()) {
+    while (pos + 4 < v.size()) {
         int n = v[pos++];
         Stroke s;
         s.radius = v[pos++];
         s.erase = !bool(v[pos++]);
+        s.hardness = v[pos++];
         for (int i = 0; i < n && pos + 1 < v.size(); ++i) {
             strokes.push_back(s);
             strokes.back().x = v[pos++];

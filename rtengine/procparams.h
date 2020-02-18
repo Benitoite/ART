@@ -136,6 +136,7 @@ struct DrawnMask {
         double x; // [0,1], with 0 as leftmost point of the image
         double y; // [0,1]
         double radius; // [0,1], with 1 as 10% of the image smallest dimension
+        double hardness; // [0,1] with 1 as opaque (strongest)
         bool erase;
         Stroke();
         bool operator==(const Stroke &other) const;

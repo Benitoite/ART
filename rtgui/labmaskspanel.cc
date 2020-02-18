@@ -293,6 +293,9 @@ public:
         radius_->setLogScale(2, 0);
         vb->pack_start(*radius_);
 
+        hardness_ = Gtk::manage(new Adjuster(M("TP_LABMASKS_DRAWNMASK_HARDNESS"), 0, 100, 1, 100));
+        vb->pack_start(*hardness_);
+
         erase_ = Gtk::manage(new Gtk::CheckButton(M("TP_LABMASKS_DRAWNMASK_ERASE")));
         vb->pack_start(*erase_);
 
@@ -397,24 +400,26 @@ public:
 
     void switchOffEditMode() override
     {
-        //EditSubscriber::switchOffEditMode();
         toggle_->set_active(false);
     }
 
     void setTargetMask(rtengine::procparams::DrawnMask *mask)
     {
-        mask_ = mask;
-        if (mask_) {
-            if (toggle_->get_active()) {
-                toggle_->set_active(false);
+        if (mask != mask_) {
+            mask_ = nullptr;
+            if (mask) {
+                if (toggle_->get_active()) {
+                    toggle_->set_active(false);
+                }
+                info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask->strokes.size()));
+                setEnabled(mask->enabled);
+                feather_->setValue(mask->feather);
+                transparency_->setValue(mask->transparency * 100.0);
+                smoothness_->setValue(mask->smoothness * 100.0);
+                contrast_->setCurve(mask->contrast);
+                set_mode(mask->addmode ? 1 : 0);
             }
-            info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
-            setEnabled(mask_->enabled);
-            feather_->setValue(mask_->feather);
-            transparency_->setValue(mask_->transparency * 100.0);
-            smoothness_->setValue(mask_->smoothness * 100.0);
-            contrast_->setCurve(mask_->contrast);
-            set_mode(mask_->addmode ? 1 : 0);
+            mask_ = mask;
         }
     }
 
@@ -468,6 +473,7 @@ private:
         s.y = double(p.y) / double(h);
         s.radius = radius_->getValue() / 100.0;
         s.erase = erase_->get_active();
+        s.hardness = hardness_->getValue() / 100.0;
         info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask_->strokes.size()));
     }
 
@@ -529,6 +535,7 @@ private:
     Adjuster *radius_;
     Adjuster *transparency_;
     Adjuster *smoothness_;
+    Adjuster *hardness_;
     Gtk::CheckButton *erase_;
     DiagonalCurveEditor *contrast_;
     Gtk::ToggleButton *mode_[2];
@@ -916,16 +923,16 @@ ToolPanelListener *LabMasksPanel::getListener()
 void LabMasksPanel::disableListener()
 {
     listenerDisabled.push_back(true);
-    static_cast<DrawnMaskPanel *>(drawnMask)->setTargetMask(nullptr);
+    //static_cast<DrawnMaskPanel *>(drawnMask)->setTargetMask(nullptr);
 }
 
 
 void LabMasksPanel::enableListener()
 {
     listenerDisabled.pop_back();
-    if (listenerDisabled.empty() || !listenerDisabled.back()) {
-        static_cast<DrawnMaskPanel *>(drawnMask)->setTargetMask(&masks_[selected_].drawnMask);
-    }
+    // if (listenerDisabled.empty() || !listenerDisabled.back()) {
+    //     static_cast<DrawnMaskPanel *>(drawnMask)->setTargetMask(&masks_[selected_].drawnMask);
+    // }
 }
 
 
@@ -1396,6 +1403,7 @@ void LabMasksPanel::setMasks(const std::vector<rtengine::procparams::Mask> &mask
     } else {
         showMask->set_active(false);
     }
+    static_cast<DrawnMaskPanel *>(drawnMask)->setTargetMask(nullptr);
     populateList();
     area_shape_index_ = 0;
     maskShow(selected_);
