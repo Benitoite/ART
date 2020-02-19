@@ -47,6 +47,7 @@ private:
     rtengine::ProcEvent EvLocalContrastCurve;
     
     rtengine::ProcEvent EvList;
+    rtengine::ProcEvent EvParametricMask;
     rtengine::ProcEvent EvHueMask;
     rtengine::ProcEvent EvChromaticityMask;
     rtengine::ProcEvent EvLightnessMask;

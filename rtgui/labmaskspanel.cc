@@ -30,9 +30,9 @@ using Shape = rtengine::procparams::AreaMask::Shape;
 
 constexpr int ID_HUE_MASK = 5;
 
-inline bool hasMask(const std::vector<double> &dflt, const std::vector<double> &mask)
+inline bool hasMask(const rtengine::procparams::Mask &m, const std::vector<double> &dflt, const std::vector<double> &mask)
 {
-    return !(mask.empty() || mask[0] == FCT_Linear || mask == dflt);
+    return m.parametricMask.enabled && !(mask.empty() || mask[0] == FCT_Linear || mask == dflt);
 }
 
 
@@ -558,7 +558,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     deltaE_provider_(nullptr)
 {
     Gtk::Widget *child = cp_->getWidget();
-    cp_->getEvents(EvMaskList, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask, EvDeltaEMask, EvContrastThresholdMask, EvDrawnMask);
+    cp_->getEvents(EvMaskList, EvParametricMask, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask, EvDeltaEMask, EvContrastThresholdMask, EvDrawnMask);
     EvAreaMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvAreaMask.get_message());
     EvDeltaEMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvDeltaEMask.get_message());
     
@@ -653,7 +653,13 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     maskInverted->signal_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onMaskInvertedChanged));
     hb->pack_start(*maskInverted);
     mask_box->pack_start(*hb);
-    
+
+    parametricMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_PARAMETRIC")));
+    ToolParamBlock *tb = Gtk::manage(new ToolParamBlock());
+    parametricMask->add(*tb, false);
+    parametricMask->setLevel(1);
+    parametricMask->signal_enabled_toggled().connect(sigc::mem_fun(*this, &LabMasksPanel::onParametricMaskEnableToggled));
+        
     maskEditorGroup = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, "", 0.7));
     maskEditorGroup->setCurveListener(this);
 
@@ -664,20 +670,20 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     hueMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_HUE"), nullptr, false, true));
     hueMask->setIdentityValue(0.);
-    hueMask->setResetCurve(FlatCurveType(default_params.hueMask[0]), default_params.hueMask);
+    hueMask->setResetCurve(FlatCurveType(default_params.parametricMask.hue[0]), default_params.parametricMask.hue);
     hueMask->setCurveColorProvider(this, ID_HUE_MASK);
     hueMask->setBottomBarColorProvider(this, ID_HUE_MASK);
     hueMask->setEditID(eh, BT_SINGLEPLANE_FLOAT);
 
     chromaticityMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_CHROMATICITY"), nullptr, false, false));
     chromaticityMask->setIdentityValue(0.);
-    chromaticityMask->setResetCurve(FlatCurveType(default_params.chromaticityMask[0]), default_params.chromaticityMask);
+    chromaticityMask->setResetCurve(FlatCurveType(default_params.parametricMask.chromaticity[0]), default_params.parametricMask.chromaticity);
     chromaticityMask->setBottomBarColorProvider(this, ID_HUE_MASK+1);
     chromaticityMask->setEditID(ec, BT_SINGLEPLANE_FLOAT);
 
     lightnessMask = static_cast<FlatCurveEditor *>(maskEditorGroup->addCurve(CT_Flat, M("TP_LABMASKS_LIGHTNESS"), nullptr, false, false));
     lightnessMask->setIdentityValue(0.);
-    lightnessMask->setResetCurve(FlatCurveType(default_params.lightnessMask[0]), default_params.lightnessMask);
+    lightnessMask->setResetCurve(FlatCurveType(default_params.parametricMask.lightness[0]), default_params.parametricMask.lightness);
     std::vector<GradientMilestone> milestones = {
         GradientMilestone(0., 0., 0., 0.),
         GradientMilestone(1., 1., 1., 1.)
@@ -687,17 +693,21 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
 
     maskEditorGroup->curveListComplete();
     maskEditorGroup->show();
-    mask_box->pack_start(*maskEditorGroup, Gtk::PACK_SHRINK, 4);
+    tb->pack_start(*maskEditorGroup);//, Gtk::PACK_SHRINK, 4);
+
+    contrastThreshold = Gtk::manage(new Adjuster(M("TP_LABMASKS_CONTRASTTHRESHOLDMASK"), -150, 150, 1, 0));
+    contrastThreshold->setAdjusterListener(this);
+    //mask_box->pack_start(*contrastThreshold);
+    tb->pack_start(*contrastThreshold);
 
     maskBlur = Gtk::manage(new Adjuster(M("TP_LABMASKS_BLUR"), -10, 500, 0.1, 0));
     maskBlur->setLogScale(10, -10);
     maskBlur->setAdjusterListener(this);
-    mask_box->pack_start(*maskBlur);
+    //mask_box->pack_start(*maskBlur);
+    tb->pack_start(*maskBlur);
 
-    contrastThreshold = Gtk::manage(new Adjuster(M("TP_LABMASKS_CONTRASTTHRESHOLDMASK"), -150, 150, 1, 0));
-    contrastThreshold->setAdjusterListener(this);
-    mask_box->pack_start(*contrastThreshold);
-
+    mask_box->pack_start(*parametricMask);
+    
     //-------------------------------------------------------------------------
     deltaEMask = Gtk::manage(new MyExpander(true, M("TP_LABMASKS_DELTAE")));
     deltaEMask->getLabelWidget()->set_tooltip_text(M("TP_LABMASKS_DELTAE_TOOLTIP"));
@@ -731,7 +741,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     vb->pack_start(*deltaEPick);
     vb->pack_start(*deltaEColor, Gtk::PACK_EXPAND_WIDGET, 4);
     hb->pack_start(*vb, Gtk::PACK_SHRINK, 4);
-    ToolParamBlock *tb = Gtk::manage(new ToolParamBlock());
+    tb = Gtk::manage(new ToolParamBlock());
     tb->pack_start(*deltaEL);
     tb->pack_start(*deltaEC);
     tb->pack_start(*deltaEH);
@@ -797,6 +807,9 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     areaMaskFeather = Gtk::manage(new Adjuster(M("TP_LABMASKS_AREA_FEATHER"), 0, 100, 0.1, 0));
     add_adjuster(areaMaskFeather, area);
 
+    areaMaskBlur = Gtk::manage(new Adjuster(M("TP_LABMASKS_BLUR"), 0, 500, 0.1, 0));
+    add_adjuster(areaMaskBlur, area);
+    
     CurveEditorGroup *cg = Gtk::manage(new CurveEditorGroup(options.lastToneCurvesDir, M("TP_LABMASKS_AREA_CONTRAST")));
     cg->setCurveListener(this);
 
@@ -961,13 +974,16 @@ void LabMasksPanel::maskGet(int idx)
     }
     
     auto &r = masks_[idx];
-    r.hueMask = hueMask->getCurve();
-    r.chromaticityMask = chromaticityMask->getCurve();
-    r.lightnessMask = lightnessMask->getCurve();
-    r.maskBlur = maskBlur->getValue();
+    r.parametricMask.enabled = parametricMask->getEnabled();
+    r.parametricMask.hue = hueMask->getCurve();
+    r.parametricMask.chromaticity = chromaticityMask->getCurve();
+    r.parametricMask.lightness = lightnessMask->getCurve();
+    r.parametricMask.blur = maskBlur->getValue();
+    r.parametricMask.contrastThreshold = contrastThreshold->getValue();
     r.inverted = maskInverted->get_active();
-    r.areaEnabled = areaMask->getEnabled();
+    r.areaMask.enabled = areaMask->getEnabled();
     r.areaMask.feather = areaMaskFeather->getValue();
+    r.areaMask.blur = areaMaskBlur->getValue();
     r.areaMask.contrast = areaMaskContrast->getCurve();
     if (area_shape_index_ < r.areaMask.shapes.size()) {
         auto &a = r.areaMask.shapes[area_shape_index_];
@@ -992,7 +1008,6 @@ void LabMasksPanel::maskGet(int idx)
     r.deltaEMask.weight_H = b;
     r.deltaEMask.range = deltaERange->getValue();
     r.deltaEMask.decay = deltaEDecay->getValue();
-    r.contrastThresholdMask = contrastThreshold->getValue();
 }
 
 
@@ -1131,7 +1146,7 @@ void LabMasksPanel::populateList()
             row[list_model_columns_->cols[c]] = cp_->getColumnContent(c, i);
         }
         Glib::ustring am("");
-        if (r.areaEnabled && !r.areaMask.isTrivial()) {
+        if (r.areaMask.enabled && !r.areaMask.isTrivial()) {
             am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
         }
         if (!r.drawnMask.isTrivial()) {
@@ -1145,12 +1160,12 @@ void LabMasksPanel::populateList()
         row[list_model_columns_->mask] = 
             Glib::ustring::compose(
                 "%1%2%3%4%7%5%6",
-                hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
-                hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
-                hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
+                hasMask(r, dflt.parametricMask.hue, r.parametricMask.hue) ? "H" : "",
+                hasMask(r, dflt.parametricMask.chromaticity, r.parametricMask.chromaticity) ? "C" : "",
+                hasMask(r, dflt.parametricMask.lightness, r.parametricMask.lightness) ? "L" : "",
                 r.deltaEMask.enabled ? "ΔE" : "",
-                r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "",
-                am, r.contrastThresholdMask > 0 ? Glib::ustring::compose(" c=%1", r.contrastThresholdMask) : "");
+                r.parametricMask.blur ? Glib::ustring::compose(" b=%1", r.parametricMask.blur) : "",
+                am, (r.parametricMask.enabled && r.parametricMask.contrastThreshold) ? Glib::ustring::compose(" c=%1", r.parametricMask.contrastThreshold) : "");
     }
 }
 
@@ -1162,18 +1177,21 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
     auto &r = masks_[idx];
     if (!list_only) {
         cp_->selectionChanged(idx);
-        hueMask->setCurve(r.hueMask);
-        chromaticityMask->setCurve(r.chromaticityMask);
-        lightnessMask->setCurve(r.lightnessMask);
-        maskBlur->setValue(r.maskBlur);
+        parametricMask->setEnabled(r.parametricMask.enabled);
+        hueMask->setCurve(r.parametricMask.hue);
+        chromaticityMask->setCurve(r.parametricMask.chromaticity);
+        lightnessMask->setCurve(r.parametricMask.lightness);
+        contrastThreshold->setValue(r.parametricMask.contrastThreshold);
+        maskBlur->setValue(r.parametricMask.blur);
         maskInverted->set_active(r.inverted);
 
         if (unsub && isCurrentSubscriber()) {
             unsubscribe();
         }
         areaMaskToggle->set_active(false);
-        areaMask->setEnabled(r.areaEnabled);
+        areaMask->setEnabled(r.areaMask.enabled);
         areaMaskFeather->setValue(r.areaMask.feather);
+        areaMaskBlur->setValue(r.areaMask.blur);
         areaMaskContrast->setCurve(r.areaMask.contrast);
         if (area_shape_index_ < r.areaMask.shapes.size()) {
             auto &a = r.areaMask.shapes[area_shape_index_];
@@ -1194,8 +1212,6 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         deltaERange->setValue(r.deltaEMask.range);
         deltaEDecay->setValue(r.deltaEMask.decay);
         static_cast<DeltaEArea *>(deltaEColor)->setColor(r.deltaEMask.L, r.deltaEMask.C, r.deltaEMask.H);
-
-        contrastThreshold->setValue(r.contrastThresholdMask);
         
         updateAreaMask(false);
     }
@@ -1208,7 +1224,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         row[list_model_columns_->cols[c]] = cp_->getColumnContent(c, idx);
     }
     Glib::ustring am("");
-    if (r.areaEnabled && !r.areaMask.isTrivial()) {
+    if (r.areaMask.enabled && !r.areaMask.isTrivial()) {
         am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
                                     r.areaMask.shapes.size() > 1 ? "s" : "");
     }
@@ -1223,12 +1239,12 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
     row[list_model_columns_->mask] = 
         Glib::ustring::compose(
             "%1%2%3%4%7%5%6",
-            hasMask(dflt.hueMask, r.hueMask) ? "H" : "",
-            hasMask(dflt.chromaticityMask, r.chromaticityMask) ? "C" : "",
-            hasMask(dflt.lightnessMask, r.lightnessMask) ? "L" : "",
+            hasMask(r, dflt.parametricMask.hue, r.parametricMask.hue) ? "H" : "",
+            hasMask(r, dflt.parametricMask.chromaticity, r.parametricMask.chromaticity) ? "C" : "",
+            hasMask(r, dflt.parametricMask.lightness, r.parametricMask.lightness) ? "L" : "",
             r.deltaEMask.enabled ? "ΔE" : "",
-            r.maskBlur ? Glib::ustring::compose(" b=%1", r.maskBlur) : "", am,
-            r.contrastThresholdMask ? Glib::ustring::compose(" c=%1", r.contrastThresholdMask) : "");
+            r.parametricMask.blur ? Glib::ustring::compose(" b=%1", r.parametricMask.blur) : "", am,
+            (r.parametricMask.enabled && r.parametricMask.contrastThreshold) ? Glib::ustring::compose(" c=%1", r.parametricMask.contrastThreshold) : "");
     Gtk::TreePath pth;
     pth.push_back(idx);
     list->get_selection()->select(pth);
@@ -1719,6 +1735,7 @@ void LabMasksPanel::onAreaMaskPastePressed()
             updateGeometry();
             updateAreaMask(true);
             areaMaskFeather->setValue(a.feather);
+            areaMaskBlur->setValue(a.blur);
             areaMaskContrast->setCurve(a.contrast);
             areaMaskRoundness->setValue(s.roundness);
             toggleAreaShapeMode(int(s.mode));
@@ -1843,6 +1860,7 @@ void LabMasksPanel::on_map()
 {
     Gtk::VBox::on_map();
     if (first_mask_exp_) {
+        parametricMask->set_expanded(false);
         areaMask->set_expanded(false);
         deltaEMask->set_expanded(false);
         drawnMask->set_expanded(false);
@@ -1858,6 +1876,15 @@ void LabMasksPanel::onMaskFold(GdkEventButton *evt)
         if (showMask->get_active()) {
             showMask->set_active(false);
         }
+    }
+}
+
+
+void LabMasksPanel::onParametricMaskEnableToggled()
+{
+    auto l = getListener();
+    if (l) {
+        l->panelChanged(EvParametricMask, parametricMask->getEnabled() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
 }
 

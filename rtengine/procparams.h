@@ -102,7 +102,9 @@ struct AreaMask {
         bool operator==(const Shape &other) const;
         bool operator!=(const Shape &other) const;
     };
+    bool enabled;
     double feather; // [0,100]
+    double blur;
     std::vector<double> contrast; // curve
     std::vector<Shape> shapes;
         
@@ -160,30 +162,40 @@ struct DrawnMask {
 };
 
 
+class ParametricMask {
+public:
+    bool enabled;
+    double blur;
+    std::vector<double> hue;
+    std::vector<double> chromaticity;
+    std::vector<double> lightness;
+    int contrastThreshold;
+
+    ParametricMask();
+    bool operator==(const ParametricMask &other) const;
+    bool operator!=(const ParametricMask &other) const;
+};
+
+
 class Mask {
 public:
     bool enabled;
-    std::vector<double> hueMask;
-    std::vector<double> chromaticityMask;
-    std::vector<double> lightnessMask;
-    double maskBlur;
     bool inverted;
-    bool areaEnabled;
+    ParametricMask parametricMask;
     AreaMask areaMask;
     DeltaEMask deltaEMask;
-    int contrastThresholdMask;
     DrawnMask drawnMask;
 
     Mask();
     bool operator==(const Mask &other) const;
     bool operator!=(const Mask &other) const;
 
-    bool load(const KeyFile &keyfile, const Glib::ustring &group_name,
+    bool load(int ppVersion,
+              const KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix);
     void save(KeyFile &keyfile, const Glib::ustring &group_name,
               const Glib::ustring &prefix, const Glib::ustring &suffix) const;
 };
-
 
 
 template<typename T>

@@ -60,8 +60,11 @@ void fastlin2log(float *x, float factor, float base, int w)
 #endif
 
 
-bool generate_area_mask(int ox, int oy, int width, int height, const array2D<float> &guide, const AreaMask &areaMask, bool enabled, float blur, bool multithread, array2D<float> &mask)
+bool generate_area_mask(int ox, int oy, int width, int height, const array2D<float> &guide, const AreaMask &areaMask, float scale, bool multithread, array2D<float> &mask)
 {
+    bool enabled = areaMask.enabled;
+    float blur = areaMask.blur / scale;
+    
     if (!enabled || areaMask.shapes.empty() || (areaMask.isTrivial() && blur <= 0.f)) {
         return false;
     }
@@ -503,16 +506,16 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<Mask> &masks, int offse
         if (r.deltaEMask.enabled) {
             has_mask = true;
         }
-        if (!r.hueMask.empty() && r.hueMask[0] != FCT_Linear && r.hueMask != dflt.hueMask) {
-            hmask[i].reset(new FlatCurve(r.hueMask, true));
+        if (r.parametricMask.enabled && !r.parametricMask.hue.empty() && r.parametricMask.hue[0] != FCT_Linear && r.parametricMask.hue != dflt.parametricMask.hue) {
+            hmask[i].reset(new FlatCurve(r.parametricMask.hue, true));
             has_mask = true;
         }
-        if (!r.chromaticityMask.empty() && r.chromaticityMask[0] != FCT_Linear && r.chromaticityMask != dflt.chromaticityMask) {
-            cmask[i].reset(new FlatCurve(r.chromaticityMask, false));
+        if (r.parametricMask.enabled && !r.parametricMask.chromaticity.empty() && r.parametricMask.chromaticity[0] != FCT_Linear && r.parametricMask.chromaticity != dflt.parametricMask.chromaticity) {
+            cmask[i].reset(new FlatCurve(r.parametricMask.chromaticity, false));
             has_mask = true;
         }
-        if (!r.lightnessMask.empty() && r.lightnessMask[0] != FCT_Linear && r.lightnessMask != dflt.lightnessMask) {
-            lmask[i].reset(new FlatCurve(r.lightnessMask, false));
+        if (r.parametricMask.enabled && !r.parametricMask.lightness.empty() && r.parametricMask.lightness[0] != FCT_Linear && r.parametricMask.lightness != dflt.parametricMask.lightness) {
+            lmask[i].reset(new FlatCurve(r.parametricMask.lightness, false));
             has_mask = true;
         }
     }
@@ -619,7 +622,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<Mask> &masks, int offse
 
     if (has_mask) {
         for (int i = begin_idx; i < end_idx; ++i) {
-            float blur = masks[i].maskBlur;
+            float blur = masks[i].parametricMask.blur;
             blur = blur < 0.f ? -1.f/blur : 1.f + blur;
             int r1 = max(int(4 / scale * blur + 0.5), 1);
             int r2 = max(int(25 / scale * blur + 0.5), 1);
@@ -658,7 +661,7 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<Mask> &masks, int offse
     array2D<float> amask;
 
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, masks[i].areaEnabled, masks[i].maskBlur / scale, multithread, amask)) {
+        if (generate_area_mask(offset_x, offset_y, full_width, full_height, guide, masks[i].areaMask, scale, multithread, amask)) {
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)
 #endif
@@ -678,11 +681,11 @@ bool generateLabMasks(Imagefloat *rgb, const std::vector<Mask> &masks, int offse
     
     float s_scale = std::sqrt(scale);
     for (int i = begin_idx; i < end_idx; ++i) {
-        if (masks[i].contrastThresholdMask != 0) {
+        if (masks[i].parametricMask.enabled && masks[i].parametricMask.contrastThreshold != 0) {
             amask(W, H);
-            float thresh = float(std::abs(masks[i].contrastThresholdMask))/100.f * s_scale;
-            float blur = std::max(masks[i].maskBlur, 2.0) / s_scale;
-            bool neg = masks[i].contrastThresholdMask < 0;
+            float thresh = float(std::abs(masks[i].parametricMask.contrastThreshold))/100.f * s_scale;
+            float blur = std::max(masks[i].parametricMask.blur, 2.0) / s_scale;
+            bool neg = masks[i].parametricMask.contrastThreshold < 0;
             buildBlendMask(guide, amask, W, H, thresh, 1.f, false, blur, 32768.f);
 #ifdef _OPENMP
 #           pragma omp parallel for if (multithread)

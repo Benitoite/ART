@@ -37,7 +37,7 @@ public:
     virtual ~LabMasksContentProvider() {}
 
     virtual Gtk::Widget *getWidget() = 0;
-    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) = 0;
+    virtual void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) = 0;
 
     virtual ToolPanelListener *listener() = 0;
 
@@ -163,6 +163,7 @@ private:
     void onAreaMaskDrawChanged();
     void onAreaMaskDrawAddPressed();
     void onDeltaEMaskEnableToggled();
+    void onParametricMaskEnableToggled();
     void onListEnabledToggled(const Glib::ustring &path);
     void setListEnabled(Gtk::CellRenderer *renderer, const Gtk::TreeModel::iterator &it);
     
@@ -190,6 +191,7 @@ private:
     unsigned int selected_;
 
     rtengine::ProcEvent EvMaskList;
+    rtengine::ProcEvent EvParametricMask;
     rtengine::ProcEvent EvHMask;
     rtengine::ProcEvent EvCMask;
     rtengine::ProcEvent EvLMask;
@@ -236,6 +238,7 @@ private:
     Gtk::Button *up;
     Gtk::Button *down;
     Gtk::Button *copy;
+    MyExpander *parametricMask;
     CurveEditorGroup *maskEditorGroup;
     FlatCurveEditor *hueMask;
     FlatCurveEditor *chromaticityMask;
@@ -259,6 +262,7 @@ private:
     Gtk::Button *areaMaskCopy;
     Gtk::Button *areaMaskPaste;
     Adjuster *areaMaskFeather;
+    Adjuster *areaMaskBlur;
     DiagonalCurveEditor *areaMaskContrast;
     Gtk::ToggleButton *areaMaskMode[3];
     sigc::connection areaMaskModeConn[3];

@@ -465,7 +465,9 @@ bool AreaMask::Shape::operator!=(const Shape &other) const
 
 
 AreaMask::AreaMask():
+    enabled(false),
     feather(0),
+    blur(0),
     contrast{DCT_Linear},
     shapes{Shape()}
 {
@@ -474,7 +476,9 @@ AreaMask::AreaMask():
 
 bool AreaMask::operator==(const AreaMask &other) const
 {
-    return feather == other.feather
+    return enabled == other.enabled
+        && feather == other.feather
+        && blur == other.blur
         && contrast == other.contrast
         && shapes == other.shapes;
 }
@@ -488,7 +492,9 @@ bool AreaMask::operator!=(const AreaMask &other) const
 
 bool AreaMask::isTrivial() const
 {
-    return (*this == AreaMask());
+    AreaMask n;
+    n.enabled = true;
+    return (!enabled || *this == n);
 }
 
 
@@ -646,9 +652,10 @@ void DrawnMask::strokes_from_list(const std::vector<double> &v)
 }
 
 
-Mask::Mask():
-    enabled(true),
-    hueMask{
+ParametricMask::ParametricMask():
+    enabled(false),
+    blur(0),
+    hue{
         FCT_MinMaxCPoints,
             0.166666667,
             1.,
@@ -659,7 +666,7 @@ Mask::Mask():
             0.35,
             0.35
     },
-    chromaticityMask{
+    chromaticity{
         FCT_MinMaxCPoints,
             0.,
             1.,
@@ -670,7 +677,7 @@ Mask::Mask():
             0.35,
             0.35
             },
-    lightnessMask{
+    lightness{
         FCT_MinMaxCPoints,
             0.,
             1.,
@@ -681,12 +688,34 @@ Mask::Mask():
             0.35,
             0.35
             },
-    maskBlur(0),
+    contrastThreshold(0)
+{
+}
+
+
+bool ParametricMask::operator==(const ParametricMask &other) const
+{
+    return enabled == other.enabled
+        && blur == other.blur
+        && hue == other.hue
+        && chromaticity == other.chromaticity
+        && lightness == other.lightness
+        && contrastThreshold == other.contrastThreshold;
+}
+
+
+bool ParametricMask::operator!=(const ParametricMask &other) const
+{
+    return !(*this == other);
+}
+
+
+Mask::Mask():
+    enabled(true),
     inverted(false),
-    areaEnabled(false),
+    parametricMask(),
     areaMask(),
     deltaEMask(),
-    contrastThresholdMask(0),
     drawnMask()
 {
 }
@@ -695,15 +724,10 @@ Mask::Mask():
 bool Mask::operator==(const Mask &other) const
 {
     return enabled == other.enabled
-        && hueMask == other.hueMask
-        && chromaticityMask == other.chromaticityMask
-        && lightnessMask == other.lightnessMask
-        && maskBlur == other.maskBlur
         && inverted == other.inverted
-        && areaEnabled == other.areaEnabled
+        && parametricMask == other.parametricMask
         && areaMask == other.areaMask
         && deltaEMask == other.deltaEMask
-        && contrastThresholdMask == other.contrastThresholdMask
         && drawnMask == other.drawnMask;
 }
 
@@ -743,16 +767,28 @@ Glib::ustring mode2str(AreaMask::Shape::Mode mode)
 } // namespace
 
 
-bool Mask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
+bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix)
 {
     bool ret = false;
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskEnabled" + suffix, enabled);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, hueMask);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, lightnessMask);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, maskBlur);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskInverted" + suffix, inverted);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, areaEnabled);
+    if (ppVersion < 1008) {
+        parametricMask.enabled = true;
+    } else {
+        ret |= assignFromKeyfile(keyfile, group_name, prefix + "ParametricMaskEnabled" + suffix, parametricMask.enabled);
+    }
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, parametricMask.hue);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, parametricMask.chromaticity);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, parametricMask.lightness);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ContrastThresholdMask" + suffix, parametricMask.contrastThreshold);
+    if (ppVersion < 1008) {
+        ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, parametricMask.blur);
+        areaMask.blur = parametricMask.blur;
+    } else {
+        ret |= assignFromKeyfile(keyfile, group_name, prefix + "ParametricMaskBlur" + suffix, parametricMask.blur);
+        ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskBlur" + suffix, areaMask.blur);
+    }
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskEnabled" + suffix, areaMask.enabled);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast);
     if (areaMask.contrast.empty() || areaMask.contrast[0] < DCT_Linear || areaMask.contrast[0] >= DCT_Unchanged) {
@@ -794,7 +830,6 @@ bool Mask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const G
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ContrastThresholdMask" + suffix, contrastThresholdMask);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency);
@@ -815,13 +850,16 @@ bool Mask::load(const KeyFile &keyfile, const Glib::ustring &group_name, const G
 void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::ustring &prefix, const Glib::ustring &suffix) const
 {
     putToKeyfile(group_name, prefix + "MaskEnabled" + suffix, enabled, keyfile);
-    putToKeyfile(group_name, prefix + "HueMask" + suffix, hueMask, keyfile);
-    putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, chromaticityMask, keyfile);
-    putToKeyfile(group_name, prefix + "LightnessMask" + suffix, lightnessMask, keyfile);
-    putToKeyfile(group_name, prefix + "MaskBlur" + suffix, maskBlur, keyfile);
     putToKeyfile(group_name, prefix + "MaskInverted" + suffix, inverted, keyfile);
-    putToKeyfile(group_name, prefix + "AreaMaskEnabled" + suffix, areaEnabled, keyfile);
+    putToKeyfile(group_name, prefix + "ParametricMaskEnabled" + suffix, parametricMask.enabled, keyfile);
+    putToKeyfile(group_name, prefix + "HueMask" + suffix, parametricMask.hue, keyfile);
+    putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, parametricMask.chromaticity, keyfile);
+    putToKeyfile(group_name, prefix + "LightnessMask" + suffix, parametricMask.lightness, keyfile);
+    putToKeyfile(group_name, prefix + "ContrastThresholdMask" + suffix, parametricMask.contrastThreshold, keyfile);
+    putToKeyfile(group_name, prefix + "ParametricMaskBlur" + suffix, parametricMask.blur, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskEnabled" + suffix, areaMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather, keyfile);
+    putToKeyfile(group_name, prefix + "AreaMaskBlur" + suffix, areaMask.blur, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast, keyfile);
     for (size_t i = 0; i < areaMask.shapes.size(); ++i) {
         auto &a = areaMask.shapes[i];
@@ -844,7 +882,6 @@ void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::u
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H, keyfile);
-    putToKeyfile(group_name, prefix + "ContrastThresholdMask" + suffix, contrastThresholdMask, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency, keyfile);
@@ -3450,7 +3487,7 @@ int ProcParams::load(bool load_general,
                     found = true;
                     done = false;
                 }
-                if (curmask.load(keyFile, "Local Contrast", "", n)) {
+                if (curmask.load(ppVersion, keyFile, "Local Contrast", "", n)) {
                     found = true;
                     done = false;
                 }
@@ -3645,7 +3682,7 @@ int ProcParams::load(bool load_general,
                     found = true;
                     done = false;
                 }
-                if (curmask.load(keyFile, tbgroup, "", n)) {
+                if (curmask.load(ppVersion, keyFile, tbgroup, "", n)) {
                     found = true;
                     done = false;
                 }
@@ -4009,7 +4046,7 @@ int ProcParams::load(bool load_general,
                     found = true;
                     done = false;
                 }
-                if (curmask.load(keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n)) {
+                if (curmask.load(ppVersion, keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n)) {
                     found = true;
                     done = false;
                 }
@@ -4124,7 +4161,7 @@ int ProcParams::load(bool load_general,
                         }
                     }
                 }
-                if (curmask.load(keyFile, ccgroup, prefix, Glib::ustring("_") + n)) {
+                if (curmask.load(ppVersion, keyFile, ccgroup, prefix, Glib::ustring("_") + n)) {
                     found = true;
                     done = false;
                 }

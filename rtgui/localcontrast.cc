@@ -41,9 +41,10 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
     {
         mask_list = parent_->EvList;
+        parametric_mask = parent_->EvParametricMask;
         h_mask = parent_->EvHueMask;
         c_mask = parent_->EvChromaticityMask;
         l_mask = parent_->EvLightnessMask;
@@ -173,6 +174,7 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     EvLocalContrastCurve = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CURVE");
 
     EvList = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_LIST");
+    EvParametricMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_PARAMETRICMASK");
     EvHueMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_HUEMASK");
     EvChromaticityMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CHROMATICITYMASK");
     EvLightnessMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_LIGHTNESSMASK");

@@ -40,9 +40,10 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
     {
         mask_list = parent_->EvList;
+        parametric_mask = parent_->EvParametricMask;
         h_mask = parent_->EvHueMask;
         c_mask = parent_->EvChromaticityMask;
         l_mask = parent_->EvLightnessMask;
@@ -154,6 +155,7 @@ TextureBoost::TextureBoost () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL")
 {
     auto m = ProcEventMapper::getInstance();
     EvList = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_LIST");
+    EvParametricMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_PARAMETRICMASK");
     EvHueMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_HUEMASK");
     EvChromaticityMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_CHROMATICITYMASK");
     EvLightnessMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_LIGHTNESSMASK");
