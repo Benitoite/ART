@@ -20,7 +20,7 @@ CURVEEDITOR_DARKS;Darks
 CURVEEDITOR_EDITPOINT_HINT;Enable edition of node in/out values.\n\nRight-click on a node to select it.\nRight-click on empty space to de-select the node.
 CURVEEDITOR_HIGHLIGHTS;Highlights
 CURVEEDITOR_LIGHTS;Lights
-CURVEEDITOR_LINEAR;Linear
+CURVEEDITOR_LINEAR;Off
 CURVEEDITOR_LOADDLGLABEL;Load curve...
 CURVEEDITOR_MINMAXCPOINTS;Equalizer
 CURVEEDITOR_NURBS;Control cage
@@ -28,7 +28,7 @@ CURVEEDITOR_PARAMETRIC;Parametric
 CURVEEDITOR_SAVEDLGLABEL;Save curve...
 CURVEEDITOR_SHADOWS;Shadows
 CURVEEDITOR_TOOLTIPCOPY;Copy current curve to clipboard.
-CURVEEDITOR_TOOLTIPLINEAR;Reset curve to linear.
+CURVEEDITOR_TOOLTIPLINEAR;Reset curve to identity.
 CURVEEDITOR_TOOLTIPLOAD;Load a curve from file.
 CURVEEDITOR_TOOLTIPPASTE;Paste curve from clipboard.
 CURVEEDITOR_TOOLTIPSAVE;Save current curve.
