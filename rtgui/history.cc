@@ -261,7 +261,7 @@ void History::procParamsChanged(
     // if there is no last item or its chev!=ev, create a new one
     if (size == 0 || !row || row[historyColumns.chev] != ev || ev == EvProfileChanged) {
         Gtk::TreeModel::Row newrow = *(historyModel->append());
-        newrow[historyColumns.text] = text;
+        newrow[historyColumns.text] = escapeHtmlChars(text);
         newrow[historyColumns.value] = g_markup_escape_text(descr.c_str(), -1);
         newrow[historyColumns.chev] = ev;
         newrow[historyColumns.params] = *params;
