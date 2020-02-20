@@ -179,7 +179,7 @@ public:
     void copyProfile ();
     void pasteProfile ();
     void partPasteProfile ();
-    void selectImage (Glib::ustring fname);
+    void selectImage(const Glib::ustring &fname);
     void openNextPreviousEditorImage (Glib::ustring fname, eRTNav eNextPrevious);
 
 #ifdef WIN32

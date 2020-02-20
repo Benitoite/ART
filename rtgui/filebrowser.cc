@@ -1813,10 +1813,8 @@ void FileBrowser::openPrevImage ()
 }
 
 
-void FileBrowser::selectImage (Glib::ustring fname)
+void FileBrowser::selectImage(const Glib::ustring &fname)
 {
-
-    // need to clear the filter in filecatalog
     MYWRITERLOCK(l, entryRW);
 
     if (!fd.empty() && !options.tabbedUI) {
@@ -1829,33 +1827,81 @@ void FileBrowser::selectImage (Glib::ustring fname)
                     selected[j]->selected = false;
                 }
 
-                selected.clear ();
+                selected.clear();
 
                 // set new selection
                 fd[i]->selected = true;
-                selected.push_back (fd[i]);
-                queue_draw ();
+                selected.push_back(fd[i]);
+                queue_draw();
 
                 MYWRITERLOCK_RELEASE(l);
 
                 // this will require a read access
-                notifySelectionListener ();
+                notifySelectionListener();
 
                 MYWRITERLOCK_ACQUIRE(l);
 
-                // scroll to the selected position
-                double h = selected[0]->getStartX();
-                double v = selected[0]->getStartY();
+                // scroll to the selected position, centered horizontally in the container
+                double x = selected[0]->getStartX();
+                double y = selected[0]->getStartY();
+
+                int tw = fd[i]->getMinimalWidth(); // thumb width
+
+                int ww = get_width(); // window width
 
                 MYWRITERLOCK_RELEASE(l);
 
-                setScrollPosition(h, v);
+                // Center thumb
+                setScrollPosition(x - (ww - tw) / 2, y);
 
                 return;
             }
         }
     }
 }
+// void FileBrowser::selectImage (Glib::ustring fname)
+// {
+
+//     // need to clear the filter in filecatalog
+//     MYWRITERLOCK(l, entryRW);
+
+//     if (!fd.empty() && !options.tabbedUI) {
+//         for (size_t i = 0; i < fd.size(); i++) {
+//             if (fname == fd[i]->filename && !fd[i]->filtered) {
+//                 // matching file found for sync
+
+//                 // clear current selection
+//                 for (size_t j = 0; j < selected.size(); j++) {
+//                     selected[j]->selected = false;
+//                 }
+
+//                 selected.clear ();
+
+//                 // set new selection
+//                 fd[i]->selected = true;
+//                 selected.push_back (fd[i]);
+//                 queue_draw ();
+
+//                 MYWRITERLOCK_RELEASE(l);
+
+//                 // this will require a read access
+//                 notifySelectionListener ();
+
+//                 MYWRITERLOCK_ACQUIRE(l);
+
+//                 // scroll to the selected position
+//                 double h = selected[0]->getStartX();
+//                 double v = selected[0]->getStartY();
+
+//                 MYWRITERLOCK_RELEASE(l);
+
+//                 setScrollPosition(h, v);
+
+//                 return;
+//             }
+//         }
+//     }
+// }
 
 void FileBrowser::openNextPreviousEditorImage (Glib::ustring fname, eRTNav nextPrevious)
 {
