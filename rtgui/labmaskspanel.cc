@@ -544,6 +544,11 @@ private:
     SigDrawUpdated sig_draw_updated_;
 };
 
+bool on_release_event_ignore(GdkEventButton *event)
+{
+    return true;
+}
+
 } // namespace
 
 
@@ -561,6 +566,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     cp_->getEvents(EvMaskList, EvParametricMask, EvHMask, EvCMask, EvLMask, EvMaskBlur, EvShowMask, EvAreaMask, EvDeltaEMask, EvContrastThresholdMask, EvDrawnMask);
     EvAreaMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvAreaMask.get_message());
     EvDeltaEMaskVoid = ProcEventMapper::getInstance()->newEvent(M_VOID, EvDeltaEMask.get_message());
+    EvMaskName = ProcEventMapper::getInstance()->newEvent(M_VOID, "HISTORY_MSG_LABMASKS_MASK_NAME");
     
     CurveListener::setMulti(true);
     
@@ -905,7 +911,24 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     
     mask_box->set_border_width(4);
 
-    MyExpander *mask_exp = Gtk::manage(new MyExpander(false, M("TP_LABMASKS_MASK")));
+    MyExpander *mask_exp = nullptr;
+    {
+        Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+        Gtk::Label *l = Gtk::manage(new Gtk::Label());
+        l->set_markup("<b>" + M("TP_LABMASKS_MASK") + "</b>");
+        l->set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
+        hb->pack_start(*l);
+        Gtk::Entry *e = Gtk::manage(new Gtk::Entry());
+        hb->pack_start(*e, Gtk::PACK_EXPAND_WIDGET, 2);
+        e->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
+        e->set_alignment(Gtk::ALIGN_END);
+        e->set_placeholder_text("(" + M("TP_LABMASKS_MASK_UNNAMED") + ")");
+        mask_exp = Gtk::manage(new MyExpander(false, hb));
+        e->signal_button_release_event().connect(&on_release_event_ignore);
+        e->add_events(Gdk::FOCUS_CHANGE_MASK);
+        e->signal_focus_out_event().connect(sigc::mem_fun(*this, &LabMasksPanel::onMaskNameFocusOut));
+        maskName = e;
+    }
     mask_exp->add(*mask_box, false);
     mask_exp->setLevel(2);
     pack_start(*mask_exp);
@@ -1008,6 +1031,7 @@ void LabMasksPanel::maskGet(int idx)
     r.deltaEMask.weight_H = b;
     r.deltaEMask.range = deltaERange->getValue();
     r.deltaEMask.decay = deltaEDecay->getValue();
+    r.name = maskName->get_text();
 }
 
 
@@ -1145,27 +1169,31 @@ void LabMasksPanel::populateList()
         for (int c = 0; c < n; ++c) {
             row[list_model_columns_->cols[c]] = cp_->getColumnContent(c, i);
         }
-        Glib::ustring am("");
-        if (r.areaMask.enabled && !r.areaMask.isTrivial()) {
-            am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
-        }
-        if (!r.drawnMask.isTrivial()) {
-            if (am.empty()) {
-                am = "\n";
-            } else {
-                am += " ";
+        if (!r.name.empty()) {
+            row[list_model_columns_->mask] = r.name;            
+        } else {
+            Glib::ustring am("");
+            if (r.areaMask.enabled && !r.areaMask.isTrivial()) {
+                am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(), r.areaMask.shapes.size() > 1 ? "s" : "");
             }
-            am += Glib::ustring::compose("%1 stroke%2", r.drawnMask.strokes.size(), r.drawnMask.strokes.size() == 1 ? "" : "s");
+            if (!r.drawnMask.isTrivial()) {
+                if (am.empty()) {
+                    am = "\n";
+                } else {
+                    am += " ";
+                }
+                am += Glib::ustring::compose("%1 stroke%2", r.drawnMask.strokes.size(), r.drawnMask.strokes.size() == 1 ? "" : "s");
+            }
+            row[list_model_columns_->mask] = 
+                Glib::ustring::compose(
+                    "%1%2%3%4%7%5%6",
+                    hasMask(r, dflt.parametricMask.hue, r.parametricMask.hue) ? "H" : "",
+                    hasMask(r, dflt.parametricMask.chromaticity, r.parametricMask.chromaticity) ? "C" : "",
+                    hasMask(r, dflt.parametricMask.lightness, r.parametricMask.lightness) ? "L" : "",
+                    r.deltaEMask.enabled ? "ΔE" : "",
+                    r.parametricMask.blur ? Glib::ustring::compose(" b=%1", r.parametricMask.blur) : "",
+                    am, (r.parametricMask.enabled && r.parametricMask.contrastThreshold) ? Glib::ustring::compose(" c=%1", r.parametricMask.contrastThreshold) : "");
         }
-        row[list_model_columns_->mask] = 
-            Glib::ustring::compose(
-                "%1%2%3%4%7%5%6",
-                hasMask(r, dflt.parametricMask.hue, r.parametricMask.hue) ? "H" : "",
-                hasMask(r, dflt.parametricMask.chromaticity, r.parametricMask.chromaticity) ? "C" : "",
-                hasMask(r, dflt.parametricMask.lightness, r.parametricMask.lightness) ? "L" : "",
-                r.deltaEMask.enabled ? "ΔE" : "",
-                r.parametricMask.blur ? Glib::ustring::compose(" b=%1", r.parametricMask.blur) : "",
-                am, (r.parametricMask.enabled && r.parametricMask.contrastThreshold) ? Glib::ustring::compose(" c=%1", r.parametricMask.contrastThreshold) : "");
     }
 }
 
@@ -1184,6 +1212,7 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
         contrastThreshold->setValue(r.parametricMask.contrastThreshold);
         maskBlur->setValue(r.parametricMask.blur);
         maskInverted->set_active(r.inverted);
+        maskName->set_text(r.name);
 
         if (unsub && isCurrentSubscriber()) {
             unsubscribe();
@@ -1223,28 +1252,32 @@ void LabMasksPanel::maskShow(int idx, bool list_only, bool unsub)
     for (int c = 0; c < n; ++c) {
         row[list_model_columns_->cols[c]] = cp_->getColumnContent(c, idx);
     }
-    Glib::ustring am("");
-    if (r.areaMask.enabled && !r.areaMask.isTrivial()) {
-        am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
-                                    r.areaMask.shapes.size() > 1 ? "s" : "");
-    }
-    if (!r.drawnMask.isTrivial()) {
-        if (am.empty()) {
-            am = "\n";
-        } else {
-            am += " ";
+    if (!r.name.empty()) {
+        row[list_model_columns_->mask] = r.name;
+    } else {
+        Glib::ustring am("");
+        if (r.areaMask.enabled && !r.areaMask.isTrivial()) {
+            am = Glib::ustring::compose("\n%1 shape%2", r.areaMask.shapes.size(),
+                                        r.areaMask.shapes.size() > 1 ? "s" : "");
         }
-        am += Glib::ustring::compose("%1 stroke%2", r.drawnMask.strokes.size(), r.drawnMask.strokes.size() == 1 ? "" : "s");
+        if (!r.drawnMask.isTrivial()) {
+            if (am.empty()) {
+                am = "\n";
+            } else {
+                am += " ";
+            }
+            am += Glib::ustring::compose("%1 stroke%2", r.drawnMask.strokes.size(), r.drawnMask.strokes.size() == 1 ? "" : "s");
+        }
+        row[list_model_columns_->mask] = 
+            Glib::ustring::compose(
+                "%1%2%3%4%7%5%6",
+                hasMask(r, dflt.parametricMask.hue, r.parametricMask.hue) ? "H" : "",
+                hasMask(r, dflt.parametricMask.chromaticity, r.parametricMask.chromaticity) ? "C" : "",
+                hasMask(r, dflt.parametricMask.lightness, r.parametricMask.lightness) ? "L" : "",
+                r.deltaEMask.enabled ? "ΔE" : "",
+                r.parametricMask.blur ? Glib::ustring::compose(" b=%1", r.parametricMask.blur) : "", am,
+                (r.parametricMask.enabled && r.parametricMask.contrastThreshold) ? Glib::ustring::compose(" c=%1", r.parametricMask.contrastThreshold) : "");
     }
-    row[list_model_columns_->mask] = 
-        Glib::ustring::compose(
-            "%1%2%3%4%7%5%6",
-            hasMask(r, dflt.parametricMask.hue, r.parametricMask.hue) ? "H" : "",
-            hasMask(r, dflt.parametricMask.chromaticity, r.parametricMask.chromaticity) ? "C" : "",
-            hasMask(r, dflt.parametricMask.lightness, r.parametricMask.lightness) ? "L" : "",
-            r.deltaEMask.enabled ? "ΔE" : "",
-            r.parametricMask.blur ? Glib::ustring::compose(" b=%1", r.parametricMask.blur) : "", am,
-            (r.parametricMask.enabled && r.parametricMask.contrastThreshold) ? Glib::ustring::compose(" c=%1", r.parametricMask.contrastThreshold) : "");
     Gtk::TreePath pth;
     pth.push_back(idx);
     list->get_selection()->select(pth);
@@ -1971,4 +2004,15 @@ void LabMasksPanel::onDrawnMaskUpdated()
     if (l) {
         l->panelChanged(EvDrawnMask, M("GENERAL_CHANGED"));
     }
+}
+
+
+bool LabMasksPanel::onMaskNameFocusOut(GdkEventFocus *e)
+{
+    auto l = getListener();
+    if (l) {
+        l->panelChanged(EvMaskName, M("GENERAL_CHANGED"));
+    }
+    maskShow(selected_, true);
+    return false;
 }

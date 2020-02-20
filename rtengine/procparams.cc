@@ -716,7 +716,8 @@ Mask::Mask():
     parametricMask(),
     areaMask(),
     deltaEMask(),
-    drawnMask()
+    drawnMask(),
+    name("")
 {
 }
 
@@ -728,7 +729,8 @@ bool Mask::operator==(const Mask &other) const
         && parametricMask == other.parametricMask
         && areaMask == other.areaMask
         && deltaEMask == other.deltaEMask
-        && drawnMask == other.drawnMask;
+        && drawnMask == other.drawnMask
+        && name == other.name;
 }
 
 
@@ -772,6 +774,7 @@ bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &grou
     bool ret = false;
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskEnabled" + suffix, enabled);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskInverted" + suffix, inverted);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskName" + suffix, name);
     if (ppVersion < 1008) {
         parametricMask.enabled = true;
     } else {
@@ -851,6 +854,7 @@ void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::u
 {
     putToKeyfile(group_name, prefix + "MaskEnabled" + suffix, enabled, keyfile);
     putToKeyfile(group_name, prefix + "MaskInverted" + suffix, inverted, keyfile);
+    putToKeyfile(group_name, prefix + "MaskName" + suffix, name, keyfile);
     putToKeyfile(group_name, prefix + "ParametricMaskEnabled" + suffix, parametricMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "HueMask" + suffix, parametricMask.hue, keyfile);
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, parametricMask.chromaticity, keyfile);

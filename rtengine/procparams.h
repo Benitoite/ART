@@ -185,6 +185,7 @@ public:
     AreaMask areaMask;
     DeltaEMask deltaEMask;
     DrawnMask drawnMask;
+    Glib::ustring name;
 
     Mask();
     bool operator==(const Mask &other) const;

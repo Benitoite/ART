@@ -186,6 +186,8 @@ private:
     void onDeltaEPickClicked();
     void onDrawnMaskUpdated();
 
+    bool onMaskNameFocusOut(GdkEventFocus *e);
+
     LabMasksContentProvider *cp_;
     std::vector<rtengine::procparams::Mask> masks_;
     unsigned int selected_;
@@ -203,6 +205,7 @@ private:
     rtengine::ProcEvent EvDeltaEMaskVoid;
     rtengine::ProcEvent EvContrastThresholdMask;
     rtengine::ProcEvent EvDrawnMask;
+    rtengine::ProcEvent EvMaskName;
 
     class ListColumns: public Gtk::TreeModel::ColumnRecord {
     public:
@@ -289,8 +292,8 @@ private:
     Gtk::Button *deltaEPick;
 
     Adjuster *contrastThreshold;
-
     DeltaEColorProvider *deltaE_provider_;
-
     MyExpander *drawnMask;
+
+    Gtk::Entry *maskName;
 };
