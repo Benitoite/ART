@@ -20,7 +20,7 @@ CURVEEDITOR_DARKS;Ombres
 CURVEEDITOR_EDITPOINT_HINT;Activer l'édition des points de contrôle d'entrée/sortie.\n\nUn clic droit sur un point le sélectionne.\nUn clic droit dans un espace vide desélectionne le point.
 CURVEEDITOR_HIGHLIGHTS;Hautes lumières
 CURVEEDITOR_LIGHTS;Zones claires
-CURVEEDITOR_LINEAR;Linéaire
+CURVEEDITOR_LINEAR;Sans
 CURVEEDITOR_LOADDLGLABEL;Charger la courbe...
 CURVEEDITOR_MINMAXCPOINTS;Points de contrôle minima/maxima
 CURVEEDITOR_NURBS;Cage de contrôle
@@ -28,7 +28,7 @@ CURVEEDITOR_PARAMETRIC;Paramétrique
 CURVEEDITOR_SAVEDLGLABEL;Enregistrer la courbe...
 CURVEEDITOR_SHADOWS;Ombres bouchées
 CURVEEDITOR_TOOLTIPCOPY;Copier la courbe courante dans le presse-papier
-CURVEEDITOR_TOOLTIPLINEAR;Réinitialise la courbe vers linéaire
+CURVEEDITOR_TOOLTIPLINEAR;Réinitialise la courbe
 CURVEEDITOR_TOOLTIPLOAD;Charger une courbe depuis un fichier
 CURVEEDITOR_TOOLTIPPASTE;Coller la courbe depuis le presse-papier
 CURVEEDITOR_TOOLTIPSAVE;Enregistrer la courbe actuelle
@@ -75,7 +75,7 @@ EXPORT_BYPASS_ALL;Sélectionner / Désélectionner tout
 EXPORT_BYPASS_DEFRINGE;Ignorer la Correction des Franges Colorées
 EXPORT_BYPASS_DIRPYRDENOISE;Ignorer la Réduction du Bruit
 EXPORT_BYPASS_LOCALCONTRAST;Ignorer le Contraste Local
-EXPORT_BYPASS_RAW_CA;Ignorer la Correction d'Aberration Chromatique [raw]
+EXPORT_BYPASS_RAW_CA;Ignorer la Correction d'Aberrations Chromatiques [raw]
 EXPORT_BYPASS_RAW_CCSTEPS;Ignorer la Suppression des Fausses Couleurs [raw]
 EXPORT_BYPASS_RAW_DCB_ENHANCE;Ignorer les Etapes d'Amélioration DCB [raw]
 EXPORT_BYPASS_RAW_DCB_ITERATIONS;Ignorer le nombre d'itérations DCB [raw]
@@ -277,7 +277,7 @@ HISTORY_MSG_32;Déconvolution (RL) - Amortissement
 HISTORY_MSG_33;Déconvolution (RL) - Itérations
 HISTORY_MSG_34;Correction d'objectif - Distortion
 HISTORY_MSG_35;Correction d'objectif - Vignetage
-HISTORY_MSG_36;Correction d'objectif - Aberration chromatique
+HISTORY_MSG_36;Correction d'objectif - Aberrations chromatiques
 HISTORY_MSG_37;Exposition - Niveaux auto.
 HISTORY_MSG_38;Balance des Blancs - Méthode
 HISTORY_MSG_39;BdB - Température
@@ -306,7 +306,7 @@ HISTORY_MSG_61;Remplissage auto.
 HISTORY_MSG_62;Correction de la distorsion
 HISTORY_MSG_63;Instantané sélectionné
 HISTORY_MSG_64;Rognage
-HISTORY_MSG_65;Correction Aberration Chromatique
+HISTORY_MSG_65;Correction Aberrations Chromatiques
 HISTORY_MSG_66;Reconst. Hautes lumières
 HISTORY_MSG_67;Reconst. HL - Quantité
 HISTORY_MSG_68;Reconst. HL - Méthode
@@ -745,6 +745,8 @@ HISTORY_MSG_COLORCORRECTION_SATURATION;CC - Saturation
 HISTORY_MSG_COLORCORRECTION_SHOWMASK;CC - Montrer le masque
 HISTORY_MSG_COLORCORRECTION_SLOPE;CC - Pente
 HISTORY_MSG_COLORCORRECTION_DELTAEMASK;CC - Masque ΔE
+HISTORY_MSG_COLORCORRECTION_DRAWNMASK;CC - Masque au pinceau
+HISTORY_MSG_COLORCORRECTION_PARAMETRICMASK;CC - Masque paramétrique
 HISTORY_MSG_COLORTONING_LABGRID_VALUE;CC - Correction de Couleur
 HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR;RdB - Force Chroma auto.
 HISTORY_MSG_DENOISE_GUIDED_EPSILON;RdB - Epsilon du filtre guidé
@@ -772,6 +774,8 @@ HISTORY_MSG_EPD_SHOWMASK;TM - Montrer le masque
 HISTORY_MSG_EPD_AREAMASK;TM - Zone du masque
 HISTORY_MSG_EPD_CONTRASTTHRESHOLDMASK;TB - seuil de contraste du masque
 HISTORY_MSG_EPD_DELTAEMASK;TB - masque ΔE
+HISTORY_MSG_EPD_DRAWNMASK;TB - masque au pinceau
+HISTORY_MSG_EPD_PARAMETRICMASK;TB - masque paramétrique
 HISTORY_MSG_EXPOSURE_BLACK;Exposition - Point noir
 HISTORY_MSG_FILMNEGATIVE_ENABLED;Film Négatif
 HISTORY_MSG_FILMNEGATIVE_VALUES;Valeurs du Film Négatif
@@ -797,6 +801,8 @@ HISTORY_MSG_LOCALCONTRAST_LIGHTNESS;Contraste Local - Lumières
 HISTORY_MSG_LOCALCONTRAST_MODE;Contraste Local - Méthode
 HISTORY_MSG_LOCALCONTRAST_RADIUS;Contraste Local - Rayon
 HISTORY_MSG_LOCALCONTRAST_DELTAEMASK;Contraste Local - Masque ΔE
+HISTORY_MSG_LOCALCONTRAST_DRAWNMASK;Contraste Local - Masque au pinceau
+HISTORY_MSG_LOCALCONTRAST_PARAMETRICMASK;Contraste Local - Masque paramétrique
 HISTORY_MSG_LOGENC_AUTO;Log - Automatique
 HISTORY_MSG_LOGENC_AUTOGRAY;Log - Gris auto.
 HISTORY_MSG_LOGENC_REGULARIZATION;Log - Régularisation
@@ -840,6 +846,8 @@ HISTORY_MSG_SMOOTHING_MASKBLUR;Lissage - Masque flou
 HISTORY_MSG_SMOOTHING_SHOWMASK;Lissage - Montrer le masque
 HISTORY_MSG_SMOOTHING_AREAMASK;Lissage - Masque de zone
 HISTORY_MSG_SMOOTHING_DELTAEMASK;Lissage - Masque ΔE
+HISTORY_MSG_SMOOTHING_DRAWNMASK;Lissage - Masque au pinceau
+HISTORY_MSG_SMOOTHING_PARAMETRICMASK;Lissage - Masque paramétrique
 HISTORY_MSG_SOFTLIGHT_ENABLED;Lumière douce
 HISTORY_MSG_SOFTLIGHT_STRENGTH;Lumière douce - Force
 HISTORY_MSG_TM_FATTAL_ANCHOR;CPD - Point d'ancrage
@@ -1046,7 +1054,7 @@ PARTIALPASTE_EFFECTSGROUP;Paramètres des effets spéciaux
 PARTIALPASTE_EXPOSUREGROUP;Paramètres Exposition
 PARTIALPASTE_SATURATION;Saturation & Vibrance
 PARTIALPASTE_TONECURVE;Courbes Tonales
-PARTIALPASTE_CACORRECTION;Aberration Chromatique
+PARTIALPASTE_CACORRECTION;Aberrations Chromatiques
 PARTIALPASTE_CHANNELMIXER;Mixage des Canaux
 PARTIALPASTE_CHANNELMIXERBW;Noir et Blanc
 PARTIALPASTE_COARSETRANS;Rotation grossière / miroir
@@ -1424,7 +1432,7 @@ TP_BWMIX_SET_PORTRAIT;Portrait
 TP_BWMIX_SET_RGBABS;RVB Absolu
 TP_BWMIX_SET_RGBREL;RVB Relatif
 TP_CACORRECTION_BLUE;Bleu
-TP_CACORRECTION_LABEL;Aberration Chromatique
+TP_CACORRECTION_LABEL;Aberrations Chromatiques
 TP_CACORRECTION_RED;Rouge
 TP_LOCALCONTRAST_LIST_TITLE;Paramètres
 TP_CHMIXER_BLUE;Canal Bleu
@@ -1504,7 +1512,7 @@ TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN;Chrominance - Rouge-Vert
 TP_DIRPYRDENOISE_LABEL;Réduction de Bruit
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL;Niveau de détails de Luminance
 TP_DIRPYRDENOISE_LUMINANCE_FRAME;Luminance
-TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Detail seuil
+TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Détail seuil
 TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING;Luminance
 TP_DIRPYRDENOISE_MAIN_COLORSPACE;Espace colorimétrique
 TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB;Lab
@@ -1575,7 +1583,7 @@ TP_FLATFIELD_BT_AREA;Zone
 TP_FLATFIELD_BT_HORIZONTAL;Horizontal
 TP_FLATFIELD_BT_VERTHORIZ;Vertical + Horizontal
 TP_FLATFIELD_BT_VERTICAL;Vertical
-TP_FLATFIELD_CLIPCONTROL;Control de l'écrêtage
+TP_FLATFIELD_CLIPCONTROL;Contrôle de l'écrêtage
 TP_FLATFIELD_CLIPCONTROL_TOOLTIP;"Contrôle de l'écrêtage" évite l'écrêtage des Hautes Lumière dû à l'application du Champ Uniforme. S'il y a déjà des Hautes Lumières brûlées avant l'application du Champ Uniforme, "Contrôle de l'écrêtage" peut conduire à une dérive couleur.
 TP_FLATFIELD_LABEL;Champ Uniforme
 TP_GENERAL_11SCALE_TOOLTIP;Les effets de cet outil ne sont visibles ou fiables qu'à une échelle d'aperçu de 1:1.
@@ -1679,7 +1687,7 @@ TP_LABMASKS_BLUR;Flouter
 TP_LABMASKS_CHROMATICITY;C
 TP_LABMASKS_HUE;T
 TP_LABMASKS_LIGHTNESS;L
-TP_LABMASKS_MASK;Masque
+TP_LABMASKS_MASK;Masques
 TP_LABMASKS_SHOW;Montrer masque
 TP_LABMASKS_CONTRASTTHRESHOLDMASK;Seuil du contraste
 TP_LABMASKS_DELTAE;Masque ΔE
@@ -1691,6 +1699,19 @@ TP_LABMASKS_DELTAE_DECAY;Decroissance
 TP_LABMASKS_DELTAE_PICK;Choisir
 TP_LABMASKS_DELTAE_CHAN_WEIGHT;Pondération dans le calcul du ΔE
 TP_LABMASKS_DELTAE_TOOLTIP;Sélectionne des régions de couleurs similaires\n(selon la définition de la métrique CIELAB ΔE*)
+TP_LABMASKS_DRAWNMASK;Masque au pinceau
+TP_LABMASKS_DRAWNMASK_TOGGLE_TIP;Basculer vers le dessin sur image
+TP_LABMASKS_DRAWNMASK_PEN_SETTINGS;Paramètres du pinceau
+TP_LABMASKS_DRAWNMASK_RESET_TIP;Effacer tous les tracés
+TP_LABMASKS_DRAWNMASK_RADIUS;Rayon
+TP_LABMASKS_DRAWNMASK_TRANSPARENCY;Transparence
+TP_LABMASKS_DRAWNMASK_SMOOTHNESS;Lissage
+TP_LABMASKS_DRAWNMASK_ERASE;Mode effacement
+TP_LABMASKS_DRAWNMASK_HARDNESS;Dureté
+TP_LABMASKS_DRAWNMASK_INFO;%1 trait(s)
+TP_LABMASKS_DRAWNMASK_INTERSECT_TOOLTIP;Intersection du masque au pinceau avec les autres masques
+TP_LABMASKS_DRAWNMASK_ADD_TOOLTIP;Ajouter le masque au pinceau au dessus des autres masques
+TP_LABMASKS_PARAMETRIC;Masque paramétrique
 TP_LENSGEOM_AUTOCROP;Rognage auto
 TP_LENSGEOM_FILL;Remplir automatiquement
 TP_LENSGEOM_LABEL;Objectif / Géométrie
@@ -1700,7 +1721,7 @@ TP_LENSPROFILE_CORRECTION_MANUAL;Manuellement
 TP_LENSPROFILE_LABEL;Correction d'Objectif par Profil
 TP_LENSPROFILE_LENS_WARNING;Attention: le facteur de rognage utilisé pour la caractérisation d'un objectif est plus grand que le facteur de rognage du capteur, les résultats pourraient être faux.
 TP_LENSPROFILE_MODE_HEADER;Selectionner le profil d'objectif :
-TP_LENSPROFILE_USE_CA;Aberration chromatique
+TP_LENSPROFILE_USE_CA;Aberrations chromatiques
 TP_LENSPROFILE_USE_GEOMETRIC;Géometrique
 TP_LENSPROFILE_USE_HEADER;Selectionner les distortions à corriger:
 TP_LENSPROFILE_USE_VIGNETTING;Vignetage
@@ -1735,7 +1756,7 @@ TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP;Horizontale et verticale
 TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP;Horizontale
 TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP;Verticale
 TP_PERSPECTIVE_CROPFACTOR;Facteur de rognage
-TP_PERSPECTIVE_FLENGTH;Longeur focale
+TP_PERSPECTIVE_FLENGTH;Longueur focale
 TP_PERSPECTIVE_HORIZONTAL;Horizontale
 TP_PERSPECTIVE_LABEL;Correction de la perspective
 TP_PERSPECTIVE_SHEAR;Cisaillement
@@ -1764,7 +1785,7 @@ TP_RAWCACORR_AUTOIT_TOOLTIP;Ce réglage est disponible si "Correction automatiqu
 TP_RAWCACORR_AVOIDCOLORSHIFT;Éviter la dérive des couleurs
 TP_RAWCACORR_CABLUE;Bleu
 TP_RAWCACORR_CARED;Rouge
-TP_RAWCACORR_LABEL;Aberration Chromatique
+TP_RAWCACORR_LABEL;Aberrations Chromatiques
 TP_RAWEXPOS_BLACK_0;Vert 1 (maître)
 TP_RAWEXPOS_BLACK_1;Rouge
 TP_RAWEXPOS_BLACK_2;Bleu
@@ -1897,7 +1918,7 @@ TP_SMOOTHING_CHANNEL_L;Luminance
 TP_SMOOTHING_CHANNEL_C;Chrominance
 TP_SMOOTHING_CHANNEL_RGB;RVB
 TP_SMOOTHING_RADIUS;Rayon
-TP_SMOOTHING_EPSILON;Detail
+TP_SMOOTHING_EPSILON;Détail
 TP_SMOOTHING_ITERATIONS;Itérations
 TP_SOFTLIGHT_LABEL;Lumière douce
 TP_SOFTLIGHT_STRENGTH;Force
