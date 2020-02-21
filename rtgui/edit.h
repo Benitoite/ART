@@ -559,6 +559,14 @@ public:
     @return true if the preview has to be redrawn, false otherwise */
     virtual bool pick3 (const bool picked);
 
+    /**
+     * triggered for scroll wheel events. Only for ET_OBJECTS types
+     * 
+     * @return false if the scroll event has to be propagated to the crop
+     * window, true if the event has been processed
+     */
+    virtual bool scroll(int bstate, GdkScrollDirection direction, double deltaX, double deltaY);
+
     /** @brief Get the geometry to be shown to the user */
     const std::vector<Geometry*>& getVisibleGeometry ();
 
@@ -775,6 +783,11 @@ inline bool EditSubscriber::pick2 (const bool picked) {
 }
 
 inline bool EditSubscriber::pick3 (const bool picked) {
+    return false;
+}
+
+inline bool EditSubscriber::scroll(int bstate, GdkScrollDirection direction, double deltaX, double deltaY)
+{
     return false;
 }
 

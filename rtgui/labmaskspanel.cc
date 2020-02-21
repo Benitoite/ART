@@ -418,6 +418,24 @@ public:
         return true;
     }
 
+    bool scroll(int bstate, GdkScrollDirection direction, double deltaX, double deltaY) override
+    {
+        double delta = (abs(deltaX) > abs(deltaY)) ? deltaX : deltaY;
+        bool isUp = direction == GDK_SCROLL_UP || (direction == GDK_SCROLL_SMOOTH && delta < 0.0);
+        int incr = isUp ? 1 : -1;
+        
+        if (bstate & GDK_CONTROL_MASK) {
+            radius_->setValue(std::max(radius_->getValue() + incr, 0.0));
+            update_pen(false);
+            return true;
+        } else if (bstate & GDK_MOD1_MASK) {
+            hardness_->setValue(std::max(hardness_->getValue() + incr, 0.0));
+            return true;
+        }
+        
+        return false;
+    }
+
     void switchOffEditMode() override
     {
         toggle_->set_active(false);

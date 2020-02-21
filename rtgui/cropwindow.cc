@@ -296,6 +296,16 @@ void CropWindow::scroll (int state, GdkScrollDirection direction, int x, int y, 
         // sometimes this case happens. To avoid zooming into the wrong direction in this case, we just do nothing
         return;
     }
+
+    const auto editSubscriber = iarea->getCurrSubscriber();
+    if (iarea->getToolMode () == TMHand && editSubscriber && editSubscriber->getEditingType() == ET_OBJECTS && cropgl && cropgl->inImageArea(iarea->posImage.x, iarea->posImage.y)) {
+        bool done = editSubscriber->scroll(state, direction, deltaX, deltaY);
+        if (done) {
+            iarea->redraw();
+            return;
+        }
+    }
+    
     bool isUp = direction == GDK_SCROLL_UP || (direction == GDK_SCROLL_SMOOTH && delta < 0.0);
     if ((state & GDK_CONTROL_MASK) && onArea(ColorPicker, x, y)) {
         // resizing a color picker
