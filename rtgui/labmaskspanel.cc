@@ -203,7 +203,8 @@ class DrawnMaskPanel: public MyExpander, public EditSubscriber, public AdjusterL
 public:
     DrawnMaskPanel():
         MyExpander(true, M("TP_LABMASKS_DRAWNMASK")),
-        EditSubscriber(ET_OBJECTS)
+        EditSubscriber(ET_OBJECTS),
+        prev_erase_(false)
     {
         // Editing geometry; create the spot rectangle
         pen_ = new Circle();
@@ -277,11 +278,17 @@ public:
         toggle_->signal_toggled().connect(sigc::mem_fun(this, &DrawnMaskPanel::on_toggled));
 
         reset_ = Gtk::manage(new Gtk::Button());
-        reset_->add(*Gtk::manage(new RTImage("undo.png")));
+        reset_->add(*Gtk::manage(new RTImage("undo-all.png")));
         set_btn_style(reset_);
         reset_->set_tooltip_text(M("TP_LABMASKS_DRAWNMASK_RESET_TIP"));
         reset_->signal_clicked().connect(sigc::mem_fun(this, &DrawnMaskPanel::on_reset));
 
+        undo_ = Gtk::manage(new Gtk::Button());
+        undo_->add(*Gtk::manage(new RTImage("undo.png")));
+        set_btn_style(undo_);
+        undo_->set_tooltip_text(M("TP_LABMASKS_DRAWNMASK_UNDO_TIP"));
+        undo_->signal_clicked().connect(sigc::mem_fun(this, &DrawnMaskPanel::on_undo));
+        
         vbg->pack_start(*hb);
         hb = Gtk::manage(new Gtk::HBox());
         
@@ -305,9 +312,10 @@ public:
         Gtk::Grid *grid = Gtk::manage(new Gtk::Grid());
         setExpandAlignProperties(grid, false, true, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
         grid->attach(*reset_, 0, 1, 1, 1);
-        grid->attach(*toggle_, 0, 2, 1, 1);
-        grid->attach(*mode_[0], 0, 3, 1, 1);
-        grid->attach(*mode_[1], 0, 4, 1, 1);
+        grid->attach(*undo_, 0, 2, 1, 1);
+        grid->attach(*toggle_, 0, 3, 1, 1);
+        grid->attach(*mode_[0], 0, 4, 1, 1);
+        grid->attach(*mode_[1], 0, 5, 1, 1);
         hb->pack_start(*grid, Gtk::PACK_SHRINK, 2);
         
         tb->pack_start(*hb);
@@ -373,6 +381,10 @@ public:
     
     bool mouseOver(int modifierKey) override
     {
+        if ((modifierKey & GDK_SHIFT_MASK) != prev_erase_) {
+            prev_erase_ = (modifierKey & GDK_SHIFT_MASK);
+            erase_->set_active(!erase_->get_active());
+        }
         update_pen(false);
         return true;
     }
@@ -380,6 +392,14 @@ public:
     bool button1Pressed(int modifierKey) override
     {
         EditSubscriber::action = ES_ACTION_DRAGGING;
+        undo_stack_.push_back(mask_->strokes.size());
+        if (modifierKey & GDK_CONTROL_MASK) {
+            mask_->strokes.push_back(rtengine::procparams::DrawnMask::Stroke());
+        }
+        if ((modifierKey & GDK_SHIFT_MASK) != prev_erase_) {
+            prev_erase_ = (modifierKey & GDK_SHIFT_MASK);
+            erase_->set_active(!erase_->get_active());
+        }
         add_stroke(false);
         return true;
     }
@@ -407,6 +427,7 @@ public:
     {
         if (mask != mask_) {
             mask_ = nullptr;
+            undo_stack_.clear();
             if (mask) {
                 if (toggle_->get_active()) {
                     toggle_->set_active(false);
@@ -454,6 +475,17 @@ private:
             if (!getEnabled()) {
                 toggle_->set_active(false);
             }
+            sig_draw_updated_.emit();
+        }
+    }
+
+    void on_undo()
+    {
+        if (mask_ && !undo_stack_.empty()) {
+            size_t n = undo_stack_.back();
+            undo_stack_.pop_back();
+            mask_->strokes.resize(n);
+            info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), n));
             sig_draw_updated_.emit();
         }
     }
@@ -531,6 +563,7 @@ private:
     Gtk::ToggleButton *toggle_;
     Gtk::Label *info_;
     Gtk::Button *reset_;
+    Gtk::Button *undo_;
     Adjuster *feather_;
     Adjuster *radius_;
     Adjuster *transparency_;
@@ -542,6 +575,8 @@ private:
     sigc::connection modeconn_[2];
 
     SigDrawUpdated sig_draw_updated_;
+    bool prev_erase_;
+    std::vector<size_t> undo_stack_;
 };
 
 bool on_release_event_ignore(GdkEventButton *event)

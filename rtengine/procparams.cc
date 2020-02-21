@@ -533,9 +533,9 @@ bool DeltaEMask::operator!=(const DeltaEMask &other) const
 
 
 DrawnMask::Stroke::Stroke():
-    x(0),
-    y(0),
-    radius(1),
+    x(-1),
+    y(-1),
+    radius(0),
     hardness(1),
     erase(false)
 {
