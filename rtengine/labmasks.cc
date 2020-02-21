@@ -243,7 +243,8 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
 
                 int w = 2*radius_ + 1;
                 int h = 2*radius_ + 1;
-                const float val = (neg_ ? -1.f : 1.f) + (1.f - LIM01(hardness_)) * (neg_ ? 0.9f : -0.9f);
+                const float f = LIM01(hardness_);
+                const float val = (neg_ ? -1.f : 1.f) + (1.f - f) * (neg_ ? 0.99f : -0.99f);
                 
                 buf_(w, h);
                 for (int y = 0; y < h; ++y) {
@@ -257,11 +258,7 @@ bool generate_drawn_mask(int ox, int oy, int width, int height, const DrawnMask 
                     }
                 }
 
-                // for (auto i : flagmods_) {
-                //     flag_[i] = curflag_;
-                // }
                 ++curflag_;
-                // flagmods_.clear();
             }
 
             int cx = width_ * s.x - ox_;
