@@ -352,7 +352,7 @@ void Crop::update(int todo)
         // Computing the internal image for analysis, i.e. conversion from lab->Output profile (rtSettings.HistogramWorking disabled) or lab->WCS (rtSettings.HistogramWorking enabled)
 
         // internal image in output color space for analysis
-        Image8 *cropImgtrue = parent->ipf.lab2rgb(bufs_[2], 0, 0, cropw, croph, params.icm);
+        Image8 *cropImgtrue = parent->ipf.lab2rgb(bufs_[2], 0, 0, cropImg->getWidth(), cropImg->getHeight(), params.icm);
 
         int finalW = rqcropw;
 
@@ -370,11 +370,10 @@ void Crop::update(int todo)
         Image8* finaltrue = new Image8(finalW, finalH);
 
         const int cW = cropImg->getWidth();
-        const int ctW = cropImgtrue->getWidth();
 
         for (int i = 0; i < finalH; i++) {
             memcpy(final->data + 3 * i * finalW, cropImg->data + 3 * (i + upperBorder)*cW + 3 * leftBorder, 3 * finalW);
-            memcpy(finaltrue->data + 3 * i * finalW, cropImgtrue->data + 3 * (i + upperBorder)*ctW + 3 * leftBorder, 3 * finalW);
+            memcpy(finaltrue->data + 3 * i * finalW, cropImgtrue->data + 3 * (i + upperBorder)*cW + 3 * leftBorder, 3 * finalW);
         }
 
         cropImageListener->setDetailedCrop(final, finaltrue, params.icm, params.crop, rqcropx, rqcropy, rqcropw, rqcroph, skip);
