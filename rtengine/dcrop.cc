@@ -369,9 +369,12 @@ void Crop::update(int todo)
         Image8* final = new Image8(finalW, finalH);
         Image8* finaltrue = new Image8(finalW, finalH);
 
+        const int cW = cropImg->getWidth();
+        const int ctW = cropImgtrue->getWidth();
+
         for (int i = 0; i < finalH; i++) {
-            memcpy(final->data + 3 * i * finalW, cropImg->data + 3 * (i + upperBorder)*cropw + 3 * leftBorder, 3 * finalW);
-            memcpy(finaltrue->data + 3 * i * finalW, cropImgtrue->data + 3 * (i + upperBorder)*cropw + 3 * leftBorder, 3 * finalW);
+            memcpy(final->data + 3 * i * finalW, cropImg->data + 3 * (i + upperBorder)*cW + 3 * leftBorder, 3 * finalW);
+            memcpy(finaltrue->data + 3 * i * finalW, cropImgtrue->data + 3 * (i + upperBorder)*ctW + 3 * leftBorder, 3 * finalW);
         }
 
         cropImageListener->setDetailedCrop(final, finaltrue, params.icm, params.crop, rqcropx, rqcropy, rqcropw, rqcroph, skip);
