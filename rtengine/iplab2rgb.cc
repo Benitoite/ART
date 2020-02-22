@@ -81,6 +81,7 @@ inline void copyAndClamp(const Imagefloat *src, unsigned char *dst, const double
 void ImProcFunctions::lab2monitorRgb(Imagefloat *img, Image8* image)
 {
     img->setMode(Imagefloat::Mode::LAB, multiThread);
+    image->allocate(img->getWidth(), img->getHeight());
     
     if (monitorTransform) {
 
