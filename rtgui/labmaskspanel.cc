@@ -191,6 +191,13 @@ public:
     }
 
 private:
+    void on_hide() override
+    {
+        if (isCurrentSubscriber()) {
+            switchOffEditMode();
+        }
+    }
+
     float L_;
     float C_;
     float H_;
@@ -340,6 +347,8 @@ public:
         tb->pack_start(*cg, Gtk::PACK_SHRINK, 2);
         
         signal_enabled_toggled().connect(sigc::mem_fun(*this, &DrawnMaskPanel::on_enabled_toggled));
+
+        tb->signal_unmap().connect(sigc::mem_fun(*this, &DrawnMaskPanel::on_hide));
     }
 
     ~DrawnMaskPanel()
@@ -381,8 +390,10 @@ public:
     
     bool mouseOver(int modifierKey) override
     {
-        if ((modifierKey & GDK_SHIFT_MASK) != prev_erase_) {
-            prev_erase_ = (modifierKey & GDK_SHIFT_MASK);
+        bool ctrl = modifierKey & GDK_CONTROL_MASK;
+        bool shift = modifierKey & GDK_SHIFT_MASK;
+        if ((!ctrl && shift) != prev_erase_) {
+            prev_erase_ = (!ctrl && shift);
             erase_->set_active(!erase_->get_active());
         }
         update_pen(false);
@@ -393,11 +404,12 @@ public:
     {
         EditSubscriber::action = ES_ACTION_DRAGGING;
         undo_stack_.push_back(mask_->strokes.size());
-        if (modifierKey & GDK_CONTROL_MASK) {
+        bool ctrl = modifierKey & GDK_CONTROL_MASK;
+        bool shift = modifierKey & GDK_SHIFT_MASK;
+        if (ctrl && !shift) {
             mask_->strokes.push_back(rtengine::procparams::DrawnMask::Stroke());
-        }
-        if ((modifierKey & GDK_SHIFT_MASK) != prev_erase_) {
-            prev_erase_ = (modifierKey & GDK_SHIFT_MASK);
+        } else if ((!ctrl && shift) != prev_erase_) {
+            prev_erase_ = !ctrl && shift;
             erase_->set_active(!erase_->get_active());
         }
         add_stroke(false);
@@ -423,12 +435,14 @@ public:
         double delta = (abs(deltaX) > abs(deltaY)) ? deltaX : deltaY;
         bool isUp = direction == GDK_SCROLL_UP || (direction == GDK_SCROLL_SMOOTH && delta < 0.0);
         int incr = isUp ? 1 : -1;
-        
-        if (bstate & GDK_CONTROL_MASK) {
+
+        bool ctrl = bstate & GDK_CONTROL_MASK;
+        bool shift = bstate & GDK_SHIFT_MASK;
+        if (ctrl && !shift) {
             radius_->setValue(std::max(radius_->getValue() + incr, 0.0));
             update_pen(false);
             return true;
-        } else if (bstate & GDK_MOD1_MASK) {
+        } else if (ctrl && shift) {
             hardness_->setValue(std::max(hardness_->getValue() + incr, 0.0));
             return true;
         }
@@ -449,6 +463,7 @@ public:
             if (mask) {
                 if (toggle_->get_active()) {
                     toggle_->set_active(false);
+                    unsubscribe();
                 }
                 info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), mask->strokes.size()));
                 setEnabled(mask->enabled);
@@ -470,6 +485,10 @@ private:
     {
         if (mask_ && getEnabled() && getEditProvider()) {
             if (toggle_->get_active()) {
+                auto p = getEditProvider();
+                if (p && p->getCurrSubscriber()) {
+                    p->getCurrSubscriber()->switchOffEditMode();
+                }
                 subscribe();
             } else {
                 unsubscribe();
@@ -505,6 +524,13 @@ private:
             mask_->strokes.resize(n);
             info_->set_markup(Glib::ustring::compose(M("TP_LABMASKS_DRAWNMASK_INFO"), n));
             sig_draw_updated_.emit();
+        }
+    }
+
+    void on_hide() override
+    {
+        if (isCurrentSubscriber()) {
+            switchOffEditMode();
         }
     }
     
@@ -956,6 +982,7 @@ LabMasksPanel::LabMasksPanel(LabMasksContentProvider *cp):
     vb->pack_start(*areaFrame);
     areaMask->add(*vb, false);
     areaMask->setLevel(1);
+    vb->signal_unmap().connect(sigc::mem_fun(*this, &LabMasksPanel::on_hide));
     mask_box->pack_start(*areaMask);
 
     drawnMask = Gtk::manage(new DrawnMaskPanel());
@@ -1962,6 +1989,17 @@ void LabMasksPanel::onMaskFold(GdkEventButton *evt)
         if (showMask->get_active()) {
             showMask->set_active(false);
         }
+        if (isCurrentSubscriber()) {
+            switchOffEditMode();
+        }
+    }
+}
+
+
+void LabMasksPanel::on_hide()
+{
+    if (isCurrentSubscriber()) {
+        switchOffEditMode();
     }
 }
 

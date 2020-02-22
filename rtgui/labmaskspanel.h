@@ -187,6 +187,7 @@ private:
     void onDrawnMaskUpdated();
 
     bool onMaskNameFocusOut(GdkEventFocus *e);
+    void on_hide() override;
 
     LabMasksContentProvider *cp_;
     std::vector<rtengine::procparams::Mask> masks_;
