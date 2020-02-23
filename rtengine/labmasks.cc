@@ -826,8 +826,8 @@ bool getDeltaEColor(Imagefloat *rgb, int x, int y, int offset_x, int offset_y, i
     std::vector<float> med_L, med_a, med_b;
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(rgb->colorSpace());
     const auto mode = rgb->mode();
-    x = (x - offset_x) / scale;
-    y = (y - offset_y) / scale;
+    x = x / scale - offset_x;
+    y = y / scale - offset_y;
     const int off = int(32.0 / scale + 0.5);
     if (x < 0 || x >= rgb->getWidth() || y < 0 || y >= rgb->getHeight()) {
         return false;
