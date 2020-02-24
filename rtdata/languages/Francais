@@ -791,6 +791,7 @@ HISTORY_MSG_ICM_OUTPUT_TYPE;Profil de sortie - Type
 HISTORY_MSG_ICM_WORKING_GAMMA;Profil de travail - Gamma
 HISTORY_MSG_ICM_WORKING_SLOPE;Profil de travail - Pente
 HISTORY_MSG_ICM_WORKING_TRC_METHOD;Profil de travail - Méthode CRT
+HISTORY_MSG_LABMASKS_MASK_NAME;Nom du masque
 HISTORY_MSG_LOCALCONTRAST_AMOUNT;Contraste Local - Quantité
 HISTORY_MSG_LOCALCONTRAST_CONTRAST;Contraste Local - Contraste Résiduel
 HISTORY_MSG_LOCALCONTRAST_CONTRASTTHRESHOLDMASK;Contraste Local - Seuil de contraste du masque
@@ -1566,7 +1567,7 @@ TP_EXPOSURE_TCMODE_STANDARD;Standard
 TP_EXPOSURE_TCMODE_WEIGHTEDSTD;Standard Pondéré
 TP_EXPOS_BLACKPOINT_LABEL;Points Noir Raw
 TP_EXPOS_WHITEPOINT_LABEL;Points Blanc Raw
-TP_FILMNEGATIVE_BLUE;Ratio bleu
+TP_FILMNEGATIVE_BLUE;Ratio de bleu
 TP_FILMNEGATIVE_GREEN;Exposant de référence (contraste)
 TP_FILMNEGATIVE_GUESS_TOOLTIP;Calculer l'exposition en collectant 2 points de référence neutre dans l'image ; un blanc (gris léger) et un noir (gris foncé). L'ordre n'a pas d'importance. L'exposition sera mise à jour aprés la collecte du second point.
 TP_FILMNEGATIVE_LABEL;Film Négatif
@@ -1688,6 +1689,7 @@ TP_LABMASKS_CHROMATICITY;C
 TP_LABMASKS_HUE;T
 TP_LABMASKS_LIGHTNESS;L
 TP_LABMASKS_MASK;Masques
+TP_LABMASKS_MASK_UNNAMED;Sans nom
 TP_LABMASKS_SHOW;Montrer masque
 TP_LABMASKS_CONTRASTTHRESHOLDMASK;Seuil du contraste
 TP_LABMASKS_DELTAE;Masque ΔE
@@ -1703,6 +1705,7 @@ TP_LABMASKS_DRAWNMASK;Masque au pinceau
 TP_LABMASKS_DRAWNMASK_TOGGLE_TIP;Basculer vers le dessin sur image
 TP_LABMASKS_DRAWNMASK_PEN_SETTINGS;Paramètres du pinceau
 TP_LABMASKS_DRAWNMASK_RESET_TIP;Effacer tous les tracés
+TP_LABMASKS_DRAWNMASK_UNDO_TIP;Eliminer le dernier groupe de tracés
 TP_LABMASKS_DRAWNMASK_RADIUS;Rayon
 TP_LABMASKS_DRAWNMASK_TRANSPARENCY;Transparence
 TP_LABMASKS_DRAWNMASK_SMOOTHNESS;Lissage
@@ -1756,7 +1759,7 @@ TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP;Horizontale et verticale
 TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP;Horizontale
 TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP;Verticale
 TP_PERSPECTIVE_CROPFACTOR;Facteur de rognage
-TP_PERSPECTIVE_FLENGTH;Longueur focale
+TP_PERSPECTIVE_FLENGTH;Distance focale
 TP_PERSPECTIVE_HORIZONTAL;Horizontale
 TP_PERSPECTIVE_LABEL;Correction de la perspective
 TP_PERSPECTIVE_SHEAR;Cisaillement
