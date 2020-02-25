@@ -63,7 +63,7 @@ void ImProcFunctions::exposure(Imagefloat *img)
                 if (_mm_movemask_ps((vfloat)m)) {
                     for (int k = 0; k < 4; ++k) {
                         float &vv = chan[c][y][x + k];
-                        vv = (vv < MAXVALF ? expcomp[vv] : std::max(vv * exp_scale + black, 0.f));
+                        vv = (vv < MAXVALF ? expcomp[vv] : std::max(vv * exp_scale - black, 0.f));
                     }
                 } else {
                     STVF(chan[c][y][x], expcomp[v]);
@@ -74,7 +74,7 @@ void ImProcFunctions::exposure(Imagefloat *img)
         for (; x < W; ++x) {
             for (int c = 0; c < 3; ++c) {
                 float &v = chan[c][y][x];
-                v = (v < MAXVALF ? expcomp[v] : std::max(v * exp_scale + black, 0.f));
+                v = (v < MAXVALF ? expcomp[v] : std::max(v * exp_scale - black, 0.f));
             }
         }
     }
