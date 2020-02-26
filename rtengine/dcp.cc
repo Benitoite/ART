@@ -742,6 +742,36 @@ private:
     FILE *file_;
 };
 
+
+// avoid hue shift discontinuity
+// (see https://torger.se/anders/dcamprof.html#dcp_hue_shift_discontinuity).
+// Adapted from dcamprof, Copyright 2015 Anders Torger, released under GPLv3
+inline float hue_interpolate(float f0, float hue0, float f1, float hue1)
+{
+    float h1 = fmod(hue0, 360.f);
+    float h2 = fmod(hue1, 360.f);
+    float d = h2 - h1;
+    float res = 0.f;
+    if (h1 > h2) {
+        std::swap(h1, h2);
+        std::swap(f0, f1);
+#ifndef NDEBUG
+        std::swap(hue0, hue1);
+#endif
+        d = -d;
+    }
+    if (d > 180.f) {
+        h1 += 360.f;
+        res = fmod((f0 * f1) * h1 + f1 * (h2 - h1), 360.f);
+    } else {
+        res = f0 * h1 + f1 * h2;
+    }
+
+    assert(fabs((f0 * hue0 + f1 * hue1) - res) <= 0.1f);
+    
+    return res;
+}
+
 } // namespace
 
 
@@ -1855,6 +1885,7 @@ DCPProfile::Matrix DCPProfile::makeXyzCam(const ColorTemp& white_balance, const 
     return res;
 }
 
+
 std::vector<DCPProfile::HsbModify> DCPProfile::makeHueSatMap(const ColorTemp& white_balance, int preferred_illuminant) const
 {
     if (deltas_1.empty()) {
@@ -1918,13 +1949,14 @@ std::vector<DCPProfile::HsbModify> DCPProfile::makeHueSatMap(const ColorTemp& wh
     const float w2 = 1.0f - w1;
 
     for (unsigned int i = 0; i < delta_info.array_count; ++i) {
-        res[i].hue_shift = w1 * deltas_1[i].hue_shift + w2 * deltas_2[i].hue_shift;
+        res[i].hue_shift = hue_interpolate(w1, deltas_1[i].hue_shift, w2, deltas_2[i].hue_shift);
         res[i].sat_scale = w1 * deltas_1[i].sat_scale + w2 * deltas_2[i].sat_scale;
         res[i].val_scale = w1 * deltas_1[i].val_scale + w2 * deltas_2[i].val_scale;
     }
 
     return res;
 }
+
 
 void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h, float& s, float& v) const
 {
@@ -1958,18 +1990,18 @@ void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbM
         std::vector<HsbModify>::size_type e00_index = h_index0 * table_info.pc.hue_step + s_index0;
         std::vector<HsbModify>::size_type e01_index = e00_index + (h_index1 - h_index0) * table_info.pc.hue_step;
 
-        const float hue_shift0 = h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift;
+        const float hue_shift0 = hue_interpolate(h_fract0, table_base[e00_index].hue_shift, h_fract1, table_base[e01_index].hue_shift);
         const float sat_scale0 = h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale;
         const float val_scale0 = h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale;
 
         ++e00_index;
         ++e01_index;
 
-        const float hueShift1 = h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift;
+        const float hueShift1 = hue_interpolate(h_fract0, table_base[e00_index].hue_shift, h_fract1, table_base[e01_index].hue_shift);
         const float satScale1 = h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale;
         const float valScale1 = h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale;
 
-        hue_shift = s_fract0 * hue_shift0 + s_fract1 * hueShift1;
+        hue_shift = hue_interpolate(s_fract0, hue_shift0, s_fract1, hueShift1);
         sat_scale = s_fract0 * sat_scale0 + s_fract1 * satScale1;
         val_scale = s_fract0 * val_scale0 + s_fract1 * valScale1;
     } else {
@@ -2007,8 +2039,8 @@ void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbM
         std::vector<HsbModify>::size_type e11_index = e01_index + table_info.pc.val_step;
 
         const float hueShift0 =
-            v_fract0 * (h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift)
-            + v_fract1 * (h_fract0 * table_base[e10_index].hue_shift + h_fract1 * table_base[e11_index].hue_shift);
+            hue_interpolate(v_fract0, hue_interpolate(h_fract0, table_base[e00_index].hue_shift, h_fract1, table_base[e01_index].hue_shift),
+                            v_fract1, hue_interpolate(h_fract0, table_base[e10_index].hue_shift, h_fract1, table_base[e11_index].hue_shift));
         const float satScale0 =
             v_fract0 * (h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale)
             + v_fract1 * (h_fract0 * table_base[e10_index].sat_scale + h_fract1 * table_base[e11_index].sat_scale);
@@ -2022,8 +2054,8 @@ void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbM
         ++e11_index;
 
         const float hueShift1 =
-            v_fract0 * (h_fract0 * table_base[e00_index].hue_shift + h_fract1 * table_base[e01_index].hue_shift)
-            + v_fract1 * (h_fract0 * table_base[e10_index].hue_shift + h_fract1 * table_base[e11_index].hue_shift);
+            hue_interpolate(v_fract0, hue_interpolate(h_fract0, table_base[e00_index].hue_shift, h_fract1, table_base[e01_index].hue_shift),
+                            v_fract1, hue_interpolate(h_fract0, table_base[e10_index].hue_shift, h_fract1, table_base[e11_index].hue_shift));
         const float satScale1 =
             v_fract0 * (h_fract0 * table_base[e00_index].sat_scale + h_fract1 * table_base[e01_index].sat_scale)
             + v_fract1 * (h_fract0 * table_base[e10_index].sat_scale + h_fract1 * table_base[e11_index].sat_scale);
@@ -2031,7 +2063,7 @@ void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vector<HsbM
             v_fract0 * (h_fract0 * table_base[e00_index].val_scale + h_fract1 * table_base[e01_index].val_scale)
             + v_fract1 * (h_fract0 * table_base[e10_index].val_scale + h_fract1 * table_base[e11_index].val_scale);
 
-        hue_shift = s_fract0 * hueShift0 + s_fract1 * hueShift1;
+        hue_shift = hue_interpolate(s_fract0, hueShift0, s_fract1, hueShift1);
         sat_scale = s_fract0 * satScale0 + s_fract1 * satScale1;
         val_scale = s_fract0 * valScale0 + s_fract1 * valScale1;
     }
