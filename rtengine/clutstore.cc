@@ -502,7 +502,9 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
         }
 
         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-            setUnlessOOG(r[ti * TS_ + tj], g[ti * TS_ + tj], b[ti * TS_ + tj], clutr[tj], clutg[tj], clutb[tj]);
+            r[ti * TS_ + tj] = clutr[tj];
+            g[ti * TS_ + tj] = clutg[tj];
+            b[ti * TS_ + tj] = clutb[tj];
         }
     }
 }

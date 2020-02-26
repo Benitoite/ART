@@ -137,6 +137,12 @@ float estimate_ambient_light(const array2D<float> &R, const array2D<float> &G, c
             }
             return q.top();
         };
+
+    const auto OOG =
+        [](float val, float high) -> bool
+        {
+            return (val < 0.f) || (val > high);
+        };
     
     float darklim = RT_INFINITY_F;
     {

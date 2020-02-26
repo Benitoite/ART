@@ -41,9 +41,7 @@ void apply_contrast(Imagefloat *rgb, const ImProcData &im, int contrast)
             float &r = rgb->r(i, j);
             float &g = rgb->g(i, j);
             float &b = rgb->b(i, j);
-            if (OOG(r) || OOG(g) || OOG(b)) {
-                Color::filmlike_clip(&r, &g, &b);
-            }
+            Color::filmlike_clip(&r, &g, &b);
         }
     }
     
@@ -81,14 +79,16 @@ void apply_contrast(Imagefloat *rgb, const ImProcData &im, int contrast)
             tmpr = curve(LVFU(rgb->r(i, j)));
             tmpg = curve(LVFU(rgb->g(i, j)));
             tmpb = curve(LVFU(rgb->b(i, j)));
-            for (int k = 0; k < 4; ++k) {
-                setUnlessOOG(rgb->r(i, j+k), rgb->g(i, j+k), rgb->b(i, j+k), tmpr[k], tmpg[k], tmpb[k]);
-            }
+            STVFU(rgb->r(i, j), tmpr);
+            STVFU(rgb->g(i, j), tmpg);
+            STVFU(rgb->b(i, j), tmpb);
         }
 #endif
         for (; j < W; ++j) {
             //brightness/contrast
-            setUnlessOOG(rgb->r(i, j), rgb->g(i, j), rgb->b(i, j), curve[rgb->r(i, j)], curve[rgb->g(i, j)], curve[rgb->b(i, j)]);
+            rgb->r(i, j) = curve[rgb->r(i, j)];
+            rgb->g(i, j) = curve[rgb->g(i, j)];
+            rgb->b(i, j) = curve[rgb->b(i, j)];
         }
     }
 }

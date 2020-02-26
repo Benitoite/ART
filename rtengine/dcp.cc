@@ -1585,7 +1585,9 @@ void DCPProfile::step2ApplyTile(float* rc, float* gc, float* bc, int width, int 
 
                     Color::hsv2rgbdcp( h, s, v, cnewr, cnewg, cnewb);
 
-                    setUnlessOOG(newr, newg, newb, cnewr, cnewg, cnewb);
+                    newr = cnewr;
+                    newg = cnewg;
+                    newb = cnewb;
                 }
 
                 if (as_in.data->use_tone_curve) {
