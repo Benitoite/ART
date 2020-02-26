@@ -898,9 +898,12 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
     const AdobeToneCurve& adobeTC = static_cast<const AdobeToneCurve&>((const ToneCurve&) * this);
 
     for (size_t i = start; i < end; ++i) {
-        float r = CLIP(rc[i]);
-        float g = CLIP(gc[i]);
-        float b = CLIP(bc[i]);
+        // float r = CLIP(rc[i]);
+        // float g = CLIP(gc[i]);
+        // float b = CLIP(bc[i]);
+        float r = rc[i];
+        float g = gc[i];
+        float b = bc[i];
 
         if (!state.isProphoto) {
             // convert to prophoto space to make sure the same result is had regardless of working color space
@@ -910,6 +913,32 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
             r = newr;
             g = newg;
             b = newb;
+        }
+
+        { // fix out of gamut blues. Apply a variation of this trick:
+          // https://acescentral.com/t/colour-artefacts-or-breakup-using-aces/520/8
+          // matrix hand-tuned by visual inspection (!!)
+            // [ 1.0 0.0  0.0
+            //   0.0 0.94 0.06
+            //   0.0 0.0  1.0 ]
+            float hue, sat, val;
+            Color::rgb2hsv(r, g, b, hue, sat, val);
+            hue *= 360.f;
+            constexpr float blue_hue = 250.f;
+            constexpr float blue_hue_inner = 20.f;
+            constexpr float blue_hue_outer = 40.f;
+            float dist = std::abs(hue - blue_hue);
+            if (dist <= blue_hue_outer) {
+                float gg = intp(0.94f, g, b);
+                float d = std::max(dist - blue_hue_inner, 0.f);
+                float x = 1.f - d / (blue_hue_outer - blue_hue_inner);
+                if (x < 0.5f) {
+                    x = 2.f * SQR(x);
+                } else {
+                    x = 1.f - 2.f * SQR(1 - x);
+                }
+                g = intp(x, gg, g);
+            }
         }
 
         float ar = r;
