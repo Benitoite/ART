@@ -959,7 +959,8 @@ ToneCurveParams::ToneCurveParams():
     fromHistMatching(false),
     saturation{
         FCT_Linear
-    }
+    },
+    perceptualStrength(100)
 {
 }
 
@@ -974,7 +975,8 @@ bool ToneCurveParams::operator ==(const ToneCurveParams& other) const
         && curveMode2 == other.curveMode2
         && histmatching == other.histmatching
         && fromHistMatching == other.fromHistMatching
-        && saturation == other.saturation;
+        && saturation == other.saturation
+        && perceptualStrength == perceptualStrength;
 }
 
 
@@ -2675,6 +2677,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("ToneCurve", "Curve", toneCurve.curve, keyFile);
             saveToKeyfile("ToneCurve", "Curve2", toneCurve.curve2, keyFile);
             saveToKeyfile("ToneCurve", "Saturation", toneCurve.saturation, keyFile);
+            saveToKeyfile("ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength, keyFile);
         }
 
 // Local contrast
@@ -3415,6 +3418,7 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "ToneCurve", "HistogramMatching", toneCurve.histmatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "Saturation", toneCurve.saturation);
+                assignFromKeyfile(keyFile, "ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength);
             }
         }
 

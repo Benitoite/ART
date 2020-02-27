@@ -568,6 +568,7 @@ public:
     float Prophoto2Working[3][3];
     float cmul_contrast;
     bool isProphoto;
+    float strength;
 };
 
 // Tone curve whose purpose is to keep the color appearance constant, that is the curve changes contrast
@@ -590,7 +591,7 @@ private:
     float calculateToneCurveContrastValue() const;
 public:
     static void init();
-    void initApplyState(PerceptualToneCurveState & state, Glib::ustring workingSpace) const;
+    void initApplyState(PerceptualToneCurveState & state, const Glib::ustring &workingSpace) const;
     void BatchApply(const size_t start, const size_t end, float *r, float *g, float *b, const PerceptualToneCurveState &state) const;
 };
 

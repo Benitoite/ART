@@ -47,16 +47,19 @@ protected:
     DiagonalCurveEditor* shape2;
     CurveEditorGroup *satcurveG;
     FlatCurveEditor *satcurve;
+    Adjuster *perceptualStrength;
 
     rtengine::ProcEvent EvHistMatching;
     rtengine::ProcEvent EvHistMatchingBatch;
     rtengine::ProcEvent EvSatCurve;
+    rtengine::ProcEvent EvPerceptualStrength;
 
     // used temporarily in eventing
     rtengine::procparams::ToneCurveParams::TcMode nextToneCurveMode;
     std::vector<double> nextToneCurve;
 
     void setHistmatching(bool enabled);
+    void showPerceptualStrength();
 
 public:
     ToneCurve();

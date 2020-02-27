@@ -47,6 +47,7 @@ ToneCurve::ToneCurve():
     EvHistMatching = m->newEvent(AUTOEXP, "HISTORY_MSG_HISTMATCHING");
     EvHistMatchingBatch = m->newEvent(M_VOID, "HISTORY_MSG_HISTMATCHING");
     EvSatCurve = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_TONECURVE_SATCURVE");
+    EvPerceptualStrength = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_TONECURVE_PERCEPTUAL_STRENGTH");
     EvToolEnabled.set_action(AUTOEXP);
 
     contrast = Gtk::manage (new Adjuster(M("TP_BRIGHTCONTRSAT_CONTRAST"), -100, 100, 1, 0));
@@ -120,6 +121,9 @@ ToneCurve::ToneCurve():
 
     tcmode2conn = toneCurveMode2->signal_changed().connect( sigc::mem_fun(*this, &ToneCurve::curveMode2Changed), true );
 
+    perceptualStrength = Gtk::manage(new Adjuster(M("TP_TONECURVE_PERCEPTUAL_STRENGTH"), 0, 100, 1, 100));
+    pack_start(*perceptualStrength);
+    perceptualStrength->setAdjusterListener(this);
 
     satcurveG = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_TONECURVE_SATCURVE"), 0.7));
     satcurveG->setCurveListener(this);
@@ -168,6 +172,10 @@ void ToneCurve::read(const ProcParams* pp)
 
     tcmode2conn.block(false);
     tcmodeconn.block(false);
+
+    perceptualStrength->setValue(pp->toneCurve.perceptualStrength);
+
+    showPerceptualStrength();
 
     enableListener ();
 }
@@ -232,6 +240,8 @@ void ToneCurve::write(ProcParams* pp)
     pp->toneCurve.fromHistMatching = fromHistMatching;
 
     pp->toneCurve.saturation = satcurve->getCurve();
+
+    pp->toneCurve.perceptualStrength = perceptualStrength->getValue();
 }
 
 
@@ -246,6 +256,7 @@ void ToneCurve::setRaw(bool raw)
 void ToneCurve::setDefaults(const ProcParams* defParams)
 {
     contrast->setDefault(defParams->toneCurve.contrast);
+    perceptualStrength->setDefault(defParams->toneCurve.perceptualStrength);
 }
 
 
@@ -266,6 +277,7 @@ void ToneCurve::curveChanged(CurveEditor *ce)
 
 void ToneCurve::curveMode1Changed ()
 {
+    showPerceptualStrength();
     //if (listener)  listener->panelChanged (EvToneCurveMode, toneCurveMode->get_active_text());
     if (listener && getEnabled()) {
         //setHistmatching(false);
@@ -284,6 +296,7 @@ bool ToneCurve::curveMode1Changed_ ()
 
 void ToneCurve::curveMode2Changed ()
 {
+    showPerceptualStrength();
     //if (listener)  listener->panelChanged (EvToneCurveMode, toneCurveMode->get_active_text());
     if (listener && getEnabled()) {
         //setHistmatching(false);
@@ -325,6 +338,8 @@ void ToneCurve::enableAll(bool yes)
     toneCurveMode2->set_sensitive(yes);
     histmatching->set_sensitive(yes);
     satcurveG->set_sensitive(yes);
+    contrast->set_sensitive(yes);
+    perceptualStrength->set_sensitive(yes);
 }
 
 
@@ -415,5 +430,15 @@ void ToneCurve::adjusterChanged(Adjuster *a, double newval)
 
     if (a == contrast) {
         listener->panelChanged(EvContrast, costr);
+    } else if (a == perceptualStrength) {
+        listener->panelChanged(EvPerceptualStrength, costr);
     }
+}
+
+
+void ToneCurve::showPerceptualStrength()
+{
+    perceptualStrength->set_visible(
+        toneCurveMode->get_active_row_number() == 5 ||
+        toneCurveMode2->get_active_row_number() == 5);
 }

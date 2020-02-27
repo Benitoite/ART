@@ -910,6 +910,35 @@ inline float scurve(const float x) // x must be in 0..1 range
 void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float *rc, float *gc, float *bc, const PerceptualToneCurveState &state) const
 {
     const AdobeToneCurve& adobeTC = static_cast<const AdobeToneCurve&>((const ToneCurve&) * this);
+    const StandardToneCurve &stdTC = static_cast<const StandardToneCurve &>((const ToneCurve&) * this);
+
+    const float strength = state.strength;
+
+    const auto to_prophoto =
+        [&state](float &r, float &g, float &b) -> void
+        {
+            if (!state.isProphoto) {
+                float newr = state.Working2Prophoto[0][0] * r + state.Working2Prophoto[0][1] * g + state.Working2Prophoto[0][2] * b;
+                float newg = state.Working2Prophoto[1][0] * r + state.Working2Prophoto[1][1] * g + state.Working2Prophoto[1][2] * b;
+                float newb = state.Working2Prophoto[2][0] * r + state.Working2Prophoto[2][1] * g + state.Working2Prophoto[2][2] * b;
+                r = newr;
+                g = newg;
+                b = newb;
+            }
+        };
+
+    const auto to_working =
+        [&state](float &r, float &g, float &b) -> void
+        {
+            if (!state.isProphoto) {
+                float newr = state.Prophoto2Working[0][0] * r + state.Prophoto2Working[0][1] * g + state.Prophoto2Working[0][2] * b;
+                float newg = state.Prophoto2Working[1][0] * r + state.Prophoto2Working[1][1] * g + state.Prophoto2Working[1][2] * b;
+                float newb = state.Prophoto2Working[2][0] * r + state.Prophoto2Working[2][1] * g + state.Prophoto2Working[2][2] * b;
+                r = newr;
+                g = newg;
+                b = newb;
+            }
+        };
 
     for (size_t i = start; i < end; ++i) {
         // float r = CLIP(rc[i]);
@@ -919,15 +948,7 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
         float g = gc[i];
         float b = bc[i];
 
-        if (!state.isProphoto) {
-            // convert to prophoto space to make sure the same result is had regardless of working color space
-            float newr = state.Working2Prophoto[0][0] * r + state.Working2Prophoto[0][1] * g + state.Working2Prophoto[0][2] * b;
-            float newg = state.Working2Prophoto[1][0] * r + state.Working2Prophoto[1][1] * g + state.Working2Prophoto[1][2] * b;
-            float newb = state.Working2Prophoto[2][0] * r + state.Working2Prophoto[2][1] * g + state.Working2Prophoto[2][2] * b;
-            r = newr;
-            g = newg;
-            b = newb;
-        }
+        to_prophoto(r, g, b);
 
         { // fix out of gamut blues. Apply a variation of this trick:
           // https://acescentral.com/t/colour-artefacts-or-breakup-using-aces/520/8
@@ -953,6 +974,12 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
                 g = intp(x * xx, gg, g);
             }
         }
+
+        float std_r = r;
+        float std_g = g;
+        float std_b = b;
+        stdTC.Apply(std_r, std_g, std_b);
+        to_working(std_r, std_g, std_b);
 
         float ar = r;
         float ag = g;
@@ -1004,17 +1031,10 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
 
         if (!isfinite(J) || !isfinite(C) || !isfinite(h)) {
             // this can happen for dark noise colours or colours outside human gamut. Then we just return the curve's result.
-            if (!state.isProphoto) {
-                float newr = state.Prophoto2Working[0][0] * r + state.Prophoto2Working[0][1] * g + state.Prophoto2Working[0][2] * b;
-                float newg = state.Prophoto2Working[1][0] * r + state.Prophoto2Working[1][1] * g + state.Prophoto2Working[1][2] * b;
-                float newb = state.Prophoto2Working[2][0] * r + state.Prophoto2Working[2][1] * g + state.Prophoto2Working[2][2] * b;
-                r = newr;
-                g = newg;
-                b = newb;
-            }
-            rc[i] = r;
-            gc[i] = g;
-            bc[i] = b;
+            to_working(r, g, b);
+            rc[i] = intp(strength, r, std_r);
+            gc[i] = intp(strength, g, std_g);
+            bc[i] = intp(strength, b, std_b);
 
             continue;
         }
@@ -1113,18 +1133,14 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
 
         if (!isfinite(x) || !isfinite(y) || !isfinite(z)) {
             // can happen for colours on the rim of being outside gamut, that worked without chroma scaling but not with. Then we return only the curve's result.
-            if (!state.isProphoto) {
-                float newr = state.Prophoto2Working[0][0] * r + state.Prophoto2Working[0][1] * g + state.Prophoto2Working[0][2] * b;
-                float newg = state.Prophoto2Working[1][0] * r + state.Prophoto2Working[1][1] * g + state.Prophoto2Working[1][2] * b;
-                float newb = state.Prophoto2Working[2][0] * r + state.Prophoto2Working[2][1] * g + state.Prophoto2Working[2][2] * b;
-                r = newr;
-                g = newg;
-                b = newb;
-            }
+            to_working(r, g, b);
 
-            rc[i] = r;
-            gc[i] = g;
-            bc[i] = b;
+            // rc[i] = r;
+            // gc[i] = g;
+            // bc[i] = b;
+            rc[i] = intp(strength, r, std_r);
+            gc[i] = intp(strength, g, std_g);
+            bc[i] = intp(strength, b, std_b);
 
             continue;
         }
@@ -1177,17 +1193,13 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
             }
         }
 
-        if (!state.isProphoto) {
-            float newr = state.Prophoto2Working[0][0] * r + state.Prophoto2Working[0][1] * g + state.Prophoto2Working[0][2] * b;
-            float newg = state.Prophoto2Working[1][0] * r + state.Prophoto2Working[1][1] * g + state.Prophoto2Working[1][2] * b;
-            float newb = state.Prophoto2Working[2][0] * r + state.Prophoto2Working[2][1] * g + state.Prophoto2Working[2][2] * b;
-            r = newr;
-            g = newg;
-            b = newb;
-        }
-        rc[i] = r;
-        gc[i] = g;
-        bc[i] = b;
+        to_working(r, g, b);
+        // rc[i] = r;
+        // gc[i] = g;
+        // bc[i] = b;
+        rc[i] = intp(strength, r, std_r);
+        gc[i] = intp(strength, g, std_g);
+        bc[i] = intp(strength, b, std_b);
     }
 }
 float PerceptualToneCurve::cf_range[2];
@@ -1256,9 +1268,10 @@ void PerceptualToneCurve::init()
     }
 }
 
-void PerceptualToneCurve::initApplyState(PerceptualToneCurveState & state, Glib::ustring workingSpace) const
+void PerceptualToneCurve::initApplyState(PerceptualToneCurveState &state, const Glib::ustring &workingSpace) const
 {
-
+    state.strength = 1.f;
+    
     // Get the curve's contrast value, and convert to a chroma scaling
     const float contrast_value = calculateToneCurveContrastValue();
     state.cmul_contrast = get_curve_val(contrast_value, cf_range, cf, sizeof(cf) / sizeof(cf[0]));

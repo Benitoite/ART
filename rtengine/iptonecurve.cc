@@ -119,7 +119,7 @@ inline void apply(const Curve &c, Imagefloat *rgb, int W, int H, bool multithrea
 }
 
 
-void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curveMode, const Glib::ustring &working_profile, bool multithread)
+void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curveMode, const Glib::ustring &working_profile, int perceptual_strength, bool multithread)
 {
     const int W = rgb->getWidth();
     const int H = rgb->getHeight();
@@ -128,6 +128,7 @@ void apply_tc(Imagefloat *rgb, const ToneCurve &tc, ToneCurveParams::TcMode curv
         const PerceptualToneCurve &c = static_cast<const PerceptualToneCurve&>(tc);
         PerceptualToneCurveState state;
         c.initApplyState(state, working_profile);
+        state.strength = LIM01(float(perceptual_strength) / 100.f);
 
 #ifdef _OPENMP
         #pragma omp parallel for if (multithread)
@@ -287,7 +288,7 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
 
         if (!tcurve1.isIdentity()) {
             tc.Set(tcurve1, Color::sRGBGammaCurve);
-            apply_tc(img, tc, params->toneCurve.curveMode, params->icm.workingProfile, multiThread);
+            apply_tc(img, tc, params->toneCurve.curveMode, params->icm.workingProfile, params->toneCurve.perceptualStrength, multiThread);
         }
 
         if (editImgFloat && editID == EUID_ToneCurve2) {
@@ -298,7 +299,7 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
 
         if (!tcurve2.isIdentity()) {
             tc.Set(tcurve2, Color::sRGBGammaCurve);
-            apply_tc(img, tc, params->toneCurve.curveMode2, params->icm.workingProfile, multiThread);
+            apply_tc(img, tc, params->toneCurve.curveMode2, params->icm.workingProfile, params->toneCurve.perceptualStrength, multiThread);
         }
 
         if (editWhatever) {
