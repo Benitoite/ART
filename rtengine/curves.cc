@@ -893,6 +893,20 @@ float PerceptualToneCurve::calculateToneCurveContrastValue() const
     return maxslope;
 }
 
+namespace {
+
+inline float scurve(const float x) // x must be in 0..1 range
+{
+    if (x < 0.5f) {
+        return 2.f*SQR(x);
+    } else {
+        return 1.f - 2.f*SQR(1.f-x);
+    }
+}
+
+} // namespace
+
+
 void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float *rc, float *gc, float *bc, const PerceptualToneCurveState &state) const
 {
     const AdobeToneCurve& adobeTC = static_cast<const AdobeToneCurve&>((const ToneCurve&) * this);
@@ -927,17 +941,16 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
             constexpr float blue_hue = 250.f;
             constexpr float blue_hue_inner = 20.f;
             constexpr float blue_hue_outer = 40.f;
+            constexpr float blue_sat_lower = 0.65f;
             float dist = std::abs(hue - blue_hue);
-            if (dist <= blue_hue_outer) {
+            if (dist <= blue_hue_outer && sat >= blue_sat_lower) {
                 float gg = intp(0.94f, g, b);
                 float d = std::max(dist - blue_hue_inner, 0.f);
                 float x = 1.f - d / (blue_hue_outer - blue_hue_inner);
-                if (x < 0.5f) {
-                    x = 2.f * SQR(x);
-                } else {
-                    x = 1.f - 2.f * SQR(1 - x);
-                }
-                g = intp(x, gg, g);
+                x = scurve(x);
+                float xx = (sat - blue_sat_lower) / (1.f - blue_sat_lower);
+                xx = scurve(xx);
+                g = intp(x * xx, gg, g);
             }
         }
 
