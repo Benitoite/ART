@@ -1669,7 +1669,7 @@ bool EditorPanel::handleShortcutKey (GdkEventKey* event)
                     }
                     // saveProfile();
                     // setProgressStr (M ("PROGRESSBAR_PROCESSING_PROFILESAVED"));
-                    // return true;
+                    return true;
 
                 case GDK_KEY_s:
                     if (!gimpPlugin) {
