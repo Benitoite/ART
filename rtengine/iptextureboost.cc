@@ -33,13 +33,13 @@ namespace {
 
 void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &pp, double scale, bool multithread)
 {
-    unsigned int Iterates = 5;
+    unsigned int Iterates = 0;//5;
 
     float stren = pp.strength; 
     float edgest = pp.edgeStopping; 
     float sca = pp.scale;
     constexpr float gamm = 1.5f;
-    constexpr float rew = 1;
+    constexpr float rew = 0;
     constexpr float noise_floor = 1e-8f * 32768.f;
     
     //Pointers to whole data and size of it.
@@ -125,7 +125,7 @@ void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &
     fwrite(L, N, sizeof(float), f);
     fclose(f);*/
 
-    epd.CompressDynamicRange (L, sca / scale, edgest, Compression, DetailBoost, Iterates, rew);
+    epd.CompressDynamicRange (L, sca / SQR(scale), edgest, Compression, DetailBoost, Iterates, rew);
 
     //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
     float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
