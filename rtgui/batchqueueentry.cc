@@ -28,6 +28,7 @@
 
 bool BatchQueueEntry::iconsLoaded(false);
 Glib::RefPtr<Gdk::Pixbuf> BatchQueueEntry::savedAsIcon;
+Glib::RefPtr<Gdk::Pixbuf> BatchQueueEntry::fastExportIcon;
 
 BatchQueueEntry::BatchQueueEntry (rtengine::ProcessingJob* pjob, const rtengine::procparams::ProcParams& pparams, Glib::ustring fname, int prevw, int prevh, Thumbnail* thm) :
     ThumbBrowserEntryBase(fname),
@@ -55,7 +56,8 @@ BatchQueueEntry::BatchQueueEntry (rtengine::ProcessingJob* pjob, const rtengine:
 #endif
 
     if (!iconsLoaded) {
-        savedAsIcon = RTImage::createPixbufFromFile ("save-small.png");
+        savedAsIcon = RTImage::createPixbufFromFile("save-small.png");
+        fastExportIcon = RTImage::createPixbufFromFile("fast-export-small.png");
         iconsLoaded = true;
     }
 
@@ -148,10 +150,13 @@ void BatchQueueEntry::removeButtonSet ()
 std::vector<Glib::RefPtr<Gdk::Pixbuf>> BatchQueueEntry::getIconsOnImageArea ()
 {
 
-    std::vector<Glib::RefPtr<Gdk::Pixbuf> > ret;
+    std::vector<Glib::RefPtr<Gdk::Pixbuf>> ret;
 
     if (!outFileName.empty()) {
-        ret.push_back (savedAsIcon);
+        ret.push_back(savedAsIcon);
+    }
+    if (fast_pipeline) {
+        ret.push_back(fastExportIcon);
     }
 
     return ret;

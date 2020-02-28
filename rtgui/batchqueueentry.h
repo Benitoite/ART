@@ -44,6 +44,7 @@ class BatchQueueEntry : public ThumbBrowserEntryBase, public BQEntryUpdateListen
 public:
 
     static Glib::RefPtr<Gdk::Pixbuf> savedAsIcon;
+    static Glib::RefPtr<Gdk::Pixbuf> fastExportIcon;
 
     rtengine::ProcessingJob* job;
     rtengine::procparams::ProcParams params;
