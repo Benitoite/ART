@@ -40,6 +40,63 @@
 
 using namespace std;
 
+namespace {
+
+class DirCompletion: public Gtk::EntryCompletion {
+public:
+    DirCompletion():
+        root_("")
+    { 
+        model_ = Gtk::ListStore::create(record_);
+        set_model(model_);
+        set_text_column(record_.column);
+    }
+    
+    void refresh(const Glib::ustring &root)
+    {
+        if (root != root_) {
+            root_ = root;
+
+            try {
+                std::vector<Glib::ustring> entries;
+                Glib::Dir dir(root_);
+                for (auto fn : dir) {
+                    auto pth = Glib::build_filename(root_, fn);
+                    if (Glib::file_test(pth, Glib::FILE_TEST_IS_DIR)) {
+                        entries.push_back(pth);
+                    }
+                }
+
+                model_->clear();
+                std::sort(entries.begin(), entries.end());
+                for (auto &d : entries) {
+                    auto row = *(model_->append());
+                    row[record_.column] = d;
+                }
+            } catch (Glib::Exception &exc) {
+            }
+        }
+    }
+
+private:
+    Glib::RefPtr<Gtk::ListStore> model_;
+
+    class CompletionRecord: public Gtk::TreeModel::ColumnRecord {
+    public:
+        CompletionRecord()
+        {
+            add(column);
+        }
+        Gtk::TreeModelColumn<Glib::ustring> column;
+    };
+
+    CompletionRecord record_;
+    Glib::ustring root_;
+};
+
+} // namespace
+
+
 #define CHECKTIME 2000
 
 FileCatalog::FileCatalog(FilePanel* filepanel) :
@@ -97,8 +154,13 @@ FileCatalog::FileCatalog(FilePanel* filepanel) :
     hbBrowsePath->pack_start (*buttonBrowsePath, Gtk::PACK_SHRINK, 0);
     hbToolBar1->pack_start (*hbBrowsePath, Gtk::PACK_EXPAND_WIDGET, 0);
 
+    browsePathCompletion = Glib::RefPtr<Gtk::EntryCompletion>(new DirCompletion());
+    BrowsePath->set_completion(browsePathCompletion);
+    browsePathCompletion->set_minimum_key_length(1);
+    
     BrowsePath->signal_activate().connect (sigc::mem_fun(*this, &FileCatalog::buttonBrowsePathPressed)); //respond to the Enter key
     BrowsePath->signal_key_press_event().connect(sigc::mem_fun(*this, &FileCatalog::BrowsePath_key_pressed));
+    BrowsePath->signal_changed().connect(sigc::mem_fun(*this, &FileCatalog::onBrowsePathChanged));
 
     //setup Query
     iQueryClear = new RTImage("cancel-small.png");
@@ -1876,26 +1938,28 @@ void FileCatalog::updateFBToolBarVisibility (bool showFilmStripToolBar)
 
 void FileCatalog::buttonBrowsePathPressed ()
 {
-    Glib::ustring BrowsePathValue = BrowsePath->get_text();
-    Glib::ustring DecodedPathPrefix = "";
-    Glib::ustring FirstChar;
+    // Glib::ustring BrowsePathValue = BrowsePath->get_text();
+    // Glib::ustring DecodedPathPrefix = "";
+    // Glib::ustring FirstChar;
 
-    // handle shortcuts in the BrowsePath -- START
-    // read the 1-st character from the path
-    FirstChar = BrowsePathValue.substr (0, 1);
+    // // handle shortcuts in the BrowsePath -- START
+    // // read the 1-st character from the path
+    // FirstChar = BrowsePathValue.substr (0, 1);
 
-    if (FirstChar == "~") { // home directory
-        DecodedPathPrefix = PlacesBrowser::userHomeDir ();
-    } else if (FirstChar == "!") { // user's pictures directory
-        DecodedPathPrefix = PlacesBrowser::userPicturesDir ();
-    }
+    // if (FirstChar == "~") { // home directory
+    //     DecodedPathPrefix = PlacesBrowser::userHomeDir ();
+    // } else if (FirstChar == "!") { // user's pictures directory
+    //     DecodedPathPrefix = PlacesBrowser::userPicturesDir ();
+    // }
 
-    if (!DecodedPathPrefix.empty()) {
-        BrowsePathValue = Glib::ustring::compose ("%1%2", DecodedPathPrefix, BrowsePathValue.substr (1, BrowsePath->get_text_length() - 1));
-        BrowsePath->set_text(BrowsePathValue);
-    }
+    // if (!DecodedPathPrefix.empty()) {
+    //     BrowsePathValue = Glib::ustring::compose ("%1%2", DecodedPathPrefix, BrowsePathValue.substr (1, BrowsePath->get_text_length() - 1));
+    //     BrowsePath->set_text(BrowsePathValue);
+    // }
 
-    // handle shortcuts in the BrowsePath -- END
+    // // handle shortcuts in the BrowsePath -- END
+    auto BrowsePathValue = getBrowsePath();
+    BrowsePath->set_text(BrowsePathValue);
 
     // validate the path
     if (Glib::file_test(BrowsePathValue, Glib::FILE_TEST_IS_DIR) && selectDir) {
@@ -2387,6 +2451,10 @@ bool FileCatalog::handleShortcutKey (GdkEventKey* event)
 
             refreshHeight();
             return true;
+
+        case GDK_KEY_F5:
+            FileCatalog::buttonBrowsePathPressed();
+            return true;
         }
     }
 
@@ -2409,4 +2477,34 @@ void FileCatalog::hideToolBar()
     }
 
     buttonBar->hide();
+}
+
+
+Glib::ustring FileCatalog::getBrowsePath()
+{
+    auto txt = BrowsePath->get_text();
+    Glib::ustring expanded = "";
+    auto prefix = txt.substr(0, 1);
+    if (prefix == "~") { // home directory
+        expanded = PlacesBrowser::userHomeDir();
+    } else if (prefix == "!") { // user's pictures directory
+        expanded = PlacesBrowser::userPicturesDir();
+    }
+
+    if (!expanded.empty()) {
+        return Glib::ustring::compose("%1%2", expanded, txt.substr(1));
+    } else {
+        return txt;
+    }
+}
+
+
+void FileCatalog::onBrowsePathChanged()
+{
+    auto txt = getBrowsePath();
+    auto pos = txt.find_last_of(G_DIR_SEPARATOR_S);
+    if (pos != Glib::ustring::npos) {
+        auto root = txt.substr(0, pos+1);
+        Glib::RefPtr<DirCompletion>::cast_static(browsePathCompletion)->refresh(root);
+    }
 }

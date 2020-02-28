@@ -107,6 +107,7 @@ private:
 
     Gtk::Entry* BrowsePath;
     Gtk::Button* buttonBrowsePath;
+    Glib::RefPtr<Gtk::EntryCompletion> browsePathCompletion;
 
     Gtk::Entry* Query;
     Gtk::Button* buttonQueryClear;
@@ -145,6 +146,9 @@ private:
     std::vector<Glib::ustring> getFileList ();
     BrowserFilter getFilter ();
     void trashChanged ();
+
+    void onBrowsePathChanged();
+    Glib::ustring getBrowsePath();
 
 public:
     // thumbnail browsers
