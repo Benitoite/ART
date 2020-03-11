@@ -37,4 +37,4 @@ RUN cd ~/programs/code-ART/build && make -j$(nproc --all) && make install
 #   set the entrypoint command
 
 LABEL maintainer="kd6kxr@gmail.com"
-CMD echo "This is a test..." && ~/programs/ART/art && echo "THATS ALL FOLKS!!!"
+CMD echo "This is a test..." && ~/programs/ART/ART && echo "THATS ALL FOLKS!!!"
