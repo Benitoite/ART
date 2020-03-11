@@ -1,9 +1,9 @@
 name: Docker Action
-  uses: zenato/docker-action@v1.0.0
-  with:
-    # Registry username
-    username: kd6kxr
-    # Registry password
-    password: 70fc78fa-71fb-4211-8236-0bcd6548ba6c
-    # Repository on registry
-    repository: art-test
+uses: zenato/docker-action@v1.0.0
+with:
+  # Registry username
+  username: kd6kxr
+  # Registry password
+  password: 70fc78fa-71fb-4211-8236-0bcd6548ba6c
+  # Repository on registry
+  repository: art-test
