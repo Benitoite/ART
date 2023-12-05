@@ -40,7 +40,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask, rtengine::ProcEvent &mask_postprocess) override
     {
         mask_list = parent_->EvList;
         parametric_mask = parent_->EvParametricMask;
@@ -53,6 +53,7 @@ public:
         deltaE_mask = parent_->EvDeltaEMask;
         contrastThreshold_mask = parent_->EvContrastThresholdMask;
         drawn_mask = parent_->EvDrawnMask;
+        mask_postprocess = parent_->EvMaskPostprocess;
     }
 
     ToolPanelListener *listener() override
@@ -91,10 +92,10 @@ public:
         return true;
     }
 
-    bool resetPressed() override
+    bool resetPressed(int idx) override
     {
-        parent_->data = { TextureBoostParams::Region() };
-        parent_->labMasks->setMasks({ Mask() }, -1);
+        parent_->data[idx] = TextureBoostParams::Region();
+        //parent_->labMasks->setMasks({ Mask() }, -1);
         return true;
     }
     
@@ -131,7 +132,7 @@ public:
         auto &r = parent_->data[row];
 
         return Glib::ustring::compose(
-            "%1 %2 %3", r.strength, r.edgeStopping, r.scale); 
+            "%1 %2 %3", r.strength, r.detailThreshold, r.iterations); 
     }
 
     void getEditIDs(EditUniqueID &hcurve, EditUniqueID &ccurve, EditUniqueID &lcurve, EditUniqueID &deltaE) override
@@ -151,38 +152,47 @@ private:
 // EPD
 //-----------------------------------------------------------------------------
 
-TextureBoost::TextureBoost () : FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), true, true)
+TextureBoost::TextureBoost(): FoldableToolPanel(this, "epd", M("TP_EPD_LABEL"), false, true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvList = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_LIST");
-    EvParametricMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_PARAMETRICMASK");
-    EvHueMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_HUEMASK");
-    EvChromaticityMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_CHROMATICITYMASK");
-    EvLightnessMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_LIGHTNESSMASK");
-    EvMaskBlur = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_MASKBLUR");
-    EvShowMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_SHOWMASK");
-    EvAreaMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_AREAMASK");
-    EvDeltaEMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_DELTAEMASK");
-    EvContrastThresholdMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_CONTRASTTHRESHOLDMASK");
-    EvDrawnMask = m->newEvent(DISPLAY, "HISTORY_MSG_EPD_DRAWNMASK");
+    auto EVENT = LUMINANCECURVE;
+    EvIterations = m->newEvent(EVENT, "HISTORY_MSG_EPD_ITERATIONS");
+    EvDetailThreshold = m->newEvent(EVENT, "HISTORY_MSG_EPD_DETAIL_THRESHOLD");
+    EvList = m->newEvent(EVENT, "HISTORY_MSG_EPD_LIST");
+    EvParametricMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_PARAMETRICMASK");
+    EvHueMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_HUEMASK");
+    EvChromaticityMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_CHROMATICITYMASK");
+    EvLightnessMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_LIGHTNESSMASK");
+    EvMaskBlur = m->newEvent(EVENT, "HISTORY_MSG_EPD_MASKBLUR");
+    EvShowMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_SHOWMASK");
+    EvAreaMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_AREAMASK");
+    EvDeltaEMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_DELTAEMASK");
+    EvContrastThresholdMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_CONTRASTTHRESHOLDMASK");
+    EvDrawnMask = m->newEvent(EVENT, "HISTORY_MSG_EPD_DRAWNMASK");
+    EvMaskPostprocess = m->newEvent(EVENT, "HISTORY_MSG_EPD_MASK_POSTPROCESS");
 
-    strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -1.0, 2.0, 0.01, 0.5));
-    edgeStopping = Gtk::manage(new Adjuster (M("TP_EPD_EDGESTOPPING"), 0.1, 4.0, 0.01, 0.5));
-    scale = Gtk::manage(new Adjuster (M("TP_EPD_SCALE"), 0.1, 10.0, 0.01, 0.1));
+    EvToolEnabled.set_action(EVENT);
+    EvToolReset.set_action(EVENT);
+
+    strength = Gtk::manage(new Adjuster (M("TP_EPD_STRENGTH"), -2.0, 2.0, 0.01, 0));
+    strength->setLogScale(2, 0, true);
+    detailThreshold = Gtk::manage(new Adjuster (M("TP_EPD_DETAIL_THRESHOLD"), 0.01, 2.0, 0.01, 0.2));
+    detailThreshold->setLogScale(10, 1, true);
+    iterations = Gtk::manage(new Adjuster(M("TP_EPD_ITERATIONS"), 1, 5, 1, 1));
 
     box = Gtk::manage(new Gtk::VBox());
 
     strength->setAdjusterListener(this);
-    edgeStopping->setAdjusterListener(this);
-    scale->setAdjusterListener(this);
+    detailThreshold->setAdjusterListener(this);
+    iterations->setAdjusterListener(this);
 
     strength->show();
-    edgeStopping->show();
-    scale->show();
+    detailThreshold->show();
+    iterations->show();
 
     box->pack_start(*strength);
-    box->pack_start(*edgeStopping);
-    box->pack_start(*scale);
+    box->pack_start(*detailThreshold);
+    box->pack_start(*iterations);
 
     labMasksContentProvider.reset(new EPDMasksContentProvider(this));
     labMasks = Gtk::manage(new LabMasksPanel(labMasksContentProvider.get()));
@@ -199,10 +209,10 @@ void TextureBoost::read(const ProcParams *pp)
     data = pp->textureBoost.regions;
     auto m = pp->textureBoost.labmasks;
     if (data.empty()) {
-        data.emplace_back(rtengine::TextureBoostParams::Region());
-        m.emplace_back(rtengine::Mask());
+        data.emplace_back(rtengine::procparams::TextureBoostParams::Region());
+        m.emplace_back(rtengine::procparams::Mask());
     }
-    labMasks->setMasks(m, pp->textureBoost.showMask);
+    labMasks->setMasks(m, pp->textureBoost.selectedRegion, pp->textureBoost.showMask >= 0 && pp->textureBoost.showMask == pp->textureBoost.selectedRegion);
 
     enableListener();
 }
@@ -215,6 +225,7 @@ void TextureBoost::write(ProcParams *pp)
     pp->textureBoost.regions = data;
 
     labMasks->getMasks(pp->textureBoost.labmasks, pp->textureBoost.showMask);
+    pp->textureBoost.selectedRegion = labMasks->getSelected();
     assert(pp->textureBoost.regions.size() == pp->textureBoost.labmasks.size());
 
     labMasks->updateSelected();
@@ -223,8 +234,10 @@ void TextureBoost::write(ProcParams *pp)
 void TextureBoost::setDefaults(const ProcParams *defParams)
 {
     strength->setDefault(defParams->textureBoost.regions[0].strength);
-    edgeStopping->setDefault(defParams->textureBoost.regions[0].edgeStopping);
-    scale->setDefault(defParams->textureBoost.regions[0].scale);
+    detailThreshold->setDefault(defParams->textureBoost.regions[0].detailThreshold);
+    iterations->setDefault(defParams->textureBoost.regions[0].iterations);
+
+    initial_params = defParams->textureBoost;
 }
 
 void TextureBoost::adjusterChanged(Adjuster* a, double newval)
@@ -234,10 +247,10 @@ void TextureBoost::adjusterChanged(Adjuster* a, double newval)
 
         if(a == strength) {
             listener->panelChanged(EvEPDStrength, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
-        } else if(a == edgeStopping) {
-            listener->panelChanged(EvEPDEdgeStopping, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
-        } else if(a == scale) {
-            listener->panelChanged(EvEPDScale, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
+        } else if(a == detailThreshold) {
+            listener->panelChanged(EvDetailThreshold, Glib::ustring::format(std::setw(2), std::fixed, std::setprecision(2), a->getValue()));
+        } else if(a == iterations) {
+            listener->panelChanged(EvIterations, a->getTextValue());
         }
     }
 }
@@ -256,6 +269,10 @@ void TextureBoost::enabledChanged ()
         } else {
             listener->panelChanged (EvEPDEnabled, M("GENERAL_DISABLED"));
         }
+    }
+
+    if (listener && !getEnabled()) {
+        labMasks->switchOffEditMode();
     }
 }
 
@@ -289,8 +306,8 @@ void TextureBoost::regionGet(int idx)
     
     auto &r = data[idx];
     r.strength = strength->getValue();
-    r.edgeStopping = edgeStopping->getValue();
-    r.scale = scale->getValue();
+    r.detailThreshold = detailThreshold->getValue();
+    r.iterations = iterations->getValue();
 }
 
 
@@ -303,8 +320,8 @@ void TextureBoost::regionShow(int idx)
 
     auto &r = data[idx];
     strength->setValue(r.strength);
-    edgeStopping->setValue(r.edgeStopping);
-    scale->setValue(r.scale);
+    detailThreshold->setValue(r.detailThreshold);
+    iterations->setValue(r.iterations);
     
     if (disable) {
         enableListener();
@@ -321,4 +338,15 @@ void TextureBoost::setAreaDrawListener(AreaDrawListener *l)
 void TextureBoost::setDeltaEColorProvider(DeltaEColorProvider *p)
 {
     labMasks->setDeltaEColorProvider(p);
+}
+
+
+void TextureBoost::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.textureBoost = initial_params;
+    }
+    pp.textureBoost.enabled = getEnabled();
+    read(&pp);
 }

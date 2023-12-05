@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -128,13 +129,15 @@ public:
     sigc::signal<void> signal_curvepoint_release();
 
     void switchOffEditMode () override;
-    bool mouseOver(const int modifierKey) override;
-    bool button1Pressed(const int modifierKey) override;
+    bool mouseOver(int modifierKey) override;
+    bool button1Pressed(int modifierKey) override;
     bool button1Released() override;
-    bool drag1(const int modifierKey) override;
-    CursorShape getCursor(const int objectID) override;
+    bool drag1(int modifierKey) override;
+    CursorShape getCursor(int objectID) override;
 
     void showEditButton(bool yes);
+
+    PopUpToggleButton *getCurveTypeButton() { return curveType; }
 };
 
 
@@ -142,9 +145,9 @@ public:
  ******************** Diagonal Curve Editor ********************
  */
 
+class CurveBackgroundProvider;
 
-class DiagonalCurveEditor : public CurveEditor
-{
+class DiagonalCurveEditor: public CurveEditor {
 
     friend class DiagonalCurveEditorSubGroup;
 
@@ -160,6 +163,8 @@ protected:
     std::vector<double> catmullRomResetCurve;
     Glib::ustring rangeLabels[4];
     double rangeMilestones[3];
+    CurveBackgroundProvider *bp_;
+    int bp_id_;
 
 public:
     DiagonalCurveEditor (Glib::ustring text, CurveEditorGroup* ceGroup, CurveEditorSubGroup* ceSubGroup);
@@ -171,6 +176,14 @@ public:
 
     // set the reset curve for a given curve type. This is optional; all curve type have a default reset curve
     void setResetCurve(DiagonalCurveType cType, const std::vector<double> &resetCurve);
+
+    void setBackgroundProvider(CurveBackgroundProvider *bp, int caller_id)
+    {
+        bp_ = bp;
+        bp_id_ = caller_id;
+    }
+    CurveBackgroundProvider *getBackgroundProvider() { return bp_; }
+    int getBackgroundCallerId() { return bp_id_; }
 };
 
 

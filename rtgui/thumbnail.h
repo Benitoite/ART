@@ -64,6 +64,7 @@ class Thumbnail: public PParamsSnapshotListener {
     Glib::ustring dateTimeString;
 
     bool initial_;
+    bool first_process_;
 
     // rating info
     struct Rating {
@@ -92,9 +93,9 @@ class Thumbnail: public PParamsSnapshotListener {
     // vector of listeners
     std::vector<ThumbnailListener*> listeners;
 
-    void _loadThumbnail(bool firstTrial = true);
+    void _loadThumbnail(bool firstTrial=true, bool info_only=false);
     void _saveThumbnail();
-    void _generateThumbnailImage(bool save_in_cache=true);
+    void _generateThumbnailImage(bool save_in_cache=true, bool info_only=false);
     int infoFromImage(const Glib::ustring& fname);
     void loadThumbnail(bool firstTrial = true);
     void generateExifDateTimeStrings();
@@ -140,27 +141,27 @@ public:
     rtengine::IImage8 *upgradeThumbImage(const rtengine::procparams::ProcParams& pparams, int h, double& scale);
     void getThumbnailSize(int &w, int &h, const rtengine::procparams::ProcParams *pparams = nullptr);
     void getFinalSize(const rtengine::procparams::ProcParams& pparams, int& w, int& h);
-    void getOriginalSize(int& w, int& h);
+    void getOriginalSize(int &w, int &h, bool consider_coarse=false);
 
     const Glib::ustring &getExifString();
     const Glib::ustring &getDateTimeString();
-    void getCamWB(double& temp, double& green)
-    {
-        if (tpp) {
-            tpp->getCamWB(temp, green);
-        } else {
-            temp = green = -1.0;
-        }
-    }
-    void getAutoWB(double& temp, double& green, double equal);
-    void getSpotWB(int x, int y, int rect, double& temp, double& green)
-    {
-        if (tpp) {
-            tpp->getSpotWB (getProcParams(), x, y, rect, temp, green);
-        } else {
-            temp = green = -1.0;
-        }
-    }
+    // void getCamWB(double& temp, double& green)
+    // {
+    //     if (tpp) {
+    //         tpp->getCamWB(temp, green);
+    //     } else {
+    //         temp = green = -1.0;
+    //     }
+    // }
+    // void getAutoWB(double& temp, double& green, double equal);
+    // void getSpotWB(int x, int y, int rect, double& temp, double& green)
+    // {
+    //     if (tpp) {
+    //         tpp->getSpotWB (getProcParams(), x, y, rect, temp, green);
+    //     } else {
+    //         temp = green = -1.0;
+    //     }
+    // }
 
     ThFileType getType();
     Glib::ustring getFileName() { return fname; }
@@ -207,7 +208,6 @@ public:
     void updateCache(bool updatePParams = true, bool updateCacheImageData = true);
     void saveThumbnail();
 
-    bool openDefaultViewer(int destination);
     bool imageLoad(bool loading);
 
     std::shared_ptr<rtengine::FramesMetaData> getMetaData();

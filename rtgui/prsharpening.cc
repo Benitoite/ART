@@ -23,11 +23,11 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-PrSharpening::PrSharpening () : FoldableToolPanel(this, "prsharpening", M("TP_PRSHARPENING_LABEL"), false, true)
+PrSharpening::PrSharpening () : FoldableToolPanel(this, "prsharpening", M("TP_PRSHARPENING_LABEL"), false, true, true)
 {
-
     auto m = ProcEventMapper::getInstance();
-    EvPrShrContrast = m->newEvent(RESIZE, "HISTORY_MSG_PRSHARPEN_CONTRAST");
+    EvPrShrContrast = m->newEvent(M_LUMINANCE, "HISTORY_MSG_PRSHARPEN_CONTRAST");
+    EvToolReset.set_action(M_LUMINANCE);
 
     std::vector<GradientMilestone> milestones;
     milestones.push_back( GradientMilestone(0.0, 0.0, 0.0, 0.0) );
@@ -219,7 +219,6 @@ void PrSharpening::write(ProcParams* pp)
 
 void PrSharpening::setDefaults(const ProcParams* defParams)
 {
-
     contrast->setDefault (defParams->prsharpening.contrast);
     amount->setDefault (defParams->prsharpening.amount);
     radius->setDefault (defParams->prsharpening.radius);
@@ -229,6 +228,8 @@ void PrSharpening::setDefaults(const ProcParams* defParams)
     hcamount->setDefault (defParams->prsharpening.halocontrol_amount);
     damount->setDefault (defParams->prsharpening.deconvamount);
     dradius->setDefault (defParams->prsharpening.deconvradius);
+
+    initial_params = defParams->prsharpening;
 }
 
 void PrSharpening::adjusterChanged (Adjuster* a, double newval)
@@ -365,7 +366,6 @@ void PrSharpening::adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int ne
 
 void PrSharpening::trimValues (rtengine::procparams::ProcParams* pp)
 {
-
     contrast->trimValue(pp->prsharpening.contrast);
     radius->trimValue(pp->prsharpening.radius);
     dradius->trimValue(pp->prsharpening.deconvradius);
@@ -374,4 +374,15 @@ void PrSharpening::trimValues (rtengine::procparams::ProcParams* pp)
     eradius->trimValue(pp->prsharpening.edges_radius);
     etolerance->trimValue(pp->prsharpening.edges_tolerance);
     hcamount->trimValue(pp->prsharpening.halocontrol_amount);
+}
+
+
+void PrSharpening::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.prsharpening = initial_params;
+    }
+    pp.prsharpening.enabled = getEnabled();
+    read(&pp);
 }

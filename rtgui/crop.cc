@@ -19,6 +19,7 @@
 #include "crop.h"
 #include "options.h"
 #include "rtimage.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
@@ -46,7 +47,7 @@ inline void get_custom_ratio(int w, int h, double &rw, double &rh)
 } // namespace
 
 Crop::Crop():
-    FoldableToolPanel(this, "crop", M("TP_CROP_LABEL"), false, true),
+    FoldableToolPanel(this, "crop", M("TP_CROP_LABEL"), false, true, true),
     crop_ratios{
         {M("GENERAL_ASIMAGE"), 0.0},
         {M("GENERAL_CURRENT"), -1.0},
@@ -66,7 +67,7 @@ Crop::Crop():
         {"6:7", 6.0 / 7.0},                 // L1.166...,   P0.857...
         {"6:17", 6.0 / 17.0},               // L2.833...,   P0.352...
         {"24:65 - XPAN", 24.0 / 65.0},      // L2.708...,   P0.369...
-        {"1.414 - DIN EN ISO 216", 1.414},  // L1.414,      P0.707...
+        {"1.414 - ISO 216 (A4 paper)", 1.414},  // L1.414,      P0.707...
         {"3.5:5", 3.5 / 5.0},               // L1.428...,   P0.7
         {"8.5:11 - US Letter", 8.5 / 11.0}, // L1.294...,   P0.772...
         {"9.5:12", 9.5 / 12.0},             // L1.263...,   P0.791...
@@ -83,8 +84,10 @@ Crop::Crop():
     hDirty(true),
     xDirty(true),
     yDirty(true),
-    lastFixRatio(true)
+    lastFixRatio(true),
+    selecting_(false)
 {
+    EvToolReset.set_action(CROP);
 
     clistener = nullptr;
 
@@ -123,15 +126,14 @@ Crop::Crop():
     setExpandAlignProperties(h, true, false, Gtk::ALIGN_END, Gtk::ALIGN_CENTER);
     h->set_width_chars(6);
 
-    selectCrop = Gtk::manage (new Gtk::Button (M("TP_CROP_SELECTCROP")));
+    selectCrop = Gtk::manage(new Gtk::Button(M("TP_CROP_SELECTCROP")));
     setExpandAlignProperties(selectCrop, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
     selectCrop->get_style_context()->add_class("independent");
     selectCrop->set_image (*Gtk::manage (new RTImage ("crop-small.png")));
 
-    resetCrop = Gtk::manage (new Gtk::Button (M("TP_CROP_RESETCROP")));
+    resetCrop = Gtk::manage(new Gtk::Button(M("TP_CROP_RESETCROP")));
     setExpandAlignProperties(resetCrop, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
     resetCrop->get_style_context()->add_class("independent");
-    resetCrop->set_image (*Gtk::manage (new RTImage ("undo-small.png")));
 
     methodgrid->attach (*xlab, 0, 0, 1, 1);
     methodgrid->attach (*x, 1, 0, 1, 1);
@@ -514,7 +516,13 @@ bool Crop::inImageArea (int x, int y)
 void Crop::selectPressed ()
 {
     if (clistener) {
-        clistener->cropSelectRequested();
+        if (!selecting_) {
+            setSelecting(true);
+            clistener->cropSelectRequested();
+        } else {
+            setSelecting(false);
+            clistener->cropEnableChanged(false);
+        }
     }
 }
 
@@ -816,6 +824,9 @@ void Crop::refreshSize ()
  */
 void Crop::setDimensions (int mw, int mh)
 {
+    if (maxw == mw && maxh == mh) {
+        return;
+    }
 
     maxw = mw;
     maxh = mh;
@@ -1331,6 +1342,7 @@ void Crop::cropInit (int &x, int &y, int &w, int &h)
     setEnabled(true);
 }
 
+
 void Crop::cropResized (int &x, int &y, int& x2, int& y2)
 {
 
@@ -1448,7 +1460,7 @@ void Crop::cropManipReady(int &x, int &y, int &w, int &h)
         h = nh;
         enableListener();
     }
-    
+
     idle_register.add(
         [this]() -> bool
         {
@@ -1457,6 +1469,14 @@ void Crop::cropManipReady(int &x, int &y, int &w, int &h)
         }
     );
 }
+
+
+void Crop::setSelecting(bool yes)
+{
+    selecting_ = yes;
+    selectCrop->set_label(yes ? M("TP_CROP_DONE") : M("TP_CROP_SELECTCROP"));
+}
+
 
 double Crop::getRatio () const
 {
@@ -1492,4 +1512,28 @@ void Crop::updateCurrentRatio()
     get_custom_ratio(w->get_value(), h->get_value(), rw, rh);
     customRatioLabel->set_text(Glib::ustring::compose("%1:%2", rw, rh));
     crop_ratios[1].value = double(w->get_value())/double(h->get_value());
+}
+
+
+void Crop::setDefaults(const ProcParams *def)
+{
+    initial_params = def->crop;
+}
+
+
+void Crop::toolReset(bool to_initial)
+{
+    doresetCrop(false);
+    int saved_nw = nw, saved_nh = nh, saved_maxw = maxw, saved_maxh = maxh;
+    ProcParams pp;
+    if (to_initial) {
+        pp.crop = initial_params;
+    }
+    pp.crop.enabled = getEnabled();
+    read(&pp);
+    nw = saved_nw;
+    nh = saved_nh;
+    maxw = saved_maxw;
+    maxh = saved_maxh;
+    refreshSpins(false);
 }

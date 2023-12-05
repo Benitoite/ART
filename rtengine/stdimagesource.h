@@ -1,4 +1,4 @@
-/*
+/* -*- C++ -*-
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,16 +16,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _STDIMAGESOURCE_
-#define _STDIMAGESOURCE_
+#pragma once
 
 #include "imagesource.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
-class StdImageSource : public ImageSource
-{
+class StdImageSource: public ImageSource {
 
 protected:
     ImageIO* img;
@@ -34,63 +31,65 @@ protected:
     bool full;
     int max[3];
     bool rgbSourceModified;
+    Imagefloat* imgCopy;
 
     //void transformPixel             (int x, int y, int tran, int& tx, int& ty);
-    void getSampleFormat (const Glib::ustring &fname, IIOSampleFormat &sFormat, IIOSampleArrangement &sArrangement);
+    void getSampleFormat(const Glib::ustring &fname, IIOSampleFormat &sFormat, IIOSampleArrangement &sArrangement);
 
 public:
-    StdImageSource ();
-    ~StdImageSource () override;
+    StdImageSource();
+    ~StdImageSource() override;
 
-    int         load        (const Glib::ustring &fname) override;
-    void        getImage    (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hrp, const RAWParams &raw) override;
-    ColorTemp   getWB       () const override
+    int load(const Glib::ustring &fname) override;
+    int load(const Glib::ustring &fname, int maxw_hint, int maxh_hint);
+    void getImage(const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hrp, const RAWParams &raw) override;
+    ColorTemp getWB() const override
     {
         return wb;
     }
-    void        getAutoWBMultipliers (double &rm, double &gm, double &bm) override;
-    ColorTemp   getSpotWB   (std::vector<Coord2D> &red, std::vector<Coord2D> &green, std::vector<Coord2D> &blue, int tran, double equal) override;
+    void getAutoWBMultipliers(double &rm, double &gm, double &bm) override;
+    ColorTemp getSpotWB(std::vector<Coord2D> &red, std::vector<Coord2D> &green, std::vector<Coord2D> &blue, int tran, double equal) override;
 
     eSensorType getSensorType() const override {return ST_NONE;}
     bool isMono() const override {return false;}
 
-    bool        isWBProviderReady () override
+    bool isWBProviderReady() override
     {
         return true;
-    };
+    }
 
-    void        getAutoExpHistogram (LUTu &histogram, int& histcompr) override;
+    void getAutoExpHistogram(LUTu &histogram, int& histcompr) override;
 
-    double      getDefGain  () const override
+    double getDefGain() const override
     {
         return 0.0;
     }
 
-    void        getFullSize (int& w, int& h, int tr = TR_NONE) override;
-    void        getSize     (const PreviewProps &pp, int& w, int& h) override;
+    void getFullSize(int &w, int &h, int tr=TR_NONE) override;
+    void getSize(const PreviewProps &pp, int &w, int &h) override;
 
-    ImageIO*    getImageIO   ()
+    ImageIO *getImageIO()
     {
         return img;
     }
-    ImageMatrices* getImageMatrices () override
+    ImageMatrices *getImageMatrices() override
     {
         return (ImageMatrices*)nullptr;
     }
-    bool        isRAW() const override
+    bool isRAW() const override
     {
         return false;
     }
 
-    void        setProgressListener (ProgressListener* pl) override
+    void setProgressListener(ProgressListener* pl) override
     {
         plistener = pl;
     }
 
-    void        convertColorSpace(Imagefloat* image, const ColorManagementParams &cmp, const ColorTemp &wb) override;// RAWParams raw will not be used for non-raw files (see imagesource.h)
-    static void colorSpaceConversion (Imagefloat* im, const ColorManagementParams &cmp, cmsHPROFILE embedded, IIOSampleFormat sampleFormat);
+    void convertColorSpace(Imagefloat *image, const ColorManagementParams &cmp, const ColorTemp &wb) override;// RAWParams raw will not be used for non-raw files (see imagesource.h)
+    static void colorSpaceConversion(Imagefloat* im, const ColorManagementParams &cmp, cmsHPROFILE embedded, IIOSampleFormat sampleFormat, ProgressListener *plistener=nullptr);
 
-    bool        isRGBSourceModified() const override
+    bool isRGBSourceModified() const override
     {
         return rgbSourceModified;
     }
@@ -101,8 +100,13 @@ public:
 
     void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) override { R = G = B = 0;}
 
-    void        flushRGB          () override;
+    void flushRGB() override;
 
+    void wbMul2Camera(double &rm, double &gm, double &bm) override;
+    void wbCamera2Mul(double &rm, double &gm, double &bm) override;
+
+    void getWBMults(const ColorTemp &ctemp, const procparams::RAWParams &raw, std::array<float, 4>& scale_mul, float &autoGainComp, float &rm, float &gm, float &bm) const override {}
+    
 };
-}
-#endif
+
+} // namespace rtengine

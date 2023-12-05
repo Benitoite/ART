@@ -26,6 +26,8 @@
 #include "opthelper.h"
 #include "rtlensfun.h"
 #include "perspectivecorrection.h"
+#include "lensexif.h"
+#include "../rtgui/multilangmgr.h"
 
 
 using namespace std;
@@ -110,18 +112,18 @@ void encode(rtengine::Imagefloat *src, rtengine::Imagefloat *dest, bool multiThr
 {
     LUTf lut(65536);
     for (int i = 0; i < 65536; ++i) {
-        lut[i] = xcbrtf(float(i));
+        lut[i] = Color::gamma2(float(i) / 65535.f) * 65535.f;
     }
 
     const auto enc =
         [&](float f) -> float
         {
             if (f <= 0.f) {
-                return 0.f;
+                return f;
             } else if (f <= 65535.f) {
                 return lut[f];
             } else {
-                return xcbrtf(f);
+                return Color::gamma2(f / 65535.f) * 65535.f;
             }
         };
     
@@ -142,18 +144,18 @@ void decode(rtengine::Imagefloat *img, bool multiThread)
 {
     LUTf lut(65536);
     for (int i = 0; i < 65536; ++i) {
-        lut[i] = SQR(float(i)) * float(i);
+        lut[i] = Color::igamma2(float(i) / 65535.f) * 65535.f;
     }
 
     const auto dec =
         [&](float f) -> float
         {
             if (f <= 0.f) {
-                return 0.f;
+                return f;
             } else if (f <= 65535.f) {
                 return lut[f];
             } else {
-                return SQR(f) * f;
+                return Color::igamma2(f / 65535.f) * 65535.f;
             }
         };
     
@@ -329,10 +331,10 @@ void transform_perspective(const ProcParams *params, const FramesMetaData *metad
                     interpolateTransformCubic(orig, xc - 1, yc - 1, Dx, Dy, dest->r(y, x), dest->g(y, x), dest->b(y, x));
                 } else {
                     // edge pixels
-                    int y1 = LIM (yc, 0, H - 1);
-                    int y2 = LIM (yc + 1, 0, H - 1);
-                    int x1 = LIM (xc, 0, W - 1);
-                    int x2 = LIM (xc + 1, 0, W - 1);
+                    int y1 = LIM (yc, 0, orig_H - 1);
+                    int y2 = LIM (yc + 1, 0, orig_H - 1);
+                    int x1 = LIM (xc, 0, orig_W - 1);
+                    int x2 = LIM (xc + 1, 0, orig_W - 1);
 
                     dest->r(y, x) = (orig->r (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + orig->r (y1, x2) * Dx * (1.0 - Dy) + orig->r (y2, x1) * (1.0 - Dx) * Dy + orig->r (y2, x2) * Dx * Dy);
                     dest->g (y, x) = (orig->g (y1, x1) * (1.0 - Dx) * (1.0 - Dy) + orig->g (y1, x2) * Dx * (1.0 - Dy) + orig->g (y2, x1) * (1.0 - Dx) * Dy + orig->g (y2, x2) * Dx * Dy);
@@ -550,7 +552,15 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
 
     std::unique_ptr<const LensCorrection> pLCPMap;
 
-    if (needsLensfun()) {
+    if (params->lensProf.useExif()) {
+        auto corr = new ExifLensCorrection(metadata, oW, oH, params->coarse, rawRotationDeg);
+        pLCPMap.reset(corr);
+        if (!corr->ok()) {
+            LensProfParams lf;
+            lf.lcMode = LensProfParams::LcMode::LENSFUNAUTOMATCH;
+            pLCPMap = LFDatabase::getInstance()->findModifier(lf, metadata, oW, oH, params->coarse, rawRotationDeg);
+        }
+    } else if (needsLensfun()) {
         pLCPMap = LFDatabase::getInstance()->findModifier(params->lensProf, metadata, oW, oH, params->coarse, rawRotationDeg);
     } else if (needsLCP()) { // don't check focal length to allow distortion correction for lenses without chip
         const std::shared_ptr<LCPProfile> pLCPProf = LCPStore::getInstance()->getProfile (params->lensProf.lcpFile);
@@ -563,13 +573,15 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
                                oW, oH, params->coarse, rawRotationDeg
                 )
             );
+        } else if (!params->lensProf.lcpFile.empty() && plistener) {
+            plistener->error(Glib::ustring::compose(M("ERROR_MSG_FILE_READ"), params->lensProf.lcpFile));
         }
     }
 
     if (needsCA() || scale == 1) {
         highQuality = true;
     }
-    const bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || needsLCP() || needsLensfun();
+    const bool needs_dist_rot_ca = needsCA() || needsDistortion() || needsRotation() || params->lensProf.needed();
     const bool needs_luminance = needsVignetting();
     const bool needs_lcp_ca = highQuality && pLCPMap && params->lensProf.useCA && pLCPMap->isCACorrectionAvailable();
     const bool needs_perspective = needsPerspective() || needs_lcp_ca;
@@ -582,6 +594,10 @@ void ImProcFunctions::transform(Imagefloat* original, Imagefloat* transformed, i
         std::unique_ptr<Imagefloat> logimg;
         if (do_encode) {
             logimg.reset(new Imagefloat(original->getWidth(), original->getHeight()));
+            if (needs_luminance) {
+                transformLuminanceOnly(original, logimg.get(), cx, cy, oW, oH, fW, fH, false);
+                original = logimg.get();
+            }
             encode(original, logimg.get(), multiThread);
             original = logimg.get();
         }
@@ -1042,7 +1058,7 @@ void ImProcFunctions::transformGeneral(bool highQuality, Imagefloat *original, I
     const bool enableCA = highQuality && needsCA();
     constexpr bool enableGradient = false;
     constexpr bool enablePCVignetting = false;
-    bool enableVignetting = needsVignetting();
+    bool enableVignetting = !highQuality && needsVignetting();
     bool enableDistortion = needsDistortion();
 
     double w2 = (double) oW  / 2.0 - 0.5;
@@ -1365,12 +1381,12 @@ bool ImProcFunctions::needsLensfun()
 
 bool ImProcFunctions::needsTransform()
 {
-    return needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsVignetting() || needsLCP() || needsLensfun();
+    return needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsVignetting() || params->lensProf.needed();
 }
 
 bool ImProcFunctions::needsLuminanceOnly()
 {
-    return !(needsCA() || needsDistortion() || needsRotation() || needsPerspective() || needsLCP() || needsLensfun()) && needsVignetting();
+    return !(needsCA() || needsDistortion() || needsRotation() || needsPerspective() || params->lensProf.needed()) && needsVignetting();
 }
 
 

@@ -28,13 +28,14 @@ namespace { constexpr double IN_TO_CM = 2.54; }
 
 
 Resize::Resize():
-    FoldableToolPanel(this, "resize", M("TP_RESIZE_LABEL"), false, true),
+    FoldableToolPanel(this, "resize", M("TP_RESIZE_LABEL"), false, true, true),
     maxw(100000), maxh(100000)
 {
     auto m = ProcEventMapper::getInstance();
     EvResizeAllowUpscaling = m->newEvent(RESIZE, "HISTORY_MSG_RESIZE_ALLOWUPSCALING");
     EvUnit = m->newEvent(RESIZE, "HISTORY_MSG_RESIZE_UNIT");
     EvPPI = m->newEvent(RESIZE, "HISTORY_MSG_RESIZE_PPI");
+    EvToolReset.set_action(RESIZE);
 
     cropw = 0;
     croph = 0;
@@ -105,7 +106,8 @@ Resize::Resize():
     allowUpscaling = Gtk::manage(new Gtk::CheckButton(M("TP_RESIZE_ALLOW_UPSCALING")));
     hbox->pack_start(*allowUpscaling);
     endBox->pack_start(*hbox);
-
+    unitBox = hbox;
+    unitBox->reference();
 
     // ppigrid START
     Gtk::Grid *ppigrid = Gtk::manage(new Gtk::Grid());
@@ -186,6 +188,7 @@ Resize::~Resize ()
 {
     idle_register.destroy();
     delete scale;
+    delete unitBox;
     delete sizeBox;
 }
 
@@ -261,6 +264,7 @@ void Resize::write(ProcParams* pp)
 void Resize::setDefaults(const ProcParams* defParams)
 {
     scale->setDefault (defParams->resize.scale);
+    initial_params = defParams->resize;
 }
 
 
@@ -270,6 +274,7 @@ void Resize::adjusterChanged(Adjuster* a, double newval)
     ConnectionBlocker hb(hconn);
     h->set_value((croph && appliesTo->get_active_row_number() == 0 ? croph : maxh) * a->getValue());
     w->set_value((cropw && appliesTo->get_active_row_number() == 0 ? cropw : maxw) * a->getValue());
+    updateInfoLabels();
 
     if (listener && getEnabled()) {
         listener->panelChanged (EvResizeScale, Glib::ustring::format (std::setw(5), std::fixed, std::setprecision(2), scale->getValue()));
@@ -562,6 +567,7 @@ void Resize::updateGUI ()
 
     removeIfThere(this, scale, false);
     removeIfThere(this, sizeBox, false);
+    removeIfThere(endBox, unitBox, false);
 
     switch (spec->get_active_row_number()) {
     case (0):
@@ -598,7 +604,11 @@ void Resize::updateGUI ()
         break;
     }
 
-    unit->set_sensitive(spec->get_active_row_number() > 0);
+    //unit->set_sensitive(spec->get_active_row_number() > 0);
+    if (spec->get_active_row_number() > 0) {
+        endBox->pack_start(*unitBox);
+        endBox->reorder_child(*unitBox, 0);
+    }
 }
 
 void Resize::notifyBBox()
@@ -723,7 +733,7 @@ void Resize::updateInfoLabels()
         size_info_1->set_text(Glib::ustring::compose("%1 px x %2 px", std::round(iw), std::round(ih)));
         size_info_2->set_text(Glib::ustring::compose("%1 in x %2 in", Glib::ustring::format(std::setprecision(3), w->get_value() / IN_TO_CM), Glib::ustring::format(std::setprecision(3), h->get_value() / IN_TO_CM)));
         break;
-    case ResizeParams::IN:
+    case ResizeParams::INCHES:
         iw = w->get_value() * ppi->get_value();
         ih = h->get_value() * ppi->get_value();
         size_info_1->set_text(Glib::ustring::compose("%1 px x %2 px", std::round(iw), std::round(ih)));
@@ -744,7 +754,7 @@ double Resize::from_px(int p, ResizeParams::Unit u)
     switch (u) {
     case ResizeParams::CM:
         return double(p) / ppi->get_value() * IN_TO_CM;
-    case ResizeParams::IN:
+    case ResizeParams::INCHES:
         return double(p) / ppi->get_value();
     default:
         return p;
@@ -763,7 +773,7 @@ int Resize::to_px(double p, ResizeParams::Unit u)
     switch (u) {
     case ResizeParams::CM:
         return std::round(ppi->get_value() * (p / IN_TO_CM));
-    case ResizeParams::IN:
+    case ResizeParams::INCHES:
         return std::round(ppi->get_value() * p);
     default:
         return p;
@@ -774,4 +784,15 @@ int Resize::to_px(double p, ResizeParams::Unit u)
 int Resize::to_px(double p)
 {
     return to_px(p, ResizeParams::Unit(unit->get_active_row_number()));
+}
+
+
+void Resize::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.resize = initial_params;
+    }
+    pp.resize.enabled = getEnabled();
+    read(&pp);
 }

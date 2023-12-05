@@ -33,7 +33,9 @@ MyDiagonalCurve::MyDiagonalCurve () :
     ugpX(0.0),
     ugpY(0.0),
     activeParam(-1),
-    bghistvalid(false)
+    bghistvalid(false),
+    bp_(nullptr),
+    bp_id_(-1)
 {
 
     grab_point = -1;
@@ -212,6 +214,13 @@ void MyDiagonalCurve::interpolate ()
     curveIsDirty = false;
 }
 
+void MyDiagonalCurve::setBackgroundProvider(CurveBackgroundProvider *bp, int caller_id)
+{
+    bp_ = bp;
+    bp_id_ = caller_id;
+}
+
+
 void MyDiagonalCurve::draw (int handle)
 {
     if (!isDirty()) {
@@ -363,6 +372,11 @@ void MyDiagonalCurve::draw (int handle)
         }
 
         cr->fill ();
+    }
+
+    // draw the custom background if present
+    if (bp_) {
+        bp_->renderCurveBackground(bp_id_, style, cr, graphX, graphY, graphW, graphH);
     }
 
     // draw the pipette values
@@ -778,7 +792,7 @@ bool MyDiagonalCurve::handleEvents (GdkEvent* event)
     case GDK_MOTION_NOTIFY:
         snapToElmt = -100;
 
-        if (curve.type == DCT_Linear || curve.type == DCT_Spline || curve.type == DCT_NURBS || curve.type == DCT_CatumullRom) {
+        if (curve.type == DCT_Linear || curve.type == DCT_Spline || curve.type == DCT_NURBS || curve.type == DCT_CatmullRom) {
 
             snapToMinDistY = snapToMinDistX = 10.;
             snapToValY = snapToValX = 0.;
@@ -1030,7 +1044,7 @@ void MyDiagonalCurve::pipetteMouseOver (CurveEditor *ce, EditDataProvider *provi
     double s = (double)RTScalable::getScale();
     double minDistanceX = MIN_DISTANCE / graphW * s;
 
-    if (curve.type == DCT_Linear || curve.type == DCT_Spline || curve.type == DCT_NURBS || curve.type == DCT_CatumullRom) {
+    if (curve.type == DCT_Linear || curve.type == DCT_Spline || curve.type == DCT_NURBS || curve.type == DCT_CatmullRom) {
         // get the pointer position
         getCursorPositionFromCurve(pipetteVal);
 
@@ -1420,8 +1434,8 @@ std::vector<double> MyDiagonalCurve::getPoints ()
             result.push_back (double(DCT_Spline));
         } else if (curve.type == DCT_NURBS) {
             result.push_back (double(DCT_NURBS));
-        } else if (curve.type == DCT_CatumullRom) {
-            result.push_back (double(DCT_CatumullRom));
+        } else if (curve.type == DCT_CatmullRom) {
+            result.push_back (double(DCT_CatmullRom));
         }
 
         // then we push all the points coordinate
@@ -1558,7 +1572,7 @@ void MyDiagonalCurve::reset(const std::vector<double> &resetCurve, double identi
     switch (curve.type) {
     case DCT_Spline :
     case DCT_NURBS :
-    case DCT_CatumullRom:
+    case DCT_CatmullRom:
         curve.x.resize(2);
         curve.y.resize(2);
         curve.x.at(0) = 0.;

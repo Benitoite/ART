@@ -32,7 +32,7 @@ static double one2one(double val)
     return val;
 }
 
-Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep, double vdefault, Gtk::Image *imgIcon1, Gtk::Image *imgIcon2, double2double_fun slider2value_, double2double_fun value2slider_)
+Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep, double vdefault, Gtk::Image *imgIcon1, Gtk::Image *imgIcon2, double2double_fun slider2value_, double2double_fun value2slider_, bool deprecated, bool compact)
 {
 
     set_hexpand(true);
@@ -86,7 +86,7 @@ Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep
     reset->add (*Gtk::manage (new RTImage ("undo-small.png", "redo-small.png")));
     setExpandAlignProperties(reset, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
     reset->set_relief (Gtk::RELIEF_NONE);
-    reset->set_tooltip_markup (M("ADJUSTER_RESET_TO_DEFAULT"));
+    reset->set_tooltip_markup(M("ADJUSTER_RESET_TO_DEFAULT"));
     reset->get_style_context()->add_class(GTK_STYLE_CLASS_FLAT);
     reset->set_can_focus(false);
 
@@ -101,9 +101,15 @@ Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep
     slider->set_draw_value (false);
     //slider->set_has_origin(false);  // ------------------ This will remove the colored part on the left of the slider's knob
 
-    if (vlabel.empty()) {
+    if (vlabel.empty() || compact) {
         // No label, everything goes in a single row
-        attach_next_to(*slider, Gtk::POS_LEFT, 1, 1);
+        if (vlabel.empty()) {
+            attach_next_to(*slider, Gtk::POS_LEFT, 1, 1);
+        } else {
+            setExpandAlignProperties(label, false, false, Gtk::ALIGN_START, Gtk::ALIGN_BASELINE);            
+            attach_next_to(*label, Gtk::POS_LEFT, 1, 1);
+            attach_next_to(*slider, *label, Gtk::POS_RIGHT, 1, 1);
+        }
 
         if (imageIcon1) {
             attach_next_to(*imageIcon1, *slider, Gtk::POS_LEFT, 1, 1);
@@ -119,7 +125,18 @@ Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep
         attach_next_to(*reset, *spin, Gtk::POS_RIGHT, 1, 1);
     } else {
         // A label is provided, spreading the widgets in 2 rows
-        attach_next_to(*label, Gtk::POS_LEFT, 1, 1);
+        Gtk::HBox *hb = nullptr;
+        if (deprecated) {
+            hb = Gtk::manage(new Gtk::HBox());
+            Gtk::Image *w = Gtk::manage(new RTImage("warning-small.png"));
+            w->set_tooltip_markup(M("GENERAL_DEPRECATED_TOOLTIP"));
+            hb->pack_start(*w, Gtk::PACK_SHRINK, 2);
+            hb->pack_start(*label, Gtk::PACK_SHRINK);
+            setExpandAlignProperties(hb, true, false, Gtk::ALIGN_START, Gtk::ALIGN_BASELINE);
+            attach_next_to(*hb, Gtk::POS_LEFT, 1, 1);
+        } else {
+            attach_next_to(*label, Gtk::POS_LEFT, 1, 1);
+        }
         attach_next_to(*spin, Gtk::POS_RIGHT, 1, 1);
         // A second HBox is necessary
         grid = Gtk::manage(new Gtk::Grid());
@@ -136,7 +153,11 @@ Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep
             grid->attach_next_to(*reset, *slider, Gtk::POS_RIGHT, 1, 1);
         }
 
-        attach_next_to(*grid, *label, Gtk::POS_BOTTOM, 2, 1);
+        if (deprecated) {
+            attach_next_to(*grid, *hb, Gtk::POS_BOTTOM, 2, 1);
+        } else {
+            attach_next_to(*grid, *label, Gtk::POS_BOTTOM, 2, 1);
+        }
     }
 
     setLimits (vmin, vmax, vstep, vdefault);
@@ -149,6 +170,35 @@ Adjuster::Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep
     sliderChange = slider->signal_value_changed().connect( sigc::mem_fun(*this, &Adjuster::sliderChanged) );
     spinChange = spin->signal_value_changed().connect ( sigc::mem_fun(*this, &Adjuster::spinChanged), true);
     reset->signal_button_release_event().connect_notify( sigc::mem_fun(*this, &Adjuster::resetPressed) );
+    const auto keypress =
+        [this](GdkEventKey *evt) -> bool
+        {
+            bool ctrl = evt->state & GDK_CONTROL_MASK;
+            bool shift = evt->state & GDK_SHIFT_MASK;
+            bool alt = evt->state & GDK_MOD1_MASK;
+            double step, page;
+            spin->get_increments(step, page);
+
+            if (!ctrl && !shift && !alt) {
+                switch (evt->keyval) {
+                case GDK_KEY_Up:
+                    spin->set_value(spin->get_value() + step);
+                    return true;
+                case GDK_KEY_Down:
+                    spin->set_value(spin->get_value() - step);
+                    return true;
+                case GDK_KEY_Page_Up:
+                    spin->set_value(spin->get_value() + page);
+                    return true;
+                case GDK_KEY_Page_Down:
+                    spin->set_value(spin->get_value() - page);
+                    return true;
+                }
+            }
+            return false;
+        };
+    slider->add_events(Gdk::KEY_PRESS_MASK);
+    slider->signal_key_press_event().connect(sigc::slot<bool, GdkEventKey *>(keypress), false);
 
     show_all ();
 }
@@ -669,15 +719,36 @@ inline void Adjuster::setSliderValue(double val)
 
 void Adjuster::setLogScale(double base, double pivot, bool anchorMiddle)
 {
-    spinChange.block (true);
-    sliderChange.block (true);
+    if (!options.adjuster_force_linear) {
+        spinChange.block(true);
+        sliderChange.block(true);
 
-    double cur = getSliderValue();
-    logBase = base;
-    logPivot = pivot;
-    logAnchorMiddle = anchorMiddle;
-    setSliderValue(cur);
+        double cur = getSliderValue();
+        logBase = base;
+        logPivot = pivot;
+        logAnchorMiddle = anchorMiddle;
+        setSliderValue(cur);
     
-    sliderChange.block (false);
-    spinChange.block (false);
+        sliderChange.block(false);
+        spinChange.block(false);
+    }
+}
+
+
+void Adjuster::showIcons(bool yes)
+{
+    if (imageIcon1) {
+        imageIcon1->set_visible(yes);
+    }
+    if (imageIcon2) {
+        imageIcon2->set_visible(yes);
+    }
+}
+
+
+void Adjuster::forceNotifyListener()
+{
+    if (adjusterListener) {
+        adjusterListener->adjusterChanged(this, spin->get_value ());
+    }
 }

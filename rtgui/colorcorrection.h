@@ -23,20 +23,13 @@
 #include "adjuster.h"
 #include "toolpanel.h"
 #include "labmaskspanel.h"
-#include "labgrid.h"
+#include "colorwheel.h"
 #include "colorprovider.h"
 #include "thresholdadjuster.h"
+#include "clutparamspanel.h"
 
-class ColorCorrection:
-    public ToolParamBlock,
-    public AdjusterListener,
-    public FoldableToolPanel,
-    public PParamsChangeListener,
-    public ThresholdAdjusterListener,
-    public ColorProvider
-{
+class ColorCorrection: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public PParamsChangeListener, public ThresholdAdjusterListener, public ColorProvider {
 public:
-
     ColorCorrection();
 
     void read(const rtengine::procparams::ProcParams *pp) override;
@@ -69,22 +62,36 @@ public:
     void adjusterChanged2(ThresholdAdjuster *a, int newBottomL, int newTopL, int newBottomR, int newTopR) override {}
 
     void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
+
+    void toolReset(bool to_initial) override;
+
+    void drawCurve(bool rgb, Cairo::RefPtr<Cairo::Context> cr, Glib::RefPtr<Gtk::StyleContext> style, int W, int H);
     
 private:
     void regionGet(int idx);
     void regionShow(int idx);
     void modeChanged();
     void syncSlidersToggled();
+    void wheelChanged();
+    void hslWheelChanged(int c);
+    void lutChanged();
+    void lutParamsChanged();
     
     rtengine::ProcEvent EvEnabled;
-    rtengine::ProcEvent EvAB;
-    rtengine::ProcEvent EvSaturation;
+    rtengine::ProcEvent EvColorWheel;
+    rtengine::ProcEvent EvInSaturation;
+    rtengine::ProcEvent EvOutSaturation;
     rtengine::ProcEvent EvLightness;
     rtengine::ProcEvent EvSlope;
     rtengine::ProcEvent EvOffset;
     rtengine::ProcEvent EvPower;    
     rtengine::ProcEvent EvPivot;    
     rtengine::ProcEvent EvMode;
+    rtengine::ProcEvent EvRgbLuminance;
+    rtengine::ProcEvent EvHueShift;
+    rtengine::ProcEvent EvCompression;
+    rtengine::ProcEvent EvLUT;
+    rtengine::ProcEvent EvLUTParams;
 
     rtengine::ProcEvent EvList;
     rtengine::ProcEvent EvParametricMask;
@@ -97,6 +104,7 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvContrastThresholdMask;
     rtengine::ProcEvent EvDrawnMask;
+    rtengine::ProcEvent EvMaskPostprocess;
 
     std::vector<rtengine::procparams::ColorCorrectionParams::Region> data;
 
@@ -110,22 +118,40 @@ private:
     Gtk::VBox *box_combined;
     Gtk::VBox *box_rgb;
     Gtk::VBox *box_hsl;
+    Gtk::VBox *box_lut;
     
-    LabGrid *gridAB;
-    Adjuster *saturation;
+    ColorWheel *wheel;
+    Adjuster *inSaturation;
+    Adjuster *outSaturation;
+    Adjuster *hueshift;
+    Gtk::DrawingArea *hueshift_bar;
+    Gtk::Frame *hueframe;
+    Gtk::Frame *satframe;
+    MyFileChooserButton *lut_filename;
+    CLUTParamsPanel *lut_params;
+    Gtk::HBox *lut_filename_box;
+    
     Adjuster *slope;
     Adjuster *offset;
     Adjuster *power;
     Adjuster *pivot;
+    Adjuster *compression;
 
     Adjuster *slope_rgb[3];
     Adjuster *offset_rgb[3];
     Adjuster *power_rgb[3];
     Adjuster *pivot_rgb[3];
-
+    Adjuster *compression_rgb[3];
+    Gtk::CheckButton *rgbluminance;
+    
     Gtk::CheckButton *sync_rgb_sliders;
     
     Adjuster *lfactor[3];
-    ThresholdAdjuster *huesat[3];
+    HueSatColorWheel *huesat[3];
+
+    Gtk::DrawingArea *curve_lum;
+    Gtk::DrawingArea *curve_rgb;
+
+    rtengine::procparams::ColorCorrectionParams initial_params;
 };
 

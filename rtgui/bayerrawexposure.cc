@@ -23,9 +23,10 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-BayerRAWExposure::BayerRAWExposure () : FoldableToolPanel(this, "bayerrawexposure", M("TP_EXPOS_BLACKPOINT_LABEL"), true, true)
+BayerRAWExposure::BayerRAWExposure () : FoldableToolPanel(this, "bayerrawexposure", M("TP_EXPOS_BLACKPOINT_LABEL"), false, true, true)
 {
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
     
     PexBlack1 = Gtk::manage(new Adjuster (M("TP_RAWEXPOS_BLACK_1"), -2048, 2048, 1, 0)); //black level
     PexBlack1->setAdjusterListener (this);
@@ -166,6 +167,8 @@ void BayerRAWExposure::setDefaults(const rtengine::procparams::ProcParams* defPa
     PexBlack1->setDefault( defParams->raw.bayersensor.black1);
     PexBlack2->setDefault( defParams->raw.bayersensor.black2);
     PexBlack3->setDefault( defParams->raw.bayersensor.black3);
+
+    initial_params = defParams->raw.bayersensor;
 }
 
 
@@ -176,4 +179,15 @@ void BayerRAWExposure::trimValues (rtengine::procparams::ProcParams* pp)
     PexBlack1->trimValue(pp->raw.bayersensor.black1);
     PexBlack2->trimValue(pp->raw.bayersensor.black2);
     PexBlack3->trimValue(pp->raw.bayersensor.black3);
+}
+
+
+void BayerRAWExposure::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.raw.bayersensor = initial_params;
+    }
+    pp.raw.bayersensor.enable_black = getEnabled();
+    read(&pp);
 }

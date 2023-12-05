@@ -1,8 +1,9 @@
 if(APPLE)
-    cmake_minimum_required(VERSION 3.5)
+    cmake_minimum_required(VERSION 3.7)
     cmake_policy(SET CMP0025 NEW)
+    cmake_policy(SET CMP0037 NEW)
 else()
-    cmake_minimum_required(VERSION 2.8.8)
+    cmake_minimum_required(VERSION 3.0)
 endif()
 
 # Must stay before the project() command:
@@ -15,9 +16,9 @@ endif()
 
 project(ART)
 
-# The default target is Debug:
+# The default target is Release:
 if(CMAKE_BUILD_TYPE STREQUAL "")
-    set(CMAKE_BUILD_TYPE Debug CACHE STRING "One of: None Debug Release RelWithDebInfo MinSizeRel" FORCE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "One of: None Debug Release RelWithDebInfo MinSizeRel" FORCE)
 endif()
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} UPPER_CMAKE_BUILD_TYPE)
@@ -28,6 +29,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9")
     message(FATAL_ERROR "Building ART requires using GCC version 4.9 or higher!")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "10.0" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "10.2")
+    message(STATUS "WARNING: gcc ${CMAKE_CXX_COMPILER_VERSION} is known to miscompile ART when using -ftree-loop-vectorize, forcing the option to be off")    
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-tree-loop-vectorize")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-tree-loop-vectorize")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
+    message(STATUS "WARNING: gcc ${CMAKE_CXX_COMPILER_VERSION} is known to miscompile ART when using --ffp-contract=fast, forcing the option to be off")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffp-contract=off")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
 endif()
 
 # We might want to build using the old C++ ABI, even when using a new GCC version:
@@ -101,6 +112,10 @@ if(HAVE_X86_SSE_MATH)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2 -mfpmath=sse")
 endif()
 
+# Do net set math errno, as we never check its value.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-math-errno")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-math-errno")
+
 # On i386 Linux we can fix unaligned SSE malloc (see GitHub issue #4432)
 include(FindUnalignedMalloc)
 
@@ -108,6 +123,10 @@ if(WIN32)
     # Add additional paths. Look in the MinGW path first, then in the Gtkmm path.
     # If you wish to build some dependent libraries, you have to install them in MinGW to use them:
     set(CMAKE_PREFIX_PATH $ENV{MINGW_BASEPATH} $ENV{GTKMM_BASEPATH} CACHE STRING "Additional search paths")
+
+    # increase the stack size
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--stack,4194304")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,--stack,4194304")
 endif()
 
 if(APPLE)
@@ -122,41 +141,45 @@ if(APPLE)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -headerpad_max_install_names")
 endif()
 
-option(USE_EXPERIMENTAL_LANG_VERSIONS "Build with -std=c++0x" OFF)
 option(BUILD_SHARED "Build with shared libraries" OFF)
 option(WITH_BENCHMARK "Build with benchmark code" OFF)
-option(WITH_MYFILE_MMAP "Build using memory mapped file" ON)
 option(WITH_LTO "Build with link-time optimizations" OFF)
 option(WITH_SAN "Build with run-time sanitizer" OFF)
 option(WITH_PROF "Build with profiling instrumentation" OFF)
-option(WITH_SYSTEM_KLT "Build using system KLT library." OFF)
+option(WITH_SYSTEM_KLT "Build using system KLT library" OFF)
 option(OPTION_OMP "Build with OpenMP support" ON)
-option(STRICT_MUTEX "True (recommended): MyMutex will behave like POSIX Mutex; False: MyMutex will behave like POSIX RecMutex; Note: forced to ON for Debug builds" ON)
-option(TRACE_MYRWMUTEX "Trace custom R/W Mutex (Debug builds only); redirecting std::out to a file is strongly recommended!" OFF)
-option(AUTO_GDK_FLUSH "Use gdk_flush on all gdk_thread_leave other than the GUI thread; set it ON if you experience X Server warning/errors" OFF)
-
-option(ENABLE_TCMALLOC "Use the tcmalloc library if available" OFF)
-set(TCMALLOC_LIB_DIR "" CACHE PATH "Custom path for the tcmalloc library")
+#option(ENABLE_MIMALLOC "Use the mimalloc library if available" ON)
+option(ENABLE_LIBRAW "Use libraw for decoding" ON)
+option(ENABLE_OCIO "Use OpenColorIOv2 for LUT application" ON)
+option(ENABLE_CTL "Enable support for the ACES Color Transformation Language" OFF)
 
 # Set installation directories:
 if(WIN32 OR APPLE)
     if(BUILD_BUNDLE)
-        message(STATUS "You have set BUILD_BUNDLE=ON but this is not necessary - the option is forced to ON for Windows and macOS.")
+        message(
+            STATUS
+                "You have set BUILD_BUNDLE=ON but this is not necessary - the option is forced to ON for Windows and macOS."
+        )
     endif()
     set(BUILD_BUNDLE ON FORCE)
 endif()
 
 if(NOT DEFINED BUNDLE_BASE_INSTALL_DIR)
     if(APPLE)
-        set(BUNDLE_BASE_INSTALL_DIR "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/MacOS")
+        set(BUNDLE_BASE_INSTALL_DIR "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/MacOS")
     else()
         set(BUNDLE_BASE_INSTALL_DIR "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
     endif()
 endif()
 
 if(BUILD_BUNDLE)
-    set(BINDIR .)
-    set(CMAKE_INSTALL_PREFIX "${BUNDLE_BASE_INSTALL_DIR}")
+    if(APPLE)
+        set(BINDIR "${BUNDLE_BASE_INSTALL_DIR}")
+        set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/build")
+    else()
+        set(BINDIR .)
+        set(CMAKE_INSTALL_PREFIX "${BUNDLE_BASE_INSTALL_DIR}")
+    endif()
 endif()
 
 if(NOT DEFINED BINDIR)
@@ -166,7 +189,7 @@ endif()
 if(NOT DEFINED DATADIR)
     if(BUILD_BUNDLE)
         if(APPLE)
-            set(DATADIR "../../Resources")
+            set(DATADIR "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/Resources/share")
         else()
             set(DATADIR .)
         endif()
@@ -178,7 +201,7 @@ endif()
 if(NOT DEFINED LIBDIR)
     if(BUILD_BUNDLE)
         if(APPLE)
-            set(LIBDIR "../../Frameworks")
+            set(LIBDIR "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/Frameworks")
         else()
             set(LIBDIR .)
         endif()
@@ -198,7 +221,11 @@ endif()
 
 if(NOT DEFINED DOCDIR)
     if(BUILD_BUNDLE)
-        set(DOCDIR "${DATADIR}/share/doc")
+        if(APPLE)
+            set(DOCDIR "${DATADIR}/doc")
+        else()
+            set(DOCDIR "${DATADIR}/share/doc")
+        endif()
     else()
         set(DOCDIR "${CMAKE_INSTALL_PREFIX}/share/doc/ART")
     endif()
@@ -206,7 +233,11 @@ endif()
 
 if(NOT DEFINED CREDITSDIR)
     if(BUILD_BUNDLE)
-        set(CREDITSDIR "${DATADIR}")
+        if(APPLE)
+            set(CREDITSDIR "${DATADIR}/..")
+        else()
+            set(CREDITSDIR "${DATADIR}")
+        endif()
     else()
         set(CREDITSDIR "${CMAKE_INSTALL_PREFIX}/share/doc/ART")
     endif()
@@ -214,7 +245,11 @@ endif()
 
 if(NOT DEFINED LICENCEDIR)
     if(BUILD_BUNDLE)
-        set(LICENCEDIR "${DATADIR}")
+        if(APPLE)
+            set(LICENCEDIR "${CREDITSDIR}")
+        else()
+            set(LICENCEDIR "${DATADIR}")
+        endif()
     else()
         set(LICENCEDIR "${CMAKE_INSTALL_PREFIX}/share/doc/ART")
     endif()
@@ -223,7 +258,11 @@ endif()
 if(NOT DEFINED DESKTOPDIR)
     if(UNIX)
         if(BUILD_BUNDLE)
-            set(DESKTOPDIR "${DATADIR}/share/applications")
+            if(APPLE)
+                set(DESKTOPDIR "${DATADIR}/applications")
+            else()
+                set(DESKTOPDIR "${DATADIR}/share/applications")
+            endif()
         else()
             set(DESKTOPDIR "${CMAKE_INSTALL_PREFIX}/share/applications")
         endif()
@@ -233,7 +272,11 @@ endif()
 if(NOT DEFINED ICONSDIR)
     if(UNIX)
         if(BUILD_BUNDLE)
-            set(ICONSDIR "${DATADIR}/share/icons")
+            if(APPLE)
+                set(ICONSDIR "${DATADIR}/icons")
+            else()
+                set(ICONSDIR "${DATADIR}/share/icons")
+            endif()
         else()
             set(ICONSDIR "${CMAKE_INSTALL_PREFIX}/share/icons")
         endif()
@@ -243,30 +286,72 @@ endif()
 if(NOT DEFINED APPDATADIR)
     if(UNIX)
         if(BUILD_BUNDLE)
-            set(APPDATADIR "${DATADIR}/share/metainfo")
+            if(APPLE)
+                set(APPDATADIR "${DATADIR}/metainfo")
+            else()
+                set(APPDATADIR "${DATADIR}/share/metainfo")
+            endif()
         else()
             set(APPDATADIR "${CMAKE_INSTALL_PREFIX}/share/metainfo")
         endif()
     endif()
 endif()
 
-if (NOT APPLE)
+if(NOT APPLE)
     if(DEFINED LENSFUNDBDIR AND NOT IS_ABSOLUTE "${LENSFUNDBDIR}")
         set(LENSFUNDBDIR "${DATADIR}/${LENSFUNDBDIR}")
     endif()
+else()
+    set(LENSFUNDBDIR "${LENSFUNDBDIR}")
 endif()
 
 if(APPLE)
     if("${CODESIGNID}")
-        set(CODESIGNID "${CODESIGNID}" CACHE STRING "Codesigning Identity")
+        set(CODESIGNID
+            "${CODESIGNID}"
+            CACHE STRING "Codesigning Identity")
     endif()
     if("${NOTARY}")
-        set(NOTARY "${NOTARY}" CACHE STRING "Notarization Identity")
+        set(NOTARY
+            "${NOTARY}"
+            CACHE STRING "Notarization Identity")
     endif()
     if("${LOCAL_PREFIX}")
-        set(LOCAL_PREFIX "${LOCAL_PREFIX}" CACHE STRING "macos/gtk parent directory ie /usr or /opt")
-    elseif(NOT DEFINED LOCAL_PREFIX)
-        set(LOCAL_PREFIX "/usr")
+        set(LOCAL_PREFIX
+            "${LOCAL_PREFIX}"
+            CACHE STRING "macos/gtk parent directory ie /usr/local or /opt/local or /opt/homebrew (for arm64)")
+    else()
+        set(LOCAL_PREFIX
+            /usr/local
+            CACHE STRING "macos/gtk parent directory ie /usr/local (default) or /opt/local (macports) or /opt/homebrew (for arm64)")
+    endif()
+    if("${FANCY_DMG}")
+        set(FANCY_DMG
+            ON
+            CACHE BOOL
+                  "Use the andreyvit/create-dmg script to make a fancy .dmg")
+    endif()
+endif()
+
+# For macOS only, OSX_DEV_BUILD option allows using relative paths instead of absolute
+# paths. Consequently, for development builds, application can be launching without
+# being bundled. However, file access can be restricted for some folder.
+option(OSX_DEV_BUILD "Generate macOS development builds" OFF)
+
+# On macOS, optionally generate the final zip artifact file without version in the name for nightly upload purposes.
+option(OSX_NIGHTLY "Generate a generically-named zip" OFF)
+
+# Generate a universal macOS build
+option(OSX_UNIVERSAL "Generate a universal app" OFF)
+
+# On macOS: merge the app via a specific url to generate a universal bundle with both x86_64 and arm64
+if(OSX_UNIVERSAL)
+    if(NOT OSX_UNIVERSAL_URL)
+        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+            set(OSX_UNIVERSAL_URL "ART_macOS_x86_64_latest.zip" CACHE STRING "URL of x86_64 app for lipo")
+        else()
+            set(OSX_UNIVERSAL_URL "ART_macOS_arm64_latest.zip" CACHE STRING "URL of arm64 app for lipo")
+        endif()
     endif()
 endif()
 
@@ -277,26 +362,6 @@ if(NOT BUILD_BUNDLE)
             message(FATAL_ERROR "The ${path} path has to be absolute when using -DBUILD_BUNDLE=OFF")
         endif()
     endforeach()
-endif()
-
-# MyMutex:
-if(STRICT_MUTEX OR UPPER_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-    add_definitions(-DSTRICT_MUTEX=1)
-else()
-    add_definitions(-DSTRICT_MUTEX=0)
-endif()
-
-# MyRWMutex:
-if(TRACE_MYRWMUTEX)
-    add_definitions(-DTRACE_MYRWMUTEX=1)
-else()
-    add_definitions(-DTRACE_MYRWMUTEX=0)
-endif()
-
-if(AUTO_GDK_FLUSH)
-    add_definitions(-DAUTO_GDK_FLUSH=1)
-else()
-    add_definitions(-DAUTO_GDK_FLUSH=0)
 endif()
 
 # Check for libraries:
@@ -340,10 +405,17 @@ set(EXIV2_LIBRARIES "")
 foreach(l ${_exiv2_libs})
     set(_el "_el-NOTFOUND")
     if(EXIV2_LIBRARY_DIRS)
+        message(STATUS "searching for library ${l} in ${EXIV2_LIBRARY_DIRS}")
         find_library(_el ${l} PATHS ${EXIV2_LIBRARY_DIRS} NO_DEFAULT_PATH)
+        if(NOT _el)
+            message(STATUS  "  NOT FOUND, searching again in default path")
+            find_library(_el ${l})
+        endif()
     else()
-        find_library(_el ${l} PATHS ${EXIV2_LIBRARY_DIRS})
+        message(STATUS "searching for library ${l}")
+        find_library(_el ${l})# PATHS ${EXIV2_LIBRARY_DIRS})
     endif()
+    message(STATUS "  result: ${_el}")
     set(EXIV2_LIBRARIES ${EXIV2_LIBRARIES} ${_el})
 endforeach()
 
@@ -370,14 +442,14 @@ if(WITH_SYSTEM_KLT)
     find_package(KLT REQUIRED)
 endif()
 
+#Set the appropriate FFTW flags on macOS
+if(APPLE AND OPTION_OMP)
+        set(EXTRA_LIB "-L${LOCAL_PREFIX}/lib -lfftw3f_omp -lfftw3f -lm")
+endif()
 
 # Check for libcanberra-gtk3 (sound events on Linux):
 if(UNIX AND(NOT APPLE))
     pkg_check_modules(CANBERRA-GTK REQUIRED libcanberra-gtk3)
-endif()
-
-if(WITH_MYFILE_MMAP)
-    add_definitions(-DMYFILE_MMAP)
 endif()
 
 if(WITH_LTO)
@@ -387,8 +459,8 @@ if(WITH_LTO)
     string(REGEX REPLACE ".* ([0-9.]+)\n.*" "\\1" BINUTILS_VERSION_DETECTED "${BINUTILS_VERSION_DETECTED}")
     if("${BINUTILS_VERSION_DETECTED}" VERSION_LESS "${BINUTILS_VERSION_MININUM}")
         if(APPLE)
-            set(CMAKE_AR "/opt/local/bin/ar")
-            set(CMAKE_RANLIB "/opt/local/bin/ranlib")
+            set(CMAKE_AR "ar")
+            set(CMAKE_RANLIB "ranlib")
         else()
             set(CMAKE_AR "/usr/bin/gcc-ar")
             set(CMAKE_RANLIB "/usr/bin/gcc-ranlib")
@@ -396,9 +468,9 @@ if(WITH_LTO)
         message(STATUS "Binutils version detected as less than " ${BINUTILS_VERSION_MININUM} " - setting CMake parameters to enable LTO linking:\n    CMAKE_AR=\"" ${CMAKE_AR} "\"\n    CMAKE_RANLIB=\"" ${CMAKE_RANLIB} "\"")
     endif()
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto=auto")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto=auto")
 endif()
 
 if(WITH_SAN)
@@ -451,6 +523,148 @@ int main()
 endif()
 
 
+# check whether the used version of lensfun has lfDatabase::LoadDirectory
+set(_lf_libs ${LENSFUN_LIBRARIES})
+set(LENSFUN_LIBRARIES "")
+foreach(l ${_lf_libs})
+    set(_el "_el-NOTFOUND")
+    if(LENSFUN_LIBRARY_DIRS)
+        message(STATUS "searching for library ${l} in ${LENSFUN_LIBRARY_DIRS}")
+        find_library(_el ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
+    else()
+        message(STATUS "searching for library ${l}")
+        find_library(_el ${l})# PATHS ${LENSFUN_LIBRARY_DIRS})
+    endif()
+    message(STATUS "  result: ${_el}")
+    set(LENSFUN_LIBRARIES ${LENSFUN_LIBRARIES} ${_el})
+endforeach()
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_INCLUDES ${LENSFUN_INCLUDE_DIRS})
+set(CMAKE_REQUIRED_LIBRARIES ${LENSFUN_LIBRARIES})
+# foreach(l ${LENSFUN_LIBRARIES})
+#     if(LENSFUN_LIBRARY_DIRS)
+#         # the NO_DEFAULT_PATH is to make sure we find the lensfun version we
+#         # want, and not the system's one (e.g. if we have a custom version
+#         # installed in a non-standard location)
+#         set(_l "_l-NOTFOUND")
+#         find_library(_l ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
+#     else()
+#         # LENSFUN_LIBRARY_DIRS can be empty if lensfun is installed in the
+#         # default path. In this case, adding NO_DEFAULT_PATH would make
+#         # find_library fail...
+#         set(_l "_l-NOTFOUND")
+#         find_library(_l ${l})
+#     endif()
+#     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${_l})
+# endforeach()
+check_cxx_source_compiles(
+    "#include <lensfun.h>
+int main()
+{
+    lfDatabase *db = 0;
+    bool b = db->LoadDirectory(0);
+    return 0;
+}" LENSFUN_HAS_LOAD_DIRECTORY)
+
+
+# check whether we can use the fast float plugin of LCMS2
+set(ART_LCMS_VERSION_INFO "${LCMS_VERSION}")
+set(CMAKE_REQUIRED_INCLUDES ${LCMS_INCLUDE_DIRS})
+set(CMAKE_REQUIRED_LIBRARIES)
+foreach(l ${LCMS_LIBRARIES})
+    set(_f "_f-NOTFOUND")
+    find_library(_f ${l} PATHS ${LCMS_LIBRARY_DIRS} NO_DEFAULT_PATH)
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${_f})
+endforeach()
+check_c_source_compiles(
+"#include <lcms2.h>
+#include <lcms2_fast_float.h>
+#if LCMS2_FAST_FLOAT_VERSION < 1500
+#  error \"fast float too old\"
+#endif
+
+int main()
+{
+    cmsPlugin(cmsFastFloatExtensions());
+    return 0;
+}" _lcms2_fast_float)
+if(_lcms2_fast_float)
+    add_definitions(-DART_LCMS2_FAST_FLOAT)
+    message(STATUS "using LCMS2 fast float plugin")
+    set(ART_LCMS_VERSION_INFO "${ART_LCMS_VERSION_INFO}-fastfloat")
+endif()
+
+
+set(HAS_MIMALLOC)
+set(ART_MIMALLOC_VERSION_INFO "N/A")
+find_package(mimalloc)
+if(mimalloc_FOUND)
+    if ("${mimalloc_VERSION}" VERSION_LESS 1.4)
+        message(FATAL_ERROR "found mimalloc ${mimalloc_VERSION}, but at least 1.4 is required")
+    else()
+        message(STATUS "using mimalloc library ${mimalloc_VERSION}")
+        set(HAS_MIMALLOC 1)
+        add_definitions(-DWITH_MIMALLOC)
+        set(ART_MIMALLOC_VERSION_INFO "V${mimalloc_VERSION}")
+    endif()
+else()
+    message(FATAL_ERROR "ART requires the mimalloc library. Please install it (see https://microsoft.github.io/mimalloc/)")
+endif()
+
+if(ENABLE_LIBRAW)
+    pkg_check_modules(LIBRAW libraw_r>=0.21)
+    if(LIBRAW_FOUND)
+        message(STATUS "using libraw library ${LIBRAW_VERSION}")
+        add_definitions(-DART_USE_LIBRAW)
+    else()
+        message(STATUS "libraw not found")
+    endif()
+endif()
+
+if(ENABLE_OCIO)
+    pkg_check_modules(OCIO OpenColorIO>=2.0.0)
+    if(OCIO_FOUND)
+        message(STATUS "using OpenColorIO library ${OCIO_VERSION}")
+        add_definitions(-DART_USE_OCIO)
+    else()
+        message(STATUS "OpenColorIO not found")
+    endif()
+endif()
+
+if(ENABLE_CTL)
+    find_path(CTL_INCLUDE_DIR NAMES "CtlInterpeter.h" PATH_SUFFIXES "CTL")
+    pkg_check_modules(OPENEXR OpenEXR>=3)
+    #find_path(_openexr_half OpenEXR/half.h)
+    find_library(_ctl_lib IlmCtl)
+    find_library(_ctl_math_lib IlmCtlMath)
+    find_library(_ctl_simd_lib IlmCtlSimd)
+    if(NOT OPENEXR_FOUND)
+        pkg_check_modules(OPENEXR IlmBase)
+    endif()
+    if(NOT (OPENEXR_FOUND AND CTL_INCLUDE_DIR AND _ctl_lib AND _ctl_math_lib AND _ctl_simd_lib))
+        message(STATUS "CTL interpreter not found")
+    else()
+        set(CTL_INCLUDE_DIRS)
+        list(APPEND CTL_INCLUDE_DIRS "${CTL_INCLUDE_DIR}" ${OPENEXR_INCLUDE_DIRS})
+        message(STATUS "CTL lib found with headers at ${CTL_INCLUDE_DIR}")
+        set(CTL_LIBRARIES)
+        set(CTL_LIBRARY_DIRS ${OPENEXR_LIBRARY_DIRS})
+        list(APPEND CTL_LIBRARIES "${_ctl_simd_lib}" "${_ctl_math_lib}" "${_ctl_lib}")
+        list(APPEND CTL_LIBRARIES ${OPENEXR_LIBRARIES})
+        add_definitions(-DART_USE_CTL)
+        set(CTL_FOUND 1)
+        file(STRINGS "${CTL_INCLUDE_DIR}/CtlVersion.h"
+            _ctl_version_line REGEX "#define +CURRENT_CTL_VERSION[ \t]+")
+        string(REGEX REPLACE "#define +CURRENT_CTL_VERSION[ \t]+" "version "
+            _ctl_version_string "${_ctl_version_line}")
+        string(STRIP "${_ctl_version_string}" ART_CTL_VERSION_INFO)
+        message(STATUS "Found CTL interpreter, ${ART_CTL_VERSION_INFO}")
+    endif()
+else()
+    set(ART_CTL_VERSION_INFO "N/A")
+endif()
+
+
 # Find out whether we are building out of source:
 get_filename_component(ABS_SOURCE_DIR "${PROJECT_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(ABS_BINARY_DIR "${CMAKE_BINARY_DIR}" ABSOLUTE)
@@ -462,7 +676,7 @@ endif()
 
 # Remove files which could require manual work.
 # We will remove this after some time to have a clean build system without file modifications in the source tree again. (?)
-set(OOSB_FILES "${PROJECT_SOURCE_DIR}/rtdata/rawtherapee.desktop" "${PROJECT_SOURCE_DIR}/rtgui/version.h" "${PROJECT_SOURCE_DIR}/rtgui/config.h" "${PROJECT_SOURCE_DIR}/AboutThisBuild.txt")
+set(OOSB_FILES "${PROJECT_SOURCE_DIR}/rtdata/ART.desktop" "${PROJECT_SOURCE_DIR}/rtgui/version.h" "${PROJECT_SOURCE_DIR}/rtgui/config.h" "${PROJECT_SOURCE_DIR}/AboutThisBuild.txt")
 if(OUT_OF_SOURCE_BUILD)
     foreach(f ${OOSB_FILES})
         file(REMOVE "${f}")
@@ -497,6 +711,7 @@ else()
     set(COMPILER_INFO "gcc ${GCC_VERSION}")
 endif()
 
+
 # Get C++ and linker flags for rtengine (the GUI's C++ flags may have fewer flags):
 set(CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${UPPER_CMAKE_BUILD_TYPE}} ${RTENGINE_CXX_FLAGS}")
 set(LFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${UPPER_CMAKE_BUILD_TYPE}}")
@@ -504,14 +719,16 @@ set(LFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${UPPER_CMAKE_BUI
 set(ABOUT_COMMAND_WITH_ARGS ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR:STRING=${PROJECT_SOURCE_DIR}
     -DCACHE_NAME_SUFFIX:STRING=${CACHE_NAME_SUFFIX}
-    -DPROC_LABEL:STRING="${PROC_LABEL}"
-    -DPROC_BIT_DEPTH:STRING="${PROC_BIT_DEPTH}"
+    -DPROC_LABEL:STRING=${PROC_LABEL}
+    -DPROC_BIT_DEPTH:STRING=${PROC_BIT_DEPTH}
     -DBUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
     -DGTKMM_VERSION:STRING=${GTKMM_VERSION}
     -DOPTION_OMP:STRING=${OPTION_OMP}
-    -DWITH_MYFILE_MMAP:STRING=${WITH_MYFILE_MMAP}
     -DLENSFUN_VERSION:STRING=${LENSFUN_VERSION}
-    -DEXIV2_VERSION:STRING=${EXIV2_VERSION})
+    -DEXIV2_VERSION:STRING=${EXIV2_VERSION}
+    -DLCMS_VERSION_INFO:STRING=${ART_LCMS_VERSION_INFO}
+    -DART_MIMALLOC_VERSION_INFO:STRING=${ART_MIMALLOC_VERSION_INFO}
+    )
 
 if(WIN32)
     list(APPEND ABOUT_COMMAND_WITH_ARGS -DSYSTEM:STRING=Windows
@@ -521,10 +738,23 @@ if(WIN32)
         -DCMAKE_INSTALL_PREFIX:STRING="${CMAKE_INSTALL_PREFIX}"
         -DBIT_DEPTH:STRING="${CMAKE_SIZEOF_VOID_P}")
 elseif(APPLE)
-    list(APPEND ABOUT_COMMAND_WITH_ARGS -DSYSTEM:STRING=Apple
-        -DCXX_FLAGS:STRING=${CXX_FLAGS}
-        -DLFLAGS:STRING=${LFLAGS}
-        -DCOMPILER_INFO:STRING=${COMPILER_INFO})
+    set(
+         ABOUT_COMMAND_WITH_ARGS
+         ${CMAKE_COMMAND}
+             -DPROJECT_SOURCE_DIR:STRING=${PROJECT_SOURCE_DIR}
+             -DCACHE_NAME_SUFFIX:STRING=${CACHE_NAME_SUFFIX}
+             -DSYSTEM:STRING=Apple
+             -DCXX_FLAGS:STRING=${CXX_FLAGS}
+             -DLFLAGS:STRING=${LFLAGS}
+             -DCOMPILER_INFO:STRING=${COMPILER_INFO}
+             -DPROC_LABEL:STRING="${PROC_LABEL}"
+             -DPROC_BIT_DEPTH:STRING="${PROC_BIT_DEPTH}"
+             -DBUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+             -DGTKMM_VERSION:STRING=${GTKMM_VERSION}
+             -DOPTION_OMP:STRING=${OPTION_OMP}
+             -DWITH_MYFILE_MMAP:STRING=${WITH_MYFILE_MMAP}
+             -DLENSFUN_VERSION:STRING=${LENSFUN_VERSION}
+             -P ${PROJECT_SOURCE_DIR}/UpdateInfo.cmake)
 else()
     list(APPEND ABOUT_COMMAND_WITH_ARGS -DSYSTEM:STRING="${CMAKE_SYSTEM_NAME}"
         -DCXX_FLAGS:STRING=${CXX_FLAGS}
@@ -532,11 +762,36 @@ else()
         -DCOMPILER_INFO:STRING=${COMPILER_INFO})
 endif()
 
+if(ENABLE_LIBRAW AND LIBRAW_FOUND)
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_LIBRAW_VERSION_INFO:STRING="${LIBRAW_VERSION}")
+else()
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_LIBRAW_VERSION_INFO:STRING="N/A")
+endif()
+
+if(ENABLE_OCIO AND OCIO_FOUND)
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_OCIO_VERSION_INFO:STRING="${OCIO_VERSION}")
+else()
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_OCIO_VERSION_INFO:STRING="N/A")
+endif()
+
+if(ENABLE_CTL AND CTL_FOUND)
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_CTL_VERSION_INFO:STRING=${ART_CTL_VERSION_INFO})
+else()
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_CTL_VERSION_INFO:STRING="N/A")
+endif()
+
 list(APPEND ABOUT_COMMAND_WITH_ARGS "-DBUILDINFO_OS:STRING=${CMAKE_HOST_SYSTEM_NAME}" -P "${PROJECT_SOURCE_DIR}/UpdateInfo.cmake")
 
 add_custom_target(UpdateInfo ALL
     COMMAND ${ABOUT_COMMAND_WITH_ARGS}
-    COMMENT "Creating AboutThisBuild.txt and other version-dependent files")
+    COMMENT "Creating AboutThisBuild.txt and other version-dependent files"
+    )
 
 ### End generating AboutThisBuild.txt
 
@@ -548,70 +803,19 @@ install(FILES RELEASE_NOTES.txt DESTINATION "${CREDITSDIR}" OPTIONAL)
 # The standard location for man pages in Linux is /usr/share/man
 # Use "manpath" to see the search paths for man pages on your system.
 if(BUILD_BUNDLE)
-    install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${DATADIR}/share/man/man1")
+    if(APPLE)
+        install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1"
+                DESTINATION "${DATADIR}/man/man1")
+    else()
+        install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1"
+                DESTINATION "${DATADIR}/share/man/man1")
+    endif()
 else()
     install(FILES "${PROJECT_SOURCE_DIR}/doc/manpage/ART.1" DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man1")
 endif()
 
 if(WIN32)
     install(DIRECTORY "licenses" DESTINATION "${LICENCEDIR}")
-endif()
-
-# check whether the used version of lensfun has lfDatabase::LoadDirectory
-set(_lf_libs ${LENSFUN_LIBRARIES})
-set(LENSFUN_LIBRARIES "")
-foreach(l ${_lf_libs})
-    set(_el "_el-NOTFOUND")
-    if(LENSFUN_LIBRARY_DIRS)
-        find_library(_el ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
-    else()
-        find_library(_el ${l} PATHS ${LENSFUN_LIBRARY_DIRS})
-    endif()
-    set(LENSFUN_LIBRARIES ${LENSFUN_LIBRARIES} ${_el})
-endforeach()
-include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${LENSFUN_INCLUDE_DIRS})
-set(CMAKE_REQUIRED_LIBRARIES ${LENSFUN_LIBRARIES})
-# foreach(l ${LENSFUN_LIBRARIES})
-#     if(LENSFUN_LIBRARY_DIRS)
-#         # the NO_DEFAULT_PATH is to make sure we find the lensfun version we
-#         # want, and not the system's one (e.g. if we have a custom version
-#         # installed in a non-standard location)
-#         set(_l "_l-NOTFOUND")
-#         find_library(_l ${l} PATHS ${LENSFUN_LIBRARY_DIRS} NO_DEFAULT_PATH)
-#     else()
-#         # LENSFUN_LIBRARY_DIRS can be empty if lensfun is installed in the
-#         # default path. In this case, adding NO_DEFAULT_PATH would make
-#         # find_library fail...
-#         set(_l "_l-NOTFOUND")
-#         find_library(_l ${l})
-#     endif()
-#     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${_l})
-# endforeach()
-check_cxx_source_compiles(
-    "#include <lensfun.h>
-int main()
-{
-    lfDatabase *db = 0;
-    bool b = db->LoadDirectory(0);
-    return 0;
-}" LENSFUN_HAS_LOAD_DIRECTORY)
-
-set(TCMALLOC_LIB_DIR)
-if(ENABLE_TCMALLOC)
-    if(TCMALLOC_LIB_DIR)
-        find_library(TCMALLOC_LIBRARIES tcmalloc PATHS ${TCMALLOC_LIB_DIR} NO_DEFAULT_PATH)
-    else()
-        find_library(TCMALLOC_LIBRARIES tcmalloc)
-    endif()
-    if(TCMALLOC_LIBRARIES)
-        message(STATUS "using tcmalloc library in ${TCMALLOC_LIBRARIES}")
-    else()
-        set(TCMALLOC_LIBRARIES "" CACHE INTERNAL "" FORCE)
-        message(STATUS "tcmalloc not found")
-    endif()
-else()
-    set(TCMALLOC_LIBRARIES "" CACHE INTERNAL "" FORCE)
 endif()
 
 add_subdirectory(rtengine)

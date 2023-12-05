@@ -53,239 +53,252 @@
  *
  *          !! locked arrays cannot be resized and cannot be unlocked again !!
  */
-#ifndef ARRAY2D_H_
-#define ARRAY2D_H_
+#pragma once
 #include <csignal>  // for raise()
 #include <cassert>
-
-// flags for use
-#define ARRAY2D_LOCK_DATA   1
-#define ARRAY2D_CLEAR_DATA  2
-#define ARRAY2D_BYREFERENCE 4
-#define ARRAY2D_VERBOSE     8
-
 #include <cstring>
 #include <cstdio>
+#include <algorithm>
 
 #include "noncopyable.h"
+#include "alignedbuffer.h"
 
-template<typename T>
-class array2D :
-    public rtengine::NonCopyable
-{
+namespace rtengine {
 
+// flags for use
+constexpr unsigned int ARRAY2D_CLEAR_DATA = 2;
+constexpr unsigned int ARRAY2D_BYREFERENCE = 4;
+constexpr unsigned int ARRAY2D_ALIGNED = 16;
+
+
+template <typename T>
+class array2D: public rtengine::NonCopyable {
 private:
-    int x, y, owner;
-    unsigned int flags;
-    T ** ptr;
-    T * data;
-    bool lock; // useful lock to ensure data is not changed anymore.
-    void ar_realloc(int w, int h, int offset = 0)
+    int width_;
+    int height_;
+    unsigned int flags_ : 31;
+    bool owner_ : 1;
+    T **ptr_;
+    AlignedBuffer<T> buf_;
+    
+    void ar_realloc(int w, int h, int offset=0)
     {
-        if ((ptr) && ((h > y) || (4 * h < y))) {
-            delete[] ptr;
-            ptr = nullptr;
+        if (ptr_ && ((h > height_) || (4 * h < height_))) {
+            delete[] ptr_;
+            ptr_ = nullptr;
         }
 
-        if ((data) && (((h * w) > (x * y)) || ((h * w) < ((x * y) / 4)))) {
-            delete[] data;
-            data = nullptr;
+        size_t cursz = rowstride(width_) * height_;
+        size_t reqsz = rowstride(w) * h;
+
+        bool ok = true;
+        if ((reqsz > cursz) || (reqsz < (cursz / 4))) {
+            ok = buf_.resize(reqsz + offset * sizeof(T), 1);
         }
 
-        if (ptr == nullptr) {
-            ptr = new T*[h];
+        if (!ok) {
+            if (ptr_) {
+                delete[] ptr_;
+                ptr_ = nullptr;
+            }
+            width_ = height_ = 0;
+            return;
         }
 
-        if (data == nullptr) {
-            data = new T[h * w + offset];
+        if (ptr_ == nullptr) {
+            ptr_ = new T*[h];
         }
 
-        x = w;
-        y = h;
+        width_ = w;
+        height_ = h;
+        
+        // for (int i = 0; i < h; ++i) {
+        //     ptr_[i] = buf_.data + offset + w * i;
+        // }
+        char *start = reinterpret_cast<char *>(buf_.data);
+        size_t stride = rowstride(w);
 
-        for (int i = 0; i < h; i++) {
-            ptr[i] = data + offset + w * i;
+        for (int i = 0; i < h; ++i) {
+            int k = i * stride + offset * sizeof(T);
+            ptr_[i] = reinterpret_cast<T *>(start + k);
         }
 
-        owner = 1;
+        owner_ = true;
     }
+
+    size_t rowstride(int w) const // in bytes
+    {
+        return (flags_ & ARRAY2D_ALIGNED) ? ((w * sizeof(T) + 15) / 16 * 16) : w * sizeof(T);
+    }
+
+    void construct(int w, int h, int startx, int starty, T **source, unsigned int flgs)
+    {
+        flags_ = flgs;
+        owner_ = !(flags_ & ARRAY2D_BYREFERENCE);
+        size_t stride = rowstride(w);
+
+        if (owner_) {
+            buf_.resize(stride * h, 1);
+        }
+
+        width_ = w;
+        height_ = h;
+        ptr_ = new T*[h];
+
+        if (!owner_) {
+            for (int i = 0; i < h; ++i) {
+                ptr_[i] = source[i + starty] + startx;
+            }
+        } else {
+            char *start = reinterpret_cast<char *>(buf_.data);
+            for (int i = 0; i < h; ++i) {
+                int k = i * stride;
+                ptr_[i] = reinterpret_cast<T *>(start + k);
+                for (int j = 0; j < w; ++j) {
+                    ptr_[i][j] = source[i + starty][j + startx];
+                }
+            }
+        }
+    }
+    
 public:
 
     // use as empty declaration, resize before use!
     // very useful as a member object
-    array2D() :
-        x(0), y(0), owner(0), flags(0), ptr(nullptr), data(nullptr), lock(false)
+    array2D():
+        width_(0), height_(0), flags_(0), owner_(false), ptr_(nullptr), buf_()
     {
-        //printf("got empty array2D init\n");
+    }
+
+    explicit array2D(unsigned int flgs):
+        width_(0), height_(0), flags_(flgs), owner_(false), ptr_(nullptr),
+        buf_(0, flgs & ARRAY2D_ALIGNED ? 16 : 0)
+    {
     }
 
     // creator type1
-    array2D(int w, int h, unsigned int flgs = 0)
+    array2D(int w, int h, unsigned int flgs=0):
+        buf_(0, flgs & ARRAY2D_ALIGNED ? 16 : 0)
     {
-        flags = flgs;
-        lock = flags & ARRAY2D_LOCK_DATA;
-        data = new T[h * w];
-        owner = 1;
-        x = w;
-        y = h;
-        ptr = new T*[h];
+        flags_ = flgs;
+        owner_ = true;
 
-        for (int i = 0; i < h; i++) {
-            ptr[i] = data + i * w;
-        }
+        size_t stride = rowstride(w);
+        buf_.resize(stride * h, 1);
+        width_ = w;
+        height_ = h;
+        ptr_ = new T*[h];
 
-        if (flags & ARRAY2D_CLEAR_DATA) {
-            memset(data, 0, w * h * sizeof(T));
+        char *start = reinterpret_cast<char *>(buf_.data);
+        for (int i = 0; i < h; ++i) {
+            int k = i * stride;
+            ptr_[i] = reinterpret_cast<T *>(start + k);
+        }        
+
+        if (flags_ & ARRAY2D_CLEAR_DATA) {
+            fill(0);
         }
     }
 
     // creator type 2
-    array2D(int w, int h, T ** source, unsigned int flgs = 0)
+    array2D(int w, int h, T **source, unsigned int flgs=0):
+        buf_(0, (flgs & ARRAY2D_ALIGNED) && !(flgs & ARRAY2D_BYREFERENCE) ? 16 : 0)
     {
-        flags = flgs;
-        //if (lock) { printf("array2D attempt to overwrite data\n");raise(SIGSEGV);}
-        lock = flags & ARRAY2D_LOCK_DATA;
-        // when by reference
-        // TODO: improve this code with ar_realloc()
-        owner = (flags & ARRAY2D_BYREFERENCE) ? 0 : 1;
+        construct(w, h, 0, 0, source, flgs);
+    }
 
-        if (owner) {
-            data = new T[h * w];
-        } else {
-            data = nullptr;
-        }
-
-        x = w;
-        y = h;
-        ptr = new T*[h];
-
-        for (int i = 0; i < h; i++) {
-            if (owner) {
-                ptr[i] = data + i * w;
-
-                for (int j = 0; j < w; j++) {
-                    ptr[i][j] = source[i][j];
-                }
-            } else {
-                ptr[i] = source[i];
-            }
-        }
+    // creator type 3
+    array2D(int w, int h, int startx, int starty, T **source, unsigned int flgs=0)
+    {
+        construct(w, h, startx, starty, source, flgs);
     }
 
     // destructor
     ~array2D()
     {
-
-        if (flags & ARRAY2D_VERBOSE) {
-            printf(" deleting array2D size %dx%d \n", x, y);
+        if (ptr_) {
+            delete[] ptr_;
         }
+    }
 
-        if ((owner) && (data)) {
-            delete[] data;
-        }
-
-        if (ptr) {
-            delete[] ptr;
+    void fill(const T val)
+    {
+        for (int i = 0; i < height_; ++i) {
+            std::fill(ptr_[i], ptr_[i]+width_, val);
         }
     }
 
     void free()
     {
-        if ((owner) && (data)) {
-            delete[] data;
-            data = nullptr;
+        if (owner_) {
+            buf_.resize(0);
         }
 
-        if (ptr) {
-            delete [] ptr;
-            ptr = nullptr;
+        if (ptr_) {
+            delete [] ptr_;
+            ptr_ = nullptr;
         }
+
+        width_ = height_ = 0;
     }
 
     // use with indices
     T * operator[](int index) const
     {
-        assert((index >= 0) && (index < y));
-        return ptr[index];
+        assert((index >= 0) && (index < height_));
+        return ptr_[index];
     }
 
     // use as pointer to T**
     operator T**()
     {
-        return ptr;
+        return ptr_;
     }
 
     // use as pointer to data
     operator T*()
     {
         // only if owner this will return a valid pointer
-        return data;
+        return owner_ ? buf_.data : nullptr;
     }
 
 
     // useful within init of parent object
     // or use as resize of 2D array
-    void operator()(int w, int h, unsigned int flgs = 0, int offset = 0)
+    void operator()(int w, int h, unsigned int flgs=0, int offset=0)
     {
-        flags = flgs;
-
-        if (flags & ARRAY2D_VERBOSE) {
-            printf("got init request %dx%d flags=%u\n", w, h, flags);
-            printf("previous was data %p ptr %p \n", data, ptr);
-        }
-
-        if (lock) { // our object was locked so don't allow a change.
-            printf("got init request but object was locked!\n");
-            raise( SIGSEGV);
-        }
-
-        lock = flags & ARRAY2D_LOCK_DATA;
-
+        flags_ = flgs & ~(ARRAY2D_BYREFERENCE|ARRAY2D_ALIGNED);
         ar_realloc(w, h, offset);
 
-        if (flags & ARRAY2D_CLEAR_DATA) {
-            memset(data + offset, 0, w * h * sizeof(T));
+        if (flags_ & ARRAY2D_CLEAR_DATA) {
+            fill(0);
         }
     }
 
     // import from flat data
-    void operator()(int w, int h, T* copy, unsigned int flgs = 0)
+    void operator()(int w, int h, T* copy, unsigned int flgs=0)
     {
-        flags = flgs;
-
-        if (flags & ARRAY2D_VERBOSE) {
-            printf("got init request %dx%d flags=%u\n", w, h, flags);
-            printf("previous was data %p ptr %p \n", data, ptr);
-        }
-
-        if (lock) { // our object was locked so don't allow a change.
-            printf("got init request but object was locked!\n");
-            raise( SIGSEGV);
-        }
-
-        lock = flags & ARRAY2D_LOCK_DATA;
+        flags_ = flgs & ~(ARRAY2D_BYREFERENCE|ARRAY2D_ALIGNED);
 
         ar_realloc(w, h);
-        memcpy(data, copy, w * h * sizeof(T));
+        for (int y = 0; y < h; ++y) {
+            std::copy(copy + y * w, copy + y * w + w, ptr_[y]);
+        }
     }
-    int width() const
-    {
-        return x;
-    }
-    int height() const
-    {
-        return y;
-    }
+    
+    int width() const { return width_; }
+    int height() const { return height_; }
 
     operator bool()
     {
-        return (x > 0 && y > 0);
+        return (width_ > 0 && height_ > 0);
     }
-
 };
-template<typename T, const size_t num>
-class multi_array2D
-{
+
+
+
+template <typename T, const size_t num>
+class multi_array2D {
 private:
     array2D<T> list[num];
 
@@ -302,10 +315,11 @@ public:
         //printf("trying to delete the list of array2D objects\n");
     }
 
-    array2D<T> & operator[](int index)
+    array2D<T> &operator[](int index)
     {
         assert(static_cast<size_t>(index) < num);
         return list[index];
     }
 };
-#endif /* array2D_H_ */
+
+} // namespace rtengine

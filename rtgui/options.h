@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,29 +17,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _OPTIONS_
-#define _OPTIONS_
+#pragma once
 
 #include <set>
 #include <gtkmm.h>
 #include "../rtengine/rtengine.h"
 #include <exception>
-
-#define STARTUPDIR_CURRENT 0
-#define STARTUPDIR_HOME    1
-#define STARTUPDIR_CUSTOM  2
-#define STARTUPDIR_LAST    3
-
-#define THEMEREGEXSTR      "^(.+)-GTK3-(\\d{1,2})?_(\\d{1,2})?\\.css$"
-
-// Profile name to use for internal values' profile
-#define DEFPROFILE_INTERNAL "Neutral"
-// Special name for the Dynamic profile
-#define DEFPROFILE_DYNAMIC  "Dynamic"
-// Default bundled profile name to use for Standard images
-#define DEFPROFILE_IMG DEFPROFILE_INTERNAL
-// Default bundled profile name to use for Raw images
-#define DEFPROFILE_RAW DEFPROFILE_DYNAMIC
+#include "exiffiltersettings.h"
 
 struct SaveFormat {
     SaveFormat(
@@ -84,6 +69,8 @@ struct SaveFormat {
     {
     }
 
+    Glib::ustring getKey() const;
+
     Glib::ustring format;
     int pngBits;
     int jpegQuality;
@@ -99,11 +86,31 @@ enum PPLoadLocation {PLL_Cache = 0, PLL_Input = 1};
 enum CPBKeyType {CPBKT_TID = 0, CPBKT_NAME = 1, CPBKT_TID_NAME = 2};
 enum prevdemo_t {PD_Sidecar = 1, PD_Fast = 0};
 
-class Options
-{
+class Options {
 public:
-    class Error: public std::exception
-    {
+    enum {
+        STARTUPDIR_CURRENT = 0,
+        STARTUPDIR_HOME = 1,
+        STARTUPDIR_CUSTOM = 2,
+        STARTUPDIR_LAST = 3
+    };
+
+    static constexpr const char *THEMEREGEXSTR = "^(.+)-GTK3-(\\d{1,2})?_(\\d{1,2})?(-DEPRECATED)?\\.css$";
+
+    // Profile name to use for internal values' profile
+    static constexpr const char *DEFPROFILE_INTERNAL = "Neutral";
+    // Special name for the Dynamic profile
+    static constexpr const char *DEFPROFILE_DYNAMIC = "Dynamic";
+    // Default bundled profile name to use for Standard images
+    static constexpr const char *DEFPROFILE_IMG = DEFPROFILE_INTERNAL;
+    // Default bundled profile name to use for Raw images
+    static constexpr const char *DEFPROFILE_RAW = DEFPROFILE_DYNAMIC;
+
+    static constexpr const char *DEFAULT_THEME = "Default";
+
+    static constexpr const char *SESSION_PATH = ":session:";
+    
+    class Error: public std::exception {
     public:
         explicit Error (const Glib::ustring &msg): msg_ (msg) {}
         const char *what() const throw() override
@@ -156,6 +163,27 @@ public:
         R0_1,
         _COUNT
     };
+
+    enum class ScopeType {
+        NONE = -1,
+        HISTOGRAM,
+        HISTOGRAM_RAW,
+        PARADE,
+        VECTORSCOPE_HC,
+        VECTORSCOPE_HS,
+        WAVEFORM
+    };
+
+    enum class ThumbnailOrder {
+        FILENAME,
+        DATE,
+        DATE_REV,
+        MODTIME,
+        MODTIME_REV,
+        PROCTIME,
+        PROCTIME_REV
+    };
+    
     SaveFormat saveFormat;
     SaveFormat saveFormatBatch;
     Glib::ustring savePathTemplate;
@@ -168,6 +196,7 @@ public:
     int adjusterMaxDelay;
     int startupDir;
     Gtk::SortType dirBrowserSortType;
+    bool dir_browser_single_click;
     Glib::ustring startupPath;
     Glib::ustring profilePath; // can be an absolute or relative path; depending on this value, bundled profiles may not be found
     bool useBundledProfiles;   // only used if multiUser == true
@@ -182,6 +211,7 @@ public:
     bool browserToolPanelOpened;
     bool browserDirPanelOpened;
     bool editorFilmStripOpened;
+    bool inspectorDirPanelOpened;
     int historyPanelWidth;
     int windowX;
     int windowY;
@@ -222,9 +252,10 @@ public:
     int thumbSizeTab;
     int thumbSizeQueue;
     bool sameThumbSize;     // Will use only one thumb size for the file browser and the single editor tab, and avoid recomputing them
+    ThumbnailOrder thumbnailOrder;
     bool showHistory;
     bool showInfo;
-    bool mainNBVertical;  // main notebook vertical tabs?
+    bool filmstripBottom;
     bool showClippedHighlights;
     bool showClippedShadows;
     int highlightThreshold;
@@ -240,6 +271,9 @@ public:
     bool saveParamsFile;
     bool saveParamsCache;
     PPLoadLocation paramsLoadLocation;
+    bool params_out_embed;
+    bool params_sidecar_strip_extension;
+    
     bool procQueueEnabled;
     Glib::ustring gimpDir;
     Glib::ustring psDir;
@@ -247,7 +281,18 @@ public:
     Glib::ustring CPBPath; // Custom Profile Builder's path
     CPBKeyType CPBKeys; // Custom Profile Builder's key type
     int editorToSendTo;
+    enum EditorOutDir {
+        EDITOR_OUT_DIR_TEMP,
+        EDITOR_OUT_DIR_CURRENT,
+        EDITOR_OUT_DIR_CUSTOM
+    };
+    EditorOutDir editor_out_dir; // output directory for "open in external editor"
+    Glib::ustring editor_custom_out_dir;
+    bool editor_float32;
+    bool editor_bypass_output_profile;
+        
     int maxThumbnailHeight;
+    int maxThumbnailWidth;
     std::size_t maxCacheEntries;
     int thumbInterp; // 0: nearest, 1: bilinear
     std::vector<Glib::ustring> parseExtensions;   // List containing all extensions type
@@ -278,17 +323,22 @@ public:
     double sndLngEditProcDoneSecs;  // Minimum processing time seconds till the sound is played
     bool sndEnable;
 
+    enum { HISTOGRAM_POS_OFF = 0, HISTOGRAM_POS_LEFT = 1, HISTOGRAM_POS_RIGHT = 2};
     int histogramPosition;  // 0=disabled, 1=left pane, 2=right pane
     bool histogramRed;
     bool histogramGreen;
     bool histogramBlue;
     bool histogramLuma;
     bool histogramChroma;
-    bool histogramRAW;
+    //bool histogramRAW;
     bool histogramBar;
     int histogramHeight;
     int histogramDrawMode;
     double histogram_scaling_factor;
+    ScopeType histogramScopeType;
+    bool histogramShowOptionButtons;
+    float histogramTraceBrightness;
+
     bool FileBrowserToolbarSingleRow;
     bool hideTPVScrollbar;
     int whiteBalanceSpotSize;
@@ -305,10 +355,19 @@ public:
     int maxInspectorBuffers;   // maximum number of buffers (i.e. images) for the Inspector feature
     int inspectorDelay;
     int clutCacheSize;
-    bool filledProfile;  // Used as reminder for the ProfilePanel "mode"
+    bool thumb_delay_update;
+    bool thumb_lazy_caching;
+    bool thumb_cache_processed;
+    bool profile_append_mode;  // Used as reminder for the ProfilePanel "mode"
     prevdemo_t prevdemo; // Demosaicing method used for the <100% preview
     bool serializeTiffRead;
     bool denoiseZoomedOut;
+    enum WBPreviewMode {
+        WB_AFTER, // apply WB after demosaicing (faster)
+        WB_BEFORE, // always apply WB before demosaicing
+        WB_BEFORE_HIGH_DETAIL // apply WB before demosaicing only at 1:1
+    };
+    WBPreviewMode wb_preview_mode;
 
     bool menuGroupRank;
     bool menuGroupLabel;
@@ -334,34 +393,8 @@ public:
     bool ICCPC_appendParamsToDesc;
 
     // fast export options
-    bool fastexport_bypass_sharpening;
-    bool fastexport_bypass_defringe;
-    bool fastexport_bypass_dirpyrDenoise;
-    bool fastexport_bypass_localContrast;
-    Glib::ustring fastexport_raw_bayer_method;
-    bool fastexport_bypass_raw_bayer_dcb_iterations;
-    bool fastexport_bypass_raw_bayer_dcb_enhance;
-    bool fastexport_bypass_raw_bayer_lmmse_iterations;
-    bool fastexport_bypass_raw_bayer_linenoise;
-    bool fastexport_bypass_raw_bayer_greenthresh;
-    Glib::ustring fastexport_raw_xtrans_method;
-    bool fastexport_bypass_raw_ccSteps;
-    bool fastexport_bypass_raw_ca;
-    bool fastexport_bypass_raw_df;
-    bool fastexport_bypass_raw_ff;
-    Glib::ustring fastexport_icm_input_profile;
-    Glib::ustring fastexport_icm_working_profile;
-    Glib::ustring fastexport_icm_output_profile;
-    rtengine::RenderingIntent fastexport_icm_outputIntent;
-    bool fastexport_icm_outputBPC;
-    Glib::ustring fastexport_icm_custom_output_profile;
-    bool fastexport_resize_enabled;
-    double fastexport_resize_scale;
-    Glib::ustring fastexport_resize_appliesTo;
-    int fastexport_resize_dataspec;
     int fastexport_resize_width;
     int fastexport_resize_height;
-    bool fastexport_use_fast_pipeline;
 
     std::vector<Glib::ustring> favorites;
     // Dialog settings
@@ -377,6 +410,8 @@ public:
     Glib::ustring lastProfilingReferenceDir;
     Glib::ustring lastLensProfileDir;
     Glib::ustring lastICCProfCreatorDir;
+    Glib::ustring last_session_add_dir;
+    Glib::ustring last_session_loadsave_dir;
     bool gimpPluginShowInfoDialog;
 
     size_t maxRecentFolders;                   // max. number of recent folders stored in options file
@@ -392,9 +427,59 @@ public:
     bool thumbnail_inspector_show_info;
     bool thumbnail_inspector_enable_cms;
     int browser_width_for_inspector;
+    bool thumbnail_inspector_show_histogram;
+    bool thumbnail_inspector_hover;
 
-    Glib::ustring batch_queue_profile_path;
-    bool batch_queue_use_profile;
+    // Glib::ustring batch_queue_profile_path;
+    // bool batch_queue_use_profile;
+
+    bool toolpanels_disable;
+    bool adjuster_force_linear;
+    
+    int error_message_duration; // in milliseconds
+    int max_error_messages;
+
+    // maps a IRE value to a false color
+    // taken from
+    // https://www.premiumbeat.com/blog/how-to-use-false-color-nail-skin-tone-exposure/
+    std::map<int, std::string> falseColorsMap;
+    std::string clipped_highlights_color;
+    std::string clipped_shadows_color;
+
+    struct RenameOptions {
+        Glib::ustring pattern;
+        Glib::ustring sidecars;
+        int name_norm;
+        int ext_norm;
+        bool allow_whitespace;
+        int on_existing;
+        int progressive_number;
+
+        RenameOptions();
+    };
+    RenameOptions renaming;
+
+    int sidecar_autosave_interval; // in seconds
+
+    int editor_keyboard_scroll_step; // in pixels
+    int adjuster_shortcut_scrollwheel_factor; // to control the adjustment step when using tool shortcuts with the mouse wheel
+
+    bool remember_exif_filter_settings;
+    ExifFilterSettings last_exif_filter_settings;
+
+    bool show_exiftool_makernotes;
+
+    std::vector<int> theme_bg_color; // RGB in 0-255
+    std::vector<int> theme_fg_color;
+    std::vector<int> theme_hl_color;
+
+    struct ExportProfileInfo {
+        Glib::ustring profile;
+        bool enabled;
+        ExportProfileInfo(const Glib::ustring &p="", bool e=false):
+            profile(p), enabled(e) {}
+    };
+    std::map<Glib::ustring, ExportProfileInfo> export_profile_map;
 
     Options();
 
@@ -403,7 +488,7 @@ public:
     void setDefaults();
     void readFromFile(Glib::ustring fname);
     void saveToFile(Glib::ustring fname);
-    static void load(bool lightweight = false);
+    static void load(bool lightweight=false, int verbose=-1);
     static void save();
 
     // if multiUser=false, send back the global profile path
@@ -424,6 +509,9 @@ public:
     void setDefProfImgMissing(bool value);
     void setBundledDefProfImgMissing(bool value);
     static Glib::ustring getICCProfileCopyright();
+
+    Glib::ustring getParamFile(const Glib::ustring &fname);
+    Glib::ustring getXmpSidecarFile(const Glib::ustring &fname);
 };
 
 extern Options options;
@@ -434,5 +522,3 @@ extern bool gimpPlugin;
 extern bool remote;
 extern Glib::ustring versionString;
 extern Glib::ustring paramFileExtension;
-
-#endif

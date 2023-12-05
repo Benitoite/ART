@@ -72,9 +72,15 @@ ToolBar::ToolBar () : showColPickers(true), listener (nullptr), pickerListener(n
     straimg->show ();
     straTool->set_relief(Gtk::RELIEF_NONE);
     straTool->show ();
+    pack_start(*straTool);
 
-    pack_start (*straTool);
-
+    perspTool = Gtk::manage(new Gtk::ToggleButton());
+    Gtk::Image *perspimg = Gtk::manage(new RTImage("perspective-vertical-bottom.png"));
+    perspTool->add(*perspimg);
+    perspimg->show();
+    perspTool->set_relief(Gtk::RELIEF_NONE);
+    perspTool->show();
+    pack_start(*perspTool);
 
     handTool->set_active (true);
     current = TMHand;
@@ -85,12 +91,14 @@ ToolBar::ToolBar () : showColPickers(true), listener (nullptr), pickerListener(n
     cpConn   = colPickerTool->signal_button_press_event().connect_notify( sigc::mem_fun(*this, &ToolBar::colPicker_pressed));
     cropConn = cropTool->signal_toggled().connect( sigc::mem_fun(*this, &ToolBar::crop_pressed));
     straConn = straTool->signal_toggled().connect( sigc::mem_fun(*this, &ToolBar::stra_pressed));
+    perspConn = perspTool->signal_toggled().connect(sigc::mem_fun(*this, &ToolBar::persp_pressed));
 
     handTool->set_tooltip_markup (M("TOOLBAR_TOOLTIP_HAND"));
     wbTool->set_tooltip_markup (M("TOOLBAR_TOOLTIP_WB"));
     colPickerTool->set_tooltip_markup (M("TOOLBAR_TOOLTIP_COLORPICKER"));
     cropTool->set_tooltip_markup (M("TOOLBAR_TOOLTIP_CROP"));
     straTool->set_tooltip_markup (M("TOOLBAR_TOOLTIP_STRAIGHTEN"));
+    perspTool->set_tooltip_markup(M("TOOLBAR_TOOLTIP_PERSPECTIVE"));
 }
 
 //
@@ -105,6 +113,7 @@ void ToolBar::setTool (ToolMode tool)
     ConnectionBlocker handBlocker(handConn);
     ConnectionBlocker straBlocker(straConn);
     ConnectionBlocker cropBlocker(cropConn);
+    ConnectionBlocker perspBlocker(perspConn);
     ConnectionBlocker wbWasBlocked(wbTool, wbConn), cpWasBlocked(colPickerTool, cpConn);
 
     stopEdit = tool == TMHand && handTool->get_active() && editingMode;
@@ -117,6 +126,9 @@ void ToolBar::setTool (ToolMode tool)
 
     cropTool->set_active (false);
     straTool->set_active (false);
+    if (tool != TMHand) {
+        perspTool->set_active(false);
+    }
     if (colPickerTool) {
         colPickerTool->set_active (false);
     }
@@ -136,6 +148,8 @@ void ToolBar::setTool (ToolMode tool)
         if (colPickerTool) {
             colPickerTool->set_active (true);
         }
+    } else if (tool == TMPerspective) {
+        perspTool->set_active(true);
     }
 
     current = tool;
@@ -158,6 +172,7 @@ void ToolBar::startEditMode()
         ConnectionBlocker handBlocker(handConn);
         ConnectionBlocker straBlocker(straConn);
         ConnectionBlocker cropBlocker(cropConn);
+        ConnectionBlocker perspBlocker(perspConn);
         ConnectionBlocker wbWasBlocked(wbTool, wbConn), cpWasBlocked(colPickerTool, cpConn);
 
         if (current != TMHand) {
@@ -170,6 +185,7 @@ void ToolBar::startEditMode()
 
             cropTool->set_active (false);
             straTool->set_active (false);
+            perspTool->set_active(false);
             current = TMHand;
         }
         handTool->set_active (true);
@@ -202,6 +218,7 @@ void ToolBar::hand_pressed ()
     ConnectionBlocker handBlocker(handConn);
     ConnectionBlocker straBlocker(straConn);
     ConnectionBlocker cropBlocker(cropConn);
+    ConnectionBlocker perspBlocker(perspConn);
     ConnectionBlocker wbWasBlocked(wbTool, wbConn), cpWasBlocked(colPickerTool, cpConn);
 
     if (editingMode) {
@@ -220,6 +237,7 @@ void ToolBar::hand_pressed ()
 
     cropTool->set_active (false);
     straTool->set_active (false);
+    perspTool->set_active(false);
     handTool->set_active (true);
 
     if (current != TMHand) {
@@ -242,6 +260,7 @@ void ToolBar::wb_pressed ()
     ConnectionBlocker handBlocker(handConn);
     ConnectionBlocker straBlocker(straConn);
     ConnectionBlocker cropBlocker(cropConn);
+    ConnectionBlocker perspBlocker(perspConn);
     ConnectionBlocker wbWasBlocked(wbTool, wbConn), cpWasBlocked(colPickerTool, cpConn);
 
     if (current != TMSpotWB) {
@@ -254,6 +273,7 @@ void ToolBar::wb_pressed ()
         handTool->set_active (false);
         cropTool->set_active (false);
         straTool->set_active (false);
+        perspTool->set_active(false);
         if (colPickerTool) {
             colPickerTool->set_active(false);
         }
@@ -279,6 +299,7 @@ void ToolBar::colPicker_pressed (GdkEventButton* event)
         ConnectionBlocker handBlocker(handConn);
         ConnectionBlocker straBlocker(straConn);
         ConnectionBlocker cropBlocker(cropConn);
+        ConnectionBlocker perspBlocker(perspConn);
         ConnectionBlocker wbWasBlocked(wbTool, wbConn);
 
         cropTool->set_active (false);
@@ -286,6 +307,7 @@ void ToolBar::colPicker_pressed (GdkEventButton* event)
             wbTool->set_active (false);
         }
         straTool->set_active (false);
+        perspTool->set_active(false);
 
         if (current != TMColorPicker) {
             // Disabling all other tools, enabling the Picker tool and entering the "visible pickers" mode
@@ -362,6 +384,7 @@ void ToolBar::crop_pressed ()
     ConnectionBlocker handBlocker(handConn);
     ConnectionBlocker straBlocker(straConn);
     ConnectionBlocker cropBlocker(cropConn);
+    ConnectionBlocker perspBlocker(perspConn);
     ConnectionBlocker wbWasBlocked(wbTool, wbConn), cpWasBlocked(colPickerTool, cpConn);
 
     if (editingMode) {
@@ -379,6 +402,7 @@ void ToolBar::crop_pressed ()
     }
 
     straTool->set_active (false);
+    perspTool->set_active(false);
     cropTool->set_active (true);
 
     if (current != TMCropSelect) {
@@ -402,6 +426,7 @@ void ToolBar::stra_pressed ()
     ConnectionBlocker handBlocker(handConn);
     ConnectionBlocker straBlocker(straConn);
     ConnectionBlocker cropBlocker(cropConn);
+    ConnectionBlocker perspBlocker(perspConn);
     ConnectionBlocker wbWasBlocked(wbTool, wbConn), cpWasBlocked(colPickerTool, cpConn);
 
     if (editingMode) {
@@ -419,6 +444,7 @@ void ToolBar::stra_pressed ()
     }
 
     cropTool->set_active (false);
+    perspTool->set_active(false);
     straTool->set_active (true);
 
     if (current != TMStraighten) {
@@ -435,6 +461,19 @@ void ToolBar::stra_pressed ()
     }
 }
 
+
+void ToolBar::persp_pressed()
+{
+    if (listener) {
+        if (!perspTool->get_active()) {
+            listener->toolDeselected(TMPerspective);
+        } else {
+            listener->toolSelected(TMPerspective);
+        }
+    }
+}
+
+
 bool ToolBar::handleShortcutKey (GdkEventKey* event)
 {
 
@@ -444,7 +483,7 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
 
     if (!ctrl && !alt) {
         switch(event->keyval) {
-        case GDK_KEY_w:
+        // case GDK_KEY_w:
         case GDK_KEY_W:
             if(wbTool) {
                 wb_pressed();
@@ -453,12 +492,12 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
 
             return false;
 
-        case GDK_KEY_c:
+        // case GDK_KEY_c:
         case GDK_KEY_C:
             crop_pressed();
             return true;
 
-        case GDK_KEY_s:
+        // case GDK_KEY_s:
         case GDK_KEY_S:
             stra_pressed();
             return true;
@@ -466,6 +505,10 @@ bool ToolBar::handleShortcutKey (GdkEventKey* event)
         case GDK_KEY_h:
         case GDK_KEY_H:
             hand_pressed();
+            return true;
+
+        case GDK_KEY_P:
+            perspTool->set_active(!perspTool->get_active());
             return true;
         }
     } else {

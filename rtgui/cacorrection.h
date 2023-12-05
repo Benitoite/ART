@@ -30,6 +30,7 @@ class CACorrection : public ToolParamBlock, public AdjusterListener, public Fold
 protected:
     Adjuster* red;
     Adjuster* blue;
+    rtengine::procparams::CACorrParams initial_params;
 
 public:
 
@@ -40,7 +41,9 @@ public:
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
     void adjusterChanged (Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

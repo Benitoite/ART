@@ -16,6 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "controllines.h"
 #include "perspective.h"
 #include "rtimage.h"
 #include "eventmapper.h"
@@ -23,13 +24,96 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("TP_PERSPECTIVE_LABEL"), false, true)
+
+namespace {
+
+void controlLinesToValues(const std::vector<rtengine::ControlLine>& lines,
+                          std::vector<int> &values)
+{
+    values.clear();
+
+    for (auto &&line : lines) {
+        int type = -1;
+        switch (line.type) {
+            case rtengine::ControlLine::VERTICAL:
+                type = 0;
+                break;
+            case rtengine::ControlLine::HORIZONTAL:
+                type = 1;
+                break;
+        }
+        values.push_back(type);
+
+        values.push_back(line.x1);
+        values.push_back(line.y1);
+        values.push_back(line.x2);
+        values.push_back(line.y2);
+    }
+}
+
+std::vector<rtengine::ControlLine> valuesToControlLines(const std::vector<int> &values)
+{
+    auto line_count = values.size() / 5;
+    std::vector<rtengine::ControlLine> lines(line_count);
+
+    auto values_iter = values.begin();
+    for (auto &&line : lines) {
+        switch (*(values_iter++)) {
+            case 0:
+                line.type = rtengine::ControlLine::VERTICAL;
+                break;
+            case 1:
+                line.type = rtengine::ControlLine::HORIZONTAL;
+                break;
+        }
+        
+        line.x1 = *(values_iter++);
+        line.y1 = *(values_iter++);
+        line.x2 = *(values_iter++);
+        line.y2 = *(values_iter++);
+    }
+
+    return lines;
+}
+
+
+class LinesCallbacks: public ControlLineManager::Callbacks {
+protected:
+    PerspCorrection *tool;
+
+public:
+    explicit LinesCallbacks(PerspCorrection *tool): tool(tool) {}
+
+    void lineChanged() override
+    {
+        if (tool) {
+            tool->lineChanged();
+        }
+    }
+    
+    void switchOffEditMode() override
+    {
+        if (tool) {
+            tool->switchOffEditMode();
+        }
+    }
+};
+
+} // namespace
+
+
+PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("TP_PERSPECTIVE_LABEL"), false, true, true)
 {
     EvToolEnabled.set_action(TRANSFORM);
+    EvToolReset.set_action(TRANSFORM);
+    
     auto m = ProcEventMapper::getInstance();
     EvPerspCorrLens = m->newEvent(TRANSFORM, "HISTORY_MSG_PERSPECTIVE_LENS");
+    EvPerspControlLines = m->newEvent(M_VOID, "HISTORY_MSG_PERSPECTIVE_CTRL_LINE");
+    EvPerspRender = m->newAnonEvent(TRANSFORM);
     
     lgl = nullptr;
+    panel_listener = nullptr;
     metadata = nullptr;
 
     Gtk::Image *ipersHL = Gtk::manage(new RTImage("perspective-horizontal-left-small.png"));
@@ -74,6 +158,40 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     cropfactor->setLogScale(2, 1);
     aspect->setLogScale(100, 1, true);
 
+    // Begin control lines interface.
+    Gtk::Image *ipers_draw = Gtk::manage(new RTImage("edit.png"));
+    Gtk::Image *ipers_trash = Gtk::manage(new RTImage("trash-empty.png"));
+    Gtk::Image *ipers_apply = Gtk::manage(new RTImage("tick.png"));
+    
+    lines_button_apply = Gtk::manage(new Gtk::Button());
+    lines_button_apply->set_image(*ipers_apply);
+    lines_button_apply->set_tooltip_text(M("GENERAL_APPLY"));
+    lines_button_apply->set_sensitive(false);
+    lines_button_apply->signal_pressed().connect(sigc::mem_fun(*this, &PerspCorrection::linesApplyButtonPressed));
+
+    lines_button_edit = Gtk::manage (new Gtk::ToggleButton());
+    lines_button_edit->set_image(*ipers_draw);
+    lines_button_edit->set_tooltip_text(M("GENERAL_EDIT"));
+    lines_button_edit->signal_toggled().connect(sigc::mem_fun(*this, &PerspCorrection::linesEditButtonPressed));
+
+    lines_button_erase = Gtk::manage (new Gtk::Button());
+    lines_button_erase->set_image(*ipers_trash);
+    lines_button_erase->set_tooltip_text(M("GENERAL_DELETE_ALL"));
+    lines_button_erase->set_sensitive(false);
+    lines_button_erase->signal_pressed().connect(sigc::mem_fun(*this, &PerspCorrection::linesEraseButtonPressed));
+
+    lines.reset(new ControlLineManager());
+    lines->callbacks = std::make_shared<LinesCallbacks>(this);
+
+    Gtk::HBox *control_lines_box = Gtk::manage(new Gtk::HBox());
+    Gtk::Label *control_lines_label = Gtk::manage(new Gtk::Label(M("TP_PERSPECTIVE_CONTROL_LINES") + ": "));
+    control_lines_label->set_tooltip_markup(M("TP_PERSPECTIVE_CONTROL_LINES_TOOLTIP") );
+    control_lines_box->pack_start(*control_lines_label, Gtk::PACK_SHRINK);
+    control_lines_box->pack_start(*lines_button_edit);
+    control_lines_box->pack_start(*lines_button_apply);
+    control_lines_box->pack_start(*lines_button_erase);
+    // End control lines interface.
+
     auto_horiz = Gtk::manage(new Gtk::Button());
     auto_horiz->add(*Gtk::manage(new RTImage("perspective-horizontal-left.png")));
     auto_horiz->get_style_context()->add_class("independent");
@@ -102,6 +220,9 @@ PerspCorrection::PerspCorrection() : FoldableToolPanel(this, "perspective", M("T
     auto_vert->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &PerspCorrection::autoPressed), auto_vert));
     auto_both->signal_pressed().connect(sigc::bind(sigc::mem_fun(*this, &PerspCorrection::autoPressed), auto_both));
 
+    pack_start(*Gtk::manage (new  Gtk::HSeparator()));
+    pack_start(*control_lines_box);
+    pack_start(*Gtk::manage (new  Gtk::HSeparator()));
     pack_start(*hb, Gtk::PACK_EXPAND_WIDGET, 4);
     hb->show();
     
@@ -126,6 +247,7 @@ void PerspCorrection::read(const ProcParams* pp)
         flength->setValue(28);
         cropfactor->setValue(1);
     }
+    lines->setLines(valuesToControlLines(pp->perspective.control_lines));
     setEnabled(pp->perspective.enabled);
 
     enableListener ();
@@ -141,11 +263,13 @@ void PerspCorrection::write(ProcParams* pp)
     pp->perspective.flength = flength->getValue();
     pp->perspective.cropfactor = cropfactor->getValue();
     pp->perspective.aspect = aspect->getValue();
+    std::vector<rtengine::ControlLine> control_lines;
+    lines->toControlLines(control_lines);
+    controlLinesToValues(control_lines, pp->perspective.control_lines);
 }
 
 void PerspCorrection::setDefaults(const ProcParams* defParams)
 {
-
     horiz->setDefault (defParams->perspective.horizontal);
     vert->setDefault (defParams->perspective.vertical);
     angle->setDefault(defParams->perspective.angle);
@@ -153,6 +277,8 @@ void PerspCorrection::setDefaults(const ProcParams* defParams)
     flength->setDefault(defParams->perspective.flength);
     cropfactor->setDefault(defParams->perspective.cropfactor);
     aspect->setDefault(defParams->perspective.aspect);
+
+    initial_params = defParams->perspective;
 }
 
 void PerspCorrection::adjusterChanged(Adjuster* a, double newval)
@@ -185,7 +311,7 @@ void PerspCorrection::trimValues (rtengine::procparams::ProcParams* pp)
 
 void PerspCorrection::autoPressed(Gtk::Button *which)
 {
-    if (!lgl || !getEnabled()) {
+    if (!lgl) {
         return;
     }
     
@@ -205,6 +331,43 @@ void PerspCorrection::autoPressed(Gtk::Button *which)
     lgl->autoPerspectiveRequested(hh, vv, a, h, v, s);
 
     disableListener();
+    setEnabled(true);
+    angle->setValue(a);
+    horiz->setValue(h);
+    vert->setValue(v);
+    shear->setValue(s);
+    enableListener();
+
+    adjusterChanged(nullptr, 0);
+}
+
+
+void PerspCorrection::applyControlLines()
+{
+    if (!lgl) {
+        return;
+    }
+
+    std::vector<rtengine::ControlLine> control_lines;
+    int h_count = 0, v_count = 0;
+    double a = angle->getValue();
+    double h = horiz->getValue();
+    double v = vert->getValue();
+    double s = shear->getValue();
+
+    lines->toControlLines(control_lines);
+
+    for (unsigned int i = 0; i < lines->size(); i++) {
+        if (control_lines[i].type == rtengine::ControlLine::HORIZONTAL) {
+            h_count++;
+        } else if (control_lines[i].type == rtengine::ControlLine::VERTICAL) {
+            v_count++;
+        }
+    }
+    lgl->autoPerspectiveRequested(h_count > 1, v_count > 1, a, h, v, s, &control_lines);
+
+    disableListener();
+    setEnabled(true);
     angle->setValue(a);
     horiz->setValue(h);
     vert->setValue(v);
@@ -239,4 +402,87 @@ void PerspCorrection::setRawMeta(bool raw, const rtengine::FramesMetaData *meta)
     disableListener();
     do_set_metadata(meta);
     enableListener();
+}
+
+
+void PerspCorrection::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.perspective = initial_params;
+    }
+    pp.perspective.enabled = getEnabled();
+    read(&pp);
+}
+
+
+void PerspCorrection::switchOffEditMode()
+{
+    lines_button_edit->set_active(false);
+}
+
+void PerspCorrection::setEditProvider(EditDataProvider*provider)
+{
+    lines->setEditProvider(provider);
+}
+
+void PerspCorrection::lineChanged()
+{
+    if (listener) {
+        listener->panelChanged(EvPerspControlLines, M("HISTORY_CHANGED"));
+    }
+}
+
+void PerspCorrection::linesApplyButtonPressed()
+{
+    applyControlLines();
+    lines_button_edit->set_active(false);
+}
+
+void PerspCorrection::linesEditButtonPressed()
+{
+    if (lines_button_edit->get_active()) { // Enter edit mode.
+        lines->setActive(true);
+        lines->setDrawMode(true);
+        if (lgl) {
+            lgl->updateTransformPreviewRequested(EvPerspRender, false);
+        }
+        lines_button_apply->set_sensitive(true);
+        lines_button_erase->set_sensitive(true);
+        //setCamBasedEventsActive(false);
+        if (panel_listener) {
+            panel_listener->controlLineEditModeChanged(true);
+        }
+    } else { // Leave edit mode.
+        //setCamBasedEventsActive(true);
+        lines_button_apply->set_sensitive(false);
+        lines_button_erase->set_sensitive(false);
+        if (lgl) {
+            lgl->updateTransformPreviewRequested(EvPerspRender, true);
+        }
+        lines->setDrawMode(false);
+        lines->setActive(false);
+        if (panel_listener) {
+            panel_listener->controlLineEditModeChanged(false);
+        }
+    }
+}
+
+void PerspCorrection::linesEraseButtonPressed()
+{
+    lines->removeAll();
+}
+
+
+void PerspCorrection::requestApplyControlLines()
+{
+    if (lines_button_apply->is_sensitive()) {
+        linesApplyButtonPressed();
+    }
+}
+
+
+void PerspCorrection::setControlLineEditMode(bool active)
+{
+    lines_button_edit->set_active(active);
 }

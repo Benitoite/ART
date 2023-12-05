@@ -26,6 +26,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <iostream>
 
 #include "thumbnail.h"
 #include "batchqueue.h"
@@ -35,6 +36,7 @@
 #include "guiutils.h"
 #include "rtimage.h"
 #include <sys/time.h>
+#include "../rtengine/imgiomanager.h"
 
 using namespace std;
 using namespace rtengine;
@@ -46,7 +48,8 @@ BatchQueue::BatchQueue (FileCatalog* aFileCatalog):
     listener(nullptr),
     batch_profile_(nullptr)
 {
-
+    fileCatalog->setBatchQueue(this);
+    
     location = THLOC_BATCHQUEUE;
 
     int p = 0;
@@ -81,12 +84,26 @@ BatchQueue::BatchQueue (FileCatalog* aFileCatalog):
     cancel->add_accelerator ("activate", pmaccelgroup, GDK_KEY_Delete, (Gdk::ModifierType)0, Gtk::ACCEL_VISIBLE);
 
     open->signal_activate().connect(sigc::mem_fun(*this, &BatchQueue::openLastSelectedItemInEditor));
-    cancel->signal_activate().connect (std::bind (&BatchQueue::cancelItems, this, std::ref (selected)));
+    cancel->signal_activate().connect (std::bind (&BatchQueue::cancelItems_, this, std::ref (selected)));
     head->signal_activate().connect (std::bind (&BatchQueue::headItems, this, std::ref (selected)));
     tail->signal_activate().connect (std::bind (&BatchQueue::tailItems, this, std::ref (selected)));
     selall->signal_activate().connect (sigc::mem_fun(*this, &BatchQueue::selectAll));
 
     setArrangement (ThumbBrowserBase::TB_Vertical);
+
+    format2ext_ = {
+        {"jpg", "jpg"},
+        {"tif8", "tif"},
+        {"tif16", "tif"},
+        {"tif16f", "tif"},
+        {"tif32f", "tif"},
+        {"png8", "png"},
+        {"png16", "png"}
+    };
+    auto extra_fmts = rtengine::ImageIOManager::getInstance()->getSaveFormats();
+    for (auto &p : extra_fmts) {
+        format2ext_[p.first] = p.second.extension;
+    }
 }
 
 BatchQueue::~BatchQueue ()
@@ -202,8 +219,9 @@ void BatchQueue::addEntries (const std::vector<BatchQueueEntry*>& entries, bool 
             // recovery save
             const auto tempFile = getTempFilenameForParams (entry->filename);
 
-            if (!entry->params.save (tempFile))
+            if (!entry->params.save(this, tempFile)) {
                 entry->savedParamsFile = tempFile;
+            }
 
             entry->selected = false;
 
@@ -335,8 +353,9 @@ bool BatchQueue::loadBatchQueue ()
 
             rtengine::procparams::ProcParams pparams;
 
-            if (pparams.load (paramsFile))
+            if (pparams.load(this, paramsFile)) {
                 continue;
+            }
 
             auto thumb = CacheManager::getInstance ()->getEntry (source);
 
@@ -409,7 +428,7 @@ Glib::ustring BatchQueue::getTempFilenameForParams( const Glib::ustring &filenam
     return savedParamPath;
 }
 
-void BatchQueue::cancelItems (const std::vector<ThumbBrowserEntryBase*>& items)
+void BatchQueue::cancelItems(const std::vector<ThumbBrowserEntryBase*>& items, bool immediately)
 {
     std::set<BatchQueueEntry*> removable_bqes;
 
@@ -446,27 +465,33 @@ void BatchQueue::cancelItems (const std::vector<ThumbBrowserEntryBase*>& items)
     }
 
     if (!removable_bqes.empty()) {
-        mutex_removable_batch_queue_entries.lock();
-        removable_batch_queue_entries.insert(removable_bqes.begin(), removable_bqes.end());
-        mutex_removable_batch_queue_entries.unlock();
-
-        idle_register.add(
-            [this]() -> bool
-            {
-                std::set<BatchQueueEntry*> removable_bqes;
-
-                mutex_removable_batch_queue_entries.lock();
-                removable_batch_queue_entries.swap(removable_bqes);
-                mutex_removable_batch_queue_entries.unlock();
-
-                for (const auto entry : removable_bqes) {
-                    ::g_remove(entry->savedParamsFile.c_str());
-                    delete entry;
-                }
-
-                return false;
+        if (immediately) {
+            for (const auto entry : removable_bqes) {
+                ::g_remove(entry->savedParamsFile.c_str());
+                delete entry;
             }
-        );
+        } else {
+            mutex_removable_batch_queue_entries.lock();
+            removable_batch_queue_entries.insert(removable_bqes.begin(), removable_bqes.end());
+            mutex_removable_batch_queue_entries.unlock();
+
+            idle_register.add(
+                [this]() -> bool
+                {
+                    std::set<BatchQueueEntry*> removable_bqes;
+
+                    mutex_removable_batch_queue_entries.lock();
+                    removable_batch_queue_entries.swap(removable_bqes);
+                    mutex_removable_batch_queue_entries.unlock();
+
+                    for (const auto entry : removable_bqes) {
+                        ::g_remove(entry->savedParamsFile.c_str());
+                        delete entry;
+                    }
+
+                    return false;
+                });
+        }
     }
 
     saveBatchQueue ();
@@ -654,156 +679,29 @@ void BatchQueue::error(const Glib::ustring& descr)
 
     if (listener) {
         BatchQueueListener* const bql = listener;
+        const bool running = processing;
+        int qsize = 0;
+        {
+            MYREADERLOCK(l, entryRW);
+            qsize = fd.size();
+        }        
 
         idle_register.add(
-            [bql, descr]() -> bool
+            [bql, descr, qsize, running]() -> bool
             {
-                bql->queueSizeChanged(0, false, true, descr);
+                bql->queueSizeChanged(qsize, running/*false*/, true, descr);
                 return false;
             }
         );
     }
 }
 
-rtengine::ProcessingJob* BatchQueue::imageReady(rtengine::IImagefloat* img)
-{
-    // save image img
-    Glib::ustring fname;
-    SaveFormat saveFormat;
 
-    if (processing->outFileName == "") { // auto file name
-        Glib::ustring s = calcAutoFileNameBase (processing->filename, processing->sequence);
-        saveFormat = options.saveFormatBatch;
-        fname = autoCompleteFileName (s, saveFormat.format);
-    } else { // use the save-as filename with automatic completion for uniqueness
-        if (processing->forceFormatOpts) {
-            saveFormat = processing->saveFormat;
-        } else {
-            saveFormat = options.saveFormatBatch;
-        }
-
-        // The output filename's extension is forced to the current or selected output format,
-        // despite what the user have set in the fielneame's field of the "Save as" dialgo box
-        fname = autoCompleteFileName (removeExtension(processing->outFileName), saveFormat.format);
-        //fname = autoCompleteFileName (removeExtension(processing->outFileName), getExtension(processing->outFileName));
-    }
-
-    //printf ("fname=%s, %s\n", fname.c_str(), removeExtension(fname).c_str());
-
-    if (img && fname != "") {
-        int err = 0;
-
-        if (saveFormat.format == "tif") {
-            err = img->saveAsTIFF (fname, saveFormat.tiffBits, saveFormat.tiffFloat, saveFormat.tiffUncompressed);
-        } else if (saveFormat.format == "png") {
-            err = img->saveAsPNG (fname, saveFormat.pngBits);
-        } else if (saveFormat.format == "jpg") {
-            err = img->saveAsJPEG (fname, saveFormat.jpegQuality, saveFormat.jpegSubSamp);
-        }
-
-        img->free ();
-
-        if (err) {
-            throw Glib::FileError(Glib::FileError::FAILED, M("MAIN_MSG_CANNOTSAVE") + "\n" + fname);
-        }
-
-        if (saveFormat.saveParams) {
-            // We keep the extension to avoid overwriting the profile when we have
-            // the same output filename with different extension
-            //processing->params.save (removeExtension(fname) + paramFileExtension);
-            if (batch_profile_) {
-                batch_profile_->applyTo(processing->params);
-            }
-            processing->params.save (fname + ".out" + paramFileExtension);
-        }
-
-        if (processing->thumbnail) {
-            processing->thumbnail->imageDeveloped ();
-            processing->thumbnail->imageRemovedFromQueue ();
-        }
-    }
-
-    // save temporary params file name: delete as last thing
-    Glib::ustring processedParams = processing->savedParamsFile;
-
-    // delete from the queue
-    bool remove_button_set = false;
-
-    {
-        MYWRITERLOCK(l, entryRW);
-
-        delete processing;
-        processing = nullptr;
-
-        fd.erase (fd.begin());
-
-        // return next job
-        if (!fd.empty() && listener && listener->canStartNext ()) {
-            BatchQueueEntry* next = static_cast<BatchQueueEntry*>(fd[0]);
-            // tag it as selected and set sequence
-            next->processing = true;
-            next->sequence = ++sequence;
-            processing = next;
-
-            // remove from selection
-            if (processing->selected) {
-                std::vector<ThumbBrowserEntryBase*>::iterator pos = std::find (selected.begin(), selected.end(), processing);
-
-                if (pos != selected.end()) {
-                    selected.erase (pos);
-                }
-
-                processing->selected = false;
-            }
-
-            // remove button set
-            remove_button_set = true;
-        }
-    }
-
-    if (remove_button_set) {
-        // ButtonSet have Cairo::Surface which might be rendered while we're trying to delete them
-        GThreadLock lock;
-        processing->removeButtonSet ();
-    }
-
-    if (saveBatchQueue ()) {
-        ::g_remove (processedParams.c_str ());
-
-        // Delete all files in directory batch when finished, just to be sure to remove zombies
-        auto isEmpty = false;
-
-        {
-            MYREADERLOCK(l, entryRW);
-            isEmpty = fd.empty();
-        }
-
-        if (isEmpty) {
-
-            const auto batchdir = Glib::build_filename (options.rtdir, "batch");
-
-            try {
-
-                auto dir = Gio::File::create_for_path (batchdir);
-                auto enumerator = dir->enumerate_children ("standard::name");
-
-                while (auto file = enumerator->next_file ()) {
-                    ::g_remove (Glib::build_filename (batchdir, file->get_name ()).c_str ());
-                }
-
-            } catch (Glib::Exception&) {}
-        }
-    }
-
-    redraw ();
-    notifyListener ();
-
-    return processing ? processing->job : nullptr;
-}
+namespace {
 
 // Calculates automatic filename of processed batch entry, but just the base name
 // example output: "c:\out\converted\dsc0121"
-Glib::ustring BatchQueue::calcAutoFileNameBase (const Glib::ustring& origFileName, int sequence)
+Glib::ustring calcAutoFileNameBase(const Glib::ustring& origFileName, rtengine::ProcParams &params, int sequence)
 {
 
     std::vector<Glib::ustring> pa;
@@ -892,18 +790,27 @@ Glib::ustring BatchQueue::calcAutoFileNameBase (const Glib::ustring& origFileNam
                 } else if (options.savePathTemplate[ix] == 'f') {
                     path = path + filename;
                 } else if (options.savePathTemplate[ix] == 'r') { // rank from pparams
-                    char rank;
-                    rtengine::procparams::ProcParams pparams;
-
-                    if( pparams.load(origFileName + paramFileExtension) == 0 ) {
-                        if (!pparams.inTrash) {
-                            rank = pparams.rank + '0';
-                        } else {
+                    auto thm = CacheManager::getInstance()->getEntry(origFileName);
+                    char rank = '0';
+                    if (thm) {
+                        if (thm->getInTrash()) {
                             rank = 'x';
+                        } else if (thm->getRank() >= 0) {
+                            rank = '0' + thm->getRank();
                         }
-                    } else {
-                        rank = '0';    // if param file not loaded (e.g. does not exist), default to rank=0
+                        thm->decreaseRef();
                     }
+                    // rtengine::procparams::ProcParams pparams;
+
+                    // if( pparams.load(nullptr, options.getParamFile(origFileName)) == 0 ) {
+                    //     if (!pparams.inTrash) {
+                    //         rank = pparams.rank + '0';
+                    //     } else {
+                    //         rank = 'x';
+                    //     }
+                    // } else {
+                    //     rank = '0';    // if param file not loaded (e.g. does not exist), default to rank=0
+                    // }
 
                     path += rank;
                 } else if (options.savePathTemplate[ix] == 's') { // sequence
@@ -918,6 +825,32 @@ Glib::ustring BatchQueue::calcAutoFileNameBase (const Glib::ustring& origFileNam
 
                     seqstr << sequence;
                     path += seqstr.str ();
+                } else if (options.savePathTemplate[ix] == 'n' || options.savePathTemplate[ix] == 'u') { // snapshot name
+                    auto thm = CacheManager::getInstance()->getEntry(origFileName);
+                    if (thm && thm->hasProcParams()) {
+                        const auto &sn = thm->getProcParamsSnapshots();
+                        for (auto &p : sn) {
+                            bool ok = (p.second == params);
+                            if (options.rtSettings.verbose) {
+                                std::cout << "comparing params with snapshot " << p.first << ": " << (ok ? "YES" : "NO") << std::endl;
+                            }
+                            if (ok) {
+                                auto name = p.first;
+                                if (options.savePathTemplate[ix] == 'u') {
+                                    name = "";
+                                    for (auto c : p.first) {
+                                        if (std::isspace(c)) {
+                                            c = '_';
+                                        }
+                                        name.push_back(c);
+                                    }
+                                }
+                                path += name;
+                                break;
+                            }
+                        }
+                        thm->decreaseRef();
+                    }
                 }
             }
 
@@ -934,6 +867,157 @@ Glib::ustring BatchQueue::calcAutoFileNameBase (const Glib::ustring& origFileNam
     return path;
 }
 
+} // namespace
+
+
+rtengine::ProcessingJob* BatchQueue::imageReady(rtengine::IImagefloat* img)
+{
+    // save image img
+    Glib::ustring fname;
+    SaveFormat saveFormat;
+
+    if (processing->outFileName == "") { // auto file name
+        Glib::ustring s = calcAutoFileNameBase(processing->filename, processing->params, processing->sequence);
+        saveFormat = options.saveFormatBatch;
+        fname = autoCompleteFileName(s, saveFormat.format);
+    } else { // use the save-as filename with automatic completion for uniqueness
+        if (processing->forceFormatOpts) {
+            saveFormat = processing->saveFormat;
+        } else {
+            saveFormat = options.saveFormatBatch;
+        }
+
+        // The output filename's extension is forced to the current or selected output format,
+        // despite what the user have set in the fielneame's field of the "Save as" dialgo box
+        fname = autoCompleteFileName (removeExtension(processing->outFileName), saveFormat.format);
+        //fname = autoCompleteFileName (removeExtension(processing->outFileName), getExtension(processing->outFileName));
+    }
+
+    //printf ("fname=%s, %s\n", fname.c_str(), removeExtension(fname).c_str());
+
+    if (img && fname != "") {
+        int err = 0;
+        processing->processing = false;
+
+        img->setSaveProgressListener(this);
+
+        if (saveFormat.format == "tif") {
+            err = img->saveAsTIFF (fname, saveFormat.tiffBits, saveFormat.tiffFloat, saveFormat.tiffUncompressed);
+        } else if (saveFormat.format == "png") {
+            err = img->saveAsPNG (fname, saveFormat.pngBits);
+        } else if (saveFormat.format == "jpg") {
+            err = img->saveAsJPEG (fname, saveFormat.jpegQuality, saveFormat.jpegSubSamp);
+        } else {
+            err = rtengine::ImageIOManager::getInstance()->save(img, saveFormat.format, fname, this) ? 0 : 1;
+        }
+
+        img->free ();
+
+        if (err) {
+            throw Glib::FileError(Glib::FileError::FAILED, M("MAIN_MSG_CANNOTSAVE") + ": " + fname);
+        }
+
+        if (saveFormat.saveParams) {
+            // We keep the extension to avoid overwriting the profile when we have
+            // the same output filename with different extension
+            //processing->params.save (removeExtension(fname) + paramFileExtension);
+            if (batch_profile_ && processing->use_batch_profile) {
+                batch_profile_->applyTo(processing->params);
+            }
+            auto sidecar = fname + ".out" + paramFileExtension;
+            if (!options.params_out_embed) {
+                processing->params.save(this, sidecar);
+            } else if (processing->params.saveEmbedded(this, fname) != 0) {
+                error(Glib::ustring::compose(M("PROCPARAMS_EMBEDDED_SAVE_WARNING"), fname, sidecar));
+                processing->params.save(this, sidecar);
+            }
+        }
+
+        if (processing->thumbnail) {
+            processing->thumbnail->imageDeveloped ();
+            processing->thumbnail->imageRemovedFromQueue ();
+        }
+    }
+
+    // save temporary params file name: delete as last thing
+    Glib::ustring processedParams = processing->savedParamsFile;
+
+    // delete from the queue
+    bool remove_button_set = false;
+
+    {
+        MYWRITERLOCK(l, entryRW);
+
+        delete processing;
+        processing = nullptr;
+
+        fd.erase (fd.begin());
+
+        // return next job
+        if (!fd.empty() && listener && listener->canStartNext ()) {
+            BatchQueueEntry* next = static_cast<BatchQueueEntry*>(fd[0]);
+            // tag it as selected and set sequence
+            next->processing = true;
+            next->sequence = ++sequence;
+            processing = next;
+
+            // remove from selection
+            if (processing->selected) {
+                std::vector<ThumbBrowserEntryBase*>::iterator pos = std::find (selected.begin(), selected.end(), processing);
+
+                if (pos != selected.end()) {
+                    selected.erase (pos);
+                }
+
+                processing->selected = false;
+            }
+
+            // remove button set
+            remove_button_set = true;
+        }
+    }
+
+    if (remove_button_set) {
+        // ButtonSet have Cairo::Surface which might be rendered while we're trying to delete them
+        GThreadLock lock;
+        processing->removeButtonSet ();
+    }
+
+    if (saveBatchQueue ()) {
+        ::g_remove (processedParams.c_str ());
+
+        // Delete all files in directory batch when finished, just to be sure to remove zombies
+        auto isEmpty = false;
+
+        {
+            MYREADERLOCK(l, entryRW);
+            isEmpty = fd.empty();
+        }
+
+        if (isEmpty) {
+
+            const auto batchdir = Glib::build_filename (options.rtdir, "batch");
+
+            try {
+
+                auto dir = Gio::File::create_for_path (batchdir);
+                auto enumerator = dir->enumerate_children ("standard::name");
+
+                while (auto file = enumerator->next_file ()) {
+                    ::g_remove (Glib::build_filename (batchdir, file->get_name ()).c_str ());
+                }
+
+            } catch (Glib::Exception&) {}
+        }
+    }
+
+    redraw ();
+    notifyListener ();
+
+    return processing ? processing->job : nullptr;
+}
+
+
 Glib::ustring BatchQueue::autoCompleteFileName (const Glib::ustring& fileName, const Glib::ustring& format)
 {
 
@@ -941,6 +1025,12 @@ Glib::ustring BatchQueue::autoCompleteFileName (const Glib::ustring& fileName, c
     Glib::ustring dstdir = Glib::path_get_dirname (fileName);
     Glib::ustring dstfname = Glib::path_get_basename (fileName);
     Glib::ustring fname;
+
+    Glib::ustring ext = format;
+    auto it = format2ext_.find(format);
+    if (it != format2ext_.end()) {
+        ext = it->second;
+    }
 
     // create directory, if does not exist
     if (g_mkdir_with_parents (dstdir.c_str (), 0755)) {
@@ -953,9 +1043,9 @@ Glib::ustring BatchQueue::autoCompleteFileName (const Glib::ustring& fileName, c
 
     for (int tries = 0; tries < 100; tries++) {
         if (tries == 0) {
-            fname = Glib::ustring::compose ("%1.%2", Glib::build_filename (dstdir,  dstfname), format);
+            fname = Glib::ustring::compose ("%1.%2", Glib::build_filename (dstdir,  dstfname), ext);
         } else {
-            fname = Glib::ustring::compose ("%1-%2.%3", Glib::build_filename (dstdir,  dstfname), tries, format);
+            fname = Glib::ustring::compose ("%1-%2.%3", Glib::build_filename (dstdir,  dstfname), tries, ext);
         }
 
         int fileExists = Glib::file_test (fname, Glib::FILE_TEST_EXISTS);

@@ -31,7 +31,7 @@
 #include "array2D.h"
 #include "cplx_wavelet_dec.h"
 #include "curves.h"
-#include "labmasks.h"
+#include "masks.h"
 
 
 namespace rtengine {
@@ -261,9 +261,9 @@ void local_contrast_wavelets(array2D<float> &Y, const LocalContrastParams::Regio
     int skip = scale;
     wavelet_decomposition wd(static_cast<float *>(Y), W, H, wavelet_level, 1, skip);
 
-    if (wd.memoryAllocationFailed) {
-        return;
-    }
+    // if (wd.memoryAllocationFailed) {
+    //     return;
+    // }
 
     const float contrast = params.contrast;
     int maxlvl = wd.maxlevel();
@@ -441,17 +441,17 @@ bool ImProcFunctions::localContrast(Imagefloat *rgb)
         rgb->setMode(Imagefloat::Mode::LAB, multiThread);
         
         if (editWhatever) {
-            LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H2);
-            fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
+            MasksEditID id = static_cast<MasksEditID>(int(eid) - EUID_LabMasks_H2);
+            fillPipetteMasks(rgb, editWhatever, id, multiThread);
         }
         
         int n = params->localContrast.regions.size();
         int show_mask_idx = params->localContrast.showMask;
-        if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW && cur_pipeline != Pipeline::OUTPUT)) {
+        if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW /*&& cur_pipeline != Pipeline::OUTPUT*/)) {
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);
-        if (!generateLabMasks(rgb, params->localContrast.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+        if (!generateMasks(rgb, params->localContrast.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr, cur_pipeline == Pipeline::NAVIGATOR ? plistener : nullptr)) {
             return true; // show mask is active, nothing more to do
         }
 

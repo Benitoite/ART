@@ -30,7 +30,7 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
 {
     PlanarWhateverData<float> *editWhatever = nullptr;
     EditUniqueID eid = pipetteBuffer ? pipetteBuffer->getEditID() : EUID_None;
-    if ((eid == EUID_HSV_H || eid == EUID_HSV_S || eid == EUID_HSV_V) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+    if ((eid == EUID_HSL_H || eid == EUID_HSL_S || eid == EUID_HSL_V) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
     
@@ -73,7 +73,7 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
         [](float y, float base) -> float
         {
             float v = (y - 0.5f) * 2.f;
-            return SGN(v) * LIM01(log2lin(std::abs(v), base));
+            return SGN(v) * LIM01(xlog2lin(std::abs(v), base));
         };
     
     if (editWhatever) {
@@ -123,13 +123,22 @@ void ImProcFunctions::hslEqualizer(Imagefloat *img)
             guidedFilter(Y, mask, mask, radius, eps, multiThread);
         }
 
+        FlatCurve coeff({
+                FCT_MinMaxCPoints,
+                0.25, 0.0, 0.5, 0.18,
+                1, 1, 0, 0.35
+            });
+
 #ifdef _OPENMP
 #       pragma omp parallel for if (multiThread)
 #endif
         for (int y = 0; y < H; ++y) {
             for (int x = 0; x < W; ++x) {
-                float f = 1.f + tolin(mask[y][x], 10.f);
-                img->b(y, x) *= f;
+                float f = tolin(mask[y][x], 2.f);//10.f);
+                // float s = LIM01(img->b(y, x) * 4.f);
+                // img->b(y, x) *= 1.f + (f >= 0.f ? pow_F(s, 1.8f) : pow_F(s, 1.f/1.8f)) * f;
+                float s = 1.f + (f < 0 ? coeff.getVal(img->b(y, x)) : 1.f - coeff.getVal(img->b(y, x)));
+                img->b(y, x) *= 1.f + SGN(f) * pow_F(LIM01(std::abs(f)), s);
             }
         }
     }

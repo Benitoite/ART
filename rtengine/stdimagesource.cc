@@ -22,11 +22,12 @@
 #include "imageio.h"
 #include "curves.h"
 #include "color.h"
+#include "imgiomanager.h"
+#include "../rtgui/multilangmgr.h"
 
 #undef THREAD_PRIORITY_NORMAL
 
-namespace rtengine
-{
+namespace rtengine {
 
 extern const Settings* settings;
 
@@ -51,7 +52,14 @@ template<class T> T** allocArray (int W, int H)
 }
 
 #define HR_SCALE 2
-StdImageSource::StdImageSource () : ImageSource(), img(nullptr), plistener(nullptr), full(false), max{}, rgbSourceModified(false)
+StdImageSource::StdImageSource():
+    ImageSource(),
+    img(nullptr),
+    plistener(nullptr),
+    full(false),
+    max{},
+    rgbSourceModified(false),
+    imgCopy(nullptr)
 {
 
     embProfile = nullptr;
@@ -65,6 +73,14 @@ StdImageSource::~StdImageSource ()
 
     if (img) {
         delete img;
+    }
+
+    if (imgCopy) {
+        delete imgCopy;
+    }
+
+    if (embProfile) {
+        cmsCloseProfile(embProfile);
     }
 }
 
@@ -102,17 +118,17 @@ void StdImageSource::getSampleFormat (const Glib::ustring &fname, IIOSampleForma
  * and RT's image data type (Image8, Image16 and Imagefloat), then it will
  * load the image into it
  */
-int StdImageSource::load (const Glib::ustring &fname)
+int StdImageSource::load(const Glib::ustring &fname, int maxw_hint, int maxh_hint)
 {
-
     fileName = fname;
 
     // First let's find out the input image's type
 
     IIOSampleFormat sFormat;
     IIOSampleArrangement sArrangement;
-    getSampleFormat(fname, sFormat, sArrangement);
+    getSampleFormat(fileName, sFormat, sArrangement);
 
+    bool loaded = false;
     // Then create the appropriate object
 
     switch (sFormat) {
@@ -136,31 +152,44 @@ int StdImageSource::load (const Glib::ustring &fname)
     }
 
     default:
-        return IMIO_FILETYPENOTSUPPORTED;
+        if (!ImageIOManager::getInstance()->load(fname, plistener, img, maxw_hint, maxh_hint)) {
+            return IMIO_FILETYPENOTSUPPORTED;
+        } else {
+            loaded = true;
+            maxw_hint = maxh_hint = 0;
+        }
     }
 
-    img->setSampleFormat(sFormat);
-    img->setSampleArrangement(sArrangement);
+    if (!loaded) {
+        img->setSampleFormat(sFormat);
+        img->setSampleArrangement(sArrangement);
 
-    if (plistener) {
-        plistener->setProgressStr ("PROGRESSBAR_LOADING");
-        plistener->setProgress (0.0);
-        img->setProgressListener (plistener);
+        if (plistener) {
+            plistener->setProgressStr ("PROGRESSBAR_LOADING");
+            plistener->setProgress (0.0);
+            img->setProgressListener (plistener);
+        }
+
+        // And load the image!
+
+        int error = img->load(fname, maxw_hint, maxh_hint);
+
+        if (error) {
+            delete img;
+            img = nullptr;
+            return error;
+        }
     }
 
-    // And load the image!
-
-    int error = img->load (fname);
-
-    if (error) {
-        delete img;
-        img = nullptr;
-        return error;
+    if (embProfile) {
+        cmsCloseProfile(embProfile);
+    }
+    embProfile = nullptr;
+    if (img->getEmbeddedProfile()) {
+        embProfile = ProfileContent(img->getEmbeddedProfile()).toProfile();
     }
 
-    embProfile = img->getEmbeddedProfile ();
-
-    idata = new FramesData (fname);
+    idata = new FramesData(fname);
 
     if (idata->hasExif()) {
         int deg = 0;
@@ -183,10 +212,15 @@ int StdImageSource::load (const Glib::ustring &fname)
         plistener->setProgress (1.0);
     }
 
-    wb = ColorTemp (1.0, 1.0, 1.0, 1.0);
     //this is probably a mistake if embedded profile is not D65
+    wb = ColorTemp (1.0, 1.0, 1.0, 1.0);
 
     return 0;
+}
+
+int StdImageSource::load(const Glib::ustring &fname)
+{
+    return load(fname, 0, 0);
 }
 
 void StdImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hrp, const RAWParams &raw)
@@ -212,10 +246,10 @@ void StdImageSource::getImage (const ColorTemp &ctemp, int tran, Imagefloat* ima
 
 void StdImageSource::convertColorSpace(Imagefloat* image, const ColorManagementParams &cmp, const ColorTemp &wb)
 {
-    colorSpaceConversion (image, cmp, embProfile, img->getSampleFormat());
+    colorSpaceConversion (image, cmp, embProfile, img->getSampleFormat(), plistener);
 }
 
-void StdImageSource::colorSpaceConversion (Imagefloat* im, const ColorManagementParams &cmp, cmsHPROFILE embedded, IIOSampleFormat sampleFormat)
+void StdImageSource::colorSpaceConversion (Imagefloat* im, const ColorManagementParams &cmp, cmsHPROFILE embedded, IIOSampleFormat sampleFormat, ProgressListener *plistener)
 {
 
     bool skipTransform = false;
@@ -235,6 +269,9 @@ void StdImageSource::colorSpaceConversion (Imagefloat* im, const ColorManagement
     } else {
         if (cmp.inputProfile != "(none)") {
             in = ICCStore::getInstance()->getProfile (cmp.inputProfile);
+            if (!in && plistener) {
+                plistener->error(Glib::ustring::compose(M("ERROR_MSG_FILE_READ"), cmp.inputProfile));
+            }
 
             if (in == nullptr && embedded) {
                 in = embedded;
@@ -256,7 +293,7 @@ void StdImageSource::colorSpaceConversion (Imagefloat* im, const ColorManagement
 
         lcmsMutex->lock ();
         cmsHTRANSFORM hTransform = cmsCreateTransform (in, TYPE_RGB_FLT, out, TYPE_RGB_FLT, INTENT_RELATIVE_COLORIMETRIC,
-                                   cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
+                                                       cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE);
         lcmsMutex->unlock ();
 
         if(hTransform) {
@@ -338,10 +375,29 @@ ColorTemp StdImageSource::getSpotWB (std::vector<Coord2D> &red, std::vector<Coor
     return ColorTemp (reds / rn * img_r, greens / gn * img_g, blues / bn * img_b, equal);
 }
 
-void StdImageSource::flushRGB() {
+void StdImageSource::flushRGB()
+{
     img->allocate(0, 0);
-};
-
-
+    if (imgCopy) {
+        delete imgCopy;
+        imgCopy = nullptr;
+    }
 }
 
+
+void StdImageSource::wbMul2Camera(double &rm, double &gm, double &bm)
+{
+    rm = 1.0 / rm;
+    gm = 1.0 / gm;
+    bm = 1.0 / bm;
+}
+
+
+void StdImageSource::wbCamera2Mul(double &rm, double &gm, double &bm)
+{
+    rm = 1.0 / rm;
+    gm = 1.0 / gm;
+    bm = 1.0 / bm;
+}
+
+} // namespace rtengine

@@ -34,9 +34,13 @@ protected:
     MyComboBoxText *lineDenoiseDirection;
     Adjuster* greenEqThreshold;
     Gtk::CheckButton *pdafLinesFilter;
+    Gtk::CheckButton *dynamicRowNoiseFilter;
 
     rtengine::ProcEvent EvLineDenoiseDirection;
     rtengine::ProcEvent EvPDAFLinesFilter;
+    rtengine::ProcEvent EvDynamicRowNoiseFilter;
+
+    rtengine::procparams::RAWParams::BayerSensor initial_params;
     
 public:
 
@@ -50,9 +54,12 @@ public:
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
 
     void hotDeadPixelChanged();
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
     void lineDenoiseDirectionChanged();
     void pdafLinesFilterChanged();
+    void dynamicRowNoiseFilterChanged();
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

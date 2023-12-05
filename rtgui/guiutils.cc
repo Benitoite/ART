@@ -27,8 +27,6 @@
 
 #include <assert.h>
 
-//extern Glib::Threads::Thread* mainThread;
-
 using namespace std;
 
 Glib::RefPtr<RTImage> MyExpander::inconsistentImage;
@@ -36,6 +34,13 @@ Glib::RefPtr<RTImage> MyExpander::enabledImage;
 Glib::RefPtr<RTImage> MyExpander::disabledImage;
 Glib::RefPtr<RTImage> MyExpander::openedImage;
 Glib::RefPtr<RTImage> MyExpander::closedImage;
+
+namespace {
+
+constexpr double MyExpander_disabled_opacity = 0.35;
+
+} // namespace
+
 
 IdleRegister::~IdleRegister()
 {
@@ -82,58 +87,6 @@ void IdleRegister::destroy()
     mutex.unlock();
 }
 
-/*
-gboolean giveMeAGo(void* data) {
-    GThreadLock *threadMutex = static_cast<GThreadLock*>(data);
-    printf("A\n");
-    Glib::Threads::Mutex::Lock GUILock(threadMutex->GUI);
-    printf("B\n");
-    {
-    Glib::Threads::Mutex::Lock operationLock(threadMutex->operation);
-    printf("C\n");
-
-    threadMutex->operationCond.signal();
-    printf("D\n");
-    operationLock.release();  // because we're not sure that "lock" destructor happens here...
-    }
-    threadMutex->GUICond.wait(threadMutex->GUI);
-    printf("E\n");
-
-    GUILock.release();
-
-    return false;
-}
-
-GThreadLock::GThreadLock() : sameThread(false) {
-    if (Glib::Threads::Thread::self() == mainThread) {
-        sameThread = true;
-        return;
-    }
-
-    printf("10\n");
-    {
-    Glib::Threads::Mutex::Lock operationLock(operation);
-
-    printf("20\n");
-    gdk_threads_add_idle(giveMeAGo, this);
-
-    printf("30\n");
-    operationCond.wait(operation);
-    printf("40\n");
-    operationLock.release();
-    }
-}
-
-GThreadLock::~GThreadLock() {
-    if (!sameThread) {
-        printf("50\n");
-        Glib::Threads::Mutex::Lock lock(GUI);
-        printf("60\n");
-        GUICond.signal();
-        printf("Fin\n");
-    }
-}
-*/
 
 Glib::ustring escapeHtmlChars(const Glib::ustring &src)
 {
@@ -594,6 +547,7 @@ void MyExpander::init()
     }
 }
 
+
 void MyExpander::cleanup()
 {
     inconsistentImage.reset();
@@ -603,10 +557,12 @@ void MyExpander::cleanup()
     closedImage.reset();
 }
 
+
 MyExpander::MyExpander(bool useEnabled, Gtk::Widget* titleWidget) :
     enabled(false), inconsistent(false), flushEvent(false), expBox(nullptr),
     child(nullptr), headerWidget(nullptr), statusImage(nullptr),
-    label(nullptr), useEnabled(useEnabled)
+    label(nullptr), useEnabled(useEnabled),
+    overlay_(nullptr), overlay_label_(nullptr)    
 {
     set_spacing(0);
     set_name("MyExpander");
@@ -655,10 +611,12 @@ MyExpander::MyExpander(bool useEnabled, Gtk::Widget* titleWidget) :
     titleEvBox->signal_leave_notify_event().connect( sigc::mem_fun(this, & MyExpander::on_enter_leave_title), false);
 }
 
+
 MyExpander::MyExpander(bool useEnabled, Glib::ustring titleLabel) :
     enabled(false), inconsistent(false), flushEvent(false), expBox(nullptr),
     child(nullptr), headerWidget(nullptr),
-    label(nullptr), useEnabled(useEnabled)
+    label(nullptr), useEnabled(useEnabled),
+    overlay_(nullptr), overlay_label_(nullptr)
 {
     set_spacing(0);
     set_name("MyExpander");
@@ -714,6 +672,7 @@ MyExpander::MyExpander(bool useEnabled, Glib::ustring titleLabel) :
     titleEvBox->signal_leave_notify_event().connect( sigc::mem_fun(this, & MyExpander::on_enter_leave_title), false);
 }
 
+
 bool MyExpander::on_enter_leave_title (GdkEventCrossing* event)
 {
     if (is_sensitive()) {
@@ -728,6 +687,7 @@ bool MyExpander::on_enter_leave_title (GdkEventCrossing* event)
 
     return true;
 }
+
 
 bool MyExpander::on_enter_leave_enable (GdkEventCrossing* event)
 {
@@ -845,6 +805,18 @@ void MyExpander::setEnabled(bool isEnabled)
             }
         }
     }
+
+    if (useEnabled) {
+        if (overlay_label_) {
+            overlay_label_->set_visible(!enabled);
+        }
+        if (headerWidget) {
+            headerWidget->set_opacity(enabled ? 1 : MyExpander_disabled_opacity);
+        }
+        if (label) {
+            label->set_opacity(enabled ? 1 : MyExpander_disabled_opacity);
+        }
+    }        
 }
 
 void MyExpander::setEnabledTooltipMarkup(Glib::ustring tooltipMarkup)
@@ -893,14 +865,51 @@ bool MyExpander::get_expanded()
     return expBox ? expBox->get_visible() : false;
 }
 
-void MyExpander::add  (Gtk::Container& widget, bool setChild)
+
+namespace {
+
+class DisablerBox: public Gtk::EventBox {
+public:
+    DisablerBox(): Gtk::EventBox()
+    {
+        set_name("ExpanderBox");
+    }
+
+    bool on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr)
+    {
+        Glib::RefPtr<Gtk::StyleContext> style = get_style_context();
+        cr->set_antialias(Cairo::ANTIALIAS_NONE);
+        Gdk::RGBA c = style->get_color(Gtk::STATE_FLAG_INSENSITIVE);
+        cr->set_source_rgba(c.get_red() / 2, c.get_green() / 2, c.get_blue() / 2, 0.5);
+        cr->paint();
+
+        return true;
+    }
+};
+    
+} // namespace
+
+void MyExpander::add(Gtk::Container& widget, bool setChild)
 {
     if(setChild) {
         child = &widget;
     }
+    overlay_ = Gtk::manage(new Gtk::Overlay());
     expBox = Gtk::manage (new ExpanderBox (child));
-    expBox->add (widget);
-    pack_start(*expBox, Gtk::PACK_SHRINK, 0);
+    expBox->add(widget);
+
+    if (useEnabled && options.toolpanels_disable) {
+        overlay_->add(*expBox);
+        overlay_label_ = Gtk::manage(new DisablerBox());
+        overlay_label_->property_halign() = Gtk::ALIGN_FILL;
+        overlay_label_->property_valign() = Gtk::ALIGN_FILL;
+        overlay_label_->property_margin() = 2;
+        overlay_->add_overlay(*overlay_label_);
+        pack_start(*overlay_, Gtk::PACK_SHRINK, 0);
+    } else {
+        pack_start(*expBox, Gtk::PACK_SHRINK, 0);
+    }
+    
     widget.show();
     expBox->hideBox();
 }
@@ -953,6 +962,17 @@ bool MyExpander::on_enabled_change(GdkEventButton* event)
             statusImage->set(enabledImage->get_surface());
         }
 
+        if (overlay_label_) {
+            overlay_label_->set_visible(!enabled);
+        }
+
+        if (headerWidget) {
+            headerWidget->set_opacity(enabled ? 1.0 : MyExpander_disabled_opacity);
+        }
+        if (label) {
+            label->set_opacity(enabled ? 1.0 : MyExpander_disabled_opacity);
+        }
+        
         message.emit();
         flushEvent = true;
     }
@@ -982,39 +1002,26 @@ bool MyScrolledWindow::on_scroll_event (GdkEventScroll* event)
     Gtk::Scrollbar *scroll = get_vscrollbar();
 
     if (adjust && scroll) {
-        double upper = adjust->get_upper();
-        double lower = adjust->get_lower();
+        const double upperBound = adjust->get_upper();
+        const double lowerBound = adjust->get_lower();
         double value = adjust->get_value();
         double step  = adjust->get_step_increment();
-        double value2 = 0.;
-
-//        printf("MyScrolledwindow::on_scroll_event / delta_x=%.5f, delta_y=%.5f, direction=%d, type=%d, send_event=%d\n",
-//                event->delta_x, event->delta_y, (int)event->direction, (int)event->type, event->send_event);
 
         if (event->direction == GDK_SCROLL_DOWN) {
-            value2 = value + step;
-
-            if (value2 > upper) {
-                value2 = upper;
-            }
+            const double value2 = rtengine::min<double>(value + step, upperBound);
 
             if (value2 != value) {
                 scroll->set_value(value2);
             }
         } else if (event->direction == GDK_SCROLL_UP) {
-            value2 = value - step;
-
-            if (value2 < lower) {
-                value2 = lower;
-            }
+            const double value2 = rtengine::max<double>(value - step, lowerBound);
 
             if (value2 != value) {
                 scroll->set_value(value2);
             }
         } else if (event->direction == GDK_SCROLL_SMOOTH) {
-            if (abs(event->delta_y) > 0.1) {
-                value2 = rtengine::LIM<double>(value + (event->delta_y > 0 ? step : -step), lower, upper);
-            }
+            const double value2 = rtengine::LIM<double>(value + event->delta_y * step, lowerBound, upperBound);
+
             if (value2 != value) {
                 scroll->set_value(value2);
             }
@@ -1851,4 +1858,12 @@ void BackBuffer::copySurface(Cairo::RefPtr<Cairo::Context> crDest, Gdk::Rectangl
 
         crDest->fill();
     }
+}
+
+
+void setTreeViewCssProvider(Gtk::TreeView *tree)
+{
+    auto p = Gtk::CssProvider::create();
+    p->load_from_data("* { background-image: none; border-color: rgba(0,0,0,0); }");
+    tree->get_style_context()->add_provider(p, GTK_STYLE_PROVIDER_PRIORITY_USER);
 }

@@ -22,23 +22,13 @@
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
+#include "curveeditor.h"
+#include "curveeditorgroup.h"
+#include "mycurve.h"
 
-class Dehaze: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
+class Dehaze: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public CurveListener
 {
-private:
-    Adjuster *strength;
-    Adjuster *depth;
-    Gtk::CheckButton *showDepthMap;
-    MyComboBoxText *luminance;
-
-    rtengine::ProcEvent EvDehazeEnabled;
-    rtengine::ProcEvent EvDehazeStrength;
-    rtengine::ProcEvent EvDehazeDepth;
-    rtengine::ProcEvent EvDehazeShowDepthMap;
-    rtengine::ProcEvent EvDehazeLuminance;
-    
 public:
-
     Dehaze();
 
     void read(const rtengine::procparams::ProcParams *pp) override;
@@ -46,8 +36,31 @@ public:
     void setDefaults(const rtengine::procparams::ProcParams *defParams) override;
     void adjusterChanged(Adjuster *a, double newval) override;
     void enabledChanged() override;
+    void adjusterAutoToggled(Adjuster *a, bool newval) override {}
+    void curveChanged() override;
+    void autoOpenCurve() override;
+    void setEditProvider(EditDataProvider *provider) override;
+
+    void toolReset(bool to_initial) override;
+
+private:
     void showDepthMapChanged();
     void luminanceChanged();
-    void adjusterAutoToggled(Adjuster* a, bool newval) override {}
+
+    FlatCurveEditor *strength;
+    //Adjuster *strength;
+    Adjuster *depth;
+    Gtk::CheckButton *showDepthMap;
+    MyComboBoxText *luminance;
+    Adjuster *blackpoint;
+
+    rtengine::ProcEvent EvDehazeEnabled;
+    rtengine::ProcEvent EvDehazeStrength;
+    rtengine::ProcEvent EvDehazeDepth;
+    rtengine::ProcEvent EvDehazeShowDepthMap;
+    rtengine::ProcEvent EvDehazeLuminance;
+    rtengine::ProcEvent EvDehazeBlackpoint;
+
+    rtengine::procparams::DehazeParams initial_params;
 };
 

@@ -144,12 +144,20 @@ void spectrum_to_xyz_blackbody(double _temp, double &x, double &y, double &z)
         X += Me * cie_colour_match_jd[i][0];
         Y += Me * cie_colour_match_jd[i][1];
         Z += Me * cie_colour_match_jd[i][2];
+
+        assert(X >= 0);
+        assert(Y >= 0);
+        assert(Z >= 0);
     }
 
     XYZ = (X + Y + Z);
     x = X / XYZ;
     y = Y / XYZ;
     z = Z / XYZ;
+
+    assert(x >= 0);
+    assert(y >= 0);
+    assert(z >= 0);
 }
 
 
@@ -249,9 +257,9 @@ void ColorTemp::temp2mul (double temp, double green, double equal, double& rmul,
     }
 
     //recalculate channels multipliers with new values of XYZ tue to whitebalance
-    rmul = sRGBd65_xyz[0][0] * Xwb * adj + sRGBd65_xyz[0][1] + sRGBd65_xyz[0][2] * Zwb / adj; // Jacques' empirical modification 5/2013
-    gmul = sRGBd65_xyz[1][0] * Xwb       + sRGBd65_xyz[1][1] + sRGBd65_xyz[1][2] * Zwb;
-    bmul = sRGBd65_xyz[2][0] * Xwb * adj + sRGBd65_xyz[2][1] + sRGBd65_xyz[2][2] * Zwb / adj;
+    rmul = std::max(sRGBd65_xyz[0][0] * Xwb * adj + sRGBd65_xyz[0][1] + sRGBd65_xyz[0][2] * Zwb / adj, 1e-05); // Jacques' empirical modification 5/2013
+    gmul = std::max(sRGBd65_xyz[1][0] * Xwb       + sRGBd65_xyz[1][1] + sRGBd65_xyz[1][2] * Zwb, 1e-05);
+    bmul = std::max(sRGBd65_xyz[2][0] * Xwb * adj + sRGBd65_xyz[2][1] + sRGBd65_xyz[2][2] * Zwb / adj, 1e-05);
     //};
     gmul /= green;
     //printf("rmul=%f gmul=%f bmul=%f\n",rmul, gmul, bmul);
@@ -260,6 +268,14 @@ void ColorTemp::temp2mul (double temp, double green, double equal, double& rmul,
     rmul /= maxRGB;
     gmul /= maxRGB;
     bmul /= maxRGB;
+
+    assert(rmul >= 0);
+    assert(gmul >= 0);
+    assert(bmul >= 0);
+
+    rmul /= gmul;
+    bmul /= gmul;
+    gmul = 1.0;
 }
 
 } // namespace rtengine

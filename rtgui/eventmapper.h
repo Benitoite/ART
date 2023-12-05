@@ -29,6 +29,7 @@ class ProcEventMapper {
 public:
     static ProcEventMapper *getInstance();
     rtengine::ProcEvent newEvent(int action, const std::string &history_msg="");
+    rtengine::ProcEvent newAnonEvent(int action);
     std::string getHistoryMsg(const rtengine::ProcEvent &event) const;
 
 private:

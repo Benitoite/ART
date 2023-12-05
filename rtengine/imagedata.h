@@ -27,9 +27,10 @@
 #include <glibmm.h>
 #include "procparams.h"
 #include "rtengine.h"
+#include "metadata.h"
+#include "gainmap.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
 class FramesData : public FramesMetaData {
 private:
@@ -47,10 +48,16 @@ private:
     std::string make, model, serial;
     std::string orientation;
     std::string lens;
+    std::string software;
     IIOSampleFormat sampleFormat;
     bool isPixelShift;
     bool isHDR;
     int rating_;
+    std::vector<GainMap> gain_maps_;
+    int w_;
+    int h_;
+    bool dng_;
+    std::string internal_make_model_;
     
 public:
     FramesData (const Glib::ustring& fname);
@@ -60,6 +67,7 @@ public:
     bool getPixelShift() const override;
     bool getHDR() const override;
     std::string getImageType() const override;
+    std::string getSoftware() const override;
     IIOSampleFormat getSampleFormat() const override;
     bool hasExif() const override;
     tm getDateTime() const override;
@@ -78,8 +86,24 @@ public:
     std::string getOrientation() const override;
     Glib::ustring getFileName() const override;
     int getRating() const override;
+    std::vector<GainMap> getGainMaps() const override { return gain_maps_; }
+    void getDimensions(int &w, int &h) const override;
+
+    void fillBasicTags(Exiv2::ExifData &exif) const;
+
+    void setGainMaps(const std::vector<GainMap> &m)
+    {
+        gain_maps_ = m;
+    }
+
+    void setDimensions(int w, int h);
+    void setDNG(bool yes) { dng_ = yes; }
+    bool isDNG() const override { return dng_; }
+
+    void setInternalMakeModel(const std::string &m);
+    std::string getInternalMakeModel() const { return internal_make_model_; }
 };
 
 
-}
+} // namespace rtengine
 #endif

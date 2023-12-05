@@ -26,9 +26,10 @@
 #include "curveeditorgroup.h"
 #include "mycurve.h"
 #include "guiutils.h"
+#include "colorprovider.h"
 
-class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener, public AdjusterListener
-{
+
+class ToneCurve: public ToolParamBlock, public FoldableToolPanel, public CurveListener, public AdjusterListener, public ColorProvider {
 private:
     IdleRegister idle_register;
 
@@ -47,19 +48,37 @@ protected:
     DiagonalCurveEditor* shape2;
     CurveEditorGroup *satcurveG;
     FlatCurveEditor *satcurve;
+    DiagonalCurveEditor *satcurve2_;
     Adjuster *perceptualStrength;
+    Adjuster *whitePoint;
+
+    Gtk::HBox *mode1_box_;
+    Gtk::HBox *mode2_box_;
+    MyComboBoxText *mode_;
+    Gtk::CheckButton *contrast_legacy_;
+    Gtk::HBox *mode_box_;
+    Gtk::HBox *contrast_legacy_box_;
 
     rtengine::ProcEvent EvHistMatching;
     rtengine::ProcEvent EvHistMatchingBatch;
     rtengine::ProcEvent EvSatCurve;
     rtengine::ProcEvent EvPerceptualStrength;
+    rtengine::ProcEvent EvContrastLegacy;
+    rtengine::ProcEvent EvMode;
+    rtengine::ProcEvent EvWhitePoint;
 
     // used temporarily in eventing
-    rtengine::procparams::ToneCurveParams::TcMode nextToneCurveMode;
     std::vector<double> nextToneCurve;
+    std::vector<double> nextToneCurve2;
 
     void setHistmatching(bool enabled);
     void showPerceptualStrength();
+    void contrastLegacyToggled();
+    void modeChanged();
+    void showWhitePoint();
+    void updateSatCurves(int i);
+
+    rtengine::procparams::ToneCurveParams initial_params;
 
 public:
     ToneCurve();
@@ -96,8 +115,13 @@ public:
     );
 
     void histmatchingToggled();
-    void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve);
+    void autoMatchedToneCurveChanged(const std::vector<double> &curve, const std::vector<double> &curve2);
     void setRaw (bool raw);
 
     void adjusterChanged(Adjuster *a, double newval) override;
+
+    void toolReset(bool to_initial) override;
+    void registerShortcuts(ToolShortcutManager *mgr) override;
+
+    void colorForValue(double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller *caller) override;
 };

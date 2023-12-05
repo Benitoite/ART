@@ -23,15 +23,17 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENING_LABEL"), true, true)
+Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENING_LABEL"), true, true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvSharpenContrast = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_CONTRAST");
-    // EvSharpenBlur = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_BLUR");
     EvAutoRadiusOn = m->newEvent(SHARPENING | M_AUTOEXP, "HISTORY_MSG_SHARPENING_AUTORADIUS");
     EvAutoRadiusOff = m->newEvent(M_VOID, "HISTORY_MSG_SHARPENING_AUTORADIUS");
     EvDeconvCornerBoost = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_RLD_CORNERRADIUS");
     EvDeconvCornerLatitude = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_RLD_CORNERLATITUDE");
+    EvPSFKernel = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_PSF_KERNEL");
+    EvPSFIterations = m->newEvent(SHARPENING, "HISTORY_MSG_SHARPENING_PSF_ITERATIONS");
+    EvToolReset.set_action(SHARPENING);
 
     Gtk::HBox* hb = Gtk::manage (new Gtk::HBox ());
     hb->show ();
@@ -39,16 +41,13 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     contrast->setAdjusterListener (this);
     pack_start(*contrast);
     contrast->show();
-    // blur = Gtk::manage(new Adjuster (M("TP_SHARPENING_BLUR"), 0.2, 2.0, 0.05, 0.2));
-    // blur->setAdjusterListener (this);
-    // pack_start(*blur);
-    // blur->show();
 
     Gtk::Label* ml = Gtk::manage (new Gtk::Label (M("TP_SHARPENING_METHOD") + ":"));
     ml->show ();
     method = Gtk::manage (new MyComboBoxText ());
     method->append (M("TP_SHARPENING_USM"));
     method->append (M("TP_SHARPENING_RLD"));
+    method->append (M("TP_SHARPENING_PSF"));
     method->show ();
     hb->pack_start(*ml, Gtk::PACK_SHRINK, 4);
     hb->pack_start(*method);
@@ -128,6 +127,17 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     halocontrol->show ();
     hcamount->show ();
 
+    psf = new Gtk::VBox ();
+    psf_kernel = Gtk::manage(new MyFileChooserButton(M("TP_SHARPENING_PSF_KERNEL")));
+    psf_iterations = Gtk::manage(new Adjuster(M("TP_SHARPENING_PSF_ITERATIONS"), 1, 100, 1, 10));
+    hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_SHARPENING_PSF_KERNEL") + ": ")), Gtk::PACK_SHRINK);
+    hb->pack_start(*psf_kernel, Gtk::PACK_EXPAND_WIDGET);
+    psf->pack_start(*hb);
+    psf->pack_start(*psf_iterations);
+    psf->show_all_children();
+    psf->show();
+
     dradius->setAdjusterListener (this);
     damount->setAdjusterListener (this);
     radius->setAdjusterListener (this);
@@ -138,10 +148,21 @@ Sharpening::Sharpening() : FoldableToolPanel(this, "sharpening", M("TP_SHARPENIN
     deconvCornerBoost->setAdjusterListener(this);
     deconvCornerLatitude->setAdjusterListener(this);
 
+    const auto on_kernel =
+        [this]() -> void
+        {
+            if (listener && getEnabled()) {
+                listener->panelChanged(EvPSFKernel, psf_kernel->get_filename());
+            }
+        };
+    psf_kernel->signal_file_set().connect(sigc::slot<void>(on_kernel));
+    psf_iterations->setAdjusterListener(this);
+
     edgebox->reference ();
     hcbox->reference ();
     usm->reference ();
     rld->reference ();
+    psf->reference();
 
     eonlyConn = edgesonly->signal_toggled().connect( sigc::mem_fun(*this, &Sharpening::edgesonly_toggled) );
     hcConn    = halocontrol->signal_toggled().connect( sigc::mem_fun(*this, &Sharpening::halocontrol_toggled) );
@@ -152,6 +173,7 @@ Sharpening::~Sharpening ()
 {
     idle_register.destroy();
 
+    delete psf;
     delete usm;
     delete rld;
     delete edgebox;
@@ -161,54 +183,61 @@ Sharpening::~Sharpening ()
 
 void Sharpening::read(const ProcParams* pp)
 {
-    disableListener ();
+    disableListener();
 
-    setEnabled (pp->sharpening.enabled);
+    setEnabled(pp->sharpening.enabled);
 
-    eonlyConn.block (true);
-    edgesonly->set_active (pp->sharpening.edgesonly);
-    eonlyConn.block (false);
+    eonlyConn.block(true);
+    edgesonly->set_active(pp->sharpening.edgesonly);
+    eonlyConn.block(false);
     lastEdgesOnly = pp->sharpening.edgesonly;
 
-    hcConn.block (true);
-    halocontrol->set_active (pp->sharpening.halocontrol);
-    hcConn.block (false);
+    hcConn.block(true);
+    halocontrol->set_active(pp->sharpening.halocontrol);
+    hcConn.block(false);
     lastHaloControl = pp->sharpening.halocontrol;
 
-    contrast->setValue      (pp->sharpening.contrast);
-    // blur->setValue          (pp->sharpening.blurradius);
-    amount->setValue        (pp->sharpening.amount);
-    radius->setValue        (pp->sharpening.radius);
+    contrast->setValue(pp->sharpening.contrast);
+    // blur->setValue(pp->sharpening.blurradius);
+    amount->setValue(pp->sharpening.amount);
+    radius->setValue(pp->sharpening.radius);
     threshold->setValue<int>(pp->sharpening.threshold);
-    eradius->setValue       (pp->sharpening.edges_radius);
-    etolerance->setValue    (pp->sharpening.edges_tolerance);
-    hcamount->setValue      (pp->sharpening.halocontrol_amount);
+    eradius->setValue(pp->sharpening.edges_radius);
+    etolerance->setValue(pp->sharpening.edges_tolerance);
+    hcamount->setValue(pp->sharpening.halocontrol_amount);
 
-    dradius->setValue       (pp->sharpening.deconvradius);
-    damount->setValue       (pp->sharpening.deconvamount);
+    dradius->setValue(pp->sharpening.deconvradius);
+    damount->setValue(pp->sharpening.deconvamount);
     dradius->setAutoValue(pp->sharpening.deconvAutoRadius);
     deconvCornerBoost->setValue(pp->sharpening.deconvCornerBoost);
     deconvCornerLatitude->setValue(pp->sharpening.deconvCornerLatitude);
 
-    removeIfThere (edgebin, edgebox, false);
+    removeIfThere(edgebin, edgebox, false);
 
-    if (edgesonly->get_active ()) {
-        edgebin->pack_start (*edgebox);
+    if (edgesonly->get_active()) {
+        edgebin->pack_start(*edgebox);
     }
 
-    removeIfThere (hcbin, hcbox, false);
+    removeIfThere(hcbin, hcbox, false);
 
-    if (halocontrol->get_active ()) {
-        hcbin->pack_start (*hcbox);
+    if (halocontrol->get_active()) {
+        hcbin->pack_start(*hcbox);
     }
 
     if (pp->sharpening.method == "usm") {
-        method->set_active (0);
+        method->set_active(0);
     } else if (pp->sharpening.method == "rld") {
-        method->set_active (1);
+        method->set_active(1);
+    } else if (pp->sharpening.method == "psf") {
+        method->set_active(2);
     }
 
-    enableListener ();
+    psf_kernel->set_filename(pp->sharpening.psf_kernel);
+    psf_iterations->setValue(pp->sharpening.psf_iterations);
+
+    enabledChanged();
+
+    enableListener();
 }
 
 void Sharpening::write(ProcParams* pp)
@@ -235,7 +264,11 @@ void Sharpening::write(ProcParams* pp)
         pp->sharpening.method = "usm";
     } else if (method->get_active_row_number() == 1) {
         pp->sharpening.method = "rld";
+    } else if (method->get_active_row_number() == 2) {
+        pp->sharpening.method = "psf";
     }
+    pp->sharpening.psf_kernel = psf_kernel->get_filename();
+    pp->sharpening.psf_iterations = psf_iterations->getValue();
 }
 
 void Sharpening::setDefaults(const ProcParams* defParams)
@@ -252,6 +285,9 @@ void Sharpening::setDefaults(const ProcParams* defParams)
     dradius->setDefault (defParams->sharpening.deconvradius);
     deconvCornerBoost->setDefault(defParams->sharpening.deconvCornerBoost);
     deconvCornerLatitude->setDefault(defParams->sharpening.deconvCornerLatitude);
+    psf_iterations->setDefault(defParams->sharpening.psf_iterations);
+
+    initial_params = defParams->sharpening;
 }
 
 void Sharpening::adjusterChanged(Adjuster* a, double newval)
@@ -290,6 +326,8 @@ void Sharpening::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDeconvCornerBoost, a->getTextValue());
         } else if (a == deconvCornerLatitude) {
             listener->panelChanged(EvDeconvCornerLatitude, a->getTextValue());
+        } else if (a == psf_iterations) {
+            listener->panelChanged(EvPSFIterations, a->getTextValue());
         }
     }
 }
@@ -329,7 +367,6 @@ void Sharpening::adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int newT
 
 void Sharpening::enabledChanged ()
 {
-
     if (listener) {
         if (get_inconsistent()) {
             listener->panelChanged (EvShrEnabled, M("GENERAL_UNCHANGED"));
@@ -338,6 +375,12 @@ void Sharpening::enabledChanged ()
         } else {
             listener->panelChanged (EvShrEnabled, M("GENERAL_DISABLED"));
         }
+    }
+    if (options.toolpanels_disable) {
+        rld->set_sensitive(getEnabled());
+        usm->set_sensitive(getEnabled());
+        edgebox->set_sensitive(getEnabled());
+        hcbox->set_sensitive(getEnabled());
     }
 }
 
@@ -381,17 +424,20 @@ void Sharpening::halocontrol_toggled ()
 
 void Sharpening::method_changed ()
 {
-    removeIfThere (this, usm, false);
-    removeIfThere (this, rld, false);
+    removeIfThere(this, usm, false);
+    removeIfThere(this, rld, false);
+    removeIfThere(this, psf, false);
 
     if (method->get_active_row_number() == 0) {
-        pack_start (*usm);
+        pack_start(*usm);
     } else if (method->get_active_row_number() == 1) {
-        pack_start (*rld);
+        pack_start(*rld);
+    } else if (method->get_active_row_number() == 2) {
+        pack_start(*psf);
     }
 
-    if (listener && getEnabled() ) {
-        listener->panelChanged (EvShrMethod, method->get_active_text ());
+    if (listener && getEnabled()) {
+        listener->panelChanged(EvShrMethod, method->get_active_text ());
     }
 
 }
@@ -409,6 +455,7 @@ void Sharpening::trimValues (rtengine::procparams::ProcParams* pp)
     hcamount->trimValue(pp->sharpening.halocontrol_amount);
     deconvCornerBoost->trimValue(pp->sharpening.deconvCornerBoost);
     deconvCornerLatitude->trimValue(pp->sharpening.deconvCornerLatitude);
+    psf_iterations->trimValue(pp->sharpening.psf_iterations);
 }
 
 
@@ -428,4 +475,15 @@ void Sharpening::autoDeconvRadiusChanged(float radius)
             return false;
         }
     );
+}
+
+
+void Sharpening::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.sharpening = initial_params;
+    }
+    pp.sharpening.enabled = getEnabled();
+    read(&pp);
 }

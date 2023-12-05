@@ -44,5 +44,7 @@ public:
 
     void setImageData(const rtengine::FramesMetaData* id);
     void setListener(ToolPanelListener *tpl) override;
+
+    void setProgressListener(rtengine::ProgressListener *pl);
 };
 

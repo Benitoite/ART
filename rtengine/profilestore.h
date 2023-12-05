@@ -120,7 +120,7 @@ private:
 
     MyMutex parseMutex;
     StoreState storeState;
-    rtengine::procparams::FilePartialProfile *internalDefaultProfile;
+    rtengine::procparams::PartialProfile *internalDefaultProfile;
     ProfileStoreEntry *internalDefaultEntry;
     ProfileStoreEntry *internalDynamicEntry;
 
@@ -141,6 +141,8 @@ private:
 
     /** whereas we have to load all profile at init time or one by one upon request */
     bool loadAll;
+
+    rtengine::ProgressListener *pl_;
 
     /** @brief Method to recursively parse a profile folder with a level depth arbitrarily limited to 3
       *
@@ -199,6 +201,8 @@ public:
     std::unique_ptr<rtengine::procparams::PartialProfile> loadDynamicProfile(const rtengine::FramesMetaData *im);
 
     void dumpFolderList();
+
+    void setProgressListener(rtengine::ProgressListener *pl) { pl_ = pl; }
 };
 
 #endif

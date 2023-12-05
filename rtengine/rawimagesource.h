@@ -41,10 +41,11 @@ private:
     static DiagonalCurve *phaseOneIccCurveInv;
     static LUTf invGrad;  // for fast_demosaic
     static LUTf initInvGrad ();
-    static void colorSpaceConversion_ (Imagefloat* im, const ColorManagementParams& cmp, const ColorTemp &wb, double pre_mul[3], cmsHPROFILE embedded, cmsHPROFILE camprofile, double cam[3][3], const std::string &camName, const Glib::ustring &fileName);
-    int  defTransform        (int tran);
+    static void colorSpaceConversion_(Imagefloat* im, const ColorManagementParams& cmp, const ColorTemp &wb, double pre_mul[3], cmsHPROFILE camprofile, double cam[3][3], cmsHPROFILE in, DCPProfile *dcpProf, ProgressListener *plistener);
 
 protected:
+    static int defTransform(const RawImage *ri, int tran);
+    
     MyMutex getImageMutex;  // locks getImage
 
     int W, H;
@@ -93,6 +94,7 @@ protected:
     float psBlueBrightness[4];
 
     std::vector<double> histMatchingCache;
+    std::vector<double> histMatchingCache2;
     ColorManagementParams histMatchingParams;
 
     void processFalseColorCorrectionThread (Imagefloat* im, array2D<float> &rbconv_Y, array2D<float> &rbconv_I, array2D<float> &rbconv_Q, array2D<float> &rbout_I, array2D<float> &rbout_Q, const int row_from, const int row_to);
@@ -107,6 +109,8 @@ protected:
     inline void getRowStartEnd (int x, int &start, int &end);
     static void getProfilePreprocParams(cmsHPROFILE in, float& gammafac, float& lineFac, float& lineSum);
 
+    void HLRecovery_inpaint(int blur);
+    void highlight_recovery_opposed(float scale_mul[3], const ColorTemp &wb);
 
 public:
     RawImageSource ();
@@ -114,19 +118,19 @@ public:
 
     int load(const Glib::ustring &fname) override { return load(fname, false); }
     int load(const Glib::ustring &fname, bool firstFrameOnly);
-    void        preprocess  (const RAWParams &raw, const LensProfParams &lensProf, const CoarseTransformParams& coarse, bool prepareDenoise = true) override;
-    void        demosaic    (const RAWParams &raw, bool autoContrast, double &contrastThreshold) override;
-    void        flushRawData      () override;
-    void        flushRGB          () override;
-    void        HLRecovery_Global (const ExposureParams &hrp) override;
-    void        refinement(int PassCount);
-    void        setBorder(unsigned int rawBorder) override {border = rawBorder;}
-    bool        isRGBSourceModified() const override
+    void preprocess(const RAWParams &raw, const LensProfParams &lensProf, const CoarseTransformParams& coarse, bool prepareDenoise=true, const ColorTemp &wb=ColorTemp()) override;
+    void demosaic(const RAWParams &raw, bool autoContrast, double &contrastThreshold) override;
+    void flushRawData() override;
+    void flushRGB() override;
+    void HLRecovery_Global(const ExposureParams &hrp) override;
+    void refinement(int PassCount);
+    void setBorder(unsigned int rawBorder) override {border = rawBorder;}
+    bool isRGBSourceModified() const override
     {
         return rgbSourceModified;   // tracks whether cached rgb output of demosaic has been modified
     }
 
-    void        processFlatField(const RAWParams &raw, RawImage *riFlatFile, unsigned short black[4]);
+    void        processFlatField(const RAWParams &raw, RawImage *riFlatFile, array2D<float> &rawData, unsigned short black[4]);
     void        copyOriginalPixels(const RAWParams &raw, RawImage *ri, RawImage *riDark, RawImage *riFlatFile, array2D<float> &rawData  );
     void        cfaboxblur  (RawImage *riFlatFile, float* cfablur, int boxH, int boxW);
     void        scaleColors (int winx, int winy, int winw, int winh, const RAWParams &raw, array2D<float> &rawData); // raw for cblack
@@ -178,18 +182,14 @@ public:
     }
     void getAutoExpHistogram(LUTu & histogram, int& histcompr) override;
     void        getRAWHistogram (LUTu & histRedRaw, LUTu & histGreenRaw, LUTu & histBlueRaw) override;
-    void getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve) override;
+    void getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve, std::vector<double> &outCurve2) override;
     DCPProfile *getDCP(const ColorManagementParams &cmp, DCPProfile::ApplyState &as) override;
 
     void convertColorSpace(Imagefloat* image, const ColorManagementParams &cmp, const ColorTemp &wb) override;
-    static bool findInputProfile(Glib::ustring inProfile, cmsHPROFILE embedded, std::string camName, const Glib::ustring &filename, DCPProfile **dcpProf, cmsHPROFILE& in);
-    static void colorSpaceConversion   (Imagefloat* im, const ColorManagementParams& cmp, const ColorTemp &wb, double pre_mul[3], cmsHPROFILE embedded, cmsHPROFILE camprofile, double cam[3][3], const std::string &camName, const Glib::ustring &fileName)
-    {
-        colorSpaceConversion_ (im, cmp, wb, pre_mul, embedded, camprofile, cam, camName, fileName);
-    }
+    static bool findInputProfile(Glib::ustring inProfile, cmsHPROFILE embedded, std::string camName, const Glib::ustring &filename, DCPProfile **dcpProf, cmsHPROFILE& in, ProgressListener *plistener=nullptr);
+    static void colorSpaceConversion(Imagefloat* im, const ColorManagementParams& cmp, const ColorTemp &wb, double pre_mul[3], cmsHPROFILE embedded, cmsHPROFILE camprofile, double cam[3][3], const std::string &camName, const Glib::ustring &fileName, ProgressListener *plistener=nullptr);
     static void inverse33 (const double (*coeff)[3], double (*icoeff)[3]);
 
-    void HLRecovery_inpaint (float** red, float** green, float** blue) override;
     static void HLRecovery_blend (float* rin, float* gin, float* bin, int width, float maxval, float* hlmax);
     static void init ();
     static void cleanup ();
@@ -220,6 +220,8 @@ public:
         virtual float operator()(int row) const { return 1.f; }
     };
     
+    static void computeFullSize(const RawImage *ri, int tr, int &w, int &h, int border=-1);
+
 protected:
     typedef unsigned short ushort;
     void processFalseColorCorrection (Imagefloat* i, const int steps);
@@ -290,14 +292,25 @@ protected:
     void xtransborder_interpolate (int border, array2D<float> &red, array2D<float> &green, array2D<float> &blue);
     void xtrans_interpolate (const int passes, const bool useCieLab);
     void fast_xtrans_interpolate (const array2D<float> &rawData, array2D<float> &red, array2D<float> &green, array2D<float> &blue);
+    void fast_xtrans_interpolate_blend (const float* const * blend, const array2D<float> &rawData, array2D<float> &red, array2D<float> &green, array2D<float> &blue);
     void pixelshift(int winx, int winy, int winw, int winh, const RAWParams &rawParams, unsigned int frame, const std::string &make, const std::string &model, float rawWpCorrection);
+    void bayer_bilinear_demosaic(const float *const * blend, const array2D<float> &rawData, array2D<float> &red, array2D<float> &green, array2D<float> &blue);
     void    hflip       (Imagefloat* im);
     void    vflip       (Imagefloat* im);
     void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) override;
 
     bool getDeconvAutoRadius(float *out=nullptr) override;
-    bool getFilmNegativeExponents(Coord2D spotA, Coord2D spotB, int tran, const FilmNegativeParams& currentParams, std::array<float, 3>& newExps) override;
-    void filmNegativeProcess(const procparams::FilmNegativeParams &params) override;
+
+    void apply_gain_map(unsigned short black[4], std::vector<GainMap> &&maps);
+
+public:
+    float get_pre_mul(int c) const { return ri ? ri->get_pre_mul(c) : 1.f; }
+
+    void wbMul2Camera(double &rm, double &gm, double &bm) override;
+    void wbCamera2Mul(double &rm, double &gm, double &bm) override;    
+
+    void getWBMults(const ColorTemp &ctemp, const procparams::RAWParams &raw, std::array<float, 4>& scale_mul, float &autoGainComp, float &rm, float &gm, float &bm) const override;
 };
-}
+
+} // namespace rtengine
 #endif

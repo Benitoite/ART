@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,15 +17,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EXIFFILTERSETTINGS_
-#define _EXIFFILTERSETTINGS_
+#pragma once
 
 #include <set>
 #include <string>
+#include <glibmm/date.h>
+#include <glibmm/keyfile.h>
 
-class ExifFilterSettings
-{
 
+class ExifFilterSettings {
 public:
     std::set<std::string> filetypes;
     std::set<std::string> cameras;
@@ -38,7 +39,10 @@ public:
     double focalTo;
     unsigned isoFrom;
     unsigned isoTo;
+    Glib::Date dateFrom;
+    Glib::Date dateTo;
 
+    bool enabled;
     bool filterFNumber;
     bool filterShutter;
     bool filterFocalLen;
@@ -47,10 +51,11 @@ public:
     bool filterCamera;
     bool filterLens;
     bool filterFiletype;
+    bool filterDate;
 
-    ExifFilterSettings ();
-    void clear ();
+    ExifFilterSettings();
+    void clear();
+
+    void load(const Glib::KeyFile &kf, const Glib::ustring &group);
+    void save(Glib::KeyFile &kf, const Glib::ustring &group) const;
 };
-
-#endif
-

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -34,13 +35,12 @@ struct BatchQueueEntryIdleHelper {
 
 class BatchQueueEntry : public ThumbBrowserEntryBase, public BQEntryUpdateListener
 {
-
-    guint8* opreview;
     int origpw, origph;
     BatchQueueEntryIdleHelper* bqih;
-    bool opreviewDone;
     static bool iconsLoaded;
-
+ 
+    void customBackBufferUpdate(Cairo::RefPtr<Cairo::Context> c) override;
+   
 public:
 
     static Glib::RefPtr<Gdk::Pixbuf> savedAsIcon;
@@ -55,6 +55,7 @@ public:
     SaveFormat saveFormat;
     bool forceFormatOpts;
     bool fast_pipeline;
+    bool use_batch_profile;
 
     BatchQueueEntry (rtengine::ProcessingJob* job, const rtengine::procparams::ProcParams& pparams, Glib::ustring fname, int prevw, int prevh, Thumbnail* thm = nullptr);
     ~BatchQueueEntry () override;

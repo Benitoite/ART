@@ -19,7 +19,7 @@
 
 #include "rtscalable.h"
 #include <glib/gstdio.h>
-#include <regex>
+#include <glibmm/regex.h>
 #include <glibmm.h>
 #include <iostream>
 #include <librsvg/rsvg.h>
@@ -233,7 +233,7 @@ Cairo::RefPtr<Cairo::ImageSurface> RTScalable::loadImage(const Glib::ustring &fn
 
     // -------------------- Updating the the magic color --------------------
 
-    std::string updatedSVG = std::regex_replace(svgFile, std::regex("#2a7fff"), "#CCCCCC");
+    std::string updatedSVG = Glib::Regex::create("#2a7fff")->replace(svgFile, 0, "#CCCCCC", Glib::RegexMatchFlags());
 
     // -------------------- Creating the rsvg handle --------------------
 

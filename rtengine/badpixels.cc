@@ -14,16 +14,24 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with RawTherapee.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "array2D.h"
 #include "median.h"
 #include "pixelsmap.h"
+#include "rawimage.h"
 #include "rawimagesource.h"
 //#define BENCHMARK
 #include "StopWatch.h"
 
+namespace rtengine {
+
+namespace {
+
+unsigned fc(const unsigned int cfa[2][2], int r, int c) {
+    return cfa[r & 1][c & 1];
+}
 
 inline void sum5x5(const array2D<float>& in, int col, float &sum) {
 #ifdef __SSE2__
@@ -49,14 +57,15 @@ inline void sum5x5(const array2D<float>& in, int col, float &sum) {
 #endif
 
 }
-namespace rtengine
-{
+
+} // namespace
 
 /* interpolateBadPixelsBayer: correct raw pixels looking at the bitmap
  * takes into consideration if there are multiple bad pixels in the neighborhood
  */
 int RawImageSource::interpolateBadPixelsBayer(const PixelsMap &bitmapBads, array2D<float> &rawData)
 {
+    const unsigned int cfarray[2][2] = {{FC(0,0), FC(0,1)}, {FC(1,0), FC(1,1)}};
     constexpr float eps = 1.f;
     int counter = 0;
 
@@ -80,7 +89,7 @@ int RawImageSource::interpolateBadPixelsBayer(const PixelsMap &bitmapBads, array
             float wtdsum = 0.f, norm = 0.f;
 
             // diagonal interpolation
-            if (FC(row, col) == 1) {
+            if (fc(cfarray, row, col) == 1) {
                 // green channel. We can use closer pixels than for red or blue channel. Distance to center pixel is sqrt(2) => weighting is 0.70710678
                 // For green channel following pixels will be used for interpolation. Pixel to be interpolated is in center.
                 // 1 means that pixel is used in this step, if itself and his counterpart are not marked bad
@@ -468,15 +477,11 @@ int RawImageSource::interpolateBadPixelsXtrans(const PixelsMap &bitmapBads)
 int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, const bool findHotPixels, const bool findDeadPixels) const
 {
     BENCHFUN
-    const float varthresh = (20.0 * (thresh / 100.0) + 1.0) / 24.f;
+    const bool is_xtrans = ri->getSensorType() == ST_FUJI_XTRANS;
+    const float varthresh = (20.f * (thresh / 100.f) + 1.f) / 24.f * (is_xtrans ? 0.25f : 1.f);
 
     // counter for dead or hot pixels
     int counter = 0;
-
-#if defined __GNUC__ && !defined __clang__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-overflow"
-#endif
 
 #ifdef _OPENMP
     #pragma omp parallel reduction(+:counter)
@@ -485,6 +490,32 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
         array2D<float> cfablur(W, 5, ARRAY2D_CLEAR_DATA);
         int firstRow = -1;
         int lastRow = -1;
+
+        std::array<float, 25> medbuf;
+        
+        const auto med_xt =
+            [&](unsigned int c, int y0, int x0) -> float
+            {
+                size_t n = 0;
+                for (int y = y0; y < y0+5; ++y) {
+                    for (int x = x0; x < x0+5; ++x) {
+                        if (ri->XTRANSFC(y, x) == c) {
+                            medbuf[n++] = rawData[y][x];
+                        }
+                    }
+                }
+                if (n >= 9) {
+                    return median(medbuf[0], medbuf[1], medbuf[2], medbuf[3], medbuf[4], medbuf[5], medbuf[6], medbuf[7], medbuf[8]);
+                } else if (n >= 7) {
+                    return median(medbuf[0], medbuf[1], medbuf[2], medbuf[3], medbuf[4], medbuf[5], medbuf[6]);
+                } else if (n >= 5) {
+                    return median(medbuf[0], medbuf[1], medbuf[2], medbuf[3], medbuf[4]);
+                } else if (n >= 3) {
+                    return median(medbuf[0], medbuf[1], medbuf[2]);
+                } else {
+                    return medbuf[0];
+                }
+            };
 
 #ifdef _OPENMP
         // note, static scheduling is important in this implementation
@@ -498,7 +529,9 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
                     for (int row = firstRow - 2; row < firstRow; ++row) {
                         const int destRow = row % 5;
                         for (int j = 2; j < W - 2; ++j) {
-                            const float temp = median(rawData[row - 2][j - 2], rawData[row - 2][j], rawData[row - 2][j + 2],
+                            const float temp = is_xtrans ?
+                                med_xt(ri->XTRANSFC(row, j), row-2, j-2) :
+                                median(rawData[row - 2][j - 2], rawData[row - 2][j], rawData[row - 2][j + 2],
                                                       rawData[row][j - 2], rawData[row][j], rawData[row][j + 2],
                                                       rawData[row + 2][j - 2], rawData[row + 2][j], rawData[row + 2][j + 2]);
                             cfablur[destRow][j] = rawData[row][j] - temp;
@@ -509,7 +542,9 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
             lastRow = i;
             const int destRow = i % 5;
             for (int j = 2; j < W - 2; ++j) {
-                const float temp = median(rawData[i - 2][j - 2], rawData[i - 2][j], rawData[i - 2][j + 2],
+                const float temp = is_xtrans ?
+                    med_xt(ri->XTRANSFC(i, j), i-2, j-2) :
+                    median(rawData[i - 2][j - 2], rawData[i - 2][j], rawData[i - 2][j + 2],
                                           rawData[i][j - 2], rawData[i][j], rawData[i][j + 2],
                                           rawData[i + 2][j - 2], rawData[i + 2][j], rawData[i + 2][j + 2]);
                 cfablur[destRow][j] = rawData[i][j] - temp;
@@ -553,7 +588,9 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
                     }
                 } else {
                     for (int j = 2; j < W - 2; ++j) {
-                        const float temp = median(rawData[i - 2][j - 2], rawData[i - 2][j], rawData[i - 2][j + 2],
+                        const float temp = is_xtrans ?
+                            med_xt(ri->XTRANSFC(i, j), i-2, j-2) :
+                            median(rawData[i - 2][j - 2], rawData[i - 2][j], rawData[i - 2][j + 2],
                                                   rawData[i][j - 2], rawData[i][j], rawData[i][j + 2],
                                                   rawData[i + 2][j - 2], rawData[i + 2][j], rawData[i + 2][j + 2]);
                         cfablur[destRow][j] = rawData[i][j] - temp;
@@ -586,10 +623,6 @@ int RawImageSource::findHotDeadPixels(PixelsMap &bpMap, const float thresh, cons
         }
     }//end of parallel processing
 
-#if defined __GNUC__ && !defined __clang__
-#pragma GCC diagnostic pop
-#endif
-    
     return counter;
 }
 

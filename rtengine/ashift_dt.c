@@ -68,7 +68,7 @@ using namespace std;
 #define RANSAC_OPTIMIZATION_STEPS 5         // home many steps to optimize epsilon
 #define RANSAC_OPTIMIZATION_DRY_RUNS 50     // how man runs per optimization steps
 #define RANSAC_HURDLE 5                     // hurdle rate: the number of lines below which we do a complete permutation instead of random sampling
-#define MINIMUM_FITLINES 4                  // minimum number of lines needed for automatic parameter fit
+#define MINIMUM_FITLINES 2 /** ART 4 */                 // minimum number of lines needed for automatic parameter fit
 #define NMS_EPSILON 1e-3                    // break criterion for Nelder-Mead simplex
 #define NMS_SCALE 1.0                       // scaling factor for Nelder-Mead simplex
 #define NMS_ITERATIONS 400                  // number of iterations for Nelder-Mead simplex
@@ -100,6 +100,10 @@ using namespace std;
 
 //-----------------------------------------------------------------------------
 // RT: BEGIN COMMENT
+#ifdef near
+#  undef near
+#endif
+
 #if 0
 DT_MODULE_INTROSPECTION(4, dt_iop_ashift_params_t)
 
@@ -3679,8 +3683,10 @@ void gui_post_expose(struct dt_iop_module_t *self, cairo_t *cr, int32_t width, i
 
   cairo_restore(cr);
 }
+#endif // if 0
+//-----------------------------------------------------------------------------
 
-update the number of selected vertical and horizontal lines
+// update the number of selected vertical and horizontal lines
 static void update_lines_count(const dt_iop_ashift_line_t *lines, const int lines_count,
                         int *vertical_count, int *horizontal_count)
 {
@@ -3699,6 +3705,9 @@ static void update_lines_count(const dt_iop_ashift_line_t *lines, const int line
   *horizontal_count = hlines;
 }
 
+//-----------------------------------------------------------------------------
+// RT: BEGIN COMMENT
+#if 0
 int mouse_moved(struct dt_iop_module_t *self, double x, double y, double pressure, int which)
 {
   dt_iop_ashift_gui_data_t *g = (dt_iop_ashift_gui_data_t *)self->gui_data;

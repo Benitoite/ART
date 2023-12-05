@@ -1,16 +1,22 @@
+[Version]
+Version=1040
+
 [Exposure]
-HLRecovery=Blend
+HLRecovery=Balanced
 
 [ToneCurve]
 Enabled=true
 HistogramMatching=true
-CurveMode=FilmLike
+CurveMode=Neutral
 Curve2=0;
+Saturation=0;
+Saturation2=0;
+WhitePoint=1
 
 [LensProfile]
-LcMode=lfauto
+LcMode=exif
 UseDistortion=true
-UseVignette=false
+UseVignette=true
 UseCA=false
 
 [Color Management]

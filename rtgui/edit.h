@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -18,7 +19,7 @@
  */
 #pragma once
 #include <gtkmm.h>
-#include "../rtengine/imagefloat.h"
+//#include "../rtengine/imagefloat.h"
 #include "editid.h"
 #include "cursormanager.h"
 #include "../rtengine/rt_math.h"
@@ -204,28 +205,51 @@ class EditCoordSystem
 public:
     virtual ~EditCoordSystem() {}
 
-    /// Convert the widget's DrawingArea (i.e. preview area) coords to the edit buffer coords
+    /// Convert the widget's DrawingArea (i.e. preview area) coords to the edit buffer coords / int values
     virtual void screenCoordToCropBuffer (int phyx, int phyy, int& cropx, int& cropy) = 0;
-    /// Convert the widget's DrawingArea (i.e. preview area) coords to the full image coords
+    /// Convert the widget's DrawingArea (i.e. preview area) coords to the edit buffer coords / double values
+    virtual void screenCoordToCropBuffer (double phyx, double phyy, double& cropx, double& cropy) = 0;
+
+    /// Convert the widget's DrawingArea (i.e. preview area) coords to the full image coords / int values
     virtual void screenCoordToImage (int phyx, int phyy, int& imgx, int& imgy) = 0;
-    /// Convert the image coords to the widget's DrawingArea (i.e. preview area) coords
+    /// Convert the widget's DrawingArea (i.e. preview area) coords to the full image coords / double values
+    virtual void screenCoordToImage (double phyx, double phyy, double& imgx, double& imgy) = 0;
+
+    /// Convert the image coords to the widget's DrawingArea (i.e. preview area) coords / int values
     virtual void imageCoordToScreen (int imgx, int imgy, int& phyx, int& phyy) = 0;
-    /// Convert the image coords to the crop's canvas coords (full image + padding)
+    /// Convert the image coords to the widget's DrawingArea (i.e. preview area) coords / double values
+    virtual void imageCoordToScreen (double imgx, double imgy, double& phyx, double& phyy) = 0;
+
+    /// Convert the image coords to the crop's canvas coords (full image + padding) / int values
     virtual void imageCoordToCropCanvas (int imgx, int imgy, int& phyx, int& phyy) = 0;
-    /// Convert the image coords to the edit buffer coords  (includes borders)
+    /// Convert the image coords to the crop's canvas coords (full image + padding) / double values
+    virtual void imageCoordToCropCanvas (double imgx, double imgy, double& phyx, double& phyy) = 0;
+
+    /// Convert the image coords to the edit buffer coords  (includes borders) / int values
     virtual void imageCoordToCropBuffer (int imgx, int imgy, int& phyx, int& phyy) = 0;
-    /// Convert the image coords to the displayed image coords  (no borders here)
+    /// Convert the image coords to the edit buffer coords  (includes borders) / double values
+    virtual void imageCoordToCropBuffer (double imgx, double imgy, double& phyx, double& phyy) = 0;
+
+    /// Convert the image coords to the displayed image coords  (no borders here) / int values
     virtual void imageCoordToCropImage (int imgx, int imgy, int& phyx, int& phyy) = 0;
+    /// Convert the image coords to the displayed image coords  (no borders here) / double values
+    virtual void imageCoordToCropImage (double imgx, double imgy, double& phyx, double& phyy) = 0;
+
     /// Convert a size value from the preview's scale to the image's scale
     virtual int scaleValueToImage (int value) = 0;
+
     /// Convert a size value from the preview's scale to the image's scale
     virtual float scaleValueToImage (float value) = 0;
+
     /// Convert a size value from the preview's scale to the image's scale
     virtual double scaleValueToImage (double value) = 0;
+
     /// Convert a size value from the image's scale to the preview's scale
     virtual int scaleValueToCanvas (int value) = 0;
+
     /// Convert a size value from the image's scale to the preview's scale
     virtual float scaleValueToCanvas (float value) = 0;
+
     /// Convert a size value from the image's scale to the preview's scale
     virtual double scaleValueToCanvas (double value) = 0;
 };
@@ -287,6 +311,8 @@ public:
         F_VISIBLE     = 1 << 0, /// true if the geometry have to be drawn on the visible layer
         F_HOVERABLE   = 1 << 1, /// true if the geometry have to be drawn on the "mouse over" layer
         F_AUTO_COLOR  = 1 << 2, /// true if the color depend on the state value, not the color field above
+        F_DASHED      = 1 << 3, /// true if the geometry have to be drawn as a dash line
+        F_FRAME       = 1 << 4, /// true if the geometry represent a base shape used to compute a usable shape (e.g. : control cage)
     };
 
     /// @brief Key point of the image's rectangle that is used to locate the icon copy to the target point:
@@ -303,6 +329,7 @@ public:
     };
 
 protected:
+    static const std::vector<double> dash;
     RGBColor innerLineColor;
     RGBColor outerLineColor;
     short flags;
@@ -326,8 +353,12 @@ public:
     void setAutoColor (bool aColor);
     bool isVisible ();
     void setVisible (bool visible);
+    bool isFrame ();
+    void setFrame (bool frame);
     bool isHoverable ();
     void setHoverable (bool visible);
+    bool isDashed ();
+    void setDashed (bool dashed);
 
 
     // setActive will enable/disable the visible and hoverable flags in one shot!
@@ -372,17 +403,18 @@ public:
     void drawToMOChannel   (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
 };
 
-class Polyline : public Geometry
+class PolyLine : public Geometry
 {
 public:
-    std::vector<rtengine::Coord> points;
+    std::vector<rtengine::CoordD> points;
     bool filled;
+    bool closed;
 
-    Polyline ();
+    PolyLine ();
 
     void drawOuterGeometry (Cairo::RefPtr<Cairo::Context> &cr, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
     void drawInnerGeometry (Cairo::RefPtr<Cairo::Context> &cr, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
-    void drawToMOChannel (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
+    void drawToMOChannel   (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
 };
 
 class Rectangle : public Geometry
@@ -400,7 +432,7 @@ public:
     void setXYXY(rtengine::Coord topLeft, rtengine::Coord bottomRight);
     void drawOuterGeometry (Cairo::RefPtr<Cairo::Context> &cr, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
     void drawInnerGeometry (Cairo::RefPtr<Cairo::Context> &cr, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
-    void drawToMOChannel (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
+    void drawToMOChannel   (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
 };
 
 class OPIcon : public Geometry    // OP stands for "On Preview"
@@ -437,7 +469,7 @@ public:
     const Cairo::RefPtr<RTSurface> getInsensitiveImg();
     void drawOuterGeometry (Cairo::RefPtr<Cairo::Context> &cr, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
     void drawInnerGeometry (Cairo::RefPtr<Cairo::Context> &cr, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
-    void drawToMOChannel (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
+    void drawToMOChannel   (Cairo::RefPtr<Cairo::Context> &cr, unsigned short id, ObjectMOBuffer *objectBuffer, EditCoordSystem &coordSystem) override;
 };
 
 class OPAdjuster : public Geometry    // OP stands for "On Preview"
@@ -473,7 +505,7 @@ public:
     virtual ~EditSubscriber () {}
 
     void               setEditProvider(EditDataProvider *provider);
-    EditDataProvider*  getEditProvider ();
+    EditDataProvider*  getEditProvider () const;
     void               setEditID(EditUniqueID ID, BufferType buffType);
     bool               isCurrentSubscriber();
     virtual void       subscribe();
@@ -487,19 +519,26 @@ public:
 
     /** @brief Get the cursor to be displayed when above handles
     @param objectID object currently "hovered" */
-    virtual CursorShape getCursor (const int objectID);
+    virtual CursorShape getCursor (int objectID);
+
+    /** @brief Get the cursor to be displayed when above handles
+    @param objectID object currently "hovered"
+    @param xPos X cursor position in image space
+    @param yPos Y cursor position in image space */
+    virtual CursorShape getCursor (int objectID, int xPos, int yPos);
 
     /** @brief Triggered when the mouse is moving over an object
     This method is also triggered when the cursor is moving over the image in ET_PIPETTE mode
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool mouseOver (const int modifierKey);
+    virtual bool mouseOver(int modifierKey);
 
     /** @brief Triggered when mouse button 1 is pressed, together with the CTRL modifier key if the subscriber is of type ET_PIPETTE
     Once the key is pressed, RT will enter in drag1 mode on subsequent mouse movements
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool button1Pressed (const int modifierKey);
+    virtual bool button1Pressed(int modifierKey);
+    virtual bool button1Pressed(int modifierKey, double pressure) { return button1Pressed(modifierKey); }
 
     /** @brief Triggered when mouse button 1 is released
     @return true if the preview has to be redrawn, false otherwise */
@@ -509,7 +548,8 @@ public:
     Once the key is pressed, RT will enter in drag2 mode on subsequent mouse movements
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool button2Pressed (const int modifierKey);
+    virtual bool button2Pressed (int modifierKey);
+    virtual bool button2Pressed(int modifierKey, double pressure) { return button2Pressed(modifierKey); }
 
     /** @brief Triggered when mouse button 2 is released (middle button)
     @return true if the preview has to be redrawn, false otherwise */
@@ -519,7 +559,8 @@ public:
     Once the key is pressed, RT will enter in drag3 mode on subsequent mouse movements
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool button3Pressed (const int modifierKey);
+    virtual bool button3Pressed (int modifierKey);
+    virtual bool button3Pressed(int modifierKey, double pressure) { return button3Pressed(modifierKey); }
 
     /** @brief Triggered when mouse button 3 is released (right button)
     @return true if the preview has to be redrawn, false otherwise */
@@ -528,44 +569,52 @@ public:
     /** @brief Triggered when the user is moving while holding down mouse button 1
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool drag1 (const int modifierKey);
+    virtual bool drag1(int modifierKey);
+    virtual bool drag1(int modifierKey, double pressure) { return drag1(modifierKey); }
 
     /** @brief Triggered when the user is moving while holding down mouse button 2
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool drag2 (const int modifierKey);
+    virtual bool drag2(int modifierKey);
+    virtual bool drag2(int modifierKey, double pressure) { return drag2(modifierKey); }
 
     /** @brief Triggered when the user is moving while holding down mouse button 3
     @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool drag3 (const int modifierKey);
+    virtual bool drag3(int modifierKey);
+    virtual bool drag3(int modifierKey, double pressure) { return drag3(modifierKey); }
 
     /** @brief Triggered when the user is releasing mouse button 1 while in action==ES_ACTION_PICKING mode
     No modifier key is provided, since having a different modifier key than on button press will set picked to false.
     @param picked True if the cursor is still above the the same object than on button pressed and with the same modifier keys.
                   If false, the user moved the cursor away or the modifier key is different, so the element is considered as NOT selected.
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool pick1 (const bool picked);
+    virtual bool pick1 (bool picked);
 
     /** @brief Triggered when the user is releasing mouse button 2 while in action==ES_ACTION_PICKING mode
     @param picked True if the cursor is still above the the same object than on button pressed and with the same modifier keys.
                   If false, the user moved the cursor away or the modifier key is different, so the element is considered as NOT selected.
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool pick2 (const bool picked);
+    virtual bool pick2 (bool picked);
 
     /** @brief Triggered when the user is releasing mouse button 3 while in action==ES_ACTION_PICKING mode
     @param picked True if the cursor is still above the the same object than on button pressed and with the same modifier keys.
                   If false, the user moved the cursor away or the modifier key is different, so the element is considered as NOT selected.
     @return true if the preview has to be redrawn, false otherwise */
-    virtual bool pick3 (const bool picked);
+    virtual bool pick3 (bool picked);
 
     /**
      * triggered for scroll wheel events. Only for ET_OBJECTS types
      * 
+     * @param modifierKey Gtk's event modifier key (GDK_CONTROL_MASK | GDK_SHIFT_MASK | ...)
+     * @param direction Direction of the scroll (see Gtk documentation for more information)
+     * @param deltaX values sent by Gtk on scroll events
+     * @param deltaY values sent by Gtk on scroll events
+     * @param propagateEvent value to state whether the event has been catched (false) or should be propagated (true)
      * @return false if the scroll event has to be propagated to the crop
      * window, true if the event has been processed
      */
-    virtual bool scroll(int bstate, GdkScrollDirection direction, double deltaX, double deltaY);
+    virtual bool scroll(int modifierKey, GdkScrollDirection direction, double deltaX, double deltaY, bool &propagateEvent);
 
     /** @brief Get the geometry to be shown to the user */
     const std::vector<Geometry*>& getVisibleGeometry ();
@@ -597,12 +646,16 @@ public:
     rtengine::Coord deltaPrevImage;  /// Delta relative to the previous mouse location, in the full image space
 
     EditDataProvider();
-    virtual ~EditDataProvider() {}
+    virtual ~EditDataProvider();
 
     virtual void        subscribe(EditSubscriber *subscriber);
     virtual void        unsubscribe();         /// Occurs when the subscriber has been switched off first
     virtual void        switchOffEditMode ();  /// Occurs when the user want to stop the editing mode
-    virtual CursorShape getCursor(int objectID);
+    int getObject() const;
+    void setObject(int newObject);
+
+    virtual CursorShape getCursor(int objectID, int xPos, int yPos);
+    // virtual CursorShape getCursor(int objectID);
     int                 getPipetteRectSize ();
     EditSubscriber*     getCurrSubscriber();
     virtual void        getImageSize (int &w, int&h) = 0;
@@ -706,6 +759,18 @@ inline void Geometry::setVisible (bool visible) {
     }
 }
 
+inline bool Geometry::isFrame () {
+    return flags & F_FRAME;
+}
+
+inline void Geometry::setFrame (bool frame) {
+    if (frame) {
+        flags |= F_FRAME;
+    } else {
+        flags &= ~F_FRAME;
+    }
+}
+
 inline bool Geometry::isHoverable () {
     return flags & F_HOVERABLE;
 }
@@ -726,19 +791,31 @@ inline void Geometry::setActive (bool active) {
     }
 }
 
-inline EditDataProvider* EditSubscriber::getEditProvider () {
+inline bool Geometry::isDashed () {
+    return flags & F_DASHED;
+}
+
+inline void Geometry::setDashed (bool dashed) {
+    if (dashed) {
+        flags |= F_DASHED;
+    } else {
+        flags &= ~F_DASHED;
+    }
+}
+
+inline EditDataProvider* EditSubscriber::getEditProvider () const {
     return provider;
 }
 
-inline CursorShape EditSubscriber::getCursor (const int objectID) {
+inline CursorShape EditSubscriber::getCursor (int objectID) {
     return CSHandOpen;
 }
 
-inline bool EditSubscriber::mouseOver (const int modifierKey) {
+inline bool EditSubscriber::mouseOver (int modifierKey) {
     return false;
 }
 
-inline bool EditSubscriber::button1Pressed (const int modifierKey) {
+inline bool EditSubscriber::button1Pressed (int modifierKey) {
     return false;
 }
 
@@ -746,7 +823,7 @@ inline bool EditSubscriber::button1Released () {
     return false;
 }
 
-inline bool EditSubscriber::button2Pressed (const int modifierKey) {
+inline bool EditSubscriber::button2Pressed (int modifierKey) {
     return false;
 }
 
@@ -754,7 +831,7 @@ inline bool EditSubscriber::button2Released () {
     return false;
 }
 
-inline bool EditSubscriber::button3Pressed (const int modifierKey) {
+inline bool EditSubscriber::button3Pressed (int modifierKey) {
     return false;
 }
 
@@ -762,32 +839,33 @@ inline bool EditSubscriber::button3Released () {
     return false;
 }
 
-inline bool EditSubscriber::drag1 (const int modifierKey) {
+inline bool EditSubscriber::drag1 (int modifierKey) {
     return false;
 }
 
-inline bool EditSubscriber::drag2 (const int modifierKey) {
+inline bool EditSubscriber::drag2 (int modifierKey) {
     return false;
 }
 
-inline bool EditSubscriber::drag3 (const int modifierKey) {
+inline bool EditSubscriber::drag3 (int modifierKey) {
     return false;
 }
 
-inline bool EditSubscriber::pick1 (const bool picked) {
+inline bool EditSubscriber::pick1 (bool picked) {
     return false;
 }
 
-inline bool EditSubscriber::pick2 (const bool picked) {
+inline bool EditSubscriber::pick2 (bool picked) {
     return false;
 }
 
-inline bool EditSubscriber::pick3 (const bool picked) {
+inline bool EditSubscriber::pick3 (bool picked) {
     return false;
 }
 
-inline bool EditSubscriber::scroll(int bstate, GdkScrollDirection direction, double deltaX, double deltaY)
+inline bool EditSubscriber::scroll(int bstate, GdkScrollDirection direction, double deltaX, double deltaY, bool &propagateEvent)
 {
+    propagateEvent = true;
     return false;
 }
 
@@ -845,8 +923,9 @@ inline Rectangle::Rectangle () :
         topLeft (0, 0), bottomRight (10, 10), filled (false) {
 }
 
-inline Polyline::Polyline () :
-        filled (false) {
+inline PolyLine::PolyLine () :
+        filled (false),
+        closed (true) {
 }
 
 inline Line::Line () :

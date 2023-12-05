@@ -30,7 +30,7 @@
 ThresholdAdjuster::ThresholdAdjuster (Glib::ustring label,
                                       double minValueBottom, double maxValueBottom, double defBottom, Glib::ustring labelBottom, unsigned int precisionBottom,
                                       double minValueTop,    double maxValueTop,    double defTop,    Glib::ustring labelTop,    unsigned int precisionTop,
-                                      ThresholdCurveProvider* curveProvider, bool editedCheckBox)
+                                      ThresholdCurveProvider* curveProvider, bool editedCheckBox, bool compact)
     : tSelector(minValueBottom, maxValueBottom, defBottom, labelBottom, precisionBottom, minValueTop, maxValueTop, defTop, labelTop, precisionTop, curveProvider)
 
 {
@@ -39,7 +39,7 @@ ThresholdAdjuster::ThresholdAdjuster (Glib::ustring label,
     initialDefaultVal[ThresholdSelector::TS_BOTTOMRIGHT] = 0.; // unused
     initialDefaultVal[ThresholdSelector::TS_TOPRIGHT] = 0.;    // unused
 
-    initObject (label, editedCheckBox);
+    initObject (label, editedCheckBox, compact);
 }
 
 ThresholdAdjuster::ThresholdAdjuster (Glib::ustring label, double minValue, double maxValue, double defBottom,
@@ -68,7 +68,7 @@ ThresholdAdjuster::ThresholdAdjuster (Glib::ustring label, double minValue, doub
     initObject (label, editedCheckBox);
 }
 
-void ThresholdAdjuster::initObject (Glib::ustring label, bool editedcb)
+void ThresholdAdjuster::initObject (Glib::ustring label, bool editedcb, bool compact)
 {
 
     adjusterListener = nullptr;
@@ -93,20 +93,26 @@ void ThresholdAdjuster::initObject (Glib::ustring label, bool editedcb)
         editedCheckBox = nullptr;
     }
 
-    hbox->pack_start (*this->label);
-
     reset = Gtk::manage (new Gtk::Button ());
     reset->add (*Gtk::manage (new RTImage ("undo-small.png", "redo-small.png")));
     reset->set_relief (Gtk::RELIEF_NONE);
     reset->set_tooltip_markup (M("ADJUSTER_RESET_TO_DEFAULT"));
 
-    hbox->pack_end (*reset, Gtk::PACK_SHRINK, 0);
+    if (compact) {
+        hbox->pack_start(*this->label, Gtk::PACK_SHRINK, 0);
+        hbox->pack_start(tSelector, Gtk::PACK_EXPAND_WIDGET);
+        hbox->pack_end(*reset, Gtk::PACK_SHRINK, 0);
+        pack_start(*hbox, false, false);
+    } else {
+        hbox->pack_start (*this->label);
+        hbox->pack_end (*reset, Gtk::PACK_SHRINK, 0);
+
+        pack_start (*hbox, false, false);
+        pack_start (tSelector, false, false);
+    }
 
     reset->set_size_request (-1, this->label->get_height() > MIN_RESET_BUTTON_HEIGHT ? this->label->get_height() : MIN_RESET_BUTTON_HEIGHT);
-
-    pack_start (*hbox, false, false);
-    pack_start (tSelector, false, false);
-
+    
     editedState = defEditedState = Irrelevant;
 
     selectorChange = tSelector.signal_value_changed().connect( sigc::mem_fun(*this, &ThresholdAdjuster::selectorChanged) );

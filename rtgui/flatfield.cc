@@ -22,13 +22,17 @@
 #include <sstream>
 #include "rtimage.h"
 #include "../rtengine/refreshmap.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-FlatField::FlatField () : FoldableToolPanel(this, "flatfield", M("TP_FLATFIELD_LABEL"), false, true)
+FlatField::FlatField () : FoldableToolPanel(this, "flatfield", M("TP_FLATFIELD_LABEL"), false, true, true)
 {
+    auto m = ProcEventMapper::getInstance();
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
+    EvEmbedded = m->newEvent(DARKFRAME, "HISTORY_MSG_FLATFIELD_EMBEDDED");
     
     hbff = Gtk::manage(new Gtk::HBox());
     hbff->set_spacing(2);
@@ -53,15 +57,15 @@ FlatField::FlatField () : FoldableToolPanel(this, "flatfield", M("TP_FLATFIELD_L
     flatFieldBlurRadius->show();
 
     Gtk::HBox* hbffbt = Gtk::manage (new Gtk::HBox ());
-    hbffbt->pack_start (*Gtk::manage (new Gtk::Label ( M("TP_FLATFIELD_BLURTYPE") + ":")));
-    hbffbt->set_spacing(4);
+    hbffbt->pack_start (*Gtk::manage (new Gtk::Label ( M("TP_FLATFIELD_BLURTYPE") + ": ")), Gtk::PACK_SHRINK, 0);
+    //hbffbt->set_spacing(4);
     flatFieldBlurType = Gtk::manage (new MyComboBoxText ());
     flatFieldBlurType->append(M("TP_FLATFIELD_BT_AREA"));
     flatFieldBlurType->append(M("TP_FLATFIELD_BT_VERTICAL"));
     flatFieldBlurType->append(M("TP_FLATFIELD_BT_HORIZONTAL"));
     flatFieldBlurType->append(M("TP_FLATFIELD_BT_VERTHORIZ"));
     flatFieldBlurType->set_active(0);
-    hbffbt->pack_end (*flatFieldBlurType);
+    hbffbt->pack_start(*flatFieldBlurType, Gtk::PACK_EXPAND_WIDGET, 0);
 
     flatFieldClipControl = Gtk::manage (new Adjuster(M("TP_FLATFIELD_CLIPCONTROL"), 0., 100., 1., 0.));
     flatFieldClipControl->setAdjusterListener(this);
@@ -74,18 +78,28 @@ FlatField::FlatField () : FoldableToolPanel(this, "flatfield", M("TP_FLATFIELD_L
     flatFieldClipControl->show();
     flatFieldClipControl->set_tooltip_markup (M("TP_FLATFIELD_CLIPCONTROL_TOOLTIP"));
 
+    embedded = Gtk::manage(new Gtk::CheckButton(M("TP_FLATFIELD_EMBEDDED")));
+
     pack_start( *hbff, Gtk::PACK_SHRINK, 0);
-    pack_start( *flatFieldAutoSelect, Gtk::PACK_SHRINK, 0);
+    Gtk::HBox *hb = Gtk::manage(new Gtk::HBox());
+    hb->pack_start( *flatFieldAutoSelect, Gtk::PACK_SHRINK, 0);
+    hb->pack_start(*embedded, Gtk::PACK_SHRINK, 4);
+    pack_start(*hb, Gtk::PACK_EXPAND_WIDGET, 0);
+
+    vbff = Gtk::manage(new Gtk::VBox());
     pack_start( *ffInfo, Gtk::PACK_SHRINK, 0);
-    pack_start( *hbffbt, Gtk::PACK_SHRINK, 0);
-    pack_start( *flatFieldBlurRadius, Gtk::PACK_SHRINK, 0);
-    pack_start( *flatFieldClipControl, Gtk::PACK_SHRINK, 0);
+    vbff->pack_start( *hbffbt, Gtk::PACK_SHRINK, 2);
+    vbff->pack_start( *flatFieldBlurRadius, Gtk::PACK_SHRINK, 0);
+    vbff->pack_start( *flatFieldClipControl, Gtk::PACK_SHRINK, 0);
+    pack_start(*vbff);
 
     flatFieldFileconn = flatFieldFile->signal_file_set().connect ( sigc::mem_fun(*this, &FlatField::flatFieldFileChanged)); //, true);
     flatFieldFileReset->signal_clicked().connect( sigc::mem_fun(*this, &FlatField::flatFieldFile_Reset), true );
     flatFieldAutoSelectconn = flatFieldAutoSelect->signal_toggled().connect ( sigc::mem_fun(*this, &FlatField::flatFieldAutoSelectChanged), true);
     flatFieldBlurTypeconn = flatFieldBlurType->signal_changed().connect( sigc::mem_fun(*this, &FlatField::flatFieldBlurTypeChanged) );
     lastShortcutPath = "";
+
+    embedded->signal_toggled().connect(sigc::mem_fun(*this, &FlatField::embeddedToggled), true);
 
     // Set filename filters
     b_filter_asCurrent = false;
@@ -204,12 +218,25 @@ void FlatField::read(const rtengine::procparams::ProcParams* pp)
         }
     }
 
+    disableListener();
+    embedded->set_active(pp->raw.ff_embedded);
+    embedded->set_sensitive(true);
+    if (ffp && !ffp->hasEmbeddedFF()) {
+        embedded->set_sensitive(false);
+        embedded->set_active(false);
+    }
+    embeddedToggled();
+    enableListener();
 }
+
 
 void FlatField::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.enable_flatfield = getEnabled();
     pp->raw.ff_file = flatFieldFile->get_filename();
+    if (!Glib::file_test(pp->raw.ff_file, Glib::FILE_TEST_EXISTS)) {
+        pp->raw.ff_file = "";
+    }    
     pp->raw.ff_AutoSelect = flatFieldAutoSelect->get_active();
     pp->raw.ff_BlurRadius = flatFieldBlurRadius->getIntValue();
     pp->raw.ff_clipControl = flatFieldClipControl->getIntValue();
@@ -220,6 +247,8 @@ void FlatField::write( rtengine::procparams::ProcParams* pp)
     if( currentRow >= 0 && flatFieldBlurType->get_active_text() != M("GENERAL_UNCHANGED")) {
         pp->raw.ff_BlurType = procparams::RAWParams::getFlatFieldBlurTypeStrings()[currentRow];
     }
+
+    pp->raw.ff_embedded = embedded->get_active();
 }
 
 void FlatField::adjusterChanged(Adjuster* a, double newval)
@@ -260,6 +289,8 @@ void FlatField::setDefaults(const rtengine::procparams::ProcParams* defParams)
 {
     flatFieldBlurRadius->setDefault( defParams->raw.ff_BlurRadius);
     flatFieldClipControl->setDefault( defParams->raw.ff_clipControl);
+
+    initial_params = defParams->raw;
 }
 
 void FlatField::flatFieldFileChanged()
@@ -361,4 +392,28 @@ void FlatField::flatFieldAutoClipValueChanged(int n)
             return false;
         }
     );
+}
+
+
+void FlatField::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.raw = initial_params;
+    }
+    pp.raw.enable_flatfield = getEnabled();
+    read(&pp);
+}
+
+
+void FlatField::embeddedToggled()
+{
+    bool active = embedded->get_active();
+    flatFieldAutoSelect->set_sensitive(!active);
+    hbff->set_sensitive(!active);
+    vbff->set_sensitive(!active);
+
+    if (listener && getEnabled()) {
+        listener->panelChanged(EvEmbedded, active ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
+    }
 }

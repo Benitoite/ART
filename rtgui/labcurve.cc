@@ -20,14 +20,17 @@
 #include <iomanip>
 #include "../rtengine/improcfun.h"
 #include "edit.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
 
 LabCurve::LabCurve():
-    FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"), false, true)
+    FoldableToolPanel(this, "labcurves", M("TP_LABCURVE_LABEL"), false, true, true)
 {
+    EvToolReset.set_action(LUMINANCECURVE);
+    
     std::vector<GradientMilestone> milestones;
 
     brightness = Gtk::manage (new Adjuster (M("TP_LABCURVE_BRIGHTNESS"), -100., 100., 1., 0.));
@@ -150,6 +153,8 @@ void LabCurve::setDefaults(const ProcParams* defParams)
     brightness->setDefault(defParams->labCurve.brightness);
     contrast->setDefault(defParams->labCurve.contrast);
     chromaticity->setDefault(defParams->labCurve.chromaticity);
+
+    initial_params = defParams->labCurve;
 }
 
 
@@ -238,4 +243,23 @@ void LabCurve::enabledChanged()
             listener->panelChanged (EvLEnabled, M("GENERAL_DISABLED"));
         }
     }
+}
+
+
+void LabCurve::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.labCurve = initial_params;
+    }
+    pp.labCurve.enabled = getEnabled();
+    read(&pp);
+}
+
+
+void LabCurve::registerShortcuts(ToolShortcutManager *mgr)
+{
+    mgr->addShortcut(GDK_KEY_i, this, brightness);
+    mgr->addShortcut(GDK_KEY_j, this, contrast);
+    mgr->addShortcut(GDK_KEY_n, this, chromaticity);
 }

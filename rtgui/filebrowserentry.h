@@ -54,7 +54,7 @@ class FileBrowserEntry : public ThumbBrowserEntryBase,
     bool wasInside;
     int press_x, press_y, action_x, action_y;
     double rot_deg;
-    bool landscape;
+    int coarse_rotate;
     rtengine::procparams::CropParams cropParams;
     CropGUIListener* cropgl;
     FileBrowserEntryIdleHelper* feih;
@@ -64,13 +64,14 @@ class FileBrowserEntry : public ThumbBrowserEntryBase,
 
     IdleRegister idle_register;
 
-    bool onArea (CursorArea a, int x, int y);
+    // bool onArea (CursorArea a, int x, int y);
     // void updateCursor (int x, int y);
     void drawStraightenGuide (Cairo::RefPtr<Cairo::Context> c);
     void customBackBufferUpdate (Cairo::RefPtr<Cairo::Context> c) override;
 
     enum class RefreshStatus { READY, PENDING, QUICK, FULL };
     RefreshStatus refresh_status_;
+    bool refresh_disabled_;
     void update_refresh_status();
     
 public:
@@ -104,6 +105,8 @@ public:
     bool    motionNotify  (int x, int y) override;
     bool    pressNotify   (int button, int type, int bstate, int x, int y) override;
     bool    releaseNotify (int button, int type, int bstate, int x, int y) override;
+
+    void enableThumbRefresh();
 };
 
 #endif

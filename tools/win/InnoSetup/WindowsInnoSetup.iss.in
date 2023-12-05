@@ -20,7 +20,6 @@
 
 #define MyAppName "ART"
 #define MyAppVersion "${GIT_DESCRIBE}"
-#define MyAppVersionNumeric "${GIT_NUMERIC_VERSION_BS}"
 #define MyAppPublisher "ART"
 #define MyAppURL "http://bitbucket.org/agriggio/ART/"
 #define MyAppExeName "ART.exe"
@@ -39,7 +38,6 @@
 AppId={#MyAppName}{#MyAppVersion}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;VersionInfoVersion={#MyAppVersionNumeric}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -73,7 +71,8 @@ Name: regBrowseFolder; Description: "Add ""Browse with ART"" option to context m
 Name: regOpenFile; Description: "Add ""Open with ART"" option to context menu when right-clicking on a file."; GroupDescription: File extensions:
 
 [Files]
-Source: "{#MyBuildBasePath}\ART*.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyBuildBasePath}\ART.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyBuildBasePath}\ART-cli.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\*.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\dynamicprofile.cfg"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\exiftool.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
@@ -96,8 +95,9 @@ Source: "{#MyBuildBasePath}\options"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\gspawn-win{#MyBitDepth}-helper.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\gspawn-win{#MyBitDepth}-helper-console.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyBuildBasePath}\gdb.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
+Source: "{#MyBuildBasePath}\gdbus.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildBasePath}\fonts\DroidSansMonoSlashed.ttf"; DestDir: "{fonts}"; FontInstall: "Droid Sans Mono Slashed"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "{#MyBuildBasePath}\imageio\*"; DestDir: "{app}\imageio\"; Flags: skipifsourcedoesntexist ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

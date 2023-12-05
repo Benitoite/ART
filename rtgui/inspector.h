@@ -22,6 +22,7 @@
 #include <gtkmm.h>
 #include "guiutils.h"
 #include "../rtengine/coord.h"
+#include "histogrampanel.h"
 
 class InspectorBuffer;
 class FileCatalog;
@@ -40,7 +41,7 @@ public:
     /** @brief A new image is being flown over
      * @param fullPath Full path of the image that is being hovered inspect, or an empty string if out of any image.
      */
-    void switchImage (const Glib::ustring &fullPath);
+    void switchImage(const Glib::ustring &fullPath, bool recenter=false, rtengine::Coord2D newcenter=rtengine::Coord2D(-1, -1));
 
     /** @brief Set the new coarse rotation transformation
      * @param transform A semi-bitfield coarse transformation using #defines from iimage.h
@@ -65,7 +66,8 @@ public:
 
     void setInfoText(const Glib::ustring &txt);
     void infoEnabled(bool yes);
-    void setZoomFit(bool yes);
+//    void setZoomFit(bool yes);
+    void setFocusMask(bool yes);
 
     Gtk::SizeRequestMode get_request_mode_vfunc () const override;
     void get_preferred_height_vfunc (int& minimum_height, int& natural_height) const override;
@@ -74,11 +76,22 @@ public:
     void get_preferred_width_for_height_vfunc (int height, int &minimum_width, int &natural_width) const override;
 
     sigc::signal<void> signal_ready() { return sig_ready_; }
+    sigc::signal<void> signal_active() { return sig_active_; }
+    sigc::signal<void, rtengine::Coord2D> signal_moved() { return sig_moved_; }
+    sigc::signal<void, rtengine::Coord2D> signal_pressed() { return sig_pressed_; }
+    sigc::signal<void> signal_released() { return sig_released_; }
+
+    void setHighlight(bool yes) { highlight_ = yes; }
 
 private:
     bool on_draw(const ::Cairo::RefPtr< Cairo::Context> &cr) override;
+    bool onMouseMove(GdkEventMotion *evt);
+    bool onMousePress(GdkEventButton *evt);
+    bool onMouseRelease(GdkEventButton *evt);
+	
     void deleteBuffers();
-    bool doSwitchImage();
+    bool doSwitchImage(bool recenter, rtengine::Coord2D newcenter);
+    void updateHistogram();
 
     rtengine::Coord center;
     std::vector<InspectorBuffer*> images;
@@ -86,6 +99,8 @@ private:
     //double zoom;
     bool active;
     bool first_active_;
+    bool highlight_;
+    bool has_focus_mask_;
 
     sigc::connection delayconn;
     Glib::ustring next_image_path;
@@ -94,6 +109,13 @@ private:
     BackBuffer info_bb_;
 
     sigc::signal<void> sig_ready_;
+    sigc::signal<void> sig_active_;
+    sigc::signal<void, rtengine::Coord2D> sig_moved_;
+    sigc::signal<void, rtengine::Coord2D> sig_pressed_;
+    sigc::signal<void> sig_released_;
+    rtengine::Coord prev_point_;
+
+    HistogramArea hist_bb_;
 };
 
 
@@ -101,21 +123,16 @@ class Inspector: public Gtk::VBox {
 public:
     Inspector(FileCatalog *filecatalog);
 
-    void mouseMove(rtengine::Coord2D pos, int transform)
-    { ins_.mouseMove(pos, transform); }
-    
-    void switchImage(const Glib::ustring &fullPath);    
-    // void setTransformation(int transform);
-    
-    void flushBuffers() { ins_.flushBuffers(); }
-    
-    void setActive(bool state) { ins_.setActive(state); }
-    bool isActive() const { return ins_.isActive(); };
-
-    sigc::signal<void> signal_ready() { return ins_.signal_ready(); }
+    void mouseMove(rtengine::Coord2D pos, int transform);
+    void switchImage(const Glib::ustring &fullPath);
+    void flushBuffers();
+    void setActive(bool state);
+    bool isActive() const;
+    sigc::signal<void> signal_ready();
 
     void toggleShowInfo();
     void toggleUseCms();
+    void toggleShowHistogram();
     enum class DisplayMode {
         JPG,
         RAW_LINEAR,
@@ -125,22 +142,41 @@ public:
     };
     void setDisplayMode(DisplayMode m);
     void setZoomFit(bool yes);
+
+    bool handleShortcutKey(GdkEventKey *event);
     
 private:
     Gtk::HBox *get_toolbar();
-    Glib::ustring get_info_text();
+    Glib::ustring get_info_text(size_t i);
     void info_toggled();
     void mode_toggled(Gtk::ToggleButton *b);
     void zoom_toggled(Gtk::ToggleButton *b);
     void cms_toggled();
     bool keyPressed(GdkEventKey *evt);
+    void onGrabFocus(GdkEventButton *evt, size_t i);
+    void onInspectorResized(Gtk::Allocation &a);
+    void split_toggled();
+    void histogram_toggled();
+    void focus_mask_toggled();
+    void on_moved(rtengine::Coord2D pos);
+    void on_pressed(rtengine::Coord2D pos);
+    void on_released();
+    void do_toggle_zoom(Gtk::ToggleButton *b, rtengine::Coord2D pos=rtengine::Coord2D(-1, -1));
 
     FileCatalog *filecatalog_;
 
-    Glib::ustring cur_image_;
-    InspectorArea ins_;
+    Gtk::HBox ibox_;
+    std::array<Glib::ustring, 2> cur_image_;
+    std::array<InspectorArea, 2> ins_;
+    std::array<Gtk::Allocation, 2> ins_sz_;
+    size_t active_;
+    size_t num_active_;
 
+    Gtk::HBox *toolbar_;
+    Gtk::ToggleButton *split_;
     Gtk::ToggleButton *info_;
+    Gtk::ToggleButton *histogram_;
+    Gtk::ToggleButton *focusmask_;
     Gtk::ToggleButton *jpg_;
     Gtk::ToggleButton *rawlinear_;
     Gtk::ToggleButton *rawfilm_;
@@ -150,6 +186,9 @@ private:
     Gtk::ToggleButton *zoom11_;
     Gtk::ToggleButton *cms_;
 
+    RTImage focusmask_on_;
+    RTImage focusmask_off_;
+
     sigc::connection jpgconn_;
     sigc::connection rawlinearconn_;
     sigc::connection rawfilmconn_;
@@ -157,4 +196,7 @@ private:
     sigc::connection rawclipconn_;
     sigc::connection zoomfitconn_;
     sigc::connection zoom11conn_;
+    sigc::connection delayconn_;
+
+    bool temp_zoom_11_;
 };

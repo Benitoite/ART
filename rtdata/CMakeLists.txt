@@ -8,6 +8,10 @@ file(GLOB FONTS "fonts/*")
 set(PROFILESDIR "profiles")
 set(THEMEDIR "themes")
 
+set(CTLSCRIPTSDIR "ctlscripts")
+set(LUTSDIR "luts")
+
+
 file(GLOB IMG_SVG LIST_DIRECTORIES false "images/svg/*")
 file(GLOB IMG_PNG LIST_DIRECTORIES false "images/png/*")
 file(GLOB IMG_ICO LIST_DIRECTORIES false "images/*")
@@ -42,6 +46,7 @@ install(FILES ${DCPFILES} DESTINATION "${DATADIR}/dcpprofiles")
 install(FILES "cammatrices.json" DESTINATION "${DATADIR}")
 install(FILES "dcraw.json" DESTINATION "${DATADIR}")
 install(FILES "rt.json" DESTINATION "${DATADIR}")
+install(FILES "wbpresets.json" DESTINATION "${DATADIR}")
 install(FILES ${OPTIONSFILE} DESTINATION "${DATADIR}" PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ RENAME options)
 if(WIN32)
     install(FILES ${FONTS} DESTINATION "${DATADIR}/fonts")
@@ -55,6 +60,9 @@ install(DIRECTORY ${THEMEDIR} DESTINATION "${DATADIR}")
 install(FILES ${IMG_SVG} DESTINATION "${DATADIR}/images")
 install(FILES ${IMG_PNG} DESTINATION "${DATADIR}/images")
 install(FILES ${IMG_ICO} DESTINATION "${DATADIR}/images")
+
+install(DIRECTORY ${CTLSCRIPTSDIR} DESTINATION "${DATADIR}" FILES_MATCHING PATTERN "*.ctl")
+install(DIRECTORY ${LUTSDIR} DESTINATION "${DATADIR}" FILES_MATCHING REGEX ".*[^~]$")
 
 if(APPLE)
     # CMake escapes first item quote character. Do not remove 'DUMMY_VARIABLE='

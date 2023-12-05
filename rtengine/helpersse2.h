@@ -3,6 +3,11 @@
 //  this code was taken from http://shibatch.sourceforge.net/
 //  Many thanks to the author of original version: Naoki Shibata
 //
+//   Copyright Naoki Shibata and contributors 2010 - 2021.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file sleef_LICENSE.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+//
 //  This version contains modifications made by Ingo Weyrich
 //
 ////////////////////////////////////////////////////////////////
@@ -75,6 +80,11 @@ static INLINE vfloat LC2VFU(float &a)
 
 #define ZEROV _mm_setzero_ps()
 #define F2V(a) _mm_set1_ps((a))
+
+static INLINE bool vtest(vmask m)
+{
+    return _mm_movemask_ps((vfloat)m);
+}
 
 static INLINE vint vrint_vi_vd(vdouble vd)
 {

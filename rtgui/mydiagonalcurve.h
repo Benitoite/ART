@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _MYDIAGONALCURVE_
-#define _MYDIAGONALCURVE_
+#pragma once
 
 #include <gtkmm.h>
 #include <vector>
@@ -34,7 +34,7 @@ enum DiagonalCurveType {
     DCT_Spline,         // 1
     DCT_Parametric,     // 2
     DCT_NURBS,          // 3
-    DCT_CatumullRom,    // 4
+    DCT_CatmullRom,    // 4
     // Insert new curve type above this line
     DCT_Unchanged       // Must remain the last of the enum
 };
@@ -47,8 +47,14 @@ public:
     std::vector<double> x, y;   // in case of parametric curves the curve parameters are stored in vector x. In other cases these vectors store the coordinates of the bullets.
 };
 
-class MyDiagonalCurve : public MyCurve
-{
+class CurveBackgroundProvider {
+public:
+    virtual ~CurveBackgroundProvider() = default;
+    virtual void renderCurveBackground(int caller_id, Glib::RefPtr<Gtk::StyleContext> style, Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h) = 0;
+};
+
+
+class MyDiagonalCurve: public MyCurve {
 private:
     IdleRegister idle_register;
 
@@ -68,6 +74,8 @@ protected:
     int activeParam;
     unsigned int* bghist;   // histogram values
     bool bghistvalid;
+    CurveBackgroundProvider *bp_;
+    int bp_id_;
 
     void draw (int handle);
     void interpolate ();
@@ -100,6 +108,7 @@ public:
 
     void setPos(double pos, int chanIdx) override;
     void stopNumericalAdjustment() override;
+
+    void setBackgroundProvider(CurveBackgroundProvider *bp, int caller_id);
 };
 
-#endif

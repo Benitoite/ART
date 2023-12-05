@@ -5,13 +5,24 @@ Developer/Maintainer:
 
   Alberto Griggio
 
+Other developers:
+  
+  Daniel Catalina
+  Jean-Christophe Frisch  
+
 Other contributors (profiles, ideas, mockups, testing, forum activity, translations, etc.), in last name alphabetical order:
 
+  Péter Bereczky
   Felipe Bouabci Simões
+  Alvaro De Amicis
   André Gauthier
   Sebastien Guyader
   Paul Matthijsse
   Serge Moreau
+  mrleemon
+  Ohnishi, Yasuo
+  Eigil Skovgaard
+  Barry Thomas
 
 RawTherapee
 ===========
@@ -31,7 +42,7 @@ Development contributors, in last name alphabetical order:
   Maciek Dworak
   Michael Ezra
   Flössie
-  Jean-Christophe Frisch
+  Jean-Christophe Frisch  
   Ilias Giarimis
   Alberto Griggio
   Steve Herrell

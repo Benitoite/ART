@@ -25,6 +25,9 @@
 #include "rawimagesource.h"
 #include "stdimagesource.h"
 #include "iccstore.h"
+#include "imgiomanager.h"
+#define BENCHMARK
+#include "StopWatch.h"
 
 
 namespace rtengine {
@@ -35,33 +38,24 @@ extern const Settings *settings;
 using namespace rtengine;
 using namespace procparams;
 
-PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width, int height, bool enable_cms)
+PreviewImage::PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width, int height, bool enable_cms, bool compute_histogram):
+    fname_(fname),
+    ext_(ext),
+    width_(width),
+    height_(height),
+    enable_cms_(enable_cms),
+    compute_histogram_(compute_histogram),
+    loaded_(false),
+    imgprof_(nullptr)
 {
-    auto lext = ext.lowercase();
+}
 
-    if (lext == "jpg" || lext == "jpeg" || lext == "png" || lext == "tif" || lext == "tiff") {
-        img_.reset(load_img(fname, width, height));
-    } else if (settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
-        img_.reset(load_raw(fname, width, height));
-        if (settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING) {
-            enable_cms = false;
-        }
-    } else {
-        img_.reset(load_raw_preview(fname, width, height));
+
+PreviewImage::~PreviewImage()
+{
+    if (imgprof_) {
+        cmsCloseProfile(imgprof_);
     }
-
-    if (img_) {
-        try {
-            previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, img_->getWidth(), img_->getHeight());
-            previewImage->flush();
-            render(enable_cms);
-        } catch (std::exception &exc) {
-            if (settings->verbose) {
-                std::cout << "ERROR in creating PreviewImage: " << exc.what() << std::endl;
-            }
-            previewImage.clear();
-        }
-    }    
 }
 
 
@@ -71,9 +65,11 @@ void PreviewImage::render(bool enable_cms)
         cmsHTRANSFORM xform = nullptr;
         if (enable_cms) {
             cmsHPROFILE mprof = ICCStore::getInstance()->getProfile(ICCStore::getInstance()->getDefaultMonitorProfileName());
-            cmsHPROFILE iprof = ICCStore::getInstance()->getsRGBProfile();
+            cmsHPROFILE iprof = imgprof_ ? imgprof_ : ICCStore::getInstance()->getsRGBProfile();
             if (mprof) {
+                lcmsMutex->lock();
                 xform = cmsCreateTransform(iprof, TYPE_RGB_8, mprof, TYPE_RGB_8, settings->monitorIntent, cmsFLAGS_NOCACHE | (settings->monitorBPC ? cmsFLAGS_BLACKPOINTCOMPENSATION : 0));
+                lcmsMutex->unlock();
             }
         }
         const unsigned char *data = img_->data;
@@ -117,8 +113,46 @@ void PreviewImage::render(bool enable_cms)
 }
 
 
+void PreviewImage::load()
+{
+    loaded_ = true;
+
+    auto lext = ext_.lowercase();
+
+    if (lext == "jpg" || lext == "jpeg" || lext == "png" /*|| lext == "tif" || lext == "tiff" || ImageIOManager::getInstance()->canLoad(lext)*/) {
+        img_.reset(load_img(fname_, width_, height_));
+    } else if (settings->thumbnail_inspector_mode == Settings::ThumbnailInspectorMode::RAW) {
+        img_.reset(load_raw(fname_, width_, height_));
+        if (settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING) {
+            enable_cms_ = false;
+        }
+    } else {
+        img_.reset(load_raw_preview(fname_, width_, height_));
+    }
+    if (!img_ && (lext == "tif" || lext == "tiff" || ImageIOManager::getInstance()->canLoad(lext))) {
+        img_.reset(load_img(fname_, width_, height_));
+    }
+    
+    if (img_) {
+        try {
+            previewImage = Cairo::ImageSurface::create(Cairo::FORMAT_RGB24, img_->getWidth(), img_->getHeight());
+            previewImage->flush();
+            render(enable_cms_);
+        } catch (std::exception &exc) {
+            if (settings->verbose) {
+                std::cout << "ERROR in creating PreviewImage: " << exc.what() << std::endl;
+            }
+            previewImage.clear();
+        }
+    }    
+}
+
+
 Cairo::RefPtr<Cairo::ImageSurface> PreviewImage::getImage()
 {
+    if (!loaded_) {
+        load();
+    }
     return previewImage;
 }
 
@@ -126,7 +160,7 @@ Cairo::RefPtr<Cairo::ImageSurface> PreviewImage::getImage()
 Image8 *PreviewImage::load_img(const Glib::ustring &fname, int w, int h)
 {
     StdImageSource imgSrc;
-    if (imgSrc.load (fname)) {
+    if (imgSrc.load(fname, std::max(w, 0), std::max(h, 0))) {
         return nullptr;
     }
 
@@ -136,7 +170,6 @@ Image8 *PreviewImage::load_img(const Glib::ustring &fname, int w, int h)
         w = img->getWidth();
         h = img->getHeight();
     } else {
-        std::cout << "BOUNDING BOX: " << w << "x" << h << std::endl;
         // (w, h) is a bounding box
         double sw = std::max(double(img->getWidth()) / w, 1.0);
         double sh = std::max(double(img->getHeight()) / h, 1.0);
@@ -149,6 +182,8 @@ Image8 *PreviewImage::load_img(const Glib::ustring &fname, int w, int h)
         }
     }
 
+    bool has_profile = img->getEmbeddedProfile();
+
     Image8 *ret = new Image8(w, h);
 
     if (img->getType() == sImage8) {
@@ -156,13 +191,72 @@ Image8 *PreviewImage::load_img(const Glib::ustring &fname, int w, int h)
     } else if (img->getType() == sImage16) {
         static_cast<Image16 *>(img)->resizeImgTo(w, h, TI_Bilinear, ret);
     } else if (img->getType() == sImagefloat) {
-        static_cast<Imagefloat *>(img)->resizeImgTo(w, h, TI_Bilinear, ret);
+        // do the CMS conversion here
+        Imagefloat *f = static_cast<Imagefloat *>(img);
+        if (has_profile) {
+            lcmsMutex->lock();
+            cmsHTRANSFORM xform = cmsCreateTransform(
+                img->getEmbeddedProfile(),
+                TYPE_RGB_FLT,
+                ICCStore::getInstance()->getsRGBProfile(), TYPE_RGB_FLT,
+                INTENT_RELATIVE_COLORIMETRIC,
+                cmsFLAGS_NOOPTIMIZE|cmsFLAGS_NOCACHE);
+            lcmsMutex->unlock();
+            f->normalizeFloatTo1();
+            f->ExecCMSTransform(xform);
+            f->normalizeFloatTo65535();
+            cmsDeleteTransform(xform);
+        }
+        has_profile = false;
+        f->resizeImgTo(w, h, TI_Bilinear, ret);
     } else {
         delete ret;
         ret = nullptr;
     }
-    
+
+    if (ret && has_profile) {
+        int length = 0;
+        unsigned char *data = nullptr;
+        img->getEmbeddedProfileData(length, data);
+        if (data) {
+            imgprof_ = cmsOpenProfileFromMem(data, length);
+        }
+    }
+
+    if (ret && compute_histogram_) {
+        get_histogram(ret);
+    }        
+
     return ret;
+}
+
+
+void PreviewImage::get_histogram(Image8 *img)
+{
+    for (int i = 0; i < 3; ++i) {
+        hist_[i](256);
+    }
+
+    const int W = img->getWidth();
+    const int H = img->getHeight();
+#ifdef _OPENMP
+#   pragma omp parallel for
+#endif
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            hist_[0][img->r(y, x)]++;
+            hist_[1][img->g(y, x)]++;
+            hist_[2][img->b(y, x)]++;
+        }
+    }
+}
+
+
+void PreviewImage::getHistogram(LUTu &r, LUTu &g, LUTu &b)
+{
+    r = hist_[0];
+    g = hist_[1];
+    b = hist_[2];
 }
 
 
@@ -176,33 +270,11 @@ Image8 *PreviewImage::load_raw_preview(const Glib::ustring &fname, int w, int h)
         return nullptr;
     }
 
-    int err = 1;
-
-    // See if it is something we support
-    if (!ri.checkThumbOk()) {
+    Image8 *img = ri.getThumbnail();
+    if (!img) {
         return nullptr;
     }
-
-    Image8 *img = new Image8();
-    // No sample format detection occurred earlier, so we set them here,
-    // as they are mandatory for the setScanline method
-    img->setSampleFormat(IIOSF_UNSIGNED_CHAR);
-    img->setSampleArrangement(IIOSA_CHUNKY);
-
-    const char *data ((const char*)fdata (ri.get_thumbOffset(), ri.get_file()));
-
-    if ((unsigned char)data[1] == 0xd8) {
-        err = img->loadJPEGFromMemory(data, ri.get_thumbLength());
-    } else if (ri.is_ppmThumb()) {
-        err = img->loadPPMFromMemory(data, ri.get_thumbWidth(), ri.get_thumbHeight(), ri.get_thumbSwap(), ri.get_thumbBPS());
-    }
-
-    // did we succeed?
-    if (err) {
-        delete img;
-        return nullptr;
-    }
-
+    
     if (w > 0 && h > 0) {
         double fw = img->getWidth();
         double fh = img->getHeight();
@@ -230,6 +302,25 @@ Image8 *PreviewImage::load_raw_preview(const Glib::ustring &fname, int w, int h)
         img->rotate(ri.get_rotateDegree());
     }
 
+    if (compute_histogram_) {
+        for (int i = 0; i < 3; ++i) {
+            hist_[i](256);
+            for (int j = 0; j < 256; ++j) {
+                hist_[i][j] = 0;
+            }
+        }
+
+        const int W = img->getWidth();
+        const int H = img->getHeight();
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                hist_[0][img->r(y, x)]++;
+                hist_[1][img->g(y, x)]++;
+                hist_[2][img->b(y, x)]++;
+            }
+        }
+    }
+
     return img;
 }
 
@@ -241,103 +332,10 @@ public:
     PreviewRawImageSource(int bw, int bh):
         RawImageSource(),
         bbox_W_(bw),
-        bbox_H_(bh)
+        bbox_H_(bh),
+        demosaiced_(false),
+        scaled_(false)
     {
-    }
-
-    void rescale()
-    {
-        if (bbox_W_ < 0 || bbox_H_ < 0) {
-            return;
-        }
-        if (fuji || d1x) {
-            return;
-        }
-        if (numFrames != 1) {
-            return;
-        }
-
-        // (w, h) is a bounding box
-        double sw = std::max(double(W) / bbox_W_, 1.0);
-        double sh = std::max(double(H) / bbox_H_, 1.0);
-        int skip = std::max(sw, sh);
-        
-        if (skip <= 1) {
-            return;
-        }
-
-        if (ri->getSensorType() == ST_BAYER) {
-            skip /= 2;
-            if (skip & 1) {
-                --skip;
-            }
-            if (skip <= 1) {
-                return;
-            }
-
-            if (settings->verbose) {
-                std::cout << "SKIP: " << skip << ", FROM: " << W << "x" << H
-                          << " to " << (W/skip) << "x" << (H/skip) << std::endl;
-            }
-            
-            array2D<float> tmp;
-            tmp(W, H, static_cast<float *>(rawData), 0);
-            W /= skip;
-            H /= skip;
-            rawData.free();
-            rawData(W, H);
-            
-#ifdef _OPENMP
-#           pragma omp parallel for
-#endif
-            for (int y = 0; y < H; ++y) {
-                int yy = y * skip + int(y & 1);
-                for (int x = 0; x < W; ++x) {
-                    int xx = x * skip + int(x & 1);
-                    rawData[y][x] = tmp[yy][xx];
-                }
-            }
-            flushRGB();
-            red(W, H);
-            green(W, H);
-            blue(W, H);
-        } else if (ri->getSensorType() == ST_FUJI_XTRANS) {
-            return; // TODO
-        } else {
-            int c = ri->get_colors();
-            if (c > 3) {
-                return;
-            }
-
-            if (settings->verbose) {
-                std::cout << "SKIP: " << skip << ", FROM: " << W << "x" << H
-                          << " to " << (W/skip) << "x" << (H/skip) << std::endl;
-            }
-            
-            array2D<float> tmp;
-            tmp(W * c, H, static_cast<float *>(rawData), 0);
-            W /= skip;
-            H /= skip;
-            rawData.free();
-            rawData(W * c, H);
-            
-#ifdef _OPENMP
-#           pragma omp parallel for
-#endif
-            for (int y = 0; y < H; ++y) {
-                int yy = y * skip;
-                for (int x = 0; x < W; ++x) {
-                    int xx = x * skip;
-                    for (int j = 0; j < c; ++j) {
-                        rawData[y][c * x + j] = tmp[yy][c * xx + j];
-                    }
-                }
-            }
-            flushRGB();
-            red(W, H);
-            green(W, H);
-            blue(W, H);
-        }
     }
 
     bool mark_clipped()
@@ -432,9 +430,249 @@ public:
         }
     }
 
+    void fast_demosaic(bool mono)
+    {
+        if (settings->verbose > 1) {
+            std::cout << "FAST PREVIEW DEMOSAIC: " << fileName << std::endl;
+        }
+        
+        BENCHFUN
+            
+        scaled_ = rescale(mono);
+        
+        if (demosaiced_) {
+            return;
+        } else if (!mono && scaled_ && ri->isBayer()) {
+            bayer_bilinear_demosaic(rawData, red, green, blue);
+            return;
+        }
+
+        ProcParams pp;
+        pp.raw.bayersensor.method = RAWParams::BayerSensor::Method::FAST;
+        pp.raw.xtranssensor.method = RAWParams::XTransSensor::Method::FAST;
+
+        if (mono) {
+            pp.raw.bayersensor.method = RAWParams::BayerSensor::Method::MONO;
+            pp.raw.xtranssensor.method = RAWParams::XTransSensor::Method::MONO;
+        }
+
+        double t = 0;
+        RawImageSource::demosaic(pp.raw, false, t);
+    }
+
+    void getFullSize(int &w, int &h, int tr=TR_NONE) override
+    {
+        if (scaled_) {
+            w = W;
+            h = H;
+
+            if (ri) {
+                tr = defTransform(ri, tr);
+            }
+
+            if ((tr & TR_ROT) == TR_R90 || (tr & TR_ROT) == TR_R270) {
+                std::swap(w, h);
+            }
+
+            constexpr int border = 8;
+            w -= border;
+            h -= border;
+        } else {
+            RawImageSource::getFullSize(w, h, tr);
+        }
+    }
+
 private:
+    bool rescale(bool mono)
+    {
+        //return false;
+        
+        if (bbox_W_ < 0 || bbox_H_ < 0) {
+            return false;
+        }
+        if (fuji || d1x) {
+            return false;
+        }
+        if (numFrames != 1) {
+            return false;
+        }
+
+        // (w, h) is a bounding box
+        double sw = std::max(double(W) / bbox_W_, 1.0);
+        double sh = std::max(double(H) / bbox_H_, 1.0);
+        int skip = std::max(sw, sh);
+
+        if (settings->verbose > 1) {
+            std::cout << "  skip calculation: W = " << W << ", bbox_W = " << bbox_W_ << ", H = " << H << ", bbox_H_ = " << bbox_H_ << ", skip = " << skip << std::endl;
+        }
+        
+        if (skip <= 1) {
+            return false;
+        }
+
+        if (ri->getSensorType() == ST_BAYER) {
+            if (settings->verbose > 1) {
+                std::cout << "SKIP: " << skip << ", FROM: " << W << "x" << H
+                          << " to " << (W/skip) << "x" << (H/skip) << std::endl;
+            }
+
+            if (!mono) {
+                // direct half-size demosaic
+                if (!ri || ri->get_ISOspeed() > 200) {
+                    skip /= 2;
+                }
+                if (skip & 1) {
+                    --skip;
+                }
+                if (skip <= 1) {
+                    return false;
+                }
+                
+                int ww = (W / skip) - 1;
+                int hh = (H / skip) - 1;
+                flushRGB();
+                red(ww, hh);
+                green(ww, hh);
+                blue(ww, hh);
+
+                int yr = 0, xr = 0;
+                int yg = 0, xg = 0;
+                int yb = 0, xb = 0;
+                switch (FC(0, 0)) {
+                case 0:
+                    xg = 1;
+                    xb = 1;
+                    yb = 1;
+                    break;
+                case 1:
+                    if (FC(0, 1) == 2) {
+                        xb = 1;
+                        yr = 1;
+                    } else {
+                        xr = 1;
+                        yb = 1;
+                    }
+                    break;
+                default:
+                    xg = 1;
+                    xr = 1;
+                    yr = 1;
+                    break;
+                }
+
+#ifdef _OPENMP
+#               pragma omp parallel for
+#endif
+                for (int y = 0; y < hh; ++y) {
+                    int yy = y * skip;
+                    for (int x = 0; x < ww; ++x) {
+                        int xx = x * skip;
+                        red[y][x] = rawData[yy+yr][xx+xr];
+                        green[y][x] = rawData[yy+yg][xx+xg];
+                        blue[y][x] = rawData[yy+yb][xx+xb];
+                    }
+                }
+
+                rawData.free();
+                W = ww;
+                H = hh;
+                demosaiced_ = true;
+            } else {
+                array2D<float> tmp;
+                tmp(W, H, static_cast<float *>(rawData), 0);
+                W /= skip;
+                H /= skip;
+                rawData.free();
+                rawData(W, H);
+            
+#ifdef _OPENMP
+#               pragma omp parallel for
+#endif
+                for (int y = 0; y < H; ++y) {
+                    int yy = y * skip + int(y & 1);
+                    for (int x = 0; x < W; ++x) {
+                        int xx = x * skip + int(x & 1);
+                        rawData[y][x] = tmp[yy][xx];
+                    }
+                }
+                flushRGB();
+                red(W, H);
+                green(W, H);
+                blue(W, H);
+            }
+        } else if (ri->getSensorType() == ST_FUJI_XTRANS) {
+            return false; // TODO
+        } else {
+            int c = ri->get_colors();
+            if (c > 3) {
+                return false;
+            }
+
+            if (settings->verbose > 1) {
+                std::cout << "SKIP: " << skip << ", FROM: " << W << "x" << H
+                          << " to " << (W/skip) << "x" << (H/skip) << std::endl;
+            }
+            
+            array2D<float> tmp;
+            tmp(W * c, H, static_cast<float *>(rawData), 0);
+            W /= skip;
+            H /= skip;
+            rawData.free();
+            rawData(W * c, H);
+            
+#ifdef _OPENMP
+#           pragma omp parallel for
+#endif
+            for (int y = 0; y < H; ++y) {
+                int yy = y * skip;
+                for (int x = 0; x < W; ++x) {
+                    int xx = x * skip;
+                    for (int j = 0; j < c; ++j) {
+                        rawData[y][c * x + j] = tmp[yy][c * xx + j];
+                    }
+                }
+            }
+            flushRGB();
+            red(W, H);
+            green(W, H);
+            blue(W, H);
+        }
+        return true;
+    }
+
+    void bayer_bilinear_demosaic(const array2D<float> &rawData, array2D<float> &red, array2D<float> &green, array2D<float> &blue)
+    {
+        //BENCHFUN
+    #ifdef _OPENMP
+        #pragma omp parallel for
+    #endif
+        for (int i = 1; i < H - 1; ++i) {
+            float **nonGreen1 = red;
+            float **nonGreen2 = blue;
+            if (FC(i, 0) == 2 || FC(i, 1) == 2) { // blue row => swap pointers
+                std::swap(nonGreen1, nonGreen2);
+            }
+    #if defined(__clang__)
+            #pragma clang loop vectorize(assume_safety)
+    #elif defined(__GNUC__)
+            #pragma GCC ivdep
+    #endif
+            for (int j = 2 - (FC(i, 1) & 1); j < W - 2; j += 2) { // always begin with a green pixel
+                green[i][j] = rawData[i][j];
+                nonGreen1[i][j] = (rawData[i][j - 1] + rawData[i][j + 1]) * 0.5f;
+                nonGreen2[i][j] = (rawData[i - 1][j] + rawData[i + 1][j]) * 0.5f;
+                green[i][j + 1] = ((rawData[i - 1][j + 1] + rawData[i][j]) + (rawData[i][j + 2] + rawData[i + 1][j + 1])) * 0.25f;
+                nonGreen1[i][j + 1] = rawData[i][j + 1];
+                nonGreen2[i][j + 1] = ((rawData[i - 1][j] + rawData[i - 1][j + 2]) + (rawData[i + 1][j] + rawData[i + 1][j + 2])) * 0.25f;
+            }
+        }
+        border_interpolate2(W, H, 2, rawData, red, green, blue);
+    }
+    
     int bbox_W_;
     int bbox_H_;
+    bool demosaiced_;
+    bool scaled_;
 };
 
 } // namespace
@@ -451,26 +689,24 @@ Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
     const bool show_clip = settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::RAW_CLIPPING;
 
     ProcParams neutral;
-    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
-    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
     neutral.icm.inputProfile = "(camera)";
-    neutral.icm.workingProfile = options.rtSettings.srgb;
-
+    neutral.icm.workingProfile = "sRGB";
     if (show_clip) {
-        neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::MONO);
-        neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::MONO);
+        neutral.raw.bayersensor.method = RAWParams::BayerSensor::Method::MONO;
+        neutral.raw.xtranssensor.method = RAWParams::XTransSensor::Method::MONO;
     }
 
-    src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false);
-    double thresholdDummy = 0.f;
+    ColorTemp wb = show_clip ? ColorTemp() : src.getWB();
+    src.preprocess(neutral.raw, neutral.lensProf, neutral.coarse, false, wb);
 
-    src.rescale();
-    src.demosaic(neutral.raw, false, thresholdDummy);
+    //src.rescale();
+    src.fast_demosaic(show_clip);
 
+    if (compute_histogram_) {
+        src.getRAWHistogram(hist_[0], hist_[1], hist_[2]);
+    }
+    
     bool marked = show_clip && src.mark_clipped();
-    // if (show_clip) {
-    //     src.mark_clipped();
-    // }
 
     int fw, fh;
     src.getFullSize(fw, fh);
@@ -498,7 +734,6 @@ Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
     int ih = fh / int(scale);
 
     Imagefloat tmp(iw, ih);
-    ColorTemp wb = src.getWB();
     if (show_clip) {
         wb = ColorTemp();
     }
@@ -512,18 +747,20 @@ Image8 *PreviewImage::load_raw(const Glib::ustring &fname, int w, int h)
     LUTi gamma(65536);
     const bool apply_curve = settings->thumbnail_inspector_raw_curve != Settings::ThumbnailInspectorRawCurve::LINEAR && !show_clip;
     if (apply_curve) {
-        static const std::vector<double> shadowcurve = {
-            DCT_CatumullRom,
-            0, 0,
-            0.1, 0.4,
-            0.70, 0.75,
-            1, 1
-        };
-        DiagonalCurve curve(settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::FILM ? curves::filmcurve_def : shadowcurve);
-        for (int i = 0; i < 65536; ++i) {
-            float x = Color::gamma_srgbclipped(i) / 65535.f;
-            float y = curve.getVal(x) * 255.f;
-            gamma[i] = y;
+        if (settings->thumbnail_inspector_raw_curve == Settings::ThumbnailInspectorRawCurve::FILM) {
+            DiagonalCurve curve(curves::filmcurve_def);
+            for (int i = 0; i < 65536; ++i) {
+                float x = Color::gamma_srgbclipped(i) / 65535.f;
+                float y = curve.getVal(x) * 255.f;
+                gamma[i] = y;
+            }
+        } else {
+            constexpr float base = 500.f;
+            for (int i = 0; i < 65536; ++i) {
+                float x = float(i)/65535.f;
+                float y = xlin2log(x, base);
+                gamma[i] = y * 255.f;
+            }
         }
     } else {
         for (int i = 0; i < 65536; ++i) {

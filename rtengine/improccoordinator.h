@@ -17,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _IMPROCCOORDINATOR_H_
-#define _IMPROCCOORDINATOR_H_
+#pragma once
 
 #include "rtengine.h"
 #include "improcfun.h"
@@ -30,8 +29,10 @@
 #include "LUT.h"
 #include "../rtgui/threadutils.h"
 
-namespace rtengine
-{
+#include <mutex>
+#include <condition_variable>
+
+namespace rtengine {
 
 using namespace procparams;
 
@@ -48,7 +49,7 @@ class Crop;
   * but using this class' LUT and other precomputed parameters. The main preview area is displaying a non framed Crop object,
   * while detail windows are framed Crop objects.
   */
-class ImProcCoordinator : public StagedImageProcessor
+class ImProcCoordinator : public StagedImageProcessor, public HistogramObservable
 {
 
     friend class Crop;
@@ -56,7 +57,10 @@ class ImProcCoordinator : public StagedImageProcessor
 protected:
     Imagefloat *orig_prev;
     Imagefloat *oprevi;
+    Imagefloat *spotprev;
     Imagefloat *bufs_[3];
+    std::array<bool, 4> pipeline_stop_;
+    
     Imagefloat *drcomp_11_dcrop_cache; // global cache for dynamicRangeCompression used in 1:1 detail windows (except when denoise is active)
     Image8 *previmg;  // displayed image in monitor color space, showing the output profile as well (soft-proofing enabled, which then correspond to workimg) or not
     Image8 *workimg;  // internal image in output color space for analysis
@@ -74,7 +78,7 @@ protected:
     Glib::ustring monitorProfile;
     RenderingIntent monitorIntent;
     bool softProof;
-    bool gamutCheck;
+    GamutCheck gamutCheck;
     bool sharpMask;
 
     int scale;
@@ -91,7 +95,18 @@ protected:
     LUTu histGreen, histGreenRaw;
     LUTu histBlue, histBlueRaw;
     LUTu histLuma, histToneCurve, histLCurve, histCCurve;
-    LUTu histLLCurve, histLCAM, histCCAM, histChroma, histLRETI;
+    LUTu /*histLLCurve,*/ histLCAM, histCCAM, histChroma, histLRETI;
+
+    bool hist_lrgb_dirty;
+    /// Used to simulate a lazy update of the raw histogram.
+    bool hist_raw_dirty;
+    int vectorscopeScale;
+    bool vectorscope_hc_dirty, vectorscope_hs_dirty;
+    array2D<int> vectorscope_hc, vectorscope_hs;
+    /// Waveform's intensity. Same as height of reference image.
+    int waveformScale;
+    bool waveform_dirty;
+    array2D<int> waveformRed, waveformGreen, waveformBlue, waveformLuma;    
     // ------------------------------------------------------------------------------------
 
     int fw, fh, tr, fullw, fullh;
@@ -106,6 +121,7 @@ protected:
     AutoContrastListener *xtransAutoContrastListener;
     FrameCountListener *frameCountListener;
     ImageTypeListener *imageTypeListener;
+    FilmNegListener *filmNegListener;
 
     AutoChromaListener* adnListener;
 
@@ -120,15 +136,30 @@ protected:
     bool resultValid;
 
     MyMutex minit;  // to gain mutually exclusive access to ... to what exactly?
+    void backupParams();
+    void restoreParams();
 
     void progress (Glib::ustring str, int pr);
     void reallocAll ();
-    void updateLRGBHistograms();
+    void allocCache (Imagefloat* &imgfloat);
     void setScale (int prevscale);
     void updatePreviewImage (int todo, bool panningRelatedChange);
+    void updateWB();
 
+    void notifyHistogramChanged();
+    /// Updates L, R, G, and B histograms. Returns true unless not updated.
+    bool updateLRGBHistograms();
+    /// Updates the H-C vectorscope. Returns true unless not updated.
+    bool updateVectorscopeHC();
+    /// Updates the H-S vectorscope. Returns true unless not updated.
+    bool updateVectorscopeHS();
+    /// Updates all waveforms. Returns true unless not updated.
+    bool updateWaveforms();
+    
     MyMutex mProcessing;
     ProcParams params;
+    ProcParams paramsBackup;
+    TweakOperator* tweakOperator;
 
     // for optimization purpose, the output profile, output rendering intent and
     // output BPC will trigger a regeneration of the profile on parameter change only
@@ -138,8 +169,10 @@ protected:
     bool lastOutputBPC;
 
     // members of the updater:
-    Glib::Thread* thread;
-    MyMutex updaterThreadStart;
+    std::mutex updater_mutex_;
+    std::condition_variable updater_cond_;
+    
+    // MyMutex updaterThreadStart;
     MyMutex paramsUpdateMutex;
     int  changeSinceLast;
     bool updaterRunning;
@@ -148,8 +181,10 @@ protected:
     void startProcessing ();
     void process ();
     bool highQualityComputed;
-    cmsHTRANSFORM customTransformIn;
-    cmsHTRANSFORM customTransformOut;
+
+    void wait_not_running();
+    void set_updater_running(bool val);
+    
 public:
 
     ImProcCoordinator ();
@@ -198,27 +233,32 @@ public:
     }
 
     DetailedCrop* createCrop  (::EditDataProvider *editDataProvider, bool isDetailWindow) override;
+    void setTweakOperator (TweakOperator *tOperator) override;
+    void unsetTweakOperator (TweakOperator *tOperator) override;
 
     bool getAutoWB   (double& temp, double& green, double equal) override;
     void getCamWB    (double& temp, double& green) override;
     void getSpotWB   (int x, int y, int rectSize, double& temp, double& green) override;
     void getAutoCrop (double ratio, int &x, int &y, int &w, int &h) override;
-    bool getFilmNegativeExponents(int xA, int yA, int xB, int yB, std::array<float, 3>& newExps) override;
     bool getHighQualComputed() override;
     void setHighQualComputed() override;
     void setMonitorProfile (const Glib::ustring& profile, RenderingIntent intent) override;
     void getMonitorProfile (Glib::ustring& profile, RenderingIntent& intent) const override;
-    void setSoftProofing   (bool softProof, bool gamutCheck) override;
-    void getSoftProofing   (bool &softProof, bool &gamutCheck) override;
+    void setSoftProofing   (bool softProof, GamutCheck gamutCheck) override;
     void setSharpMask      (bool sharpMask) override;
     bool updateTryLock () override
     {
-        return updaterThreadStart.trylock();
+        //return updaterThreadStart.trylock();
+        set_updater_running(true);
+        return true;
     }
     void updateUnLock () override
     {
-        updaterThreadStart.unlock();
+        //updaterThreadStart.unlock();
+        set_updater_running(false);
     }
+
+    bool is_running() const;
 
     void setProgressListener (ProgressListener* pl) override
     {
@@ -246,7 +286,13 @@ public:
     }
     void setHistogramListener (HistogramListener *h) override
     {
+        if (hListener) {
+            hListener->setObservable(nullptr);
+        }
         hListener = h;
+        if (h) {
+            h->setObservable(this);
+        }
     }
     void setAutoWBListener   (AutoWBListener* awb) override
     {
@@ -281,6 +327,11 @@ public:
         imageTypeListener = itl;
     }
 
+    void setFilmNegListener(FilmNegListener* fnl) override
+    {
+        filmNegListener = fnl;
+    }
+
     void setAutoLogListener(AutoLogListener *l) override
     {
         autoLogListener = l;
@@ -298,29 +349,20 @@ public:
         return imgsrc;
     }
 
-    cmsHTRANSFORM& getCustomTransformIn ()
-    {
-        return customTransformIn;
-    }
-
-    cmsHTRANSFORM& getCustomTransformOut ()
-    {
-        return customTransformOut;
-    }
-
     bool getDeltaELCH(EditUniqueID id, int x, int y, float &L, float &C, float &H) override;
 
-    /* struct DenoiseInfoStore { */
-    /*     DenoiseInfoStore () : chM (0), max_r{}, max_b{}, ch_M{}, valid (false)  {} */
-    /*     float chM; */
-    /*     float max_r[9]; */
-    /*     float max_b[9]; */
-    /*     float ch_M[9]; */
-    /*     bool valid; */
-
-    /* } */
     ImProcFunctions::DenoiseInfoStore denoiseInfoStore;
 
+    void requestUpdateHistogram() override;
+    void requestUpdateHistogramRaw() override;
+    void requestUpdateVectorscopeHC() override;
+    void requestUpdateVectorscopeHS() override;
+    void requestUpdateWaveform() override;
+
+    // returns true if some mask is being displayed on the image
+    bool is_mask_image() const;
+
+    bool getFilmNegativeSpot(int x, int y, const int spotSize, FilmNegativeParams::RGB &refInput, FilmNegativeParams::RGB &refOutput);
 };
-}
-#endif
+
+} // namespace rtengine

@@ -30,7 +30,8 @@ ProfileStore::ProfileStore():
     internalDefaultProfile(nullptr),
     internalDefaultEntry(nullptr),
     internalDynamicEntry(nullptr),
-    loadAll(true)
+    loadAll(true),
+    pl_(nullptr)
 {
 }
 
@@ -143,12 +144,12 @@ void ProfileStore::_parseProfiles ()
     // entries and partProfiles are empty, but the entry and profiles already exist (they have survived to clearFileList and clearProfileList)
     if (!internalDefaultEntry) {
         assert(!internalDefaultProfile);
-        internalDefaultProfile = new rtengine::procparams::FilePartialProfile("", true);
-        internalDefaultEntry = new ProfileStoreEntry (Glib::ustring ("(") + M ("PROFILEPANEL_PINTERNAL") + Glib::ustring (")"), PSET_FILE, 0, 0);
+        internalDefaultProfile = new rtengine::procparams::FullPartialProfile(rtengine::procparams::ProcParams());
+        internalDefaultEntry = new ProfileStoreEntry(Glib::ustring ("(") + M ("PROFILEPANEL_PINTERNAL") + Glib::ustring (")"), PSET_FILE, 0, 0);
     }
 
     entries.push_back (internalDefaultEntry);
-    partProfiles[internalDefaultEntry] = *internalDefaultProfile; 
+    //partProfiles[internalDefaultEntry] = *internalDefaultProfile; 
 
     if (!internalDynamicEntry) {
         internalDynamicEntry = new ProfileStoreEntry (Glib::ustring ("(") + M ("PROFILEPANEL_PDYNAMIC") + Glib::ustring (")"), PSET_FILE, 0, 0);
@@ -219,7 +220,7 @@ bool ProfileStore::parseDir (Glib::ustring& realPath, Glib::ustring& virtualPath
 
                 if (lastdot != Glib::ustring::npos && lastdot == currDir.length() - 4 && currDir.substr (lastdot).casefold() == paramFileExtension) {
                     // file found
-                    if ( options.rtSettings.verbose ) {
+                    if (options.rtSettings.verbose > 1) {
                         printf ("Processing file %s...", fname.c_str());
                     }
 
@@ -227,12 +228,12 @@ bool ProfileStore::parseDir (Glib::ustring& realPath, Glib::ustring& virtualPath
 
                     // create the partial profile
                     rtengine::procparams::ProcParams pp;
-                    int res = pp.load(fname);
+                    int res = pp.load(pl_, fname);
 
                     if (!res && pp.ppVersion >= 220) {
                         fileFound = true;
 
-                        if ( options.rtSettings.verbose ) {
+                        if (options.rtSettings.verbose > 1) {
                             printf ("OK\n");
                         }
 
@@ -241,8 +242,8 @@ bool ProfileStore::parseDir (Glib::ustring& realPath, Glib::ustring& virtualPath
                         entries.push_back (filePSE);
 
                         // map the partial profile
-                        partProfiles[filePSE] = FilePartialProfile(fname);
-                    } else if ( options.rtSettings.verbose ) {
+                        partProfiles[filePSE] = FilePartialProfile(pl_, fname, false);
+                    } else if (options.rtSettings.verbose > 1) {
                         printf ("failed!\n");
                     }
                 }
@@ -291,7 +292,7 @@ const ProfileStoreEntry* ProfileStore::findEntryFromFullPathU (Glib::ustring pat
         parseProfilesOnce();
     }
 
-    if (path == DEFPROFILE_INTERNAL || path == DEFPROFILE_DYNAMIC) {
+    if (path == Options::DEFPROFILE_INTERNAL || path == Options::DEFPROFILE_DYNAMIC) {
         return internalDefaultEntry;
     }
 
@@ -375,6 +376,10 @@ const PartialProfile *ProfileStore::getProfile(const ProfileStoreEntry* entry)
     }
 
     MyMutex::MyLock lock (parseMutex);
+
+    if (entry == internalDefaultEntry) {
+        return internalDefaultProfile;
+    }
 
     auto iter = partProfiles.find(entry);
 
@@ -515,7 +520,7 @@ std::unique_ptr<PartialProfile> ProfileStore::loadDynamicProfile(const FramesMet
                 printf("found matching profile %s\n", rule.profilepath.c_str());
             }
 
-            FilePartialProfile fp(pth);
+            FilePartialProfile fp(pl_, pth, false);
             if (!fp.applyTo(pp)) {
                 printf ("ERROR loading matching profile from: %s\n", pth.c_str());
             }

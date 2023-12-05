@@ -79,9 +79,9 @@ public:
         return save(fname);
     }
 
-    int saveAsPNG(const Glib::ustring &fname, int bps = -1) const override
+    int saveAsPNG(const Glib::ustring &fname, int bps = -1, bool uncompressed=false) const override
     {
-        return savePNG(fname, bps);
+        return savePNG(fname, bps, uncompressed);
     }
 
     int saveAsJPEG(const Glib::ustring &fname, int quality = 100, int subSamp = 3) const override

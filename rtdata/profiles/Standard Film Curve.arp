@@ -1,0 +1,17 @@
+[Version]
+Version=1040
+
+[Exposure]
+HLRecovery=Balanced
+
+[ToneCurve]
+Enabled=true
+Contrast=0
+HistogramMatching=false
+CurveFromHistogramMatching=false
+CurveMode=Neutral
+Curve=1;0;0;0.11;0.089999999999999997;0.32000000000000001;0.46999999999999997;0.66000000000000003;0.87;1;1;
+Curve2=0;
+Saturation=1;0;0.47999999999999998;0.33999999999999997;0.34999999999999998;1;0.47999999999999998;0.34999999999999998;0.34999999999999998;
+Saturation2=0;
+WhitePoint=1

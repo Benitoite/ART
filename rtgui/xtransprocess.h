@@ -48,6 +48,8 @@ protected:
     rtengine::ProcEvent EvDemosaicAutoContrast;
     rtengine::ProcEvent EvDemosaicContrast;
 
+    rtengine::procparams::RAWParams::XTransSensor initial_params;
+
 public:
 
     XTransProcess ();
@@ -62,6 +64,8 @@ public:
     void adjusterChanged(Adjuster* a, double newval) override;
     void checkBoxToggled(CheckBox* c, CheckValue newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

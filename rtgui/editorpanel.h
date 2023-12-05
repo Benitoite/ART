@@ -18,10 +18,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EDITORPANEL_
-#define _EDITORPANEL_
+#pragma once
 
 #include <gtkmm.h>
+#include <memory>
 #include "imageareapanel.h"
 #include "toolpanelcoord.h"
 #include "profilepanel.h"
@@ -46,6 +46,7 @@ struct EditorPanelIdleHelper {
 };
 
 class RTWindow;
+using rtengine::array2D;
 
 class EditorPanel final :
     public Gtk::VBox,
@@ -53,7 +54,9 @@ class EditorPanel final :
     public rtengine::ProgressListener,
     public ThumbnailListener,
     public HistoryBeforeAfterListener,
-    public rtengine::HistogramListener
+    public rtengine::HistogramListener,
+    public HistogramPanelListener,
+    public rtengine::SizeListener
 {
 public:
     explicit EditorPanel (FilePanel* filePanel = nullptr);
@@ -65,10 +68,7 @@ public:
     void leftPaneButtonReleased (GdkEventButton *event);
     void rightPaneButtonReleased (GdkEventButton *event);
 
-    void setParent (RTWindow* p)
-    {
-        parent = p;
-    }
+    void setParent(RTWindow* p);
 
     void setParentWindow (Gtk::Window* p)
     {
@@ -123,9 +123,29 @@ public:
         const LUTu& histGreenRaw,
         const LUTu& histBlueRaw,
         const LUTu& histChroma,
-        const LUTu& histLRETI
+        const LUTu& histLRETI,
+        int vectorscopeScale,
+        const array2D<int>& vectorscopeHC,
+        const array2D<int>& vectorscopeHS,
+        int waveformScale,
+        const array2D<int>& waveformRed,
+        const array2D<int>& waveformGreen,
+        const array2D<int>& waveformBlue,
+        const array2D<int>& waveformLuma
     ) override;
+    void setObservable(rtengine::HistogramObservable* observable) override;
+    bool updateHistogram(void) const override;
+    bool updateHistogramRaw(void) const override;
+    bool updateVectorscopeHC(void) const override;
+    bool updateVectorscopeHS(void) const override;
+    bool updateWaveform(void) const override;
 
+    // HistogramPanelListener
+    void scopeTypeChanged(Options::ScopeType new_type) override;
+
+    // SizeListener
+    void sizeChanged(int w, int h, int ow, int oh) override;
+    
     // event handlers
     void info_toggled ();
     void hideHistoryActivated ();
@@ -150,11 +170,16 @@ public:
     Glib::ustring getShortName ();
     Glib::ustring getFileName ();
     bool handleShortcutKey (GdkEventKey* event);
+    bool keyPressedBefore(GdkEventKey *event);
+    bool keyReleased(GdkEventKey *event);
+    bool scrollPressed(GdkEventScroll *event);
 
     bool getIsProcessing() const
     {
-        return isProcessing;
+        return isProcessing || !can_open_now();
     }
+    void setIsProcessing() { isProcessing = true; }
+    
     void updateProfiles (const Glib::ustring &printerProfile, rtengine::RenderingIntent printerIntent, bool printerBPC);
     void updateTPVScrollbar (bool hide);
     void updateHistogramPosition (int oldPosition, int newPosition);
@@ -165,19 +190,24 @@ public:
 
     Gtk::Paned* catalogPane;
 
-private:
+    void cleanup();
     void close ();
+    
+private:
 
-    BatchQueueEntry *createBatchQueueEntry(bool fast_export=false);
-    bool                idle_imageSaved (ProgressConnector<int> *pc, rtengine::IImagefloat* img, Glib::ustring fname, SaveFormat sf, rtengine::procparams::ProcParams &pparams);
-    bool                idle_saveImage (ProgressConnector<rtengine::IImagefloat*> *pc, Glib::ustring fname, SaveFormat sf, rtengine::procparams::ProcParams &pparams);
-    bool                idle_sendToGimp ( ProgressConnector<rtengine::IImagefloat*> *pc, Glib::ustring fname);
-    bool                idle_sentToGimp (ProgressConnector<int> *pc, rtengine::IImagefloat* img, Glib::ustring filename);
-    void                histogramProfile_toggled ();
+    BatchQueueEntry *createBatchQueueEntry(bool fast_export, bool use_batch_queue_profile, const rtengine::procparams::PartialProfile *export_profile);
+    bool idle_imageSaved(ProgressConnector<int> *pc, rtengine::IImagefloat* img, Glib::ustring fname, SaveFormat sf, rtengine::procparams::ProcParams &pparams);
+    bool idle_saveImage(ProgressConnector<rtengine::IImagefloat*> *pc, Glib::ustring fname, SaveFormat sf, rtengine::procparams::ProcParams &pparams);
+    bool idle_sendToGimp( ProgressConnector<rtengine::IImagefloat*> *pc, Glib::ustring fname);
+    bool idle_sentToGimp(ProgressConnector<int> *pc, rtengine::IImagefloat* img, Glib::ustring filename);
+    void histogramProfile_toggled();
 
     void do_save_image(bool fast_export);
     void do_queue_image(bool fast_export);
+    bool autosave();
 
+    bool can_open_now() const;
+    
     Glib::ustring lastSaveAsFileName;
     bool realized;
 
@@ -245,8 +275,8 @@ private:
     int selectedFrame;
 
     rtengine::InitialImage* isrc;
-    rtengine::StagedImageProcessor* ipc;
-    rtengine::StagedImageProcessor* beforeIpc;    // for the before-after view
+    std::shared_ptr<rtengine::StagedImageProcessor> ipc;
+    std::shared_ptr<rtengine::StagedImageProcessor> beforeIpc;    // for the before-after view
 
     EditorPanelIdleHelper* epih;
 
@@ -259,7 +289,12 @@ private:
     bool isProcessing;
 
     IdleRegister idle_register;
-};
 
-#endif
+    rtengine::HistogramObservable* histogram_observable;
+    Options::ScopeType histogram_scope_type;
+
+    sigc::connection autosave_conn_;
+
+    std::unique_ptr<ToolShortcutManager> shortcut_mgr_;
+};
 

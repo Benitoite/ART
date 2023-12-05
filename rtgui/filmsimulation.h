@@ -27,23 +27,23 @@
 #include "toolpanel.h"
 #include "guiutils.h"
 #include "adjuster.h"
+#include "clutparamspanel.h"
 
-class ClutComboBox : public MyComboBox
-{
+
+class ClutComboBox: public MyComboBox {
 public:
-    explicit ClutComboBox(const Glib::ustring &path);
+    explicit ClutComboBox(const std::vector<Glib::ustring> &paths);
     //int fillFromDir (const Glib::ustring& path);
     int foundClutsCount() const;
-    Glib::ustring getSelectedClut();
-    void setSelectedClut( Glib::ustring filename );
+    std::pair<Glib::ustring, Glib::ustring> getSelectedClut();
+    void setSelectedClut(Glib::ustring filename);
 
     static void cleanup();
 
 private:
     void updateUnchangedEntry(); // in batchMode we need to add an extra entry "(Unchanged)". We do this whenever the widget is mapped (connecting to signal_map()), unless options.multiDisplayMode (see the comment below about cm2 in this case)
 
-    class ClutColumns : public Gtk::TreeModel::ColumnRecord
-    {
+    class ClutColumns: public Gtk::TreeModel::ColumnRecord {
     public:
         Gtk::TreeModelColumn<Glib::ustring> label;
         Gtk::TreeModelColumn<Glib::ustring> clutFilename;
@@ -55,8 +55,8 @@ private:
         Glib::RefPtr<Gtk::TreeStore> m_model;
         ClutColumns m_columns;
         int count;
-        explicit ClutModel(const Glib::ustring &path);
-        int parseDir (const Glib::ustring& path);
+        explicit ClutModel(const std::vector<Glib::ustring> &paths);
+        int parseDir(const std::vector<Glib::ustring> &paths);
     };
 
     Glib::RefPtr<Gtk::TreeStore> &m_model();
@@ -68,8 +68,8 @@ private:
     static std::unique_ptr<ClutModel> cm2; // ... except when options.multiDisplayMode (i.e. editors in their own window), where we need two. This is because we might have two combo boxes displayed at the same time in this case
 };
 
-class FilmSimulation : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
-{
+
+class FilmSimulation: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
 public:
     FilmSimulation();
 
@@ -79,17 +79,30 @@ public:
     void write(rtengine::procparams::ProcParams* pp) override;
     void trimValues(rtengine::procparams::ProcParams* pp) override;
 
+    void setDefaults(const rtengine::procparams::ProcParams *pp) override;
+    void toolReset(bool to_initial) override;
+
 private:
     void onClutSelected();
+    void onClutParamsChanged();
     void enabledChanged() override;
-
-    void updateDisable( bool value );
+    void updateDisable(bool value);
+    void afterToneCurveToggled();
 
     ClutComboBox *m_clutComboBox;
     sigc::connection m_clutComboBoxConn;
-    Glib::ustring m_oldClutFilename;
+    //Glib::ustring m_oldClutFilename;
 
     Adjuster *m_strength;
+    Gtk::CheckButton *after_tone_curve_;
+    Gtk::HBox *after_tone_curve_box_;
+
+    CLUTParamsPanel *lut_params_;
+    
+    rtengine::procparams::FilmSimulationParams initial_params;
+
+    rtengine::ProcEvent EvAfterToneCurve;
+    rtengine::ProcEvent EvClutParams;
 };
 
 #endif

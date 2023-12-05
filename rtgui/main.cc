@@ -1,25 +1,25 @@
 /*
- *  This file is part of RawTherapee.
+ *  This file is part of ART.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
  *
- *  RawTherapee is free software: you can redistribute it and/or modify
+ *  ART is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  RawTherapee is distributed in the hope that it will be useful,
+ *  ART is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with ART.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifdef __GNUC__
 #if defined(__FAST_MATH__)
-#error Using the -ffast-math CFLAG is known to lead to problems. Disable it to compile RawTherapee.
+#error Using the -ffast-math CFLAG is known to lead to problems. Disable it to compile ART.
 #endif
 #endif
 
@@ -40,6 +40,9 @@
 #include "extprog.h"
 #include "../rtengine/dynamicprofile.h"
 #include "printhelp.h"
+#include "wbprovider.h"
+#include "pathutils.h"
+#include "session.h"
 
 #ifndef WIN32
 #include <glibmm/fileutils.h>
@@ -49,6 +52,10 @@
 #else
 #include <glibmm/thread.h>
 #include "conio.h"
+#endif
+
+#ifdef WITH_MIMALLOC
+#  include <mimalloc.h>
 #endif
 
 // Set this to 1 to make RT work when started with Eclipse and arguments, at least on Windows platform
@@ -65,30 +72,10 @@ Glib::ustring argv2;
 bool simpleEditor = false;
 bool gimpPlugin = false;
 bool remote = false;
+bool is_session = false;
 unsigned char initialGdkScale = 1;
-//Glib::Threads::Thread* mainThread;
 
-namespace
-{
-
-// For an unknown reason, Glib::filename_to_utf8 doesn't work on reliably Windows,
-// so we're using Glib::filename_to_utf8 for Linux/Apple and Glib::locale_to_utf8 for Windows.
-Glib::ustring fname_to_utf8 (const char* fname)
-{
-#ifdef WIN32
-
-    try {
-        return Glib::locale_to_utf8 (fname);
-    } catch (Glib::Error&) {
-        return Glib::convert_with_fallback (fname, "UTF-8", "ISO-8859-1", "?");
-    }
-
-#else
-
-    return Glib::filename_to_utf8 (fname);
-
-#endif
-}
+namespace {
 
 // This recursive mutex will be used by gdk_threads_enter/leave instead of a simple mutex
 static Glib::Threads::RecMutex myGdkRecMutex;
@@ -97,15 +84,9 @@ static void myGdkLockEnter()
 {
     myGdkRecMutex.lock();
 }
+
 static void myGdkLockLeave()
 {
-    // Automatic gdk_flush for non main thread
-#if AUTO_GDK_FLUSH
-    //if (Glib::Thread::self() != mainThread) {
-    //    gdk_flush();
-    //}
-
-#endif
     myGdkRecMutex.unlock();
 }
 
@@ -142,70 +123,105 @@ void process_help_params(int argc, char **argv)
  *  -1 if there is an error in parameters
  *  -2 if an error occurred during processing
  *  -3 if at least one required procparam file was not found */
-int processLineParams ( int argc, char **argv )
+int processLineParams(int argc, char **argv)
 {
+    Glib::setenv("ART_IS_SESSION", "0");
     int ret = 1;
-    for ( int iArg = 1; iArg < argc; iArg++) {
+    for (int iArg = 1; iArg < argc; iArg++) {
         Glib::ustring currParam (argv[iArg]);
-        if ( currParam.empty() ) {
+        if (currParam.empty()) {
             continue;
         }
 #if ECLIPSE_ARGS
-        currParam = currParam.substr (1, currParam.length() - 2);
+        currParam = currParam.substr(1, currParam.length() - 2);
 #endif
 
-        if ( currParam.at (0) == '-' && currParam.size() > 1 ) {
-            switch ( currParam.at (1) ) {
+        if (currParam[0] == '-' && currParam.size() > 1) {
+            switch (currParam[1]) {
 #ifdef WIN32
 
-                case 'w': // This case is handled outside this function
-                    break;
+            case 'w': // This case is handled outside this function
+                break;
 #endif
 
-                case 'v':
-                    printf("%s, version %s\n", RTNAME, RTVERSION);
-                    ret = 0;
-                    break;
+            case 'v':
+                printf("%s, version %s\n", RTNAME, RTVERSION);
+                ret = 0;
+                break;
 
 #ifndef __APPLE__ // TODO agriggio - there seems to be already some "single instance app" support for OSX in rtwindow. Disabling it here until I understand how to merge the two
 
-                case 'R':
-                    if (!gimpPlugin) {
-                        remote = true;
-                    }
+            case 'R':
+                if (!gimpPlugin) {
+                    remote = true;
+                }
 
-                    break;
+                break;
 #endif
-                case '-':
-                    if (currParam.substr(5) == "--gtk" || currParam == "--g-fatal-warnings") {
+            case 's':
+                simpleEditor = true;
+                remote = false;
+                break;
+                
+            case '-':
+                if (currParam.substr(5) == "--gtk" || currParam == "--g-fatal-warnings") {
+                    break;
+                }
+
+            case 'g':
+                if (currParam == "-gimp") {
+                    gimpPlugin = true;
+                    simpleEditor = true;
+                    remote = false;
+                    break;
+                }
+
+            case 'S':
+                if (remote) {
+                    Glib::setenv("ART_IS_SESSION", "1");
+                    if (currParam == "-S") {
+                        if (iArg+1 < argc && argv[iArg+1][0] != '-') {
+                            ++iArg;
+                            art::session::load(Glib::ustring(fname_to_utf8(argv[iArg])));
+                        } else {
+                            art::session::load(art::session::filename() + ".last");
+                        }
+                        break;
+                    } else if (currParam == "-Sc") {
+                        art::session::clear();
+                        break;
+                    } else if (currParam == "-Sa" || currParam == "-Sr") {
+                        std::vector<Glib::ustring> fnames;
+                        ++iArg;
+                        while (iArg < argc && argv[iArg][0] != '-') {
+                            fnames.emplace_back(fname_to_utf8(argv[iArg]));
+                            ++iArg;
+                        }
+                        if (currParam == "-Sa") {
+                            art::session::add(fnames);
+                        } else {
+                            art::session::remove(fnames);
+                        }
                         break;
                     }
-
-                case 'g':
-                    if (currParam == "-gimp") {
-                        gimpPlugin = true;
-                        simpleEditor = true;
-                        remote = false;
-                        break;
-                    }
-
+                }
                 // no break here on purpose
 
-                case 'h':
-                case '?':
-                default:
-                    ART_print_help(argv[0], true);
-                    ret = -1;
-                    break;
+            case 'h':
+            case '?':
+            default:
+                ART_print_help(argv[0], true);
+                ret = -1;
+                break;
             }
         } else {
             if (argv1.empty()) {
-                argv1 = Glib::ustring (fname_to_utf8 (argv[iArg]));
+                argv1 = Glib::ustring(fname_to_utf8(argv[iArg]));
 #if ECLIPSE_ARGS
-                argv1 = argv1.substr (1, argv1.length() - 2);
+                argv1 = argv1.substr(1, argv1.length() - 2);
 #endif
             } else if (gimpPlugin) {
-                argv2 = Glib::ustring (fname_to_utf8 (argv[iArg]));
+                argv2 = Glib::ustring(fname_to_utf8(argv[iArg]));
                 break;
             }
 
@@ -221,8 +237,9 @@ int processLineParams ( int argc, char **argv )
 
 bool init_rt()
 {
-    extProgStore->init();
+    UserCommandStore::getInstance()->init(Glib::build_filename(options.rtdir, "usercommands"));
     SoundManager::init();
+    wb_presets::init(argv0, options.rtdir);
 
     if ( !options.rtSettings.verbose ) {
         TIFFSetWarningHandler (nullptr);   // avoid annoying message boxes
@@ -263,8 +280,8 @@ class RTApplication: public Gtk::Application
 {
 public:
     RTApplication():
-        Gtk::Application ("com.rawtherapee.application",
-                          Gio::APPLICATION_HANDLES_OPEN),
+        Gtk::Application("us.pixls.art.application",
+                         Gio::APPLICATION_SEND_ENVIRONMENT|Gio::APPLICATION_HANDLES_COMMAND_LINE),
         rtWindow (nullptr)
     {
     }
@@ -272,12 +289,13 @@ public:
     ~RTApplication() override
     {
         if (rtWindow) {
-            delete rtWindow;
+//            delete rtWindow;
+            art::session::save(art::session::filename() + ".last");
+            art::session::clear();
+            cleanup_rt();
         }
-
-        cleanup_rt();
     }
-
+    
 private:
     bool create_window()
     {
@@ -292,56 +310,71 @@ private:
             return false;
         } else {
             rtWindow = create_rt_window();
-            add_window (*rtWindow);
+            add_window(*rtWindow);
             return true;
         }
     }
 
-    // Override default signal handlers:
-    void on_activate() override
+    int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine> &command_line) override
     {
-        if (create_window()) {
-            rtWindow->present();
+        auto s = command_line->getenv("ART_IS_SESSION");
+        if (!s.empty() && atoi(s.c_str())) {
+            is_session = true;
         }
-    }
-
-    void on_open (const Gio::Application::type_vec_files& files,
-                  const Glib::ustring& hint) override
-    {
-        if (create_window()) {
-            struct Data {
-                std::vector<Thumbnail *> entries;
-                Glib::ustring lastfilename;
-                FileCatalog *filecatalog;
-            };
-            Data *d = new Data;
-            d->filecatalog = rtWindow->fpanel->fileCatalog;
-
-            for (const auto &f : files) {
-                Thumbnail *thm = cacheMgr->getEntry (f->get_path());
-
-                if (thm) {
-                    d->entries.push_back (thm);
-                    d->lastfilename = f->get_path();
-                }
-            }
-
-            if (!d->entries.empty()) {
+        int argc = 0;
+        auto argv = command_line->get_arguments(argc);
+        if (is_session) {
+            bool raise = !rtWindow;
+            if (create_window()) {
                 const auto doit =
-                [] (gpointer data) -> gboolean {
-                    Data *d = static_cast<Data *> (data);
-                    d->filecatalog->openRequested (d->entries);
-                    d->filecatalog->selectImage (d->lastfilename, true);
-                    delete d;
-                    return FALSE;
-                };
-                gdk_threads_add_idle (doit, d);
-            } else {
-                delete d;
+                    [] (gpointer data) -> gboolean {
+                        FileCatalog *filecatalog = static_cast<FileCatalog *>(data);
+                        if (!art::session::check(filecatalog->lastSelectedDir())) {
+                            filecatalog->dirSelected(art::session::path(), "");
+                        }
+                        return FALSE;
+                    };
+                gdk_threads_add_idle(doit, rtWindow->fpanel->fileCatalog);
+                if (raise) {
+                    rtWindow->present();
+                }
+                return 0;
             }
+        } else if (argc == 2) {
+            if (create_window()) {
+                struct Data {
+                    Glib::ustring dirname;
+                    Glib::ustring fname;
+                    FileCatalog *filecatalog;
+                };
+                Data *d = new Data;
+                d->fname = argv[1];
+                if (Glib::file_test(d->fname, Glib::FILE_TEST_IS_DIR)) {
+                    d->dirname = d->fname;
+                    d->fname = "";
+                } else {
+                    d->dirname = Glib::path_get_dirname(d->fname);
+                }
+                d->filecatalog = rtWindow->fpanel->fileCatalog;
 
-            rtWindow->present();
+                const auto doit =
+                    [] (gpointer data) -> gboolean {
+                        Data *d = static_cast<Data *>(data);
+                        d->filecatalog->dirSelected(d->dirname, d->fname);
+                        delete d;
+                        return FALSE;
+                    };
+                gdk_threads_add_idle(doit, d);
+                rtWindow->present();
+                return 0;
+            }
+        } else {
+            if (create_window()) {
+                rtWindow->present();
+                return 0;
+            }
         }
+        return 1;
     }
 
 private:
@@ -361,17 +394,22 @@ void show_gimp_plugin_info_dialog(Gtk::Window *parent)
     }
 }
 
+
 } // namespace
 
 
 int main (int argc, char **argv)
 {
+#ifdef WITH_MIMALLOC
+    mi_version();
+#endif
+    
     setlocale (LC_ALL, "");
     setlocale (LC_NUMERIC, "C"); // to set decimal point to "."
 
     simpleEditor = false;
     gimpPlugin = false;
-    remote = false;
+    remote = true;
     argv0 = "";
     argv1 = "";
     argv2 = "";
@@ -379,7 +417,7 @@ int main (int argc, char **argv)
     process_help_params(argc, argv);
 
     Glib::init();  // called by Gtk::Main, but this may be important for thread handling, so we call it ourselves now
-    Gio::init ();
+    Gio::init();
 
 #ifdef WIN32
     if (GetFileType (GetStdHandle (STD_OUTPUT_HANDLE)) == 0x0003) {
@@ -408,6 +446,8 @@ int main (int argc, char **argv)
     // set paths
     if (Glib::path_is_absolute (DATA_SEARCH_PATH)) {
         argv0 = DATA_SEARCH_PATH;
+    } else if (strcmp(DATA_SEARCH_PATH, ".") == 0) {
+        argv0 = exePath;
     } else {
         argv0 = Glib::build_filename (exePath, DATA_SEARCH_PATH);
     }
@@ -432,6 +472,13 @@ int main (int argc, char **argv)
     licensePath = LICENCE_SEARCH_PATH;
     options.rtSettings.lensfunDbDirectory = LENSFUN_DB_PATH;
 #endif
+
+    Glib::ustring fatalError;
+    try {
+        Options::load();
+    } catch (Options::Error &e) {
+        fatalError = e.get_msg();
+    }
 
 #ifdef WIN32
     bool consoleOpened = false;
@@ -510,14 +557,6 @@ int main (int argc, char **argv)
 
 #endif
 
-    Glib::ustring fatalError;
-
-    try {
-        Options::load();
-    } catch (Options::Error &e) {
-        fatalError = e.get_msg();
-    }
-
     if (gimpPlugin) {
         if (!Glib::file_test (argv1, Glib::FILE_TEST_EXISTS) || Glib::file_test (argv1, Glib::FILE_TEST_IS_DIR)) {
             printf ("Error: argv1 doesn't exist\n");
@@ -528,20 +567,20 @@ int main (int argc, char **argv)
             printf ("Error: -gimp requires two arguments\n");
             return 1;
         }
-    } else if (!remote && Glib::file_test(argv1, Glib::FILE_TEST_EXISTS) && !Glib::file_test(argv1, Glib::FILE_TEST_IS_DIR)) {
-        simpleEditor = true;
+    } else if (!remote && !(Glib::file_test(argv1, Glib::FILE_TEST_EXISTS) && !Glib::file_test(argv1, Glib::FILE_TEST_IS_DIR))) {
+        simpleEditor = false;
     }
 
     int ret = 0;
 
     if (options.pseudoHiDPISupport) {
-		// Reading/updating GDK_SCALE early if it exists
-		const gchar *gscale = g_getenv("GDK_SCALE");
-		if (gscale && gscale[0] == '2') {
-			initialGdkScale = 2;
-		}
-		// HOMBRE: On Windows, if resolution is set to 200%, Gtk internal variables are SCALE=2 and DPI=96
-		g_setenv("GDK_SCALE", "1", true);
+        // Reading/updating GDK_SCALE early if it exists
+        const gchar *gscale = g_getenv("GDK_SCALE");
+        if (gscale && gscale[0] == '2') {
+            initialGdkScale = 2;
+        }
+        // HOMBRE: On Windows, if resolution is set to 200%, Gtk internal variables are SCALE=2 and DPI=96
+        g_setenv("GDK_SCALE", "1", true);
     }
 
     gdk_threads_set_lock_functions (G_CALLBACK (myGdkLockEnter), (G_CALLBACK (myGdkLockLeave)));
@@ -558,7 +597,7 @@ int main (int argc, char **argv)
         }
 
         RTApplication app;
-        ret = app.run (app_argc, app_argv);
+        ret = app.run(app_argc, app_argv);
     } else {
         if (fatalError.empty() && init_rt()) {
             Gtk::Main m (&argc, &argv);

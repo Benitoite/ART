@@ -36,18 +36,32 @@ namespace rtengine {
  */
 class PreviewImage {
 public:
-    PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width=-1, int height=-1, bool enable_cms=false);
+    PreviewImage(const Glib::ustring &fname, const Glib::ustring &ext, int width=-1, int height=-1, bool enable_cms=false, bool compute_histogram=false);
+    ~PreviewImage();
 
     Cairo::RefPtr<Cairo::ImageSurface> getImage();
+    void getHistogram(LUTu &r, LUTu &g, LUTu &b);
 
 private:
+    void load();
     Image8 *load_raw(const Glib::ustring &fname, int width, int height);
     Image8 *load_raw_preview(const Glib::ustring &fname, int width, int height);
     Image8 *load_img(const Glib::ustring &fname, int width, int height);
     void render(bool enable_cms);
+    void get_histogram(Image8 *img);
+
+    Glib::ustring fname_;
+    Glib::ustring ext_;
+    int width_;
+    int height_;
+    bool enable_cms_;
+    bool compute_histogram_;
+    bool loaded_;
     
     std::unique_ptr<Image8> img_;
     Cairo::RefPtr<Cairo::ImageSurface> previewImage;
+    std::array<LUTu, 3> hist_;
+    cmsHPROFILE imgprof_;
 };
 
 } // namespace rtengine

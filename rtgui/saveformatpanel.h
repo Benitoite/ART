@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,51 +17,49 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __SAVEFORMATPANEL_H__
-#define __SAVEFORMATPANEL_H__
+#pragma once
 
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "guiutils.h"
 #include "options.h"
+#include "../rtengine/imgiomanager.h"
 
-class FormatChangeListener
-{
+class FormatChangeListener {
 public:
     virtual ~FormatChangeListener() = default;
     virtual void formatChanged(const Glib::ustring& format) = 0;
 };
 
-class SaveFormatPanel : public Gtk::Grid, public AdjusterListener
-{
 
+class SaveFormatPanel: public Gtk::Grid, public AdjusterListener {
 protected:
-    Adjuster*           jpegQual;
-    Gtk::CheckButton*   tiffUncompressed;
-    MyComboBoxText*     format;
-    MyComboBoxText*     jpegSubSamp;
-    Gtk::Grid*          formatOpts;
-    Gtk::Grid*          jpegOpts;
-    Gtk::Label*         jpegSubSampLabel;
-    FormatChangeListener* listener;
-    Gtk::CheckButton*   savesPP;
-
+    Adjuster *jpegQual;
+    Gtk::CheckButton *tiffUncompressed;
+    MyComboBoxText *format;
+    MyComboBoxText *jpegSubSamp;
+    Gtk::Grid *formatOpts;
+    Gtk::Grid *jpegOpts;
+    Gtk::Label *jpegSubSampLabel;
+    FormatChangeListener *listener;
+    Gtk::CheckButton *savesPP;
+    std::vector<std::pair<std::string, rtengine::ImageIOManager::SaveFormatInfo>> extrafmts_;
 
 public:
-
-    SaveFormatPanel ();
-    ~SaveFormatPanel () override;
-    void        setListener     (FormatChangeListener* l)
+    SaveFormatPanel();
+    ~SaveFormatPanel() override;
+    void setListener(FormatChangeListener *l)
     {
         listener = l;
     }
 
-    void        init            (SaveFormat& sf);
-    SaveFormat  getFormat       ();
+    void init(SaveFormat &sf);
+    SaveFormat getFormat();
 
-    void        formatChanged   ();
-    void        adjusterChanged (Adjuster* a, double newval) override;
-    void        adjusterAutoToggled(Adjuster* a, bool newval) override;
+    void formatChanged();
+    void adjusterChanged(Adjuster *a, double newval) override;
+    void adjusterAutoToggled(Adjuster *a, bool newval) override;
+
+    Glib::ustring getExtension();
 };
 
-#endif

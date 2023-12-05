@@ -25,10 +25,7 @@
 #include "lensgeom.h"
 #include "toolpanel.h"
 
-class LensProfilePanel final :
-    public ToolParamBlock,
-    public FoldableToolPanel
-{
+class LensProfilePanel: public ToolParamBlock, public FoldableToolPanel {
 public:
     LensProfilePanel();
 
@@ -45,13 +42,13 @@ public:
     void onLensfunLensChanged();
     void onCorrModeChanged(const Gtk::RadioButton* rbChanged);
 
+    void setDefaults(const rtengine::procparams::ProcParams *def) override;
+    void toolReset(bool to_initial) override;
+
 private:
-    class LFDbHelper final
-    {
+    class LFDbHelper {
     public:
-        class LFModelCam final :
-            public Gtk::TreeModel::ColumnRecord
-        {
+        class LFModelCam: public Gtk::TreeModel::ColumnRecord {
         public:
             LFModelCam()
             {
@@ -62,9 +59,7 @@ private:
             Gtk::TreeModelColumn<Glib::ustring> model;
         };
 
-        class LFModelLens final :
-            public Gtk::TreeModel::ColumnRecord
-        {
+        class LFModelLens: public Gtk::TreeModel::ColumnRecord {
         public:
             LFModelLens()
             {
@@ -87,8 +82,7 @@ private:
         void fillLensfunLenses();
     };
 
-    void updateDisabled(bool enable);
-
+    void updateDisabled();
     bool setLensfunCamera(const Glib::ustring& make, const Glib::ustring& model);
     bool setLensfunLens(const Glib::ustring& lens);
     bool checkLensfunCanCorrect(bool automatch);
@@ -115,6 +109,7 @@ private:
     Gtk::Grid* const modesGrid;
     Gtk::Grid* const distGrid;
     Gtk::RadioButton::Group corrGroup;
+    Gtk::RadioButton *corrExif;
     Gtk::RadioButton* const corrLensfunAutoRB;
     Gtk::RadioButton* const corrLensfunManualRB;
     Gtk::RadioButton* const corrLcpFileRB;
@@ -127,6 +122,8 @@ private:
     Gtk::CheckButton* const ckbUseDist;
     Gtk::CheckButton* const ckbUseVign;
     Gtk::CheckButton* const ckbUseCA;
+
+    rtengine::procparams::LensProfParams initial_params;
 
     static LFDbHelper* lf;
 };

@@ -45,9 +45,9 @@ void imfile_update_progress(IMFILE *f);
 
 IMFILE* fopen (const char* fname);
 IMFILE* gfopen (const char* fname);
-IMFILE* fopen (unsigned* buf, int size);
+IMFILE* fopen (unsigned* buf, ssize_t size);
 void fclose (IMFILE* f);
-inline int ftell (IMFILE* f)
+inline ssize_t ftell (IMFILE* f)
 {
 
     return f->pos;
@@ -59,9 +59,9 @@ inline int feof (IMFILE* f)
     return f->eof;
 }
 
-inline void fseek (IMFILE* f, int p, int how)
+inline void fseek (IMFILE* f, ssize_t p, int how)
 {
-    int fpos = f->pos;
+    ssize_t fpos = f->pos;
 
     if (how == SEEK_SET) {
         f->pos = p;
@@ -100,11 +100,11 @@ inline int getc (IMFILE* f)
     return fgetc(f);
 }
 
-inline int fread (void* dst, int es, int count, IMFILE* f)
+inline int fread (void* dst, ssize_t es, ssize_t count, IMFILE* f)
 {
 
-    int s = es * count;
-    int avail = f->size - f->pos;
+    ssize_t s = es * count;
+    ssize_t avail = f->size - f->pos;
 
     if (s <= avail) {
         memcpy (dst, f->data + f->pos, s);
@@ -127,13 +127,13 @@ inline int fread (void* dst, int es, int count, IMFILE* f)
     }
 }
 
-inline unsigned char* fdata(int offset, IMFILE* f)
+inline unsigned char* fdata(ssize_t offset, IMFILE* f)
 {
     return (unsigned char*)f->data + offset;
 }
 
 int fscanf (IMFILE* f, const char* s ...);
-char* fgets (char* s, int n, IMFILE* f);
+char* fgets (char* s, ssize_t n, IMFILE* f);
 
 #endif
 

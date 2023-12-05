@@ -2,8 +2,7 @@
  *  
  *  This file is part of RawTherapee.
  */
-#ifndef _GRADIENT_H_
-#define _GRADIENT_H_
+#pragma once
 
 #include <gtkmm.h>
 #include "adjuster.h"
@@ -31,6 +30,8 @@ protected:
     rtengine::Coord draggedCenter;
     sigc::connection editConn;
 
+    rtengine::procparams::GradientParams initial_params;
+
     void editToggled ();
 
 public:
@@ -50,12 +51,13 @@ public:
     void setEditProvider (EditDataProvider* provider) override;
 
     // EditSubscriber interface
-    CursorShape getCursor(const int objectID) override;
-    bool mouseOver(const int modifierKey) override;
-    bool button1Pressed(const int modifierKey) override;
+    CursorShape getCursor(int objectID) override;
+    bool mouseOver(int modifierKey) override;
+    bool button1Pressed(int modifierKey) override;
     bool button1Released() override;
-    bool drag1(const int modifierKey) override;
+    bool drag1(int modifierKey) override;
     void switchOffEditMode () override;
+
+    void toolReset(bool to_initial) override;
 };
 
-#endif

@@ -24,10 +24,15 @@
 #include "utils.h"
 #include "rt_math.h"
 
+#include <glib/gstdio.h>
+#include <giomm.h>
+#ifdef WIN32
+#  include <windows.h>
+#endif
+
 using namespace std;
 
-namespace rtengine
-{
+namespace rtengine {
 
 void poke255_uc(unsigned char*& dest, unsigned char r, unsigned char g, unsigned char b)
 {
@@ -265,7 +270,51 @@ void swab(const void* from, void* to, ssize_t n)
     }
 }
 
+
+std::string getMD5(const Glib::ustring& fname, bool extended)
+{
+
+#ifdef WIN32
+
+    std::unique_ptr<wchar_t, GFreeFunc> wfname(reinterpret_cast<wchar_t*>(g_utf8_to_utf16(fname.c_str(), -1, NULL, NULL, NULL)), g_free);
+
+    WIN32_FILE_ATTRIBUTE_DATA fileAttr;
+    if (GetFileAttributesExW(wfname.get(), GetFileExInfoStandard, &fileAttr)) {
+        // We use name, size and creation time to identify a file.
+        const auto identifier = Glib::ustring::compose("%1-%2-%3-%4", fileAttr.nFileSizeLow, fileAttr.ftCreationTime.dwHighDateTime, fileAttr.ftCreationTime.dwLowDateTime, fname);
+        return Glib::Checksum::compute_checksum(Glib::Checksum::CHECKSUM_MD5, identifier);
+    }
+
+#else
+
+    const auto file = Gio::File::create_for_path(fname);
+    if (file) {
+
+        try
+        {
+            const auto info = file->query_info("standard::*," G_FILE_ATTRIBUTE_TIME_MODIFIED);
+            if (info) {
+                // We only use name and size to identify a file.
+                Glib::ustring identifier;
+                if (!extended) {
+                    identifier = Glib::ustring::compose("%1%2", fname, info->get_size());
+                } else {
+                    auto tv = info->modification_time();
+                    identifier = Glib::ustring::compose("%1%2-%3%4", fname, info->get_size(), tv.tv_sec, tv.tv_usec);
+                }
+                return Glib::Checksum::compute_checksum(Glib::Checksum::CHECKSUM_MD5, identifier);
+            }
+
+        } catch(Gio::Error&) {}
+    }
+
+#endif
+
+    return {};
 }
+
+
+} // namespace rtengine
 
 #if __SIZEOF_WCHAR_T__ == 4
 Glib::ustring utf32_to_utf8(wchar_t* UTF32Buffer, size_t sizeOfUTF32Buffer)

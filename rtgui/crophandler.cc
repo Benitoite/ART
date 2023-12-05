@@ -26,8 +26,75 @@
 #include "../rtengine/dcrop.h"
 #include "../rtengine/refreshmap.h"
 #include "../rtengine/rt_math.h"
+#include "../rtengine/improcfun.h"
+
+#include "../rtengine/threadpool.h"
+
+#ifdef _OPENMP
+# include <omp.h>
+#endif
 
 using namespace rtengine;
+
+namespace {
+
+
+Glib::RefPtr<Gdk::Pixbuf> resize_fast(Glib::RefPtr<Gdk::Pixbuf> src, int dw, int dh, float scale)
+{
+    auto dst = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, dw, dh);
+    src->scale(dst, 0, 0, dw, dh, 0, 0, scale, scale, Gdk::INTERP_NEAREST);
+    return dst;
+}
+
+
+Glib::RefPtr<Gdk::Pixbuf> resize_lanczos(Glib::RefPtr<Gdk::Pixbuf> src, int dw, int dh, float scale)
+{
+    const int sW = src->get_width();
+    const int sH = src->get_height();
+    
+    Imagefloat tmps(sW, sH);
+    tmps.assignMode(Imagefloat::Mode::LAB);
+    auto s_data = src->get_pixels();
+    auto s_stride = src->get_rowstride();
+        
+#ifdef _OPENMP
+#   pragma omp parallel for
+#endif
+    for (int y = 0; y < sH; ++y) {
+        auto s_row = s_data + (y * s_stride);
+        for (int x = 0; x < sW; ++x) {
+            tmps.r(y, x) = s_row[x * 3];
+            tmps.g(y, x) = s_row[x * 3 + 1];
+            tmps.b(y, x) = s_row[x * 3 + 2];
+        }
+    }
+
+    Imagefloat tmpd(dw, dh);
+
+    ImProcFunctions ipf(nullptr);
+    ipf.Lanczos(&tmps, &tmpd, scale);
+
+    auto dst = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, dw, dh);
+    auto d_data = dst->get_pixels();
+    auto d_stride = dst->get_rowstride();
+    
+#ifdef _OPENMP
+#   pragma omp parallel for
+#endif
+    for (int y = 0; y < dh; ++y) {
+        auto d_row = d_data + (y * d_stride);
+        for (int x = 0; x < dw; ++x) {
+            d_row[x * 3] = LIM(int(tmpd.r(y, x)), 0, 255); 
+            d_row[x * 3 + 1] = LIM(int(tmpd.g(y, x)), 0, 255);
+            d_row[x * 3 + 2] = LIM(int(tmpd.b(y, x)), 0, 255);
+        }
+    }
+
+    return dst;
+}
+
+} // namespace
+
 
 CropHandler::CropHandler() :
     zoom(100),
@@ -51,7 +118,6 @@ CropHandler::CropHandler() :
     ciw(0),
     cih(0),
     cis(1),
-    isLowUpdatePriority(false),
     ipc(nullptr),
     crop(nullptr),
     displayHandler(nullptr),
@@ -60,7 +126,8 @@ CropHandler::CropHandler() :
 {
 }
 
-CropHandler::~CropHandler ()
+
+CropHandler::~CropHandler()
 {
     idle_register.destroy();
 
@@ -82,9 +149,9 @@ void CropHandler::setEditSubscriber (EditSubscriber* newSubscriber)
     (static_cast<rtengine::Crop *>(crop))->setEditSubscriber(newSubscriber);
 }
 
-void CropHandler::newImage (StagedImageProcessor* ipc_, bool isDetailWindow)
-{
 
+void CropHandler::newImage(std::shared_ptr<StagedImageProcessor> ipc_, bool isDetailWindow)
+{
     ipc = ipc_;
     cx = 0;
     cy = 0;
@@ -130,7 +197,6 @@ double CropHandler::getFitCropZoom ()
 
 double CropHandler::getFitZoom ()
 {
-
     if (ipc) {
         double z1 = (double) wh / ipc->getFullHeight ();
         double z2 = (double) ww / ipc->getFullWidth ();
@@ -142,7 +208,10 @@ double CropHandler::getFitZoom ()
 
 void CropHandler::setZoom (int z, int centerx, int centery)
 {
-    assert (ipc);
+    //assert (ipc);
+    if (!ipc) {
+        return;
+    }
 
     int oldZoom = zoom;
     float oldScale = zoom >= 1000 ? float(zoom / 1000) : 10.f / float(zoom);
@@ -191,15 +260,46 @@ void CropHandler::setZoom (int z, int centerx, int centery)
 
     compDim ();
 
-    if (enabled && (oldZoom != zoom || oldcax != cax || oldcay != cay || oldCropX != cropX || oldCropY != cropY || oldCropW != cropW || oldCropH != cropH)) {
-        if (needsFullRefresh && !ipc->getHighQualComputed()) {
-            cropPixbuf.clear ();
-            ipc->startProcessing(M_HIGHQUAL);
-            ipc->setHighQualComputed();
-        } else {
-            update ();
+    bool needed = enabled && (oldZoom != zoom || oldcax != cax || oldcay != cay || oldCropX != cropX || oldCropY != cropY || oldCropW != cropW || oldCropH != cropH);
+
+    if (needed) {
+        const auto doit =
+            [this,needsFullRefresh]() -> bool
+            {
+                if (ipc) {
+                    if (needsFullRefresh && !ipc->getHighQualComputed()) {
+                        ipc->startProcessing(M_HIGHQUAL);
+                        ipc->setHighQualComputed();
+                    } else {
+                        update ();
+                    }
+                }
+                return false;
+            };
+
+        if (zoom_conn_.connected()) {
+            zoom_conn_.disconnect();
         }
+        if (cropPixbuf) {
+            cropPixbuf.clear();
+        }
+        if (cropPixbuftrue) {
+            cropPixbuftrue.clear();
+        }
+
+        zoom_conn_ = Glib::signal_timeout().connect(sigc::slot<bool>(doit), options.adjusterMaxDelay);
     }
+    
+    // if (enabled && (oldZoom != zoom || oldcax != cax || oldcay != cay || oldCropX != cropX || oldCropY != cropY || oldCropW != cropW || oldCropH != cropH)) {
+    //     if (needsFullRefresh && !ipc->getHighQualComputed()) {
+    //         cropPixbuf.clear ();
+    //         ipc->startProcessing(M_HIGHQUAL);
+    //         ipc->setHighQualComputed();
+    //     } else {
+    //         update ();
+    //     }
+    // }
+
 }
 
 float CropHandler::getZoomFactor ()
@@ -345,6 +445,7 @@ void CropHandler::setDetailedCrop(
 
                     if (redraw_needed.exchange(false)) {
                         cropPixbuf.clear ();
+                        cropPixbuftrue.clear ();
 
                         if (!enabled) {
                             cropimg.clear();
@@ -370,15 +471,17 @@ void CropHandler::setDetailedCrop(
                                     imh = wh;
                                 }
 
-                                Glib::RefPtr<Gdk::Pixbuf> tmpPixbuf = Gdk::Pixbuf::create_from_data (cropimg.data(), Gdk::COLORSPACE_RGB, false, 8, cropimg_width, cropimg_height, 3 * cropimg_width);
-                                cropPixbuf = Gdk::Pixbuf::create (Gdk::COLORSPACE_RGB, false, 8, imw, imh);
-                                tmpPixbuf->scale (cropPixbuf, 0, 0, imw, imh, 0, 0, czoom, czoom, Gdk::INTERP_TILES);
-                                tmpPixbuf.clear ();
+                                cropPixbuf = Gdk::Pixbuf::create_from_data (cropimg.data(), Gdk::COLORSPACE_RGB, false, 8, cropimg_width, cropimg_height, 3 * cropimg_width);
+                                if (czoom < 1.f) {
+                                    cropPixbuf = resize_lanczos(cropPixbuf, imw, imh, czoom);
+                                } else if (czoom > 1.f) {
+                                    cropPixbuf = resize_fast(cropPixbuf, imw, imh, czoom);
+                                }
 
-                                Glib::RefPtr<Gdk::Pixbuf> tmpPixbuftrue = Gdk::Pixbuf::create_from_data (cropimgtrue.data(), Gdk::COLORSPACE_RGB, false, 8, cropimg_width, cropimg_height, 3 * cropimg_width);
-                                cropPixbuftrue = Gdk::Pixbuf::create (Gdk::COLORSPACE_RGB, false, 8, imw, imh);
-                                tmpPixbuftrue->scale (cropPixbuftrue, 0, 0, imw, imh, 0, 0, czoom, czoom, Gdk::INTERP_TILES);
-                                tmpPixbuftrue.clear ();
+                                cropPixbuftrue = Gdk::Pixbuf::create_from_data (cropimgtrue.data(), Gdk::COLORSPACE_RGB, false, 8, cropimg_width, cropimg_height, 3 * cropimg_width);
+                                if (czoom != 1.f) {
+                                    cropPixbuftrue = resize_fast(cropPixbuftrue, imw, imh, czoom);
+                                }
                             }
 
                             cropimg.clear();
@@ -432,20 +535,27 @@ void CropHandler::update ()
     if (crop && enabled) {
 //        crop->setWindow (cropX, cropY, cropW, cropH, zoom>=1000 ? 1 : zoom); --> we use the "getWindow" hook instead of setting the size before
         crop->setListener (this);
+        cimg.lock();
         cropPixbuf.clear ();
+        cropPixbuftrue.clear();
+        cimg.unlock();
 
         // To save threads, try to mark "needUpdate" without a thread first
         if (crop->tryUpdate()) {
-            if (isLowUpdatePriority) {
-                Glib::Thread::create(sigc::mem_fun(*crop, &DetailedCrop::fullUpdate), 0, false, true, Glib::THREAD_PRIORITY_LOW);
-            } else {
-                Glib::Thread::create(sigc::mem_fun(*crop, &DetailedCrop::fullUpdate), false );
-            }
+            auto i = ipc; // keep a reference around so that ipc doesn't get
+                          // destroyed
+            auto c = crop;
+            const auto upd =
+                [i, c]() -> void
+                {
+                    c->fullUpdate();
+                };
+            rtengine::ThreadPool::add_task(rtengine::ThreadPool::Priority::HIGH, upd);
         }
     }
 }
 
-void CropHandler::setEnabled (bool e)
+void CropHandler::setEnabled(bool e, bool do_update)
 {
 
     enabled = e;
@@ -460,8 +570,8 @@ void CropHandler::setEnabled (bool e)
         cropimgtrue.clear();
         cropPixbuf.clear();
         cimg.unlock();
-    } else {
-        update ();
+    } else if (do_update) {
+        update();
     }
 }
 
@@ -473,6 +583,8 @@ bool CropHandler::getEnabled ()
 
 void CropHandler::colorPick (const rtengine::Coord &pickerPos, float &r, float &g, float &b, float &rpreview, float &gpreview, float &bpreview, LockableColorPicker::Size size)
 {
+
+    //MyMutex::MyLock lock(cimg);
 
     if (!cropPixbuf || !cropPixbuftrue) {
         r = g = b = 0.f;

@@ -25,40 +25,51 @@
 
 class LogEncoding: public ToolParamBlock, public AdjusterListener, public rtengine::AutoLogListener, public FoldableToolPanel
 {
-protected:
+public:
+    LogEncoding();
+
+    void read(const rtengine::procparams::ProcParams *pp) override;
+    void write(rtengine::procparams::ProcParams *pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams *defParams) override;
+
+    void adjusterChanged(Adjuster* a, double newval) override;
+    void adjusterAutoToggled(Adjuster* a, bool newval) override;
+    void enabledChanged() override;
+
+    void logEncodingChanged(const rtengine::procparams::LogEncodingParams &params) override;
+    void autocomputeToggled();
+
+    void toolReset(bool to_initial) override;
+    void registerShortcuts(ToolShortcutManager *mgr) override;
+
+private:
+    void satcontrolChanged();
+
     Gtk::ToggleButton *autocompute;
-    Adjuster *sourceGray;
+    Adjuster *gain;
     Adjuster *targetGray;
     Adjuster *blackEv;
     Adjuster *whiteEv;
     Adjuster *regularization;
+    Gtk::CheckButton *satcontrol;
+    Adjuster *highlightCompression;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAuto;
-    rtengine::ProcEvent EvAutoGrayOn;
-    rtengine::ProcEvent EvAutoGrayOff;
+    rtengine::ProcEvent EvAutoGainOn;
+    rtengine::ProcEvent EvAutoGainOff;
     rtengine::ProcEvent EvAutoBatch;
-    rtengine::ProcEvent EvSourceGray;
-    rtengine::ProcEvent EvSourceGrayAuto;
+    rtengine::ProcEvent EvGain;
+    rtengine::ProcEvent EvGainAuto;
     rtengine::ProcEvent EvTargetGray;
     rtengine::ProcEvent EvBlackEv;
     rtengine::ProcEvent EvWhiteEv;
     rtengine::ProcEvent EvRegularization;
+    rtengine::ProcEvent EvSatControl;
+    rtengine::ProcEvent EvHLCompression;
 
     sigc::connection autoconn;
-    
-public:
-    LogEncoding();
 
-    void read(const rtengine::procparams::ProcParams *pp);
-    void write(rtengine::procparams::ProcParams *pp);
-    void setDefaults(const rtengine::procparams::ProcParams *defParams);
-
-    void adjusterChanged(Adjuster* a, double newval);
-    void adjusterAutoToggled(Adjuster* a, bool newval);
-    void enabledChanged();
-
-    void logEncodingChanged(const rtengine::LogEncodingParams &params);
-    void autocomputeToggled();
+    rtengine::procparams::LogEncodingParams initial_params;
 };
 

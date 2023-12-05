@@ -37,6 +37,8 @@
 #include "ciecam02.h"
 #include "color.h"
 #include "iccstore.h"
+#include "linalgebra.h"
+
 #undef CLIPD
 #define CLIPD(a) ((a)>0.0f?((a)<1.0f?(a):1.0f):0.0f)
 
@@ -459,7 +461,7 @@ void CurveFactory::complexCurve (double ecomp, double black, double hlcompr, dou
         const DiagonalCurve tcurve(curvePoints2, CURVES_MIN_POLY_POINTS / skip);
 
         if (!tcurve.isIdentity()) {
-            customToneCurve2.Set(tcurve, gamma_);
+            customToneCurve2.Set(tcurve);
         }
 
         if (outBeforeCCurveHistogram ) {
@@ -478,7 +480,7 @@ void CurveFactory::complexCurve (double ecomp, double black, double hlcompr, dou
         const DiagonalCurve tcurve(curvePoints, CURVES_MIN_POLY_POINTS / skip);
 
         if (!tcurve.isIdentity()) {
-            customToneCurve1.Set(tcurve, gamma_);
+            customToneCurve1.Set(tcurve);
         }
 
         if (outBeforeCCurveHistogram) {
@@ -524,6 +526,22 @@ void CurveFactory::complexCurve (double ecomp, double black, double hlcompr, dou
 }
 
 
+void CurveFactory::contrastCurve(double contr, LUTu &histogram, LUTf &outCurve,
+                                 int skip)
+{
+    LUTf curve1(65536);
+    LUTf curve2(65536);
+    LUTu dummy;
+    ToneCurve customToneCurve1, customToneCurve2;
+    
+    CurveFactory::complexCurve(0, 0, 0, 0, 0, 0, contr,
+                               { DCT_Linear }, { DCT_Linear },
+                               histogram, curve1, curve2, outCurve, dummy,
+                               customToneCurve1, customToneCurve2,
+                               skip);
+}
+
+
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 void CurveFactory::RGBCurve (const std::vector<double>& curvePoints, LUTf & outCurve, int skip)
@@ -565,37 +583,15 @@ void ToneCurve::Reset()
 }
 
 // Fill a LUT with X/Y, ranged 0xffff
-void ToneCurve::Set(const Curve &pCurve, float gamma)
+void ToneCurve::Set(const Curve &pCurve, float whitecoeff)
 {
+    this->whitecoeff = whitecoeff;
+    this->curve = &pCurve;
+    this->whitept = 65535.f * whitecoeff;
     lutToneCurve(65536);
 
-    if (gamma <= 0.0 || gamma == 1.) {
-        for (int i = 0; i < 65536; i++) {
-            lutToneCurve[i] = (float)pCurve.getVal(float(i) / 65535.f) * 65535.f;
-        }
-    } else if(gamma == (float)Color::sRGBGammaCurve) {
-        // for sRGB gamma we can use luts, which is much faster
-        for (int i = 0; i < 65536; i++) {
-            float val = Color::gammatab_srgb[i] / 65535.f;
-            val = pCurve.getVal(val);
-            val = Color::igammatab_srgb[val * 65535.f];
-            lutToneCurve[i] = val;
-        }
-
-    } else {
-        const float start = expf(gamma * logf( -0.055 / ((1.0 / gamma - 1.0) * 1.055 )));
-        const float slope = 1.055 * powf (start, 1.0 / gamma - 1) - 0.055 / start;
-        const float mul = 1.055;
-        const float add = 0.055;
-
-        // apply gamma, that is 'pCurve' is defined with the given gamma and here we convert it to a curve in linear space
-        for (int i = 0; i < 65536; i++) {
-            float val = float(i) / 65535.f;
-            val = CurveFactory::gamma (val, gamma, start, slope, mul, add);
-            val = pCurve.getVal(val);
-            val = CurveFactory::igamma (val, gamma, start, slope, mul, add);
-            lutToneCurve[i] = val * 65535.f;
-        }
+    for (int i = 0; i < 65536; i++) {
+        lutToneCurve[i] = (float)pCurve.getVal(float(i) / 65535.f) * 65535.f;
     }
 }
 
@@ -921,9 +917,9 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
                 float newr = state.Working2Prophoto[0][0] * r + state.Working2Prophoto[0][1] * g + state.Working2Prophoto[0][2] * b;
                 float newg = state.Working2Prophoto[1][0] * r + state.Working2Prophoto[1][1] * g + state.Working2Prophoto[1][2] * b;
                 float newb = state.Working2Prophoto[2][0] * r + state.Working2Prophoto[2][1] * g + state.Working2Prophoto[2][2] * b;
-                r = newr;
-                g = newg;
-                b = newb;
+                r = CLIP(newr);
+                g = CLIP(newg);
+                b = CLIP(newb);
             }
         };
 
@@ -934,19 +930,19 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
                 float newr = state.Prophoto2Working[0][0] * r + state.Prophoto2Working[0][1] * g + state.Prophoto2Working[0][2] * b;
                 float newg = state.Prophoto2Working[1][0] * r + state.Prophoto2Working[1][1] * g + state.Prophoto2Working[1][2] * b;
                 float newb = state.Prophoto2Working[2][0] * r + state.Prophoto2Working[2][1] * g + state.Prophoto2Working[2][2] * b;
-                r = newr;
-                g = newg;
-                b = newb;
+                r = CLIP(newr);
+                g = CLIP(newg);
+                b = CLIP(newb);
             }
         };
 
     for (size_t i = start; i < end; ++i) {
-        // float r = CLIP(rc[i]);
-        // float g = CLIP(gc[i]);
-        // float b = CLIP(bc[i]);
-        float r = rc[i];
-        float g = gc[i];
-        float b = bc[i];
+        float r = CLIP(rc[i]);
+        float g = CLIP(gc[i]);
+        float b = CLIP(bc[i]);
+        // float r = rc[i];
+        // float g = gc[i];
+        // float b = bc[i];
 
         to_prophoto(r, g, b);
 
@@ -1032,9 +1028,9 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
         if (!isfinite(J) || !isfinite(C) || !isfinite(h)) {
             // this can happen for dark noise colours or colours outside human gamut. Then we just return the curve's result.
             to_working(r, g, b);
-            rc[i] = intp(strength, r, std_r);
-            gc[i] = intp(strength, g, std_g);
-            bc[i] = intp(strength, b, std_b);
+            rc[i] = CLIP(intp(strength, r, std_r));
+            gc[i] = CLIP(intp(strength, g, std_g));
+            bc[i] = CLIP(intp(strength, b, std_b));
 
             continue;
         }
@@ -1197,11 +1193,13 @@ void PerceptualToneCurve::BatchApply(const size_t start, const size_t end, float
         // rc[i] = r;
         // gc[i] = g;
         // bc[i] = b;
-        rc[i] = intp(strength, r, std_r);
-        gc[i] = intp(strength, g, std_g);
-        bc[i] = intp(strength, b, std_b);
+        rc[i] = CLIP(intp(strength, r, std_r));
+        gc[i] = CLIP(intp(strength, g, std_g));
+        bc[i] = CLIP(intp(strength, b, std_b));
     }
 }
+
+
 float PerceptualToneCurve::cf_range[2];
 float PerceptualToneCurve::cf[1000];
 float PerceptualToneCurve::f, PerceptualToneCurve::c, PerceptualToneCurve::nc, PerceptualToneCurve::yb, PerceptualToneCurve::la, PerceptualToneCurve::xw, PerceptualToneCurve::yw, PerceptualToneCurve::zw;
@@ -1302,4 +1300,186 @@ void PerceptualToneCurve::initApplyState(PerceptualToneCurveState &state, const 
     }
 }
 
+
+NeutralToneCurve::ApplyState::ApplyState(const Glib::ustring &workingSpace, const Glib::ustring &outprofile)
+{
+    auto work = ICCStore::getInstance()->workingSpaceMatrix(workingSpace);
+    auto iwork = ICCStore::getInstance()->workingSpaceInverseMatrix(workingSpace);
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            ws[i][j] = work[i][j];
+            iws[i][j] = iwork[i][j];
+        }
+    }
+
+    Mat33<float> om;
+    if (ICCStore::getInstance()->getProfileMatrix(outprofile, om)) {
+        auto iom = inverse(om);
+        to_out = dot_product(iom, work);
+        to_work = dot_product(iwork, om);
+    } else {
+        to_out = identity<float>();
+        to_work = identity<float>();
+    }
+
+    float j, c;
+    const auto hws = xyz_rec2020;
+    Color::rgb2jzczhz(1, 0, 0, j, c, rhue, hws);
+    Color::rgb2jzczhz(0, 0, 1, j, c, bhue, hws);
+    Color::rgb2jzczhz(1, 1, 0, j, c, yhue, hws);
+    float ohue;
+    Color::rgb2jzczhz(1, 0.5, 0, j, c, ohue, hws);
+    yrange = std::abs(ohue - yhue) * 0.8f;
+    rrange = std::abs(ohue - rhue);
+    brange = rrange;
 }
+
+
+void NeutralToneCurve::BatchApply(const size_t start, const size_t end, float *rc, float *gc, float *bc, const ApplyState &state) const
+{
+    Vec3f rgb;
+    Vec3f jch;
+
+    const float Lmax = whitept;
+
+    // from https://github.com/jedypod/gamut-compress
+
+    // Distance limit: How far beyond the gamut boundary to compress
+    //const Vec3<float> dl(1.147f, 1.264f, 1.312f); // original ACES values
+    static const Vec3<float> dl(1.1f, 1.2f, 1.5f); // hand-tuned
+    // Amount of outer gamut to affect
+    //const Vec3<float> th(0.815f, 0.803f, 0.88f); // original ACES values
+    static const Vec3<float> th(0.85f, 0.75f, 0.95f); // hand-tuned
+
+    // Power or Parabolic compression functions: https://www.desmos.com/calculator/nvhp63hmtj
+#if 0 // power compression
+    constexpr float p = 1.2f;
+    const auto scale =
+        [](float l, float t, float p) -> float
+        {
+            return (l - t) / std::pow(std::pow((1.f - t)/(l - t), -p) - 1.f, 1.f/p);
+        };
+    static const Vec3<float> s(scale(dl[0], th[0], p),
+                               scale(dl[1], th[1], p),
+                               scale(dl[2], th[2], p));
+
+    const auto compr =
+        [&](float x, int i) -> float
+        {
+            float t = (x - th[i])/s[i];
+            return th[i] + s[i] * std::pow(t / (1.f + std::pow(t, p)), 1.f/p);
+        };
+#else // parabolic compression
+    const auto scale =
+        [](float l, float t) -> float
+        {
+            return (1.f - t) / std::sqrt(l-1.f);
+        };
+    static const Vec3<float> s(scale(dl[0], th[0]), scale(dl[1], th[1]), scale(dl[2], th[2]));
+
+    const auto compr =
+        [&](float x, int i) -> float
+        {
+            return s[i] * std::sqrt(x - th[i] + SQR(s[i])/4.0f) - s[i] * std::sqrt(SQR(s[i]) / 4.0f) + th[i];            
+        };
+#endif // power/parabolic compression
+
+    const auto gauss =
+        [](float x, float b, float c) -> float
+        {
+            return xexpf(-SQR(x-b)/(2*SQR(c)));
+        };
+
+    for (size_t i = start; i < end; ++i) {
+        rgb[0] = std::max(rc[i] / 65535.f, 0.f);
+        rgb[1] = std::max(gc[i] / 65535.f, 0.f);
+        rgb[2] = std::max(bc[i] / 65535.f, 0.f);
+
+        Color::rgb2jzczhz(rgb[0], rgb[1], rgb[2], jch[0], jch[1], jch[2], state.ws);
+
+        float ilum = jch[0];
+        float hue = jch[2];
+
+        // gamut compression
+        float iY = (rgb[0] + rgb[1] + rgb[2]) / 3.f;
+
+        rgb = dot_product(state.to_out, rgb);
+
+        // Achromatic axis
+        float ac = max(rgb[0], rgb[1], rgb[2]);
+
+        // Inverse RGB Ratios: distance from achromatic axis
+        Vec3<float> d;
+        float aac = std::abs(ac);
+        if (ac != 0.f) {
+            d[0] = (ac - rgb[0])/aac;
+            d[1] = (ac - rgb[1])/aac;
+            d[2] = (ac - rgb[2])/aac;
+        }
+
+        Vec3<float> cd; // Compressed distance
+        for (int i = 0; i < 3; ++i) {
+            cd[i] = d[i] < th[i] ? d[i] : compr(d[i], i);
+        }
+
+        // Inverse RGB Ratios to RGB
+        rgb[0] = ac-cd[0]*aac;
+        rgb[1] = ac-cd[1]*aac;
+        rgb[2] = ac-cd[2]*aac;
+          
+        rgb = dot_product(state.to_work, rgb);
+        
+        float oY = (rgb[0] + rgb[1] + rgb[2]) / 3.f;
+        if (oY > 0.f) {
+            float f = iY / oY;
+            rgb[0] *= f;
+            rgb[1] *= f;
+            rgb[2] *= f;
+            Color::filmlike_clip(&rgb[0], &rgb[1], &rgb[2], Lmax);
+        }
+        
+        // apply the curve
+        for (int j = 0; j < 3; ++j) {
+            float nt = rgb[j] * 65535.f;
+            curves::setLutVal(lutToneCurve, curve, nt);
+            rgb[j] = nt / 65535.f;
+        }
+
+        Color::rgb2jzczhz(rgb[0], rgb[1], rgb[2], jch[0], jch[1], jch[2], state.ws);
+
+#if 0
+        float red_dist = LIM01(std::sqrt(SQR(rgb[0]-whitecoeff) + SQR(rgb[1]) + SQR(rgb[2])));
+        float blue_dist = LIM01(std::sqrt(SQR(rgb[0]) + SQR(rgb[1]) + SQR(rgb[2]-whitecoeff)));
+        float hue_shift = 15.f * RT_PI_F_180 * (1.f - red_dist);
+        hue_shift += -15.f * RT_PI_F_180 * (1.f - blue_dist);
+        hue_shift *= LIM01((rgb[0] + rgb[1] + rgb[2]) / (3.f * whitecoeff));
+        hue += hue_shift;
+#else
+        float hue_shift = 15.f * RT_PI_F_180 * gauss(hue, state.rhue, state.rrange);
+        hue_shift += -5.f * RT_PI_F_180 * gauss(hue, state.bhue, state.brange);
+        hue_shift *= LIM01((rgb[0] + rgb[1] + rgb[2]) / (3.f * whitecoeff));
+        hue += hue_shift;
+#endif
+
+        float sat = jch[1];
+        float olum = jch[0];
+
+        float ccf = ilum > 1e-5f ? (1.f - (LIM01((olum / ilum) - 1.f) * 0.2f)) : 1.f;
+#if 1
+        // float yellow_dist = gauss(hue, yhue, yrange);
+        // ccf = LIM01(intp(yellow_dist, ccf, ccf + 0.5f));
+        ccf = LIM01(ccf + 0.5f * gauss(hue, state.yhue, state.yrange));
+#endif
+        
+        sat *= ccf;
+        
+        Color::jzczhz2rgb(jch[0], sat, hue, rgb[0], rgb[1], rgb[2], state.iws);
+
+        rc[i] = LIM(rgb[0] * 65535.f, 0.f, whitept);
+        gc[i] = LIM(rgb[1] * 65535.f, 0.f, whitept);
+        bc[i] = LIM(rgb[2] * 65535.f, 0.f, whitept);
+    }
+}
+
+} // namespace rtengine

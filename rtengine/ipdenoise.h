@@ -50,4 +50,13 @@ void WaveletDenoiseAll_info(int levwav, wavelet_decomposition &WaveletCoeffs_a,
         wavelet_decomposition &WaveletCoeffs_b, float **noisevarlum, float **noisevarchrom, float **noisevarhue, float &chaut, int &Nb, float &redaut, float &blueaut, float &maxredaut, float &maxblueaut, float &minredaut, float &minblueaut, int schoice,
                             float &chromina, float &sigma, float &lumema, float &sigma_L, float &redyel, float &skinc, float &nsknc, float &maxchred, float &maxchblue, float &minchred, float &minchblue, int &nb, float &chau, float &chred, float &chblue);
 
+enum class BlurType {
+    OFF,
+    BOX,
+    GAUSS
+};
+void detail_mask(const array2D<float> &src, array2D<float> &mask, float scaling, float threshold, float ceiling, float factor, BlurType blur, float blur_radius, bool multithread);
+
+void NLMeans(array2D<float> &img, float normcoeff, int strength, int detail_thresh, float scale, bool multithread);
+    
 }} // namespace rtengine::denoise

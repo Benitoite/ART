@@ -39,7 +39,11 @@
 #define TR_HFLIP    8
 #define TR_ROT      3
 
-#define CHECK_BOUNDS 0
+#ifndef NDEBUG
+#  define CHECK_BOUNDS 1
+#else
+#  define CHECK_BOUNDS 0
+#endif
 
 namespace rtengine
 {
@@ -1756,7 +1760,7 @@ public:
       * @param compression is the amount of compression (0-6), -1 corresponds to the default
       * @param bps can be 8 or 16 depending on the bits per pixels the output file will have
         @return the error code, 0 if none */
-    virtual int saveAsPNG (const Glib::ustring &fname, int bps = -1) const = 0;
+    virtual int saveAsPNG (const Glib::ustring &fname, int bps = -1, bool uncompressed=false) const = 0;
     /** @brief Saves the image to file in a jpg format.
       * @param fname is the name of the file
       * @param quality is the quality of the jpeg (0...100), set it to -1 to use default

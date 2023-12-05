@@ -23,122 +23,159 @@
 #endif
 
 #include "improcfun.h"
-#include "labmasks.h"
+#include "masks.h"
 #include "array2D.h"
-#include "EdgePreservingDecomposition.h"
+#include "guidedfilter.h"
+#include "rescale.h"
+#include "gauss.h"
+#include "rt_algo.h"
 
 namespace rtengine {
 
 namespace {
 
-void EPD(LabImage *lab, const rtengine::procparams::TextureBoostParams::Region &pp, double scale, bool multithread)
+void texture_boost(array2D<float> &Y, const rtengine::procparams::TextureBoostParams::Region &pp, double scale, bool multithread, bool high_detail)
 {
-    unsigned int Iterates = 0;//5;
+    float full_radius = pp.detailThreshold * 3.5f;
+    float fradius = full_radius / scale;
+    int radius = std::max(int(fradius + 0.5f), 1);
+    float delta = radius / fradius;
 
-    float stren = pp.strength; 
-    float edgest = pp.edgeStopping; 
-    float sca = pp.scale;
-    constexpr float gamm = 1.5f;
-    constexpr float rew = 0;
-    constexpr float noise_floor = 1e-8f * 32768.f;
+    float epsilon = 0.001f;
+    float s = pp.strength >= 0 ? pow_F(pp.strength / 2.f, 0.3f) * 2.f : pp.strength;
+    float strength = s >= 0 ? 1.f + s : 1.f / (1.f - s);
+    float strength2 = s >= 0 ? 1.f + s / 4.f: 1.f / (1.f - s / 2.f);
+
+    //bool isguided = fradius >= 1.f;
+    bool isguided = full_radius >= 1.f;
+
+    int W = Y.width();
+    int H = Y.height();
+
+    array2D<float> tmpY(ARRAY2D_ALIGNED);
+    array2D<float> *src = &Y;
+    if (fradius > 1.f && delta > 1.01f) {
+        W = int(W * delta + 0.5f);
+        H = int(H * delta + 0.5f);
+        tmpY(W, H);
+        rescaleBilinear(Y, tmpY, multithread);
+        src = &tmpY;
+    }
     
-    //Pointers to whole data and size of it.
-    float *L = lab->L[0];
-    float *a = lab->a[0];
-    float *b = lab->b[0];
-    size_t N = lab->W * lab->H;
-    EdgePreservingDecomposition epd (lab->W, lab->H);
+    array2D<float> mid(W, H, ARRAY2D_ALIGNED);
+    array2D<float> base(W, H, ARRAY2D_ALIGNED);
 
-    //Due to the taking of logarithms, L must be nonnegative. Further, scale to 0 to 1 using nominal range of L, 0 to 15 bit.
-    float minL = FLT_MAX;
-    float maxL = 0.f;
-#ifdef _OPENMP
-    #pragma omp parallel if (multithread)
+#ifdef __SSE2__
+    const vfloat v65535 = F2V(65535.f);
+    const vfloat vstrength = F2V(strength);
+    const vfloat vstrength2 = F2V(strength2);
 #endif
-    {
-        float lminL = FLT_MAX;
-        float lmaxL = 0.f;
-#ifdef _OPENMP
-        #pragma omp for
-#endif
-        for (size_t i = 0; i < N; i++) {
-            L[i] = std::max(L[i], noise_floor);
-            
-            if (L[i] < lminL) {
-                lminL = L[i];
-            }
 
-            if (L[i] > lmaxL) {
-                lmaxL = L[i];
-            }
+    float minval = RT_INFINITY;
+    constexpr float lo = 1e-5f;
+    constexpr float hi = 32.f;
+#ifdef __SSE2__
+    const vfloat vlo = F2V(lo);
+    const vfloat vhi = F2V(hi);
+#endif
+
+#ifdef _OPENMP
+#   pragma omp parallel for reduction(min:minval) if (multithread)
+#endif
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W-3; x += 4) {
+            vfloat v = LVFU((*src)[y][x]) / v65535;
+            STVFU((*src)[y][x], v);
+            STVFU(mid[y][x], vmaxf(vminf(v, vhi), vlo));
+            minval = min(minval, v[0], v[1], v[2], v[3]);
         }
-
-#ifdef _OPENMP
-        #pragma omp critical
 #endif
-        {
-            if (lminL < minL) {
-                minL = lminL;
-            }
-
-            if (lmaxL > maxL) {
-                maxL = lmaxL;
-            }
+        for (; x < W; ++x) {
+            float v = (*src)[y][x] / 65535.f;
+            (*src)[y][x] = v;
+            mid[y][x] = LIM(v, lo, hi);
+            minval = min(minval, v);
         }
     }
 
-    if (minL > 0.0f) {
-        minL = 0.0f;    //Disable the shift if there are no negative numbers. I wish there were just no negative numbers to begin with.
+#ifdef __SSE2__
+    vfloat vminval = F2V(minval);
+#endif
+
+    std::unique_ptr<Convolution> gaussian_blur;
+    if (!isguided && high_detail) {
+        array2D<float> kernel;
+        build_gaussian_kernel(fradius, kernel);
+        gaussian_blur.reset(new Convolution(kernel, W, H, multithread));
     }
 
-    if (maxL == 0.f) { // avoid division by zero
-        maxL = 1.f;
+    for (int i = 0; i < pp.iterations; ++i) {
+        float blend = 1.f / std::pow(2.f, i);
+#ifdef __SSE2__
+        vfloat vblend = F2V(blend);
+#endif
+        if (isguided) {
+            guidedFilter(mid, mid, mid, radius, epsilon, multithread);
+        } else {
+            if (high_detail) {
+                (*gaussian_blur)(mid, mid);
+            } else {
+#ifdef _OPENMP
+#               pragma omp parallel if (multithread)
+#endif
+                gaussianBlur(mid, mid, W, H, fradius);
+            }
+        }
+        guidedFilter(mid, mid, base, radius * 4, epsilon / 10.f, multithread);
+
+#ifdef _OPENMP
+#       pragma omp parallel for if (multithread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            int x = 0;
+#ifdef __SSE2__
+            for (; x < W - 3; x += 4) {
+                vfloat vy = LVFU((*src)[y][x]);
+                vfloat vm = LVFU(mid[y][x]);
+                vfloat vb = LVFU(base[y][x]);
+                vfloat d = (vy - vm) * vstrength;
+                vfloat d2 = (vm - vb) * vstrength2;
+                STVFU((*src)[y][x], vintpf(vblend, vmaxf(vb + d + d2, vminval), vy));
+            }
+#endif
+            for (; x < W; ++x) {
+                float v = (*src)[y][x];
+                float d = v - mid[y][x];
+                d *= strength;
+                float d2 = mid[y][x] - base[y][x];
+                d2 *= strength2;
+                (*src)[y][x] = intp(blend, std::max(base[y][x] + d + d2, minval), v);
+            }
+        }
     }
 
 #ifdef _OPENMP
-    #pragma omp parallel for if (multithread)
+#   pragma omp parallel for if (multithread)
 #endif
-    for (size_t i = 0; i < N; ++i)
-        //{L[i] = (L[i] - minL)/32767.0f;
-    {
-        L[i] = (L[i] - minL) / maxL;
-        L[i] *= gamm;
-    }
-
-    //Some interpretations.
-    float Compression = expf (-stren);      //This modification turns numbers symmetric around 0 into exponents.
-    float DetailBoost = stren;
-
-    if (stren < 0.0f) {
-        DetailBoost = 0.0f;    //Go with effect of exponent only if uncompressing.
-    }
-
-    //Auto select number of iterates. Note that p->EdgeStopping = 0 makes a Gaussian blur.
-    if (Iterates == 0) {
-        Iterates = (unsigned int) (edgest * 15.0f);
-    }
-
-    /* Debuggery. Saves L for toying with outside of RT.
-    char nm[64];
-    sprintf(nm, "%ux%ufloat.bin", lab->W, lab->H);
-    FILE *f = fopen(nm, "wb");
-    fwrite(L, N, sizeof(float), f);
-    fclose(f);*/
-
-    epd.CompressDynamicRange (L, sca / SQR(scale), edgest, Compression, DetailBoost, Iterates, rew);
-
-    //Restore past range, also desaturate a bit per Mantiuk's Color correction for tone mapping.
-    float s = (1.0f + 38.7889f) * powf (Compression, 1.5856f) / (1.0f + 38.7889f * powf (Compression, 1.5856f));
-#ifdef _OPENMP
-    #pragma omp parallel for            // removed schedule(dynamic,10)
+    for (int y = 0; y < H; ++y) {
+        int x = 0;
+#ifdef __SSE2__
+        for (; x < W-3; x += 4) {
+            vfloat v = LVFU((*src)[y][x]);
+            STVFU((*src)[y][x], v * v65535);
+        }
 #endif
-    for (size_t ii = 0; ii < N; ++ii) {
-        a[ii] *= s;
-        b[ii] *= s;
-        L[ii] = L[ii] * maxL * (1.f / gamm) + minL;
+        for (; x < W; ++x) {
+            (*src)[y][x] = (*src)[y][x] * 65535.f;
+        }
+    }
+
+    if (src != &Y) {
+        rescaleBilinear(*src, Y, multithread);
     }
 }
-
 
 } // namespace
 
@@ -160,26 +197,26 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb)
     
     if (params->textureBoost.enabled) {
         if (editWhatever) {
-            LabMasksEditID id = static_cast<LabMasksEditID>(int(eid) - EUID_LabMasks_H4);
-            fillPipetteLabMasks(rgb, editWhatever, id, multiThread);
+            MasksEditID id = static_cast<MasksEditID>(int(eid) - EUID_LabMasks_H4);
+            fillPipetteMasks(rgb, editWhatever, id, multiThread);
         }
         
         int n = params->textureBoost.regions.size();
         int show_mask_idx = params->textureBoost.showMask;
-        if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW && cur_pipeline != Pipeline::OUTPUT)) {
+        if (show_mask_idx >= n || (cur_pipeline != Pipeline::PREVIEW /*&& cur_pipeline != Pipeline::OUTPUT*/)) {
             show_mask_idx = -1;
         }
         std::vector<array2D<float>> mask(n);
-        if (!generateLabMasks(rgb, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr)) {
+        if (!generateMasks(rgb, params->textureBoost.labmasks, offset_x, offset_y, full_width, full_height, scale, multiThread, show_mask_idx, &mask, nullptr, cur_pipeline == Pipeline::NAVIGATOR ? plistener : nullptr)) {
             return true; // show mask is active, nothing more to do
         }
 
-        LabImage lab(rgb->getWidth(), rgb->getHeight());
-        rgb2lab(*rgb, lab);
+        const int W = rgb->getWidth();
+        const int H = rgb->getHeight();
 
-        array2D<float> L(lab.W, lab.H, lab.L, 0);
-        array2D<float> a(lab.W, lab.H, lab.a, 0);
-        array2D<float> b(lab.W, lab.H, lab.b, 0);
+        rgb->setMode(Imagefloat::Mode::YUV, multiThread);
+
+        array2D<float> Y(W, H, rgb->g.ptrs, ARRAY2D_ALIGNED);
 
         for (int i = 0; i < n; ++i) {
             if (!params->textureBoost.labmasks[i].enabled) {
@@ -187,28 +224,22 @@ bool ImProcFunctions::textureBoost(Imagefloat *rgb)
             }
             
             auto &r = params->textureBoost.regions[i];
-            EPD(&lab, r, scale, multiThread);
-            const auto &blend = mask[i];
+            if (r.strength != 0) {
+                texture_boost(Y, r, scale, multiThread, scale == 1 || cur_pipeline == Pipeline::OUTPUT);
+                const auto &blend = mask[i];
 
 #ifdef _OPENMP
-#           pragma omp parallel for if (multiThread)
+#               pragma omp parallel for if (multiThread)
 #endif
-            for (int y = 0; y < lab.H; ++y) {
-                for (int x = 0; x < lab.W; ++x) {
-                    float l = lab.L[y][x];
-                    float aa = lab.a[y][x];
-                    float bb = lab.b[y][x];
-                    lab.L[y][x] = intp(blend[y][x], lab.L[y][x], L[y][x]);
-                    lab.a[y][x] = intp(blend[y][x], lab.a[y][x], a[y][x]);
-                    lab.b[y][x] = intp(blend[y][x], lab.b[y][x], b[y][x]);
-                    L[y][x] = l;
-                    a[y][x] = aa;
-                    b[y][x] = bb;
+                for (int y = 0; y < H; ++y) {
+                    for (int x = 0; x < W; ++x) {
+                        float &YY = rgb->g(y, x);
+                        YY = intp(blend[y][x], Y[y][x], YY);
+                        Y[y][x] = YY;
+                    }
                 }
             }
         }
-
-        lab2rgb(lab, *rgb);
     } else if (editWhatever) {
         editWhatever->fill(0.f);
     }

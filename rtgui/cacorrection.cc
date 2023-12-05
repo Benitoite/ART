@@ -24,9 +24,10 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-CACorrection::CACorrection () : FoldableToolPanel(this, "cacorrection", M("TP_CACORRECTION_LABEL"), false, true)
+CACorrection::CACorrection () : FoldableToolPanel(this, "cacorrection", M("TP_CACORRECTION_LABEL"), false, true, true)
 {
     EvToolEnabled.set_action(TRANSFORM);
+    EvToolReset.set_action(TRANSFORM);
 
     Gtk::Image* icaredL =   Gtk::manage (new RTImage ("circle-red-cyan-small.png"));
     Gtk::Image* icaredR =   Gtk::manage (new RTImage ("circle-cyan-red-small.png"));
@@ -70,6 +71,7 @@ void CACorrection::setDefaults (const ProcParams* defParams)
 {
     red->setDefault (defParams->cacorrection.red);
     blue->setDefault (defParams->cacorrection.blue);
+    initial_params = defParams->cacorrection;
 }
 
 void CACorrection::adjusterChanged (Adjuster* a, double newval)
@@ -89,4 +91,15 @@ void CACorrection::trimValues (rtengine::procparams::ProcParams* pp)
 
     red->trimValue(pp->cacorrection.red);
     blue->trimValue(pp->cacorrection.blue);
+}
+
+
+void CACorrection::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.cacorrection = initial_params;
+    }
+    pp.cacorrection.enabled = getEnabled();
+    read(&pp);
 }

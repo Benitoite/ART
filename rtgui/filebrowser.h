@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _FILEBROWSER_
-#define _FILEBROWSER_
+#pragma once
 
 #include <gtkmm.h>
 #include <map>
@@ -27,7 +27,6 @@
 #include "browserfilter.h"
 #include "pparamschangelistener.h"
 #include "partialpastedlg.h"
-#include "exportpanel.h"
 #include "extprog.h"
 #include "profilestorecombobox.h"
 
@@ -43,7 +42,7 @@ public:
     virtual void openRequested(const std::vector<Thumbnail*>& tbe) = 0;
     virtual void developRequested(const std::vector<FileBrowserEntry*>& tbe, bool fastmode) = 0;
     virtual void renameRequested(const std::vector<FileBrowserEntry*>& tbe) = 0;
-    virtual void deleteRequested(const std::vector<FileBrowserEntry*>& tbe, bool inclBatchProcessed, bool onlySelected) = 0;
+    virtual void deleteRequested(const std::vector<FileBrowserEntry*>& tbe, bool onlySelected) = 0;
     virtual void copyMoveRequested(const std::vector<FileBrowserEntry*>& tbe, bool moveRequested) = 0;
     virtual void selectionChanged(const std::vector<Thumbnail*>& tbe) = 0;
     virtual void clearFromCacheRequested(const std::vector<FileBrowserEntry*>& tbe, bool leavenotrace) = 0;
@@ -55,7 +54,6 @@ public:
  */
 class FileBrowser  : public ThumbBrowserBase,
     public LWButtonListener,
-    /* public ExportPanelListener, */
     public ProfileStoreListener
 {
 private:
@@ -69,11 +67,11 @@ protected:
     MyImageMenuItem* colorlabel[6];
     Gtk::MenuItem* trash;
     Gtk::MenuItem* untrash;
+    Gtk::MenuItem *add_to_session_;
     Gtk::MenuItem* develop;
     Gtk::MenuItem* developfast;
     Gtk::MenuItem* rename;
     Gtk::MenuItem* remove;
-    Gtk::MenuItem* removeInclProc;
     Gtk::MenuItem* open;
     Gtk::MenuItem* selall;
     Gtk::MenuItem* copyTo;
@@ -83,10 +81,11 @@ protected:
     Gtk::MenuItem* menuLabel;
     Gtk::MenuItem* menuFileOperations;
     Gtk::MenuItem* menuProfileOperations;
-    Gtk::MenuItem* menuExtProg;
-    Gtk::MenuItem** amiExtProg;
-    Gtk::MenuItem* miOpenDefaultViewer;
-    std::map<Glib::ustring, const ExtProgAction*> mMenuExtProgs;  // key is menuitem label
+    // Gtk::MenuItem* menuExtProg;
+    // Gtk::MenuItem** amiExtProg;
+    Gtk::MenuItem *mi_usercommands_;
+    Gtk::SeparatorMenuItem *mi_usercommands_sep_;
+    std::vector<std::pair<std::unique_ptr<Gtk::MenuItem>, UserCommand>> usercommands_menu_;
 
     Gtk::MenuItem* menuDF;
     Gtk::MenuItem* selectDF;
@@ -123,15 +122,18 @@ protected:
 
     void toTrashRequested   (std::vector<FileBrowserEntry*> tbe);
     void fromTrashRequested (std::vector<FileBrowserEntry*> tbe);
+    void addToSessionRequested(std::vector<FileBrowserEntry*> tbe);
     void rankingRequested   (std::vector<FileBrowserEntry*> tbe, int rank);
     void colorlabelRequested   (std::vector<FileBrowserEntry*> tbe, int colorlabel);
     void requestRanking (int rank);
     void requestColorLabel(int colorlabel);
     void notifySelectionListener ();
     void openRequested( std::vector<FileBrowserEntry*> mselected);
-    // ExportPanel* exportPanel;
 
     type_trash_changed m_trash_changed;
+
+    void build_menu();
+    void refresh_usercommands_menu();
 
 public:
     FileBrowser ();
@@ -182,17 +184,9 @@ public:
     void selectImage(const Glib::ustring &fname);
     void openNextPreviousEditorImage (Glib::ustring fname, eRTNav eNextPrevious);
 
-#ifdef WIN32
-    void openDefaultViewer (int destination);
-#endif
-
     void thumbRearrangementNeeded () override;
 
     void selectionChanged () override;
-
-    /* void setExportPanel (ExportPanel* expanel); */
-    // exportpanel interface
-    /* void exportRequested() override; */
 
     void storeCurrentValue() override;
     void updateProfileList() override;
@@ -202,6 +196,8 @@ public:
 
     int getColumnWidth() const;
     bool isSelected(const Glib::ustring &fname) const;
-};
 
-#endif
+    void sortThumbnails();
+
+    void enableThumbRefresh();
+};

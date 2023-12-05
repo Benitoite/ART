@@ -138,6 +138,7 @@ void ffInfo::updateRawImage()
             int H = ri->get_height();
             int W = ri->get_width();
             ri->compress_image(0);
+            ri->set_prefilters();
             int rSize = W * ((ri->getSensorType() == ST_BAYER || ri->getSensorType() == ST_FUJI_XTRANS || ri->get_colors() == 1) ? 1 : 3);
             acc_t **acc = new acc_t*[H];
 
@@ -158,6 +159,7 @@ void ffInfo::updateRawImage()
 
                 if( !temp->loadRaw(true)) {
                     temp->compress_image(0);     //\ TODO would be better working on original, because is temporary
+                    temp->set_prefilters();
                     nFiles++;
 
                     if( ri->getSensorType() == ST_BAYER || ri->getSensorType() == ST_FUJI_XTRANS || ri->get_colors() == 1 ) {
@@ -197,6 +199,7 @@ void ffInfo::updateRawImage()
             ri = nullptr;
         } else {
             ri->compress_image(0);
+            ri->set_prefilters();
         }
     }
 
@@ -231,8 +234,12 @@ void ffInfo::updateRawImage()
 
 // ************************* class FFManager *********************************
 
-void FFManager::init( Glib::ustring pathname )
+void FFManager::init(const Glib::ustring &pathname)
 {
+    if (pathname.empty()) {
+        return;
+    }
+    
     std::vector<Glib::ustring> names;
 
     auto dir = Gio::File::create_for_path (pathname);

@@ -24,9 +24,10 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCESS_LABEL"), true, true)
+PreProcess::PreProcess () : FoldableToolPanel(this, "preprocess", M("TP_PREPROCESS_LABEL"), false, true, true)
 {
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
 
     Gtk::HBox* hotdeadPixel = Gtk::manage( new Gtk::HBox () );
     hotdeadPixel->set_spacing(4);
@@ -106,4 +107,22 @@ void PreProcess::deadPixelChanged ()
     if (listener && getEnabled()) {
         listener->panelChanged (EvPreProcessDeadPixel, deadPixel->get_active() ? M("GENERAL_ENABLED") : M("GENERAL_DISABLED"));
     }
+}
+
+
+void PreProcess::setDefaults(const ProcParams *def)
+{
+    hdThreshold->setDefault(def->raw.hotdeadpix_thresh);
+    initial_params = def->raw;
+}
+
+
+void PreProcess::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.raw = initial_params;
+    }
+    pp.raw.enable_hotdeadpix = getEnabled();
+    read(&pp);
 }

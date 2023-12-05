@@ -45,6 +45,9 @@ public:
     void adjusterChanged(Adjuster *a, double newval) override;
     void adjusterAutoToggled(Adjuster *a, bool newval) override;
 
+    void setDefaults(const rtengine::procparams::ProcParams *def) override;
+    void toolReset(bool to_initial) override;
+
 private:
     rtengine::ProcEvent EvHSLSmoothing;
     
@@ -53,4 +56,7 @@ private:
     FlatCurveEditor *sshape;
     FlatCurveEditor *lshape;
     Adjuster *smoothing;
+
+    rtengine::procparams::HSLEqualizerParams initial_params;
+    std::vector<double> default_flat_curve_;
 };

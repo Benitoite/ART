@@ -25,11 +25,12 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"), false, true)
+Rotate::Rotate () : FoldableToolPanel(this, "rotate", M("TP_ROTATE_LABEL"), false, true, true)
 {
     rlistener = nullptr;
 
     EvToolEnabled.set_action(TRANSFORM);
+    EvToolReset.set_action(TRANSFORM);
 
     //TODO the action of the rotation slider is counter-intuitive
     Gtk::Image* irotateL =   Gtk::manage (new RTImage ("rotate-right-small.png"));
@@ -68,6 +69,7 @@ void Rotate::write(ProcParams* pp)
 void Rotate::setDefaults(const ProcParams* defParams)
 {
     degree->setDefault (defParams->rotate.degree);
+    initial_params = defParams->rotate;
 }
 
 void Rotate::adjusterChanged(Adjuster* a, double newval)
@@ -104,4 +106,15 @@ void Rotate::selectStraightPressed ()
 void Rotate::trimValues (rtengine::procparams::ProcParams* pp)
 {
     degree->trimValue(pp->rotate.degree);
+}
+
+
+void Rotate::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.rotate = initial_params;
+    }
+    pp.rotate.enabled = getEnabled();
+    read(&pp);
 }

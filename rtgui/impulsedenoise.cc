@@ -17,6 +17,7 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "impulsedenoise.h"
+#include "../rtengine/refreshmap.h"
 #include <cmath>
 #include <iomanip>
 #include "guiutils.h"
@@ -24,9 +25,10 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-ImpulseDenoise::ImpulseDenoise () : FoldableToolPanel(this, "impulsedenoise", M("TP_IMPULSEDENOISE_LABEL"), true, true)
+ImpulseDenoise::ImpulseDenoise () : FoldableToolPanel(this, "impulsedenoise", M("TP_IMPULSEDENOISE_LABEL"), false, true, true)
 {
-
+    EvToolReset.set_action(DETAIL);
+    
     thresh = Gtk::manage (new Adjuster (M("TP_IMPULSEDENOISE_THRESH"), 0, 100, 1, 50));
 
     pack_start (*thresh);
@@ -54,7 +56,8 @@ void ImpulseDenoise::write(ProcParams* pp)
 
 void ImpulseDenoise::setDefaults(const ProcParams* defParams)
 {
-    thresh->setDefault (defParams->impulseDenoise.thresh);
+    thresh->setDefault(defParams->impulseDenoise.thresh);
+    initial_params = defParams->impulseDenoise;
 }
 
 void ImpulseDenoise::adjusterChanged(Adjuster* a, double newval)
@@ -86,4 +89,15 @@ void ImpulseDenoise::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
     thresh->trimValue(pp->impulseDenoise.thresh);
+}
+
+
+void ImpulseDenoise::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.impulseDenoise = initial_params;
+    }
+    pp.impulseDenoise.enabled = getEnabled();
+    read(&pp);
 }

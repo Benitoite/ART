@@ -37,6 +37,9 @@ protected:
     sigc::connection hpixelconn;
     sigc::connection dpixelconn;
     Adjuster* hdThreshold;
+
+    rtengine::procparams::RAWParams initial_params;
+    
 public:
 
     PreProcess();
@@ -49,9 +52,8 @@ public:
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
 
-
-    //void adjusterChanged     (Adjuster* a, double newval);
-    //void trimValues          (rtengine::procparams::ProcParams* pp);
+    void setDefaults(const rtengine::procparams::ProcParams *def) override;
+    void toolReset(bool to_initial) override;
 };
 
 #endif

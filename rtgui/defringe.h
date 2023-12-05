@@ -39,6 +39,8 @@ protected:
     Adjuster* threshold;
     bool edges;
 
+    rtengine::procparams::DefringeParams initial_params;
+
 public:
 
     Defringe();
@@ -54,6 +56,7 @@ public:
     void enabledChanged  () override;
     void colorForValue (double valX, double valY, enum ColorCaller::ElemType elemType, int callerId, ColorCaller* caller) override;
 
+    void toolReset(bool to_initial) override;
 };
 
 #endif

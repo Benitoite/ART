@@ -17,7 +17,8 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../rtengine/dynamicprofile.h"
+#include "dynamicprofile.h"
+#include "metadata.h"
 
 #include <stdlib.h>
 #include <glibmm/regex.h>
@@ -25,8 +26,7 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-namespace
-{
+namespace {
 
 const int ISO_MAX = 512000;
 const double FNUMBER_MAX = 100.0;
@@ -55,13 +55,66 @@ bool DynamicProfileRule::Optional::operator()(const Glib::ustring &val) const
 }
 
 
+bool DynamicProfileRule::CustomMetadata::operator()(const FramesMetaData *m) const
+{
+    if (!enabled || value.empty()) {
+        return true;
+    }
+
+    try {
+        rtengine::Exiv2Metadata meta(m->getFileName());
+        std::unordered_map<std::string, std::string> mn;
+        bool mn_loaded = false;
+        meta.load();
+        auto &exif = meta.exifData();
+        Glib::ustring found;
+        for (auto &p : value) {
+            if (p.first.find("ExifTool.MakerNotes.") == 0) {
+                if (!mn_loaded) {
+                    mn_loaded = true;
+                    mn = meta.getMakernotes();
+                }
+                auto it = mn.find(p.first.substr(20));
+                if (it == mn.end()) {
+                    return false;
+                }
+                found = it->second;
+            } else {
+                auto pos = exif.findKey(Exiv2::ExifKey(p.first));
+                if (pos == exif.end()) {
+                    return false;
+                }
+                found = pos->print(&exif);
+                if (!found.validate()) {
+                    return false;
+                }
+            }
+            auto &val = p.second;
+            if (val.find("re:") == 0) {
+                if (!Glib::Regex::match_simple(val.substr(3), found, Glib::REGEX_CASELESS)) {
+                    return false;
+                }
+            } else {
+                if (Glib::ustring(val).casefold() != found.casefold()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    } catch (std::exception &exc) {
+        return false;
+    }
+}
+
+
 DynamicProfileRule::DynamicProfileRule():
     serial_number(0),
     iso(0, ISO_MAX),
     fnumber(0, FNUMBER_MAX),
     focallen(0, FOCALLEN_MAX),
     shutterspeed(0, SHUTTERSPEED_MAX),
-    expcomp(EXPCOMP_MIN, EXPCOMP_MAX)
+    expcomp(EXPCOMP_MIN, EXPCOMP_MAX),
+    customdata()
 {
 }
 
@@ -81,11 +134,13 @@ bool DynamicProfileRule::matches(const rtengine::FramesMetaData *im) const
             && expcomp(im->getExpComp())
             && camera(im->getCamera())
             && lens(im->getLens())
-            && imagetype(im->getImageType()));
+            && imagetype(im->getImageType())
+            && filetype(getFileExtension(im->getFileName()))
+            && software(im->getSoftware())
+            && customdata(im));
 }
 
-namespace
-{
+namespace {
 
 void get_int_range(DynamicProfileRule::Range<int> &dest,
                     const Glib::KeyFile &kf, const Glib::ustring &group,
@@ -137,31 +192,74 @@ void get_optional(DynamicProfileRule::Optional &dest,
     }
 }
 
+
+void get_customdata(DynamicProfileRule::CustomMetadata &dest,
+                    const Glib::KeyFile &kf, const Glib::ustring &group,
+                    const Glib::ustring &key)
+{
+    try {
+        bool e = kf.get_boolean(group, key + "_enabled");
+
+        if (e) {
+            Glib::ArrayHandle<Glib::ustring> ar = kf.get_string_list(group, key + "_value");
+            dest.enabled = e;
+            dest.value.clear();
+            for (const auto &s : ar) {
+                auto p = s.find("=");
+                if (p != Glib::ustring::npos) {
+                    dest.value.emplace_back(s.substr(0, p), s.substr(p+1));
+                } else {
+                    dest.value.emplace_back(s, "");
+                }
+            }
+        }
+    } catch (Glib::KeyFileError &) {
+    }
+}
+
+
 void set_int_range(Glib::KeyFile &kf, const Glib::ustring &group,
-                    const Glib::ustring &key,
-                    const DynamicProfileRule::Range<int> &val)
+                   const Glib::ustring &key,
+                   const DynamicProfileRule::Range<int> &val)
 {
     kf.set_integer(group, key + "_min", val.min);
     kf.set_integer(group, key + "_max", val.max);
 }
 
+
 void set_double_range(Glib::KeyFile &kf, const Glib::ustring &group,
-                       const Glib::ustring &key,
-                       const DynamicProfileRule::Range<double> &val)
+                      const Glib::ustring &key,
+                      const DynamicProfileRule::Range<double> &val)
 {
     kf.set_double(group, key + "_min", val.min);
     kf.set_double(group, key + "_max", val.max);
 }
 
+
 void set_optional(Glib::KeyFile &kf, const Glib::ustring &group,
-                   const Glib::ustring &key,
-                   const DynamicProfileRule::Optional &val)
+                  const Glib::ustring &key,
+                  const DynamicProfileRule::Optional &val)
 {
     kf.set_boolean(group, key + "_enabled", val.enabled);
     kf.set_string(group, key + "_value", val.value);
 }
 
+
+void set_customdata(Glib::KeyFile &kf, const Glib::ustring &group,
+                    const Glib::ustring &key,
+                    const DynamicProfileRule::CustomMetadata &val)
+{
+    kf.set_boolean(group, key + "_enabled", val.enabled);
+    std::vector<std::string> tmp;
+    for (auto &p : val.value) {
+        tmp.push_back(p.first + "=" + p.second);
+    }
+    Glib::ArrayHandle<Glib::ustring> arr = tmp;
+    kf.set_string_list(group, key + "_value", arr);
+}
+
 } // namespace
+
 
 bool DynamicProfileRules::loadRules()
 {
@@ -181,7 +279,7 @@ bool DynamicProfileRules::loadRules()
         return false;
     }
 
-    if (options.rtSettings.verbose) {
+    if (options.rtSettings.verbose > 1) {
         printf("loading dynamic profiles...\n");
     }
 
@@ -200,7 +298,7 @@ bool DynamicProfileRules::loadRules()
             return false;
         }
 
-        if (options.rtSettings.verbose) {
+        if (options.rtSettings.verbose > 1) {
             printf(" loading rule %d\n", serial);
         }
 
@@ -215,6 +313,9 @@ bool DynamicProfileRules::loadRules()
         get_optional(rule.camera, kf, group, "camera");
         get_optional(rule.lens, kf, group, "lens");
         get_optional(rule.imagetype, kf, group, "imagetype");
+        get_optional(rule.filetype, kf, group, "filetype");
+        get_optional(rule.software, kf, group, "software");
+        get_customdata(rule.customdata, kf, group, "customdata");
 
         try {
             rule.profilepath = kf.get_string(group, "profilepath");
@@ -228,9 +329,10 @@ bool DynamicProfileRules::loadRules()
     return true;
 }
 
+
 bool DynamicProfileRules::storeRules()
 {
-    if (options.rtSettings.verbose) {
+    if (options.rtSettings.verbose > 1) {
         printf("saving dynamic profiles...\n");
     }
 
@@ -248,11 +350,15 @@ bool DynamicProfileRules::storeRules()
         set_optional(kf, group, "camera", rule.camera);
         set_optional(kf, group, "lens", rule.lens);
         set_optional(kf, group, "imagetype", rule.imagetype);
+        set_optional(kf, group, "filetype", rule.filetype);
+        set_optional(kf, group, "software", rule.software);
+        set_customdata(kf, group, "customdata", rule.customdata);
         kf.set_string(group, "profilepath", rule.profilepath);
     }
 
     return kf.save_to_file(Glib::build_filename(Options::rtdir, "dynamicprofile.cfg"));
 }
+
 
 const std::vector<DynamicProfileRule> &DynamicProfileRules::getRules()
 {
@@ -262,6 +368,7 @@ const std::vector<DynamicProfileRule> &DynamicProfileRules::getRules()
 
     return dynamicRules;
 }
+
 
 void DynamicProfileRules::setRules(const std::vector<DynamicProfileRule> &r)
 {

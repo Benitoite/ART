@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,18 +17,38 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _WBPROVIDER_
-#define _WBPROVIDER_
+#pragma once
 
+#include <array>
+#include <vector>
+#include <map>
+#include <glibmm.h>
 
-class WBProvider
-{
+struct WBPreset {
+    Glib::ustring label;
+    std::array<double, 3> mult;
 
+    WBPreset(const Glib::ustring &l="", const std::array<double, 3> &m={}):
+        label(l), mult(m) {}
+};
+
+class WBProvider {
 public:
     virtual ~WBProvider() {}
     virtual void getAutoWB (double& temp, double& green, double equal) {}
     virtual void getCamWB (double& temp, double& green) {}
     virtual void spotWBRequested (int size) {}
+    
+    virtual std::vector<WBPreset> getWBPresets() const { return std::vector<WBPreset>(); }
+    virtual void convertWBCam2Mul(double &rm, double &gm, double &bm) {}
+    virtual void convertWBMul2Cam(double &rm, double &gm, double &bm) {}
 };
 
-#endif
+namespace wb_presets {
+
+void init(const Glib::ustring &baseDir, const Glib::ustring &userSettingsDir);
+
+const std::map<std::string, std::vector<WBPreset>> &getPresets();
+
+} // namespace wb_presets
+

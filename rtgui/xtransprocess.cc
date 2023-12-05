@@ -24,12 +24,14 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-XTransProcess::XTransProcess () : FoldableToolPanel(this, "xtransprocess", M("TP_RAW_LABEL"), true)
+XTransProcess::XTransProcess () : FoldableToolPanel(this, "xtransprocess", M("TP_RAW_LABEL"), true, false, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvDemosaicBorder = m->newEvent(DEMOSAIC, "HISTORY_MSG_RAW_BORDER");
     EvDemosaicContrast = m->newEvent(DEMOSAIC, "HISTORY_MSG_DUALDEMOSAIC_CONTRAST");
     EvDemosaicAutoContrast = m->newEvent(DEMOSAIC, "HISTORY_MSG_DUALDEMOSAIC_AUTO_CONTRAST");
+
+    EvToolReset.set_action(DEMOSAIC|M_PREPROC);    
 
     Gtk::HBox* hb1 = Gtk::manage (new Gtk::HBox ());
     hb1->pack_start (*Gtk::manage (new Gtk::Label ( M("TP_RAW_DMETHOD") + ": ")), Gtk::PACK_SHRINK, 4);
@@ -121,7 +123,7 @@ void XTransProcess::read(const rtengine::procparams::ProcParams* pp)
 
     border->setValue(pp->raw.xtranssensor.border);
     for (size_t i = 0; i < RAWParams::XTransSensor::getMethodStrings().size(); ++i)
-        if( pp->raw.xtranssensor.method == RAWParams::XTransSensor::getMethodStrings()[i]) {
+        if( pp->raw.xtranssensor.method == RAWParams::XTransSensor::Method(i)) {
             method->set_active(i);
             oldSelection = i;
             break;
@@ -133,8 +135,8 @@ void XTransProcess::read(const rtengine::procparams::ProcParams* pp)
 
     lastAutoContrast = pp->raw.xtranssensor.dualDemosaicAutoContrast;
 
-    dualDemosaicOptions->set_visible(pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::FOUR_PASS)
-                                     || pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::getMethodString(procparams::RAWParams::XTransSensor::Method::TWO_PASS));
+    dualDemosaicOptions->set_visible(pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::Method::FOUR_PASS
+                                     || pp->raw.xtranssensor.method == procparams::RAWParams::XTransSensor::Method::TWO_PASS);
 
     methodconn.block (false);
 
@@ -151,7 +153,7 @@ void XTransProcess::write( rtengine::procparams::ProcParams* pp)
     int currentRow = method->get_active_row_number();
 
     if (currentRow >= 0 && method->get_active_text() != M("GENERAL_UNCHANGED")) {
-        pp->raw.xtranssensor.method = procparams::RAWParams::XTransSensor::getMethodStrings()[currentRow];
+        pp->raw.xtranssensor.method = procparams::RAWParams::XTransSensor::Method(currentRow);
     }
 }
 
@@ -161,6 +163,8 @@ void XTransProcess::setDefaults(const rtengine::procparams::ProcParams* defParam
     dualDemosaicContrast->setDefault( defParams->raw.xtranssensor.dualDemosaicContrast);
     border->setDefault (defParams->raw.xtranssensor.border);
     ccSteps->setDefault (defParams->raw.xtranssensor.ccSteps);
+
+    initial_params = defParams->raw.xtranssensor;
 }
 
 void XTransProcess::adjusterChanged(Adjuster* a, double newval)
@@ -197,8 +201,6 @@ void XTransProcess::methodChanged ()
     const int curSelection = method->get_active_row_number();
     const RAWParams::XTransSensor::Method currentMethod = RAWParams::XTransSensor::Method(curSelection);
 
-    oldSelection = curSelection;
-
     if (currentMethod == procparams::RAWParams::XTransSensor::Method::FOUR_PASS || currentMethod == procparams::RAWParams::XTransSensor::Method::TWO_PASS) {
         dualDemosaicOptions->show();
     } else {
@@ -210,6 +212,8 @@ void XTransProcess::methodChanged ()
             ? EvDemosaicMethodPreProc
             : EvDemosaicMethod, method->get_active_text());
     }
+
+    oldSelection = curSelection;
 }
 
 void XTransProcess::checkBoxToggled (CheckBox* c, CheckValue newval)
@@ -227,4 +231,13 @@ void XTransProcess::autoContrastChanged (double autoContrast)
             return false;
         }
     );
+}
+
+void XTransProcess::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.raw.xtranssensor = initial_params;
+    }
+    read(&pp);
 }

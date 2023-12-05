@@ -27,14 +27,14 @@
 #include "curveeditorgroup.h"
 #include "colorprovider.h"
 
-class RGBCurves : public ToolParamBlock, public FoldableToolPanel, public CurveListener, public ColorProvider
-{
+class RGBCurves : public ToolParamBlock, public FoldableToolPanel, public CurveListener, public ColorProvider, public CurveBackgroundProvider {
+private:
+    CurveEditorGroup *curveEditorG;
+    DiagonalCurveEditor *Rshape;
+    DiagonalCurveEditor *Gshape;
+    DiagonalCurveEditor *Bshape;
 
-protected:
-    CurveEditorGroup* curveEditorG;
-    DiagonalCurveEditor* Rshape;
-    DiagonalCurveEditor* Gshape;
-    DiagonalCurveEditor* Bshape;
+    rtengine::procparams::RGBCurvesParams initial_params;
 
 public:
 
@@ -60,6 +60,11 @@ public:
         const LUTu& histLRETI
     );
     void enabledChanged() override;
+
+    void setDefaults(const rtengine::procparams::ProcParams *def) override;
+    void toolReset(bool to_initial) override;
+
+    void renderCurveBackground(int caller_id, Glib::RefPtr<Gtk::StyleContext> style, Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h) override;
 };
 
 #endif

@@ -51,10 +51,14 @@ public:
     void setAreaDrawListener(AreaDrawListener *l);
     void setDeltaEColorProvider(DeltaEColorProvider *p);
 
+    void toolReset(bool to_initial) override;
+
 private:
     void regionGet(int idx);
     void regionShow(int idx);
-    
+
+    rtengine::ProcEvent EvIterations;
+    rtengine::ProcEvent EvDetailThreshold;
     rtengine::ProcEvent EvList;
     rtengine::ProcEvent EvParametricMask;
     rtengine::ProcEvent EvHueMask;
@@ -66,6 +70,7 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvContrastThresholdMask;
     rtengine::ProcEvent EvDrawnMask;
+    rtengine::ProcEvent EvMaskPostprocess;
 
     std::vector<rtengine::procparams::TextureBoostParams::Region> data;
 
@@ -74,11 +79,11 @@ private:
     LabMasksPanel *labMasks;
     
     Adjuster *strength;
-    // Adjuster *gamma;
-    Adjuster *edgeStopping;
-    Adjuster *scale;
-    // Adjuster *reweightingIterates;
+    Adjuster *detailThreshold;
+    Adjuster *iterations;
     Gtk::VBox *box;
+
+    rtengine::procparams::TextureBoostParams initial_params;
 };
 
 #endif

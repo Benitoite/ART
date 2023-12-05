@@ -166,8 +166,8 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
             boxblur(s, d, rad, s.width(), s.height(), multithread);
         };
 
-    array2D<float> I1(w, h);
-    array2D<float> p1(w, h);
+    array2D<float> I1(w, h, ARRAY2D_ALIGNED);
+    array2D<float> p1(w, h, ARRAY2D_ALIGNED);
 
     f_subsample(I1, I);
     f_subsample(p1, p);
@@ -179,11 +179,11 @@ void guidedFilter(const array2D<float> &guide, const array2D<float> &src, array2
 
     float r1 = float(r) / subsampling;
 
-    array2D<float> meanI(w, h);
+    array2D<float> meanI(w, h, ARRAY2D_ALIGNED);
     f_mean(meanI, I1, r1);
     DEBUG_DUMP(meanI);
 
-    array2D<float> meanp(w, h);
+    array2D<float> meanp(w, h, ARRAY2D_ALIGNED);
     f_mean(meanp, p1, r1);
     DEBUG_DUMP(meanp);
 

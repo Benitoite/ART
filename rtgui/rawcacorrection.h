@@ -39,6 +39,8 @@ protected:
     rtengine::ProcEvent EvPreProcessCAColourshift;
     rtengine::ProcEvent EvPreProcessCAColourshiftHistory;
 
+    rtengine::procparams::RAWParams initial_params;
+
 public:
 
     RAWCACorr();
@@ -51,6 +53,8 @@ public:
     void adjusterChanged     (Adjuster* a, double newval) override;
     void adjusterAutoToggled (Adjuster* a, bool newval) override;
     void checkBoxToggled     (CheckBox* c, CheckValue newval) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

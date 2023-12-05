@@ -29,12 +29,12 @@
 #include "coarsepanel.h"
 #include "toolbar.h"
 #include "filterpanel.h"
-//#include "exportpanel.h"
 #include "previewloader.h"
 #include "multilangmgr.h"
 #include "threadutils.h"
 
 class FilePanel;
+class BatchQueue;
 /*
  * Class:
  *   - handling the list of file (add/remove them)
@@ -44,8 +44,7 @@ class FilePanel;
 class FileCatalog : public Gtk::VBox,
     public PreviewLoaderListener,
     public FilterPanelListener,
-    public FileBrowserListener//,
-//    public ExportPanelListener
+    public FileBrowserListener
 {
 public:
     typedef sigc::slot<void, const Glib::ustring&> DirSelectionSlot;
@@ -55,6 +54,7 @@ private:
     Gtk::HBox* hBox;
     Glib::ustring selectedDirectory;
     int selectedDirectoryId;
+    int refresh_counter_;
     bool enabled;
     bool inTabMode;  // Tab mode has e.g. different progress bar handling
     Glib::ustring imageToSelect_fname;
@@ -93,6 +93,10 @@ private:
     Gtk::ToggleButton* bOriginal;
     Gtk::ToggleButton* categoryButtons[20];
     Gtk::ToggleButton* exifInfo;
+    //PopUpButton *thumbOrder;
+    Gtk::MenuButton *thumbOrder;
+    std::vector<Gtk::MenuItem *> thumbOrderItems;
+    std::vector<Glib::ustring> thumbOrderLabels;
     sigc::connection bCateg[20];
     Gtk::Image* iFilterClear, *igFilterClear;
     Gtk::Image* iranked[5], *igranked[5], *iUnRanked, *igUnRanked;
@@ -107,6 +111,10 @@ private:
 
     Gtk::Entry* BrowsePath;
     Gtk::Button* buttonBrowsePath;
+    Gtk::Button *button_session_add_;
+    Gtk::Button *button_session_remove_;
+    Gtk::Button *button_session_load_;
+    Gtk::Button *button_session_save_;
     Glib::RefPtr<Gtk::EntryCompletion> browsePathCompletion;
 
     Gtk::Entry* Query;
@@ -127,28 +135,39 @@ private:
     bool hasValidCurrentEFS;
 
     FilterPanel* filterPanel;
-    // ExportPanel* exportPanel;
+    bool filter_panel_update_;
 
     int previewsToLoad;
     int previewsLoaded;
 
 
     std::vector<Glib::ustring> fileNameList;
+    std::unordered_set<std::string> file_name_set_;
+    
     std::set<Glib::ustring> editedFiles;
     guint modifierKey; // any modifiers held when rank button was pressed
 
+    static const unsigned int DIR_REFRESH_DELAY = 2000;
     Glib::RefPtr<Gio::FileMonitor> dirMonitor;
+    sigc::connection dir_refresh_conn_;
 
     IdleRegister idle_register;
 
-    void addAndOpenFile (const Glib::ustring& fname);
-    void addFile (const Glib::ustring& fName);
-    std::vector<Glib::ustring> getFileList ();
-    BrowserFilter getFilter ();
-    void trashChanged ();
+    BatchQueue *bqueue_;    
+    std::vector<Thumbnail *> to_open_;
+    
+    void addAndOpenFile(const Glib::ustring &fname, bool force=false);
+    void addFile(const Glib::ustring& fName);
+    std::vector<Glib::ustring> getFileList();
+    BrowserFilter getFilter();
+    void trashChanged();
 
     void onBrowsePathChanged();
     Glib::ustring getBrowsePath();
+
+    void removeFromBatchQueue(const std::vector<FileBrowserEntry*>& tbe);
+    
+    void on_dir_changed(const Glib::RefPtr<Gio::File>& file, const Glib::RefPtr<Gio::File>& other_file, Gio::FileMonitorEvent event_type);
 
 public:
     // thumbnail browsers
@@ -172,24 +191,11 @@ public:
             fileBrowser->setInspector(inspector);
         }
     }
-    void disableInspector()
-    {
-        if (fileBrowser) {
-            fileBrowser->disableInspector();
-        }
-    }
-    void enableInspector()
-    {
-        if (fileBrowser) {
-            fileBrowser->enableInspector();
-        }
-    }
+    void disableInspector();
+    void enableInspector();
 
     // filterpanel interface
     void exifFilterChanged () override;
-
-    // exportpanel interface
-    // void exportRequested() override;
 
     Glib::ustring lastSelectedDir ()
     {
@@ -205,7 +211,7 @@ public:
 
     void filterApplied() override;
     void openRequested(const std::vector<Thumbnail*>& tbe) override;
-    void deleteRequested(const std::vector<FileBrowserEntry*>& tbe, bool inclBatchProcessed, bool onlySelected) override;
+    void deleteRequested(const std::vector<FileBrowserEntry*>& tbe, bool onlySelected) override;
     void copyMoveRequested(const std::vector<FileBrowserEntry*>& tbe, bool moveRequested) override;
     void developRequested(const std::vector<FileBrowserEntry*>& tbe, bool fastmode) override;
     void renameRequested(const std::vector<FileBrowserEntry*>& tbe) override;
@@ -227,7 +233,6 @@ public:
     void setDirSelector (const DirSelectionSlot& selectDir);
 
     void setFilterPanel (FilterPanel* fpanel);
-    // void setExportPanel (ExportPanel* expanel);
     void exifInfoButtonToggled();
     void categoryButtonToggled (Gtk::ToggleButton* b, bool isMouseClick);
     bool capture_event(GdkEventButton* event);
@@ -236,12 +241,18 @@ public:
 
     void on_realize() override;
     void reparseDirectory ();
-    void _openImage (const std::vector<Thumbnail*>& tmb);
+    void _openImage();
 
     void zoomIn ();
     void zoomOut ();
 
     void buttonBrowsePathPressed ();
+
+    void sessionAddPressed();
+    void sessionRemovePressed();
+    void sessionLoadPressed();
+    void sessionSavePressed();
+    
     bool BrowsePath_key_pressed (GdkEventKey *event);
     void buttonQueryClearPressed ();
     void executeQuery ();
@@ -272,12 +283,12 @@ public:
     void toggleSidePanels();
     void toggleLeftPanel();
     void toggleRightPanel();
+    void setupSidePanels();
 
     void showToolBar();
     void hideToolBar();
 
-    void on_dir_changed (const Glib::RefPtr<Gio::File>& file, const Glib::RefPtr<Gio::File>& other_file, Gio::FileMonitorEvent event_type, bool internal);
-
+    void setBatchQueue(BatchQueue *bq) { bqueue_ = bq; }
 };
 
 inline void FileCatalog::setDirSelector (const FileCatalog::DirSelectionSlot& selectDir)

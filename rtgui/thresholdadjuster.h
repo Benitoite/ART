@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -72,7 +73,7 @@ protected:
 
     double shapeValue (double a);
     void refreshLabelStyle ();
-    void initObject (Glib::ustring label, bool editedcb);
+    void initObject (Glib::ustring label, bool editedcb, bool compact=false);
     void sendToListener ();
 
 public:
@@ -82,7 +83,7 @@ public:
     ThresholdAdjuster (Glib::ustring label,
                        double minValueBottom, double maxValueBottom, double defBottom, Glib::ustring labelBottom, unsigned int precisionBottom,
                        double minValueTop,    double maxValueTop,    double defTop,    Glib::ustring labelTop,    unsigned int precisionTop,
-                       ThresholdCurveProvider* curveProvider, bool editedCheckBox = false);
+                       ThresholdCurveProvider* curveProvider, bool editedCheckBox=false, bool compact=false);
     // Simple Threshold widget with 2 linked sliders (0->1 or 1->0)
     ThresholdAdjuster (Glib::ustring label, double minValue, double maxValue, double defBottom,
                        double defTop, unsigned int precision, bool startAtOne, bool editedCheckBox = false);
@@ -148,6 +149,11 @@ public:
     void setUpdatePolicy (eUpdatePolicy policy)
     {
         tSelector.setUpdatePolicy(policy);
+    }
+
+    void setActive(bool b, bool t)
+    {
+        tSelector.setActive(b, t);
     }
 
     //void spinChanged ();

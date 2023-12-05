@@ -52,6 +52,8 @@ protected:
     bool b_filter_asCurrent;
     bool israw;
 
+    rtengine::procparams::RAWParams initial_params;
+
 public:
 
     DarkFrame();
@@ -65,7 +67,10 @@ public:
     void setDFProvider    (DFProvider* p)
     {
         dfp = p;
-    };
+    }
+
+    void setDefaults(const rtengine::procparams::ProcParams *def) override;
+    void toolReset(bool to_initial) override;
 };
 
 #endif

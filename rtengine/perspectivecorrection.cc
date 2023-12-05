@@ -46,6 +46,7 @@
 #include "perspectivecorrection.h"
 #include "improcfun.h"
 #include "rt_math.h"
+#include "linalgebra.h"
 #include <string.h>
 #include <math.h>
 #include <assert.h>
@@ -73,14 +74,14 @@ namespace {
 
 inline int mat3inv(float *const dst, const float *const src)
 {
-    std::array<std::array<float, 3>, 3> tmpsrc;
-    std::array<std::array<float, 3>, 3> tmpdst;
+    Mat33f tmpsrc;
+    Mat33f tmpdst;
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             tmpsrc[i][j] = src[3 * i + j];
         }
     }
-    if (invertMatrix(tmpsrc, tmpdst)) {
+    if (inverse(tmpsrc, tmpdst)) {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 dst[3 * i + j] = tmpdst[i][j];
@@ -277,7 +278,43 @@ void get_view_size(int w, int h, const procparams::PerspectiveParams &params, do
 
     cw = max_x - min_x;
     ch = max_y - min_y;
-}    
+}
+
+
+/**
+ * Allocates a new array and populates it with ashift lines corresponding to the
+ * provided control lines.
+ */
+std::unique_ptr<dt_iop_ashift_line_t[]> toAshiftLines(const std::vector<ControlLine> *lines)
+{
+    std::unique_ptr<dt_iop_ashift_line_t[]> retval(new dt_iop_ashift_line_t[lines->size()]);
+
+    for (size_t i = 0; i < lines->size(); i++) {
+        const float x1 = (*lines)[i].x1;
+        const float y1 = (*lines)[i].y1;
+        const float x2 = (*lines)[i].x2;
+        const float y2 = (*lines)[i].y2;
+        retval[i].p1[0] = x1;
+        retval[i].p1[1] = y1;
+        retval[i].p1[2] = 1.0f;
+        retval[i].p2[0] = x2;
+        retval[i].p2[1] = y2;
+        retval[i].p2[2] = 1.0f;
+        retval[i].length = sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+        retval[i].width = 1.0f;
+        retval[i].weight = retval[i].length;
+        if ((*lines)[i].type == ControlLine::HORIZONTAL) {
+            retval[i].type = ASHIFT_LINE_HORIZONTAL_SELECTED;
+        } else if ((*lines)[i].type == ControlLine::VERTICAL) {
+            retval[i].type = ASHIFT_LINE_VERTICAL_SELECTED;
+        } else {
+            retval[i].type = ASHIFT_LINE_IRRELEVANT;
+        }
+    }
+
+    return retval;
+}
+
 
 } // namespace
 
@@ -307,7 +344,7 @@ void PerspectiveCorrection::calc_scale(int w, int h, const procparams::Perspecti
 }
 
 
-procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams, const FramesMetaData *metadata)
+procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *src, Direction dir, const procparams::ProcParams *pparams, const FramesMetaData *metadata, const std::vector<ControlLine> *control_lines)
 {
     auto pcp = import_meta(pparams->perspective, metadata);
     procparams::PerspectiveParams dflt;
@@ -326,47 +363,49 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     int tr = getCoarseBitMask(pparams->coarse);
     int fw, fh;
     src->getFullSize(fw, fh, tr);
-    int skip = max(float(max(fw, fh)) / 900.f + 0.5f, 1.f);
-    PreviewProps pp(0, 0, fw, fh, skip);
-    int w, h;
-    src->getSize(pp, w, h);
-    std::unique_ptr<Imagefloat> img(new Imagefloat(w, h));
+    if (!control_lines) {
+        int skip = max(float(max(fw, fh)) / 900.f + 0.5f, 1.f);
+        PreviewProps pp(0, 0, fw, fh, skip);
+        int w, h;
+        src->getSize(pp, w, h);
+        std::unique_ptr<Imagefloat> img(new Imagefloat(w, h));
 
-    ProcParams neutral;
-    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
-    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
-    neutral.icm.outputProfile = ColorManagementParams::NoICMString;    
-    src->getImage(src->getWB(), tr, img.get(), pp, neutral.exposure, neutral.raw);
-    src->convertColorSpace(img.get(), pparams->icm, src->getWB());
+        ProcParams neutral;
+        neutral.raw.bayersensor.method = RAWParams::BayerSensor::Method::FAST;
+        neutral.raw.xtranssensor.method = RAWParams::XTransSensor::Method::FAST;
+        neutral.icm.outputProfile = ColorManagementParams::NoICMString;    
+        src->getImage(src->getWB(), tr, img.get(), pp, neutral.exposure, neutral.raw);
+        src->convertColorSpace(img.get(), pparams->icm, src->getWB());
 
-    neutral.rotate = pparams->rotate;
-    neutral.distortion = pparams->distortion;
-    neutral.lensProf = pparams->lensProf;
-    ImProcFunctions ipf(&neutral, true);
-    if (ipf.needsTransform()) {
-        Imagefloat *tmp = new Imagefloat(w, h);
-        ipf.transform(img.get(), tmp, 0, 0, 0, 0, w, h, w, h,
-                      src->getMetaData(), src->getRotateDegree(), false);
-        img.reset(tmp);
-    }
+        neutral.rotate = pparams->rotate;
+        neutral.distortion = pparams->distortion;
+        neutral.lensProf = pparams->lensProf;
+        ImProcFunctions ipf(&neutral, true);
+        if (ipf.needsTransform()) {
+            Imagefloat *tmp = new Imagefloat(w, h);
+            ipf.transform(img.get(), tmp, 0, 0, 0, 0, w, h, w, h,
+                          src->getMetaData(), src->getRotateDegree(), false);
+            img.reset(tmp);
+        }
 
-    // allocate the gui buffer
-    g.buf = static_cast<float *>(malloc(sizeof(float) * w * h * 4));
-    g.buf_width = w;
-    g.buf_height = h;
+        // allocate the gui buffer
+        g.buf = static_cast<float *>(malloc(sizeof(float) * w * h * 4));
+        g.buf_width = w;
+        g.buf_height = h;
 
-    img->normalizeFloatTo1();
+        img->normalizeFloatTo1();
     
 #ifdef _OPENMP
-#   pragma omp parallel for
+#       pragma omp parallel for
 #endif
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            int i = (y * w + x) * 4;
-            g.buf[i] = img->r(y, x);
-            g.buf[i+1] = img->g(y, x);
-            g.buf[i+2] = img->b(y, x);
-            g.buf[i+3] = 1.f;
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x) {
+                int i = (y * w + x) * 4;
+                g.buf[i] = img->r(y, x);
+                g.buf[i+1] = img->g(y, x);
+                g.buf[i+2] = img->b(y, x);
+                g.buf[i+3] = 1.f;
+            }
         }
     }
 
@@ -386,8 +425,21 @@ procparams::PerspectiveParams PerspectiveCorrection::autocompute(ImageSource *sr
     // reset the pseudo-random seed for repeatability -- ashift_dt uses rand()
     // internally!
     srand(1);
-    
-    auto res = do_get_structure(&module, &p, ASHIFT_ENHANCE_EDGES) && do_fit(&module, &p, fitaxis);
+
+    bool res;
+    if (!control_lines) {
+        res = do_get_structure(&module, &p, ASHIFT_ENHANCE_EDGES) && do_fit(&module, &p, fitaxis);
+    } else {
+        auto ashift_lines = toAshiftLines(control_lines);
+        dt_iop_ashift_gui_data_t *g = module.gui_data;
+        g->lines_count = control_lines->size();
+        g->lines = ashift_lines.get();
+        g->lines_in_height = fh;
+        g->lines_in_width = fw;
+        update_lines_count(g->lines, g->lines_count, &(g->vertical_count), &(g->horizontal_count));
+        res = do_fit(&module, &p, fitaxis);
+        g->lines = nullptr;
+    }
     procparams::PerspectiveParams retval = pparams->perspective;
 
     // cleanup the gui

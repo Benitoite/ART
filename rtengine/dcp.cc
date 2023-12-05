@@ -30,6 +30,7 @@
 #include "improcfun.h"
 #include "rawimagesource.h"
 #include "rt_math.h"
+#include "linalgebra.h"
 
 namespace rtengine
 {
@@ -46,36 +47,30 @@ namespace {
 
 DCPProfile::Matrix invert3x3(const DCPProfile::Matrix& a)
 {
-    DCPProfile::Matrix res = a;
-    if (!invertMatrix(a, res)) {
+    const double res00 = a[1][1] * a[2][2] - a[2][1] * a[1][2];
+    const double res10 = a[2][0] * a[1][2] - a[1][0] * a[2][2];
+    const double res20 = a[1][0] * a[2][1] - a[2][0] * a[1][1];
+
+    const double det = a[0][0] * res00 + a[0][1] * res10 + a[0][2] * res20;
+
+    if (std::fabs(det) < 1.0e-10 && settings->verbose) {
         std::cerr << "DCP matrix cannot be inverted! Expect weird output." << std::endl;
+        return a;
     }
+
+    DCPProfile::Matrix res;
+
+    res[0][0] = res00 / det;
+    res[0][1] = (a[2][1] * a[0][2] - a[0][1] * a[2][2]) / det;
+    res[0][2] = (a[0][1] * a[1][2] - a[1][1] * a[0][2]) / det;
+    res[1][0] = res10 / det;
+    res[1][1] = (a[0][0] * a[2][2] - a[2][0] * a[0][2]) / det;
+    res[1][2] = (a[1][0] * a[0][2] - a[0][0] * a[1][2]) / det;
+    res[2][0] = res20 / det;
+    res[2][1] = (a[2][0] * a[0][1] - a[0][0] * a[2][1]) / det;
+    res[2][2] = (a[0][0] * a[1][1] - a[1][0] * a[0][1]) / det;
+
     return res;
-
-    // const double res00 = a[1][1] * a[2][2] - a[2][1] * a[1][2];
-    // const double res10 = a[2][0] * a[1][2] - a[1][0] * a[2][2];
-    // const double res20 = a[1][0] * a[2][1] - a[2][0] * a[1][1];
-
-    // const double det = a[0][0] * res00 + a[0][1] * res10 + a[0][2] * res20;
-
-    // if (std::fabs(det) < 1.0e-10) {
-    //     std::cerr << "DCP matrix cannot be inverted! Expect weird output." << std::endl;
-    //     return a;
-    // }
-
-    // DCPProfile::Matrix res;
-
-    // res[0][0] = res00 / det;
-    // res[0][1] = (a[2][1] * a[0][2] - a[0][1] * a[2][2]) / det;
-    // res[0][2] = (a[0][1] * a[1][2] - a[1][1] * a[0][2]) / det;
-    // res[1][0] = res10 / det;
-    // res[1][1] = (a[0][0] * a[2][2] - a[2][0] * a[0][2]) / det;
-    // res[1][2] = (a[1][0] * a[0][2] - a[0][0] * a[1][2]) / det;
-    // res[2][0] = res20 / det;
-    // res[2][1] = (a[2][0] * a[0][1] - a[0][0] * a[2][1]) / det;
-    // res[2][2] = (a[0][0] * a[1][1] - a[1][0] * a[0][1]) / det;
-
-    // return res;
 }
 
 DCPProfile::Matrix multiply3x3(const DCPProfile::Matrix& a, const DCPProfile::Matrix& b)
@@ -434,11 +429,14 @@ std::map<std::string, std::string> getAliases(const Glib::ustring& profile_dir)
                 const cJSON* const alias = cJSON_GetArrayItem(camera, index);
                 if (cJSON_IsString(alias)) {
                     res[alias->valuestring] = camera->string;
+                    if (settings->verbose > 1) {
+                        std::cout << "dcp - alias: " << alias->valuestring << " -> " << camera->string << std::endl;
+                    }
                 }
             }
         }
     }
-
+        
     return res;
 }
 
@@ -476,7 +474,9 @@ public:
 
         if (!f) {
 #ifndef NDEBUG
-            std::cerr << "ERROR : no file opened !" << std::endl;
+            if (settings->verbose) {
+                std::cerr << "ERROR : no file opened !" << std::endl;
+            }
 #endif
             return false;
         }
@@ -767,7 +767,7 @@ inline float hue_interpolate(float f0, float hue0, float f1, float hue1)
         res = f0 * h1 + f1 * h2;
     }
 
-    assert(fabs((f0 * hue0 + f1 * hue1) - res) <= 0.1f);
+//    assert(fabs((f0 * hue0 + f1 * hue1) - res) <= 0.1f);
     
     return res;
 }
@@ -1135,7 +1135,9 @@ DCPProfile::DCPProfile(const Glib::ustring& filename) :
 
     // Color Matrix (one is always there)
     if (!md.find(COLOR_MATRIX_1)) {
-        std::cerr << "DCP '" << filename << "' is missing 'ColorMatrix1'. Skipped." << std::endl;
+        if (settings->verbose) {
+            std::cerr << "DCP '" << filename << "' is missing 'ColorMatrix1'. Skipped." << std::endl;
+        }
         fclose(file);
         return;
     }
@@ -1365,19 +1367,20 @@ void DCPProfile::apply(
     const ColorTemp& white_balance,
     const Triple& pre_mul,
     const Matrix& cam_wb_matrix,
-    bool apply_hue_sat_map
+    bool apply_hue_sat_map,
+    bool apply_look_table
 ) const
 {
 
     const TMatrix work_matrix = ICCStore::getInstance()->workingSpaceInverseMatrix(working_space);
-
-    const Matrix xyz_cam = makeXyzCam(white_balance, pre_mul, cam_wb_matrix, preferred_illuminant); // Camera RGB to XYZ D50 matrix
 
     const std::vector<HsbModify> delta_base = makeHueSatMap(white_balance, preferred_illuminant);
 
     if (delta_base.empty()) {
         apply_hue_sat_map = false;
     }
+
+    const Matrix xyz_cam = makeXyzCam(white_balance, pre_mul, cam_wb_matrix, preferred_illuminant, apply_hue_sat_map || apply_look_table); // Camera RGB to XYZ D50 matrix
 
     if (!apply_hue_sat_map) {
         // The fast path: No LUT --> Calculate matrix for direct conversion raw -> working space
@@ -1608,7 +1611,7 @@ void DCPProfile::step2ApplyTile(float* rc, float* gc, float* bc, int width, int 
     }
 }
 
-DCPProfile::Matrix DCPProfile::findXyztoCamera(const std::array<double, 2>& white_xy, int preferred_illuminant) const
+DCPProfile::Matrix DCPProfile::findXyztoCamera(const std::array<double, 2>& white_xy, int preferred_illuminant, double wbtemp) const
 {
     bool has_col_1 = has_color_matrix_1;
     bool has_col_2 = has_color_matrix_2;
@@ -1629,12 +1632,17 @@ DCPProfile::Matrix DCPProfile::findXyztoCamera(const std::array<double, 2>& whit
           Note: We're using DNG SDK reference code for XY to temperature translation to get the exact same mix as
           the reference code does.
         */
-        const double wbtemp = xyCoordToTemperature(white_xy);
+        //const double wbtemp = xyCoordToTemperature(white_xy);
+        if (wbtemp <= 0) {
+            wbtemp = xyCoordToTemperature(white_xy);
+        }
+
+        const bool lt = temperature_1 < temperature_2;
 
         double mix;
-        if (wbtemp <= temperature_1) {
+        if (lt ? wbtemp <= temperature_1 : wbtemp >= temperature_1) {
             mix = 1.0;
-        } else if (wbtemp >= temperature_2) {
+        } else if (lt ? wbtemp >= temperature_2 : wbtemp <= temperature_2) {
             mix = 0.0;
         } else {
             const double invT = 1.0 / wbtemp;
@@ -1656,7 +1664,7 @@ DCPProfile::Matrix DCPProfile::findXyztoCamera(const std::array<double, 2>& whit
     }
 }
 
-std::array<double, 2> DCPProfile::neutralToXy(const Triple& neutral, int preferred_illuminant) const
+std::array<double, 2> DCPProfile::neutralToXy(const Triple& neutral, int preferred_illuminant, double wbtemp) const
 {
     enum {
         MAX_PASSES = 30
@@ -1665,7 +1673,7 @@ std::array<double, 2> DCPProfile::neutralToXy(const Triple& neutral, int preferr
     std::array<double, 2> last_xy = {0.3457, 0.3585}; // D50
 
     for (unsigned int pass = 0; pass < MAX_PASSES; ++pass) {
-        const Matrix& xyz_to_camera = findXyztoCamera(last_xy, preferred_illuminant);
+        const Matrix& xyz_to_camera = findXyztoCamera(last_xy, preferred_illuminant, wbtemp);
         const Matrix& inv_m = invert3x3(xyz_to_camera);
         const Triple& next_xyz = multiply3x3_v3(inv_m, neutral);
 
@@ -1689,7 +1697,7 @@ std::array<double, 2> DCPProfile::neutralToXy(const Triple& neutral, int preferr
     return last_xy;
 }
 
-DCPProfile::Matrix DCPProfile::makeXyzCam(const ColorTemp& white_balance, const Triple& pre_mul, const Matrix& cam_wb_matrix, int preferred_illuminant) const
+DCPProfile::Matrix DCPProfile::makeXyzCam(const ColorTemp& white_balance, const Triple& pre_mul, const Matrix& cam_wb_matrix, int preferred_illuminant, bool use_fwd_matrix) const
 {
     // Code adapted from dng_color_spec::FindXYZtoCamera.
     // Note that we do not support monochrome or colorplanes > 3 (no reductionMatrix support),
@@ -1724,14 +1732,16 @@ DCPProfile::Matrix DCPProfile::makeXyzCam(const ColorTemp& white_balance, const 
         }
     }
 
+    const double wbtemp = white_balance.getTemp();
+    
     /* Calculate what the RGB multipliers corresponds to as a white XY coordinate, based on the
        DCP ColorMatrix or ColorMatrices if dual-illuminant. This is the DNG reference code way to
        do it, which is a bit different from RT's own white balance model at the time of writing.
        When RT's white balance can make use of the DCP color matrices we could use that instead. */
-    const std::array<double, 2> white_xy = neutralToXy(neutral, preferred_illuminant);
+    const std::array<double, 2> white_xy = neutralToXy(neutral, preferred_illuminant, wbtemp);
 
-    bool has_fwd_1 = has_forward_matrix_1;
-    bool has_fwd_2 = has_forward_matrix_2;
+    bool has_fwd_1 = use_fwd_matrix && has_forward_matrix_1;
+    bool has_fwd_2 = use_fwd_matrix && has_forward_matrix_2;
     bool has_col_1 = has_color_matrix_1;
     bool has_col_2 = has_color_matrix_2;
 
@@ -1761,13 +1771,14 @@ DCPProfile::Matrix DCPProfile::makeXyzCam(const ColorTemp& white_balance, const 
            typically does not affect the result too much, ie it's probably not strictly necessary to
            use the DNG reference code here, but we do it for now. */
         //const double wbtemp = xyCoordToTemperature(white_xy);
-        const double wbtemp = white_balance.getTemp();
+        //const double wbtemp = white_balance.getTemp();
         // std::cout << "WB TEMP ADOBE: " << wbtemp
         //           << " ART: " << white_balance.getTemp() << std::endl;
+        const bool lt = temperature_1 < temperature_2;
 
-        if (wbtemp <= temperature_1) {
+        if (lt ? wbtemp <= temperature_1 : wbtemp >= temperature_1) {
             mix = 1.0;
-        } else if (wbtemp >= temperature_2) {
+        } else if (lt ? wbtemp >= temperature_2 : wbtemp <= temperature_2) {
             mix = 0.0;
         } else {
             const double& invT = 1.0 / wbtemp;
@@ -2196,7 +2207,7 @@ DCPProfile* DCPStore::getProfile(const Glib::ustring& filename) const
     if (res->isValid()) {
         // Add profile
         profile_cache[filename] = res;
-        if (options.rtSettings.verbose) {
+        if (options.rtSettings.verbose > 1) {
             printf("DCP profile '%s' loaded from disk\n", filename.c_str());
         }
         return res;

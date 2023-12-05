@@ -25,16 +25,122 @@
 #include "batchqueuepanel.h"
 #include <set>
 #include "progressconnector.h"
-#include "editwindow.h"
 #include "splash.h"
 #if defined(__APPLE__)
 #include <gtkosxapplication.h>
 #endif
 
-class RTWindow : public Gtk::Window, public rtengine::ProgressListener
-{
+
+class EditWindow;
+
+class MessageWindow: public Gtk::Window {
+public:
+    MessageWindow();
+    virtual ~MessageWindow();
+
+    virtual void showInfo(const Glib::ustring &msg, double duration);
+    virtual void showError(const Glib::ustring &msg);
+    
+protected:
+    void init(Gtk::Widget *main_widget);
+    
+    void show_info_msg(const Glib::ustring &msg, bool is_error, double duration, size_t padding);
+    bool hide_info_msg();
+    
+    Gtk::Overlay *main_overlay_;
+    Gtk::Revealer *msg_revealer_;
+    Gtk::Label *info_label_;
+    Gtk::Box *info_box_;
+    RTImage *info_image_;
+    std::set<Glib::ustring> unique_info_msg_;
+    std::vector<Glib::ustring> info_msg_;
+    int info_msg_num_;
+    sigc::connection reveal_conn_;
+};
+
+
+class RTWindow: public MessageWindow, public rtengine::ProgressListener {
+public:
+    RTWindow ();
+    ~RTWindow() override;
+
+#if defined(__APPLE__)
+    bool osxFileOpenEvent (Glib::ustring path);
+#endif
+    void addEditorPanel (EditorPanel* ep, const std::string &name);
+    void remEditorPanel (EditorPanel* ep);
+    bool selectEditorPanel (const std::string &name);
+
+    void addBatchQueueJob       (BatchQueueEntry* bqe, bool head = false);
+    void addBatchQueueJobs      (const std::vector<BatchQueueEntry*>& entries);
+
+    bool keyPressed(GdkEventKey* event);
+    bool keyPressedBefore(GdkEventKey* event);
+    bool keyReleased(GdkEventKey* event);
+    bool scrollPressed(GdkEventScroll *event);
+    
+    bool on_configure_event (GdkEventConfigure* event) override;
+    bool on_delete_event (GdkEventAny* event) override;
+    bool on_window_state_event (GdkEventWindowState* event) override;
+    void on_mainNB_switch_page (Gtk::Widget* widget, guint page_num);
+
+    void showPreferences ();
+    void on_realize() override;
+    bool on_draw(const ::Cairo::RefPtr<::Cairo::Context> &cr) override;
+    void toggle_fullscreen ();
+
+    void setProgress(double p) override;
+    void setProgressStr(const Glib::ustring& str) override;
+    void setProgressState(bool inProcessing) override;
+    void error(const Glib::ustring& descr) override;
+
+    void showInfo(const Glib::ustring &msg, double duration) override;
+    void showError(const Glib::ustring &msg) override;
+
+    rtengine::ProgressListener* getProgressListener ()
+    {
+        return pldBridge;
+    }
+
+    EditorPanel*  epanel;
+    FilePanel* fpanel;
+
+    void SetEditorCurrent();
+    void SetMainCurrent();
+    void MoveFileBrowserToEditor();
+    void MoveFileBrowserToMain();
+
+    void updateProfiles (const Glib::ustring &printerProfile, rtengine::RenderingIntent printerIntent, bool printerBPC);
+    void updateTPVScrollbar (bool hide);
+    void updateHistogramPosition (int oldPosition, int newPosition);
+    void updateFBQueryTB (bool singleRow);
+    void updateFBToolBarVisibility (bool showFilmStripToolBar);
+    bool getIsFullscreen()
+    {
+        return is_fullscreen;
+    }
+    void set_title_decorated (Glib::ustring fname);
+    void closeOpenEditors();
+    void setEditorMode (bool tabbedUI);
+    void createSetmEditor();
+
+    void writeToolExpandedStatus (std::vector<int> &tpOpen);
+
+    // void showInfo(const Glib::ustring &msg, double duration=0.0);
 
 private:
+    // void show_info_msg(const Glib::ustring &msg, bool is_error, double duration, size_t padding);
+    // bool hide_info_msg();
+    // Gtk::Overlay *main_overlay_;
+    // Gtk::Revealer *msg_revealer_;
+    // Gtk::Label *info_label_;
+    // Gtk::Box *info_box_;
+    // RTImage *info_image_;
+    // std::set<Glib::ustring> unique_info_msg_;
+    // std::vector<Glib::ustring> info_msg_;
+    // int info_msg_num_;
+    // sigc::connection reveal_conn_;
+    
     Gtk::Notebook* mainNB;
     BatchQueuePanel* bpanel;
     std::set<Glib::ustring> filesEdited;
@@ -66,64 +172,7 @@ private:
     GtkosxApplication *osxApp;
 #endif
 
-public:
-    RTWindow ();
-    ~RTWindow() override;
-
-#if defined(__APPLE__)
-    bool osxFileOpenEvent (Glib::ustring path);
-#endif
-    void addEditorPanel (EditorPanel* ep, const std::string &name);
-    void remEditorPanel (EditorPanel* ep);
-    bool selectEditorPanel (const std::string &name);
-
-    void addBatchQueueJob       (BatchQueueEntry* bqe, bool head = false);
-    void addBatchQueueJobs      (const std::vector<BatchQueueEntry*>& entries);
-
-    bool keyPressed (GdkEventKey* event);
-    bool on_configure_event (GdkEventConfigure* event) override;
-    bool on_delete_event (GdkEventAny* event) override;
-    bool on_window_state_event (GdkEventWindowState* event) override;
-    void on_mainNB_switch_page (Gtk::Widget* widget, guint page_num);
-
-    void showICCProfileCreator ();
-    void showPreferences ();
-    void on_realize () override;
-    void toggle_fullscreen ();
-
-    void setProgress(double p) override;
-    void setProgressStr(const Glib::ustring& str) override;
-    void setProgressState(bool inProcessing) override;
-    void error(const Glib::ustring& descr) override;
-
-    rtengine::ProgressListener* getProgressListener ()
-    {
-        return pldBridge;
-    }
-
-    EditorPanel*  epanel;
-    FilePanel* fpanel;
-
-    void SetEditorCurrent();
-    void SetMainCurrent();
-    void MoveFileBrowserToEditor();
-    void MoveFileBrowserToMain();
-
-    void updateProfiles (const Glib::ustring &printerProfile, rtengine::RenderingIntent printerIntent, bool printerBPC);
-    void updateTPVScrollbar (bool hide);
-    void updateHistogramPosition (int oldPosition, int newPosition);
-    void updateFBQueryTB (bool singleRow);
-    void updateFBToolBarVisibility (bool showFilmStripToolBar);
-    bool getIsFullscreen()
-    {
-        return is_fullscreen;
-    }
-    void set_title_decorated (Glib::ustring fname);
-    void closeOpenEditors();
-    void setEditorMode (bool tabbedUI);
-    void createSetmEditor();
-
-    void writeToolExpandedStatus (std::vector<int> &tpOpen);
+    IdleRegister idle_register;
 };
 
 #endif

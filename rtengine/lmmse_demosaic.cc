@@ -75,13 +75,14 @@ void RawImageSource::lmmse_interpolate_omp(int winw, int winh, const array2D<flo
         passref = iterations - 6;
     }
 
-    bool applyGamma = true;
+    // bool applyGamma = true;
+    constexpr bool applyGamma = false;
 
     if (iterations == 0) {
-        applyGamma = false;
+        // applyGamma = false;
         iter = 0;
-    } else {
-        applyGamma = true;
+    // } else {
+    //     applyGamma = true;
     }
 
     float *rix[5];

@@ -31,7 +31,7 @@ extern const Settings *settings;
 namespace {
 
 class PDAFGreenEqulibrateThreshold: public RawImageSource::GreenEqulibrateThreshold {
-    static constexpr float BASE_THRESHOLD = 0.5f;
+    static constexpr float BASE_THRESHOLD = 0.6f;
     static constexpr int TILE_SIZE = 200;
     static constexpr float AREA = TILE_SIZE * TILE_SIZE;
     static constexpr int PIXEL_COUNT_FACTOR = 12;
@@ -144,6 +144,9 @@ public:
         if (!pattern_.empty()) {
             int key = (row - offset_) % pattern_.back();
             auto it = std::lower_bound(pattern_.begin(), pattern_.end(), key);
+            if (it == pattern_.end()) {
+                return 0.f;
+            }
 
             int b = *it;
             int d = b - key;
@@ -272,7 +275,7 @@ int PDAFLinesFilter::mark(array2D<float> &rawData, PixelsMap &bpMap)
     int off = offset_;
         
     int found = 0;
-    for (int y = 1; y < H_-1; ++y) {
+    for (int y = 2; y < H_-2; ++y) {
         int yy = pattern_[idx] + off;
         if (y == yy) {
             int n = markLine(rawData, bpMap, y) + markLine(rawData, bpMap, y-1) + markLine(rawData, bpMap, y+1);

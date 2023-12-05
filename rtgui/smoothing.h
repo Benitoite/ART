@@ -52,16 +52,30 @@ public:
     void setAreaDrawListener(AreaDrawListener *l);
     void setDeltaEColorProvider(DeltaEColorProvider *p);
 
+    void toolReset(bool to_initial) override;
+
 private:
     void regionGet(int idx);
     void regionShow(int idx);
     void channelChanged();
+    void modeChanged();
     
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvChannel;
     rtengine::ProcEvent EvRadius;
     rtengine::ProcEvent EvEpsilon;
     rtengine::ProcEvent EvIterations;
+    rtengine::ProcEvent EvMode;
+    rtengine::ProcEvent EvSigma;
+    rtengine::ProcEvent EvFalloff;
+    rtengine::ProcEvent EvNLStrength;
+    rtengine::ProcEvent EvNLDetail;
+    rtengine::ProcEvent EvNumBlades;
+    rtengine::ProcEvent EvAngle;
+    rtengine::ProcEvent EvCurvature;
+    rtengine::ProcEvent EvOffset;
+    rtengine::ProcEvent EvNoiseStrength;
+    rtengine::ProcEvent EvNoiseCoarseness;
 
     rtengine::ProcEvent EvList;
     rtengine::ProcEvent EvParametricMask;
@@ -74,17 +88,37 @@ private:
     rtengine::ProcEvent EvDeltaEMask;
     rtengine::ProcEvent EvContrastThresholdMask;
     rtengine::ProcEvent EvDrawnMask;
+    rtengine::ProcEvent EvMaskPostprocess;
 
-    std::vector<rtengine::procparams::GuidedSmoothingParams::Region> data;
+    std::vector<rtengine::procparams::SmoothingParams::Region> data;
 
     friend class SmoothingMasksContentProvider;
     std::unique_ptr<LabMasksContentProvider> labMasksContentProvider;
     LabMasksPanel *labMasks;
-    
+
     MyComboBoxText *channel;
+    MyComboBoxText *mode;
     Adjuster *radius;
     Adjuster *epsilon;
     Adjuster *iterations;
+    Adjuster *sigma;
+    Adjuster *falloff;
+    Adjuster *nlstrength;
+    Adjuster *nldetail;
+    Adjuster *numblades;
+    Adjuster *angle;
+    Adjuster *curvature;
+    Adjuster *offset;
+    Adjuster *noise_strength;
+    Adjuster *noise_coarseness;
     Gtk::VBox *box;
+    Gtk::HBox *chan_box;
+    Gtk::VBox *guided_box;
+    Gtk::VBox *gaussian_box;
+    Gtk::VBox *nl_box;
+    Gtk::VBox *lens_motion_box;
+    Gtk::VBox *noise_box;
+
+    rtengine::procparams::SmoothingParams initial_params;
 };
 

@@ -30,6 +30,8 @@ private:
 
     rtengine::ProcEvent EvSoftLightEnabled;
     rtengine::ProcEvent EvSoftLightStrength;
+
+    rtengine::procparams::SoftLightParams initial_params;
     
 public:
 
@@ -41,5 +43,8 @@ public:
     void adjusterChanged(Adjuster *a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void enabledChanged() override;
+
+    void toolReset(bool to_initial) override;
+    void registerShortcuts(ToolShortcutManager *mgr) override;
 };
 

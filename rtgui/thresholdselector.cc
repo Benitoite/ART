@@ -136,7 +136,9 @@ ThresholdSelector::ThresholdSelector(double minValue, double maxValue, double de
 
 void ThresholdSelector::initValues ()
 {
-
+    active_top_ = true;
+    active_bot_ = true;
+    
     updatePolicy = RTUP_STATIC;
     additionalTTip = "";
     oldLitCursor = litCursor = TS_UNDEFINED;
@@ -155,6 +157,14 @@ void ThresholdSelector::initValues ()
     setDirty(true);
     updateTooltip();
 }
+
+
+void ThresholdSelector::setActive(bool b, bool t)
+{
+    active_top_ = t;
+    active_bot_ = b;
+}
+
 
 Gtk::SizeRequestMode ThresholdSelector::get_request_mode_vfunc () const
 {
@@ -421,6 +431,13 @@ void ThresholdSelector::updateBackBuffer()
     cr->set_line_cap(Cairo::LINE_CAP_ROUND);
 
     for (int i = 0; i < (doubleThresh ? 4 : 2); ++i) {
+        if (!active_top_ && (i == TS_TOPLEFT || i == TS_TOPRIGHT)) {
+            continue;
+        }
+        if (!active_bot_ && (i == TS_BOTTOMLEFT || i == TS_BOTTOMRIGHT)) {
+            continue;
+        }
+
         if (!is_sensitive()) {
             style->set_state(Gtk::STATE_FLAG_INSENSITIVE);
         } else if (i == movedCursor) {
@@ -430,7 +447,7 @@ void ThresholdSelector::updateBackBuffer()
         } else {
             style->set_state(Gtk::STATE_FLAG_NORMAL);
         }
-
+        
         double posX = xStart + iw * positions01[i];
         double arrowY = i == 0 || i == 2 ? yStart - 3. * s : yEnd + 3. * s;
         double baseY = i == 0 || i == 2 ? (double)h - (double)padding.get_bottom() - 0.5 * s : (double)padding.get_top() + 0.5 * s;
@@ -467,6 +484,62 @@ bool ThresholdSelector::on_button_press_event (GdkEventButton* event)
         tmpX = event->x;
 
         queue_draw ();
+    } else if (event->button == 3 && separatedSliders) {
+        Gtk::Popover p(*this);
+        Gtk::HBox hb;
+        p.set_border_width(16);
+        p.add(hb);
+        Gtk::Label lbot(separatedLabelBottom);
+        Gtk::SpinButton bot;
+        bot.set_range(minValBottom, maxValBottom);
+        bot.set_digits(precisionBottom);
+        double xi = std::pow(10, -int(precisionBottom));
+        bot.set_increments(xi, xi*10);
+        Gtk::Label ltop(separatedLabelTop);
+        Gtk::SpinButton top;
+        top.set_range(minValTop, maxValTop);
+        top.set_digits(precisionTop);
+        double yi = std::pow(10, -int(precisionTop));
+        top.set_increments(yi, yi*10);
+
+        if (active_top_) {
+            hb.pack_start(ltop);
+            hb.pack_start(top);
+        }
+        Gtk::Label spc("  ");
+        if (active_bot_) {
+            if (active_top_) {
+                hb.pack_start(spc);
+            }
+            hb.pack_start(lbot);
+            hb.pack_start(bot);
+        }
+
+        double vb, vt;
+        getPositions(vb, vt);
+        bot.set_value(vb);
+        top.set_value(vt);
+    
+        bool done = false;
+
+        p.signal_closed().connect(
+            sigc::slot<void>(
+                [&]()
+                {
+                    done = true;
+                    if (bot.get_value() != vb || top.get_value() != vt) {
+                        setPositions(bot.get_value(), top.get_value());
+                    }
+                })
+            );
+
+        p.show_all_children();
+        p.set_modal(true);
+        p.show();
+
+        while (!done) {
+            gtk_main_iteration();
+        }
     }
 
     grab_focus();
@@ -626,6 +699,14 @@ void ThresholdSelector::findLitCursor(int posX, int posY)
                 }
             }
         }
+    }
+
+    if (!active_top_ && (litCursor == TS_TOPLEFT || litCursor == TS_TOPRIGHT)) {
+        litCursor = TS_UNDEFINED;
+    }
+
+    if (!active_bot_ && (litCursor == TS_BOTTOMLEFT || litCursor == TS_BOTTOMRIGHT)) {
+        litCursor = TS_UNDEFINED;
     }
 }
 
@@ -792,12 +873,25 @@ void ThresholdSelector::updateTooltip()
     Glib::ustring tTip;
 
     if (doubleThresh) {
-        tTip  = Glib::ustring::compose("<b>%1:</b> %2     <b>%3:</b> %4\n<b>%5:</b> %6     <b>%7:</b> %8",
-                                       M("THRESHOLDSELECTOR_TL"), Glib::ustring::format(std::fixed, std::setprecision(precisionTop), positions[TS_TOPLEFT]),
-                                       M("THRESHOLDSELECTOR_TR"), Glib::ustring::format(std::fixed, std::setprecision(precisionTop), positions[TS_TOPRIGHT]),
-                                       M("THRESHOLDSELECTOR_BL"), Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMLEFT]),
-                                       M("THRESHOLDSELECTOR_BR"), Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMRIGHT])
-                                      );
+        Glib::ustring t_top = Glib::ustring::compose(
+            "<b>%1:</b> %2     <b>%3:</b> %4",
+            M("THRESHOLDSELECTOR_TL"), Glib::ustring::format(std::fixed, std::setprecision(precisionTop), positions[TS_TOPLEFT]),
+            M("THRESHOLDSELECTOR_TR"), Glib::ustring::format(std::fixed, std::setprecision(precisionTop), positions[TS_TOPRIGHT])
+            );
+        Glib::ustring t_bot = Glib::ustring::compose(
+            "<b>%1:</b> %2     <b>%3:</b> %4",
+            M("THRESHOLDSELECTOR_BL"), Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMLEFT]),
+            M("THRESHOLDSELECTOR_BR"), Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMRIGHT])
+            );
+        if (active_top_) {
+            tTip = t_top;
+        }
+        if (active_bot_) {
+            if (active_top_) {
+                tTip += "\n";
+            }
+            tTip += t_bot;
+        }
 
         if (!additionalTTip.empty()) {
             tTip += Glib::ustring::compose("\n\n%1", additionalTTip);
@@ -805,20 +899,46 @@ void ThresholdSelector::updateTooltip()
 
         tTip += Glib::ustring::compose("\n\n%1", M("THRESHOLDSELECTOR_HINT"));
     } else if (separatedSliders) {
-        tTip  = Glib::ustring::compose("<b>%1:</b> %2\n<b>%3:</b> %4",
-                                       separatedLabelTop,    Glib::ustring::format(std::fixed, std::setprecision(precisionTop),    positions[TS_TOPLEFT]),
-                                       separatedLabelBottom, Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMLEFT])
-                                      );
+        Glib::ustring t_top = Glib::ustring::compose(
+            "<b>%1:</b> %2",
+            separatedLabelTop,    Glib::ustring::format(std::fixed, std::setprecision(precisionTop),    positions[TS_TOPLEFT])
+            );
+        Glib::ustring t_bot = Glib::ustring::compose(
+            "<b>%1:</b> %2",
+            separatedLabelBottom, Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMLEFT])
+            );
+        if (active_top_) {
+            tTip = t_top;
+        }
+        if (active_bot_) {
+            if (active_top_) {
+                tTip += "\n";
+            }
+            tTip += t_bot;
+        }
 
         if (!additionalTTip.empty()) {
             tTip += Glib::ustring::compose("\n\n%1", additionalTTip);
         }
     } else {
-        tTip  = Glib::ustring::compose("<b>%1:</b> %2\n<b>%3:</b> %4",
-                                       M("THRESHOLDSELECTOR_T"), Glib::ustring::format(std::fixed, std::setprecision(precisionTop), positions[TS_TOPLEFT]),
-                                       M("THRESHOLDSELECTOR_B"), Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMLEFT])
-                                      );
-
+        Glib::ustring t_top = Glib::ustring::compose(
+            "<b>%1:</b> %2",
+            M("THRESHOLDSELECTOR_T"), Glib::ustring::format(std::fixed, std::setprecision(precisionTop), positions[TS_TOPLEFT])
+            );
+        Glib::ustring t_bot = Glib::ustring::compose(
+            "<b>%1:</b> %2",
+            M("THRESHOLDSELECTOR_B"), Glib::ustring::format(std::fixed, std::setprecision(precisionBottom), positions[TS_BOTTOMLEFT])
+            );
+        if (active_top_) {
+            tTip = t_top;
+        }
+        if (active_bot_) {
+            if (active_top_) {
+                tTip += "\n";
+            }
+            tTip += t_bot;
+        }
+        
         if (!additionalTTip.empty()) {
             tTip += Glib::ustring::compose("\n\n%1", additionalTTip);
         }

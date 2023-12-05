@@ -51,6 +51,18 @@ rtengine::ProcEvent ProcEventMapper::newEvent(int action, const std::string &his
 }
 
 
+rtengine::ProcEvent ProcEventMapper::newAnonEvent(int action)
+{
+    auto event = rtengine::RefreshMapper::getInstance()->newEvent();
+    rtengine::RefreshMapper::getInstance()->mapEvent(event, action);    
+
+    auto it = history_msgs_.insert("");
+    event.set_message(it.first->c_str());
+    
+    return event;
+}
+
+
 std::string ProcEventMapper::getHistoryMsg(const rtengine::ProcEvent &event) const
 {
     static std::string empty;

@@ -12,9 +12,6 @@ inline void ART_print_help(std::ostream &out, const char *progname, bool gui)
     out << "  An advanced, cross-platform program for developing raw photos." << std::endl;
     out << std::endl;
     out << "  Website: http://bitbucket.org/agriggio/ART" << std::endl;
-    // out << "  Documentation: http://rawpedia.rawtherapee.com/" << std::endl;
-    // out << "  Forum: https://discuss.pixls.us/c/software/rawtherapee" << std::endl;
-    // out << "  Code and bug reports: https://github.com/Beep6581/RawTherapee" << std::endl;
     out << std::endl;
     out << "Symbols:" << std::endl;
     out << "  <Chevrons> indicate parameters you can change." << std::endl;
@@ -25,8 +22,8 @@ inline void ART_print_help(std::ostream &out, const char *progname, bool gui)
     
     if (gui) {
         out << "Usage:\n";
-        out << "  " << pn << " <folder>           Start File Browser inside folder.\n";
-        out << "  " << pn << " <file>             Start Image Editor with file.\n\n";
+        out << "  " << pn << " <folder> Start File Browser inside folder.\n";
+        out << "  " << pn << " <file>   Start Image Editor with file.\n\n";
         out << "Options:\n";
 #ifdef WIN32
         out << "  -w Do not open the Windows console\n";
@@ -35,34 +32,46 @@ inline void ART_print_help(std::ostream &out, const char *progname, bool gui)
 #ifndef __APPLE__
         out << "  -R Raise an already running instance (if available)\n";
 #endif
+        out << "  -s Simple editor mode\n";
+        out << "  -S <file> Start with session from file\n"
+            << "  -Sc Clear the session\n"
+            << "  -Sa <file1> [... <fileN>] Add the files to the session\n"
+            << "  -Sr <file1> [... <fileN>] Remove the files from the session\n";
         out << "  -h -? Display this help message\n";
     } else {        
         Glib::ustring pparamsExt = paramFileExtension.substr(1);
         out << "Usage:" << std::endl;
         out << "  " << pn << " -c <dir>|<files>   Convert files in batch with default parameters." << std::endl;
         out << "  " << pn << " <other options> -c <dir>|<files>   Convert files in batch with your own settings." << std::endl;
+        out << "  " << pn << " --make-icc <make-icc options>   Build an ICC output color profile." << std::endl;
+        out << "  " << pn << " --check-lut <lut-filename>   Check the validity of the given LUT file." << std::endl;
         out << std::endl;
         out << "Options:" << std::endl;
-        out << "  " << pn << "[-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one" << paramFileExtension << "> [-p <two" << paramFileExtension << "> ...] ] [-d] [ -j[1-100] -js<1-3> | -t[z] -b<8|16|16f|32> | -n -b<8|16> ] [-Y] [-f] -c <input>" << std::endl;
+        out << "  " << pn << "[-o <output>|-O <output>] [-q] [-a] [-s|-S] [-p <one" << paramFileExtension << "> [-p <two" << paramFileExtension << "> ...] ] [-d] [ -j[1-100] -js<1-3> | -t[z] -b<8|16|16f|32> | -n -b<8|16> | -Ttype ] [-Y] [-f] -c <input>" << std::endl;
         out << std::endl;
-        out << "  -c <files>       Specify one or more input files or folders." << std::endl;
-        out << "                   When specifying folders, Rawtherapee will look for image file types which comply" << std::endl;
-        out << "                   with the selected extensions (see also '-a')." << std::endl;
-        out << "                   -c must be the last option." << std::endl;
-        out << "  -o <file>|<dir>  Set output file or folder." << std::endl;
-        out << "                   Saves output file alongside input file if -o is not specified." << std::endl;
+        out << "  -c <files>       Specify one or more input files or folders. When specifying\n"
+            << "                   folders, ART will look for image file types which comply with\n"
+            << "                   the selected extensions (see also '-a').\n"
+            << "                   '-c' must be the last option." << std::endl;
+        out << "  -o <file>|<dir>  Set output file or folder. Saves output file alongside input\n"
+            << "                   file if -o is not specified." << std::endl;
         out << "  -O <file>|<dir>  Set output file or folder and copy " << pparamsExt << " file into it." << std::endl;
-        out << "                   Saves output file alongside input file if -O is not specified." << std::endl;
-        out << "  -q               Quick-start mode. Does not load cached files to speedup start time." << std::endl;
-        out << "  -a               Process all supported image file types when specifying a folder, even those" << std::endl;
-        out << "                   not currently selected in Preferences > File Browser > Parsed Extensions." << std::endl;
-        out << "  -s               Use the existing sidecar file to build the processing parameters," << std::endl;
-        out << "                   e.g. for photo.raw there should be a photo.raw." << pparamsExt << " file in the same folder." << std::endl;
-        out << "                   If the sidecar file does not exist, neutral values will be used." << std::endl;
+        out << "                   Saves output file alongside input file if -O is not\n"
+            << "                   specified." << std::endl;
+        out << "  -q               Quick-start mode. Does not load cached files to speedup\n"
+            << "                   start time." << std::endl;
+        out << "  -a               Process all supported image file types when specifying\n"
+            << "                   a folder, even those not currently selected in\n"
+            << "                   Preferences > File Browser > Parsed Extensions." << std::endl;
+        out << "  -s               Use the existing sidecar file to build the processing\n"
+            << "                   parameters, e.g. for photo.raw there should be a\n"
+            << "                   photo.raw." << pparamsExt << " file in the same folder. If the sidecar file\n"
+            << "                   does not exist, neutral values will be used." << std::endl;
         out << "  -S               Like -s but skip if the sidecar file does not exist." << std::endl;
         out << "  -p <file" << paramFileExtension << ">    Specify processing profile to be used for all conversions." << std::endl;
-        out << "                   You can specify as many sets of \"-p <file" << paramFileExtension << ">\" options as you like," << std::endl;
-        out << "                   each will be built on top of the previous one, as explained below." << std::endl;
+        out << "                   You can specify as many sets of \"-p <file" << paramFileExtension << ">\" options\n"
+            << "                   as you like, each will be built on top of the previous one,\n"
+            << "                   as explained below." << std::endl;
         out << "  -d               Use the default raw or non-raw processing profile as set in" << std::endl;
         out << "                   Preferences > Image Processing > Default Processing Profile" << std::endl;
         out << "  -j[1-100]        Specify output to be JPEG (default, if -t and -n are not set)." << std::endl;
@@ -75,16 +84,22 @@ inline void ART_print_help(std::ostream &out, const char *progname, bool gui)
         out << "                   3 = Best quality:       1x1, 1x1, 1x1 (4:4:4)" << std::endl;
         out << "                       No chroma subsampling." << std::endl;
         out << "  -b<8|16|16f|32>  Specify bit depth per channel." << std::endl;
-        out << "                   8   = 8-bit integer.  Applies to JPEG, PNG and TIFF. Default for JPEG and PNG." << std::endl;
-        out << "                   16  = 16-bit integer. Applies to TIFF and PNG. Default for TIFF." << std::endl;
-        out << "                   16f = 16-bit float.   Applies to TIFF." << std::endl;
-        out << "                   32  = 32-bit float.   Applies to TIFF." << std::endl;
+        out << "                   8   = 8-bit integer. Applies to JPEG, PNG and TIFF.\n"
+            << "                   Default for JPEG and PNG." << std::endl;
+        out << "                   16  = 16-bit integer. Applies to TIFF and PNG.\n"
+            << "                   Default for TIFF." << std::endl;
+        out << "                   16f = 16-bit float. Applies to TIFF." << std::endl;
+        out << "                   32  = 32-bit float. Applies to TIFF." << std::endl;
         out << "  -t[z]            Specify output to be TIFF." << std::endl;
         out << "                   Uncompressed by default, or deflate compression with 'z'." << std::endl;
         out << "  -n               Specify output to be compressed PNG." << std::endl;
         out << "                   Compression is hard-coded to PNG_FILTER_PAETH, Z_RLE." << std::endl;
+        out << "  -Ttype           Select the given (custom) output type. Must be supported\n"
+            << "                   by a user-defined custom image saver." << std::endl;
         out << "  -Y               Overwrite output if present." << std::endl;
         out << "  -f               Use the custom fast-export processing pipeline." << std::endl;
+        out << "  -V               Verbose output." << std::endl;
+        out << "  --progress       Show progress info in a format compatible with zenity." << std::endl;
         out << std::endl;
         out << "Your " << pparamsExt << " files can be incomplete, ART will build the final values as follows:" << std::endl;
         out << "  1- A new processing profile is created using neutral values," << std::endl;
@@ -92,9 +107,10 @@ inline void ART_print_help(std::ostream &out, const char *progname, bool gui)
         out << "     the default raw or non-raw processing profile." << std::endl;
         out << "  3- If one or more \"-p\" options are set, the values are overridden by those" << std::endl;
         out << "     found in these processing profiles." << std::endl;
-        out << "  4- If the \"-s\" or \"-S\" options are set, the values are finally overridden by those" << std::endl;
-        out << "     found in the sidecar files." << std::endl;
-        out << "  The processing profiles are processed in the order specified on the command line." << std::endl;
+        out << "  4- If the \"-s\" or \"-S\" options are set, the values are finally overridden\n"
+            << "     by those found in the sidecar files." << std::endl;
+        out << "  The processing profiles are processed in the order specified on the\n"
+            << "  command line." << std::endl;
     }
 }
 

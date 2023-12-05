@@ -38,32 +38,28 @@ void adjust_params(procparams::DenoiseParams &dnparams, double scale)
         return;
     }
     
+    const auto c =
+        [](double x, double f) -> double
+        {
+            int s = SGN(x);
+            double y = LIM01(std::abs(x)/100.0);
+            return s * intp(y, y * f, y) * 100.0;
+        };
+
     double scale_factor = 1.0 / scale;
-    double noise_factor_c = std::pow(scale_factor, 0.46);//scale_factor * 1.8;
-    double noise_factor_l = std::pow(scale_factor, 0.62);//scale_factor * 1.5; //std::pow(scale_factor, scale_factor);
+    double noise_factor_c = std::pow(scale_factor, 0.46);
+    double noise_factor_l = std::pow(scale_factor, 0.62) * scale_factor;
+    //noise_factor_l *= intp(std::pow(LIM01(dnparams.luminance / 100.0), 3.0), scale_factor, 1.0);
+    //std::cout << "ADJUSTING LUMINANCE SCALE: " << noise_factor_l << std::endl;
     //dnparams.luminance *= noise_factor_l;
-    dnparams.luminance *= noise_factor_l;
-    //dnparams.luminanceDetail += dnparams.luminanceDetail * noise_factor_l;
-    dnparams.luminanceDetail *= (1.0 + std::pow(1.0 - scale_factor, 2.2));//scale_factor * 1.2);
-    // if (dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::MANUAL) {
-        dnparams.chrominance *= noise_factor_c;
-        dnparams.chrominanceRedGreen *= noise_factor_c;
-        dnparams.chrominanceBlueYellow *= noise_factor_c;
-    // }
-    // if (scale > 2) {
-    //     dnparams.aggressive = false;
-    // }
-
-    if (dnparams.smoothingEnabled) {
-        int j = int(dnparams.medianType) - int(1.0 / scale_factor);
-        if (j < 0 && dnparams.smoothingMethod == procparams::DenoiseParams::SmoothingMethod::MEDIAN) {
-            dnparams.smoothingEnabled = false;
-        } else {
-            dnparams.medianType = static_cast<procparams::DenoiseParams::MedianType>(j);
-        }
-    }
-
-    // guided params don't need to be adjusted here, they are already scaled in ImProcFunctions::guidedSmoothing
+    dnparams.luminance = c(dnparams.luminance, noise_factor_l);
+    dnparams.luminanceDetail *= (1.0 + std::pow(1.0 - scale_factor, 2.2));
+    dnparams.chrominance = c(dnparams.chrominance, noise_factor_c);
+    dnparams.chrominanceRedGreen = c(dnparams.chrominanceRedGreen, noise_factor_c);
+    dnparams.chrominanceBlueYellow = c(dnparams.chrominanceBlueYellow, noise_factor_c);
+    // dnparams.chrominance *= noise_factor_c;
+    // dnparams.chrominanceRedGreen *= noise_factor_c;
+    // dnparams.chrominanceBlueYellow *= noise_factor_c;
 }
 
 
@@ -73,7 +69,7 @@ void calcautodn_info(const ProcParams *params, float &chaut, float &delta, int N
     float reducdelta = 1.f;
 
     if (params->denoise.aggressive) {
-        reducdelta = static_cast<float>(settings->nrhigh);
+        reducdelta = static_cast<float>(0.9/*settings->nrhigh*/);
     }
 
     chaut = (chaut * Nb - maxmax) / (Nb - 1); //suppress maximum for chaut calcul
@@ -299,15 +295,15 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
     int tilesize;
     int overlap;
 
-    if (settings->leveldnti == 0) {
+    // if (settings->leveldnti == 0) {
         tilesize = 1024;
         overlap = 128;
-    }
+    // }
 
-    if (settings->leveldnti == 1) {
-        tilesize = 768;
-        overlap = 96;
-    }
+    // if (settings->leveldnti == 1) {
+    //     tilesize = 768;
+    //     overlap = 96;
+    // }
 
     int numtiles_W, numtiles_H, tilewidth, tileheight, tileWskip, tileHskip;
 
@@ -361,20 +357,22 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
             }
 
             float realred, realblue;
-            float interm_med = static_cast<float>(dnparams.chrominance) / 10.0;
+            float interm_med = 1.5f; //static_cast<float>(dnparams.chrominance) / 10.0;
             float intermred, intermblue;
 
-            if (dnparams.chrominanceRedGreen > 0.) {
-                intermred = (dnparams.chrominanceRedGreen / 10.);
-            } else {
-                intermred = static_cast<float>(dnparams.chrominanceRedGreen) / 7.0;     //increase slower than linear for more sensit
-            }
+            intermred = 0.f;
+            intermblue = 0.f;
+            // if (dnparams.chrominanceRedGreen > 0.) {
+            //     intermred = (dnparams.chrominanceRedGreen / 10.);
+            // } else {
+            //     intermred = static_cast<float>(dnparams.chrominanceRedGreen) / 7.0;     //increase slower than linear for more sensit
+            // }
 
-            if (dnparams.chrominanceBlueYellow > 0.) {
-                intermblue = (dnparams.chrominanceBlueYellow / 10.);
-            } else {
-                intermblue = static_cast<float>(dnparams.chrominanceBlueYellow) / 7.0;     //increase slower than linear for more sensit
-            }
+            // if (dnparams.chrominanceBlueYellow > 0.) {
+            //     intermblue = (dnparams.chrominanceBlueYellow / 10.);
+            // } else {
+            //     intermblue = static_cast<float>(dnparams.chrominanceBlueYellow) / 7.0;     //increase slower than linear for more sensit
+            // }
 
             realred = interm_med + intermred;
 
@@ -670,27 +668,116 @@ void RGB_denoise_info(ImProcData &im, Imagefloat * src, Imagefloat * provicalc, 
 
 } // End of main RGB_denoise
 
-
 } // namespace
 
 
+
+void ImProcFunctions::DenoiseInfoStore::reset()
+{
+    chM = 0;
+    for (int i = 0; i < 9; ++i) {
+        max_r[i] = 0.f;
+        max_b[i] = 0.f;
+        ch_M[i] = 0.f;
+    }
+    valid = false;
+    DenoiseParams p;
+    chrominance = p.chrominance;
+    chrominanceRedGreen = p.chrominanceRedGreen;
+    chrominanceBlueYellow = p.chrominanceBlueYellow;
+}
+
+
+bool ImProcFunctions::DenoiseInfoStore::update_pparams(const procparams::ProcParams &p)
+{
+    if (!valid) {
+        // std::cout << "** INVALID ** " << std::endl;
+        pparams = p;
+        return false;
+    } else {
+        const auto &d1 = pparams.denoise;
+        const auto &d2 = p.denoise;
+        const auto dn_eq =
+            [&]() -> bool
+            {
+                return (d1.enabled == d2.enabled)
+                    && (d1.colorSpace == d2.colorSpace)
+                    && (d1.aggressive == d2.aggressive)
+                    && (d1.gamma == d2.gamma);
+            };
+        const auto &w1 = pparams.wb;
+        const auto &w2 = p.wb;
+        const auto wb_eq =
+            [&]() -> bool
+            {
+                if (w1.enabled == w2.enabled && w1.method == w2.method &&
+                    (w1.method == procparams::WBParams::CAMERA ||
+                     w1.method == procparams::WBParams::AUTO)) {
+                    return true;
+                }
+                return w1 == w2;
+            };
+        const auto &e1 = pparams.exposure;
+        const auto &e2 = p.exposure;
+        const auto exposure_eq =
+            [&]() -> bool
+            {
+                return e1.enabled == e2.enabled && e1.hrmode == e2.hrmode;
+            };
+        const auto &r1 = pparams.raw;
+        const auto &r2 = p.raw;
+        const auto raw_eq =
+            [&]() -> bool
+            {
+                auto r2b = r2;
+#define MK_EQ_(k) r2b.k = r1.k
+                MK_EQ_(bayersensor.method);
+                MK_EQ_(bayersensor.lmmse_iterations);
+                MK_EQ_(bayersensor.dualDemosaicAutoContrast);
+                MK_EQ_(bayersensor.dualDemosaicContrast);
+                MK_EQ_(xtranssensor.method);
+#undef MK_EQ_
+                return r1 == r2b;
+            };
+        const bool changed = !dn_eq() || !wb_eq() || !exposure_eq() || !raw_eq();
+        // if (changed) {
+        //     std::cout << "** CHANGED " << std::endl;
+        // }
+        pparams = p;
+        return !changed;
+    }
+}
+
 void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp &currWB, DenoiseInfoStore &store, procparams::DenoiseParams &dnparams)
 {
-    float autoNR = settings->nrauto;
-    float autoNRmax = settings->nrautomax;
+    if (store.valid || dnparams.chrominanceMethod != procparams::DenoiseParams::ChrominanceMethod::AUTOMATIC) {
+        if (dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::AUTOMATIC) {
+            dnparams.chrominance = store.chrominance * dnparams.chrominanceAutoFactor;
+            dnparams.chrominanceRedGreen = store.chrominanceRedGreen * dnparams.chrominanceAutoFactor;
+            dnparams.chrominanceBlueYellow = store.chrominanceBlueYellow * dnparams.chrominanceAutoFactor;
+        }
+        return;
+    }
+
+    if (settings->verbose) {
+        std::cout << "Denoise: computing auto chrominance params..." << std::endl;
+    }
+    
+    float autoNR = 10;//settings->nrauto;
+    float autoNRmax = 40;//settings->nrautomax;
 
     int tilesize;
     int overlap;
 
-    if (settings->leveldnti == 0) {
+    // if (settings->leveldnti == 0) {
         tilesize = 1024;
         overlap = 128;
-    }
+    // }
 
-    if (settings->leveldnti == 1) {
-        tilesize = 768;
-        overlap = 96;
-    }
+    // if (settings->leveldnti == 1) {
+    //     tilesize = 768;
+    //     overlap = 96;
+    // }
     
     int numtiles_W, numtiles_H, tilewidth, tileheight, tileWskip, tileHskip;
     int kall = 2;
@@ -698,7 +785,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
     int widIm, heiIm;
     int tr = getCoarseBitMask(params->coarse);
     imgsrc->getFullSize(widIm, heiIm, tr);
-    
+
     denoise::Tile_calc(tilesize, overlap, kall, widIm, heiIm, numtiles_W, numtiles_H, tilewidth, tileheight, tileWskip, tileHskip);
     kall = 0;
 
@@ -720,37 +807,37 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
         centerTile_Y[cY] = tileHskip / 2 + tileHskip * cY;
     }
 
-    assert(settings->leveldnautsimpl == 0);
-    
     if (!store.valid && dnparams.chrominanceMethod == procparams::DenoiseParams::ChrominanceMethod::AUTOMATIC) {
         MyTime t1aue, t2aue;
         t1aue.set();
 
+        store.reset();// = DenoiseInfoStore();
+
         int crW = 100; // settings->leveldnv == 0
         int crH = 100; // settings->leveldnv == 0
 
-        if (settings->leveldnv == 1) {
-            crW = 250;
-            crH = 250;
-        }
+        // if (settings->leveldnv == 1) {
+        //     crW = 250;
+        //     crH = 250;
+        // }
 
-        //  if(settings->leveldnv ==2) {crW=int(tileWskip/2);crH=int((tileWskip/2));}//adapted to scale of preview
-        if (settings->leveldnv == 2) {
+        // //  if(settings->leveldnv ==2) {crW=int(tileWskip/2);crH=int((tileWskip/2));}//adapted to scale of preview
+        // if (settings->leveldnv == 2) {
             crW = int (tileWskip / 2);
             crH = int (tileHskip / 2);
-        }
+        // }
 
-        if (settings->leveldnv == 3) {
-            crW = tileWskip - 10;
-            crH = tileHskip - 10;
-        }
+        // if (settings->leveldnv == 3) {
+        //     crW = tileWskip - 10;
+        //     crH = tileHskip - 10;
+        // }
 
         float lowdenoise = 1.f;
-        int levaut = settings->leveldnaut;
+        int levaut = 0;
 
-        if (levaut == 1) { //Standard
-            lowdenoise = 0.7f;
-        }
+        // if (levaut == 1) { //Standard
+        //     lowdenoise = 0.7f;
+        // }
 
         LUTf gamcurve(65536, 0);
         float gam, gamthresh, gamslope;
@@ -775,6 +862,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
             coordH[1] = heiIm / 2 - crH / 2;
             coordH[2] = heiIm - crH - begH;
 
+
 #ifdef _OPENMP
 #           pragma omp for schedule(dynamic) collapse(2) nowait
 #endif
@@ -798,8 +886,8 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
                     float pondcorrec = 1.0f;
                     float chaut = 0.f, redaut = 0.f, blueaut = 0.f, maxredaut = 0.f, maxblueaut = 0.f, minredaut = 0.f, minblueaut = 0.f, chromina = 0.f, sigma = 0.f, lumema = 0.f, sigma_L = 0.f, redyel = 0.f, skinc = 0.f, nsknc = 0.f;
                     int nb = 0;
-                    ImProcData im(params, scale, multiThread);
-                    RGB_denoise_info(im, origCropPart, provicalc, imgsrc->isRAW(), gamcurve, gam, gamthresh, gamslope, dnparams, imgsrc->getDirPyrDenoiseExpComp(), chaut, nb, redaut, blueaut, maxredaut, maxblueaut, minredaut, minblueaut, chromina, sigma, lumema, sigma_L, redyel, skinc, nsknc);
+                    ImProcData im(params, 1.f/*scale*/, multiThread);
+                    RGB_denoise_info(im, origCropPart, provicalc, imgsrc->isRAW(), gamcurve, gam, gamthresh, gamslope, dnparams, std::log(5.f)/std::log(2.f)/*imgsrc->getDirPyrDenoiseExpComp()*/, chaut, nb, redaut, blueaut, maxredaut, maxblueaut, minredaut, minblueaut, chromina, sigma, lumema, sigma_L, redyel, skinc, nsknc);
 
                     //printf("DCROP skip=%d cha=%f red=%f bl=%f redM=%f bluM=%f chrom=%f sigm=%f lum=%f\n",skip, chaut,redaut,blueaut, maxredaut, maxblueaut, chromina, sigma, lumema);
                     Nb[hcr * 3 + wcr] = nb;
@@ -820,6 +908,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
             delete provicalc;
             delete origCropPart;
         }
+
         float chM = 0.f;
         float MaxR = 0.f;
         float MaxB = 0.f;
@@ -862,7 +951,7 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
 
         float delta[9];
         int mode = 1;
-        int lissage = settings->leveldnliss;
+        int lissage = 0;//settings->leveldnliss;
 
         for (int k = 0; k < 9; k++) {
             float maxmax = max(store.max_r[k], store.max_b[k]);
@@ -925,15 +1014,26 @@ void ImProcFunctions::denoiseComputeParams(ImageSource *imgsrc, const ColorTemp 
         }
 
 //                  printf("DCROP skip=%d cha=%f red=%f bl=%f \n",skip, chM,maxr,maxb);
-        dnparams.chrominance = chM / (autoNR * multip * adjustr);
-        dnparams.chrominanceRedGreen = maxr;
-        dnparams.chrominanceBlueYellow = maxb;
+        store.chrominance = chM / (autoNR * multip * adjustr);
+        store.chrominanceRedGreen = maxr;
+        store.chrominanceBlueYellow = maxb;
 
-        dnparams.chrominance *= dnparams.chrominanceAutoFactor;
-        dnparams.chrominanceRedGreen *= dnparams.chrominanceAutoFactor;
-        dnparams.chrominanceBlueYellow *= dnparams.chrominanceAutoFactor;
+        dnparams.chrominance = store.chrominance * dnparams.chrominanceAutoFactor;
+        dnparams.chrominanceRedGreen = store.chrominanceRedGreen * dnparams.chrominanceAutoFactor;
+        dnparams.chrominanceBlueYellow = store.chrominanceBlueYellow * dnparams.chrominanceAutoFactor;
         
         store.valid = true;
+
+        // printf("DENOISE STORE FINAL:\n  chM = %.6f", store.chM);
+        // printf("  max_r = {");
+        // for (int i = 0; i < 9; ++i) printf(" %.6f", store.max_r[i]);
+        // printf(" }\n  max_b = {");
+        // for (int i = 0; i < 9; ++i) printf(" %.6f", store.max_b[i]);
+        // printf(" }\n  ch_M = {");
+        // for (int i = 0; i < 9; ++i) printf(" %.6f", store.ch_M[i]);
+        // printf("}\n");
+        // printf("*****************\n\n");
+        // fflush(stdout);
 
         if (settings->verbose) {
             t2aue.set();
@@ -948,6 +1048,11 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
 {
     if (!dnparams.enabled) {
         return;
+    }
+
+    if (plistener) {
+        plistener->setProgressStr("PROGRESSBAR_DENOISING");
+        plistener->setProgress(0);
     }
     
     procparams::DenoiseParams denoiseParams = dnparams;
@@ -994,64 +1099,43 @@ void ImProcFunctions::denoise(ImageSource *imgsrc, const ColorTemp &currWB, Imag
         0.35
         });
 
+    if (plistener) {
+        plistener->setProgress(0.1);
+    }
+
     ImProcData im(params, scale, multiThread);
-    denoise::RGB_denoise(im, 0, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, imgsrc->getDirPyrDenoiseExpComp(), noiseLCurve, noiseCCurve, nresi, highresi);
+    double ecomp = params->exposure.enabled ? params->exposure.expcomp : 0.0;
+    ExposureParams expparams;
+    expparams.enabled = true;
+    expparams.expcomp = ecomp;
+
+    if (ecomp > 0) {
+        expcomp(img, &expparams);
+    }
+    
+    denoise::RGB_denoise(im, 0, img, img, calclum, dnstore.ch_M, dnstore.max_r, dnstore.max_b, imgsrc->isRAW(), denoiseParams, 0, noiseLCurve, noiseCCurve, nresi, highresi);
+
+    if (plistener) {
+        plistener->setProgress(0.8);
+    }
 
     if (denoiseParams.smoothingEnabled) {
-        if (denoiseParams.smoothingMethod == DenoiseParams::SmoothingMethod::MEDIAN) {
-            denoise::Median median_type[3];
-            int median_iterations[3];
-            for (int i = 0; i < 3; ++i) {
-                median_type[i] = denoise::Median(int(denoiseParams.medianType));
-                median_iterations[i] = denoiseParams.medianIterations;
-            }
-            if (denoiseParams.medianMethod != DenoiseParams::MedianMethod::RGB) {
-                img->setMode(Imagefloat::Mode::YUV, multiThread);
-                switch (denoiseParams.medianMethod) {
-                case DenoiseParams::MedianMethod::LUMINANCE:
-                    median_iterations[1] = median_iterations[2] = 0;
-                    break;
-                case DenoiseParams::MedianMethod::CHROMINANCE:
-                    median_iterations[0] = 0;
-                    break;
-                case DenoiseParams::MedianMethod::LAB_WEIGHTED:
-                    switch (median_type[0]) {
-                    case denoise::Median::TYPE_3X3_SOFT:
-                        break;
-                    case denoise::Median::TYPE_3X3_STRONG:
-                    case denoise::Median::TYPE_5X5_SOFT:
-                        median_type[0] = denoise::Median::TYPE_3X3_SOFT;
-                        break;
-                    case denoise::Median::TYPE_5X5_STRONG:
-                    case denoise::Median::TYPE_7X7:
-                        median_type[0] = denoise::Median::TYPE_3X3_STRONG;
-                        break;
-                    case denoise::Median::TYPE_9X9:
-                        median_type[0] = denoise::Median::TYPE_5X5_SOFT;
-                        break;
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-            int num_threads = 1;
-#ifdef _OPENMP
-            if (multiThread) {
-                num_threads = omp_get_max_threads();
-            }
-#endif
-            array2D<float> buf(W, H);
-            float **channels[3] = { img->g.ptrs, img->r.ptrs, img->b.ptrs };
-            for (int c = 0; c < 3; ++c) {
-                if (median_iterations[c] > 0) {
-                    denoise::Median_Denoise(channels[c], channels[c], W, H, median_type[c], median_iterations[c], num_threads, buf);
-                }
-            }
+        denoise::denoiseGuidedSmoothing(im, img);
+        if (denoiseParams.nlStrength) {
+            img->setMode(Imagefloat::Mode::YUV, multiThread);
+            array2D<float> tmp(img->getWidth(), img->getHeight(), img->g.ptrs, ARRAY2D_BYREFERENCE);
+            denoise::NLMeans(tmp, 65535.f, denoiseParams.nlStrength, denoiseParams.nlDetail, scale, multiThread);
             img->setMode(Imagefloat::Mode::RGB, multiThread);
-        } else {
-            denoise::denoiseGuidedSmoothing(im, img);
         }
+    }
+
+    if (ecomp > 0) {
+        expparams.expcomp = -ecomp;
+        expcomp(img, &expparams);
+    }
+
+    if (plistener) {
+        plistener->setProgress(1);
     }
 }
 

@@ -33,6 +33,8 @@ protected:
     Gtk::Button*        selectStraight;
     LensGeomListener*   rlistener;
 
+    rtengine::procparams::RotateParams initial_params;
+    
 public:
 
     Rotate();
@@ -50,6 +52,8 @@ public:
     {
         rlistener = l;
     }
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

@@ -40,18 +40,26 @@ exePath="${exeRelativePath:+${exeRelativePath}/}${exe}"
 
 # Command-line arguments
 OPTIND=1
-while getopts "bdh?-" opt; do
+while getopts "bc:dph?-" opt; do
     case "${opt}" in
         b)  buildOnly="true"
             ;;
+        c)  checkout=${OPTARG}
+            ;;
         d)  buildType="debug"
+            ;;
+        p)  installPrimary="true"
             ;;
         h|\?|-) printf '%s\n' "This script gets the latest source code for ${prog} and compiles it." \
                 "" \
                 "  -b" \
                 "     Optional. If specified, the script only compiles the source, it does not try to update the source. If not specified, the source will be updated first." \
+                "  -c <commit or branch>" \
+                "     Optional. If specified, the script will checkout the given <commit or branch>. If not specified, the script will git pull only." \
                 "  -d" \
                 "     Optional. Compile a \"debug\" build. If not specified, a \"release\" build will be made." \
+                "  -p" \
+                "     Optional. Build and install using the primary program name (art) without branch or build suffix." \
                 ""
         exit 0
         ;;
@@ -60,7 +68,8 @@ done
 shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
 
-printf '%s\n' "" "Program name: ${prog}" "Build type: ${buildType}" "Build without updating: ${buildOnly}" ""
+printf '%s\n' "" "Program name: ${prog}" "Build type: ${buildType}" "Build without updating: ${buildOnly}"
+printf '%s\n' "Checkout: ${checkout}" "Install primary: ${installPrimary}" ""
 
 # Clone if needed
 cloned="false"
@@ -72,14 +81,16 @@ if [[ ! -d "$HOME/programs/code-${prog}" ]]; then
     cloned="true"
 else
     pushd "$HOME/programs/code-${prog}" 1>/dev/null || exit 1
-    git fetch
+    git fetch --all --tags --prune
     if [[ $(git rev-parse HEAD) != $(git rev-parse '@{u}') ]]; then
         updates="true"
     fi
 fi
 
 # Pull updates if necessary
-if [[ "$updates" = "true" && "$buildOnly" = "false" ]]; then
+if [[ -n "$checkout" ]]; then
+    git checkout $checkout || exit 1
+elif [[ "$updates" = "true" && "$buildOnly" = "false" ]]; then
     git pull || exit 1
 fi
 
@@ -87,7 +98,7 @@ fi
 branch="$(git rev-parse --abbrev-ref HEAD)"
 
 # Set build and install folder names
-if [[ $branch = $master && $buildType = release ]]; then
+if [[ $installPrimary = "true" || $branch = $master && $buildType = release ]]; then
     buildDir="$HOME/programs/code-${prog}/build"
     installDir="$HOME/programs/${prog}"
 else
@@ -137,7 +148,8 @@ cmake \
     -DWITH_SAN="OFF" \
     -DWITH_SYSTEM_KLT="OFF" \
     -DWITH_BENCHMARK="OFF" \
-    -DENABLE_TCMALLOC="ON" \
+    -DENABLE_LIBRAW="ON" \
+    -DENABLE_OCIO="ON" \
     "$HOME/programs/code-${prog}" || exit 1
 
 make --jobs="$cpuCount" install || exit 1

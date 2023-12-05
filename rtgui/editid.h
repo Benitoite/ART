@@ -24,28 +24,22 @@
 enum EditUniqueID {
     EUID_None,  /// special value (default)
 
+    EUID_DehazeStrength,
     EUID_ToneCurve1,
     EUID_ToneCurve2,
     EUID_ToneCurveSaturation,
+    EUID_ToneCurveSaturation2,
     EUID_Lab_LCurve,
-    EUID_Lab_CCurve,
-    EUID_Lab_LCCurve,
-    EUID_Lab_CLCurve,
-    EUID_Lab_LHCurve,
-    EUID_Lab_CHCurve,
-    EUID_Lab_HHCurve,
     EUID_Lab_aCurve,
     EUID_Lab_bCurve,
     EUID_RGB_R,
     EUID_RGB_G,
     EUID_RGB_B,
-    EUID_HSV_H,
-    EUID_HSV_S,
-    EUID_HSV_V,
-    /* EUID_BlackWhiteLuminance, */
-    /* EUID_BlackWhiteBeforeCurve, */
-    /* EUID_BlackWhiteAfterCurve, */
-    /* EUID_WW_HHCurve, */
+    EUID_HSL_H,
+    EUID_HSL_S,
+    EUID_HSL_V,
+    EUID_ColorCorrection_Wheel,
+    EUID_ColorCorrection_Wheel_Jzazbz,
     EUID_LabMasks_H1,
     EUID_LabMasks_C1,
     EUID_LabMasks_L1,

@@ -15,11 +15,13 @@
 //  GNU General Public License for more details.
 //
 //  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 ////////////////////////////////////////////////////////////////
 
+#include "color.h"
 #include "rtengine.h"
+#include "rawimage.h"
 #include "rawimagesource.h"
 #include "rt_algo.h"
 #include "rt_math.h"
@@ -29,7 +31,7 @@
 
 namespace rtengine
 {
-const double xyz_rgb[3][3] = {          // XYZ from RGB
+const float xyz_rgb[3][3] = {          // XYZ from RGB
     { 0.412453, 0.357580, 0.180423 },
     { 0.212671, 0.715160, 0.072169 },
     { 0.019334, 0.119193, 0.950227 }
@@ -39,10 +41,13 @@ const float d65_white[3] = { 0.950456, 1, 1.088754 };
 void RawImageSource::cielab (const float (*rgb)[3], float* l, float* a, float *b, const int width, const int height, const int labWidth, const float xyz_cam[3][3])
 {
     static LUTf cbrt(0x14000);
-    static bool cbrtinit = false;
 
     if (!rgb) {
+        static bool cbrtinit = false;
         if(!cbrtinit) {
+#ifdef _OPENMP
+            #pragma omp parallel for
+#endif
             for (int i = 0; i < 0x14000; i++) {
                 double r = i / 65535.0;
                 cbrt[i] = r > Color::eps ? std::cbrt(r) : (Color::kappa * r + 16.0) / 116.0;
@@ -173,9 +178,18 @@ void RawImageSource::xtransborder_interpolate (int border, array2D<float> &red, 
 */
 // override CLIP function to test unclipped output
 #define CLIP(x) (x)
-void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
+void RawImageSource::xtrans_interpolate(const int passes, const bool useCieLab)
 {
-    BENCHFUN
+    const size_t chunkSize = 2;
+    constexpr bool measure = false;
+    
+    std::unique_ptr<StopWatch> stop;
+
+    if (measure) {
+        std::cout << passes << "-pass Xtrans Demosaicing " << W << "x" << H << " image with " << chunkSize << " tiles per thread" << std::endl;
+        stop.reset(new StopWatch("xtrans demosaic"));
+    }
+
     constexpr int ts = 114;      /* Tile Size */
     constexpr int tsh = ts / 2;  /* half of Tile Size */
 
@@ -183,7 +197,7 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
     const bool plistenerActive = plistener;
 
     if (plistenerActive) {
-        plistener->setProgressStr (Glib::ustring::compose(M("TP_RAW_DMETHOD_PROGRESSBAR"), "Xtrans"));
+        plistener->setProgressStr (Glib::ustring::compose(M("TP_RAW_DMETHOD_PROGRESSBAR"), M("TP_RAW_XTRANS")));
         plistener->setProgress (progress);
     }
 
@@ -283,8 +297,6 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
 #endif
     {
         int progressCounter = 0;
-        int c;
-        float color[3][6];
 
         float *buffer = (float *) malloc ((ts * ts * (ndir * 4 + 3) + 128) * sizeof(float));
         float (*rgb)[ts][ts][3] = (float(*)[ts][ts][3]) buffer;
@@ -296,7 +308,7 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
         uint8_t (*homosummax)[ts] = (uint8_t (*)[ts]) homo[ndir - 1]; // we can reuse the homo-buffer because they are not used together
 
 #ifdef _OPENMP
-        #pragma omp for collapse(2) schedule(dynamic) nowait
+        #pragma omp for collapse(2) schedule(dynamic, chunkSize) nowait
 #endif
 
         for (int top = 3; top < height - 19; top += ts - 16)
@@ -513,6 +525,7 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
 
                     /* Interpolate red and blue values for solitary green pixels:   */
                     int sgstartcol = (left - sgcol + 4) / 3 * 3 + sgcol;
+                    float color[3][6];
 
                     for (int row = (top - sgrow + 4) / 3 * 3 + sgrow; row < mrow - 2; row += 3) {
                         for (int col = sgstartcol, h = fcol(row, col + 1); col < mcol - 2; col += 3, h ^= 2) {
@@ -556,7 +569,7 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
                             }
 
                         int coloffset = (RightShift[row % 3] == 1 ? 3 : 1);
-                        c = (row - sgrow) % 3 ? ts : 1;
+                        int c = ((row - sgrow) % 3) ? ts : 1;
                         int h = 3 * (c ^ ts ^ 1);
 
                         if(coloffset == 3) {
@@ -621,13 +634,13 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
                                     if (hex[d] + hex[d + 1]) {
                                         float g = 3 * rix[0][1] - 2 * rix[hex[d]][1] - rix[hex[d + 1]][1];
 
-                                        for (c = 0; c < 4; c += 2) {
+                                        for (int c = 0; c < 4; c += 2) {
                                             rix[0][c] = CLIP((g + 2 * rix[hex[d]][c] + rix[hex[d + 1]][c]) * 0.33333333f);
                                         }
                                     } else {
                                         float g = 2 * rix[0][1] - rix[hex[d]][1] - rix[hex[d + 1]][1];
 
-                                        for (c = 0; c < 4; c += 2) {
+                                        for (int c = 0; c < 4; c += 2) {
                                             rix[0][c] = CLIP((g + rix[hex[d]][c] + rix[hex[d + 1]][c]) * 0.5f);
                                         }
                                     }
@@ -648,10 +661,7 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
                     // (presumably coming from original AHD) and converts taking
                     // camera matrix into account.  We use this in RT.
                     for (int d = 0; d < ndir; d++) {
-                        float *l = &lab[0][0][0];
-                        float *a = &lab[1][0][0];
-                        float *b = &lab[2][0][0];
-                        cielab(&rgb[d][4][4], l, a, b, ts, mrow - 8, ts - 8, xyz_cam);
+                        cielab(&rgb[d][4][4], &lab[0][0][0], &lab[1][0][0], &lab[2][0][0], ts, mrow - 8, ts - 8, xyz_cam);
                         int f = dir[d & 3];
                         f = f == 1 ? 1 : f - 8;
 
@@ -696,7 +706,7 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab)
                                 // which appears less good with specular highlights
                                 vfloat redv, greenv, bluev;
                                 vconvertrgbrgbrgbrgb2rrrrggggbbbb(rgb[d][row][col], redv, greenv, bluev);
-                                vfloat yv = zd2627v * redv + zd6780v * bluev + zd0593v * greenv;
+                                vfloat yv = zd2627v * redv + zd6780v * greenv + zd0593v * bluev;
                                 STVFU(yuv[0][row - 4][col - 4], yv);
                                 STVFU(yuv[1][row - 4][col - 4], (bluev - yv) * zd56433v);
                                 STVFU(yuv[2][row - 4][col - 4], (redv - yv) * zd67815v);
@@ -962,7 +972,7 @@ void RawImageSource::fast_xtrans_interpolate (const array2D<float> &rawData, arr
 {
 
     if (plistener) {
-        plistener->setProgressStr(Glib::ustring::compose(M("TP_RAW_DMETHOD_PROGRESSBAR"), "fast Xtrans"));
+        plistener->setProgressStr(Glib::ustring::compose(M("TP_RAW_DMETHOD_PROGRESSBAR"), M("TP_RAW_XTRANSFAST")));
         plistener->setProgress(0.0);
     }
 
@@ -1010,6 +1020,67 @@ void RawImageSource::fast_xtrans_interpolate (const array2D<float> &rawData, arr
                 red[row][col] = sum[0];
                 green[row][col] = sum[1] * 0.5f;
                 blue[row][col] = rawData[row][col];
+                break;
+            }
+        }
+    }
+
+    if (plistener) {
+        plistener->setProgress (1.0);
+    }
+}
+
+void RawImageSource::fast_xtrans_interpolate_blend (const float* const * blend, const array2D<float> &rawData, array2D<float> &red, array2D<float> &green, array2D<float> &blue)
+{
+
+    if (plistener) {
+        plistener->setProgressStr(Glib::ustring::compose(M("TP_RAW_DMETHOD_PROGRESSBAR"), M("TP_RAW_XTRANSFAST")));
+        plistener->setProgress(0.0);
+    }
+
+    int xtrans[6][6];
+    ri->getXtransMatrix(xtrans);
+
+    const float weight[3][3] = {
+                                {0.25f, 0.5f, 0.25f},
+                                {0.5f,  0.f,  0.5f},
+                                {0.25f, 0.5f, 0.25f}
+                               };
+#ifdef _OPENMP
+    #pragma omp parallel for schedule(dynamic, 16)
+#endif
+    for (int row = 8; row < H - 8; ++row) {
+        for (int col = 8; col < W - 8; ++col) {
+            float sum[3] = {};
+
+            for (int v = -1; v <= 1; v++) {
+                for (int h = -1; h <= 1; h++) {
+                    sum[fcol(row + v, col + h)] += rawData[row + v][(col + h)] * weight[v + 1][h + 1];
+                }
+            }
+
+            switch(fcol(row, col)) {
+            case 0: // red pixel
+                red[row][col] = intp(blend[row][col], red[row][col], rawData[row][col]);
+                green[row][col] = intp(blend[row][col], green[row][col], sum[1] * 0.5f);
+                blue[row][col] = intp(blend[row][col], blue[row][col], sum[2]);
+                break;
+
+            case 1: // green pixel
+                green[row][col] = intp(blend[row][col], green[row][col], rawData[row][col]);
+                if (fcol(row, col - 1) == fcol(row, col + 1)) { // Solitary green pixel always has exactly two direct red and blue neighbors in 3x3 grid
+                    red[row][col] = intp(blend[row][col], red[row][col], sum[0]);
+                    blue[row][col] = intp(blend[row][col], blue[row][col], sum[2]);
+                } else { // Non solitary green pixel always has one direct and one diagonal red and blue neighbor in 3x3 grid
+                    red[row][col] = intp(blend[row][col], red[row][col], sum[0] * 1.3333333f);
+                    blue[row][col] = intp(blend[row][col], blue[row][col], sum[2] * 1.3333333f);
+                }
+                break;
+
+            case 2: // blue pixel
+                red[row][col] = intp(blend[row][col], red[row][col], sum[0]);
+                green[row][col] = intp(blend[row][col], green[row][col], sum[1] * 0.5f);
+                blue[row][col] = intp(blend[row][col], blue[row][col], rawData[row][col]);
                 break;
             }
         }

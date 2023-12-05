@@ -35,7 +35,29 @@ Coord& Coord::operator= (const PolarCoord& other)
     return *this;
 }
 
+CoordD& CoordD::operator= (const PolarCoord& other)
+{
+    const auto radius = other.radius;
+    const auto angle = other.angle / 180.0 * rtengine::RT_PI;
+
+    x = radius * std::cos (angle);
+    y = radius * std::sin (angle);
+
+    return *this;
+}
+
 PolarCoord& PolarCoord::operator= (const Coord& other)
+{
+    const double x = other.x;
+    const double y = other.y;
+
+    radius = rtengine::norm2 (x, y);
+    angle = std::atan2 (y, x) * 180.0 / rtengine::RT_PI;
+
+    return *this;
+}
+
+PolarCoord& PolarCoord::operator= (const CoordD& other)
 {
     const double x = other.x;
     const double y = other.y;
@@ -62,6 +84,29 @@ bool Coord::clip (const int width, const int height)
     } else {
         return false;
     }
+}
+
+/// @brief Clip the coord to stay in the width x height bounds
+/// @return true if the x or y coordinate has changed
+bool CoordD::clip (const int width, const int height)
+{
+    const auto newX = rtengine::LIM<double> (x, 0., width);
+    const auto newY = rtengine::LIM<double> (y, 0., height);
+
+    if (x != newX || y != newY) {
+
+        x = newX;
+        y = newY;
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+double CoordD::getLength ()
+{
+    return rtengine::norm2<double>(x, y);
 }
 
 }

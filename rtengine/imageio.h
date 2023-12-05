@@ -84,19 +84,19 @@ public:
     virtual void setScanline (int row, unsigned char* buffer, int bps, unsigned int numSamples = 3) = 0;
     virtual const char* getType () const = 0;
 
-    int load (const Glib::ustring &fname);
-    int save (const Glib::ustring &fname) const;
+    int load(const Glib::ustring &fname, int maxw_hint=0, int maxh_hint=0);
+    int save(const Glib::ustring &fname) const;
 
-    int loadPNG (const Glib::ustring &fname);
-    int loadJPEG (const Glib::ustring &fname);
-    int loadTIFF (const Glib::ustring &fname);
+    int loadPNG(const Glib::ustring &fname);
+    int loadJPEG(const Glib::ustring &fname, int maxw_hint=0, int maxh_hint=0);
+    int loadTIFF(const Glib::ustring &fname);
     static int getPNGSampleFormat (const Glib::ustring &fname, IIOSampleFormat &sFormat, IIOSampleArrangement &sArrangement);
     static int getTIFFSampleFormat (const Glib::ustring &fname, IIOSampleFormat &sFormat, IIOSampleArrangement &sArrangement);
 
     int loadJPEGFromMemory (const char* buffer, int bufsize);
     int loadPPMFromMemory(const char* buffer, int width, int height, bool swap, int bps);
 
-    int savePNG (const Glib::ustring &fname, int bps = -1) const;
+    int savePNG (const Glib::ustring &fname, int bps = -1, bool uncompressed=false) const;
     int saveJPEG (const Glib::ustring &fname, int quality = 100, int subSamp = 3) const;
     int saveTIFF (const Glib::ustring &fname, int bps = -1, bool isFloat = false, bool uncompressed = false) const;
 

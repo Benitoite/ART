@@ -17,26 +17,32 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _DISTORTION_H_
-#define _DISTORTION_H_
+#pragma once
 
 #include <gtkmm.h>
 #include "adjuster.h"
 #include "toolpanel.h"
 #include "lensgeomlistener.h"
 
-class Distortion : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
-{
-
+class Distortion : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
 protected:
-    Gtk::Button*   autoDistor;
-    Adjuster* distor;
-    sigc::connection    idConn;
-    LensGeomListener * rlistener;
+    Gtk::ToggleButton *autoDistor;
+    Adjuster *distor;
+    sigc::connection idConn;
+    LensGeomListener *rlistener;
+    
+    rtengine::ProcEvent EvAuto;
+    rtengine::ProcEvent EvAutoLoad;
+    bool is_auto_load_event_;
+    
+    rtengine::procparams::DistortionParams initial_params;
 
+    IdleRegister idle_register;
+    
 public:
 
     Distortion();
+    ~Distortion();
 
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
@@ -49,6 +55,8 @@ public:
     {
         rlistener = l;
     }
+
+    void toolReset(bool to_initial) override;
+    void enabledChanged() override;
 };
 
-#endif

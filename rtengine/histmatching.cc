@@ -28,7 +28,7 @@
 #include "improcfun.h"
 #include "array2D.h"
 //#define BENCHMARK
-#include "StopWatch.h"
+//#include "StopWatch.h"
 #include <iostream>
 
 
@@ -74,13 +74,14 @@ int get_b(const IImage8 &img, int y, int x)
 }
 
 
-CdfInfo getCdf(const IImage8 &img, PixelGetter getpix)
+CdfInfo getCdf(const IImage8 &img, PixelGetter getpix, float expcomp=0)
 {
     CdfInfo ret;
+    const float factor = std::pow(2.f, expcomp);
 
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
-            int lum = getpix(img, y, x);
+            int lum = LIM(int(getpix(img, y, x) * factor), 0, 255);
             ++ret.cdf[lum];
         }
     }
@@ -121,6 +122,49 @@ int findMatch(int val, const std::vector<int> &cdf, int j)
             }
         }
         return 0;
+    }
+}
+
+
+void ensure_not_clipping(std::vector<double> &curve)
+{
+    DiagonalCurve c(curve);
+    double pivot = curve[5];
+    double start = pivot / 2;
+    while (start >= 0.01) {
+        double mid = start / 2;
+        double y = c.getVal(mid);
+        if (y <= 0) {
+            curve[4] += (curve[3] - curve[4]) / 2;
+            if (settings->verbose > 1) {
+                std::cout << "histogram matching: bumping up (" << curve[3]
+                          << ", " << c.getVal(curve[3]) << ") to " << curve[4]
+                          << " to avoid negative clipping at " << mid
+                          << std::endl;
+            }
+            ensure_not_clipping(curve);
+            return;
+        } else {
+            start = mid;
+        }
+    }
+    start = pivot + (1.0 - pivot) / 2.0;
+    while (start <= 0.9) {
+        double mid = start + (1 - start) / 2;
+        double y = c.getVal(mid);
+        if (y >= 1) {
+            curve[8] += (curve[7] - curve[8]) * 0.1;
+            if (settings->verbose > 1) {
+                std::cout << "histogram matching: bumping down (" << curve[7]
+                          << ", " << c.getVal(curve[7]) << ") to " << curve[8]
+                          << " to avoid positive clipping at " << mid
+                          << std::endl;
+            }
+            ensure_not_clipping(curve);
+            return;
+        } else {
+            start = mid;
+        }
     }
 }
 
@@ -240,17 +284,39 @@ void mappingToCurve(const std::vector<int> &mapping, std::vector<double> &curve)
     } else {
         curve.insert(curve.begin(), DCT_Spline);
         DiagonalCurve c(curve);
-        double gap = 0.05;
-        double x = 0.0;
-        curve = { DCT_CatumullRom };
-        while (x < 1.0) {
-            curve.push_back(x);
-            curve.push_back(c.getVal(x));
-            x += gap;
-            gap *= 1.4;
+        curve = { DCT_Spline/*DCT_CatmullRom*/ };
+        double pivot = -1.0;
+        for (int i = 25; i < 256; ++i) {
+            double xx = double(i) / 255.0;
+            if (c.getVal(xx) > xx) {
+                pivot = xx;
+                break;
+            }
         }
-        curve.push_back(1.0);
-        curve.push_back(c.getVal(1.0));
+        if (pivot > 0) {
+            curve.push_back(0.0);
+            curve.push_back(c.getVal(0.0));
+            curve.push_back(pivot / 2.0);
+            curve.push_back(c.getVal(pivot / 2.0));
+            curve.push_back(pivot);
+            curve.push_back(c.getVal(pivot));
+            curve.push_back(pivot + (1.0 - pivot) / 2.0);
+            curve.push_back(c.getVal(pivot + (1.0 - pivot) / 2.0));
+            curve.push_back(1.0);
+            curve.push_back(c.getVal(1.0));
+            ensure_not_clipping(curve);
+        } else {
+            double x = 0.0;
+            double gap = 0.05;
+            while (x < 1.0) {
+                curve.push_back(x);
+                curve.push_back(c.getVal(x));
+                x += gap;
+                gap *= 1.4;
+            }
+            curve.push_back(1.0);
+            curve.push_back(c.getVal(1.0));
+        }        
     }
 }
 
@@ -285,7 +351,7 @@ public:
 
         for (int y = 0; y < img_.height(); ++y) {
             for (int x = 0; x < img_.width(); ++x) {
-                int l = c.getVal(img_[y][x]) * 255.f;
+                int l = LIM01(c.getVal(img_[y][x])) * 255.f;
                 ++hist[l];
             }
         }
@@ -294,10 +360,37 @@ public:
         for (size_t i = 0; i < hist.size(); ++i) {
             ret += std::abs(srchist_[i] - hist[i]);
         }
-        return ret;
+        return ret * (is_scurve(curve) ? 0.1 : 1);
     }
-
+    
 private:
+    bool is_scurve(const std::vector<double> &curve) const
+    {
+        int shoulder = -1;
+        float prev = 0.f;
+        for (size_t i = 1; i < curve.size(); i += 2) {
+            if (shoulder < 0) {
+                if (curve[i] >= curve[i+1] && curve[i] > 0) {
+                    shoulder = 1;
+                } else if (curve[i] > 0) {
+                    return false;
+                }
+            } else if (shoulder == 1) {
+                if (curve[i] < curve[i+1]) {
+                    shoulder = 0;
+                }
+            } else {
+                if (curve[i] >= curve[i+1] && curve[i] < 1) {
+                    return false;
+                } else if (curve[i+1] < prev) {
+                    return false;
+                }
+                prev = curve[i+1];
+            }
+        }
+        return shoulder >= 0;
+    }
+    
     std::array<float, 256> srchist_;
     array2D<float> img_;
 };
@@ -327,12 +420,30 @@ int max_corner_luminance(const IImage8 &img)
     return max(l_tl, l_tr, l_bl, l_br);
 }
 
+
+double get_expcomp(const FramesMetaData *md)
+{
+    if (md->getMake() == "FUJIFILM") {
+        auto mn = Exiv2Metadata(md->getFileName()).getMakernotes();
+        auto it = mn.find("RawExposureBias");
+        if (it != mn.end()) {
+            double e = -std::atof(it->second.c_str());
+            if (e > 1) {
+                return std::log(e)/std::log(2.4);
+            } else if (e > 0) {
+                return e / 2.4;
+            }
+        }
+    }
+    return 0.0;
+}
+
 } // namespace
 
 
-void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve)
+void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve, std::vector<double> &outCurve2)
 {
-    BENCHFUN
+//    BENCHFUN
 
     if (settings->verbose) {
         std::cout << "performing histogram matching for " << getFileName() << " on the embedded thumbnail" << std::endl;
@@ -354,10 +465,12 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
             std::cout << "tone curve found in cache" << std::endl;
         }
         outCurve = histMatchingCache;
+        outCurve2 = histMatchingCache2;
         return;
     }
 
     outCurve = { DCT_Linear };
+    outCurve2 = { DCT_Linear };
 
     int fw, fh;
     getFullSize(fw, fh, TR_NONE);
@@ -366,14 +479,14 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
     }
     int skip = 3;
 
-    if (settings->verbose) {
+    if (settings->verbose > 1) {
         std::cout << "histogram matching: full raw image size is " << fw << "x" << fh << std::endl;
     }
 
     ProcParams neutral;
     neutral.icm = cp;
-    neutral.raw.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::FAST);
-    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::getMethodString(RAWParams::XTransSensor::Method::FAST);
+    neutral.raw.bayersensor.method = RAWParams::BayerSensor::Method::FAST;
+    neutral.raw.xtranssensor.method = RAWParams::XTransSensor::Method::FAST;
     neutral.icm.outputProfile = ColorManagementParams::NoICMString;
 
     std::unique_ptr<IImage8> source;
@@ -386,6 +499,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
                 std::cout << "histogram matching: no thumbnail found, generating a neutral curve" << std::endl;
             }
             histMatchingCache = outCurve;
+            histMatchingCache2 = outCurve2;
             histMatchingParams = cp;
             return;
         } else if (w * 10 < fw) {
@@ -393,13 +507,14 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
                 std::cout << "histogram matching: the embedded thumbnail is too small: " << w << "x" << h << std::endl;
             }
             histMatchingCache = outCurve;
+            histMatchingCache2 = outCurve2;
             histMatchingParams = cp;
             return;
         }
         skip = LIM(skip * fh / h, 6, 10); // adjust the skip factor -- the larger the thumbnail, the less we should skip to get a good match
         source.reset(thumb->quickProcessImage(neutral, fh / skip, TI_Nearest));
 
-        if (settings->verbose) {
+        if (settings->verbose > 1) {
             std::cout << "histogram matching: extracted embedded thumbnail" << std::endl;
         }
     }
@@ -415,6 +530,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
                 std::cout << "histogram matching: raw decoding failed, generating a neutral curve" << std::endl;
             }
             histMatchingCache = outCurve;
+            histMatchingCache2 = outCurve2;
             histMatchingParams = cp;
             return;
         }
@@ -429,7 +545,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
         int sl = max_corner_luminance(*source);
         const int l_noise = 10;
         if (tl <= l_noise && sl > l_noise) {
-            if (settings->verbose) {
+            if (settings->verbose > 1) {
                 std::cout << "histogram matching: corners luminance is "
                           << tl << " for target, " << sl << " for source, "
                           << "trying to perform auto-distortion correction"
@@ -438,7 +554,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
             neutral.distortion.enabled = true;
             neutral.distortion.amount = ImProcFunctions::getAutoDistor(getFileName(), 300);
             if (neutral.distortion.amount != 0) {
-                if (settings->verbose) {
+                if (settings->verbose > 1) {
                     std::cout << "histogram matching: dark corners detected, reprocessing with auto-distortion correction" << std::endl;
                 }
                 target.reset(thumb->processImage(neutral, sensor_type, fh / skip, TI_Nearest, getMetaData(), scale, false, true));
@@ -460,7 +576,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
                 cx += cw / 2;
                 tw -= cw;
             }
-            if (settings->verbose) {
+            if (settings->verbose > 1) {
                 std::cout << "histogram matching: cropping target to get an aspect ratio of " << round(thumb_ratio * 100)/100.0 << ":1, new size is " << tw << "x" << th << std::endl;
             }
 
@@ -480,7 +596,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
             }
         }
 
-        if (settings->verbose) {
+        if (settings->verbose > 1) {
             std::cout << "histogram matching: generated neutral rendering" << std::endl;
         }
     }
@@ -489,6 +605,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
         target->resizeImgTo(source->getWidth(), source->getHeight(), TI_Nearest, tmp);
         target.reset(tmp);
     }
+    
     static const std::vector<PixelGetter> getters = {
         &get_luminance,
         &get_r,
@@ -496,9 +613,10 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
         &get_b
     };
     std::vector<std::vector<double>> candidates;
+    double expcomp = get_expcomp(getMetaData());
     for (auto g : getters) {
         CdfInfo scdf = getCdf(*source, g);
-        CdfInfo tcdf = getCdf(*target, g);
+        CdfInfo tcdf = getCdf(*target, g, expcomp);
 
         std::vector<int> mapping;
         int j = 0;
@@ -519,7 +637,10 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
     double bestscore = RT_INFINITY;
     for (size_t i = 0; i < candidates.size(); ++i) {
         double score = eval(candidates[i]);
-        if (settings->verbose) {
+        if (i == 0) {
+            score *= 0.9; // give more weight to the luminance curve
+        }
+        if (settings->verbose > 1) {
             std::cout << "histogram matching: candidate " << i
                       << " has score " << score << std::endl;
         }
@@ -529,6 +650,15 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
         }
     }
     outCurve = candidates[best];
+    if (expcomp > 0.f) {
+        double x = 0.3;
+        double y = x * std::pow(2.0, expcomp);
+        outCurve2 = { DCT_CatmullRom, 0.0, 0.0, x, y, 1.0, 1.0 };
+        if (outCurve.size() > 5 && outCurve[4] > outCurve[3]) {
+            outCurve = outCurve2;
+            outCurve2 = { DCT_Linear };
+        }
+    }
 
     if (settings->verbose) {
         std::cout << "histogram matching: best match found at " << best
@@ -537,6 +667,7 @@ void RawImageSource::getAutoMatchedToneCurve(const ColorManagementParams &cp, st
     }
 
     histMatchingCache = outCurve;
+    histMatchingCache2 = outCurve2;
     histMatchingParams = cp;
 }
 

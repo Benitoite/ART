@@ -1,11 +1,75 @@
 #pragma once
 
-// This number has to be incremented whenever the PP3 file format is modified or the behaviour of a tool changes
-#define PPVERSION 1008
-#define PPVERSION_AEXP 301 //value of PPVERSION when auto exposure algorithm was modified
+// This number has to be incremented whenever the ARP file format is modified or the behaviour of a tool changes
+#define PPVERSION 1040
 
 /*
   Log of version changes
+  1040  2023-08-30
+        changed position of the film simulation tool in the pipeline
+        (with "after_tone_curve" param to keep backwards compatibility)
+  1039  2022-11-19
+        new film negative tool ported from RT5.9
+  1038  2022-08-12
+        brush mask: changed "hardness" and "transparency" to "opacity"
+  1037  2022-07-23
+        log encoding saturation control
+  1036  2022-05-01
+        color correction: changed behaviour of hueshift in HSL mode
+  1035  2022-04-30
+        changed behaviour of the compression slider in color correction
+  1034  2022-04-09
+        changed behaviour of the tone curve contrast slider
+  1033  2022-02-23
+        added compression sliders to the color correction tool
+  1032  2022-02-17
+        added noise option to the smoothing tool
+  1031  2022-01-27
+        added option to use CAT for standard matrix input profiles
+  1030  2022-01-25
+        changed balanced highlight recovery value from ColorBlend to Balanced
+  1029  2021-12-07
+        color correction power inversion
+  1028  2021-12-04
+        color correction wheel rescaling
+  1027  2021-11-09
+        white balance multipliers stored in camera space
+  1026  2021-07-06
+        tone curve mode refactoring/simplification
+  1025  2021-06-10
+        finer-grained control of tone curve contrast with logenc enabled
+  1024  2021-05-06
+        log encoding -> source gray changed to EV gain (in log2 scale)
+  1023  2021-04-15
+        changed scale of the chromaticity curve mask 
+  1022  2020-12-18
+        brush strokes adaptation for better interaction with drawing tablets
+  1021  2020-11-10
+        output sharpening always applied if enabled
+  1020  2020-09-28
+        streamlined tone equaliser regularization 
+  1019  2020-08-08
+        binary encoding of brush mask strokes
+  1018  2020-07-24
+        color correction: added output saturation
+  1017  2020-06-11
+        store filenames as URIs
+  1016  2020-05-31
+        renamed GuidedSmoothing to Smoothing, added gaussian mode
+  1015  2020-05-13
+        added AreaMask::per_shape_feather, Shape::feather and Shape:::blur parameters
+  1014  2020-05-07
+        added support of Polygon shape for masks, Rectangle are now saved with an additional Type parameter
+  1013  2020-04-21
+        do not use exposure compensation when computing auto settings for logenc
+  1012  2020-04-11
+        new defaults for metadata 
+  1011  2020-03-31
+        new film negative
+  1010  2020-03-28
+        dehaze, changed strength from integer to (luminance) curve
+  1009  2020-03-26
+        texture boost, renamed edgeStopping to detailThreshold
   1008  2020-02-19
         parametric masks reorganization
   1007  2020-01-17

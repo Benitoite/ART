@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -86,7 +87,7 @@ public:
 
     int delay;
 
-    Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep, double vdefault, Gtk::Image *imgIcon1 = nullptr, Gtk::Image *imgIcon2 = nullptr, double2double_fun slider2value = nullptr, double2double_fun value2slider = nullptr);
+    Adjuster (Glib::ustring vlabel, double vmin, double vmax, double vstep, double vdefault, Gtk::Image *imgIcon1 = nullptr, Gtk::Image *imgIcon2 = nullptr, double2double_fun slider2value = nullptr, double2double_fun value2slider = nullptr, bool deprecated=false, bool compact=false);
     ~Adjuster () override;
 
     // Add an "Automatic" checkbox next to the reset button.
@@ -138,10 +139,14 @@ public:
         }
     }
 
+    double getStepValue() const { return vStep; }
+
     void setLabel (Glib::ustring lbl)
     {
         label->set_label(lbl);
     }
+    Glib::ustring getLabel() const { return label->get_label(); }
+    
     void setValue (double a);
     void setLimits (double vmin, double vmax, double vstep, double vdefault);
     void setEnabled (bool enabled);
@@ -171,7 +176,8 @@ public:
     };
     void spinChanged ();
     void sliderChanged ();
-    bool notifyListener ();
+    bool notifyListener();
+    void forceNotifyListener();
     void sliderReleased (GdkEventButton* event);
     void spinReleased (GdkEventButton* event);
     void resetValue (bool toInitial);
@@ -182,6 +188,8 @@ public:
     void trimValue (int &val);
 
     void setLogScale(double base, double pivot, bool anchorMiddle=false);
+
+    void showIcons(bool yes);
 };
 
 #endif

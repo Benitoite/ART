@@ -28,12 +28,12 @@ class FilmGrain: public ToolParamBlock, public AdjusterListener, public Foldable
 private:
     Adjuster *iso;
     Adjuster *strength;
-    Adjuster *scale;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvISO;
     rtengine::ProcEvent EvStrength;
-    rtengine::ProcEvent EvScale;
+
+    rtengine::procparams::GrainParams initial_params;
     
 public:
 
@@ -45,5 +45,7 @@ public:
     void adjusterChanged(Adjuster *a, double newval) override;
     void enabledChanged() override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override {}
+
+    void toolReset(bool to_initial) override;
 };
 

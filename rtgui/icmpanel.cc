@@ -17,6 +17,7 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <iomanip>
+#include <tuple>
 #include "icmpanel.h"
 #include "options.h"
 #include "eventmapper.h"
@@ -32,7 +33,7 @@ using namespace rtengine::procparams;
 extern Options options;
 
 ICMPanel::ICMPanel():
-    FoldableToolPanel(this, "icm", M("TP_ICM_LABEL")),
+    FoldableToolPanel(this, "icm", M("TP_ICM_LABEL"), false, false, true),
     iunchanged(nullptr),
     icmplistener(nullptr),
     lastRefFilename(""),
@@ -40,18 +41,8 @@ ICMPanel::ICMPanel():
     filename("")
 {
     auto m = ProcEventMapper::getInstance();
-    EvICMprimariMethod = m->newEvent(GAMMA, "HISTORY_MSG_ICM_OUTPUT_PRIMARIES");
-    EvICMprofileMethod = m->newEvent(GAMMA, "HISTORY_MSG_ICM_OUTPUT_TYPE");
-    EvICMtempMethod = m->newEvent(GAMMA, "HISTORY_MSG_ICM_OUTPUT_TEMP");
-    EvICMpredx = m->newEvent(GAMMA, "HISTORY_MSG_ICMPREDX");
-    EvICMpredy = m->newEvent(GAMMA, "HISTORY_MSG_ICMPREDY");
-    EvICMpgrex = m->newEvent(GAMMA, "HISTORY_MSG_ICMPGREX");
-    EvICMpgrey = m->newEvent(GAMMA, "HISTORY_MSG_ICMPGREY");
-    EvICMpblux = m->newEvent(GAMMA, "HISTORY_MSG_ICMPBLUX");
-    EvICMpbluy = m->newEvent(GAMMA, "HISTORY_MSG_ICMPBLUY");
-    EvICMgamm = m->newEvent(AUTOEXP, "HISTORY_MSG_ICM_WORKING_GAMMA");
-    EvICMslop = m->newEvent(AUTOEXP, "HISTORY_MSG_ICM_WORKING_SLOPE");
-    EvICMtrcinMethod = m->newEvent(AUTOEXP, "HISTORY_MSG_ICM_WORKING_TRC_METHOD");
+    EvUseCAT = m->newEvent(ALLNORAW, "HISTORY_MSG_ICM_INPUT_CAT");
+    EvToolReset.set_action(DEMOSAIC);
 
     ipDialog = Gtk::manage(new MyFileChooserButton(M("TP_ICM_INPUTDLGLABEL"), Gtk::FILE_CHOOSER_ACTION_OPEN));
     ipDialog->set_tooltip_text(M("TP_ICM_INPUTCUSTOM_TOOLTIP"));
@@ -156,6 +147,21 @@ ICMPanel::ICMPanel():
     dcpFrame->set_sensitive(false);
     iVBox->pack_start(*dcpFrame);
 
+    use_CAT_ = Gtk::manage(new Gtk::CheckButton(M("TP_ICM_INPUT_CAT")));
+    iVBox->pack_start(*use_CAT_, Gtk::PACK_SHRINK);
+    use_CAT_->signal_toggled().connect(
+        sigc::slot<void>(
+            [this]() -> void
+            {
+                if (listener) {
+                    if (use_CAT_->get_active()) {
+                        listener->panelChanged(EvUseCAT, M("GENERAL_ENABLED"));
+                    } else {
+                        listener->panelChanged(EvUseCAT, M("GENERAL_DISABLED"));
+                    }
+                }
+            }));
+
     saveRef = Gtk::manage(new Gtk::Button(M("TP_ICM_SAVEREFERENCE")));
     saveRef->set_image(*Gtk::manage(new RTImage("save-small.png")));
     saveRef->set_alignment(0.5f, 0.5f);
@@ -207,10 +213,37 @@ ICMPanel::ICMPanel():
     oProfNames->append(M("TP_ICM_NOPROFILE"));
     oProfNames->set_active(0);
 
+    out_profiles_ = {
+        ColorManagementParams::NoICMString,
+        ColorManagementParams::NoProfileString
+    };
+
     std::vector<Glib::ustring> opnames = ICCStore::getInstance()->getProfiles(rtengine::ICCStore::ProfileType::OUTPUT);
 
+    const auto is_ART_profile =
+        [](cmsHPROFILE p) -> bool
+        {
+            return ICCStore::getProfileTag(p, cmsSigDeviceMfgDescTag) == "ART";
+        };
+
+    std::vector<std::tuple<int, Glib::ustring, Glib::ustring>> opl;
     for (size_t i = 0; i < opnames.size(); i++) {
-        oProfNames->append(opnames[i]);
+        auto lbl = opnames[i];
+        auto p = ICCStore::getInstance()->getProfile(opnames[i]);
+        int key = 1;
+        if (p) { 
+            auto s = ICCStore::getProfileTag(p, cmsSigProfileDescriptionTag);
+            if (is_ART_profile(p)) {
+                lbl = s;
+                key = 0;
+            }
+        }
+        opl.push_back({key, lbl, opnames[i]});
+    }
+    std::sort(opl.begin(), opl.end());
+    for (auto &t : opl) {
+        out_profiles_.push_back(std::get<2>(t));
+        oProfNames->append(std::get<1>(t));
     }
     
     oProfNames->set_active(0);
@@ -343,6 +376,7 @@ void ICMPanel::updateDCP(int dcpIlluminant, Glib::ustring dcp_name)
 
     if (dcp) {
         dcpFrame->set_sensitive(true);
+        dcpFrame->set_visible(true);
 
         if (dcp->getHasToneCurve()) {
             ckbToneCurve->set_sensitive(true);
@@ -394,6 +428,8 @@ void ICMPanel::updateDCP(int dcpIlluminant, Glib::ustring dcp_name)
                 dcpIll->set_active(-1);
             }
         }
+    } else {
+        dcpFrame->set_visible(false);
     }
 
     if (!dcpIllLabel->get_sensitive() && dcpIll->get_active_row_number() != 0) {
@@ -436,7 +472,7 @@ void ICMPanel::read(const ProcParams* pp)
         updateDCP(pp->icm.dcpIlluminant, "");
     } else if (pp->icm.inputProfile == "(embedded)" || ((pp->icm.inputProfile == "(camera)" || pp->icm.inputProfile == "") && icamera->get_state() == Gtk::STATE_INSENSITIVE)) {
         iembedded->set_active(true);
-        updateDCP(pp->icm.dcpIlluminant, "");
+        updateDCP(pp->icm.dcpIlluminant, "(embedded)");
     } else if ((pp->icm.inputProfile == "(cameraICC)") && icameraICC->get_state() != Gtk::STATE_INSENSITIVE) {
         icameraICC->set_active(true);
         updateDCP(pp->icm.dcpIlluminant, "(cameraICC)");
@@ -461,16 +497,12 @@ void ICMPanel::read(const ProcParams* pp)
 
     wProfNames->set_active_text(pp->icm.workingProfile);
 
-    if (pp->icm.outputProfile == ColorManagementParams::NoICMString) {
-        oProfNames->set_active_text(M("TP_ICM_NOICM"));
-    } else if (pp->icm.outputProfile == ColorManagementParams::NoProfileString) {
-        oProfNames->set_active_text(M("TP_ICM_NOPROFILE"));
-    } else {
-        oProfNames->set_active_text(pp->icm.outputProfile);
-    }
-
-    if (oProfNames->get_active_row_number() == -1) {
-        oProfNames->set_active_text(M("TP_ICM_NOICM"));
+    oProfNames->set_active(0);
+    for (size_t i = 0; i < out_profiles_.size(); ++i) {
+        if (out_profiles_[i] == pp->icm.outputProfile) {
+            oProfNames->set_active(i);
+            break;
+        }
     }
 
     oRendIntent->setSelected(pp->icm.outputIntent);
@@ -480,6 +512,9 @@ void ICMPanel::read(const ProcParams* pp)
     ckbApplyLookTable->set_active(pp->icm.applyLookTable);
     ckbApplyBaselineExposureOffset->set_active(pp->icm.applyBaselineExposureOffset);
     ckbApplyHueSatMap->set_active(pp->icm.applyHueSatMap);
+
+    use_CAT_->set_active(pp->icm.inputProfileCAT);
+    use_CAT_->set_visible(icamera->get_active());
 
     enableListener();
 }
@@ -507,13 +542,14 @@ void ICMPanel::write(ProcParams* pp)
 
     pp->icm.workingProfile = wProfNames->get_active_text();
     pp->icm.dcpIlluminant = rtengine::max<int>(dcpIll->get_active_row_number(), 0);
-    if (oProfNames->get_active_row_number() == 0) {//M("TP_ICM_NOICM")) {
-        pp->icm.outputProfile  = ColorManagementParams::NoICMString;
-    } else if (oProfNames->get_active_row_number() == 1) {
-        pp->icm.outputProfile  = ColorManagementParams::NoProfileString;
-    } else {
-        pp->icm.outputProfile  = oProfNames->get_active_text();
-    }
+    // if (oProfNames->get_active_row_number() == 0) {//M("TP_ICM_NOICM")) {
+    //     pp->icm.outputProfile  = ColorManagementParams::NoICMString;
+    // } else if (oProfNames->get_active_row_number() == 1) {
+    //     pp->icm.outputProfile  = ColorManagementParams::NoProfileString;
+    // } else {
+    //     pp->icm.outputProfile  = oProfNames->get_active_text();
+    // }
+    pp->icm.outputProfile = out_profiles_[oProfNames->get_active_row_number()];
 
     int ointentVal = oRendIntent->getSelected();
 
@@ -529,10 +565,13 @@ void ICMPanel::write(ProcParams* pp)
     pp->icm.applyHueSatMap = ckbApplyHueSatMap->get_active();
     pp->icm.outputBPC = obpc->get_active();
     pp->toneCurve.fromHistMatching = false;
+
+    pp->icm.inputProfileCAT = use_CAT_->get_active();
 }
 
 void ICMPanel::setDefaults(const ProcParams* defParams)
 {
+    initial_params = defParams->icm;
 }
 
 void ICMPanel::adjusterChanged(Adjuster* a, double newval)
@@ -628,6 +667,8 @@ void ICMPanel::ipChanged()
 
     updateDCP(-1, profname);
 
+    use_CAT_->set_visible(icamera->get_active());
+
     if (listener && profname != oldip) {
         listener->panelChanged(EvIProfile, profname);
     }
@@ -637,7 +678,7 @@ void ICMPanel::ipChanged()
 
 void ICMPanel::opChanged()
 {
-    updateRenderingIntent(oProfNames->get_active_text());
+    updateRenderingIntent(out_profiles_[oProfNames->get_active_row_number()]);
 
     if (listener) {
         listener->panelChanged(EvOProfile, oProfNames->get_active_text());
@@ -777,3 +818,12 @@ void ICMPanel::saveReferencePressed()
     return;
 }
 
+
+void ICMPanel::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.icm = initial_params;
+    }
+    read(&pp);
+}

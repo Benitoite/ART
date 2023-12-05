@@ -26,9 +26,12 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-DarkFrame::DarkFrame () : FoldableToolPanel(this, "darkframe", M("TP_DARKFRAME_LABEL"), false, true), dfChanged(false), lastDFauto(false), dfp(nullptr), israw(true)
+DarkFrame::DarkFrame () :
+    FoldableToolPanel(this, "darkframe", M("TP_DARKFRAME_LABEL"), false, true, true),
+    dfChanged(false), lastDFauto(false), dfp(nullptr), israw(true)
 {
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
     
     hbdf = Gtk::manage(new Gtk::HBox());
     hbdf->set_spacing(4);
@@ -150,6 +153,9 @@ void DarkFrame::write( rtengine::procparams::ProcParams* pp)
 {
     pp->raw.enable_darkframe = getEnabled();
     pp->raw.dark_frame = darkFrameFile->get_filename();
+    if (!Glib::file_test(pp->raw.dark_frame, Glib::FILE_TEST_EXISTS)) {
+        pp->raw.dark_frame = "";
+    }
     pp->raw.df_autoselect = dfAuto->get_active();
 }
 
@@ -204,4 +210,21 @@ void DarkFrame::darkFrameReset()
         listener->panelChanged (EvPreProcessDFFile, M("GENERAL_NONE"));
     }
 
+}
+
+
+void DarkFrame::setDefaults(const ProcParams *def)
+{
+    initial_params = def->raw;
+}
+
+
+void DarkFrame::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.raw = initial_params;
+    }
+    pp.raw.enable_darkframe = getEnabled();
+    read(&pp);
 }

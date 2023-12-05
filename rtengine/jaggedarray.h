@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2016 Ingo Weyrich <heckflosse67@gmx.de>
@@ -21,53 +22,32 @@
 
 #include <cstring>
 
-#include "noncopyable.h"
+#include "array2D.h"
 
-namespace rtengine
-{
+namespace rtengine {
 
 // These emulate a jagged array, but use only 2 allocations instead of 1 + H.
 
-template<typename T>
-class JaggedArray :
-    public NonCopyable
-{
+template <typename T>
+class JaggedArray: private array2D<T> {
 public:
-    JaggedArray(std::size_t width, std::size_t height, bool init_zero = false) :
-        array(
-            [width, height, init_zero]() -> T**
-            {
-                T** const res = new T*[height];
-                res[0] = new T[height * width];
+    JaggedArray(std::size_t width, std::size_t height, bool init_zero=false):
+        array2D<T>(width, height, ARRAY2D_ALIGNED | (init_zero ? ARRAY2D_CLEAR_DATA : 0)) {}
 
-                for (std::size_t i = 1; i < height; ++i) {
-                    res[i] = res[i - 1] + width;
-                }
-
-                if (init_zero) {
-                    std::memset(res[0], 0, sizeof(T) * width * height);
-                }
-
-                return res;
-            }()
-        )
+    operator T **()
     {
+        return array2D<T>::operator T**();
     }
 
-    ~JaggedArray ()
+    T *operator[](size_t index)
     {
-        delete[] array[0];
-        delete[] array;
+        return array2D<T>::operator[](index);
     }
 
-    operator T** ()
+    T *operator[](int index)
     {
-        return array;
+        return operator[](size_t(index));
     }
-
-private:
-    T** const array;
-
 };
 
 } // rtengine

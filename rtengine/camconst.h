@@ -1,26 +1,25 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  */
-#ifndef __CAMCONST__
-#define __CAMCONST__
+#pragma once
 
 #include <glibmm.h>
 #include <map>
+#include <array>
 
-namespace rtengine
-{
+namespace rtengine {
 
-struct camera_const_levels {
-    int levels[4];
-};
-
-class CameraConst
-{
+class CameraConst {
 private:
+    struct camera_const_levels {
+        int levels[4];
+    };
+
     std::string make_model;
     short dcraw_matrix[12];
-    int raw_crop[4];
-    int raw_mask[8][4];
+    std::map<std::pair<int, int>, std::array<int, 4>> raw_crop;
+    std::map<std::pair<int, int>, std::array<std::array<int, 4>, 8>> raw_mask; //int raw_mask[8][4];
     int white_max;
     std::map<int, struct camera_const_levels> mLevels[2];
     std::map<float, float> mApertureScaling;
@@ -41,10 +40,10 @@ public:
     const short *get_dcrawMatrix(void);
     std::vector<int> get_pdafPattern();
     int get_pdafOffset() {return pdafOffset;}
-    bool has_rawCrop(void);
-    void get_rawCrop(int& left_margin, int& top_margin, int& width, int& height);
-    bool has_rawMask(int idx);
-    void get_rawMask(int idx, int& top, int& left, int& bottom, int& right);
+    bool has_rawCrop(int raw_width, int raw_height);
+    void get_rawCrop(int raw_width, int raw_height, int &left_margin, int &top_margin, int &width, int &height);
+    bool has_rawMask(int raw_width, int raw_height, int idx);
+    void get_rawMask(int raw_width, int raw_height, int idx, int& top, int& left, int& bottom, int& right);
     int get_BlackLevel(int idx, int iso_speed);
     int get_WhiteLevel(int idx, int iso_speed, float fnumber);
     bool has_globalGreenEquilibration();
@@ -54,10 +53,11 @@ public:
     void update_pdafPattern(const std::vector<int> &other);
     void update_pdafOffset(int other);
     void update_globalGreenEquilibration(bool other);
+    void update_rawMask(CameraConst *other);
 };
 
-class CameraConstantsStore
-{
+
+class CameraConstantsStore {
 private:
     std::map<std::string, CameraConst *> mCameraConstants;
 
@@ -71,6 +71,5 @@ public:
     CameraConst *get(const char make[], const char model[]);
 };
 
-}
+} // namespace rtengine
 
-#endif

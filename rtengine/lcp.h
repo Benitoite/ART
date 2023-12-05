@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+*  
 *  This file is part of RawTherapee.
 *
 *  Copyright (c) 2012 Oliver Duis <www.oliverduis.de>

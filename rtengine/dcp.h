@@ -84,7 +84,8 @@ public:
         const ColorTemp& white_balance,
         const Triple& pre_mul,
         const Matrix& cam_wb_matrix,
-        bool apply_hue_sat_map = true
+        bool apply_hue_sat_map,
+        bool apply_look_table
     ) const;
     void setStep2ApplyState(const Glib::ustring& working_space, bool use_tone_curve, bool apply_look_table, bool apply_baseline_exposure, ApplyState& as_out);
     void step2ApplyTile(float* r, float* g, float* b, int width, int height, int tile_width, const ApplyState& as_in) const;
@@ -116,9 +117,9 @@ private:
         } pc;
     };
 
-    Matrix findXyztoCamera(const std::array<double, 2>& white_xy, int preferred_illuminant) const;
-    std::array<double, 2> neutralToXy(const Triple& neutral, int preferred_illuminant) const;
-    Matrix makeXyzCam(const ColorTemp& white_balance, const Triple& pre_mul, const Matrix& cam_wb_matrix, int preferred_illuminant) const;
+    Matrix findXyztoCamera(const std::array<double, 2>& white_xy, int preferred_illuminant, double wbtemp) const;
+    std::array<double, 2> neutralToXy(const Triple& neutral, int preferred_illuminant, double wbtemp) const;
+    Matrix makeXyzCam(const ColorTemp& white_balance, const Triple& pre_mul, const Matrix& cam_wb_matrix, int preferred_illuminant, bool use_fwd_matrix) const;
     std::vector<HsbModify> makeHueSatMap(const ColorTemp& white_balance, int preferred_illuminant) const;
     void hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h, float& s, float& v) const;
 

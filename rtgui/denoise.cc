@@ -28,17 +28,16 @@ using namespace rtengine::procparams;
 extern Options options;
 
 Denoise::Denoise():
-    FoldableToolPanel(this, "dirpyrdenoise", M("TP_DIRPYRDENOISE_LABEL"), true, true)
+    FoldableToolPanel(this, "dirpyrdenoise", M("TP_DIRPYRDENOISE_LABEL"), true, true, true)
 {
     auto m = ProcEventMapper::getInstance();
-    EvSmoothingMethod = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_SMOOTHING_METHOD");
-    EvGuidedLumaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_RADIUS");
-    EvGuidedLumaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_LUMA_STRENGTH");
-    EvGuidedChromaRadius = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS");
-    EvGuidedChromaStrength = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH");
-    EvChrominanceAutoFactor = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
-    EvLuminanceDetailThreshold = m->newEvent(ALLNORAW, "HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD");
-    EvColorSpace = m->newEvent(ALLNORAW, "HISTORY_MSG_203");
+    EvGuidedChromaRadius = m->newEvent(HDR, "HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS");
+    EvChrominanceAutoFactor = m->newEvent(HDR, "HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR");
+    EvLuminanceDetailThreshold = m->newEvent(HDR, "HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD");
+    EvColorSpace = m->newEvent(HDR, "HISTORY_MSG_203");
+    EvNlDetail = m->newEvent(HDR, "HISTORY_MSG_DENOISE_NL_DETAIL");
+    EvNlStrength = m->newEvent(HDR, "HISTORY_MSG_DENOISE_NL_STRENGTH");
+    EvToolReset.set_action(HDR);
 
     Gtk::Frame *lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
     lumaFrame->set_label_align(0.025, 0.5);
@@ -133,89 +132,20 @@ Denoise::Denoise():
     smoothingEnabled = Gtk::manage(new MyExpander(true, M("TP_DENOISE_SMOOTHING")));
     ToolParamBlock *smoothing = Gtk::manage(new ToolParamBlock());
 
-    smoothingMethod = Gtk::manage(new MyComboBoxText());
-    smoothingMethod->append(M("TP_DENOISE_SMOOTHING_MEDIAN"));
-    smoothingMethod->append(M("TP_DENOISE_SMOOTHING_GUIDED"));
-    hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*Gtk::manage (new Gtk::Label(M("TP_DENOISE_SMOOTHING_METHOD") + ":")), Gtk::PACK_SHRINK, 1);
-    hb->pack_start(*smoothingMethod);
-    smoothing->pack_start(*hb);
+    Gtk::VBox *smoothingBox = Gtk::manage(new Gtk::VBox());
 
-    medianBox = Gtk::manage(new Gtk::VBox());
-    medianBox->set_spacing(2);
+    nlDetail = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_DETAIL"), 1, 100, 1, 50));
+    nlStrength = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME"), 0, 100, 1, 0));
+    smoothingBox->pack_start(*nlDetail);
+    smoothingBox->pack_start(*nlStrength);
+    nlDetail->setAdjusterListener(this);
+    nlStrength->setAdjusterListener(this);
 
-    medianMethod = Gtk::manage(new MyComboBoxText());
-    medianMethod->append(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_LUMINANCE"));
-    medianMethod->append(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_CHROMINANCE"));
-    medianMethod->append(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_WEIGHTED"));
-    medianMethod->append(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_LAB"));
-    medianMethod->append(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_RGB"));
-    medianMethod->set_active(0);
-    medianMethod->set_tooltip_text(M("TP_DIRPYRDENOISE_MEDIAN_METHOD_TOOLTIP"));
-
-    medianType = Gtk::manage(new MyComboBoxText());
-    medianType->append(M("TP_DIRPYRDENOISE_TYPE_3X3SOFT"));
-    medianType->append(M("TP_DIRPYRDENOISE_TYPE_3X3"));
-    medianType->append(M("TP_DIRPYRDENOISE_TYPE_5X5SOFT"));
-    medianType->append(M("TP_DIRPYRDENOISE_TYPE_5X5"));
-    medianType->append(M("TP_DIRPYRDENOISE_TYPE_7X7"));
-    medianType->append(M("TP_DIRPYRDENOISE_TYPE_9X9"));
-    medianType->set_active(0);
-    medianType->set_tooltip_text(M("TP_DIRPYRDENOISE_MEDIAN_TYPE_TOOLTIP"));
-
-    hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MEDIAN_METHOD") + ":")), Gtk::PACK_SHRINK, 1);
-    hb->pack_start(*medianMethod);
-    medianBox->pack_start(*hb);
-
-    hb = Gtk::manage(new Gtk::HBox());
-    hb->pack_start(*Gtk::manage(new Gtk::Label(M("TP_DIRPYRDENOISE_MEDIAN_TYPE") + ":")), Gtk::PACK_SHRINK, 1);
-    hb->pack_start(*medianType);
-    medianBox->pack_start(*hb);
-
-    medianIterations = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_MEDIAN_PASSES"), 1.0, 3.0, 1., 1.));
-    medianIterations->set_tooltip_text(M("TP_DIRPYRDENOISE_MEDIAN_PASSES_TOOLTIP"));
-    medianIterations->setAdjusterListener(this);
-    medianIterations->show();
-    medianBox->pack_start(*medianIterations);
-
-    smoothing->pack_start(*medianBox);
-
-    guidedBox = Gtk::manage(new Gtk::VBox());
-
-    lumaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_LUMINANCE_FRAME")));
-    lumaFrame->set_label_align(0.025, 0.5);
-    lumaVBox = Gtk::manage(new Gtk::VBox());
-    lumaVBox->set_spacing(2);
-    
-    guidedLumaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 5, 1, 0));
-    guidedLumaRadius->setAdjusterListener(this);
-    lumaVBox->pack_start(*guidedLumaRadius);
-    
-    guidedLumaStrength = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_STRENGTH"), 0, 100, 1, 0));
-    guidedLumaStrength->setAdjusterListener(this);
-    lumaVBox->pack_start(*guidedLumaStrength);
-
-    lumaFrame->add(*lumaVBox);
-    guidedBox->pack_start(*lumaFrame);
-
-    chromaFrame = Gtk::manage(new Gtk::Frame(M("TP_DIRPYRDENOISE_CHROMINANCE_FRAME")));
-    chromaFrame->set_label_align(0.025, 0.5);
-    chromaVBox = Gtk::manage(new Gtk::VBox());
-    chromaVBox->set_spacing(2);
-    
-    guidedChromaRadius = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_RADIUS"), 0, 20, 1, 0));
+    guidedChromaRadius = Gtk::manage(new Adjuster(M("TP_DIRPYRDENOISE_CHROMINANCE_FRAME"), 0, 20, 1, 0));
     guidedChromaRadius->setAdjusterListener(this);
-    chromaVBox->pack_start(*guidedChromaRadius);
+    smoothingBox->pack_start(*guidedChromaRadius);
 
-    guidedChromaStrength = Gtk::manage(new Adjuster(M("TP_DENOISE_GUIDED_STRENGTH"), 0, 100, 1, 0));
-    guidedChromaStrength->setAdjusterListener(this);
-    chromaVBox->pack_start(*guidedChromaStrength);
-
-    chromaFrame->add(*chromaVBox);
-    guidedBox->pack_start(*chromaFrame);
-
-    smoothing->pack_start(*guidedBox);
+    smoothing->pack_start(*smoothingBox);
     smoothingEnabled->add(*smoothing, false);
     smoothingEnabled->setLevel(2);
     pack_start(*smoothingEnabled);
@@ -223,9 +153,6 @@ Denoise::Denoise():
     aggressive->signal_changed().connect(sigc::mem_fun(*this, &Denoise::aggressiveChanged));
     colorSpace->signal_changed().connect(sigc::mem_fun(*this, &Denoise::colorSpaceChanged));
     chrominanceMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::chrominanceMethodChanged));
-    medianType->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianTypeChanged));
-    medianMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::medianMethodChanged));
-    smoothingMethod->signal_changed().connect(sigc::mem_fun(*this, &Denoise::smoothingMethodChanged));
     smoothingEnabled->signal_enabled_toggled().connect(sigc::mem_fun(*this, &Denoise::smoothingEnabledToggled));
 }
 
@@ -287,17 +214,10 @@ void Denoise::read(const ProcParams *pp)
     chrominanceBlueYellow->setValue(pp->denoise.chrominanceBlueYellow);
 
     smoothingEnabled->setEnabled(pp->denoise.smoothingEnabled);
-    smoothingMethod->set_active(int(pp->denoise.smoothingMethod));
-    smoothingMethodChanged();
     
-    medianType->set_active(int(pp->denoise.medianType));
-    medianMethod->set_active(int(pp->denoise.medianMethod));
-    medianIterations->setValue(pp->denoise.medianIterations);
-
-    guidedLumaRadius->setValue(pp->denoise.guidedLumaRadius);
-    guidedLumaStrength->setValue(pp->denoise.guidedLumaStrength);
     guidedChromaRadius->setValue(pp->denoise.guidedChromaRadius);
-    guidedChromaStrength->setValue(pp->denoise.guidedChromaStrength);
+    nlDetail->setValue(pp->denoise.nlDetail);
+    nlStrength->setValue(pp->denoise.nlStrength);
 
     enableListener ();
 }
@@ -321,21 +241,11 @@ void Denoise::write(ProcParams *pp)
     pp->denoise.chrominanceAutoFactor = chrominanceAutoFactor->getValue();
     pp->denoise.chrominanceRedGreen = chrominanceRedGreen->getValue();
     pp->denoise.chrominanceBlueYellow = chrominanceBlueYellow->getValue();
+
     pp->denoise.smoothingEnabled = smoothingEnabled->getEnabled();
-    if (smoothingMethod->get_active_row_number() < 2) {
-        pp->denoise.smoothingMethod = static_cast<DenoiseParams::SmoothingMethod>(smoothingMethod->get_active_row_number());
-    }
-    if (medianType->get_active_row_number() < 6) {
-        pp->denoise.medianType = static_cast<DenoiseParams::MedianType>(medianType->get_active_row_number());
-    }
-    if (medianMethod->get_active_row_number() < 5) {
-        pp->denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(medianMethod->get_active_row_number());
-    }
-    pp->denoise.medianIterations = medianIterations->getValue();
-    pp->denoise.guidedLumaRadius = guidedLumaRadius->getValue();
-    pp->denoise.guidedLumaStrength = guidedLumaStrength->getValue();
     pp->denoise.guidedChromaRadius = guidedChromaRadius->getValue();
-    pp->denoise.guidedChromaStrength = guidedChromaStrength->getValue();
+    pp->denoise.nlDetail = nlDetail->getValue();
+    pp->denoise.nlStrength = nlStrength->getValue();
 }
 
 
@@ -369,22 +279,6 @@ void Denoise::colorSpaceChanged()
 }
 
 
-void Denoise::medianTypeChanged()
-{
-    if (listener && getEnabled()  && smoothingEnabled->getEnabled()) {
-        listener->panelChanged(EvDPDNmedmet, medianType->get_active_text());
-    }
-}
-
-
-void Denoise::medianMethodChanged()
-{
-    if (listener && getEnabled()  && smoothingEnabled->getEnabled()) {
-        listener->panelChanged(EvDPDNmetmed, medianMethod->get_active_text());
-    }
-}
-
-
 void Denoise::setDefaults(const ProcParams *defParams)
 {
     luminance->setDefault(defParams->denoise.luminance);
@@ -395,11 +289,12 @@ void Denoise::setDefaults(const ProcParams *defParams)
     chrominanceRedGreen->setDefault(defParams->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->setDefault(defParams->denoise.chrominanceBlueYellow);
     gamma->setDefault(defParams->denoise.gamma);
-    medianIterations->setDefault(defParams->denoise.medianIterations);
-    guidedLumaRadius->setDefault(defParams->denoise.guidedLumaRadius);
-    guidedLumaStrength->setDefault(defParams->denoise.guidedLumaStrength);
+
     guidedChromaRadius->setDefault(defParams->denoise.guidedChromaRadius);
-    guidedChromaStrength->setDefault(defParams->denoise.guidedChromaStrength);
+    nlDetail->setDefault(defParams->denoise.nlDetail);
+    nlStrength->setDefault(defParams->denoise.nlStrength);
+
+    initial_params = defParams->denoise;
 }
 
 
@@ -422,18 +317,14 @@ void Denoise::adjusterChanged(Adjuster* a, double newval)
             listener->panelChanged(EvDPDNbluechro, costr);
         } else if (a == gamma) {
             listener->panelChanged(EvDPDNGamma, costr);
-        } else if (a == medianIterations && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvDPDNpasses, costr);
-        } else if (a == guidedLumaRadius && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedLumaRadius, costr);
-        } else if (a == guidedLumaStrength && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedLumaStrength, costr);
         } else if (a == guidedChromaRadius && smoothingEnabled->getEnabled()) {
             listener->panelChanged(EvGuidedChromaRadius, costr);
-        } else if (a == guidedChromaStrength && smoothingEnabled->getEnabled()) {
-            listener->panelChanged(EvGuidedChromaStrength, costr);
         } else if (a == chrominanceAutoFactor) {
             listener->panelChanged(EvChrominanceAutoFactor, costr);
+        } else if (a == nlDetail) {
+            listener->panelChanged(EvNlDetail, costr);
+        } else if (a == nlStrength) {
+            listener->panelChanged(EvNlStrength, costr);
         }
     }
 }
@@ -479,24 +370,18 @@ void Denoise::trimValues (rtengine::procparams::ProcParams* pp)
     chrominanceRedGreen->trimValue(pp->denoise.chrominanceRedGreen);
     chrominanceBlueYellow->trimValue(pp->denoise.chrominanceBlueYellow);
     gamma->trimValue(pp->denoise.gamma);
-    medianIterations->trimValue(pp->denoise.medianIterations);
-    guidedLumaRadius->trimValue(pp->denoise.guidedLumaRadius);
-    guidedLumaStrength->trimValue(pp->denoise.guidedLumaStrength);
     guidedChromaRadius->trimValue(pp->denoise.guidedChromaRadius);
-    guidedChromaStrength->trimValue(pp->denoise.guidedChromaStrength);
+    nlDetail->trimValue(pp->denoise.nlDetail);
+    nlStrength->trimValue(pp->denoise.nlStrength);
 }
 
 
-void Denoise::smoothingMethodChanged()
+void Denoise::toolReset(bool to_initial)
 {
-    if (smoothingMethod->get_active_row_number() == 0) {
-        medianBox->show();
-        guidedBox->hide();
-    } else if (smoothingMethod->get_active_row_number() == 1) {
-        medianBox->hide();
-        guidedBox->show();
+    ProcParams pp;
+    if (to_initial) {
+        pp.denoise = initial_params;
     }
-    if (listener) {
-        listener->panelChanged(EvSmoothingMethod, M("GENERAL_CHANGED"));
-    }
+    pp.denoise.enabled = getEnabled();
+    read(&pp);
 }

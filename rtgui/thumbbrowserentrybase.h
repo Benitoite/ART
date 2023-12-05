@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -56,12 +57,10 @@ protected:
 
 
     MyRWMutex lockRW;  // Locks access to all image thumb changing actions
-
-    guint8* preview;  // holds the preview image. used in updateBackBuffer. TODO Olli: Make a cache to reduce mem significantly
-
+    std::vector<guint8> preview; // holds the preview image. used in updateBackBuffer.
     Glib::ustring dispname;
 
-    LWButtonSet* buttonSet;
+    std::unique_ptr<LWButtonSet> buttonSet;
 
     int width;      // minimal width
     int height;     // minimal height
@@ -85,8 +84,8 @@ protected:
     std::vector<Glib::RefPtr<Gdk::Pixbuf>> bbSpecificityIcons;
     CursorShape cursor_type;
 
-    void drawFrame (Cairo::RefPtr<Cairo::Context> cr, const Gdk::RGBA& bg, const Gdk::RGBA& fg);
-    void getTextSizes (int& w, int& h);
+    void drawFrame(Cairo::RefPtr<Cairo::Context> cr, const Gdk::RGBA &bg, const Gdk::RGBA &fg);
+    void getTextSizes(int &w, int &h);
 
     // called during updateBackBuffer for custom overlays
     virtual void customBackBufferUpdate (Cairo::RefPtr<Cairo::Context> c) {}

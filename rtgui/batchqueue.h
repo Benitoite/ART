@@ -52,7 +52,8 @@ public:
     ~BatchQueue () override;
 
     void addEntries (const std::vector<BatchQueueEntry*>& entries, bool head = false, bool save = true);
-    void cancelItems (const std::vector<ThumbBrowserEntryBase*>& items);
+    void cancelItems(const std::vector<ThumbBrowserEntryBase*>& items) { cancelItems(items, false); }
+    void cancelItems(const std::vector<ThumbBrowserEntryBase*>& items, bool immediately);
     void headItems (const std::vector<ThumbBrowserEntryBase *>& items);
     void tailItems (const std::vector<ThumbBrowserEntryBase *>& items);
     void selectAll ();
@@ -87,13 +88,13 @@ public:
     bool loadBatchQueue ();
     void resizeLoadedQueue();
 
-    static Glib::ustring calcAutoFileNameBase (const Glib::ustring& origFileName, int sequence = 0);
     static int calcMaxThumbnailHeight();
 
     void setBatchProfile(const rtengine::procparams::PartialProfile *bp);
     const rtengine::procparams::PartialProfile *getBatchProfile() override;
 
 private:
+    void cancelItems_(const std::vector<ThumbBrowserEntryBase*>& items) { cancelItems(items, false); }
     int getMaxThumbnailHeight() const override;
     void saveThumbnailHeight (int height) override;
     int  getThumbnailHeight () override;
@@ -127,6 +128,8 @@ private:
     IdleRegister idle_register;
 
     const rtengine::procparams::PartialProfile *batch_profile_;
+
+    std::unordered_map<std::string, std::string> format2ext_;
 };
 
 #endif

@@ -19,23 +19,102 @@
 
 #include <map>
 #include <iterator>
+#include <iostream>
 
 #include <locale.h>
 
 #include <glib/gstdio.h>
 
+#include <giomm.h>
+#include <sstream>
+#include <fstream>
+
 #include "curves.h"
 #include "procparams.h"
+#include "rtengine.h"
+#include "metadata.h"
+#include "halffloat.h"
+#include "base64.h"
+#include "iccstore.h"
+#include "compress.h"
 
 #include "../rtgui/multilangmgr.h"
 #include "../rtgui/options.h"
 #include "../rtgui/paramsedited.h"
 #include "../rtgui/ppversion.h"
 #include "../rtgui/version.h"
+#include "../rtgui/pathutils.h"
 
 using namespace std;
 
 namespace rtengine { namespace procparams {
+
+namespace {
+
+class ConversionError: public std::exception {
+    const char *what() const noexcept { return "base64 error"; }
+};
+
+std::string to_xmp(const Glib::ustring &data)
+{
+    auto res = compress(data.raw());
+    return base64encode(res);
+}
+
+
+Glib::ustring from_xmp(const std::string &data)
+{
+    try {
+        auto buf = base64decode(data);
+        return decompress(buf);
+    } catch (std::exception &e) {
+        throw ConversionError();
+    }
+}
+
+std::vector<double> unpack_list(const std::string &data)
+{
+    std::vector<double> ret;
+    if (data.empty()) {
+        return ret;
+    }
+    std::vector<uint8_t> buf;
+    try {
+        buf = base64decode(data);
+    } catch (std::exception &exc) {
+        throw ConversionError();
+    }
+    Exiv2::byte *p = reinterpret_cast<Exiv2::byte *>(&(buf[0]));
+    for (size_t i = 0; i < buf.size(); i += sizeof(uint16_t)) {
+        uint16_t v = Exiv2::getUShort(p + i, Exiv2::littleEndian);
+        float f = DNG_HalfToFloat(v);
+        ret.push_back(f);
+    }
+    return ret;
+}
+
+
+std::string pack_list(const std::vector<double> &data)
+{
+    if (data.empty()) {
+        return "";
+    }
+    std::vector<uint8_t> bytes(data.size() * sizeof(uint16_t));
+    auto p = &(bytes[0]);
+    size_t off = 0;
+    for (auto f : data) {
+        uint16_t v = DNG_FloatToHalf(f);
+        long o = Exiv2::us2Data(p + off, v, Exiv2::littleEndian);
+        off += o;
+    }
+    return base64encode(bytes);
+}
+
+} // namespace
+
+
+const short SpotParams::minRadius = 2;
+const short SpotParams::maxRadius = 200;
 
 //-----------------------------------------------------------------------------
 // KeyFile
@@ -145,7 +224,14 @@ void KeyFile::set_double_list(const Glib::ustring &grp, const Glib::ustring &key
 
 bool KeyFile::load_from_file(const Glib::ustring &fn)
 {
+    filename_ = fn;
     return kf_.load_from_file(fn);
+}
+
+
+bool KeyFile::load_from_data(const Glib::ustring &data)
+{
+    return kf_.load_from_data(data);
 }
 
 
@@ -179,33 +265,6 @@ Glib::ustring expandRelativePath(const Glib::ustring &procparams_fname, const Gl
     return absPath;
 }
 
-Glib::ustring relativePathIfInside(const Glib::ustring &procparams_fname, bool fnameAbsolute, Glib::ustring embedded_fname)
-{
-    if (fnameAbsolute || embedded_fname == "" || !Glib::path_is_absolute(procparams_fname)) {
-        return embedded_fname;
-    }
-
-    Glib::ustring prefix = "";
-
-    if (embedded_fname.length() > 5 && embedded_fname.substr(0, 5) == "file:") {
-        embedded_fname = embedded_fname.substr(5);
-        prefix = "file:";
-    }
-
-    if (!Glib::path_is_absolute(embedded_fname)) {
-        return prefix + embedded_fname;
-    }
-
-    Glib::ustring dir1 = Glib::path_get_dirname(procparams_fname) + G_DIR_SEPARATOR_S;
-    Glib::ustring dir2 = Glib::path_get_dirname(embedded_fname) + G_DIR_SEPARATOR_S;
-
-    if (dir2.substr(0, dir1.length()) != dir1) {
-        // it's in a different directory, ie not inside
-        return prefix + embedded_fname;
-    }
-
-    return prefix + embedded_fname.substr(dir1.length());
-}
 
 void getFromKeyfile(
     const KeyFile& keyfile,
@@ -274,13 +333,34 @@ void getFromKeyfile(
     value.assign(tmpval.begin(), tmpval.end());
 }
 
+void getFromKeyfile(
+    const KeyFile& keyfile,
+    const Glib::ustring& group_name,
+    const Glib::ustring& key,
+    std::vector<std::string>& value
+)
+{
+    auto tmpval = keyfile.get_string_list(group_name, key);
+    value.assign(tmpval.begin(), tmpval.end());
+}
+
 template<typename T>
 bool assignFromKeyfile(const KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, T &value)
 {
-    if (keyfile.has_key(group_name, key)) {
-        getFromKeyfile(keyfile, group_name, key, value);
+    try {
+        if (keyfile.has_key(group_name, key)) {
+            getFromKeyfile(keyfile, group_name, key, value);
 
-        return true;
+            return true;
+        }
+    } catch (Glib::KeyFileError &exc) {
+        auto pl = keyfile.progressListener();
+        if (pl) {
+            pl->error(Glib::ustring::compose("WARNING: %1: %2", keyfile.filename(), exc.what()));
+            return false;
+        } else {
+            throw exc;
+        }
     }
 
     return false;
@@ -289,21 +369,31 @@ bool assignFromKeyfile(const KeyFile& keyfile, const Glib::ustring& group_name, 
 template<typename T, typename = typename std::enable_if<std::is_enum<T>::value>::type>
 bool assignFromKeyfile(const KeyFile& keyfile, const Glib::ustring& group_name, const Glib::ustring& key, const std::map<std::string, T>& mapping, T& value)
 {
-    if (keyfile.has_key(group_name, key)) {
-        Glib::ustring v;
-        getFromKeyfile(keyfile, group_name, key, v);
+    try {
+        if (keyfile.has_key(group_name, key)) {
+            Glib::ustring v;
+            getFromKeyfile(keyfile, group_name, key, v);
 
-        const typename std::map<std::string, T>::const_iterator m = mapping.find(v);
+            const typename std::map<std::string, T>::const_iterator m = mapping.find(v);
 
-        if (m != mapping.end()) {
-            value = m->second;
-        } else {
-            return false;
+            if (m != mapping.end()) {
+                value = m->second;
+            } else {
+                return false;
+            }
+
+            return true;
         }
-
-        return true;
+    } catch (Glib::KeyFileError &exc) {
+        auto pl = keyfile.progressListener();
+        if (pl) {
+            pl->error(Glib::ustring::compose("WARNING: %1: %2", keyfile.filename(), exc.what()));
+            return false;
+        } else {
+            throw exc;
+        }
     }
-
+    
     return false;
 }
 
@@ -369,6 +459,17 @@ void putToKeyfile(
     keyfile.set_double_list(group_name, key, list);
 }
 
+void putToKeyfile(
+    const Glib::ustring& group_name,
+    const Glib::ustring& key,
+    const std::vector<std::string>& value,
+    KeyFile& keyfile
+)
+{
+    const Glib::ArrayHandle<Glib::ustring> list = value;
+    keyfile.set_string_list(group_name, key, list);
+}
+
 template<typename T>
 bool saveToKeyfile(
     const Glib::ustring& group_name,
@@ -401,64 +502,279 @@ bool saveToKeyfile(
 }
 
 
-const std::map<Glib::ustring, Glib::ustring> exif_keys = {
-    {"Copyright", "Exif.Image.Copyright"},
-    {"Artist", "Exif.Image.Artist"},
-    {"ImageDescription", "Exif.Image.ImageDescription"},
-    {"Exif.UserComment", "Exif.Photo.UserComment"}
-};
+Glib::ustring filenameToUri(const Glib::ustring &fname, const Glib::ustring &basedir)
+{
+    if (fname.empty() || basedir.empty()) {
+        return fname;
+    }
 
-const std::map<Glib::ustring, Glib::ustring> iptc_keys = {
-    {"Title", "Iptc.Application2.ObjectName"},
-    {"Category", "Iptc.Application2.Category"},
-    {"SupplementalCategories", "Iptc.Application2.SuppCategory"},
-    {"Keywords", "Iptc.Application2.Keywords"},
-    {"Instructions", "Iptc.Application2.SpecialInstructions"},
-    {"DateCreated", "Iptc.Application2.DateCreated"},
-    {"Creator", "Iptc.Application2.Byline"},
-    {"CreatorJobTitle", "Iptc.Application2.BylineTitle"},
-    {"City", "Iptc.Application2.City"},
-    {"Province", "Iptc.Application2.ProvinceState"},
-    {"Country", "Iptc.Application2.CountryName"},
-    {"TransReference", "Iptc.Application2.TransmissionReference"},
-    {"Headline", "Iptc.Application2.Headline"},
-    {"Credit", "Iptc.Application2.Credit"},
-    {"Source", "Iptc.Application2.Source"},
-    {"Copyright", "Iptc.Application2.Copyright"},
-    {"Caption", "Iptc.Application2.Caption"},
-    {"CaptionWriter", "Iptc.Application2.Writer"}
-};
+    const auto stripif =
+        [](std::string &p, const Glib::ustring &d) -> bool
+        {
+            std::string dd = Glib::filename_from_utf8(d + G_DIR_SEPARATOR_S);
+            if (p.substr(0, dd.length()) == dd) {
+                p = std::string(G_DIR_SEPARATOR_S) + p.substr(dd.length());
+                return true;
+            }
+            return false;
+        };
+    
+    try {
+        auto fn = Glib::filename_from_utf8(fname);
+        if (Glib::path_is_absolute(fname)) {
+            if (stripif(fn, argv0)) {
+                return Glib::filename_to_uri(fn, "S");
+            } else if (stripif(fn, options.rtdir)) {
+                return Glib::filename_to_uri(fn, "U");
+            } else if (Glib::path_get_dirname(fname) == basedir) {
+                fn = fname_to_utf8(Glib::path_get_basename(fname));
+                return Glib::filename_to_uri(fn, "B");
+            } else {
+                return Glib::filename_to_uri(fn);
+            }
+        } else {
+            return Glib::filename_to_uri(Glib::ustring(G_DIR_SEPARATOR_S) + fn, "R");
+        }
+    } catch (Glib::ConvertError &) {
+        return fname;
+    }
+}
+
+
+Glib::ustring filenameFromUri(const Glib::ustring &uri, const Glib::ustring &basedir)
+{
+    if (uri.empty()) {
+        return uri;
+    }
+    
+    try {
+        // Glib::filename_from_uri seems to have troubles on windows (leads to
+        // crashes), so we use the C function directly
+        gchar *h = nullptr;
+        gchar *fn = g_filename_from_uri(uri.c_str(), &h, nullptr);
+        if (!fn) {
+            return uri;
+        }
+        std::string f(fn);
+        g_free(fn);
+        if (h) {
+            std::string hn(h);
+            g_free(h);
+            f = f.substr(1);
+            if (hn == "U") {
+                f = Glib::build_filename(Glib::filename_from_utf8(options.rtdir), f);
+            } else if (hn == "S") {
+                f = Glib::build_filename(Glib::filename_from_utf8(argv0), f);
+            } else if (hn == "B") {
+                f = Glib::build_filename(Glib::filename_from_utf8(basedir), f);
+            } else if (hn != "R") {
+                return uri;
+            }
+        }
+        Glib::ustring ret = fname_to_utf8(f);
+        return ret;
+    } catch (Glib::ConvertError &e) {
+        return uri;
+    }
+}
 
 } // namespace
 
 
 
 AreaMask::Shape::Shape():
-    x(0),
-    y(0),
-    width(100),
-    height(100),
-    angle(0),
-    roundness(0),
-    mode(ADD)
+    mode(ADD),
+    feather(0.),
+    blur(0.)
+{
+}
+
+AreaMask::Rectangle::Rectangle():
+    x(0.),
+    y(0.),
+    width(100.),
+    height(100.),
+    angle(0.),
+    roundness(0.)
 {
 }
 
 
+AreaMask::Gradient::Gradient():
+    x(0.),
+    y(0.),
+    strengthStart(100.),
+    strengthEnd(0.),
+    angle(0.)
+{
+    feather = 25.;
+}
+
+
+std::unique_ptr<AreaMask::Shape> AreaMask::Rectangle::clone() const
+{
+    return std::unique_ptr<Shape>(new Rectangle(*this));
+}
+
+
+AreaMask::Polygon::Knot::Knot():
+    x(0.),
+    y(0.),
+    roundness(0.)
+{
+}
+
+void AreaMask::Polygon::Knot::setPos(CoordD &pos)
+{
+    x = pos.x;
+    y = pos.y;
+}
+
+
+std::unique_ptr<AreaMask::Shape> AreaMask::Polygon::clone() const
+{
+    return std::unique_ptr<Shape>(new Polygon(*this));
+}
+
+std::unique_ptr<AreaMask::Shape> AreaMask::Gradient::clone() const
+{
+    return std::unique_ptr<Shape>(new Gradient(*this));
+}
+
 bool AreaMask::Shape::operator==(const Shape &other) const
 {
-    return
-        x == other.x
-        && y == other.y
-        && width == other.width
-        && height == other.height
-        && angle == other.angle
-        && roundness == other.roundness
-        && mode == other.mode;
+    return mode == other.mode
+           && feather == other.feather
+           && blur == other.blur;
 }
 
 
 bool AreaMask::Shape::operator!=(const Shape &other) const
+{
+    return !(*this == other);
+}
+
+
+bool AreaMask::Polygon::Knot::operator==(const Knot &other) const
+{
+    return
+        x == other.x
+        && y == other.y
+        && roundness == other.roundness;
+}
+
+
+int AreaMask::Shape::toImgSpace(double v, int imSize)
+{
+    double s2 = imSize / 2.;
+    return s2 + v / 100. * s2;
+}
+
+
+double AreaMask::Shape::toParamRange(int v, int imSize)
+{
+    double s2 = imSize / 2.;
+    return (double(v) - s2) * 100. / s2;
+}
+
+
+void AreaMask::Polygon::knots_to_list(std::vector<double> &out) const
+{
+    if (knots.empty()) {
+        out.clear();
+        return;
+    }
+
+    out.resize(knots.size() * 3);
+
+    for (size_t i = 0, j = 0; i < knots.size() ; ++i) {
+        out[j++] = knots[i].x;
+        out[j++] = knots[i].y;
+        out[j++] = knots[i].roundness;
+    }
+}
+
+
+void AreaMask::Polygon::knots_from_list(const std::vector<double> &v)
+{
+    size_t size = v.size() / 3;
+    knots.resize(size);
+
+    for (size_t i = 0, j = 0; i < size ; ++i) {
+        knots[i].x = v.at(j++);
+        knots[i].y = v.at(j++);
+        knots[i].roundness = v.at(j++);
+    }
+}
+
+
+bool AreaMask::Polygon::Knot::operator!=(const Knot &other) const
+{
+    return !(*this == other);
+}
+
+
+bool AreaMask::Rectangle::operator==(const Shape &other) const
+{
+    const Rectangle *o = dynamic_cast<const Rectangle *>(&other);
+    if (!o) {
+        return false;
+    }
+    
+    return
+        x == o->x
+        && y == o->y
+        && width == o->width
+        && height == o->height
+        && angle == o->angle
+        && roundness == o->roundness
+        && AreaMask::Shape::operator==(other);
+}
+
+
+bool AreaMask::Rectangle::operator!=(const Shape &other) const
+{
+    return !(*this == other);
+}
+
+
+bool AreaMask::Polygon::operator==(const Shape &other) const
+{
+    const Polygon *o = dynamic_cast<const Polygon *>(&other);
+    if (!o) {
+        return false;
+    }
+    
+    return
+        knots == o->knots
+        && AreaMask::Shape::operator==(other);
+}
+
+
+bool AreaMask::Polygon::operator!=(const Shape &other) const
+{
+    return !(*this == other);
+}
+
+
+bool AreaMask::Gradient::operator==(const Shape &other) const
+{
+    const Gradient *o = dynamic_cast<const Gradient *>(&other);
+    if (!o) {
+        return false;
+    }
+
+    return
+        x == o->x
+        && y == o->y
+        && strengthStart == o->strengthStart
+        && strengthEnd == o->strengthEnd
+        && angle == o->angle
+        && AreaMask::Shape::operator==(other);
+}
+
+
+bool AreaMask::Gradient::operator!=(const Shape &other) const
 {
     return !(*this == other);
 }
@@ -469,18 +785,27 @@ AreaMask::AreaMask():
     feather(0),
     blur(0),
     contrast{DCT_Linear},
-    shapes{Shape()}
+    shapes{}
 {
 }
 
 
 bool AreaMask::operator==(const AreaMask &other) const
 {
-    return enabled == other.enabled
+    if (enabled == other.enabled
         && feather == other.feather
         && blur == other.blur
         && contrast == other.contrast
-        && shapes == other.shapes;
+        && shapes.size() == other.shapes.size()) {
+        for (size_t i = 0, n = shapes.size(); i < n; ++i) {
+            if (*(shapes[i]) != *(other.shapes[i])) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -498,6 +823,33 @@ bool AreaMask::isTrivial() const
 }
 
 
+AreaMask::AreaMask(const AreaMask &other):
+    enabled(other.enabled),
+    feather(other.feather),
+    blur(other.blur),
+    contrast(other.contrast)
+{
+    for (const auto &s : other.shapes) {
+        shapes.emplace_back(s->clone());
+    }
+}
+
+
+AreaMask &AreaMask::operator=(const AreaMask &other)
+{
+    enabled = other.enabled;
+    feather = other.feather;
+    blur = other.blur;
+    contrast = other.contrast;
+
+    shapes.clear();
+    for (const auto &s : other.shapes) {
+        shapes.emplace_back(s->clone());
+    }
+    return *this;
+}
+
+
 DeltaEMask::DeltaEMask():
     enabled(false),
     L(0.0),
@@ -505,6 +857,7 @@ DeltaEMask::DeltaEMask():
     H(0.0),
     range(1.0),
     decay(1),
+    strength(100),
     weight_L(50),
     weight_C(75),
     weight_H(100)
@@ -520,6 +873,7 @@ bool DeltaEMask::operator==(const DeltaEMask &other) const
         && H == other.H
         && range == other.range
         && decay == other.decay
+        && strength == other.strength
         && weight_L == other.weight_L
         && weight_C == other.weight_C
         && weight_H == other.weight_H;
@@ -536,7 +890,7 @@ DrawnMask::Stroke::Stroke():
     x(-1),
     y(-1),
     radius(0),
-    hardness(1),
+    opacity(1),
     erase(false)
 {
 }
@@ -548,7 +902,7 @@ bool DrawnMask::Stroke::operator==(const Stroke &other) const
         && y == other.y
         && radius == other.radius
         && erase == other.erase
-        && hardness == other.hardness;
+        && opacity == other.opacity;
 }
 
 
@@ -561,11 +915,11 @@ bool DrawnMask::Stroke::operator!=(const Stroke &other) const
 DrawnMask::DrawnMask():
     enabled(false),
     feather(0.0),
-    transparency(0),
+    opacity(1),
     smoothness(0),
     contrast{DCT_Linear},
     strokes(),
-    addmode(false)
+    mode(INTERSECT)
 {
 }
 
@@ -574,11 +928,11 @@ bool DrawnMask::operator==(const DrawnMask &other) const
 {
     return enabled == other.enabled
         && feather == other.feather
-        && transparency == other.transparency
+        && opacity == other.opacity
         && smoothness == other.smoothness
         && contrast == other.contrast
         && strokes == other.strokes
-        && addmode == other.addmode;
+        && mode == other.mode;
 }
 
 
@@ -605,29 +959,29 @@ void DrawnMask::strokes_to_list(std::vector<double> &out) const
         {
             return a.radius == b.radius
                 && a.erase == b.erase
-                && a.hardness == b.hardness;
+                && a.opacity == b.opacity;
         };
 
-    auto cur = strokes[0];
     size_t pos = 0;
-    while (true) {
-        int n = 0;
-        while (pos + n < strokes.size() && same(strokes[pos + n], cur)) {
+    while (pos < strokes.size()) {
+        size_t n = 1;
+        while (n < 2048 // 2048 is the upper bound for integers that can be
+                        // represented precisely as HalfFloats. Anything
+                        // larger might be rounded up or down, leading to mask
+                        // corruption
+               && pos + n < strokes.size()
+               && same(strokes[pos + n], strokes[pos])) {
             ++n;
         }
+        assert(n > 0);
         out.push_back(n);
-        out.push_back(cur.radius);
-        out.push_back(int(!cur.erase));
-        out.push_back(cur.hardness);
-        for (int i = 0; i < n; ++i) {
+        out.push_back(strokes[pos].radius);
+        out.push_back(int(!strokes[pos].erase));
+        out.push_back(strokes[pos].opacity);
+        for (size_t i = 0; i < n; ++i) {
             out.push_back(strokes[pos].x);
             out.push_back(strokes[pos].y);
             ++pos;
-        }
-        if (pos >= strokes.size()) {
-            break;
-        } else {
-            cur = strokes[pos];
         }
     }
 }
@@ -642,7 +996,7 @@ void DrawnMask::strokes_from_list(const std::vector<double> &v)
         Stroke s;
         s.radius = v[pos++];
         s.erase = !bool(v[pos++]);
-        s.hardness = v[pos++];
+        s.opacity = v[pos++];
         for (int i = 0; i < n && pos + 1 < v.size(); ++i) {
             strokes.push_back(s);
             strokes.back().x = v[pos++];
@@ -688,6 +1042,7 @@ ParametricMask::ParametricMask():
             0.35,
             0.35
             },
+    lightnessDetail(0),
     contrastThreshold(0)
 {
 }
@@ -700,6 +1055,7 @@ bool ParametricMask::operator==(const ParametricMask &other) const
         && hue == other.hue
         && chromaticity == other.chromaticity
         && lightness == other.lightness
+        && lightnessDetail == other.lightnessDetail
         && contrastThreshold == other.contrastThreshold;
 }
 
@@ -717,7 +1073,10 @@ Mask::Mask():
     areaMask(),
     deltaEMask(),
     drawnMask(),
-    name("")
+    name(""),
+    curve{DCT_Linear},
+    posterization(0),
+    smoothing(0)
 {
 }
 
@@ -730,7 +1089,10 @@ bool Mask::operator==(const Mask &other) const
         && areaMask == other.areaMask
         && deltaEMask == other.deltaEMask
         && drawnMask == other.drawnMask
-        && name == other.name;
+        && name == other.name
+        && curve == other.curve
+        && posterization == other.posterization
+        && smoothing == other.smoothing;
 }
 
 
@@ -766,6 +1128,30 @@ Glib::ustring mode2str(AreaMask::Shape::Mode mode)
     }
 }
 
+AreaMask::Shape::Type str2type(const Glib::ustring &type)
+{
+    if (type == "rectangle") {
+        return AreaMask::Shape::RECTANGLE;
+    } else if (type == "gradient") {
+        return AreaMask::Shape::GRADIENT;
+    } else {
+        return AreaMask::Shape::POLYGON;
+    }
+}
+
+
+Glib::ustring type2str(AreaMask::Shape::Type type)
+{
+    switch (type) {
+    case AreaMask::Shape::RECTANGLE: return "rectangle";
+    case AreaMask::Shape::GRADIENT: return "gradient";
+    case AreaMask::Shape::POLYGON: return "polygon";
+    default:
+        assert(false);
+        return "";
+    }
+}
+
 } // namespace
 
 
@@ -781,8 +1167,17 @@ bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &grou
         ret |= assignFromKeyfile(keyfile, group_name, prefix + "ParametricMaskEnabled" + suffix, parametricMask.enabled);
     }
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "HueMask" + suffix, parametricMask.hue);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, parametricMask.chromaticity);
+    if (assignFromKeyfile(keyfile, group_name, prefix + "ChromaticityMask" + suffix, parametricMask.chromaticity)) {
+        if (ppVersion < 1023) {
+            for (size_t i = 1; i < parametricMask.chromaticity.size(); i += 4) {
+                auto &x = parametricMask.chromaticity[i];
+                x = lin2log(log2lin(x, 10.0), 50.0);
+            }
+        }
+        ret = true;
+    }
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMask" + suffix, parametricMask.lightness);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "LightnessMaskDetail" + suffix, parametricMask.lightnessDetail);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "ContrastThresholdMask" + suffix, parametricMask.contrastThreshold);
     if (ppVersion < 1008) {
         ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskBlur" + suffix, parametricMask.blur);
@@ -797,25 +1192,77 @@ bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &grou
     if (areaMask.contrast.empty() || areaMask.contrast[0] < DCT_Linear || areaMask.contrast[0] >= DCT_Unchanged) {
         areaMask.contrast = {DCT_Linear};
     }
-    std::vector<AreaMask::Shape> s;
+    std::vector<std::unique_ptr<AreaMask::Shape>> s;
     for (int i = 0; ; ++i) {
-        AreaMask::Shape a;
-        bool found = false;
-        std::string n = i ? std::string("_") + std::to_string(i) + "_" : "";
-        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "X" + suffix, a.x);
-        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Y" + suffix, a.y);
-        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Width" + suffix, a.width);
-        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Height" + suffix, a.height);
-        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, a.angle);
-        found |= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness);
+        Glib::ustring type;
         Glib::ustring mode;
-        if (assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode)) {
-            found = true;
-            a.mode = str2mode(mode);
+        bool found = true; // skipping the entire element if one key is missing
+        std::string n = i ? std::string("_") + std::to_string(i) + "_" : "";
+        if (ppVersion >= 1014) {
+            found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Type" + suffix, type);
         }
-        if (found) {
-            s.emplace_back(a);
-            ret = true;
+        if (ppVersion < 1014 || found) {
+            std::unique_ptr<AreaMask::Shape> shape;
+            if (ppVersion < 1014 || str2type(type) == AreaMask::Shape::Type::RECTANGLE) {
+                AreaMask::Rectangle *rect = new AreaMask::Rectangle();
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "X" + suffix, rect->x);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Y" + suffix, rect->y);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Width" + suffix, rect->width);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Height" + suffix, rect->height);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, rect->angle);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Roundness" + suffix, rect->roundness);
+                if (found) {
+                    shape.reset(rect);
+                } else {
+                    delete rect;
+                }
+            } else if (str2type(type) == AreaMask::Shape::Type::POLYGON) {
+                AreaMask::Polygon *poly = new AreaMask::Polygon();
+                if (ppVersion < 1019) {
+                    std::vector<float> v; // important: use vector<float> to avoid calling rtengine::sanitizeCurve -- need to think of a better way
+                    if ((found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Knots" + suffix, v))) {
+                        ret = true;
+                        std::vector<double> vv(v.begin(), v.end());
+                        poly->knots_from_list(vv);
+                    }
+                } else {
+                    Glib::ustring raw;
+                    if ((found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Knots" + suffix, raw))) {
+                        ret = true;
+                        std::vector<double> vv = unpack_list(raw);//.raw());
+                        poly->knots_from_list(vv);
+                    }
+                }
+                if (found) {
+                    shape.reset(poly);
+                } else {
+                    delete poly;
+                }
+            } else if (str2type(type) == AreaMask::Shape::Type::GRADIENT) {
+                AreaMask::Gradient *gradient = new AreaMask::Gradient();
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "X" + suffix, gradient->x);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Y" + suffix, gradient->y);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "StrengthStart" + suffix, gradient->strengthStart);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "StrengthEnd" + suffix, gradient->strengthEnd);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Angle" + suffix, gradient->angle);
+                if (found) {
+                    shape.reset(gradient);
+                } else {
+                    delete gradient;
+                }
+            }
+            found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode);
+            if (ppVersion >= 1015) {
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "ShapeFeather" + suffix, shape->feather);
+                found &= assignFromKeyfile(keyfile, group_name, prefix + "AreaMask" + n + "ShapeBlur" + suffix, shape->blur);
+            }
+            if (found) {
+                shape->mode = str2mode(mode);
+                s.emplace_back(std::move(shape));
+                ret = true;
+            } else {
+                break;
+            }
         } else {
             break;
         }
@@ -830,21 +1277,68 @@ bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &grou
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskH" + suffix, deltaEMask.H);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskRange" + suffix, deltaEMask.range);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskDecay" + suffix, deltaEMask.decay);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskStrength" + suffix, deltaEMask.strength);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency);
+    if (ppVersion < 1038) {
+        double transparency = 0;
+        if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, transparency)) {
+            ret = true;
+            drawnMask.opacity = 1.0 - LIM01(transparency);
+        }
+    } else {
+        ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskOpacity" + suffix, drawnMask.opacity);
+    }
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskAddMode" + suffix, drawnMask.addmode);
-    std::vector<float> v; // important: use vector<float> to avoid calling rtengine::sanitizeCurve -- need to think of a better way
-    if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskStrokes" + suffix, v)) {
-        ret = true;
-        std::vector<double> vv(v.begin(), v.end());
-        drawnMask.strokes_from_list(vv);
+    if (ppVersion < 1019) {
+        bool addmode = false;
+        if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskAddMode" + suffix, addmode)) {
+            ret = true;
+            drawnMask.mode = addmode ? DrawnMask::ADD : DrawnMask::INTERSECT;
+        }
+    } else {
+        int mode = 0;
+        if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskMode" + suffix, mode)) {
+            ret = true;
+            drawnMask.mode = DrawnMask::Mode(LIM(mode, 0, 2));
+        }
     }
+    if (ppVersion < 1019) {
+        std::vector<float> v; // important: use vector<float> to avoid calling rtengine::sanitizeCurve -- need to think of a better way
+        if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskStrokes" + suffix, v)) {
+            ret = true;
+            std::vector<double> vv(v.begin(), v.end());
+            drawnMask.strokes_from_list(vv);
+        }
+    } else {
+        Glib::ustring raw;
+        if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskStrokes" + suffix, raw)) {
+            ret = true;
+            std::vector<double> vv = unpack_list(raw);
+            drawnMask.strokes_from_list(vv);
+            if (ppVersion < 1022 && !drawnMask.strokes.empty()) {
+                std::vector<DrawnMask::Stroke> stmp;
+                stmp.swap(drawnMask.strokes);
+                drawnMask.strokes.push_back(stmp[0]);
+                for (size_t i = 1; i < stmp.size(); ++i) {
+                    auto &p = drawnMask.strokes.back();
+                    auto &s = stmp[i];
+                    if (p.radius != s.radius && p.radius > 0 && s.radius > 0 &&
+                        p.opacity == s.opacity && p.erase == s.erase) {
+                        drawnMask.strokes.push_back(DrawnMask::Stroke());
+                    }
+                    drawnMask.strokes.push_back(s);
+                }
+            }
+        }
+    }
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskCurve" + suffix, curve);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskPosterization" + suffix, posterization);
+    ret |= assignFromKeyfile(keyfile, group_name, prefix + "MaskSmoothing" + suffix, smoothing);
     
     return ret;
 }
@@ -855,26 +1349,59 @@ void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::u
     putToKeyfile(group_name, prefix + "MaskEnabled" + suffix, enabled, keyfile);
     putToKeyfile(group_name, prefix + "MaskInverted" + suffix, inverted, keyfile);
     putToKeyfile(group_name, prefix + "MaskName" + suffix, name, keyfile);
+    putToKeyfile(group_name, prefix + "MaskCurve" + suffix, curve, keyfile);
+    putToKeyfile(group_name, prefix + "MaskPosterization" + suffix, posterization, keyfile);
+    putToKeyfile(group_name, prefix + "MaskSmoothing" + suffix, smoothing, keyfile);
     putToKeyfile(group_name, prefix + "ParametricMaskEnabled" + suffix, parametricMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "HueMask" + suffix, parametricMask.hue, keyfile);
     putToKeyfile(group_name, prefix + "ChromaticityMask" + suffix, parametricMask.chromaticity, keyfile);
     putToKeyfile(group_name, prefix + "LightnessMask" + suffix, parametricMask.lightness, keyfile);
+    putToKeyfile(group_name, prefix + "LightnessMaskDetail" + suffix, parametricMask.lightnessDetail, keyfile);
     putToKeyfile(group_name, prefix + "ContrastThresholdMask" + suffix, parametricMask.contrastThreshold, keyfile);
     putToKeyfile(group_name, prefix + "ParametricMaskBlur" + suffix, parametricMask.blur, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskEnabled" + suffix, areaMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskFeather" + suffix, areaMask.feather, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskBlur" + suffix, areaMask.blur, keyfile);
     putToKeyfile(group_name, prefix + "AreaMaskContrast" + suffix, areaMask.contrast, keyfile);
+
     for (size_t i = 0; i < areaMask.shapes.size(); ++i) {
         auto &a = areaMask.shapes[i];
         std::string n = i ? std::string("_") + std::to_string(i) + "_" : "";
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "X" + suffix, a.x, keyfile);
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "Y" + suffix, a.y, keyfile);
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "Width" + suffix, a.width, keyfile);
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "Height" + suffix, a.height, keyfile);
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "Angle" + suffix, a.angle, keyfile);
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "Roundness" + suffix, a.roundness, keyfile);
-        putToKeyfile(group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode2str(a.mode), keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Type" + suffix, type2str(a->getType()), keyfile);
+        switch (a->getType()) {
+        case AreaMask::Shape::Type::POLYGON:
+        {
+            auto poly = static_cast<AreaMask::Polygon*>(a.get());
+            std::vector<double> v;
+            poly->knots_to_list(v);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Knots" + suffix, pack_list(v), keyfile);
+            break;
+        }
+        case AreaMask::Shape::Type::GRADIENT:
+        {
+            auto gradient = static_cast<AreaMask::Gradient*>(a.get());
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "X" + suffix, gradient->x, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Y" + suffix, gradient->y, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "StrengthStart" + suffix, gradient->strengthStart, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "StrengthEnd" + suffix, gradient->strengthEnd, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Angle" + suffix, gradient->angle, keyfile);
+            break;
+        }
+        case AreaMask::Shape::Type::RECTANGLE:
+        default:
+        {
+            auto rect = static_cast<AreaMask::Rectangle*>(a.get());
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "X" + suffix, rect->x, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Y" + suffix, rect->y, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Width" + suffix, rect->width, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Height" + suffix, rect->height, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Angle" + suffix, rect->angle, keyfile);
+            putToKeyfile(group_name, prefix + "AreaMask" + n + "Roundness" + suffix, rect->roundness, keyfile);
+        }
+        }
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "Mode" + suffix, mode2str(a->mode), keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "ShapeFeather" + suffix, a->feather, keyfile);
+        putToKeyfile(group_name, prefix + "AreaMask" + n + "ShapeBlur" + suffix, a->blur, keyfile);
     }
 
     putToKeyfile(group_name, prefix + "DeltaEMaskEnabled" + suffix, deltaEMask.enabled, keyfile);
@@ -883,18 +1410,19 @@ void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::u
     putToKeyfile(group_name, prefix + "DeltaEMaskH" + suffix, deltaEMask.H, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskRange" + suffix, deltaEMask.range, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskDecay" + suffix, deltaEMask.decay, keyfile);
+    putToKeyfile(group_name, prefix + "DeltaEMaskStrength" + suffix, deltaEMask.strength, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightL" + suffix, deltaEMask.weight_L, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightC" + suffix, deltaEMask.weight_C, keyfile);
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather, keyfile);
-    putToKeyfile(group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskOpacity" + suffix, drawnMask.opacity, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast, keyfile);
-    putToKeyfile(group_name, prefix + "DrawnMaskAddMode" + suffix, drawnMask.addmode, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskMode" + suffix, int(drawnMask.mode), keyfile);
     std::vector<double> v;
     drawnMask.strokes_to_list(v);
-    putToKeyfile(group_name, prefix + "DrawnMaskStrokes" + suffix, v, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskStrokes" + suffix, pack_list(v), keyfile);
 }
 
 
@@ -902,7 +1430,8 @@ ExposureParams::ExposureParams():
     enabled(true),
     hrmode(HR_OFF),
     expcomp(0),
-    black(0)
+    black(0),
+    hrblur(0)
 {
 }
 
@@ -912,7 +1441,8 @@ bool ExposureParams::operator==(const ExposureParams &other) const
     return enabled == other.enabled
         && hrmode == other.hrmode
         && expcomp == other.expcomp
-        && black == other.black;
+        && black == other.black
+        && hrblur == other.hrblur;
 }
 
 
@@ -953,14 +1483,15 @@ ToneCurveParams::ToneCurveParams():
     curve2{
         DCT_Linear
     },
-    curveMode(ToneCurveParams::TcMode::STD),
-    curveMode2(ToneCurveParams::TcMode::STD),
+    curveMode(ToneCurveParams::TcMode::NEUTRAL),
+    curveMode2(ToneCurveParams::TcMode::NEUTRAL),
     histmatching(false),
     fromHistMatching(false),
-    saturation{
-        FCT_Linear
-    },
-    perceptualStrength(100)
+    saturation{ FCT_Linear },
+    saturation2{ DCT_Linear },
+    perceptualStrength(100),
+    contrastLegacyMode(false),
+    whitePoint(1.0)    
 {
 }
 
@@ -969,20 +1500,37 @@ bool ToneCurveParams::operator ==(const ToneCurveParams& other) const
 {
     return enabled == other.enabled
         && contrast == other.contrast
-        && curve == other.curve
-        && curve2 == other.curve2
+        && histmatching == other.histmatching
+        && (histmatching || (curve == other.curve))
+        && (histmatching || (curve2 == other.curve2))
         && curveMode == other.curveMode
         && curveMode2 == other.curveMode2
-        && histmatching == other.histmatching
-        && fromHistMatching == other.fromHistMatching
+        //&& fromHistMatching == other.fromHistMatching
         && saturation == other.saturation
-        && perceptualStrength == perceptualStrength;
+        && saturation2 == other.saturation2
+        && perceptualStrength == other.perceptualStrength
+        && contrastLegacyMode == other.contrastLegacyMode
+        && whitePoint == other.whitePoint;
 }
 
 
 bool ToneCurveParams::operator !=(const ToneCurveParams& other) const
 {
     return !(*this == other);
+}
+
+
+bool ToneCurveParams::hasWhitePoint() const
+{
+    const auto good =
+        [](const std::vector<double> &c, TcMode m) -> bool
+        {
+            if (c.empty() || c[0] == DCT_Empty || c[0] == DCT_Linear) {
+                return true;
+            }
+            return m != TcMode::SATANDVALBLENDING && m != TcMode::PERCEPTUAL;
+        };
+    return !contrastLegacyMode && good(curve, curveMode) && good(curve2, curveMode2);
 }
 
 
@@ -1083,7 +1631,8 @@ LocalContrastParams::LocalContrastParams():
     enabled(false),
     regions{Region()},
     labmasks{Mask()},
-    showMask(-1)
+    showMask(-1),
+    selectedRegion(0)
 {
 }
 
@@ -1120,7 +1669,9 @@ SharpeningParams::SharpeningParams() :
     deconvradius(0.75),
     deconvAutoRadius(true),
     deconvCornerBoost(0.0),
-    deconvCornerLatitude(25)
+    deconvCornerLatitude(25),
+    psf_kernel(""),
+    psf_iterations(10)
 {
 }
 
@@ -1139,10 +1690,12 @@ bool SharpeningParams::operator ==(const SharpeningParams& other) const
         && halocontrol_amount == other.halocontrol_amount
         && method == other.method
         && deconvamount == other.deconvamount
-        && deconvradius == other.deconvradius
         && deconvAutoRadius == other.deconvAutoRadius
+        && (deconvAutoRadius || (deconvradius == other.deconvradius))
         && deconvCornerBoost == other.deconvCornerBoost
-        && deconvCornerLatitude == other.deconvCornerLatitude;
+        && deconvCornerLatitude == other.deconvCornerLatitude
+        && psf_kernel == other.psf_kernel
+        && psf_iterations == other.psf_iterations;
 }
 
 bool SharpeningParams::operator !=(const SharpeningParams& other) const
@@ -1153,68 +1706,29 @@ bool SharpeningParams::operator !=(const SharpeningParams& other) const
 
 WBParams::WBParams() :
     enabled(true),
-    method("Camera"),
+    method(CAMERA),
     temperature(6504),
     green(1.0),
-    equal(1.0)
+    equal(1.0),
+    mult{1.0, 1.0, 1.0}
 {
 }
 
 bool WBParams::operator ==(const WBParams& other) const
 {
+    const bool m = (method == Type::AUTO || method == Type::CAMERA);
     return
         enabled == other.enabled
         && method == other.method
-        && temperature == other.temperature
-        && green == other.green
-        && equal == other.equal;
+        && (m || (temperature == other.temperature))
+        && (m || (green == other.green))
+        && (m || (equal == other.equal))
+        && (m || (mult == other.mult));
 }
 
 bool WBParams::operator !=(const WBParams& other) const
 {
     return !(*this == other);
-}
-
-const std::vector<WBEntry>& WBParams::getWbEntries()
-{
-    static const std::vector<WBEntry> wb_entries = {
-        {"Camera",               WBEntry::Type::CAMERA,      M("TP_WBALANCE_CAMERA"),         0, 1.f,   1.f},
-        {"Auto",                 WBEntry::Type::AUTO,        M("TP_WBALANCE_AUTO"),           0, 1.f,   1.f},
-        {"Daylight",             WBEntry::Type::DAYLIGHT,    M("TP_WBALANCE_DAYLIGHT"),    5300, 1.f,   1.f},
-        {"Cloudy",               WBEntry::Type::CLOUDY,      M("TP_WBALANCE_CLOUDY"),      6200, 1.f,   1.f},
-        {"Shade",                WBEntry::Type::SHADE,       M("TP_WBALANCE_SHADE"),       7600, 1.f,   1.f},
-        {"Water 1",              WBEntry::Type::WATER,       M("TP_WBALANCE_WATER1"),     35000, 0.3f,  1.1f},
-        {"Water 2",              WBEntry::Type::WATER,       M("TP_WBALANCE_WATER2"),     48000, 0.63f, 1.38f},
-        {"Tungsten",             WBEntry::Type::TUNGSTEN,    M("TP_WBALANCE_TUNGSTEN"),    2856, 1.f,   1.f},
-        {"Fluo F1",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO1"),       6430, 1.f,   1.f},
-        {"Fluo F2",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO2"),       4230, 1.f,   1.f},
-        {"Fluo F3",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO3"),       3450, 1.f,   1.f},
-        {"Fluo F4",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO4"),       2940, 1.f,   1.f},
-        {"Fluo F5",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO5"),       6350, 1.f,   1.f},
-        {"Fluo F6",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO6"),       4150, 1.f,   1.f},
-        {"Fluo F7",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO7"),       6500, 1.f,   1.f},
-        {"Fluo F8",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO8"),       5020, 1.f,   1.f},
-        {"Fluo F9",              WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO9"),       4330, 1.f,   1.f},
-        {"Fluo F10",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO10"),      5300, 1.f,   1.f},
-        {"Fluo F11",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO11"),      4000, 1.f,   1.f},
-        {"Fluo F12",             WBEntry::Type::FLUORESCENT, M("TP_WBALANCE_FLUO12"),      3000, 1.f,   1.f},
-        {"HMI Lamp",             WBEntry::Type::LAMP,        M("TP_WBALANCE_HMI"),         4800, 1.f,   1.f},
-        {"GTI Lamp",             WBEntry::Type::LAMP,        M("TP_WBALANCE_GTI"),         5000, 1.f,   1.f},
-        {"JudgeIII Lamp",        WBEntry::Type::LAMP,        M("TP_WBALANCE_JUDGEIII"),    5100, 1.f,   1.f},
-        {"Solux Lamp 3500K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX35"),     3480, 1.f,   1.f},
-        {"Solux Lamp 4100K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX41"),     3930, 1.f,   1.f},
-        {"Solux Lamp 4700K",     WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX47"),     4700, 1.f,   1.f},
-        {"NG Solux Lamp 4700K",  WBEntry::Type::LAMP,        M("TP_WBALANCE_SOLUX47_NG"),  4480, 1.f,   1.f},
-        {"LED LSI Lumelex 2040", WBEntry::Type::LED,         M("TP_WBALANCE_LED_LSI"),     2970, 1.f,   1.f},
-        {"LED CRS SP12 WWMR16",  WBEntry::Type::LED,         M("TP_WBALANCE_LED_CRS"),     3050, 1.f,   1.f},
-        {"Flash 5500K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH55"),     5500, 1.f,   1.f},
-        {"Flash 6000K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH60"),     6000, 1.f,   1.f},
-        {"Flash 6500K",          WBEntry::Type::FLASH,       M("TP_WBALANCE_FLASH65"),     6500, 1.f,   1.f},
-        // Should remain the last one
-        {"Custom",               WBEntry::Type::CUSTOM,      M("TP_WBALANCE_CUSTOM"),        0, 1.f,   1.f}
-    };
-
-    return wb_entries;
 }
 
 
@@ -1298,14 +1812,9 @@ DenoiseParams::DenoiseParams() :
     chrominanceRedGreen(0),
     chrominanceBlueYellow(0),
     smoothingEnabled(false),
-    smoothingMethod(SmoothingMethod::GUIDED),
-    medianType(MedianType::TYPE_3X3_SOFT),
-    medianMethod(MedianMethod::CHROMINANCE),
-    medianIterations(1),
-    guidedLumaRadius(2),
     guidedChromaRadius(3),
-    guidedLumaStrength(0),
-    guidedChromaStrength(100)
+    nlDetail(80),
+    nlStrength(0)
 {
 }
 
@@ -1322,18 +1831,13 @@ bool DenoiseParams::operator ==(const DenoiseParams& other) const
         && luminanceDetailThreshold == other.luminanceDetailThreshold
         && chrominanceMethod == other.chrominanceMethod
         && chrominanceAutoFactor == other.chrominanceAutoFactor
-        && chrominance == other.chrominance
-        && chrominanceRedGreen == other.chrominanceRedGreen
-        && chrominanceBlueYellow == other.chrominanceBlueYellow
+        && ((chrominanceMethod == ChrominanceMethod::AUTOMATIC) || (chrominance == other.chrominance))
+        && ((chrominanceMethod == ChrominanceMethod::AUTOMATIC) || (chrominanceRedGreen == other.chrominanceRedGreen))
+        && ((chrominanceMethod == ChrominanceMethod::AUTOMATIC) || (chrominanceBlueYellow == other.chrominanceBlueYellow))
         && smoothingEnabled == other.smoothingEnabled
-        && smoothingMethod == other.smoothingMethod
-        && medianType == other.medianType
-        && medianMethod == other.medianMethod
-        && medianIterations == other.medianIterations
-        && guidedLumaRadius == other.guidedLumaRadius
         && guidedChromaRadius == other.guidedChromaRadius
-        && guidedLumaStrength == other.guidedLumaStrength
-        && guidedChromaStrength == other.guidedChromaStrength;
+        && nlDetail == other.nlDetail
+        && nlStrength == other.nlStrength;
 }
 
 
@@ -1344,9 +1848,9 @@ bool DenoiseParams::operator !=(const DenoiseParams& other) const
 
 
 TextureBoostParams::Region::Region():
-    strength(0.5),
-    edgeStopping(1.4),
-    scale(1.0)
+    strength(0),
+    detailThreshold(0.2),
+    iterations(1)
 {
 }
 
@@ -1354,8 +1858,8 @@ TextureBoostParams::Region::Region():
 bool TextureBoostParams::Region::operator==(const Region &other) const
 {
     return strength == other.strength
-        && edgeStopping == other.edgeStopping
-        && scale == other.scale;
+        && detailThreshold == other.detailThreshold
+        && iterations == other.iterations;
 }
 
 
@@ -1364,12 +1868,56 @@ bool TextureBoostParams::Region::operator!=(const Region &other) const
     return !(*this == other);
 }
 
+SpotEntry::SpotEntry() :
+    radius(25),
+    feather(1.f),
+    opacity(1.f),
+    detail(2)
+{
+}
+float SpotEntry::getFeatherRadius() const
+{
+    return radius * (1.f + feather);
+}
+
+bool SpotEntry::operator ==(const SpotEntry& other) const
+{
+    return other.sourcePos == sourcePos
+        && other.targetPos == targetPos
+        && other.radius == radius
+        && other.feather == feather
+        && other.opacity == opacity
+        && other.detail == detail;
+}
+
+bool SpotEntry::operator !=(const SpotEntry& other) const
+{
+    return !(*this == other);
+}
+
+
+SpotParams::SpotParams() :
+    enabled(false)
+{
+    entries.clear ();
+}
+
+bool SpotParams::operator ==(const SpotParams& other) const
+{
+    return enabled == other.enabled && entries == other.entries;    
+}
+
+bool SpotParams::operator !=(const SpotParams& other) const
+{
+    return !(*this == other);
+}
 
 TextureBoostParams::TextureBoostParams() :
     enabled(false),
     regions{Region()},
     labmasks{Mask()},
-    showMask(-1)
+    showMask(-1),
+    selectedRegion(0)
 {
 }
 
@@ -1390,13 +1938,15 @@ bool TextureBoostParams::operator !=(const TextureBoostParams& other) const
 
 LogEncodingParams::LogEncodingParams():
     enabled(false),
-    autocompute(true),
-    autogray(true),
-    sourceGray(18.0),
+    autocompute(false),
+    autogain(false),
+    gain(0.0),
     targetGray(18.0),
-    blackEv(-5.0),
-    whiteEv(10.0),
-    regularization(65)
+    blackEv(-13.5),
+    whiteEv(2.5),
+    regularization(60),
+    satcontrol(true),
+    highlightCompression(0)
 {
 }
 
@@ -1405,12 +1955,14 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
     return
         enabled == other.enabled
         && autocompute == other.autocompute
-        && autogray == other.autogray
-        && sourceGray == other.sourceGray
-        && blackEv == other.blackEv
-        && whiteEv == other.whiteEv
+        && autogain == other.autogain
         && targetGray == other.targetGray
-        && regularization == other.regularization;
+        && (autocompute || (blackEv == other.blackEv))
+        && (autocompute || (whiteEv == other.whiteEv))
+        && (autogain || (gain == other.gain))
+        && regularization == other.regularization
+        && satcontrol == other.satcontrol
+        && highlightCompression == other.highlightCompression;
 }
 
 bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
@@ -1422,7 +1974,8 @@ bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
 FattalToneMappingParams::FattalToneMappingParams() :
     enabled(false),
     threshold(30),
-    amount(20)
+    amount(20),
+    satcontrol(false)
 {
 }
 
@@ -1431,7 +1984,8 @@ bool FattalToneMappingParams::operator ==(const FattalToneMappingParams& other) 
     return
         enabled == other.enabled
         && threshold == other.threshold
-        && amount == other.amount;
+        && amount == other.amount
+        && satcontrol == other.satcontrol;
 }
 
 bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) const
@@ -1443,7 +1997,9 @@ bool FattalToneMappingParams::operator !=(const FattalToneMappingParams& other) 
 ToneEqualizerParams::ToneEqualizerParams():
     enabled(false),
     bands{0,0,0,0,0},
-    regularization(1)
+    regularization(4),
+    show_colormap(false),
+    pivot(0)
 {
 }
 
@@ -1453,7 +2009,9 @@ bool ToneEqualizerParams::operator ==(const ToneEqualizerParams& other) const
     return
         enabled == other.enabled
         && bands == other.bands
-        && regularization == other.regularization;
+        && regularization == other.regularization
+        && show_colormap == other.show_colormap
+        && pivot == other.pivot;
 }
 
 
@@ -1560,13 +2118,16 @@ bool RotateParams::operator !=(const RotateParams& other) const
 
 DistortionParams::DistortionParams() :
     enabled(false),
-    amount(0.0)
+    amount(0.0),
+    autocompute(false)
 {
 }
 
 bool DistortionParams::operator ==(const DistortionParams& other) const
 {
-    return enabled == other.enabled && amount == other.amount;
+    return enabled == other.enabled
+        && autocompute == other.autocompute
+        && (autocompute || (amount == other.amount));
 }
 
 bool DistortionParams::operator !=(const DistortionParams& other) const
@@ -1588,9 +2149,9 @@ bool LensProfParams::operator ==(const LensProfParams& other) const
         lcMode == other.lcMode
         && lcpFile == other.lcpFile
         && useCA == other.useCA
-        && lfCameraMake == other.lfCameraMake
-        && lfCameraModel == other.lfCameraModel
-        && lfLens == other.lfLens;
+        && ((lcMode == LcMode::LENSFUNAUTOMATCH || lcMode == LcMode::EXIF) || (lfCameraMake == other.lfCameraMake))
+        && ((lcMode == LcMode::LENSFUNAUTOMATCH || lcMode == LcMode::EXIF) || (lfCameraModel == other.lfCameraModel))
+        && ((lcMode == LcMode::LENSFUNAUTOMATCH || lcMode == LcMode::EXIF) || (lfLens == other.lfLens));
 }
 
 bool LensProfParams::operator !=(const LensProfParams& other) const
@@ -1618,13 +2179,27 @@ bool LensProfParams::lfManual() const
     return lcMode == LcMode::LENSFUNMANUAL;
 }
 
+
+bool LensProfParams::useExif() const
+{
+    return lcMode == LcMode::EXIF;
+}
+
+
+bool LensProfParams::needed() const
+{
+    return useLensfun() || useLcp() || useExif();
+}
+
+
 const std::vector<const char*>& LensProfParams::getMethodStrings() const
 {
     static const std::vector<const char*> method_strings = {
         "none",
         "lfauto",
         "lfmanual",
-        "lcp"
+        "lcp",
+        "exif"
     };
     return method_strings;
 }
@@ -1653,7 +2228,8 @@ PerspectiveParams::PerspectiveParams() :
     shear(0.0),
     flength(0),
     cropfactor(1),
-    aspect(1)
+    aspect(1),
+    control_lines()
 {
 }
 
@@ -1667,7 +2243,8 @@ bool PerspectiveParams::operator ==(const PerspectiveParams& other) const
         && shear == other.shear
         && flength == other.flength
         && cropfactor == other.cropfactor
-        && aspect == other.aspect;
+        && aspect == other.aspect
+        && control_lines == other.control_lines;
 }
 
 bool PerspectiveParams::operator !=(const PerspectiveParams& other) const
@@ -1755,27 +2332,18 @@ bool VignettingParams::operator !=(const VignettingParams& other) const
 
 ChannelMixerParams::ChannelMixerParams() :
     enabled(false),
-    red{
-        1000,
-        0,
-        0
-    },
-    green{
-        0,
-        1000,
-        0
-    },
-    blue{
-        0,
-        0,
-        1000
-    }
+    mode(RGB_MATRIX),
+    red{1000, 0, 0},
+    green{0, 1000, 0},
+    blue{0, 0, 1000},
+    hue_tweak{0, 0, 0},
+    sat_tweak{0, 0, 0}
 {
 }
 
 bool ChannelMixerParams::operator ==(const ChannelMixerParams& other) const
 {
-    if (enabled != other.enabled) {
+    if (enabled != other.enabled || mode != other.mode) {
         return false;
     }
 
@@ -1784,6 +2352,8 @@ bool ChannelMixerParams::operator ==(const ChannelMixerParams& other) const
             red[i] != other.red[i]
             || green[i] != other.green[i]
             || blue[i] != other.blue[i]
+            || hue_tweak[i] != other.hue_tweak[i]
+            || sat_tweak[i] != other.sat_tweak[i]
         ) {
             return false;
         }
@@ -1916,7 +2486,7 @@ int ResizeParams::get_width() const
     switch (unit) {
     case PX: return width;
     case CM: return std::round(ppi * (width / 2.54)); 
-    case IN: return std::round(ppi * width);
+    case INCHES: return std::round(ppi * width);
     default:
         assert(false);
         return width;
@@ -1929,7 +2499,7 @@ int ResizeParams::get_height() const
     switch (unit) {
     case PX: return height;
     case CM: return std::round(ppi * (height / 2.54));
-    case IN: return std::round(ppi * height);
+    case INCHES: return std::round(ppi * height);
     default:
         assert(false);
         return height;
@@ -1947,10 +2517,11 @@ ColorManagementParams::ColorManagementParams() :
     applyBaselineExposureOffset(true),
     applyHueSatMap(true),
     dcpIlluminant(0),
-    workingProfile("ProPhoto"),
-    outputProfile(options.rtSettings.srgb),
+    workingProfile("Rec2020"),
+    outputProfile("RTv4_sRGB"),
     outputIntent(RI_RELATIVE),
-    outputBPC(true)
+    outputBPC(true),
+    inputProfileCAT(false)
 {
 }
 
@@ -1966,7 +2537,8 @@ bool ColorManagementParams::operator ==(const ColorManagementParams& other) cons
         && workingProfile == other.workingProfile
         && outputProfile == other.outputProfile
         && outputIntent == other.outputIntent
-        && outputBPC == other.outputBPC;
+        && outputBPC == other.outputBPC
+        && inputProfileCAT == other.inputProfileCAT;
 }
 
 bool ColorManagementParams::operator !=(const ColorManagementParams& other) const
@@ -1977,7 +2549,8 @@ bool ColorManagementParams::operator !=(const ColorManagementParams& other) cons
 
 FilmSimulationParams::FilmSimulationParams() :
     enabled(false),
-    strength(100)
+    strength(100),
+    after_tone_curve(false)
 {
 }
 
@@ -1986,7 +2559,9 @@ bool FilmSimulationParams::operator ==(const FilmSimulationParams& other) const
     return
         enabled == other.enabled
         && clutFilename == other.clutFilename
-        && strength == other.strength;
+        && strength == other.strength
+        && after_tone_curve == other.after_tone_curve
+        && lut_params == other.lut_params;
 }
 
 bool FilmSimulationParams::operator !=(const FilmSimulationParams& other) const
@@ -2016,10 +2591,21 @@ bool SoftLightParams::operator !=(const SoftLightParams& other) const
 
 DehazeParams::DehazeParams() :
     enabled(false),
-    strength(50),
+    strength{
+        FCT_MinMaxCPoints,
+        0.0,
+        0.75,
+        0.0,
+        0.0,
+        1.0,
+        0.75,
+        0.0,
+        0.0
+    },
     showDepthMap(false),
     depth(25),
-    luminance(false)
+    luminance(false),
+    blackpoint(0)
 {
 }
 
@@ -2030,7 +2616,8 @@ bool DehazeParams::operator ==(const DehazeParams& other) const
         && strength == other.strength
         && showDepthMap == other.showDepthMap
         && depth == other.depth
-        && luminance == other.luminance;
+        && luminance == other.luminance
+        && blackpoint == other.blackpoint;
 }
 
 bool DehazeParams::operator !=(const DehazeParams& other) const
@@ -2042,8 +2629,7 @@ bool DehazeParams::operator !=(const DehazeParams& other) const
 GrainParams::GrainParams():
     enabled(false),
     iso(400),
-    strength(25),
-    scale(100)
+    strength(25)
 {
 }
 
@@ -2051,8 +2637,7 @@ bool GrainParams::operator==(const GrainParams &other) const
 {
     return enabled == other.enabled
         && iso == other.iso
-        && strength == other.strength
-        && scale == other.scale;
+        && strength == other.strength;
 }
 
 bool GrainParams::operator!=(const GrainParams &other) const
@@ -2061,40 +2646,63 @@ bool GrainParams::operator!=(const GrainParams &other) const
 }
 
 
-GuidedSmoothingParams::Region::Region():
+SmoothingParams::Region::Region():
+    mode(Mode::GUIDED),
     channel(Channel::RGB),
     radius(0),
+    sigma(0),
     epsilon(0),
-    iterations(1)
+    iterations(1),
+    falloff(1),
+    nldetail(50),
+    nlstrength(0),
+    numblades(9),
+    angle(0),
+    curvature(0),
+    offset(0),
+    noise_strength(10),
+    noise_coarseness(30)
 {
 }
 
 
-bool GuidedSmoothingParams::Region::operator==(const Region &other) const
+bool SmoothingParams::Region::operator==(const Region &other) const
 {
-    return channel == other.channel
+    return mode == other.mode
+        && channel == other.channel
         && radius == other.radius
+        && sigma == other.sigma
         && epsilon == other.epsilon
-        && iterations == other.iterations;
+        && iterations == other.iterations
+        && falloff == other.falloff
+        && nlstrength == other.nlstrength
+        && nldetail == other.nldetail
+        && numblades == other.numblades
+        && angle == other.angle
+        && curvature == other.curvature
+        && offset == other.offset
+        && noise_strength == other.noise_strength
+        && noise_coarseness == other.noise_coarseness;
 }
 
 
-bool GuidedSmoothingParams::Region::operator!=(const Region &other) const
+bool SmoothingParams::Region::operator!=(const Region &other) const
 {
     return !(*this == other);
 }
 
 
-GuidedSmoothingParams::GuidedSmoothingParams():
+SmoothingParams::SmoothingParams():
     enabled(false),
     regions{Region()},
     labmasks{Mask()},
-    showMask(-1)
+    showMask(-1),
+    selectedRegion(0)
 {
 }
 
 
-bool GuidedSmoothingParams::operator==(const GuidedSmoothingParams &other) const
+bool SmoothingParams::operator==(const SmoothingParams &other) const
 {
     return enabled == other.enabled
         && regions == other.regions
@@ -2103,7 +2711,7 @@ bool GuidedSmoothingParams::operator==(const GuidedSmoothingParams &other) const
 }
 
 
-bool GuidedSmoothingParams::operator!=(const GuidedSmoothingParams &other) const
+bool SmoothingParams::operator!=(const SmoothingParams &other) const
 {
     return !(*this == other);
 }
@@ -2112,7 +2720,9 @@ bool GuidedSmoothingParams::operator!=(const GuidedSmoothingParams &other) const
 ColorCorrectionParams::Region::Region():
     a(0),
     b(0),
-    saturation(0),
+    abscale(1),
+    inSaturation(0),
+    outSaturation(0),
     slope{1,1,1},
     offset{0,0,0},
     power{1,1,1},
@@ -2120,7 +2730,12 @@ ColorCorrectionParams::Region::Region():
     hue{0,0,0},
     sat{0,0,0},
     factor{0,0,0},
-    mode(ColorCorrectionParams::Mode::YUV)
+    compression{0,0,0},
+    rgbluminance(false),
+    hueshift(0),
+    lutFilename(""),
+    lut_params{},
+    mode(ColorCorrectionParams::Mode::JZAZBZ)
 {
 }
 
@@ -2129,7 +2744,9 @@ bool ColorCorrectionParams::Region::operator==(const Region &other) const
 {
     return a == other.a
         && b == other.b
-        && saturation == other.saturation
+        && abscale == other.abscale
+        && inSaturation == other.inSaturation
+        && outSaturation == other.outSaturation
         && slope == other.slope
         && offset == other.offset
         && power == other.power
@@ -2137,6 +2754,11 @@ bool ColorCorrectionParams::Region::operator==(const Region &other) const
         && hue == other.hue
         && sat == other.sat
         && factor == other.factor
+        && compression == other.compression
+        && rgbluminance == other.rgbluminance
+        && hueshift == other.hueshift
+        && lutFilename == other.lutFilename
+        && lut_params == other.lut_params
         && mode == other.mode;
 }
 
@@ -2151,7 +2773,8 @@ ColorCorrectionParams::ColorCorrectionParams():
     enabled(false),
     regions{Region()},
     labmasks{Mask()},
-    showMask(-1)
+    showMask(-1),
+    selectedRegion(0)
 {
 }
 
@@ -2172,7 +2795,7 @@ bool ColorCorrectionParams::operator!=(const ColorCorrectionParams &other) const
 
 
 RAWParams::BayerSensor::BayerSensor() :
-    method(getMethodString(Method::AMAZE)),
+    method(Method::RCD),
     border(4),
     imageNum(0),
     ccSteps(0),
@@ -2204,6 +2827,7 @@ RAWParams::BayerSensor::BayerSensor() :
     pixelShiftDemosaicMethod(getPSDemosaicMethodString(PSDemosaicMethod::AMAZE)),
     dcb_enhance(true),
     pdafLinesFilter(false),
+    dynamicRowNoiseFilter(false),
     enable_black(false),
     enable_preproc(false)
 {
@@ -2244,6 +2868,7 @@ bool RAWParams::BayerSensor::operator ==(const BayerSensor& other) const
         && pixelShiftDemosaicMethod == other.pixelShiftDemosaicMethod
         && dcb_enhance == other.dcb_enhance
         && pdafLinesFilter == other.pdafLinesFilter
+        && dynamicRowNoiseFilter == other.dynamicRowNoiseFilter
         && enable_black == other.enable_black
         && enable_preproc == other.enable_preproc;
 }
@@ -2273,28 +2898,33 @@ const std::vector<const char*>& RAWParams::BayerSensor::getMethodStrings()
 {
     static const std::vector<const char*> method_strings {
         "amaze",
-        "amazevng4",
         "rcd",
-        "rcdvng4",
-        "dcb",
-        "dcbvng4",
         "lmmse",
         "igv",
-        "ahd",
-        "eahd",
-        "hphd",
+        "amazebilinear",
+        "rcdbilinear",
         "vng4",
         "fast",
         "mono",
         "pixelshift",
         "none"
+        // "amazevng4",
+        // "rcdvng4",
+        // "dcb",
+        // "dcbbilinear",
+        // "dcbvng4",
+        // "ahd",
+        // "eahd",
+        // "hphd"
     };
     return method_strings;
 }
 
 Glib::ustring RAWParams::BayerSensor::getMethodString(Method method)
 {
-    return getMethodStrings()[toUnderlying(method)];
+    size_t i = toUnderlying(method);
+    auto &v = getMethodStrings();
+    return i < v.size() ? v[i] : "";
 }
 
 const std::vector<const char*>& RAWParams::BayerSensor::getPSDemosaicMethodStrings()
@@ -2315,7 +2945,7 @@ Glib::ustring RAWParams::BayerSensor::getPSDemosaicMethodString(PSDemosaicMethod
 
 
 RAWParams::XTransSensor::XTransSensor() :
-    method(getMethodString(Method::THREE_PASS)),
+    method(Method::THREE_PASS),
     dualDemosaicAutoContrast(true),
     dualDemosaicContrast(20),
     border(7),
@@ -2372,6 +3002,7 @@ RAWParams::RAWParams() :
     ff_BlurType(getFlatFieldBlurTypeString(FlatFieldBlurType::AREA)),
     ff_AutoClipControl(false),
     ff_clipControl(0),
+    ff_embedded(false),
     ca_autocorrect(false),
     ca_avoidcolourshift(true),
     caautoiterations(2),
@@ -2394,19 +3025,20 @@ bool RAWParams::operator ==(const RAWParams& other) const
     return
         bayersensor == other.bayersensor
         && xtranssensor == other.xtranssensor
-        && dark_frame == other.dark_frame
         && df_autoselect == other.df_autoselect
-        && ff_file == other.ff_file
+        && (df_autoselect || (dark_frame == other.dark_frame))
         && ff_AutoSelect == other.ff_AutoSelect
+        && (ff_AutoSelect || (ff_file == other.ff_file))
         && ff_BlurRadius == other.ff_BlurRadius
         && ff_BlurType == other.ff_BlurType
         && ff_AutoClipControl == other.ff_AutoClipControl
         && ff_clipControl == other.ff_clipControl
+        && ff_embedded == other.ff_embedded
         && ca_autocorrect == other.ca_autocorrect
         && ca_avoidcolourshift == other.ca_avoidcolourshift
         && caautoiterations == other.caautoiterations
-        && cared == other.cared
-        && cablue == other.cablue
+        && (ca_autocorrect || (cared == other.cared))
+        && (ca_autocorrect || (cablue == other.cablue))
         && expos == other.expos
         && hotPixelFilter == other.hotPixelFilter
         && deadPixelFilter == other.deadPixelFilter
@@ -2440,39 +3072,140 @@ Glib::ustring RAWParams::getFlatFieldBlurTypeString(FlatFieldBlurType type)
 }
 
 
-FilmNegativeParams::FilmNegativeParams():
+FilmNegativeParams::FilmNegativeParams() :
     enabled(false),
     redRatio(1.36),
     greenExp(1.5),
-    blueRatio(0.86)
+    blueRatio(0.86),
+    refInput({0.0, 0.0, 0.0}),
+    refOutput({0.0, 0.0, 0.0}),
+    colorSpace(ColorSpace::WORKING),
+    backCompat(BackCompat::CURRENT)
 {
 }
 
+bool FilmNegativeParams::RGB::operator ==(const FilmNegativeParams::RGB& other) const
+{
+    return
+        r == other.r
+        && g == other.g
+        && b == other.b;
+}
 
-bool FilmNegativeParams::operator==(const FilmNegativeParams &other) const
+bool FilmNegativeParams::RGB::operator !=(const FilmNegativeParams::RGB& other) const
+{
+    return !(*this == other);
+}
+
+FilmNegativeParams::RGB FilmNegativeParams::RGB::operator *(const FilmNegativeParams::RGB& other) const
+{
+    return {
+        (*this).r * other.r,
+        (*this).g * other.g,
+        (*this).b * other.b
+    };
+}
+
+bool FilmNegativeParams::operator ==(const FilmNegativeParams& other) const
 {
     return
         enabled == other.enabled
-        && redRatio   == other.redRatio
+        && redRatio == other.redRatio
         && greenExp == other.greenExp
-        && blueRatio  == other.blueRatio;
+        && blueRatio == other.blueRatio
+        && refInput == other.refInput
+        && refOutput == other.refOutput
+        && colorSpace == other.colorSpace
+        && backCompat == other.backCompat;
 }
 
-
-bool FilmNegativeParams::operator!=(const FilmNegativeParams &other) const
+bool FilmNegativeParams::operator !=(const FilmNegativeParams& other) const
 {
     return !(*this == other);
 }
 
 
+namespace {
+
+const std::map<Glib::ustring, Glib::ustring> exif_keys = {
+    {"Copyright", "Exif.Image.Copyright"},
+    {"Artist", "Exif.Image.Artist"},
+    {"ImageDescription", "Exif.Image.ImageDescription"},
+    {"Exif.UserComment", "Exif.Photo.UserComment"},
+    {"ISOSpeed", "Exif.Photo.ISOSpeedRatings"},
+    {"FNumber", "Exif.Photo.FNumber"},
+    {"ShutterSpeed", "Exif.Photo.ExposureTime"},
+    {"FocalLength", "Exif.Photo.FocalLength"},
+    {"ExpComp", "Exif.Photo.ExposureBiasValue"},
+    {"Flash", "Exif.Photo.Flash"},
+    {"Make", "Exif.Image.Make"},
+    {"Model", "Exif.Image.Model"},
+    {"Lens", "Exif.Photo.LensModel"},
+    {"DateTime", "Exif.Photo.DateTimeOriginal"},
+    {"XResolution", "Exif.Image.XResolution"},
+    {"YResolution", "Exif.Image.YResolution"}
+};
+
+const std::map<Glib::ustring, Glib::ustring> iptc_keys = {
+    {"Title", "Iptc.Application2.ObjectName"},
+    {"Category", "Iptc.Application2.Category"},
+    {"SupplementalCategories", "Iptc.Application2.SuppCategory"},
+    {"Keywords", "Iptc.Application2.Keywords"},
+    {"Instructions", "Iptc.Application2.SpecialInstructions"},
+    {"DateCreated", "Iptc.Application2.DateCreated"},
+    {"Creator", "Iptc.Application2.Byline"},
+    {"CreatorJobTitle", "Iptc.Application2.BylineTitle"},
+    {"City", "Iptc.Application2.City"},
+    {"Province", "Iptc.Application2.ProvinceState"},
+    {"Country", "Iptc.Application2.CountryName"},
+    {"TransReference", "Iptc.Application2.TransmissionReference"},
+    {"Headline", "Iptc.Application2.Headline"},
+    {"Credit", "Iptc.Application2.Credit"},
+    {"Source", "Iptc.Application2.Source"},
+    {"Copyright", "Iptc.Application2.Copyright"},
+    {"Caption", "Iptc.Application2.Caption"},
+    {"CaptionWriter", "Iptc.Application2.Writer"}
+};
+
+} // namespace
+
+
+std::vector<std::string> MetaDataParams::basicExifKeys = {
+    "Exif.Image.Copyright",
+    "Exif.Image.Artist",
+    "Exif.Image.ImageDescription",
+    "Exif.Photo.UserComment",
+    "Exif.Image.Make",
+    "Exif.Image.Model",
+    "Exif.Photo.LensModel",
+    "Exif.Photo.FNumber",
+    "Exif.Photo.ExposureTime",
+    "Exif.Photo.FocalLength",
+    "Exif.Photo.ISOSpeedRatings",
+    "Exif.Photo.ExposureBiasValue",
+    "Exif.Photo.Flash",
+    "Exif.Photo.DateTimeOriginal",
+    "Exif.Image.XResolution",
+    "Exif.Image.YResolution"
+};
+
+
 MetaDataParams::MetaDataParams():
-    mode(MetaDataParams::TUNNEL)
+    mode(MetaDataParams::EDIT),
+    exifKeys{},
+    exif{},
+    iptc{}
 {
+    exifKeys = basicExifKeys;
 }
+
 
 bool MetaDataParams::operator==(const MetaDataParams &other) const
 {
-    return mode == other.mode;
+    return mode == other.mode
+        && exifKeys == other.exifKeys
+        && exif == other.exif
+        && iptc == other.iptc;
 }
 
 bool MetaDataParams::operator!=(const MetaDataParams &other) const
@@ -2486,93 +3219,58 @@ ProcParams::ProcParams()
     setDefaults();
 }
 
+
 void ProcParams::setDefaults()
 {
     exposure = ExposureParams();
-
     saturation = SaturationParams();
-        
     toneCurve = ToneCurveParams();
-
     labCurve = LabCurveParams();
-
     rgbCurves = RGBCurvesParams();
-
     localContrast = LocalContrastParams();
-
     sharpening = SharpeningParams();
-
     prsharpening = SharpeningParams();
     prsharpening.contrast = 25.0;
     prsharpening.method = "usm";
-
     wb = WBParams();
-
     defringe = DefringeParams();
-
     impulseDenoise = ImpulseDenoiseParams();
-
     denoise = DenoiseParams();
-
     textureBoost = TextureBoostParams();
-
     fattal = FattalToneMappingParams();
-
     logenc = LogEncodingParams();
-
     toneEqualizer = ToneEqualizerParams();
-
     crop = CropParams();
-
     coarse = CoarseTransformParams();
-
     commonTrans = CommonTransformParams();
-
     rotate = RotateParams();
-
     distortion = DistortionParams();
-
     lensProf = LensProfParams();
-
     perspective = PerspectiveParams();
-
     gradient = GradientParams();
-
     pcvignette = PCVignetteParams();
-
     vignetting = VignettingParams();
-
     chmixer = ChannelMixerParams();
-
     blackwhite = BlackWhiteParams();
-
     hsl = HSLEqualizerParams();
-
     cacorrection = CACorrParams();
-
     resize = ResizeParams();
-
     icm = ColorManagementParams();
-
     filmSimulation = FilmSimulationParams();
-
     softlight = SoftLightParams();
-
     dehaze = DehazeParams();
-
     grain = GrainParams();
-
-    smoothing = GuidedSmoothingParams();
-
+    smoothing = SmoothingParams();
     colorcorrection = ColorCorrectionParams();
-
     raw = RAWParams();
-
     metadata = MetaDataParams();
-    exif.clear();
-    iptc.clear();
+    filmNegative = FilmNegativeParams();
+    // exif.clear();
+    // iptc.clear();
 
-    rank = 0;
+    spot = SpotParams();
+
+    rank = -1;
     colorlabel = 0;
     inTrash = false;
 
@@ -2580,7 +3278,7 @@ void ProcParams::setDefaults()
 }
 
 
-int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bool fnameAbsolute, const ParamsEdited *pedited)
+int ProcParams::save(ProgressListener *pl, const Glib::ustring& fname, const Glib::ustring& fname2, const ParamsEdited *pedited)
 {
     if (fname.empty() && fname2.empty()) {
         return 0;
@@ -2590,24 +3288,28 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 
     try {
         KeyFile keyFile;
-        int ret = save(keyFile, pedited, fname, fnameAbsolute);
+        int ret = save(pl, keyFile, pedited, fname);
         if (ret != 0) {
             return ret;
         }
 
         sPParams = keyFile.to_data();
-    } catch (Glib::KeyFileError&) {}
+    } catch (Glib::KeyFileError &exc) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_SAVE_ERROR"), fname, exc.what()));
+        }
+    }
 
     if (sPParams.empty()) {
         return 1;
     }
 
     int error1, error2;
-    error1 = write(fname, sPParams);
+    error1 = write(pl, fname, sPParams);
 
     if (!fname2.empty()) {
 
-        error2 = write(fname2, sPParams);
+        error2 = write(pl, fname2, sPParams);
         // If at least one file has been saved, it's a success
         return error1 & error2;
     } else {
@@ -2616,19 +3318,66 @@ int ProcParams::save(const Glib::ustring& fname, const Glib::ustring& fname2, bo
 }
 
 
-int ProcParams::save(bool save_general,
+int ProcParams::saveEmbedded(ProgressListener *pl, const Glib::ustring &fname)
+{
+    if (fname.empty()) {
+        return 0;
+    }
+
+    Glib::ustring sPParams;
+
+    try {
+        KeyFile keyFile;
+        int ret = save(pl, keyFile, nullptr, fname);
+        if (ret != 0) {
+            return ret;
+        }
+
+        sPParams = keyFile.to_data();
+    } catch (Glib::KeyFileError &exc) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_SAVE_ERROR"), fname, exc.what()));
+        }
+    }
+
+    if (sPParams.empty()) {
+        return 1;
+    }
+
+    try {
+        // Exiv2Metadata md(fname, false);
+        // md.load();
+        // md.xmpData()["Xmp.ART.arp"] = to_xmp(sPParams);
+        // md.saveToImage(pl, fname, true);
+        Exiv2Metadata::embedProcParamsData(fname, to_xmp(sPParams));
+        return 0;
+    } catch (std::exception &exc) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_SAVE_ERROR"), fname, exc.what()));
+        }
+        return 1;
+    }
+}
+
+
+
+int ProcParams::save(ProgressListener *pl, bool save_general,
                      KeyFile &keyFile, const ParamsEdited *pedited,
-                     const Glib::ustring &fname, bool fnameAbsolute) const
+                     const Glib::ustring &fname) const
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
     try {
+        Glib::ustring basedir = Glib::path_get_dirname(fname);
+        
 // Version
         if (save_general) {
             keyFile.set_string("Version", "AppVersion", RTVERSION);
             keyFile.set_integer("Version", "Version", PPVERSION);
 
             if (RELEVANT_(general)) {
-                saveToKeyfile("General", "Rank", rank, keyFile);
+                if (rank >= 0) {
+                    saveToKeyfile("General", "Rank", rank, keyFile);
+                }
                 saveToKeyfile("General", "ColorLabel", colorlabel, keyFile);
                 saveToKeyfile("General", "InTrash", inTrash, keyFile);
             }
@@ -2644,8 +3393,10 @@ int ProcParams::save(bool save_general,
             case ExposureParams::HR_OFF: hr = "Off"; break;
             case ExposureParams::HR_BLEND: hr = "Blend"; break;
             case ExposureParams::HR_COLOR: hr = "Color"; break;
+            case ExposureParams::HR_COLORSOFT: hr = "Balanced"; break;
             }
             saveToKeyfile("Exposure", "HLRecovery", hr, keyFile);
+            saveToKeyfile("Exposure", "HLRecoveryBlur", exposure.hrblur, keyFile);
         }
 
 // Brightness, Contrast, Saturation
@@ -2668,16 +3419,26 @@ int ProcParams::save(bool save_general,
                 {ToneCurveParams::TcMode::SATANDVALBLENDING, "SatAndValueBlending"},
                 {ToneCurveParams::TcMode::WEIGHTEDSTD, "WeightedStd"},
                 {ToneCurveParams::TcMode::LUMINANCE, "Luminance"},
-                {ToneCurveParams::TcMode::PERCEPTUAL, "Perceptual"}
+                {ToneCurveParams::TcMode::PERCEPTUAL, "Perceptual"},
+                {ToneCurveParams::TcMode::NEUTRAL, "Neutral"}
             };
 
             saveToKeyfile("ToneCurve", "CurveMode", tc_mapping, toneCurve.curveMode, keyFile);
-            saveToKeyfile("ToneCurve", "CurveMode2", tc_mapping, toneCurve.curveMode2, keyFile);
+            if (!toneCurve.curve2.empty() && toneCurve.curve2[0] != DCT_Linear && toneCurve.curveMode != toneCurve.curveMode2) {
+                saveToKeyfile("ToneCurve", "CurveMode2", tc_mapping, toneCurve.curveMode2, keyFile);
+            }
 
             saveToKeyfile("ToneCurve", "Curve", toneCurve.curve, keyFile);
             saveToKeyfile("ToneCurve", "Curve2", toneCurve.curve2, keyFile);
             saveToKeyfile("ToneCurve", "Saturation", toneCurve.saturation, keyFile);
-            saveToKeyfile("ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength, keyFile);
+            saveToKeyfile("ToneCurve", "Saturation2", toneCurve.saturation2, keyFile);
+            if (toneCurve.perceptualStrength != 100) {
+                saveToKeyfile("ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength, keyFile);
+            }
+            if (toneCurve.contrastLegacyMode) {
+                saveToKeyfile("ToneCurve", "ContrastLegacyMode", toneCurve.contrastLegacyMode, keyFile);
+            }
+            saveToKeyfile("ToneCurve", "WhitePoint", toneCurve.whitePoint, keyFile);
         }
 
 // Local contrast
@@ -2690,19 +3451,25 @@ int ProcParams::save(bool save_general,
                 putToKeyfile("Local Contrast", Glib::ustring("Curve") + n, r.curve, keyFile);
                 localContrast.labmasks[j].save(keyFile, "Local Contrast", "", n);
             }
-            saveToKeyfile("Local Contrast", "showMask", localContrast.showMask, keyFile);
+            saveToKeyfile("Local Contrast", "ShowMask", localContrast.showMask, keyFile);
+            saveToKeyfile("Local Contrast", "SelectedRegion", localContrast.selectedRegion, keyFile);
         }
 
 
 // Channel mixer
         if (RELEVANT_(chmixer)) {
             saveToKeyfile("Channel Mixer", "Enabled", chmixer.enabled, keyFile);
+            saveToKeyfile("Channel Mixer", "Mode", int(chmixer.mode), keyFile);
             Glib::ArrayHandle<int> rmix(chmixer.red, 3, Glib::OWNERSHIP_NONE);
             keyFile.set_integer_list("Channel Mixer", "Red", rmix);
             Glib::ArrayHandle<int> gmix(chmixer.green, 3, Glib::OWNERSHIP_NONE);
             keyFile.set_integer_list("Channel Mixer", "Green", gmix);
             Glib::ArrayHandle<int> bmix(chmixer.blue, 3, Glib::OWNERSHIP_NONE);
             keyFile.set_integer_list("Channel Mixer", "Blue", bmix);
+            Glib::ArrayHandle<int> h(chmixer.hue_tweak, 3, Glib::OWNERSHIP_NONE);
+            keyFile.set_integer_list("Channel Mixer", "HueTweak", h);
+            Glib::ArrayHandle<int> s(chmixer.sat_tweak, 3, Glib::OWNERSHIP_NONE);
+            keyFile.set_integer_list("Channel Mixer", "SatTweak", s);
         }
 
 // Black & White
@@ -2757,15 +3524,38 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius, keyFile);
             saveToKeyfile("Sharpening", "DeconvCornerBoost", sharpening.deconvCornerBoost, keyFile);
             saveToKeyfile("Sharpening", "DeconvCornerLatitude", sharpening.deconvCornerLatitude, keyFile);
+            saveToKeyfile("Sharpening", "PSFKernel", sharpening.psf_kernel, keyFile);
+            saveToKeyfile("Sharpening", "PSFIterations", sharpening.psf_iterations, keyFile);
         }
 
 // WB
         if (RELEVANT_(wb)) {
             saveToKeyfile("White Balance", "Enabled", wb.enabled, keyFile);
-            saveToKeyfile("White Balance", "Setting", wb.method, keyFile);
+            std::string method = "Camera";
+            switch (wb.method) {
+            case WBParams::CAMERA:
+                method = "Camera";
+                break;
+            case WBParams::AUTO:
+                method = "Auto";
+                break;
+            case WBParams::CUSTOM_TEMP:
+                method = "CustomTemp";
+                break;
+            case WBParams::CUSTOM_MULT:
+                method = "CustomMult";
+                break;
+            case WBParams::CUSTOM_MULT_LEGACY:
+                method = "CustomMultLegacy";
+            default:
+                break;
+            }
+            saveToKeyfile("White Balance", "Setting", method, keyFile);
             saveToKeyfile("White Balance", "Temperature", wb.temperature, keyFile);
             saveToKeyfile("White Balance", "Green", wb.green, keyFile);
             saveToKeyfile("White Balance", "Equal", wb.equal, keyFile);
+            std::vector<double> m(wb.mult.begin(), wb.mult.end());
+            saveToKeyfile("White Balance", "Multipliers", m, keyFile);
         }
 
 
@@ -2787,15 +3577,21 @@ int ProcParams::save(bool save_general,
         if (RELEVANT_(dehaze)) {
             saveToKeyfile("Dehaze", "Enabled", dehaze.enabled, keyFile);
             saveToKeyfile("Dehaze", "Strength", dehaze.strength, keyFile);        
-            saveToKeyfile("Dehaze", "ShowDepthMap", dehaze.showDepthMap, keyFile);        
-            saveToKeyfile("Dehaze", "Depth", dehaze.depth, keyFile);
+            saveToKeyfile("Dehaze", "Blackpoint", dehaze.blackpoint, keyFile);
             saveToKeyfile("Dehaze", "Luminance", dehaze.luminance, keyFile);
+            DehazeParams dp;
+            if (dehaze.depth != dp.depth) {
+                saveToKeyfile("Dehaze", "Depth", dehaze.depth, keyFile);
+            }
+            if (dehaze.showDepthMap != dp.showDepthMap) {
+                saveToKeyfile("Dehaze", "ShowDepthMap", dehaze.showDepthMap, keyFile);        
+            }
         }
 
 // Denoising
         if (RELEVANT_(denoise)) {
             saveToKeyfile("Denoise", "Enabled", denoise.enabled, keyFile);
-            saveToKeyfile("Denoise", "ColorSpace", denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? "LAB" : "RGB", keyFile);
+            saveToKeyfile("Denoise", "ColorSpace", denoise.colorSpace == DenoiseParams::ColorSpace::LAB ? Glib::ustring("LAB") : Glib::ustring("RGB"), keyFile);
             saveToKeyfile("Denoise", "Aggressive", denoise.aggressive, keyFile);
             saveToKeyfile("Denoise", "Gamma", denoise.gamma, keyFile);
             saveToKeyfile("Denoise", "Luminance", denoise.luminance, keyFile);
@@ -2807,14 +3603,9 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen, keyFile);
             saveToKeyfile("Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow, keyFile);
             saveToKeyfile("Denoise", "SmoothingEnabled", denoise.smoothingEnabled, keyFile);
-            saveToKeyfile("Denoise", "SmoothingMethod", int(denoise.smoothingMethod), keyFile);
-            saveToKeyfile("Denoise", "MedianType", int(denoise.medianType), keyFile);
-            saveToKeyfile("Denoise", "MedianMethod", int(denoise.medianMethod), keyFile);
-            saveToKeyfile("Denoise", "MedianIterations", denoise.medianIterations, keyFile);
-            saveToKeyfile("Denoise", "GuidedLumaRadius", denoise.guidedLumaRadius, keyFile);
             saveToKeyfile("Denoise", "GuidedChromaRadius", denoise.guidedChromaRadius, keyFile);
-            saveToKeyfile("Denoise", "GuidedLumaStrength", denoise.guidedLumaStrength, keyFile);
-            saveToKeyfile("Denoise", "GuidedChromaStrength", denoise.guidedChromaStrength, keyFile);
+            saveToKeyfile("Denoise", "NLDetail", denoise.nlDetail, keyFile);
+            saveToKeyfile("Denoise", "NLStrength", denoise.nlStrength, keyFile);
         }
 
 // TextureBoost
@@ -2824,11 +3615,12 @@ int ProcParams::save(bool save_general,
                 std::string n = j ? std::string("_") + std::to_string(j) : std::string("");
                 auto &r = textureBoost.regions[j];
                 putToKeyfile("TextureBoost", Glib::ustring("Strength") + n, r.strength, keyFile);
-                putToKeyfile("TextureBoost", Glib::ustring("EdgeStopping") + n, r.edgeStopping, keyFile);
-                putToKeyfile("TextureBoost", Glib::ustring("Scale") + n, r.scale, keyFile);
+                putToKeyfile("TextureBoost", Glib::ustring("DetailThreshold") + n, r.detailThreshold, keyFile);
+                putToKeyfile("TextureBoost", Glib::ustring("Iterations") + n, r.iterations, keyFile);
                 textureBoost.labmasks[j].save(keyFile, "TextureBoost", "", n);
             }
-            saveToKeyfile("TextureBoost", "showMask", textureBoost.showMask, keyFile);
+            saveToKeyfile("TextureBoost", "ShowMask", textureBoost.showMask, keyFile);
+            saveToKeyfile("TextureBoost", "SelectedRegion", textureBoost.selectedRegion, keyFile);
         }
 
 // Fattal
@@ -2836,18 +3628,21 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("FattalToneMapping", "Enabled", fattal.enabled, keyFile);
             saveToKeyfile("FattalToneMapping", "Threshold", fattal.threshold, keyFile);
             saveToKeyfile("FattalToneMapping", "Amount", fattal.amount, keyFile);
+            saveToKeyfile("FattalToneMapping", "SaturationControl", fattal.satcontrol, keyFile);
         }
 
 // Log encoding
         if (RELEVANT_(logenc)) {
             saveToKeyfile("LogEncoding", "Enabled", logenc.enabled, keyFile);
             saveToKeyfile("LogEncoding", "Auto", logenc.autocompute, keyFile);
-            saveToKeyfile("LogEncoding", "AutoGray", logenc.autogray, keyFile);
-            saveToKeyfile("LogEncoding", "SourceGray", logenc.sourceGray, keyFile);
+            saveToKeyfile("LogEncoding", "AutoGain", logenc.autogain, keyFile);
+            saveToKeyfile("LogEncoding", "Gain", logenc.gain, keyFile);
             saveToKeyfile("LogEncoding", "TargetGray", logenc.targetGray, keyFile);
             saveToKeyfile("LogEncoding", "BlackEv", logenc.blackEv, keyFile);
             saveToKeyfile("LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
             saveToKeyfile("LogEncoding", "Regularization", logenc.regularization, keyFile);
+            saveToKeyfile("LogEncoding", "SaturationControl", logenc.satcontrol, keyFile);
+            saveToKeyfile("LogEncoding", "HighlightCompression", logenc.highlightCompression, keyFile);
         }
 
 // ToneEqualizer
@@ -2857,6 +3652,7 @@ int ProcParams::save(bool save_general,
                 saveToKeyfile("ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i], keyFile);
             }
             saveToKeyfile("ToneEqualizer", "Regularization", toneEqualizer.regularization, keyFile);
+            saveToKeyfile("ToneEqualizer", "Pivot", toneEqualizer.pivot, keyFile);
         }
         
 // Crop
@@ -2894,12 +3690,13 @@ int ProcParams::save(bool save_general,
         if (RELEVANT_(distortion)) {
             saveToKeyfile("Distortion", "Enabled", distortion.enabled, keyFile);
             saveToKeyfile("Distortion", "Amount", distortion.amount, keyFile);
+            saveToKeyfile("Distortion", "Auto", distortion.autocompute, keyFile);
         }
 
 // Lens profile
         if (RELEVANT_(lensProf)) {
             saveToKeyfile("LensProfile", "LcMode", lensProf.getMethodString(lensProf.lcMode), keyFile);
-            saveToKeyfile("LensProfile", "LCPFile", relativePathIfInside(fname, fnameAbsolute, lensProf.lcpFile), keyFile);
+            saveToKeyfile("LensProfile", "LCPFile", filenameToUri(lensProf.lcpFile, basedir), keyFile);
             saveToKeyfile("LensProfile", "UseDistortion", lensProf.useDist, keyFile);
             saveToKeyfile("LensProfile", "UseVignette", lensProf.useVign, keyFile);
             saveToKeyfile("LensProfile", "UseCA", lensProf.useCA, keyFile);
@@ -2918,6 +3715,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Perspective", "FocalLength", perspective.flength, keyFile);
             saveToKeyfile("Perspective", "CropFactor", perspective.cropfactor, keyFile);
             saveToKeyfile("Perspective", "Aspect", perspective.aspect, keyFile);
+            saveToKeyfile("Perspective", "ControlLines", perspective.control_lines, keyFile);
         }
 
 // Gradient
@@ -2970,7 +3768,7 @@ int ProcParams::save(bool save_general,
             const char *u = "px";
             switch (resize.unit) {
             case ResizeParams::CM: u = "cm"; break;
-            case ResizeParams::IN: u = "in"; break;
+            case ResizeParams::INCHES: u = "in"; break;
             default: u = "px"; break;
             }
             saveToKeyfile("Resize", "Unit", Glib::ustring(u), keyFile);
@@ -2978,24 +3776,28 @@ int ProcParams::save(bool save_general,
 
 // Post resize sharpening
         if (RELEVANT_(prsharpening)) {
-            saveToKeyfile("PostResizeSharpening", "Enabled", prsharpening.enabled, keyFile);
-            saveToKeyfile("PostResizeSharpening", "Contrast", prsharpening.contrast, keyFile);
-            saveToKeyfile("PostResizeSharpening", "Method", prsharpening.method, keyFile);
-            saveToKeyfile("PostResizeSharpening", "Radius", prsharpening.radius, keyFile);
-            saveToKeyfile("PostResizeSharpening", "Amount", prsharpening.amount, keyFile);
-            saveToKeyfile("PostResizeSharpening", "Threshold", prsharpening.threshold.toVector(), keyFile);
-            saveToKeyfile("PostResizeSharpening", "OnlyEdges", prsharpening.edgesonly, keyFile);
-            saveToKeyfile("PostResizeSharpening", "EdgedetectionRadius", prsharpening.edges_radius, keyFile);
-            saveToKeyfile("PostResizeSharpening", "EdgeTolerance", prsharpening.edges_tolerance, keyFile);
-            saveToKeyfile("PostResizeSharpening", "HalocontrolEnabled", prsharpening.halocontrol, keyFile);
-            saveToKeyfile("PostResizeSharpening", "HalocontrolAmount", prsharpening.halocontrol_amount, keyFile);
-            saveToKeyfile("PostResizeSharpening", "DeconvRadius", prsharpening.deconvradius, keyFile);
-            saveToKeyfile("PostResizeSharpening", "DeconvAmount", prsharpening.deconvamount, keyFile);
+            saveToKeyfile("OutputSharpening", "Enabled", prsharpening.enabled, keyFile);
+            saveToKeyfile("OutputSharpening", "Contrast", prsharpening.contrast, keyFile);
+            saveToKeyfile("OutputSharpening", "Method", prsharpening.method, keyFile);
+            saveToKeyfile("OutputSharpening", "Radius", prsharpening.radius, keyFile);
+            saveToKeyfile("OutputSharpening", "Amount", prsharpening.amount, keyFile);
+            saveToKeyfile("OutputSharpening", "Threshold", prsharpening.threshold.toVector(), keyFile);
+            saveToKeyfile("OutputSharpening", "OnlyEdges", prsharpening.edgesonly, keyFile);
+            saveToKeyfile("OutputSharpening", "EdgedetectionRadius", prsharpening.edges_radius, keyFile);
+            saveToKeyfile("OutputSharpening", "EdgeTolerance", prsharpening.edges_tolerance, keyFile);
+            saveToKeyfile("OutputSharpening", "HalocontrolEnabled", prsharpening.halocontrol, keyFile);
+            saveToKeyfile("OutputSharpening", "HalocontrolAmount", prsharpening.halocontrol_amount, keyFile);
+            saveToKeyfile("OutputSharpening", "DeconvRadius", prsharpening.deconvradius, keyFile);
+            saveToKeyfile("OutputSharpening", "DeconvAmount", prsharpening.deconvamount, keyFile);
         }
 
 // Color management
         if (RELEVANT_(icm)) {
-            saveToKeyfile("Color Management", "InputProfile", relativePathIfInside(fname, fnameAbsolute, icm.inputProfile), keyFile);
+            if (icm.inputProfile.substr(0, 5) == "file:") {
+                saveToKeyfile("Color Management", "InputProfile", filenameToUri(icm.inputProfile.substr(5), basedir), keyFile);
+            } else {
+                saveToKeyfile("Color Management", "InputProfile", icm.inputProfile, keyFile);
+            }
             saveToKeyfile("Color Management", "ToneCurve", icm.toneCurve, keyFile);
             saveToKeyfile("Color Management", "ApplyLookTable", icm.applyLookTable, keyFile);
             saveToKeyfile("Color Management", "ApplyBaselineExposureOffset", icm.applyBaselineExposureOffset, keyFile);
@@ -3017,6 +3819,7 @@ int ProcParams::save(bool save_general,
                 keyFile
                 );
             saveToKeyfile("Color Management", "OutputBPC", icm.outputBPC, keyFile);
+            saveToKeyfile("Color Management", "InputProfileCAT", icm.inputProfileCAT, keyFile);
         }
 
 
@@ -3029,8 +3832,13 @@ int ProcParams::save(bool save_general,
 // Film simulation
         if (RELEVANT_(filmSimulation)) {
             saveToKeyfile("Film Simulation", "Enabled", filmSimulation.enabled, keyFile);
-            saveToKeyfile("Film Simulation", "ClutFilename", filmSimulation.clutFilename, keyFile);
+            auto filename = filenameToUri(filmSimulation.clutFilename, basedir);
+            saveToKeyfile("Film Simulation", "ClutFilename", filename, keyFile);
             saveToKeyfile("Film Simulation", "Strength", filmSimulation.strength, keyFile);
+            if (filmSimulation.after_tone_curve) {
+                saveToKeyfile("Film Simulation", "AfterToneCurve", filmSimulation.after_tone_curve, keyFile);
+            }
+            saveToKeyfile("Film Simulation", "ClutParams", filmSimulation.lut_params, keyFile);
         }
 
 // RGB curves        
@@ -3046,23 +3854,34 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Grain", "Enabled", grain.enabled, keyFile);
             saveToKeyfile("Grain", "ISO", grain.iso, keyFile);
             saveToKeyfile("Grain", "Strength", grain.strength, keyFile);
-            saveToKeyfile("Grain", "Scale", grain.scale, keyFile);
         }
 
 
 // Smoothing
         if (RELEVANT_(smoothing)) {
-            saveToKeyfile("GuidedSmoothing", "Enabled", smoothing.enabled, keyFile);
+            saveToKeyfile("Smoothing", "Enabled", smoothing.enabled, keyFile);
             for (size_t j = 0; j < smoothing.regions.size(); ++j) {
                 std::string n = std::to_string(j+1);
                 auto &r = smoothing.regions[j];
-                putToKeyfile("GuidedSmoothing", Glib::ustring("Channel_") + n, int(r.channel), keyFile);
-                putToKeyfile("GuidedSmoothing", Glib::ustring("Radius_") + n, r.radius, keyFile);
-                putToKeyfile("GuidedSmoothing", Glib::ustring("Epsilon_") + n, r.epsilon, keyFile);
-                putToKeyfile("GuidedSmoothing", Glib::ustring("Iterations_") + n, r.iterations, keyFile);
-                smoothing.labmasks[j].save(keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n);
+                putToKeyfile("Smoothing", Glib::ustring("Mode_") + n, int(r.mode), keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Channel_") + n, int(r.channel), keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Radius_") + n, r.radius, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Sigma_") + n, r.sigma, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Epsilon_") + n, r.epsilon, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Iterations_") + n, r.iterations, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Falloff_") + n, r.falloff, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("NLStrength_") + n, r.nlstrength, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("NLDetail_") + n, r.nldetail, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("NumBlades_") + n, r.numblades, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Angle_") + n, r.angle, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Curvature_") + n, r.curvature, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("Offset_") + n, r.offset, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("NoiseStrength_") + n, r.noise_strength, keyFile);
+                putToKeyfile("Smoothing", Glib::ustring("NoiseCoarseness_") + n, r.noise_coarseness, keyFile);
+                smoothing.labmasks[j].save(keyFile, "Smoothing", "", Glib::ustring("_") + n);
             }
-            saveToKeyfile("GuidedSmoothing", "ShowMask", smoothing.showMask, keyFile);
+            saveToKeyfile("Smoothing", "ShowMask", smoothing.showMask, keyFile);
+            saveToKeyfile("Smoothing", "SelectedRegion", smoothing.selectedRegion, keyFile);
         }
 
 // ColorCorrection
@@ -3072,10 +3891,22 @@ int ProcParams::save(bool save_general,
                 std::string n = std::to_string(j+1);
                 auto &l = colorcorrection.regions[j];
                 Glib::ustring mode = "YUV";
-                if (l.mode == ColorCorrectionParams::Mode::RGB) {
+                switch (l.mode) {
+                case ColorCorrectionParams::Mode::RGB:
                     mode = "RGB";
-                } else if (l.mode == ColorCorrectionParams::Mode::HSL) {
+                    break;
+                case ColorCorrectionParams::Mode::JZAZBZ:
+                    mode = "Jzazbz";
+                    break;
+                case ColorCorrectionParams::Mode::HSL:
                     mode = "HSL";
+                    break;
+                case ColorCorrectionParams::Mode::LUT:
+                    mode = "LUT";
+                    break;
+                default:
+                    mode = "YUV";
+                    break;
                 }
                 putToKeyfile("ColorCorrection", Glib::ustring("Mode_") + n, mode, keyFile);
                 {
@@ -3093,37 +3924,47 @@ int ProcParams::save(bool save_general,
                         putToKeyfile("ColorCorrection", Glib::ustring("Slope") + chan[c] + "_" + n, l.slope[c], keyFile);
                         putToKeyfile("ColorCorrection", Glib::ustring("Offset") + chan[c] + "_" + n, l.offset[c], keyFile);
                         putToKeyfile("ColorCorrection", Glib::ustring("Power") + chan[c] + "_" + n, l.power[c], keyFile);
-                        putToKeyfile("ColorCorrection", Glib::ustring("Pivot") + chan[c] + "_" + n, l.pivot[0], keyFile);
+                        putToKeyfile("ColorCorrection", Glib::ustring("Pivot") + chan[c] + "_" + n, l.pivot[c], keyFile);
+                        putToKeyfile("ColorCorrection", Glib::ustring("Compression") + chan[c] + "_" + n, l.compression[c], keyFile);
                     }
                 }
                 {
                     putToKeyfile("ColorCorrection", Glib::ustring("A_") + n, l.a, keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("B_") + n, l.b, keyFile);
-                    putToKeyfile("ColorCorrection", Glib::ustring("Saturation_") + n, l.saturation, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("ABScale_") + n, l.abscale, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("InSaturation_") + n, l.inSaturation, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("OutSaturation_") + n, l.outSaturation, keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("Slope_") + n, l.slope[0], keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("Offset_") + n, l.offset[0], keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("Power_") + n, l.power[0], keyFile);
                     putToKeyfile("ColorCorrection", Glib::ustring("Pivot_") + n, l.pivot[0], keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("Compression_") + n, l.compression[0], keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("RGBLuminance_") + n, l.rgbluminance, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("HueShift_") + n, l.hueshift, keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("LUTFilename_") + n, filenameToUri(l.lutFilename, basedir), keyFile);
+                    putToKeyfile("ColorCorrection", Glib::ustring("LUTParams_") + n, l.lut_params, keyFile);
                 }
                 colorcorrection.labmasks[j].save(keyFile, "ColorCorrection", "", Glib::ustring("_") + n);
             }
-            saveToKeyfile("ColorCorrection", "showMask", colorcorrection.showMask, keyFile);
+            saveToKeyfile("ColorCorrection", "ShowMask", colorcorrection.showMask, keyFile);
+            saveToKeyfile("ColorCorrection", "SelectedRegion", colorcorrection.selectedRegion, keyFile);
         }
         
 // Raw
         if (RELEVANT_(darkframe)) {
             saveToKeyfile("RAW", "DarkFrameEnabled", raw.enable_darkframe, keyFile);
-            saveToKeyfile("RAW", "DarkFrame", relativePathIfInside(fname, fnameAbsolute, raw.dark_frame), keyFile);
+            saveToKeyfile("RAW", "DarkFrame", filenameToUri(raw.dark_frame, basedir), keyFile);
             saveToKeyfile("RAW", "DarkFrameAuto", raw.df_autoselect, keyFile);
         }
         if (RELEVANT_(flatfield)) {
             saveToKeyfile("RAW", "FlatFieldEnabled", raw.enable_flatfield, keyFile);
-            saveToKeyfile("RAW", "FlatFieldFile", relativePathIfInside(fname, fnameAbsolute, raw.ff_file), keyFile);
+            saveToKeyfile("RAW", "FlatFieldFile", filenameToUri(raw.ff_file, basedir), keyFile);
             saveToKeyfile("RAW", "FlatFieldAutoSelect", raw.ff_AutoSelect, keyFile);
             saveToKeyfile("RAW", "FlatFieldBlurRadius", raw.ff_BlurRadius, keyFile);
             saveToKeyfile("RAW", "FlatFieldBlurType", raw.ff_BlurType, keyFile);
             saveToKeyfile("RAW", "FlatFieldAutoClipControl", raw.ff_AutoClipControl, keyFile);
             saveToKeyfile("RAW", "FlatFieldClipControl", raw.ff_clipControl, keyFile);
+            saveToKeyfile("RAW", "FlatFieldUseEmbedded", raw.ff_embedded, keyFile);
         }
         if (RELEVANT_(rawCA)) {
             saveToKeyfile("RAW", "CAEnabled", raw.enable_ca, keyFile);
@@ -3140,7 +3981,7 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("RAW", "HotDeadPixelThresh", raw.hotdeadpix_thresh, keyFile);
         }
         if (RELEVANT_(demosaic)) {
-            saveToKeyfile("RAW Bayer", "Method", raw.bayersensor.method, keyFile);
+            saveToKeyfile("RAW Bayer", "Method", RAWParams::BayerSensor::getMethodString(raw.bayersensor.method), keyFile);
             saveToKeyfile("RAW Bayer", "Border", raw.bayersensor.border, keyFile);
             saveToKeyfile("RAW Bayer", "ImageNum", raw.bayersensor.imageNum + 1, keyFile);
             saveToKeyfile("RAW Bayer", "CcSteps", raw.bayersensor.ccSteps, keyFile);
@@ -3160,8 +4001,8 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("RAW Bayer", "GreenEqThreshold", raw.bayersensor.greenthresh, keyFile);
         }
         if (RELEVANT_(demosaic)) {
-            saveToKeyfile("RAW Bayer", "DCBIterations", raw.bayersensor.dcb_iterations, keyFile);
-            saveToKeyfile("RAW Bayer", "DCBEnhance", raw.bayersensor.dcb_enhance, keyFile);
+            // saveToKeyfile("RAW Bayer", "DCBIterations", raw.bayersensor.dcb_iterations, keyFile);
+            // saveToKeyfile("RAW Bayer", "DCBEnhance", raw.bayersensor.dcb_enhance, keyFile);
             saveToKeyfile("RAW Bayer", "LMMSEIterations", raw.bayersensor.lmmse_iterations, keyFile);
             saveToKeyfile("RAW Bayer", "DualDemosaicAutoContrast", raw.bayersensor.dualDemosaicAutoContrast, keyFile);
             saveToKeyfile("RAW Bayer", "DualDemosaicContrast", raw.bayersensor.dualDemosaicContrast, keyFile);
@@ -3182,9 +4023,10 @@ int ProcParams::save(bool save_general,
         }
         if (RELEVANT_(rawPreprocessing)) {
             saveToKeyfile("RAW Bayer", "PDAFLinesFilter", raw.bayersensor.pdafLinesFilter, keyFile);
+            saveToKeyfile("RAW Bayer", "DynamicRowNoiseFilter", raw.bayersensor.dynamicRowNoiseFilter, keyFile);
         }
         if (RELEVANT_(demosaic)) {
-            saveToKeyfile("RAW X-Trans", "Method", raw.xtranssensor.method, keyFile);
+            saveToKeyfile("RAW X-Trans", "Method", RAWParams::XTransSensor::getMethodString(raw.xtranssensor.method), keyFile);
             saveToKeyfile("RAW X-Trans", "DualDemosaicAutoContrast", raw.xtranssensor.dualDemosaicAutoContrast, keyFile);
             saveToKeyfile("RAW X-Trans", "DualDemosaicContrast", raw.xtranssensor.dualDemosaicContrast, keyFile);
             saveToKeyfile("RAW X-Trans", "Border", raw.xtranssensor.border, keyFile);
@@ -3209,11 +4051,35 @@ int ProcParams::save(bool save_general,
             saveToKeyfile("Film Negative", "RedRatio", filmNegative.redRatio, keyFile);
             saveToKeyfile("Film Negative", "GreenExponent", filmNegative.greenExp, keyFile);
             saveToKeyfile("Film Negative", "BlueRatio", filmNegative.blueRatio, keyFile);
+            if (filmNegative.backCompat == FilmNegativeParams::BackCompat::V2) {
+                saveToKeyfile("Film Negative", "RedBase", filmNegative.refInput.r, keyFile);
+                saveToKeyfile("Film Negative", "GreenBase", filmNegative.refInput.g, keyFile);
+                saveToKeyfile("Film Negative", "BlueBase", filmNegative.refInput.b, keyFile);
+            }
+            saveToKeyfile("Film Negative", "ColorSpace", toUnderlying(filmNegative.colorSpace), keyFile);
+            {
+                std::vector<double> v = {
+                    filmNegative.refInput.r,
+                    filmNegative.refInput.g,
+                    filmNegative.refInput.b
+                };
+                saveToKeyfile("Film Negative", "RefInput", v, keyFile);
+                v = {
+                    filmNegative.refOutput.r,
+                    filmNegative.refOutput.g,
+                    filmNegative.refOutput.b
+                };
+                saveToKeyfile("Film Negative", "RefOutput", v, keyFile);
+            }
+            if (filmNegative.backCompat != FilmNegativeParams::BackCompat::CURRENT) {
+                saveToKeyfile("Film Negative", "BackCompat", toUnderlying(filmNegative.backCompat), keyFile);
+            }
         }
 
 // MetaData
         if (RELEVANT_(metadata)) {
             saveToKeyfile("MetaData", "Mode", metadata.mode, keyFile);
+            saveToKeyfile("MetaData", "ExifKeys", metadata.exifKeys, keyFile);
         }
 
 // EXIF change list
@@ -3222,10 +4088,10 @@ int ProcParams::save(bool save_general,
             for (auto &p : exif_keys) {
                 m[p.second] = p.first;
             }
-            for (ExifPairs::const_iterator i = exif.begin(); i != exif.end(); ++i) {
-                auto it = m.find(i->first);
+            for (auto &p : metadata.exif) {
+                auto it = m.find(p.first);
                 if (it != m.end()) {
-                    keyFile.set_string("Exif", it->second, i->second);
+                    keyFile.set_string("Exif", it->second, p.second);
                 }
             }
         }
@@ -3236,15 +4102,40 @@ int ProcParams::save(bool save_general,
             for (auto &p : iptc_keys) {
                 m[p.second] = p.first;
             }
-            for (IPTCPairs::const_iterator i = iptc.begin(); i != iptc.end(); ++i) {
-                auto it = m.find(i->first);
+            for (auto &p : metadata.iptc) {
+                auto it = m.find(p.first);
                 if (it != m.end()) {
-                    Glib::ArrayHandle<Glib::ustring> values = i->second;
+                    Glib::ArrayHandle<Glib::ustring> values = p.second;
                     keyFile.set_string_list("IPTC", it->second, values);
                 }
             }
         }
-    } catch (Glib::KeyFileError&) {
+    //Spot Removal
+        if (RELEVANT_(spot)) {
+            //Spot removal
+            saveToKeyfile("Spot Removal", "Enabled", spot.enabled, keyFile);
+            for (size_t i = 0; i < spot.entries.size (); ++i) {
+                std::vector<double> entry = {
+                    double(spot.entries[i].sourcePos.x),
+                    double(spot.entries[i].sourcePos.y),
+                    double(spot.entries[i].targetPos.x),
+                    double(spot.entries[i].targetPos.y),
+                    double(spot.entries[i].radius),
+                    double(spot.entries[i].feather),
+                    double(spot.entries[i].opacity),
+                    double(spot.entries[i].detail)
+                };
+
+                std::stringstream ss;
+                ss << "Spot" << (i + 1);
+
+                saveToKeyfile("Spot Removal", ss.str(), entry, keyFile);
+            }
+        }
+    } catch (Glib::KeyFileError &exc) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_SAVE_ERROR"), fname, exc.what()));
+        }
         return 1;
     }
 
@@ -3253,14 +4144,16 @@ int ProcParams::save(bool save_general,
 }
 
 
-int ProcParams::save(KeyFile &keyFile, const ParamsEdited *pedited,
-                     const Glib::ustring &fname, bool fnameAbsolute) const
+int ProcParams::save(ProgressListener *pl,
+                     KeyFile &keyFile, const ParamsEdited *pedited,
+                     const Glib::ustring &fname) const
 {
-    return save(true, keyFile, pedited, fname, fnameAbsolute);
+    return save(pl, true, keyFile, pedited, fname);
 }
 
 
-int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
+int ProcParams::load(ProgressListener *pl,
+                     const Glib::ustring& fname, const ParamsEdited *pedited)
 {
     setlocale(LC_NUMERIC, "C");  // to set decimal point to "."
 
@@ -3269,33 +4162,65 @@ int ProcParams::load(const Glib::ustring& fname, const ParamsEdited *pedited)
     }
 
     KeyFile keyFile;
+    keyFile.setProgressListener(pl);
 
     try {
-        if (!Glib::file_test(fname, Glib::FILE_TEST_EXISTS) ||
-                !keyFile.load_from_file(fname)) {
+        if (!Glib::file_test(fname, Glib::FILE_TEST_EXISTS)) {
             return 1;
         }
 
-        return load(keyFile, pedited, true, fname);
+        if (!keyFile.load_from_file(fname)) {
+            // not an error to report
+            return 1;
+        }
+
+        return load(pl, keyFile, pedited, true, fname);
     } catch (const Glib::Error& e) {
-        printf("-->%s\n", e.what().c_str());
+        //printf("-->%s\n", e.what().c_str());
+        try {
+            Exiv2Metadata md(fname, false);
+            md.load();
+            std::string xd = md.xmpData()["Xmp.ART.arp"].toString();
+            Glib::ustring data = from_xmp(xd);
+            if (!keyFile.load_from_data(data)) {
+                return 1;
+            }
+            return load(pl, keyFile, pedited, true, fname);
+        } catch (std::exception &exc) {
+            if (pl) {
+                pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, e.what()));
+            }
+            setDefaults();
+            return 1;
+        }
+    } catch (std::exception &e) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, e.what()));
+        }
         setDefaults();
         return 1;
     } catch (...) {
-        printf("-->unknown exception!\n");
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, "unknown exception"));
+        }
+        //printf("-->unknown exception!\n");
         setDefaults();
         return 1;
     }
 }
 
 
-int ProcParams::load(bool load_general,
+int ProcParams::load(ProgressListener *pl, bool load_general,
                      const KeyFile &keyFile, const ParamsEdited *pedited,
                      bool resetOnError, const Glib::ustring &fname)
 {
 #define RELEVANT_(n) (!pedited || pedited->n)
+#define APPEND_(n, p) (pedited && pedited->n == ParamsEdited::Undef && (n . regions != p . regions || n . labmasks != p . labmasks))
+#define DO_APPEND_(l,o) l.insert(l.begin(), o.begin(), o.end())
     
     try {
+        Glib::ustring basedir = Glib::path_get_dirname(fname);
+        
         if (load_general) {
             ppVersion = PPVERSION;
             appVersion = RTVERSION;
@@ -3323,7 +4248,9 @@ int ProcParams::load(bool load_general,
             {"SatAndValueBlending", ToneCurveParams::TcMode::SATANDVALBLENDING},
             {"WeightedStd", ToneCurveParams::TcMode::WEIGHTEDSTD},
             {"Luminance", ToneCurveParams::TcMode::LUMINANCE},
-            {"Perceptual", ToneCurveParams::TcMode::PERCEPTUAL}
+            {"Perceptual", ToneCurveParams::TcMode::PERCEPTUAL},
+            {"OpenDisplayTransform", ToneCurveParams::TcMode::NEUTRAL},
+            {"Neutral", ToneCurveParams::TcMode::NEUTRAL}
         };
 
         if (ppVersion < 350) {
@@ -3383,6 +4310,8 @@ int ProcParams::load(bool load_general,
                         exposure.hrmode = ExposureParams::HR_BLEND;
                     } else if (hr == "Color") {
                         exposure.hrmode = ExposureParams::HR_COLOR;
+                    } else if (hr == "ColorBlend" || hr == "Balanced") {
+                        exposure.hrmode = ExposureParams::HR_COLORSOFT;
                     } else {
                         exposure.hrmode = ExposureParams::HR_OFF;
                     }
@@ -3401,6 +4330,7 @@ int ProcParams::load(bool load_general,
                         exposure.hrmode = ExposureParams::HR_OFF;
                     }
                 }
+                assignFromKeyfile(keyFile, "Exposure", "HLRecoveryBlur", exposure.hrblur);                
             }
             if (keyFile.has_group("Saturation") && RELEVANT_(saturation)) {
                 assignFromKeyfile(keyFile, "Saturation", "Enabled", saturation.enabled);
@@ -3409,8 +4339,13 @@ int ProcParams::load(bool load_general,
             }
             if (keyFile.has_group("ToneCurve") && RELEVANT_(toneCurve)) {
                 assignFromKeyfile(keyFile, "ToneCurve", "Enabled", toneCurve.enabled);
-                assignFromKeyfile(keyFile, "ToneCurve", "Contrast", toneCurve.contrast);
-                assignFromKeyfile(keyFile, "ToneCurve", "CurveMode", tc_mapping, toneCurve.curveMode);
+                if (assignFromKeyfile(keyFile, "ToneCurve", "Contrast", toneCurve.contrast) && ppVersion < 1034) {
+                    double c = std::pow(std::abs(toneCurve.contrast) * 0.125 / 16.0, 1.0/1.5) * 100;
+                    toneCurve.contrast = SGN(toneCurve.contrast) * int(c + 0.5);
+                }
+                if (assignFromKeyfile(keyFile, "ToneCurve", "CurveMode", tc_mapping, toneCurve.curveMode)) {
+                    toneCurve.curveMode2 = toneCurve.curveMode;
+                }
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveMode2", tc_mapping, toneCurve.curveMode2);
 
                 assignFromKeyfile(keyFile, "ToneCurve", "Curve", toneCurve.curve);
@@ -3418,7 +4353,14 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "ToneCurve", "HistogramMatching", toneCurve.histmatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "Saturation", toneCurve.saturation);
-                assignFromKeyfile(keyFile, "ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength);
+                assignFromKeyfile(keyFile, "ToneCurve", "Saturation2", toneCurve.saturation2);
+                if (!assignFromKeyfile(keyFile, "ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength) && ppVersion >= 1026) {
+                    toneCurve.perceptualStrength = 100;
+                }
+                if (!assignFromKeyfile(keyFile, "ToneCurve", "ContrastLegacyMode", toneCurve.contrastLegacyMode)) {
+                    toneCurve.contrastLegacyMode = (ppVersion < 1026);
+                }
+                assignFromKeyfile(keyFile, "ToneCurve", "WhitePoint", toneCurve.whitePoint);
             }
         }
 
@@ -3427,6 +4369,11 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "Channel Mixer", "Enabled", chmixer.enabled);
             } else {
                 chmixer.enabled = true;
+            }
+
+            int mode = 0;
+            if (assignFromKeyfile(keyFile, "Channel Mixer", "Mode", mode)) {
+                chmixer.mode = ChannelMixerParams::Mode(mode);
             }
 
             if (keyFile.has_key("Channel Mixer", "Red") && keyFile.has_key("Channel Mixer", "Green") && keyFile.has_key("Channel Mixer", "Blue")) {
@@ -3444,6 +4391,23 @@ int ProcParams::load(bool load_general,
                         chmixer.red[i] *= 10;
                         chmixer.green[i] *= 10;
                         chmixer.blue[i] *= 10;
+                    }
+                }
+            }
+
+            if (keyFile.has_key("Channel Mixer", "HueTweak")) {
+                const std::vector<int> h = keyFile.get_integer_list("Channel Mixer", "HueTweak");
+                if (h.size() == 3) {
+                    for (int i = 0; i < 3; ++i) {
+                        chmixer.hue_tweak[i] = h[i];
+                    }
+                }
+            }
+            if (keyFile.has_key("Channel Mixer", "SatTweak")) {
+                const std::vector<int> s = keyFile.get_integer_list("Channel Mixer", "SatTweak");
+                if (s.size() == 3) {
+                    for (int i = 0; i < 3; ++i) {
+                        chmixer.sat_tweak[i] = s[i];
                     }
                 }
             }
@@ -3505,11 +4469,16 @@ int ProcParams::load(bool load_general,
                 }
             }
             if (found) {
+                if (APPEND_(localContrast, LocalContrastParams())) {
+                    DO_APPEND_(ll, localContrast.regions);
+                    DO_APPEND_(lm, localContrast.labmasks);
+                }
                 localContrast.regions = std::move(ll);
                 localContrast.labmasks = std::move(lm);
             }
             assert(localContrast.regions.size() == localContrast.labmasks.size());
             assignFromKeyfile(keyFile, "Local Contrast", "ShowMask", localContrast.showMask);
+            assignFromKeyfile(keyFile, "Local Contrast", "SelectedRegion", localContrast.selectedRegion);
         }
 
         if (keyFile.has_group("Luminance Curve") && RELEVANT_(labCurve)) {
@@ -3556,14 +4525,38 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Sharpening", "DeconvAutoRadius", sharpening.deconvAutoRadius);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvCornerBoost", sharpening.deconvCornerBoost);
             assignFromKeyfile(keyFile, "Sharpening", "DeconvCornerLatitude", sharpening.deconvCornerLatitude);
+            assignFromKeyfile(keyFile, "Sharpening", "PSFKernel", sharpening.psf_kernel);
+            assignFromKeyfile(keyFile, "Sharpening", "PSFIterations", sharpening.psf_iterations);
         }
 
         if (keyFile.has_group("White Balance") && RELEVANT_(wb)) {
             assignFromKeyfile(keyFile, "White Balance", "Enabled", wb.enabled);
-            assignFromKeyfile(keyFile, "White Balance", "Setting", wb.method);
+            Glib::ustring method = "CustomTemp";
+            assignFromKeyfile(keyFile, "White Balance", "Setting", method);
             assignFromKeyfile(keyFile, "White Balance", "Temperature", wb.temperature);
             assignFromKeyfile(keyFile, "White Balance", "Green", wb.green);
             assignFromKeyfile(keyFile, "White Balance", "Equal", wb.equal);
+            std::vector<float> m;
+            if (assignFromKeyfile(keyFile, "White Balance", "Multipliers", m) && m.size() == 3) {
+                for (int i = 0; i < 3; ++i) {
+                    wb.mult[i] = m[i];
+                }
+            }
+            if (method == "Camera") {
+                wb.method = WBParams::CAMERA;
+            } else if (method == "Auto") {
+                wb.method = WBParams::AUTO;
+            } else if (method == "CustomMult") {
+                if (ppVersion < 1027) {
+                    wb.method = WBParams::CUSTOM_MULT_LEGACY;
+                } else {
+                    wb.method = WBParams::CUSTOM_MULT;
+                }
+            } else if (method == "CustomMultLegacy") {
+                wb.method = WBParams::CUSTOM_MULT_LEGACY;
+            } else {
+                wb.method = WBParams::CUSTOM_TEMP;
+            }
         }
 
         if (keyFile.has_group("Defringing") && RELEVANT_(defringe)) {
@@ -3589,9 +4582,6 @@ int ProcParams::load(bool load_general,
         if (ppVersion < 346) {
             if (keyFile.has_group("Directional Pyramid Denoising") && RELEVANT_(denoise)) { //TODO: No longer an accurate description for FT denoise
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Enabled", denoise.enabled);
-                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Median", denoise.smoothingEnabled)) {
-                    denoise.smoothingMethod = DenoiseParams::SmoothingMethod::MEDIAN;
-                }
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Luma", denoise.luminance);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Ldetail", denoise.luminanceDetail);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Chroma", denoise.chrominance);
@@ -3606,23 +4596,8 @@ int ProcParams::load(bool load_general,
                 if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "SMethod", val)) {
                     denoise.aggressive = (val == "shalbi");
                 }
-                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MedMethod", val)) {
-                    const std::vector<Glib::ustring> medtps = { "soft", "33", "55soft", "55", "77", "99" };
-                    auto it = std::find(medtps.begin(), medtps.end(), val);
-                    if (it != medtps.end()) {
-                        denoise.medianType = static_cast<DenoiseParams::MedianType>(it - medtps.begin());
-                    }
-                }
-                if (assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "MethodMed", val)) {
-                    const std::vector<Glib::ustring> med = { "Lonly", "ab", "Lpab", "Lab", "RGB" };
-                    auto it = std::find(med.begin(), med.end(), val);
-                    if (it != med.end()) {
-                        denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(it - med.begin());
-                    }
-                }
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Redchro", denoise.chrominanceRedGreen);
                 assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Bluechro", denoise.chrominanceBlueYellow);
-                assignFromKeyfile(keyFile, "Directional Pyramid Denoising", "Passes", denoise.medianIterations);
             }
         } else {
             if (keyFile.has_group("Denoise") && RELEVANT_(denoise)) {
@@ -3648,20 +4623,12 @@ int ProcParams::load(bool load_general,
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceRedGreen", denoise.chrominanceRedGreen);
                 assignFromKeyfile(keyFile, "Denoise", "ChrominanceBlueYellow", denoise.chrominanceBlueYellow);
                 assignFromKeyfile(keyFile, "Denoise", "SmoothingEnabled", denoise.smoothingEnabled);
-                if (assignFromKeyfile(keyFile, "Denoise", "SmoothingMethod", val)) {
-                    denoise.smoothingMethod = static_cast<DenoiseParams::SmoothingMethod>(val);
+                if (assignFromKeyfile(keyFile, "Denoise", "SmoothingMethod", val) && val != 1) {
+                    denoise.smoothingEnabled = false;
                 }
-                if (assignFromKeyfile(keyFile, "Denoise", "MedianType", val)) {
-                    denoise.medianType = static_cast<DenoiseParams::MedianType>(val);
-                }
-                if (assignFromKeyfile(keyFile, "Denoise", "MedianMethod", val)) {
-                    denoise.medianMethod = static_cast<DenoiseParams::MedianMethod>(val);
-                }
-                assignFromKeyfile(keyFile, "Denoise", "MedianIterations", denoise.medianIterations);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedLumaRadius", denoise.guidedLumaRadius);
                 assignFromKeyfile(keyFile, "Denoise", "GuidedChromaRadius", denoise.guidedChromaRadius);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedLumaStrength", denoise.guidedLumaStrength);
-                assignFromKeyfile(keyFile, "Denoise", "GuidedChromaStrength", denoise.guidedChromaStrength);
+                assignFromKeyfile(keyFile, "Denoise", "NLDetail", denoise.nlDetail);
+                assignFromKeyfile(keyFile, "Denoise", "NLStrength", denoise.nlStrength);
             }
         }            
 
@@ -3682,11 +4649,11 @@ int ProcParams::load(bool load_general,
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("EdgeStopping") + n, cur.edgeStopping)) {
+                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring(ppVersion < 1009 ? "EdgeStopping" : "DetailThreshold") + n, cur.detailThreshold)) {
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("Scale") + n, cur.scale)) {
+                if (assignFromKeyfile(keyFile, tbgroup, Glib::ustring("Iterations") + n, cur.iterations)) {
                     found = true;
                     done = false;
                 }
@@ -3700,27 +4667,45 @@ int ProcParams::load(bool load_general,
                 }
             }
             if (found) {
+                if (APPEND_(textureBoost, TextureBoostParams())) {
+                    DO_APPEND_(ll, textureBoost.regions);
+                    DO_APPEND_(lm, textureBoost.labmasks);
+                }
                 textureBoost.regions = std::move(ll);
                 textureBoost.labmasks = std::move(lm);
             }
             assert(textureBoost.regions.size() == textureBoost.labmasks.size());
             assignFromKeyfile(keyFile, tbgroup, "ShowMask", textureBoost.showMask);
+            assignFromKeyfile(keyFile, tbgroup, "SelectedRegion", textureBoost.selectedRegion);
         }
 
         if (keyFile.has_group("FattalToneMapping") && RELEVANT_(fattal)) {
             assignFromKeyfile(keyFile, "FattalToneMapping", "Enabled", fattal.enabled);
             assignFromKeyfile(keyFile, "FattalToneMapping", "Threshold", fattal.threshold);
             assignFromKeyfile(keyFile, "FattalToneMapping", "Amount", fattal.amount);
+            assignFromKeyfile(keyFile, "FattalToneMapping", "SaturationControl", fattal.satcontrol);
         }
 
         if (keyFile.has_group("LogEncoding") && RELEVANT_(logenc)) {
             assignFromKeyfile(keyFile, "LogEncoding", "Enabled", logenc.enabled);
-            assignFromKeyfile(keyFile, "LogEncoding", "Auto", logenc.autocompute);
-            assignFromKeyfile(keyFile, "LogEncoding", "AutoGray", logenc.autogray);
-            if (ppVersion < 349) {
-                assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", logenc.sourceGray);
+            if (ppVersion >= 1013) {
+                assignFromKeyfile(keyFile, "LogEncoding", "Auto", logenc.autocompute);
             } else {
-                assignFromKeyfile(keyFile, "LogEncoding", "SourceGray", logenc.sourceGray);
+                logenc.autocompute = false;
+            }
+            assignFromKeyfile(keyFile, "LogEncoding", ppVersion < 1024 ? "AutoGray" : "AutoGain", logenc.autogain);
+            if (ppVersion < 349) {
+                if (assignFromKeyfile(keyFile, "LogEncoding", "GrayPoint", logenc.gain) && logenc.gain > 0) {
+                    logenc.gain = std::log2(18.0/logenc.gain);
+                }
+            } else {
+                if (ppVersion < 1024) {
+                    if (assignFromKeyfile(keyFile, "LogEncoding", "SourceGray", logenc.gain) && logenc.gain > 0) {
+                        logenc.gain = std::log2(18.0/logenc.gain);
+                    }
+                } else {
+                    assignFromKeyfile(keyFile, "LogEncoding", "Gain", logenc.gain);
+                }
                 assignFromKeyfile(keyFile, "LogEncoding", "TargetGray", logenc.targetGray);
             }
             assignFromKeyfile(keyFile, "LogEncoding", "BlackEv", logenc.blackEv);
@@ -3730,6 +4715,13 @@ int ProcParams::load(bool load_general,
             } else {
                 logenc.regularization = 0;
             }
+            if (ppVersion < 1025) {
+                toneCurve.contrast *= 2;
+            }
+            if (!assignFromKeyfile(keyFile, "LogEncoding", "SaturationControl", logenc.satcontrol) && ppVersion < 1037) {
+                logenc.satcontrol = false;
+            }
+            assignFromKeyfile(keyFile, "LogEncoding", "HighlightCompression", logenc.highlightCompression);
         }
 
         if (keyFile.has_group("ToneEqualizer") && RELEVANT_(toneEqualizer)) {
@@ -3737,11 +4729,23 @@ int ProcParams::load(bool load_general,
             for (size_t i = 0; i < toneEqualizer.bands.size(); ++i) {
                 assignFromKeyfile(keyFile, "ToneEqualizer", "Band" + std::to_string(i), toneEqualizer.bands[i]);
             }
-            if (ppVersion >= 1002) {
+            if (ppVersion >= 1020) {
                 assignFromKeyfile(keyFile, "ToneEqualizer", "Regularization", toneEqualizer.regularization);
+            } else if (ppVersion >= 1002) {
+                if (assignFromKeyfile(keyFile, "ToneEqualizer", "Regularization", toneEqualizer.regularization)) {
+                    if (toneEqualizer.regularization > 0) {
+                        //toneEqualizer.regularization = 6 - std::min(toneEqualizer.regularization, 5);
+                        toneEqualizer.regularization = 4;
+                    } else if (toneEqualizer.regularization == -5) {
+                        toneEqualizer.regularization = 0;
+                    } else {
+                        toneEqualizer.regularization = 1;
+                    }
+                }
             } else {
                 assignFromKeyfile(keyFile, "ToneEqualizer", "Detail", toneEqualizer.regularization);
             }
+            assignFromKeyfile(keyFile, "ToneEqualizer", "Pivot", toneEqualizer.pivot);
         }
         
         if (keyFile.has_group("Crop") && RELEVANT_(crop)) {
@@ -3761,8 +4765,8 @@ int ProcParams::load(bool load_general,
 
             if (assignFromKeyfile(keyFile, "Crop", "Ratio", crop.ratio)) {
                 //backwards compatibility for crop.ratio
-                if (crop.ratio == "DIN") {
-                    crop.ratio = "1.414 - DIN EN ISO 216";
+                if (crop.ratio == "DIN" || crop.ratio == "1.414 - DIN EN ISO 216") {
+                    crop.ratio = "1.414 - ISO 216 (A4 paper)";
                 }
 
                 if (crop.ratio == "8.5:11") {
@@ -3796,6 +4800,7 @@ int ProcParams::load(bool load_general,
         if (keyFile.has_group("Distortion") && RELEVANT_(distortion)) {
             assignFromKeyfile(keyFile, "Distortion", "Enabled", distortion.enabled);
             assignFromKeyfile(keyFile, "Distortion", "Amount", distortion.amount);
+            assignFromKeyfile(keyFile, "Distortion", "Auto", distortion.autocompute);
         }
 
         if (keyFile.has_group("LensProfile") && RELEVANT_(lensProf)) {
@@ -3804,7 +4809,11 @@ int ProcParams::load(bool load_general,
             }
 
             if (keyFile.has_key("LensProfile", "LCPFile")) {
-                lensProf.lcpFile = expandRelativePath(fname, "", keyFile.get_string("LensProfile", "LCPFile"));
+                if (ppVersion >= 1017) {
+                    lensProf.lcpFile = filenameFromUri(keyFile.get_string("LensProfile", "LCPFile"), basedir);
+                } else {
+                    lensProf.lcpFile = expandRelativePath(fname, "", keyFile.get_string("LensProfile", "LCPFile"));
+                }
 
                 if (ppVersion < 327 && !lensProf.lcpFile.empty()) {
                     lensProf.lcMode = LensProfParams::LcMode::LCP;
@@ -3836,7 +4845,10 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Perspective", "Shear", perspective.shear);
             assignFromKeyfile(keyFile, "Perspective", "FocalLength", perspective.flength);
             assignFromKeyfile(keyFile, "Perspective", "CropFactor", perspective.cropfactor);
-            assignFromKeyfile(keyFile, "Perspective", "Aspect", perspective.aspect);
+            assignFromKeyfile(keyFile, "Perspective", "Aspect", perspective.aspect); 
+            if (keyFile.has_key("Perspective", "ControlLines")) {
+                perspective.control_lines = keyFile.get_integer_list("Perspective", "ControlLines");
+            }
         }
 
         if (keyFile.has_group("Gradient") && RELEVANT_(gradient)) {
@@ -3893,25 +4905,53 @@ int ProcParams::load(bool load_general,
                 if (u == "cm") {
                     resize.unit = ResizeParams::CM;
                 } else if (u == "in") {
-                    resize.unit = ResizeParams::IN;
+                    resize.unit = ResizeParams::INCHES;
                 } else {
                     resize.unit = ResizeParams::PX;
                 }
             }
         }
+        
+	if (keyFile.has_group ("Spot Removal") && RELEVANT_(spot)) {
+            assignFromKeyfile(keyFile, "Spot Removal", "Enabled", spot.enabled);
+            int i = 0;
+            do {
+                std::stringstream ss;
+                ss << "Spot" << (i++ + 1);
 
-        if (keyFile.has_group("PostResizeSharpening") && RELEVANT_(prsharpening)) {
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "Enabled", prsharpening.enabled);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "Contrast", prsharpening.contrast);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "Radius", prsharpening.radius);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "Amount", prsharpening.amount);
+                if (keyFile.has_key ("Spot Removal", ss.str())) {
+                    Glib::ArrayHandle<double> entry = keyFile.get_double_list("Spot Removal", ss.str());
+                    const double epsilon = 0.001;  // to circumvent rounding of integer saved as double
+                    SpotEntry se;
 
-            if (keyFile.has_key("PostResizeSharpening", "Threshold")) {
+                    if (entry.size() == 8) {
+                        se.sourcePos.set(int(entry.data()[0] + epsilon), int(entry.data()[1] + epsilon));
+                        se.targetPos.set(int(entry.data()[2] + epsilon), int(entry.data()[3] + epsilon));
+                        se.radius  = LIM<int>(int(entry.data()[4] + epsilon), SpotParams::minRadius, SpotParams::maxRadius);
+                        se.feather = float(entry.data()[5]);
+                        se.opacity = float(entry.data()[6]);
+                        se.detail = entry.data()[7];
+                        spot.entries.push_back(se);
+                    }
+                } else {
+                    break;
+                }
+            } while (1);
+        }
+
+        const char *psgrp = ppVersion < 1021 ? "PostResizeSharpening" : "OutputSharpening";
+        if (keyFile.has_group(psgrp) && RELEVANT_(prsharpening)) {
+            assignFromKeyfile(keyFile, psgrp, "Enabled", prsharpening.enabled);
+            assignFromKeyfile(keyFile, psgrp, "Contrast", prsharpening.contrast);
+            assignFromKeyfile(keyFile, psgrp, "Radius", prsharpening.radius);
+            assignFromKeyfile(keyFile, psgrp, "Amount", prsharpening.amount);
+
+            if (keyFile.has_key(psgrp, "Threshold")) {
                 if (ppVersion < 302) {
-                    int thresh = min(keyFile.get_integer("PostResizeSharpening", "Threshold"), 2000);
+                    int thresh = min(keyFile.get_integer(psgrp, "Threshold"), 2000);
                     prsharpening.threshold.setValues(thresh, thresh, 2000, 2000);  // TODO: 2000 is the maximum value and is taken of rtgui/sharpening.cc ; should be changed by the tool modularization
                 } else {
-                    const std::vector<int> thresh = keyFile.get_integer_list("PostResizeSharpening", "Threshold");
+                    const std::vector<int> thresh = keyFile.get_integer_list(psgrp, "Threshold");
 
                     if (thresh.size() >= 4) {
                         prsharpening.threshold.setValues(thresh[0], thresh[1], min(thresh[2], 2000), min(thresh[3], 2000));
@@ -3919,19 +4959,29 @@ int ProcParams::load(bool load_general,
                 }
             }
 
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "OnlyEdges", prsharpening.edgesonly);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "EdgedetectionRadius", prsharpening.edges_radius);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "EdgeTolerance", prsharpening.edges_tolerance);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "HalocontrolEnabled", prsharpening.halocontrol);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "HalocontrolAmount", prsharpening.halocontrol_amount);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "Method", prsharpening.method);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "DeconvRadius", prsharpening.deconvradius);
-            assignFromKeyfile(keyFile, "PostResizeSharpening", "DeconvAmount", prsharpening.deconvamount);
+            assignFromKeyfile(keyFile, psgrp, "OnlyEdges", prsharpening.edgesonly);
+            assignFromKeyfile(keyFile, psgrp, "EdgedetectionRadius", prsharpening.edges_radius);
+            assignFromKeyfile(keyFile, psgrp, "EdgeTolerance", prsharpening.edges_tolerance);
+            assignFromKeyfile(keyFile, psgrp, "HalocontrolEnabled", prsharpening.halocontrol);
+            assignFromKeyfile(keyFile, psgrp, "HalocontrolAmount", prsharpening.halocontrol_amount);
+            assignFromKeyfile(keyFile, psgrp, "Method", prsharpening.method);
+            assignFromKeyfile(keyFile, psgrp, "DeconvRadius", prsharpening.deconvradius);
+            assignFromKeyfile(keyFile, psgrp, "DeconvAmount", prsharpening.deconvamount);
+            if (ppVersion < 1021 && !resize.enabled) {
+                prsharpening.enabled = false;
+            }
         }
 
         if (keyFile.has_group("Color Management") && RELEVANT_(icm)) {
             if (keyFile.has_key("Color Management", "InputProfile")) {
-                icm.inputProfile = expandRelativePath(fname, "file:", keyFile.get_string("Color Management", "InputProfile"));
+                icm.inputProfile = keyFile.get_string("Color Management", "InputProfile");
+                if (icm.inputProfile.substr(0, 5) == "file:") {
+                    if (ppVersion >= 1017) {
+                        icm.inputProfile = "file:" + filenameFromUri(icm.inputProfile, basedir);
+                    } else {
+                        icm.inputProfile = expandRelativePath(fname, "file:", icm.inputProfile);
+                    }
+                }
             }
 
             assignFromKeyfile(keyFile, "Color Management", "ToneCurve", icm.toneCurve);
@@ -3977,6 +5027,9 @@ int ProcParams::load(bool load_general,
                 }
             }
             assignFromKeyfile(keyFile, "Color Management", "OutputBPC", icm.outputBPC);
+            if (!assignFromKeyfile(keyFile, "Color Management", "InputProfileCAT", icm.inputProfileCAT) && ppVersion < 1031) {
+                icm.inputProfileCAT = false;
+            }
         }
 
         if (keyFile.has_group("SoftLight") && RELEVANT_(softlight)) {
@@ -3986,21 +5039,55 @@ int ProcParams::load(bool load_general,
 
         if (keyFile.has_group("Dehaze") && RELEVANT_(dehaze)) {
             assignFromKeyfile(keyFile, "Dehaze", "Enabled", dehaze.enabled);
-            assignFromKeyfile(keyFile, "Dehaze", "Strength", dehaze.strength);
+            if (ppVersion < 1010) {
+                int s = 0;
+                if (assignFromKeyfile(keyFile, "Dehaze", "Strength", s)) {
+                    float v = 0.5f + LIM((float(s) / 200.f) * 1.38f, -0.5f, 0.5f);
+                    dehaze.strength = {
+                        FCT_MinMaxCPoints,
+                        0.0,
+                        v,
+                        0.0,
+                        0.0,
+                        1.0,
+                        v,
+                        0.0,
+                        0.0       
+                    };
+                }
+            } else {
+                assignFromKeyfile(keyFile, "Dehaze", "Strength", dehaze.strength);
+            }
             assignFromKeyfile(keyFile, "Dehaze", "ShowDepthMap", dehaze.showDepthMap);
             assignFromKeyfile(keyFile, "Dehaze", "Depth", dehaze.depth);
             assignFromKeyfile(keyFile, "Dehaze", "Luminance", dehaze.luminance);
+            assignFromKeyfile(keyFile, "Dehaze", "Blackpoint", dehaze.blackpoint);
         }
         
         if (keyFile.has_group("Film Simulation") && RELEVANT_(filmSimulation)) {
             assignFromKeyfile(keyFile, "Film Simulation", "Enabled", filmSimulation.enabled);
             assignFromKeyfile(keyFile, "Film Simulation", "ClutFilename", filmSimulation.clutFilename);
+            if (ppVersion >= 1017) {
+                filmSimulation.clutFilename = filenameFromUri(filmSimulation.clutFilename, basedir);
+            }
 
             if (keyFile.has_key("Film Simulation", "Strength")) {
                 if (ppVersion < 321) {
                     filmSimulation.strength = keyFile.get_double("Film Simulation", "Strength") * 100 + 0.1;
                 } else {
                     filmSimulation.strength = keyFile.get_integer("Film Simulation", "Strength");
+                }
+            }
+
+            if (!assignFromKeyfile(keyFile, "Film Simulation", "AfterToneCurve", filmSimulation.after_tone_curve)) {
+                filmSimulation.after_tone_curve = (ppVersion < 1040);
+            }
+
+            std::vector<float> tmpparams;
+            if (assignFromKeyfile(keyFile, "Film Simulation", "ClutParams", tmpparams)) {
+                filmSimulation.lut_params.clear();
+                for (auto v : tmpparams) {
+                    filmSimulation.lut_params.push_back(v);
                 }
             }
         }
@@ -4021,40 +5108,89 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Grain", "Enabled", grain.enabled);
             assignFromKeyfile(keyFile, "Grain", "ISO", grain.iso);
             assignFromKeyfile(keyFile, "Grain", "Strength", grain.strength);
-            assignFromKeyfile(keyFile, "Grain", "Scale", grain.scale);
+            int gscale = 100;
+            if (assignFromKeyfile(keyFile, "Grain", "Scale", gscale)) {
+                grain.strength = int(float(grain.strength)/100.f * gscale);
+            }
         }
 
-        if (keyFile.has_group("GuidedSmoothing") && RELEVANT_(smoothing)) {
-            assignFromKeyfile(keyFile, "GuidedSmoothing", "Enabled", smoothing.enabled);
+        const char *smoothing_group = ppVersion < 1016 ? "GuidedSmoothing" : "Smoothing";
+        if (keyFile.has_group(smoothing_group) && RELEVANT_(smoothing)) {
+            assignFromKeyfile(keyFile, smoothing_group, "Enabled", smoothing.enabled);
                 
-            std::vector<GuidedSmoothingParams::Region> ll;
+            std::vector<SmoothingParams::Region> ll;
             std::vector<Mask> lm;
             bool found = false;
             bool done = false;
             for (int i = 1; !done; ++i) {
-                GuidedSmoothingParams::Region cur;
+                SmoothingParams::Region cur;
                 Mask curmask;
                 done = true;
                 std::string n = std::to_string(i);
                 int c;
-                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("Channel_") + n, c)) {
-                    cur.channel = GuidedSmoothingParams::Region::Channel(c);
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Channel_") + n, c)) {
+                    cur.channel = SmoothingParams::Region::Channel(c);
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("Radius_") + n, cur.radius)) {
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Mode_") + n, c)) {
+                    cur.mode = SmoothingParams::Region::Mode(c);
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("Epsilon_") + n, cur.epsilon)) {
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Radius_") + n, cur.radius)) {
                     found = true;
                     done = false;
                 }
-                if (assignFromKeyfile(keyFile, "GuidedSmoothing", Glib::ustring("Iterations_") + n, cur.iterations)) {
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Sigma_") + n, cur.sigma)) {
                     found = true;
                     done = false;
                 }
-                if (curmask.load(ppVersion, keyFile, "GuidedSmoothing", "", Glib::ustring("_") + n)) {
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Epsilon_") + n, cur.epsilon)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Iterations_") + n, cur.iterations)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Falloff_") + n, cur.falloff)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("NLStrength_") + n, cur.nlstrength)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("NLDetail_") + n, cur.nldetail)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("NumBlades_") + n, cur.numblades)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Angle_") + n, cur.angle)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Curvature_") + n, cur.curvature)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("Offset_") + n, cur.offset)) {
+                    found = true;
+                    done = false;
+                }
+                if (curmask.load(ppVersion, keyFile, smoothing_group, "", Glib::ustring("_") + n)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("NoiseStrength_") + n, cur.noise_strength)) {
+                    found = true;
+                    done = false;
+                }
+                if (assignFromKeyfile(keyFile, smoothing_group, Glib::ustring("NoiseCoarseness_") + n, cur.noise_coarseness)) {
                     found = true;
                     done = false;
                 }
@@ -4064,11 +5200,16 @@ int ProcParams::load(bool load_general,
                 }
             }
             if (found) {
+                if (APPEND_(smoothing, SmoothingParams())) {
+                    DO_APPEND_(ll, smoothing.regions);
+                    DO_APPEND_(lm, smoothing.labmasks);
+                }
                 smoothing.regions = std::move(ll);
                 smoothing.labmasks = std::move(lm);
             }
             assert(smoothing.regions.size() == smoothing.labmasks.size());
-            assignFromKeyfile(keyFile, "GuidedSmoothing", "ShowMask", smoothing.showMask);
+            assignFromKeyfile(keyFile, smoothing_group, "ShowMask", smoothing.showMask);
+            assignFromKeyfile(keyFile, smoothing_group, "SelectedRegion", smoothing.selectedRegion);
         }
 
         const char *ccgroup = "ColorCorrection";
@@ -4079,6 +5220,45 @@ int ProcParams::load(bool load_general,
             std::vector<Mask> lm;
             bool found = false;
             bool done = false;
+
+            auto ws = ICCStore::getInstance()->workingSpaceMatrix(icm.workingProfile);
+            const auto translate_uv =
+                [&](float &u, float &v) -> void
+                {
+                    float os = std::sqrt(SQR(u) + SQR(v));
+                    float R, G, B;
+                    const float Y = 0.5f;
+                    Color::yuv2rgb(Y, u, v, R, G, B, ws);
+                    float h, s, l;
+                    Color::rgb2hsl(R * 65535.f, G * 65535.f, B * 65535.f, h, s, l);
+                    h = h * 2.f * RT_PI_F;
+                    Color::hsl2yuv(h, os, u, v);
+                };
+            
+            const auto translate_ab =
+                [&](double &a, double &b) -> void
+                {
+                    float u = SGN(b) * log2lin(std::abs(b), 4.0);
+                    float v = SGN(a) * log2lin(std::abs(a), 4.0);
+                    translate_uv(u, v);
+                    b = SGN(u) * lin2log(std::abs(u), 4.f);
+                    a = SGN(v) * lin2log(std::abs(v), 4.f);
+                };
+
+            const auto translate_hs =
+                [&](double &h, double &s, int c) -> void
+                {
+                    constexpr float p1[] = { 3.f, 3.f, 3.f };
+                    constexpr float p2[] = { 1.f/2.5f, 1.f/2.5f, 1.f/2.5f };
+                    s = std::pow(s / 100.0, p1[c]);
+                    float u, v;
+                    Color::hsl2yuv(h / 180.f * RT_PI_F, s, u, v);
+                    translate_uv(u, v);
+                    float fh, fs;
+                    Color::yuv2hsl(u, v, fh, fs);
+                    h = fh * 180.0 / RT_PI;
+                    s = std::pow(fs, p2[c]) * 100.0;
+                };
 
             for (int i = 1; !done; ++i) {
                 ColorCorrectionParams::Region cur;
@@ -4101,7 +5281,10 @@ int ProcParams::load(bool load_general,
                 
                 get("A_", cur.a);
                 get("B_", cur.b);
-                get("Saturation_", cur.saturation);
+                if (ppVersion < 1028) {
+                    translate_ab(cur.a, cur.b);
+                }
+                get("ABScale_", cur.abscale);
                 if (ppVersion < 1005) {
                     int c = -1;
                     if (assignFromKeyfile(keyFile, ccgroup, prefix + Glib::ustring("Channel_") + n, c)) {
@@ -4136,6 +5319,10 @@ int ProcParams::load(bool load_general,
                             cur.mode = ColorCorrectionParams::Mode::RGB;
                         } else if (mode == "HSL") {
                             cur.mode = ColorCorrectionParams::Mode::HSL;
+                        } else if (mode == "Jzazbz") {
+                            cur.mode = ColorCorrectionParams::Mode::JZAZBZ;
+                        } else if (mode == "LUT") {
+                            cur.mode = ColorCorrectionParams::Mode::LUT;
                         }
                         found = true;
                         done = false;
@@ -4147,16 +5334,29 @@ int ProcParams::load(bool load_general,
                         get("Offset_", cur.offset[0]);
                         cur.offset[1] = cur.offset[2] = cur.offset[0];
                         get("Power_", cur.power[0]);
+                        if (ppVersion < 1029) {
+                            cur.power[0] = 1.0 / cur.power[0];
+                        }
                         cur.power[1] = cur.power[2] = cur.power[0];
                         get("Pivot_", cur.pivot[0]);
                         cur.pivot[1] = cur.pivot[2] = cur.pivot[0];
+                        if (get("Compression_", cur.compression[0])) {
+                            if (ppVersion < 1035) {
+                                cur.compression[0] /= 100.0;
+                            }
+                        }
+                        cur.compression[1] = cur.compression[2] = cur.compression[0];
                     } else {
                         const char *chan[3] = { "R", "G", "B" };
                         for (int c = 0; c < 3; ++c) {
                             get(Glib::ustring("Slope") + chan[c] + "_", cur.slope[c]);
                             get(Glib::ustring("Offset") + chan[c] + "_", cur.offset[c]);
                             get(Glib::ustring("Power") + chan[c] + "_", cur.power[c]);
+                            if (ppVersion < 1029) {
+                                cur.power[c] = 1.0 / cur.power[c];
+                            }
                             get(Glib::ustring("Pivot") + chan[c] + "_", cur.pivot[c]);
+                            get(Glib::ustring("Compression") + chan[c] + "_", cur.compression[c]);
                         }
                     }
                     {
@@ -4166,8 +5366,44 @@ int ProcParams::load(bool load_general,
                             get(w + "H_", cur.hue[c]);
                             get(w + "S_", cur.sat[c]);
                             get(w + "L_", cur.factor[c]);
+                            if (ppVersion < 1028) {
+                                translate_hs(cur.hue[c], cur.sat[c], c);
+                            }
                         }
                     }
+                }
+                if (ppVersion < 1018) {
+                    double sat = 0;
+                    get("Saturation_", sat);
+                    if (cur.mode == ColorCorrectionParams::Mode::YUV) {
+                        cur.inSaturation = sat;
+                        cur.outSaturation = 0;
+                    } else {
+                        cur.inSaturation = 0;
+                        cur.outSaturation = sat;
+                    }
+                } else {
+                    get("InSaturation_", cur.inSaturation);
+                    get("OutSaturation_", cur.outSaturation);
+                }                
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + "RGBLuminance_" + n, cur.rgbluminance)) {
+                    found = true;
+                    done = false;
+                }
+                get("HueShift_", cur.hueshift);
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + "LUTFilename_" + n, cur.lutFilename)) {
+                    cur.lutFilename = filenameFromUri(cur.lutFilename, basedir);
+                    found = true;
+                    done = false;
+                }
+                std::vector<float> tmpparams;
+                if (assignFromKeyfile(keyFile, ccgroup, prefix + "LUTParams_" + n, tmpparams)) {
+                    cur.lut_params.clear();
+                    for (auto v : tmpparams) {
+                        cur.lut_params.push_back(v);
+                    }
+                    found = true;
+                    done = false;
                 }
                 if (curmask.load(ppVersion, keyFile, ccgroup, prefix, Glib::ustring("_") + n)) {
                     found = true;
@@ -4176,21 +5412,37 @@ int ProcParams::load(bool load_general,
                 if (!done) {
                     lg.emplace_back(cur);
                     lm.emplace_back(curmask);
+                    if (ppVersion < 1036 && cur.mode == ColorCorrectionParams::Mode::HSL && cur.hueshift != 0) {
+                        lg.back().hueshift = 0;
+                        lm.emplace_back(curmask);
+                        lg.emplace_back();
+                        lg.back().hueshift = cur.hueshift;
+                        std::swap(lg.back(), lg[lg.size()-2]);
+                    }
                 }
             }
             if (found) {
+                if (APPEND_(colorcorrection, ColorCorrectionParams())) {
+                    DO_APPEND_(lg, colorcorrection.regions);
+                    DO_APPEND_(lm, colorcorrection.labmasks);
+                }
                 colorcorrection.regions = std::move(lg);
                 colorcorrection.labmasks = std::move(lm);
             }
             assert(colorcorrection.regions.size() == colorcorrection.labmasks.size());
             assignFromKeyfile(keyFile, ccgroup, ppVersion < 348 ? "showMask" : "LabRegionsShowMask", colorcorrection.showMask);
+            assignFromKeyfile(keyFile, ccgroup, "SelectedRegion", colorcorrection.selectedRegion);
         }
 
         if (keyFile.has_group("RAW")) {
             if (RELEVANT_(darkframe)) {
                 assignFromKeyfile(keyFile, "RAW", "DarkFrameEnabled", raw.enable_darkframe);
                 if (keyFile.has_key("RAW", "DarkFrame")) {
-                    raw.dark_frame = expandRelativePath(fname, "", keyFile.get_string("RAW", "DarkFrame"));
+                    if (ppVersion >= 1017) {
+                        raw.dark_frame = filenameFromUri(keyFile.get_string("RAW", "DarkFrame"), basedir); 
+                    } else {
+                        raw.dark_frame = expandRelativePath(fname, "", keyFile.get_string("RAW", "DarkFrame"));
+                    }
                 }
 
                 assignFromKeyfile(keyFile, "RAW", "DarkFrameAuto", raw.df_autoselect);
@@ -4199,7 +5451,11 @@ int ProcParams::load(bool load_general,
             if (RELEVANT_(flatfield)) {
                 assignFromKeyfile(keyFile, "RAW", "FlatFieldEnabled", raw.enable_flatfield);
                 if (keyFile.has_key("RAW", "FlatFieldFile")) {
-                    raw.ff_file = expandRelativePath(fname, "", keyFile.get_string("RAW", "FlatFieldFile"));
+                    if (ppVersion >= 1017) {
+                        raw.ff_file = filenameFromUri(keyFile.get_string("RAW", "FlatFieldFile"), basedir);
+                    } else {
+                        raw.ff_file = expandRelativePath(fname, "", keyFile.get_string("RAW", "FlatFieldFile"));
+                    }
                 }
 
                 assignFromKeyfile(keyFile, "RAW", "FlatFieldAutoSelect", raw.ff_AutoSelect);
@@ -4214,6 +5470,7 @@ int ProcParams::load(bool load_general,
                 } else {
                     assignFromKeyfile(keyFile, "RAW", "FlatFieldClipControl", raw.ff_clipControl);
                 }
+                assignFromKeyfile(keyFile, "RAW", "FlatFieldUseEmbedded", raw.ff_embedded);
             }
 
             if (RELEVANT_(rawCA)) {
@@ -4251,10 +5508,10 @@ int ProcParams::load(bool load_general,
 
             if (ppVersion < 320) {
                 if (RELEVANT_(demosaic)) {
-                    assignFromKeyfile(keyFile, "RAW", "Method", raw.bayersensor.method);
+                    //assignFromKeyfile(keyFile, "RAW", "Method", raw.bayersensor.method);
                     assignFromKeyfile(keyFile, "RAW", "CcSteps", raw.bayersensor.ccSteps);
-                    assignFromKeyfile(keyFile, "RAW", "DCBIterations", raw.bayersensor.dcb_iterations);
-                    assignFromKeyfile(keyFile, "RAW", "DCBEnhance", raw.bayersensor.dcb_enhance);
+                    // assignFromKeyfile(keyFile, "RAW", "DCBIterations", raw.bayersensor.dcb_iterations);
+                    // assignFromKeyfile(keyFile, "RAW", "DCBEnhance", raw.bayersensor.dcb_enhance);
                     assignFromKeyfile(keyFile, "RAW", "LMMSEIterations", raw.bayersensor.lmmse_iterations);
                 }
                 if (RELEVANT_(rawPreprocessing)) {
@@ -4273,7 +5530,20 @@ int ProcParams::load(bool load_general,
 
         if (keyFile.has_group("RAW Bayer")) {
             if (RELEVANT_(demosaic)) {
-                assignFromKeyfile(keyFile, "RAW Bayer", "Method", raw.bayersensor.method);
+                Glib::ustring method;
+                if (assignFromKeyfile(keyFile, "RAW Bayer", "Method", method)) {
+                    auto &v = raw.bayersensor.getMethodStrings();
+                    auto it = std::find(v.begin(), v.end(), method);
+                    if (it != v.end()) {
+                        raw.bayersensor.method = RAWParams::BayerSensor::Method(it - v.begin());
+                    } else if (method == "amazevng4" || method == "dcbvng4") {
+                        raw.bayersensor.method = RAWParams::BayerSensor::Method::AMAZEBILINEAR;
+                    } else if (method == "rcdvng4") {
+                        raw.bayersensor.method = RAWParams::BayerSensor::Method::RCDBILINEAR;
+                    } else {
+                        raw.bayersensor.method = RAWParams::BayerSensor::Method::AMAZE;
+                    }
+                }
                 assignFromKeyfile(keyFile, "RAW Bayer", "Border", raw.bayersensor.border);
 
                 if (keyFile.has_key("RAW Bayer", "ImageNum")) {
@@ -4304,8 +5574,8 @@ int ProcParams::load(bool load_general,
             }
 
             if (RELEVANT_(demosaic)) {
-                assignFromKeyfile(keyFile, "RAW Bayer", "DCBIterations", raw.bayersensor.dcb_iterations);
-                assignFromKeyfile(keyFile, "RAW Bayer", "DCBEnhance", raw.bayersensor.dcb_enhance);
+                // assignFromKeyfile(keyFile, "RAW Bayer", "DCBIterations", raw.bayersensor.dcb_iterations);
+                // assignFromKeyfile(keyFile, "RAW Bayer", "DCBEnhance", raw.bayersensor.dcb_enhance);
                 assignFromKeyfile(keyFile, "RAW Bayer", "LMMSEIterations", raw.bayersensor.lmmse_iterations);
                 assignFromKeyfile(keyFile, "RAW Bayer", "DualDemosaicAutoContrast", raw.bayersensor.dualDemosaicAutoContrast);
                 if (ppVersion < 345) {
@@ -4349,12 +5619,22 @@ int ProcParams::load(bool load_general,
 
             if (RELEVANT_(rawPreprocessing)) {
                 assignFromKeyfile(keyFile, "RAW Bayer", "PDAFLinesFilter", raw.bayersensor.pdafLinesFilter);
+                assignFromKeyfile(keyFile, "RAW Bayer", "DynamicRowNoiseFilter", raw.bayersensor.dynamicRowNoiseFilter);
             }
         }
 
         if (keyFile.has_group("RAW X-Trans")) {
             if (RELEVANT_(demosaic)) {
-                assignFromKeyfile(keyFile, "RAW X-Trans", "Method", raw.xtranssensor.method);
+                Glib::ustring method;
+                if (assignFromKeyfile(keyFile, "RAW X-Trans", "Method", method)) {
+                    const auto &v = RAWParams::XTransSensor::getMethodStrings();
+                    auto it = std::find(v.begin(), v.end(), method);
+                    if (it != v.end()) {
+                        raw.xtranssensor.method = RAWParams::XTransSensor::Method(it - v.begin());
+                    } else {
+                        raw.xtranssensor.method = RAWParams::XTransSensor::Method::THREE_PASS;
+                    }
+                }
                 assignFromKeyfile(keyFile, "RAW X-Trans", "DualDemosaicAutoContrast", raw.xtranssensor.dualDemosaicAutoContrast);
                 if (ppVersion < 345) {
                     raw.xtranssensor.dualDemosaicAutoContrast = false;
@@ -4376,14 +5656,62 @@ int ProcParams::load(bool load_general,
             assignFromKeyfile(keyFile, "Film Negative", "RedRatio", filmNegative.redRatio);
             assignFromKeyfile(keyFile, "Film Negative", "GreenExponent", filmNegative.greenExp);
             assignFromKeyfile(keyFile, "Film Negative", "BlueRatio", filmNegative.blueRatio);
+            if (ppVersion >= 1039) {
+                std::vector<float> v;
+                if (assignFromKeyfile(keyFile, "Film Negative", "RefInput", v)) {
+                    filmNegative.refInput.r = v[0];
+                    filmNegative.refInput.g = v[1];
+                    filmNegative.refInput.b = v[2];
+                }
+                if (assignFromKeyfile(keyFile, "Film Negative", "RefOutput", v)) {
+                    filmNegative.refOutput.r = v[0];
+                    filmNegative.refOutput.g = v[1];
+                    filmNegative.refOutput.b = v[2];
+                }
+
+                int cs = 0;
+                if (assignFromKeyfile(keyFile, "Film Negative", "ColorSpace", cs)) {
+                    filmNegative.colorSpace = static_cast<FilmNegativeParams::ColorSpace>(cs);
+                }
+
+                if (keyFile.has_key("Film Negative", "BackCompat")) {
+                    filmNegative.backCompat = FilmNegativeParams::BackCompat(keyFile.get_integer("Film Negative", "BackCompat"));
+                }
+            } else if (ppVersion >= 1011) {
+                filmNegative.backCompat = FilmNegativeParams::BackCompat::V2;
+                filmNegative.colorSpace = FilmNegativeParams::ColorSpace::INPUT;
+                double d;
+                if (assignFromKeyfile(keyFile, "Film Negative", "RedBase", d)) {
+                    filmNegative.refInput.r = d;
+                }
+                if (assignFromKeyfile(keyFile, "Film Negative", "GreenBase", d)) {
+                    filmNegative.refInput.g = d;
+                }
+                if (assignFromKeyfile(keyFile, "Film Negative", "BlueBase", d)) {
+                    filmNegative.refInput.b = d;
+                }
+            } else {
+                filmNegative.backCompat = FilmNegativeParams::BackCompat::V1;
+                filmNegative.colorSpace = FilmNegativeParams::ColorSpace::INPUT;
+                // Backwards compatibility: use special film base value -1
+                filmNegative.refInput.r = -1.f;
+                filmNegative.refInput.g = -1.f;
+                filmNegative.refInput.b = -1.f;
+            }
         }
 
         if (keyFile.has_group("MetaData") && RELEVANT_(metadata)) {
-            int mode = int(MetaDataParams::TUNNEL);
+            int mode = int(ppVersion < 1012 ? MetaDataParams::TUNNEL : MetaDataParams::EDIT);
             assignFromKeyfile(keyFile, "MetaData", "Mode", mode);
 
             if (mode >= int(MetaDataParams::TUNNEL) && mode <= int(MetaDataParams::STRIP)) {
                 metadata.mode = static_cast<MetaDataParams::Mode>(mode);
+            }
+
+            if (!assignFromKeyfile(keyFile, "MetaData", "ExifKeys", metadata.exifKeys)) {
+                if (ppVersion < 1012) {
+                    metadata.exifKeys = { "*" };
+                }
             }
         }
 
@@ -4391,7 +5719,7 @@ int ProcParams::load(bool load_general,
             for (const auto& key : keyFile.get_keys("Exif")) {
                 auto it = exif_keys.find(key);
                 if (it != exif_keys.end()) {
-                    exif[it->second] = keyFile.get_string("Exif", key);
+                    metadata.exif[it->second] = keyFile.get_string("Exif", key);
                 }
             }
         }
@@ -4416,29 +5744,43 @@ int ProcParams::load(bool load_general,
                     continue;
                 }
                 auto kk = it->second;
-                const IPTCPairs::iterator element = iptc.find(kk);
+                const IPTCPairs::iterator element = metadata.iptc.find(kk);
 
-                if (element != iptc.end()) {
+                if (element != metadata.iptc.end()) {
                     // it already exist so we cleanup the values
                     element->second.clear();
                 }
 
                 // TODO: look out if merging Keywords and SupplementalCategories from the procparams chain would be interesting
                 for (const auto& currLoadedTagValue : keyFile.get_string_list("IPTC", key)) {
-                    iptc[kk].push_back(currLoadedTagValue);
+                    metadata.iptc[kk].push_back(currLoadedTagValue);
                 }
             }
         }
 
         return 0;
     } catch (const Glib::Error& e) {
-        printf("-->%s\n", e.what().c_str());
+        //printf("-->%s\n", e.what().c_str());
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, e.what()));
+        }
         if (resetOnError) {
             setDefaults();
         }
         return 1;
+    } catch (std::exception &e) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, e.what()));
+        }            
+        if (resetOnError) {
+            setDefaults();
+        }
+        return 1;        
     } catch (...) {
-        printf("-->unknown exception!\n");
+        //printf("-->unknown exception!\n");
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, "unknown exception"));
+        }
         if (resetOnError) {
             setDefaults();
         }
@@ -4447,14 +5789,17 @@ int ProcParams::load(bool load_general,
 
     return 0;
 
+#undef DO_APPEND_
+#undef APPEND_
 #undef RELEVANT_
 }
 
 
-int ProcParams::load(const KeyFile &keyFile, const ParamsEdited *pedited,
+int ProcParams::load(ProgressListener *pl,
+                     const KeyFile &keyFile, const ParamsEdited *pedited,
                      bool resetOnError, const Glib::ustring &fname)
 {
-    return load(true, keyFile, pedited, resetOnError, fname);
+    return load(pl, true, keyFile, pedited, resetOnError, fname);
 }
 
 
@@ -4470,50 +5815,58 @@ void ProcParams::destroy(ProcParams* pp)
 
 bool ProcParams::operator ==(const ProcParams& other) const
 {
+    const auto d =
+        [](const char *name) -> bool
+        {
+            //std::cout << "ProcParams differ in " << name << std::endl;
+            return false;
+        };
+    
+#define ppEQ_(name) (name == other . name || d(#name))
     return
-        exposure == other.exposure
-        && saturation == other.saturation
-        && toneCurve == other.toneCurve
-        && localContrast == other.localContrast
-        && labCurve == other.labCurve
-        && sharpening == other.sharpening
-        && prsharpening == other.prsharpening
-        && wb == other.wb
-        && impulseDenoise == other.impulseDenoise
-        && denoise == other.denoise
-        && textureBoost == other.textureBoost
-        && fattal == other.fattal
-        && logenc == other.logenc
-        && defringe == other.defringe
-        && toneEqualizer == other.toneEqualizer
-        && crop == other.crop
-        && coarse == other.coarse
-        && rotate == other.rotate
-        && commonTrans == other.commonTrans
-        && distortion == other.distortion
-        && lensProf == other.lensProf
-        && perspective == other.perspective
-        && gradient == other.gradient
-        && pcvignette == other.pcvignette
-        && cacorrection == other.cacorrection
-        && vignetting == other.vignetting
-        && chmixer == other.chmixer
-        && blackwhite == other.blackwhite
-        && hsl == other.hsl
-        && resize == other.resize
-        && raw == other.raw
-        && icm == other.icm
-        && filmSimulation == other.filmSimulation
-        && softlight == other.softlight
-        && rgbCurves == other.rgbCurves
-        && metadata == other.metadata
-        && exif == other.exif
-        && iptc == other.iptc
-        && dehaze == other.dehaze
-        && grain == other.grain
-        && smoothing == other.smoothing
-        && colorcorrection == other.colorcorrection
-        && filmNegative == other.filmNegative;
+        ppEQ_(exposure)
+        && ppEQ_(saturation)
+        && ppEQ_(toneCurve)
+        && ppEQ_(localContrast)
+        && ppEQ_(labCurve)
+        && ppEQ_(sharpening)
+        && ppEQ_(prsharpening)
+        && ppEQ_(wb)
+        && ppEQ_(impulseDenoise)
+        && ppEQ_(denoise)
+        && ppEQ_(textureBoost)
+        && ppEQ_(fattal)
+        && ppEQ_(logenc)
+        && ppEQ_(defringe)
+        && ppEQ_(toneEqualizer)
+        && ppEQ_(crop)
+        && ppEQ_(coarse)
+        && ppEQ_(rotate)
+        && ppEQ_(commonTrans)
+        && ppEQ_(distortion)
+        && ppEQ_(lensProf)
+        && ppEQ_(perspective)
+        && ppEQ_(gradient)
+        && ppEQ_(pcvignette)
+        && ppEQ_(cacorrection)
+        && ppEQ_(vignetting)
+        && ppEQ_(chmixer)
+        && ppEQ_(blackwhite)
+        && ppEQ_(hsl)
+        && ppEQ_(resize)
+        && ppEQ_(raw)
+        && ppEQ_(icm)
+        && ppEQ_(filmSimulation)
+        && ppEQ_(softlight)
+        && ppEQ_(rgbCurves)
+        && ppEQ_(metadata)
+        && ppEQ_(dehaze)
+        && ppEQ_(grain)
+        && ppEQ_(smoothing)
+        && ppEQ_(colorcorrection)
+        && ppEQ_(filmNegative)
+        && ppEQ_(spot);
+#undef ppEQ_
 }
 
 bool ProcParams::operator !=(const ProcParams& other) const
@@ -4529,7 +5882,8 @@ void ProcParams::cleanup()
 {
 }
 
-int ProcParams::write(const Glib::ustring& fname, const Glib::ustring& content) const
+int ProcParams::write(ProgressListener *pl,
+                      const Glib::ustring& fname, const Glib::ustring& content) const
 {
     int error = 0;
 
@@ -4538,6 +5892,9 @@ int ProcParams::write(const Glib::ustring& fname, const Glib::ustring& content) 
         f = g_fopen(fname.c_str(), "wt");
 
         if (f == nullptr) {
+            if (pl) {
+                pl->error(Glib::ustring::compose(M("PROCPARAMS_SAVE_ERROR"), fname, "write error"));
+            }
             error = 1;
         } else {
             fprintf(f, "%s", content.c_str());
@@ -4546,6 +5903,44 @@ int ProcParams::write(const Glib::ustring& fname, const Glib::ustring& content) 
     }
 
     return error;
+}
+
+
+bool ProcParams::from_data(const char *data)
+{
+    setlocale(LC_NUMERIC, "C");  // to set decimal point to "."
+    try {
+        KeyFile kf;
+        if (!kf.load_from_data(data)) {
+            return false;
+        }
+
+        return load(nullptr, kf, nullptr, true, "") == 0;
+    } catch (const Glib::Error& e) {
+        return false;
+    }
+}
+
+
+std::string ProcParams::to_data() const
+{
+    try {
+        KeyFile kf;
+        int ret = save(nullptr, kf, nullptr, "");
+        if (ret != 0) {
+            return "";
+        }
+
+        return kf.to_data();
+    } catch (Glib::KeyFileError &exc) {
+        return "";
+    }
+}
+
+
+FullPartialProfile::FullPartialProfile():
+    pp_()
+{
 }
 
 
@@ -4562,23 +5957,24 @@ bool FullPartialProfile::applyTo(ProcParams &pp) const
 }
 
 
-FilePartialProfile::FilePartialProfile(const Glib::ustring &fname, bool full):
+FilePartialProfile::FilePartialProfile(ProgressListener *pl, const Glib::ustring &fname, bool append):
+    pl_(pl),
     fname_(fname),
-    full_(full)
+    append_(append)
 {
 }
 
 
 bool FilePartialProfile::applyTo(ProcParams &pp) const
 {
-    if (full_) {
-        pp.setDefaults();
-    }
-    return fname_.empty() || (pp.load(fname_) == 0);
+    ParamsEdited pe(true);
+    pe.set_append(append_);
+    return !fname_.empty() && (pp.load(pl_, fname_, &pe) == 0);
 }
 
 
-PEditedPartialProfile::PEditedPartialProfile(const Glib::ustring &fname, const ParamsEdited &pe):
+PEditedPartialProfile::PEditedPartialProfile(ProgressListener *pl, const Glib::ustring &fname, const ParamsEdited &pe):
+    pl_(pl),
     fname_(fname),
     pp_(),
     pe_(pe)
@@ -4587,6 +5983,7 @@ PEditedPartialProfile::PEditedPartialProfile(const Glib::ustring &fname, const P
 
 
 PEditedPartialProfile::PEditedPartialProfile(const ProcParams &pp, const ParamsEdited &pe):
+    pl_(nullptr),
     fname_(""),
     pp_(pp),
     pe_(pe)
@@ -4601,20 +5998,48 @@ bool PEditedPartialProfile::applyTo(ProcParams &pp) const
         try {
             if (!Glib::file_test(fname_, Glib::FILE_TEST_EXISTS) ||
                 !keyfile.load_from_file(fname_)) {
+                // not an error to repor
                 return false;
             }
         } catch (const Glib::Error& e) {
-            printf("-->%s\n", e.what().c_str());
+            //printf("-->%s\n", e.what().c_str());
+            if (pl_) {
+                pl_->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname_, e.what()));
+            }
             return false;
         }
-        return pp.load(keyfile, &pe_, false) == 0;
+        return pp.load(pl_, keyfile, &pe_, false) == 0;
     } else {
         KeyFile keyfile;
-        if (pp_.save(keyfile, &pe_) == 0) {
-            return pp.load(keyfile, &pe_, false) == 0;
+        if (pp_.save(pl_, keyfile, &pe_) == 0) {
+            return pp.load(pl_, keyfile, &pe_, false) == 0;
         }
     }
     return false;
+}
+
+
+void MultiPartialProfile::add(const PartialProfile *p)
+{
+    profiles_.push_back(p);
+}
+
+
+void MultiPartialProfile::clear()
+{
+    profiles_.clear();
+}
+
+
+bool MultiPartialProfile::applyTo(ProcParams &pp) const
+{
+    bool res = false;
+    for (auto p : profiles_) {
+        if (p->applyTo(pp)) {
+            res = true;
+        }
+    }
+    return res;
 }
 
 
@@ -4622,7 +6047,8 @@ bool PEditedPartialProfile::applyTo(ProcParams &pp) const
 // ProcParamsWithSnapshots
 //-----------------------------------------------------------------------------
 
-int ProcParamsWithSnapshots::load(const Glib::ustring &fname)
+int ProcParamsWithSnapshots::load(ProgressListener *pl,
+                                  const Glib::ustring &fname)
 {
     setlocale(LC_NUMERIC, "C");  // to set decimal point to "."
 
@@ -4631,14 +6057,17 @@ int ProcParamsWithSnapshots::load(const Glib::ustring &fname)
     }
 
     KeyFile keyfile;
+    keyfile.setProgressListener(pl);
+    
     snapshots.clear();
 
     try {
         if (!Glib::file_test(fname, Glib::FILE_TEST_EXISTS) ||
             !keyfile.load_from_file(fname)) {
+            // not an error to report
             return 1;
         }
-        if (master.load(true, keyfile, nullptr, true, fname) != 0) {
+        if (master.load(pl, true, keyfile, nullptr, true, fname) != 0) {
             return 1;
         }
         const std::string sn = "Snapshot_";
@@ -4658,7 +6087,7 @@ int ProcParamsWithSnapshots::load(const Glib::ustring &fname)
             keyfile.set_prefix(sn + std::to_string(i+1) + " ");
             snapshots[i].second.appVersion = master.appVersion;
             snapshots[i].second.ppVersion = master.ppVersion;
-            if (snapshots[i].second.load(false, keyfile, nullptr, true, fname) != 0) {
+            if (snapshots[i].second.load(pl, false, keyfile, nullptr, true, fname) != 0) {
                 snapshots.resize(i);
                 break;
             }
@@ -4666,12 +6095,18 @@ int ProcParamsWithSnapshots::load(const Glib::ustring &fname)
 
         return 0;
     } catch (const Glib::Error &e) {
-        printf("-->%s\n", e.what().c_str());
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, e.what()));
+        }
+        //printf("-->%s\n", e.what().c_str());
         master.setDefaults();
         snapshots.clear();
         return 1;
     } catch (...) {
-        printf("-->unknown exception!\n");
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_LOAD_ERROR"), fname, "unknown exception"));
+        }
+        //printf("-->unknown exception!\n");
         master.setDefaults();
         snapshots.clear();
         return 1;
@@ -4679,7 +6114,8 @@ int ProcParamsWithSnapshots::load(const Glib::ustring &fname)
 }
 
 
-int ProcParamsWithSnapshots::save(const Glib::ustring &fname, const Glib::ustring &fname2, bool fnameAbsolute)
+int ProcParamsWithSnapshots::save(ProgressListener *pl,
+                                  const Glib::ustring &fname, const Glib::ustring &fname2)
 {
     if (fname.empty() && fname2.empty()) {
         return 0;
@@ -4692,7 +6128,9 @@ int ProcParamsWithSnapshots::save(const Glib::ustring &fname, const Glib::ustrin
 
         keyfile.set_string("Version", "AppVersion", RTVERSION);
         keyfile.set_integer("Version", "Version", PPVERSION);
-        saveToKeyfile("General", "Rank", master.rank, keyfile);
+        if (master.rank >= 0) {
+            saveToKeyfile("General", "Rank", master.rank, keyfile);
+        }
         saveToKeyfile("General", "ColorLabel", master.colorlabel, keyfile);
         saveToKeyfile("General", "InTrash", master.inTrash, keyfile);
         
@@ -4702,31 +6140,35 @@ int ProcParamsWithSnapshots::save(const Glib::ustring &fname, const Glib::ustrin
             keyfile.set_string("Snapshots", key, snapshots[i].first);
         }
 
-        int ret = master.save(false, keyfile, nullptr, fname, fnameAbsolute);
+        int ret = master.save(pl, false, keyfile, nullptr, fname);
         if (ret != 0) {
             return ret;
         }
 
         for (size_t i = 0; i < snapshots.size(); ++i) {
             keyfile.set_prefix(sn + std::to_string(i+1) + " ");
-            ret = snapshots[i].second.save(false, keyfile, nullptr, fname, fnameAbsolute);
+            ret = snapshots[i].second.save(pl, false, keyfile, nullptr, fname);
             if (ret != 0) {
                 return ret;
             }
         }
         
         data = keyfile.to_data();
-    } catch (Glib::KeyFileError&) {}
+    } catch (Glib::KeyFileError &exc) {
+        if (pl) {
+            pl->error(Glib::ustring::compose(M("PROCPARAMS_SAVE_ERROR"), fname, exc.what()));
+        }
+    }
 
     if (data.empty()) {
         return 1;
     }
 
     int error1, error2;
-    error1 = master.write(fname, data);
+    error1 = master.write(pl, fname, data);
 
     if (!fname2.empty()) {
-        error2 = master.write(fname2, data);
+        error2 = master.write(pl, fname2, data);
         // If at least one file has been saved, it's a success
         return error1 & error2;
     } else {

@@ -4,13 +4,17 @@
 #include "gradient.h"
 #include "rtimage.h"
 #include "../rtengine/rt_math.h"
+#include "eventmapper.h"
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Gradient::Gradient () : FoldableToolPanel(this, "gradient", M("TP_GRADIENT_LABEL"), false, true), EditSubscriber(ET_OBJECTS), lastObject(-1), draggedPointOldAngle(-1000.)
+Gradient::Gradient():
+    FoldableToolPanel(this, "gradient", M("TP_GRADIENT_LABEL"), false, true, true),
+    EditSubscriber(ET_OBJECTS), lastObject(-1), draggedPointOldAngle(-1000.)
 {
-
+    EvToolReset.set_action(LUMINANCECURVE);
+    
     editHBox = Gtk::manage (new Gtk::HBox());
     edit = Gtk::manage (new Gtk::ToggleButton());
     edit->get_style_context()->add_class("independent");
@@ -213,6 +217,8 @@ void Gradient::setDefaults(const ProcParams* defParams)
     strength->setDefault (defParams->gradient.strength);
     centerX->setDefault (defParams->gradient.centerX);
     centerY->setDefault (defParams->gradient.centerY);
+
+    initial_params = defParams->gradient;
 }
 
 void Gradient::adjusterChanged(Adjuster* a, double newval)
@@ -274,7 +280,7 @@ void Gradient::editToggled ()
     }
 }
 
-CursorShape Gradient::getCursor(const int objectID)
+CursorShape Gradient::getCursor(int objectID)
 {
     switch (objectID) {
     case (0):
@@ -296,11 +302,11 @@ CursorShape Gradient::getCursor(const int objectID)
         return CSMove2D;
 
     default:
-        return CSHandOpen;
+        return CSArrow;
     }
 }
 
-bool Gradient::mouseOver(const int modifierKey)
+bool Gradient::mouseOver(int modifierKey)
 {
     EditDataProvider* editProvider = getEditProvider();
 
@@ -330,7 +336,7 @@ bool Gradient::mouseOver(const int modifierKey)
     return false;
 }
 
-bool Gradient::button1Pressed(const int modifierKey)
+bool Gradient::button1Pressed(int modifierKey)
 {
     if (lastObject < 0) {
         return false;
@@ -409,7 +415,7 @@ bool Gradient::button1Released()
     return true;
 }
 
-bool Gradient::drag1(const int modifierKey)
+bool Gradient::drag1(int modifierKey)
 {
     // compute the polar coordinate of the mouse position
     EditDataProvider *provider = getEditProvider();
@@ -541,3 +547,13 @@ void Gradient::switchOffEditMode ()
     EditSubscriber::switchOffEditMode();  // disconnect
 }
 
+
+void Gradient::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.gradient = initial_params;
+    }
+    pp.gradient.enabled = getEnabled();
+    read(&pp);
+}

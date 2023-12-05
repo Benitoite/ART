@@ -58,6 +58,8 @@ public:
     void set_tooltip_text (const Glib::ustring &text);
     void setItemSensitivity (int i, bool isSensitive);
 
+    void setRelief(Gtk::ReliefStyle s);
+
 private:
     type_signal_changed messageChanged;
     type_signal_item_selected messageItemSelected;
@@ -69,6 +71,7 @@ private:
     Gtk::Grid* imageContainer;
     Gtk::Menu* menu;
     Gtk::Button* button;
+    Gtk::Button *arrowButton;
     int selected;
     bool hasMenu;
 

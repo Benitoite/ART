@@ -53,6 +53,9 @@ protected:
     bool lastHaloControl;
     sigc::connection hcConn;
     rtengine::ProcEvent EvPrShrContrast;
+
+    rtengine::procparams::SharpeningParams initial_params;
+    
 public:
 
     PrSharpening();
@@ -74,7 +77,9 @@ public:
     void adjusterChanged(ThresholdAdjuster* a, int newBottomLeft, int newTopLeft, int newBottomRight, int newTopRight) override;
     void adjusterChanged2(ThresholdAdjuster* a, int newBottomL, int newTopL, int newBottomR, int newTopR) override;
 
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

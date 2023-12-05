@@ -83,6 +83,7 @@
 #include "filmnegative.h"
 #include "guiutils.h"
 #include "../rtengine/noncopyable.h"
+#include "spot.h"
 
 class ImageEditorCoordinator;
 
@@ -96,6 +97,7 @@ class ToolPanelCoordinator :
     public LensGeomListener,
     public SpotWBListener,
     public CropPanelListener,
+    public PerspCorrectionPanelListener,
     public ICMPanelListener,
     public ImageAreaToolListener,
     public rtengine::ImageTypeListener,
@@ -110,7 +112,8 @@ protected:
     Vignetting* vignetting;
     Gradient* gradient;
     PCVignette* pcvignette;
-    LensGeometry* lensgeom;
+    GeometryPanel *geompanel;
+    LensPanel *lenspanel;
     LensProfilePanel* lensProf;
     Rotate* rotate;
     Distortion* distortion;
@@ -128,6 +131,7 @@ protected:
     ToneCurve* toneCurve;
     ToneEqualizer *toneEqualizer;
     LocalContrast *localContrast;
+    Spot* spot;
     Defringe* defringe;
     ImpulseDenoise* impulsedenoise;
     Denoise* denoise;
@@ -156,7 +160,6 @@ protected:
     MetaDataPanel* metadata;
     Smoothing *smoothing;
     ColorCorrection *colorcorrection;
-    // DirPyrEqualizer *cbdl;
     FilmNegative *filmNegative;    
 
     std::vector<PParamsChangeListener*> paramcListeners;
@@ -244,7 +247,10 @@ public:
     }
 
     // toolpanellistener interface
+    void refreshPreview(const rtengine::ProcEvent& event) override;
     void panelChanged(const rtengine::ProcEvent& event, const Glib::ustring& descr) override;
+    void setTweakOperator (rtengine::TweakOperator *tOperator) override;
+    void unsetTweakOperator (rtengine::TweakOperator *tOperator) override;
 
     void imageTypeChanged (bool isRaw, bool isBayer, bool isXtrans, bool isMono = false) override;
 
@@ -293,21 +299,27 @@ public:
         }
     }
 
+    std::vector<WBPreset> getWBPresets() const override;
+    void convertWBCam2Mul(double &rm, double &gm, double &bm) override;
+    void convertWBMul2Cam(double &rm, double &gm, double &bm) override;
+
     //DFProvider interface
     rtengine::RawImage* getDF() override;
 
     //FFProvider interface
     rtengine::RawImage* getFF() override;
     Glib::ustring GetCurrentImageFilePath() override;
+    bool hasEmbeddedFF() override;
 
     // FilmNegProvider interface
-    bool getFilmNegativeExponents(rtengine::Coord spotA, rtengine::Coord spotB, std::array<float, 3>& newExps) override;
+    bool getFilmNegativeSpot(rtengine::Coord spot, int spotSize, RGB &refInput, RGB &refOutput) override;
     
     // rotatelistener interface
     void straightenRequested () override;
     void autoCropRequested () override;
     double autoDistorRequested () override;
-    void autoPerspectiveRequested(bool horiz, bool vert, double &angle, double &horizontal, double &vertical, double &shear) override;
+    void autoPerspectiveRequested(bool horiz, bool vert, double &angle, double &horizontal, double &vertical, double &shear, const std::vector<rtengine::ControlLine> *lines=nullptr) override;
+    void updateTransformPreviewRequested (rtengine::ProcEvent event, bool render_perspective) override;
 
     // spotwblistener interface
     void spotWBRequested (int size) override;
@@ -317,6 +329,9 @@ public:
     // void cropResetRequested() override;
     void cropEnableChanged(bool enabled) override;
 
+    // PerspCorrectionPanelListener interface
+    void controlLineEditModeChanged(bool active) override;
+    
     // icmpanellistener interface
     void saveInputICCReference(const Glib::ustring& fname, bool apply_wb) override;
 
@@ -334,18 +349,23 @@ public:
 
     // ToolBarListener interface
     void toolSelected(ToolMode tool) override;
+    void toolDeselected(ToolMode tool) override;
     void editModeSwitchedOff() override;
 
     void setEditProvider(EditDataProvider *provider);
 
     // AutoExpListener interface
     void autoExpChanged(double expcomp, int bright, int contr, int black, int hlcompr, int hlcomprthresh, bool hlrecons) override;
-    void autoMatchedToneCurveChanged(rtengine::procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) override;
+    void autoMatchedToneCurveChanged(const std::vector<double> &curve, const std::vector<double> &curve2) override;
 
     void setAreaDrawListener(AreaDrawListener *listener) override;
 
     // DeltaEColorProvider interface
     bool getDeltaELCH(EditUniqueID id, rtengine::Coord pos, float &L, float &C, float &H) override;
+
+    void setProgressListener(rtengine::ProgressListener *pl);
+
+    void setToolShortcutManager(ToolShortcutManager *mgr);
 
 private:
     IdleRegister idle_register;

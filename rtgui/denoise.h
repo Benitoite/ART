@@ -51,23 +51,20 @@ public:
 
     void trimValues(rtengine::procparams::ProcParams* pp) override;
 
+    void toolReset(bool to_initial) override;
+
 private:
     void aggressiveChanged();
     void chrominanceMethodChanged();
-    void medianTypeChanged();
-    void medianMethodChanged();
     void smoothingEnabledToggled();
-    void smoothingMethodChanged();
     void colorSpaceChanged();
     
-    rtengine::ProcEvent EvSmoothingMethod;
-    rtengine::ProcEvent EvGuidedLumaRadius;
-    rtengine::ProcEvent EvGuidedLumaStrength;
     rtengine::ProcEvent EvGuidedChromaRadius;
-    rtengine::ProcEvent EvGuidedChromaStrength;
     rtengine::ProcEvent EvChrominanceAutoFactor;
     rtengine::ProcEvent EvLuminanceDetailThreshold;
     rtengine::ProcEvent EvColorSpace;
+    rtengine::ProcEvent EvNlDetail;
+    rtengine::ProcEvent EvNlStrength;
 
     MyComboBoxText *aggressive;
     MyComboBoxText *colorSpace;
@@ -81,17 +78,12 @@ private:
     Adjuster *chrominanceRedGreen;
     Adjuster *chrominanceBlueYellow;
     MyExpander *smoothingEnabled;
-    MyComboBoxText *smoothingMethod;
-    Gtk::VBox *medianBox;
-    MyComboBoxText *medianType;
-    MyComboBoxText *medianMethod;
-    Adjuster *medianIterations;
-    Gtk::VBox *guidedBox;
-    Adjuster *guidedLumaRadius;
-    Adjuster *guidedLumaStrength;
     Adjuster *guidedChromaRadius;
-    Adjuster *guidedChromaStrength;
+    Adjuster *nlDetail;
+    Adjuster *nlStrength;
 
     IdleRegister idle_register;
+
+    rtengine::procparams::DenoiseParams initial_params;
 };
 

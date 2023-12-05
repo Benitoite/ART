@@ -17,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _IMAGESOURCE_
-#define _IMAGESOURCE_
+#pragma once
 
 #include <glibmm.h>
 #include <vector>
@@ -58,20 +57,20 @@ protected:
     Glib::ustring fileName;
     FramesData* idata;
     ImageMatrices imatrices;
-    double dirpyrdenoiseExpComp;
+    // double dirpyrdenoiseExpComp;
 
 public:
     ImageSource(): references (1), redAWBMul(-1.), greenAWBMul(-1.), blueAWBMul(-1.),
-        embProfile(nullptr), idata(nullptr), dirpyrdenoiseExpComp(INFINITY) {}
+                   embProfile(nullptr), idata(nullptr) {} //, dirpyrdenoiseExpComp(INFINITY) {}
 
     ~ImageSource() override {}
     virtual int load(const Glib::ustring &fname) = 0;
-    virtual void preprocess(const RAWParams &raw, const LensProfParams &lensProf, const CoarseTransformParams& coarse, bool prepareDenoise = true) {};
+    virtual void preprocess(const RAWParams &raw, const LensProfParams &lensProf, const CoarseTransformParams& coarse, bool prepareDenoise=true, const ColorTemp &wb=ColorTemp()) {};
     virtual void demosaic(const RAWParams &raw, bool autoContrast, double &contrastThreshold) {};
     virtual void flushRawData() {};
     virtual void flushRGB() {};
     virtual void HLRecovery_Global(const ExposureParams &hrp) {};
-    virtual void HLRecovery_inpaint(float** red, float** green, float** blue) {};
+    //virtual void HLRecovery_inpaint(float** red, float** green, float** blue) {};
 
     virtual bool isRGBSourceModified() const = 0; // tracks whether cached rgb output of demosaic has been modified
 
@@ -80,6 +79,7 @@ public:
     virtual int getFrameCount() = 0;
     virtual int getFlatFieldAutoClipValue() = 0;
 
+    virtual void getWBMults(const ColorTemp &ctemp, const procparams::RAWParams &raw, std::array<float, 4>& scale_mul, float &autoGainComp, float &rm, float &gm, float &bm) const = 0;
 
     // use right after demosaicing image, add coarse transformation and put the result in the provided Imagefloat*
     virtual void getImage(const ColorTemp &ctemp, int tran, Imagefloat* image, const PreviewProps &pp, const ExposureParams &hlp, const RAWParams &raw) = 0;
@@ -130,15 +130,16 @@ public:
     }
 
     // for RAW files, compute a tone curve using histogram matching on the embedded thumbnail
-    virtual void getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve)
+    virtual void getAutoMatchedToneCurve(const ColorManagementParams &cp, std::vector<double> &outCurve, std::vector<double> &outCurve2)
     {
-        outCurve = { 0.0 };
+        outCurve = { 0 };
+        outCurve2 = { 0 };
     }
     
-    double getDirPyrDenoiseExpComp()
-    {
-        return dirpyrdenoiseExpComp;
-    }
+    // double getDirPyrDenoiseExpComp()
+    // {
+    //     return dirpyrdenoiseExpComp;
+    // }
     // functions inherited from the InitialImage interface
     Glib::ustring getFileName() override
     {
@@ -159,8 +160,13 @@ public:
     virtual void getRawValues(int x, int y, int rotate, int &R, int &G, int &B) = 0;
 
     virtual bool getDeconvAutoRadius(float *out=nullptr) { return false; }
+
+    virtual void  filmNegativeProcess(const procparams::FilmNegativeParams &params, std::array<float, 3>& filmBaseValues) {}
     virtual bool getFilmNegativeExponents(Coord2D spotA, Coord2D spotB, int tran, const FilmNegativeParams& currentParams, std::array<float, 3>& newExps) { return false; }
-    virtual void filmNegativeProcess(const procparams::FilmNegativeParams &params) {}
+    virtual bool getImageSpotValues (Coord2D spot, int spotSize, int tran, const procparams::FilmNegativeParams &params, std::array<float, 3>& rawValues) { return false; };
+
+    virtual void wbMul2Camera(double &rm, double &gm, double &bm) = 0;
+    virtual void wbCamera2Mul(double &rm, double &gm, double &bm) = 0;
 };
+
 } // namespace rtengine
-#endif

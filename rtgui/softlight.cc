@@ -25,11 +25,12 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-SoftLight::SoftLight(): FoldableToolPanel(this, "softlight", M("TP_SOFTLIGHT_LABEL"), false, true)
+SoftLight::SoftLight(): FoldableToolPanel(this, "softlight", M("TP_SOFTLIGHT_LABEL"), false, true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvSoftLightEnabled = m->newEvent(M_LUMINANCE, "HISTORY_MSG_SOFTLIGHT_ENABLED");
     EvSoftLightStrength = m->newEvent(M_LUMINANCE, "HISTORY_MSG_SOFTLIGHT_STRENGTH");
+    EvToolEnabled.set_action(M_LUMINANCE);
     
     strength = Gtk::manage(new Adjuster(M("TP_SOFTLIGHT_STRENGTH"), 0., 100., 1., 30.));
     strength->setAdjusterListener(this);
@@ -59,6 +60,7 @@ void SoftLight::write(ProcParams *pp)
 void SoftLight::setDefaults(const ProcParams *defParams)
 {
     strength->setDefault(defParams->softlight.strength);
+    initial_params = defParams->softlight;
 }
 
 
@@ -88,3 +90,19 @@ void SoftLight::enabledChanged ()
     }
 }
 
+
+void SoftLight::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.softlight = initial_params;
+    }
+    pp.softlight.enabled = getEnabled();
+    read(&pp);
+}
+
+
+void SoftLight::registerShortcuts(ToolShortcutManager *mgr)
+{
+    mgr->addShortcut(GDK_KEY_o, this, strength);
+}

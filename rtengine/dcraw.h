@@ -61,9 +61,12 @@ public:
     ,RT_blacklevel_from_constant(ThreeValBool::X)
     ,RT_matrix_from_constant(ThreeValBool::X)
     ,RT_baseline_exposure(0)
+    ,RT_OpcodeList2_start(-1)
+    ,RT_OpcodeList2_len(0)
 	,getbithuff(this,ifp,zero_after_ff)
 	,nikbithuff(ifp)
     {
+        shrink=0;
         memset(&hbd, 0, sizeof(hbd));
         aber[0]=aber[1]=aber[2]=aber[3]=1;
         gamm[0]=0.45;gamm[1]=4.5;gamm[2]=gamm[3]=gamm[4]=gamm[5]=0;
@@ -159,6 +162,8 @@ protected:
     ThreeValBool RT_matrix_from_constant;
     std::string RT_software;
     double RT_baseline_exposure;
+    int RT_OpcodeList2_start;
+    int RT_OpcodeList2_len;
 
     struct PanasonicRW2Info {
         ushort bpp;
@@ -205,9 +210,11 @@ public:
             uint32_t MediaSize;
             INT64 MediaOffset;
             uint32_t MediaType; /* 1 -> /C/RAW, 2-> JPEG */
+
+            crx_data_header_t() = default;
         };
         static constexpr size_t CRXTRACKS_MAXCOUNT = 16;
-        crx_data_header_t crx_header[CRXTRACKS_MAXCOUNT];
+        std::array<crx_data_header_t, CRXTRACKS_MAXCOUNT> crx_header;
         int crx_track_selected;
         short CR3_CTMDtag;
     };
@@ -241,6 +248,7 @@ protected:
       int width, height, bps, comp, phint, offset, flip, samples, bytes;
       int tile_width, tile_length, sample_format, predictor;
       float shutter;
+      int extrasamples;
     } tiff_ifd[10];
 
     struct ph1 {

@@ -1,4 +1,4 @@
-#2020-02-09 Felipe Bouabci Simões
+#2020-10-23 Felipe Bouabci Simões
 ABOUT_TAB_BUILD;Versão
 ABOUT_TAB_CREDITS;Créditos
 ABOUT_TAB_LICENSE;Licença
@@ -48,8 +48,12 @@ DYNPROFILEEDITOR_PROFILE;Perfil de Processamento
 EDITWINDOW_TITLE;Edição de Imagem
 EDIT_OBJECT_TOOLTIP;Exibe um widget na janela de visualização que permite ajustar essa ferramenta.
 EDIT_PIPETTE_TOOLTIP;Para adicionar um ponto de ajuste à curva, segure a tecla Ctrl enquanto clica com o botão esquerdo no ponto desejado na visualização da imagem.\nPara ajustar o ponto, mantenha pressionada a tecla Ctrl enquanto clica com o botão esquerdo na área correspondente na visualização, então solte Ctrl (amenos que deseje um fino controle) e enquanto ainda mantém pressionado o botão esquerdo do mouse, mova o mouse para cima ou para baixo para mover esse ponto para cima ou para baixo na curva.
+ERROR_MSG_FILE_READ;Erro ao ler arquivo: %1
+ERROR_MSG_MAXERRORS;... (%1 erro(s) anterior(es) não mostrados)
+ERROR_MSG_METADATA_VALUE;Metadados: erro definindo %1 para %2
 EXIFFILTER_APERTURE;Abertura
 EXIFFILTER_CAMERA;Câmera
+EXIFFILTER_DATE;Data
 EXIFFILTER_EXPOSURECOMPENSATION;Compensação de exposição (EV)
 EXIFFILTER_FILETYPE;Tipo de arquivo
 EXIFFILTER_FOCALLEN;Distância focal
@@ -58,15 +62,19 @@ EXIFFILTER_ISO;ISO
 EXIFFILTER_LENS;Lente
 EXIFFILTER_METADATAFILTER;Ativar filtros de metadados
 EXIFFILTER_SHUTTER;Obturador
+EXIFPANEL_ACTIVATE_ALL_HINT;Selecionar todas as etiquetas
+EXIFPANEL_ACTIVATE_NONE_HINT;Desselecionar todas as etiqueta
 EXIFPANEL_ADDEDIT;Adicionar/Editar
-EXIFPANEL_ADDEDITHINT;Adicionar nova tag ou editar tag.
+EXIFPANEL_ADDEDITHINT;Adicionar nova etiqueta ou editar etiqueta.
 EXIFPANEL_ADDTAGDLG_ENTERVALUE;Insira valor
-EXIFPANEL_ADDTAGDLG_SELECTTAG;Selecionar tag
-EXIFPANEL_ADDTAGDLG_TITLE;Adicionar/Editar Tag
+EXIFPANEL_ADDTAGDLG_SELECTTAG;Selecionar etiqueta
+EXIFPANEL_ADDTAGDLG_TITLE;Adicionar/Editar etiqueta
 EXIFPANEL_RESET;Restaurar
 EXIFPANEL_RESETALL;Restaurar Tudo
 EXIFPANEL_RESETALLHINT;Restaurar todas as tags aos seus valores originais.
 EXIFPANEL_RESETHINT;Restaurar as tags selecionadas aos seus valores originais.
+EXIFPANEL_BASIC_GROUP;Básico
+EXIFPANEL_VALUE_NOT_SHOWN;Não mostrado
 EXPORT_BYPASS;Etapas de processamento para ignorar
 EXPORT_BYPASS_ALL;Selecionar / Desmarcar Tudo
 EXPORT_BYPASS_DEFRINGE;Ignorar Remover franja
@@ -152,7 +160,7 @@ FILEBROWSER_POPUPTRASH;Mover para a lixeira
 FILEBROWSER_POPUPUNRANK;Desclassificar
 FILEBROWSER_POPUPUNTRASH;Remover da lixeira
 FILEBROWSER_QUERYBUTTONHINT;Limpar a consulta Localizar
-FILEBROWSER_QUERYHINT;Digite nomes de arquivos para procurar. Suporta nomes de arquivos parciais. Separe os termos de pesquisa usando vírgulas, por exemplo\n<i>1001,1004,1199</i>\n\nExcluir termos de pesquisa prefixando-os com <i>!=</i>\npor ex.\n<i>!=1001,1004,1199</i>\n\nAtalhos:\n<b>Ctrl-f</b> - foque a caixa Localizar,\n<b>Enter</b> - pesquisa,\n<b>Esc</b> - Limpe a caixa Localizar,\n<b>Shift-Esc</b> - desfoque a caixa Localizar.
+FILEBROWSER_QUERYHINT;Digite nomes de arquivos para procurar. Suporta nomes de arquivos parciais. Separe os termos de pesquisa usando vírgulas, por exemplo\n<i>1001,1004,1199</i>\n\nExcluir termos de pesquisa prefixando-os com <i>!=</i>\npor ex.\n<i>!=1001,1004,1199</i>\n\nAtalhos:\n<b>Ctrl-f</b> - foque a caixa Localizar,\n<b>Enter</b> - pesquisa,\n<b>Shift-Esc</b> - Limpe a caixa Localizar,\n<b>Esc</b> - desfoque a caixa Localizar.
 FILEBROWSER_QUERYLABEL; Localizar:
 FILEBROWSER_RANK1_TOOLTIP;Classificação 1 *\nAtalho: <b>Shift-1</b>
 FILEBROWSER_RANK2_TOOLTIP;Classificação 2 *\nAtalho: <b>Shift-2</b>
@@ -205,6 +213,8 @@ GENERAL_CANCEL;Cancelar
 GENERAL_CHANGED;Modificado
 GENERAL_CLOSE;Fechar
 GENERAL_CURRENT;Atual
+GENERAL_DELETE_ALL;Apagar tudo
+GENERAL_EDIT;Editar
 GENERAL_DISABLE;Desabilitar
 GENERAL_DISABLED;Desabilitado
 GENERAL_ENABLE;Habilitar
@@ -223,7 +233,10 @@ GENERAL_SAVE_AS;Salvar como...
 GENERAL_SLIDER;Controle deslizante
 GENERAL_UNCHANGED;(Inalterado)
 GENERAL_WARNING;Atenção
+GENERAL_DEPRECATED;Depreciado
+GENERAL_DEPRECATED_TOOLTIP;Depreciado! Será removido em uma versão futura.
 GIMP_PLUGIN_INFO;Bem-vindo ao plugin ART do GIMP!\nDepois de terminar de editar, feche a janela principal do ART e a imagem será importada automaticamente no GIMP.
+HISTOGRAM_RAW_STATS_TOOLTIP;min: %1 (%2), max: %3 (%4), pico: %5 (%6)\n    intervalo: %7 EV, valores: %8, pixels: %9
 HISTOGRAM_TOOLTIP_B;Mostrar/Ocultar histograma azul.
 HISTOGRAM_TOOLTIP_BAR;Mostrar/ocultar barra do indicador RGB.\nClique com o botão direito do mouse na visualização da imagem para congelar/descongelar.
 HISTOGRAM_TOOLTIP_CHRO;Mostrar/Ocultar histograma de cromaticidade.
@@ -396,9 +409,7 @@ HISTORY_MSG_155;Vibração - Evita mudança de cor
 HISTORY_MSG_156;Vibração - Link pastel/saturado
 HISTORY_MSG_157;Vibração - Limite P/S
 HISTORY_MSG_158;TB - Intensidade
-HISTORY_MSG_159;TB - Borda parando
 HISTORY_MSG_160;TB - Escala
-HISTORY_MSG_161;TB - Reponderar iteração
 HISTORY_MSG_162;Impulso de textura
 HISTORY_MSG_163;Curvas RGB - Vermelho
 HISTORY_MSG_164;Curvas RGB - Verde
@@ -723,6 +734,10 @@ HISTORY_MSG_LOCALCONTRAST_LIGHTNESSMASK;Contraste local - Máscara L
 HISTORY_MSG_LOCALCONTRAST_MASKBLUR;Contraste local - desfoque da máscara
 HISTORY_MSG_LOCALCONTRAST_SHOWMASK;Contraste local - mostrar máscara
 HISTORY_MSG_LOCALCONTRAST_AREAMASK;Contraste local - máscara de área
+HISTORY_MSG_CHMIXER_MODE;Misturador de canais - modo
+HISTORY_MSG_CHMIXER_RED_PRIMARY;Misturador de canais - Vermelho primário
+HISTORY_MSG_CHMIXER_GREEN_PRIMARY;Misturador de canais - Verde primário
+HISTORY_MSG_CHMIXER_BLUE_PRIMARY;Misturador de canais - Azul primário
 HISTORY_MSG_CLAMPOOG;Recortar cores fora da gama
 HISTORY_MSG_COLORCORRECTION_AB;CC - correção de matiz
 HISTORY_MSG_COLORCORRECTION_AREAMASK;CC - máscara de área da região
@@ -738,10 +753,13 @@ HISTORY_MSG_COLORCORRECTION_MASKBLUR;CC - desfoque da máscara de região
 HISTORY_MSG_COLORCORRECTION_OFFSET;CC - compensação de região
 HISTORY_MSG_COLORCORRECTION_PIVOT;CC - pivô da região
 HISTORY_MSG_COLORCORRECTION_POWER;CC - potência da região
-HISTORY_MSG_COLORCORRECTION_SATURATION;CC - saturação
+HISTORY_MSG_COLORCORRECTION_INSATURATION;CC - saturação de entrada
+HISTORY_MSG_COLORCORRECTION_OUTSATURATION;CC - saturação de saída
 HISTORY_MSG_COLORCORRECTION_SHOWMASK;CC - mostrar máscara da região
 HISTORY_MSG_COLORCORRECTION_SLOPE;CC - declive da região
 HISTORY_MSG_COLORCORRECTION_DELTAEMASK;CC- máscara dE
+HISTORY_MSG_COLORCORRECTION_DRAWNMASK;CC - máscara do pincel
+HISTORY_MSG_COLORCORRECTION_PARAMETRICMASK;CC - máscara paramétrica
 HISTORY_MSG_COLORTONING_LABGRID_VALUE;CT - Correção de cor
 HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR;NR - força da crominância automática
 HISTORY_MSG_DENOISE_GUIDED_EPSILON;NR - epsilon GF
@@ -753,13 +771,17 @@ HISTORY_MSG_DENOISE_LUMINANCE_DETAIL_THRESHOLD;NR - Limiar de detalhe
 HISTORY_MSG_DENOISE_LUMINANCE_CURVE;NR - Curva de luminância
 HISTORY_MSG_DENOISE_GUIDED_CHROMA_STRENGTH;NR - Força C do GF
 HISTORY_MSG_DENOISE_SMOOTHING_METHOD;NR - Método de suavização
+HISTORY_MSG_DEHAZE_BLACKPOINT;Remover neblina - Correção de pontos pretos
 HISTORY_MSG_DEHAZE_DEPTH;Remover neblina - Profundidade
 HISTORY_MSG_DEHAZE_ENABLED;Remover neblina
 HISTORY_MSG_DEHAZE_LUMINANCE;Remover névoa - Apenas luminância
 HISTORY_MSG_DEHAZE_SHOW_DEPTH_MAP;Remover neblina - Mostrar mapa profundidade
 HISTORY_MSG_DEHAZE_STRENGTH;Remover neblina - Intensidade
+HISTORY_MSG_DISTORTION_AUTO;Correção de Distorção Automática
 HISTORY_MSG_DUALDEMOSAIC_AUTO_CONTRAST;Demosaico dual - Limite automático
 HISTORY_MSG_DUALDEMOSAIC_CONTRAST;Demosaico dual - Limite de contraste
+HISTORY_MSG_EPD_DETAIL_THRESHOLD;TB - escala do detalhe
+HISTORY_MSG_EPD_ITERATIONS;TB - iterações
 HISTORY_MSG_EPD_LIST;TB - Regiões
 HISTORY_MSG_EPD_HUEMASK;TB - Máscara H
 HISTORY_MSG_EPD_CHROMATICITYMASK;TB - Máscara C
@@ -769,9 +791,13 @@ HISTORY_MSG_EPD_SHOWMASK;TB - Mostrar máscara
 HISTORY_MSG_EPD_AREAMASK;TB - Máscara de área
 HISTORY_MSG_EPD_CONTRASTTHRESHOLDMASK;TB - Máscara de limiar de contraste
 HISTORY_MSG_EPD_DELTAEMASK;TB - Máscara dE
+HISTORY_MSG_EPD_DRAWNMASK;TB - máscara do pincel
+HISTORY_MSG_EPD_PARAMETRICMASK;TB - máscara paramétrica
 HISTORY_MSG_EXPOSURE_BLACK;Exposição - Ponto preto
 HISTORY_MSG_FILMNEGATIVE_ENABLED;Negativo de Filme
+HISTORY_MSG_FILMNEGATIVE_FILMBASE;Cor base do filme
 HISTORY_MSG_FILMNEGATIVE_VALUES;Valores do negativo de filme
+HISTORY_MSG_FLATFIELD_EMBEDDED;Campo-plano embutido
 HISTORY_MSG_GRAIN_ENABLED;Granulação de Filme
 HISTORY_MSG_GRAIN_ISO;Granulação de Filme - ISO
 HISTORY_MSG_GRAIN_STRENGTH;Granulação de Filme - Força
@@ -784,6 +810,7 @@ HISTORY_MSG_ICM_OUTPUT_TYPE;Tipo de perfil de saída
 HISTORY_MSG_ICM_WORKING_GAMMA;Gama de trabalho
 HISTORY_MSG_ICM_WORKING_SLOPE;Declive de trabalho
 HISTORY_MSG_ICM_WORKING_TRC_METHOD;Método de trabalho TRC
+HISTORY_MSG_LABMASKS_MASK_NAME;Nome da máscara
 HISTORY_MSG_LOCALCONTRAST_AMOUNT;Contraste Local - Montante
 HISTORY_MSG_LOCALCONTRAST_CONTRAST;Contraste Local - Contraste residual
 HISTORY_MSG_LOCALCONTRAST_CONTRASTTHRESHOLDMASK;Contraste Local - Máscara de limiar de contraste
@@ -794,6 +821,8 @@ HISTORY_MSG_LOCALCONTRAST_LIGHTNESS;Contraste Local - Contraste
 HISTORY_MSG_LOCALCONTRAST_MODE;Contraste Local - Método
 HISTORY_MSG_LOCALCONTRAST_RADIUS;Contraste Local - Raio
 HISTORY_MSG_LOCALCONTRAST_DELTAEMASK;Contraste Local - Máscara dE
+HISTORY_MSG_LOCALCONTRAST_DRAWNMASK;Contraste local - máscara de pincel
+HISTORY_MSG_LOCALCONTRAST_PARAMETRICMASK;Contraste local - máscara paramétrica
 HISTORY_MSG_LOGENC_AUTO;Log - Auto
 HISTORY_MSG_LOGENC_AUTOGRAY;Log - Cinza auto
 HISTORY_MSG_LOGENC_REGULARIZATION;Log - Regularização
@@ -806,8 +835,10 @@ HISTORY_MSG_METADATA_MODE;Modo de cópia de metadados
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontraste - Limite de contraste
 HISTORY_MSG_PCVIGNETTE_CENTER;VF - Centralizar
 HISTORY_MSG_PERSPECTIVE_ENABLED;Correção de perspectiva
+HISTORY_MSG_PERSPECTIVE_CTRL_LINE;Perspectiva - Linhas de controle
 HISTORY_MSG_PERSPECTIVE_LENS;Perspectiva - dados da lente
 HISTORY_MSG_PIXELSHIFT_DEMOSAIC;PS - Método Demosaico para Movimento
+HISTORY_MSG_PREPROCESS_DYNROWNOISEFILTER;Filtro de ruído de linha dinâmico
 HISTORY_MSG_PREPROCESS_LINEDENOISE_DIRECTION;Direção do filtro de ruído de linha
 HISTORY_MSG_PREPROCESS_PDAFLINESFILTER;Filtros de linha PDAF
 HISTORY_MSG_PRSHARPEN_CONTRAST;PRS - Limite de contraste
@@ -824,9 +855,11 @@ HISTORY_MSG_SHARPENING_RLD_CORNERLATITUDE;Nitidez - Latitude dos cantos RLD
 HISTORY_MSG_SHARPENING_RLD_CORNERRADIUS;Nitidez - aumentar raio dos cantos RLD
 HISTORY_MSG_SH_COLORSPACE;S/H - Espaço de cor
 HISTORY_MSG_SMOOTHING_ENABLED;Suavização
+HISTORY_MSG_SMOOTHING_MODE;Suavização - modo
 HISTORY_MSG_SMOOTHING_CHANNEL;Suavização - canal
 HISTORY_MSG_SMOOTHING_CONTRASTTHRESHOLDMASK;Suavização - máscara de limiar de contraste
 HISTORY_MSG_SMOOTHING_RADIUS;Suavização - raio
+HISTORY_MSG_SMOOTHING_SIGMA;Suavização - raio
 HISTORY_MSG_SMOOTHING_EPSILON;Suavização - detalhe
 HISTORY_MSG_SMOOTHING_ITERATIONS;Suavização - iterações
 HISTORY_MSG_SMOOTHING_LIST;Suavização - regiões
@@ -837,19 +870,27 @@ HISTORY_MSG_SMOOTHING_MASKBLUR;Suavização - desfoque da máscara
 HISTORY_MSG_SMOOTHING_SHOWMASK;Suavização - mostrar máscara
 HISTORY_MSG_SMOOTHING_AREAMASK;Suavização - máscara da área
 HISTORY_MSG_SMOOTHING_DELTAEMASK;Suavização - máscara dE
+HISTORY_MSG_SMOOTHING_DRAWNMASK;Suavização - máscara de pincel
+HISTORY_MSG_SMOOTHING_PARAMETRICMASK;Suavização - máscara paramétrica
 HISTORY_MSG_SOFTLIGHT_ENABLED;Luz suave
 HISTORY_MSG_SOFTLIGHT_STRENGTH;Luz suave - Intensidade
-HISTORY_MSG_TM_FATTAL_ANCHOR;DRC - Âncora
+HISTORY_MSG_SPOT;Remoção de ponto
+HISTORY_MSG_SPOT_ENTRY;Remoção de ponto - Modif. ponto
+HISTORY_MSG_TM_FATTAL_SATCONTROL;DRC - Controle de saturação
 HISTORY_MSG_TONE_EQUALIZER_ENABLED;Equalizador de tons
 HISTORY_MSG_TONE_EQUALIZER_BANDS;Equalizador de tons - Bandas
 HISTORY_MSG_TONE_EQUALIZER_REGULARIZATION;Equalizador de tons - Regularização
+HISTORY_MSG_TONE_EQUALIZER_SHOW_COLOR_MAP;Equalizador de tons - Mapa tonal
 HISTORY_MSG_TONECURVE_SATCURVE;Curva de tons - Saturação
+HISTORY_MSG_TONECURVE_PERCEPTUAL_STRENGTH;Curva de tons - Força perceptiva
+HISTORY_MSG_WBALANCE_MULT;WB - multiplicadores
 HISTORY_NEWSNAPSHOT;Adicionar
 HISTORY_NEWSNAPSHOT_TOOLTIP;Atalho: <b>Alt-s</b>
 HISTORY_SNAPSHOT;Instantâneo
 HISTORY_SNAPSHOTS;Instantâneos
+HISTORY_SNAPSHOT_CONFIRM_UPDATE;Sobrescrever o instantâneo atual?
 ICCPROFCREATOR_COPYRIGHT;Direito Autoral:
-ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Restaurar para o direito autoral padrão, concedido a "ART, CC0"
+ICCPROFCREATOR_COPYRIGHT_RESET_TOOLTIP;Restaurar para o direito autoral padrão, concedido a "RawTherapee, CC0"
 ICCPROFCREATOR_CUSTOM;Personalizado
 ICCPROFCREATOR_DESCRIPTION;Descrição:
 ICCPROFCREATOR_DESCRIPTION_ADDPARAM;Anexar valores da gama e declive à descrição
@@ -896,6 +937,7 @@ INSPECTOR_RAW_LINEAR;Renderização rápida raw com uma curva de tons linear.\nA
 INSPECTOR_RAW_FILM;Renderização rápida raw com uma curva de tons como filme.\nAtalho: <b>f</b>.
 INSPECTOR_RAW_CLIP;Pixels recortados raw.\nAtalho: <b>w</b>.
 INSPECTOR_RAW_SHADOW;Renderização rápida raw com uma curva de tons que impulsiona sombras.\nAtalho: <b>s</b>.
+INSPECTOR_SPLIT;Visão dividida.\nAtalho: <b>y</b>.
 INSPECTOR_ZOOM_FIT;Ajustar para janela.\nAtalho: <b>x</b>.
 INSPECTOR_ZOOM_11;Zoom para 100%.\nAtalho: <b>z</b>.
 IPTCPANEL_CATEGORY;Categoria
@@ -993,6 +1035,7 @@ MAIN_TAB_FAVORITES;Favoritos
 MAIN_TAB_FAVORITES_TOOLTIP;Atalho: <b>Alt-u</b>
 MAIN_TAB_FILTER; Filtro
 MAIN_TAB_INSPECT; Inspecionar
+MAIN_TAB_INSPECT_TOOLTIP;Ativar o inspetor.\nAtalho: <b>Ctrl-i</b>
 MAIN_TAB_IPTC;IPTC
 MAIN_TAB_LOCAL;Edição local
 MAIN_TAB_LOCAL_TOOLTIP;Atalho: <b>Alt-x</b>
@@ -1007,21 +1050,24 @@ MAIN_TOOLTIP_BACKCOLOR1;Cor de fundo da pré-visualização: <b>Preto</b>\nAtalh
 MAIN_TOOLTIP_BACKCOLOR2;Cor de fundo da pré-visualização: <b>Branco</b>\nAtalho: <b>9</b>
 MAIN_TOOLTIP_BACKCOLOR3;Cor de fundo da pré-visualização: <b>Cinza médio</b>\nAtalho: <b>9</b>
 MAIN_TOOLTIP_BEFOREAFTERLOCK;<b>Travar</b> / <b>Destravar</b> a <b>Antes</b> visualização\n\n<b>Travar</b>: mantenha o <b>Antes</b> visualização inalterada.\nÚtil para avaliar o efeito cumulativo de várias ferramentas.\nAlém disso, comparações podem ser feitas a qualquer momento.\n\n<b>Destravar</b>: o <b>Antes</b> visualização seguinte <b>Depois</b> visualização anterior, mostrando a imagem antes do efeito da ferramenta atualmente utilizada.
+MAIN_TOOLTIP_FALSECOLORS;Alternar indicação de exposição usando falsa cor.\nAtalho: <b>e</b>\n\nChave (intervalo IRE):\n%1
 MAIN_TOOLTIP_HIDEHP;Mostrar/Ocultar o painel esquerdo (incluindo o histórico).\nAtalho: <b>l</b>
-MAIN_TOOLTIP_INDCLIPPEDH;Indicação de realce recortado.\nAtalho: <b><</b>
-MAIN_TOOLTIP_INDCLIPPEDS;Indicação de sombra recortada.\nAtalho: <b>></b>
+MAIN_TOOLTIP_INDCLIPPEDH;Indicação de realce recortado.\nAtalho: <b>&gt;</b>
+MAIN_TOOLTIP_INDCLIPPEDS;Indicação de sombra recortada.\nAtalho: <b>&lt;</b>
 MAIN_TOOLTIP_PREVIEWB;Pré-visualize o <b>Canal Azul</b>.\nAtalho: <b>b</b>
 MAIN_TOOLTIP_PREVIEWFOCUSMASK;Pré-visualize a <b>Máscara de Foco</b>.\nAtalho: <b>Shift-f</b>\n\nMais preciso em imagens com pouca profundidade de campo, baixo ruído e níveis de zoom mais altos.\n\nPara melhorar a precisão da detecção de imagens ruidosas, avalie com zoom menor, cerca de 10-30%.
 MAIN_TOOLTIP_PREVIEWG;Pré-visualize o <b>Canal verde</b>.\nAtalho: <b>g</b>
 MAIN_TOOLTIP_PREVIEWL;Pré-visualize a <b>Luminosidade</b>.\nAtalho: <b>v</b>\n\n0.299*R + 0.587*G + 0.114*B
 MAIN_TOOLTIP_PREVIEWR;Pré-visualize o <b>Canal vermelho</b>.\nAtalho: <b>r</b>
-MAIN_TOOLTIP_PREVIEWSHARPMASK;Pré-visualize a <b>Máscara de Contraste de Nitidez</b>.\nAtalho: <b>p</b>\n\nSó funciona quando a nitidez está ativada e o zoom >= 100%.
+MAIN_TOOLTIP_PREVIEWSHARPMASK;Pré-visualize a <b>Máscara de Contraste de Nitidez</b>.\nAtalho: <b>Shift-p</b>\n\nSó funciona quando a nitidez está ativada e o zoom >= 100%.
 MAIN_TOOLTIP_QINFO;Informação rápida na imagem.\nAtalho: <b>i</b>
 MAIN_TOOLTIP_SHOWHIDELP1;Mostrar/Ocultar o painel esquerdo.\nAtalho: <b>l</b>
 MAIN_TOOLTIP_SHOWHIDERP1;Mostrar/Ocultar o painel direito.\nAtalho: <b>Ctrl-l</b>
 MAIN_TOOLTIP_SHOWHIDETP1;Mostrar/Ocultar o painel superior.\nAtalho: <b>Shift-l</b>
 MAIN_TOOLTIP_THRESHOLD;Limite
 MAIN_TOOLTIP_TOGGLE;Alternar a visualização de <b>Antes</b>/<b>Depois</b>.\nAtalho: <b>Shift-b</b>
+METADATA_LOAD_ERROR;Erro ao carregar metadados de %1: %2
+METADATA_SAVE_ERROR;Erro ao salvar metadados de %1: %2
 MONITOR_PROFILE_SYSTEM;Padrão do sistema
 NAVIGATOR_B;B:
 NAVIGATOR_C;C:
@@ -1115,6 +1161,7 @@ PARTIALPASTE_SHARPENING;Nitidez (USM/RL)
 PARTIALPASTE_SHARPENMICRO;Microcontraste
 PARTIALPASTE_SMOOTHING;Suavização
 PARTIALPASTE_SOFTLIGHT;Luz suave
+PARTIALPASTE_SPOT;Remoção de ponto
 PARTIALPASTE_TM_FATTAL;Compressão de Amplitude Dinâmica(DRC)
 PARTIALPASTE_TM_LOG;Codificação log
 PARTIALPASTE_TONE_EQUALIZER;Equalizador de tons
@@ -1122,6 +1169,7 @@ PARTIALPASTE_VIBRANCE;Vibração
 PARTIALPASTE_VIGNETTING;Correção de vinheta
 PARTIALPASTE_WHITEBALANCE;Balanço de branco
 PREFERENCES_ADD;Adicionar
+PREFERENCES_ADJUSTER_FORCE_LINEAR;Forçar escala linear nos ajustes deslizantes
 PREFERENCES_APPEARANCE;Aparência
 PREFERENCES_APPEARANCE_COLORPICKERFONT;Fonte do seletor de cor
 PREFERENCES_APPEARANCE_CROPMASKCOLOR;Cor da máscara de corte
@@ -1174,6 +1222,12 @@ PREFERENCES_DIRSOFTWARE;Diretório de instalação
 PREFERENCES_EDITORCMDLINE;Linha de comando personalizada
 PREFERENCES_EDITORLAYOUT;Layout do Editor
 PREFERENCES_EXTERNALEDITOR;Editor Externo
+PREFERENCES_EXTEDITOR_DIR;Diretório de saída
+PREFERENCES_EXTEDITOR_DIR_TEMP;Dir temp do SO
+PREFERENCES_EXTEDITOR_DIR_CURRENT;Mesmo que a imagem de entrada
+PREFERENCES_EXTEDITOR_DIR_CUSTOM;Personalizado
+PREFERENCES_EXTEDITOR_FLOAT32;TIFF de saída 32-bit float
+PREFERENCES_EXTEDITOR_BYPASS_OUTPUT_PROFILE;Desviar do perfil de saída
 PREFERENCES_EXIFTOOL_PATH;Comando exiftool
 PREFERENCES_EXIFTOOL_PATH_TOOLTIP;Exiftool é usada como um recurso para descodificar metadados para formatos ainda não suportados pelo Exiv2
 PREFERENCES_FBROWSEROPTS;Navegador de Arquivos / Opções de Miniaturas
@@ -1225,6 +1279,9 @@ PREFERENCES_OVERLAY_FILENAMES;Mostrar nomes de arquivos por cima das miniaturas 
 PREFERENCES_OVERLAY_FILENAMES_FILMSTRIP;Mostrar nomes de arquivos por cima das miniaturas no painel do editor
 PREFERENCES_OVERWRITEOUTPUTFILE;Sobrescrever arquivos de saída existentes
 PREFERENCES_PANFACTORLABEL;Taxa de amplificação do deslocamento do cursor
+PREFERENCES_PARAMS_SIDECAR_STYLE;Estilo do sidecar do perfil de processamento
+PREFERENCES_PARAMS_SIDECAR_FULL;Adicionar .arp ao nome do arquivo (NOMEDOARQUIVO.ext.arp para NOMEDOARQUIVO.ext)
+PREFERENCES_PARAMS_SIDECAR_STRIP_EXT;Substituir extensão com .arp (NOMEDOARQUIVO.arp para NOMEDOARQUIVO.ext)
 PREFERENCES_PARSEDEXT;Extensões Analisadas
 PREFERENCES_PARSEDEXTADD;Extensão Adicionada
 PREFERENCES_PARSEDEXTADDHINT;Adicione a extensão inserida à lista.
@@ -1247,6 +1304,9 @@ PREFERENCES_PROFILESAVECACHE;Salvar o perfil de processamento no cache
 PREFERENCES_PROFILESAVEINPUT;Salvar o perfil de processamento próximo ao arquivo de entrada
 PREFERENCES_PROFILESAVELOCATION;Local de salvamento do perfil de processamento
 PREFERENCES_PROFILE_NONE;Nenhum
+PREFERENCES_PROFILE_SAVE_OUTPUT;Perfis de processamento para imagens de saída
+PREFERENCES_PROFILE_SAVE_OUTPUT_SIDECAR;Salvar em um arquivo sidecar (saída.ext.arp para saída.ext)
+PREFERENCES_PROFILE_SAVE_OUTPUT_EMBEDDED;Embutir nos metadados
 PREFERENCES_PRTINTENT;Intenção de renderização
 PREFERENCES_PRTPROFILE;Perfil de cor
 PREFERENCES_PSPATH;Diretório de instalação do Adobe Photoshop
@@ -1284,12 +1344,20 @@ PREFERENCES_THUMBNAIL_INSPECTOR_RAW_IF_NO_JPEG_FULLSIZE;JPEG incorporado se tama
 PREFERENCES_THUMBNAIL_INSPECTOR_RAW_FILM_CURVE;Use uma curva de filme padrão para a renderização raw
 PREFERENCES_THUMBNAIL_RATING;Carregar/guardar dados de classificação de miniaturas de/para sidecars XMP
 PREFERENCES_TP_LABEL;Painel de ferramentas:
+PREFERENCES_TP_DISABLE;Acizentar ferramentas inativas
 PREFERENCES_TP_VSCROLLBAR;Ocultar barra de rolagem vertical
-PREFERENCES_USEBUNDLEDPROFILES;Use perfis agrupados
+PREFERENCES_USEBUNDLEDPROFILES;Usar perfis agrupados
+PREFERENCES_WBPREVIEW_LABEL;Posição do balanço de brancos na previsão de pipeline:
+PREFERENCES_WBPREVIEW_AFTER;Depois do demosaico (mais rápido)
+PREFERENCES_WBPREVIEW_BEFORE;Antes do demosaico (mais preciso)
+PREFERENCES_WBPREVIEW_BEFORE_HIGH_DETAIL;ntes do demosaico a >=100% zoom, depois nos outros casos
 PREFERENCES_WORKFLOW;Layout
 PREFERENCES_XMP_SIDECAR_MODE;Estilo do sidecar XMP
 PREFERENCES_XMP_SIDECAR_MODE_STD;Padrão (NOMEDOARQUIVO.xmp para NOMEDOARQUIVO.ext)
 PREFERENCES_XMP_SIDECAR_MODE_EXT;Parecido-com-darktable/digiKam (NOMEDOARQUIVO.ext.xmp para NOMEDOARQUIVO.ext)
+PROCPARAMS_LOAD_ERROR;Erro ao carregar parâmetros de %1: %2
+PROCPARAMS_SAVE_ERROR;Erro ao salvar parâmetros para %1: %2
+PROCPARAMS_EMBEDDED_SAVE_WARNING;Aviso: falha ao embutir parâmetros de processamento em %1, salvando para o sidecar %2 como alternativa
 PROFILEPANEL_COPYPPASTE;Parâmetros para copiar
 PROFILEPANEL_GLOBALPROFILES;Perfis agrupados
 PROFILEPANEL_LABEL;Perfis de Processamento
@@ -1330,6 +1398,7 @@ QINFO_HDR;HDR / %2 quadro(s)
 QINFO_ISO;ISO
 QINFO_NOEXIF;Dados exif não disponíveis.
 QINFO_PIXELSHIFT;Pixel Shift / %2 quadro(s)
+QUEUE_APPLY_BATCH_PROFILE;Aplicar o seguinte perfil na exportação
 QUEUE_AUTOSTART;Início automático
 QUEUE_AUTOSTART_TOOLTIP;Começa a processar automaticamente um novo trabalho.
 QUEUE_DESTFILENAME;Caminho e nome do arquivo
@@ -1339,6 +1408,26 @@ QUEUE_LOCATION_TEMPLATE;Use modelo
 QUEUE_LOCATION_TEMPLATE_TOOLTIP;Podes usar as seguintes sequências de formatação:\n<b>%f</b>, <b>%d1</b>, <b>%d2</b>, ..., <b>%p1</b>, <b>%p2</b>, ..., <b>%r</b>, <b>%s1</b>, <b>%s2</b>, ...\n\nEssas cadeias de formatação referem-se às diferentes partes do endereço do nome da foto, alguns atributos da foto ou um índice de sequência arbitrário no processamento em lote.\n\nPor exemplo, se a foto que está sendo processada tiver o seguinte endereço do nome:\n<b><i>/inicio/rodrigo/fotos/2010-10-31/dsc0042.nef</i></b>\no significado das cadeias de formatação são:\n<b>%d4</b> = <i>inicio</i>\n<b>%d3</b> = <i>rodrigo</i>\n<b>%d2</b> = <i>fotos</i>\n<b>%d1</b> = <i>2010-10-31</i>\n<b>%f</b> = <i>dsc0042</i>\n<b>%p1</b> = <i>/inicio/rodrigo/fotos/2010-10-31/</i>\n<b>%p2</b> = <i>/inicio/rodrigo/fotos/</i>\n<b>%p3</b> = <i>/inicio/rodrigo/</i>\n<b>%p4</b> = <i>/inicio/</i>\n\n<b>%r</b> será substituído pela classificação da foto. Se a foto não tiver classificação, %r será substituído por '0'. Se a foto estiver na lixeira, %r será substituído por 'x'.\n\n<b>%s1</b>, <b>%s2</b>, etc. será substituído por um índice de sequência que é preenchido entre 1 e 9 dígitos. O índice de sequência iniciará em 1 sempre que o processamento da fila for iniciado e será incrementado em 1 para cada imagem processada.\n\nSe quiseres salvar a imagem de saída no local onde se encontra a original, escreva:\n<b>%p1/%f</b>\n\nSe quiseres salvar a imagem de saída num diretório chamado "<i>convertido</i>" localizado no diretório da imagem aberta, escreva:\n<b>%p1/convertido/%f</b>\n\nSe quiseres salvar a imagem de saída num diretório chamado\n"<i>/inicio/rodrigo/fotos/convertido/2010-10-31</i>", escreva:\n<b>%p2/convertido/%d1/%f</b>
 QUEUE_LOCATION_TITLE;Local da Saída
 QUEUE_STARTSTOP_TOOLTIP;Inicia ou para o processamento das imagens na fila.\n\nAtalho: <b>Ctrl</b>+<b>s</b>
+RENAME_DIALOG_BASEDIR;Diretório base
+RENAME_DIALOG_PATTERN;Padrão do nome do arquivo
+RENAME_DIALOG_PATTERN_TIP;Especificar o nome de saída baseado no nome e metadados da foto de origem.\n\nOs significados das strings de formatação são os seguintes:\n<b>%f</b>: nome do arquivo sem extensão\n<b>%e</b>: extensão do arquivo\n<b>%C</b>: nome da câmera (fabricante e modelo)\n<b>%M</b>: marca da câmera\n<b>%N</b>: modelo da câmera\n<b>%Y</b>: data da foto, ano (4 dígitos)\n<b>%y</b>: data da foto, ano (2 dígitos)\n<b>%m</b>: data da foto, mês (numérico)\n<b>%b</b>: data da foto, mês (nome abreviado)\n<b>%B</b>: data da foto, mês (nome completo)\n<b>%d</b>: data da foto, dia (numérico)\n<b>%a</b>: data da foto, dia (nome abreviado)\n<b>%A</b>: data da foto, dia (nome completo)\n<b>%n1</b> to <b>%n9</b>: número progressivo, com o número especificando o desvio com zeros (e.g. <b>%n2</b> resulta em <i>01</i>)\n<b>%I</b>: Velocidade do ISO\n<b>%L</b>: nome da lente\n<b>%F</b>: abertura da lente (número F)\n<b>%l</b>: distância focal\n<b>%E</b>: compensação de exposição\n<b>%s</b>: velocidade do Obturador\n<b>%r</b>: avaliação da foto\n<b>%T[<i>nomdedaetiqueta</i>]</b>: conteúdo da etiqueta de metadados <i>nomedaetiqueta</i> (com caracteres inválidos substituídos por '_')\n<b>%%</b>: '%' caractere.
+RENAME_DIALOG_ALLOW_WHITESPACE;Permitir espaços em branco no nome de saída
+RENAME_DIALOG_NAME_NORMALIZATION;Normalização do nome do arquivo
+RENAME_DIALOG_NORM_OFF;Nenhum
+RENAME_DIALOG_NORM_UPPERCASE;Caixa alta
+RENAME_DIALOG_NORM_LOWERCASE;Caixa baixa
+RENAME_DIALOG_EXT_NORMALIZATION;Normalização da extensão do arquivo
+RENAME_DIALOG_ON_EXISTING;Ação quando destino já existe
+RENAME_DIALOG_SKIP;Pular
+RENAME_DIALOG_RENAME;Gerar um nome único
+RENAME_DIALOG_PROGRESSIVE;Número progressivo
+RENAME_DIALOG_SIDECARS;Sidecars adicionais
+RENAME_DIALOG_SIDECARS_TIP;Lista de extensões de sidecars adicionais para renomear, separados por um caractere ';'. Se uma extensão começa com um '+', ela é anexada ao nome original em vez de substituir sua extensão.\nPor exemplo, se o arquivo de entrada <i>arquivo.raw</i>, especificando <i>ext1;+ext2</i> resulta nos sidecars <i>arquivo.ext1</i> e <i>arquivo.raw.ext2</i>.
+RENAME_DIALOG_FILENAMES;Arquivos para renomear
+RENAME_DIALOG_PREVIEW;Previsão
+RENAME_DIALOG_INVALID_PATTERN;Padrão inválido
+RENAME_DIALOG_INVALID_SIDECARS;Lista inválida de sidecars
+RENAME_DIALOG_ERROR;Falhou em renomear %1 para %2
 SAMPLEFORMAT_0;Formato de dados desconhecido
 SAMPLEFORMAT_1;8 bits sem assinatura
 SAMPLEFORMAT_2;16-bits sem assinatura
@@ -1377,6 +1466,7 @@ THRESHOLDSELECTOR_TR;Superior direito
 TOOLBAR_TOOLTIP_COLORPICKER;Seletor de Cores com Trava\n\nQuando a ferramenta está ativada:\n- Adicionar um seletor de cores: <b>clique esquerdo</b>.\n- Arrastar um seletor de cores: <b>clique esquerdo e arraste</b>.\n- Excluir um seletor de cores: <b>clique direito</b>.\n- Excluir todos os seletores de cores: <b>Ctrl</b>+<b>Shift</b>+<b>clique direito</b>.\n- Reverter para a ferramenta de Mão: <b>clique direito</b> fora de qualquer seletor de cores.
 TOOLBAR_TOOLTIP_CROP;<b>Cortar</b> seleção.\nAtalho: <b>c</b>\nMover a área de corte usando <b>Shift</b>+<b>arrastar mouse</b>\nRedimensionar o corte usando <b>Ctrl</b>+<b>arrastar mouse</b>.
 TOOLBAR_TOOLTIP_HAND;Ferramenta de mão.\nAtalho: <b>h</b>
+TOOLBAR_TOOLTIP_PERSPECTIVE;<b>Correção de perspectiva</b>.\nAtalho: <b>p</b>\n\nEditar linhas de controle para corrigir distorção de perspectiva. Clique neste botão novamente para aplicar a correção.
 TOOLBAR_TOOLTIP_STRAIGHTEN;<b>Endireitar</b> / <b>rotação fina</b>.\nAtalho: <b>s</b>\n\nIndique a vertical ou horizontal, desenhando uma linha guia sobre a visualização da imagem. O ângulo de rotação será mostrado ao lado da linha da guia. O centro de rotação é o centro geométrico da imagem.
 TOOLBAR_TOOLTIP_WB;Balanço de branco no local.\nAtalho: <b>w</b>
 TP_SATURATION_LABEL;Saturação e Vibração
@@ -1427,11 +1517,21 @@ TP_CHMIXER_BLUE;Canal azul
 TP_CHMIXER_GREEN;Canal verde
 TP_CHMIXER_LABEL;Misturador de canais
 TP_CHMIXER_RED;Canal vermelho
+TP_CHMIXER_MODE;Modo
+TP_CHMIXER_HUE;Correção de matiz
+TP_CHMIXER_SAT;Correção de saturação
+TP_CHMIXER_PRIMARY_R;Vermelho primário
+TP_CHMIXER_PRIMARY_G;Verde primário
+TP_CHMIXER_PRIMARY_B;Azul primário
+TP_CHMIXER_MODE_RGB_MATRIX;Matriz RGB
+TP_CHMIXER_MODE_PRIMARIES_CHROMA;Correção de primários
 TP_COARSETRAF_TOOLTIP_HFLIP;Girar horizontalmente.
 TP_COARSETRAF_TOOLTIP_ROTLEFT;Rotacione à esquerda.\n\nAtalhos:\n<b>[</b> - Modo de Guias do Editor Múltiplo,\n<b>Alt-[</b> - Modo de Guia do Editor Único.
 TP_COARSETRAF_TOOLTIP_ROTRIGHT;Rotacione à direita.\n\nAtalhos:\n<b>]</b> - Modo de Guias do Editor Múltiplo,\n<b>Alt-]</b> - Modo de Guia do Editor Único.
 TP_COARSETRAF_TOOLTIP_VFLIP;Girar verticalmente.
 TP_COLORCORRECTION_ABVALUES;a=%1 b=%2
+TP_COLORCORRECTION_IN;Entrada
+TP_COLORCORRECTION_OUT;Saída
 TP_COLORCORRECTION_MODE;Modo
 TP_COLORCORRECTION_MODE_COMBINED;Padrão
 TP_COLORCORRECTION_MODE_RGBCHANNELS;Separar canais RGB
@@ -1467,6 +1567,7 @@ TP_CROP_LABEL;Cortar
 TP_CROP_PPI;PPI=
 TP_CROP_RESETCROP;Repor
 TP_CROP_SELECTCROP;Selecionar
+TP_CROP_DONE;Feito
 TP_CROP_W;Largura
 TP_CROP_X;Esquerda
 TP_CROP_Y;Topo
@@ -1475,6 +1576,7 @@ TP_DARKFRAME_LABEL;Quadro Escuro
 TP_DEFRINGE_LABEL;Remover franja
 TP_DEFRINGE_RADIUS;Raio
 TP_DEFRINGE_THRESHOLD;Limite
+TP_DEHAZE_BLACKPOINT;Correção de pontos pretos
 TP_DEHAZE_DEPTH;Profundidade
 TP_DEHAZE_LABEL;Remover neblina
 TP_DEHAZE_MODE;Modo
@@ -1497,14 +1599,14 @@ TP_DIRPYRDENOISE_CHROMINANCE_MASTER;Crominância - Mestre
 TP_DIRPYRDENOISE_CHROMINANCE_METHOD;Método
 TP_DIRPYRDENOISE_CHROMINANCE_METHOD_TOOLTIP;Manual\nAtua na imagem completa.\nControlas as configurações de redução de ruído manualmente.\n\nGlobal automático\nAtua na imagem completa.\n9 zonas são usadas para calcular uma configuração global de redução de ruído de crominância.\n\nMulti-zonas automáticas\nSem pré-visualização - funciona apenas durante a gravação, usando o método "Pré-visualização" para ajustar o tamanho do mosaico e o centro com o tamanho da visualização e o centro, podes ter uma idéia dos resultados esperados.\nA imagem é dividida em mosaicos (cerca de 10 a 70, dependendo do tamanho da imagem) e cada mosaico recebe suas próprias configurações de redução de ruído de crominância.\n\nPré-visualização\nAtua em toda a imagem.\nA parte da imagem visível na visualização é usada para calcular as configurações globais de redução de ruído de crominância.
 TP_DIRPYRDENOISE_CHROMINANCE_REDGREEN;Crominância - Vermelho-Verde
+TP_DIRPYRDENOISE_MAIN_COLORSPACE;Espaço de cor
+TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB;L*a*b*
+TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB;RGB
 TP_DIRPYRDENOISE_LABEL;Redução de Ruído
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL;Recuperação de detalhes
 TP_DIRPYRDENOISE_LUMINANCE_FRAME;Luminância
 TP_DIRPYRDENOISE_LUMINANCE_DETAIL_THRESHOLD;Limiar de detalhe
 TP_DIRPYRDENOISE_LUMINANCE_SMOOTHING;Luminância
-TP_DIRPYRDENOISE_MAIN_COLORSPACE;Espaço de cor
-TP_DIRPYRDENOISE_MAIN_COLORSPACE_LAB;L*a*b*
-TP_DIRPYRDENOISE_MAIN_COLORSPACE_RGB;RGB
 TP_DIRPYRDENOISE_MAIN_GAMMA;Gama
 TP_DIRPYRDENOISE_MAIN_GAMMA_TOOLTIP;Gama varia a intensidade da redução de ruído em toda a gama de tons. Valores menores atuam sobre sombras, enquanto valores maiores tem efeito sobre tons mais claros.
 TP_DIRPYRDENOISE_MAIN_MODE;Modo
@@ -1531,10 +1633,11 @@ TP_DIRPYRDENOISE_TYPE_9X9;9X9
 TP_DISTORTION_AMOUNT;Montante
 TP_DISTORTION_AUTO_TIP;Corrige automaticamente a distorção da lente em arquivos RAW, combinando-a com a imagem JPEG incorporada, caso exista, e tenha sua distorção de lente corrigida automaticamente pela câmera.
 TP_DISTORTION_LABEL;Correção de Distorção
-TP_EPD_EDGESTOPPING;Borda parando
+TP_EPD_DETAIL_THRESHOLD;Escala de detalhe
 TP_EPD_LABEL;Impulso de textura
 TP_EPD_LIST_TITLE;Parâmetros
 TP_EPD_SCALE;Escala
+TP_EPD_ITERATIONS;Iterações
 TP_EPD_STRENGTH;Intensidade
 TP_EXPOSURE_BLACK;Compensação de ponto preto
 TP_EXPOSURE_CURVEEDITOR1;Curva de tom 1
@@ -1555,6 +1658,9 @@ TP_EXPOSURE_TCMODE_WEIGHTEDSTD;Padrão Ponderado
 TP_EXPOS_BLACKPOINT_LABEL;Pontos Pretos Raw
 TP_EXPOS_WHITEPOINT_LABEL;Pontos Brancos Raw
 TP_FILMNEGATIVE_BLUE;Relação de azul
+TP_FILMNEGATIVE_FILMBASE_PICK;Escolher cor de base do filme
+TP_FILMNEGATIVE_FILMBASE_TOOLTIP;Escolha um ponto de filme não exposto (por exemplo, a borda entre fotogramas), para obter os valores reais da cor base do filme, e guarde-os no perfil de processamento.\n Isto facilita a obtenção de um balanço de cor mais consistente quando se processam várias imagens em lote do mesmo rolo.\nTambém use isto quando a imagem convertida é extremamente escura, brilhante ou sem balanço de cor.
+TP_FILMNEGATIVE_FILMBASE_VALUES;Base RGB do filme:
 TP_FILMNEGATIVE_GREEN;Expoente de referência (contraste)
 TP_FILMNEGATIVE_GUESS_TOOLTIP;Calcular expoentes escolhendo dois pontos de referência neutros na imagem; um branco (cinza claro) e outro preto (cinza escuro). A ordem não importa. Os expoentes serão atualizados após a escolha do segundo ponto.
 TP_FILMNEGATIVE_LABEL;Negativo de Filme
@@ -1573,8 +1679,12 @@ TP_FLATFIELD_BT_VERTHORIZ;Vertical + Horizontal
 TP_FLATFIELD_BT_VERTICAL;Vertical
 TP_FLATFIELD_CLIPCONTROL;Controle de recorte
 TP_FLATFIELD_CLIPCONTROL_TOOLTIP;O controle de recorte evita realces recortados provocados pela aplicação do campo plano. Se já houver realces recortados antes da aplicação do campo plano, o controle de recorte pode levar à conversão de cores.
+TP_FLATFIELD_EMBEDDED;Embutido nos metadados
 TP_FLATFIELD_LABEL;Campo-Plano
 TP_GENERAL_11SCALE_TOOLTIP;Os efeitos dessa ferramenta só são visíveis ou são precisos numa escala prévia de 1:1.
+TP_GENERAL_RESET_DEFAULT;Restaurar para padrão
+TP_GENERAL_RESET_SAVED;Restaurar para salvo
+TP_GENERAL_TOOL_RESET_TOOLTIP;Restaurar todas as configurações.
 TP_GRADIENT_CENTER_X;Centro X
 TP_GRADIENT_CENTER_X_TOOLTIP;Deslocar gradiente para a esquerda (valores negativos) ou para a direita (valores positivos).
 TP_GRADIENT_CENTER_Y;Centro Y
@@ -1660,6 +1770,7 @@ TP_LABMASKS_AREA_ROUNDNESS;Redondeza
 TP_LABMASKS_AREA_MASK_COPY_TOOLTIP;Copiar a máscara de área atual para a área de transferência
 TP_LABMASKS_AREA_MASK_DRAW_TOOLTIP;Editar a forma da área atual desenhando na pré-visualização
 TP_LABMASKS_AREA_MASK_DRAW_ADD_TOOLTIP;Adicionar uma forma de área desenhando na pré-visualização
+TP_LABMASKS_AREA_MASK_DRAW_POLYGON_ADD_TOOLTIP;Adicionar uma forma de área poligonal adicionando pontos na imagem de previsão
 TP_LABMASKS_AREA_MASK_TOGGLE_TOOLTIP;Mostrar a forma de área atual na pré-visualização
 TP_LABMASKS_AREA_MASK_PASTE_TOOLTIP;Colar uma máscara de área da área de transferência
 TP_LABMASKS_AREA_SHAPE;Forma
@@ -1667,6 +1778,7 @@ TP_LABMASKS_AREA_SHAPE_MODE;Modo
 TP_LABMASKS_AREA_SHAPE_MODE_ADD;Adicionar
 TP_LABMASKS_AREA_SHAPE_MODE_SUBTRACT;Subtrair
 TP_LABMASKS_AREA_SHAPE_MODE_INTERSECT;Interseccionar
+TP_LABMASKS_AREA_SHAPE_POLY_NONEMPTY;%1 ponto(s)
 TP_LABMASKS_AREA_SHAPES;Formas de área
 TP_LABMASKS_AREA_WIDTH;Largura
 TP_LABMASKS_AREA_X;Centro X
@@ -1675,7 +1787,9 @@ TP_LABMASKS_BLUR;Desfoque
 TP_LABMASKS_CHROMATICITY;C
 TP_LABMASKS_HUE;H
 TP_LABMASKS_LIGHTNESS;L
+TP_LABMASKS_LIGHTNESS_DETAIL;Proteção de detalhe da máscara L
 TP_LABMASKS_MASK;Máscara
+TP_LABMASKS_MASK_UNNAMED;Sem nome
 TP_LABMASKS_SHOW;Mostrar máscara
 TP_LABMASKS_CONTRASTTHRESHOLDMASK;Limiar de contraste
 TP_LABMASKS_DELTAE;Máscara ΔE
@@ -1687,18 +1801,35 @@ TP_LABMASKS_DELTAE_DECAY;Decaimento
 TP_LABMASKS_DELTAE_PICK;Escolher
 TP_LABMASKS_DELTAE_CHAN_WEIGHT;Peso no cálculo de ΔE
 TP_LABMASKS_DELTAE_TOOLTIP;Selecionar regiões de cor similar\n(de acordo com a métrica ΔE* CIELAB)
+TP_LABMASKS_DRAWNMASK;Máscara de pincel
+TP_LABMASKS_DRAWNMASK_TOGGLE_TIP;Alternar a pintura em tela com o pincel.\nSegure <b>Shift</b> para alternar temporariamente o modo "Borracha". \Use <b>Ctrl+ roda do mouse</b> para alterar o raio do pincel,\n<b>Ctrl+Shift+ roda do mouse</b> para alterar a dureza do pincel,\n e <b>Ctrl+clique</b> para iniciar um novo grupo de traçados sem alterar os parâmetros\n(para que vários traçados na mesma área se somem).
+TP_LABMASKS_DRAWNMASK_PEN_SETTINGS;Configurações de pincel
+TP_LABMASKS_DRAWNMASK_RESET_TIP;Limpar todos os traçados
+TP_LABMASKS_DRAWNMASK_UNDO_TIP;Remover o último grupo de traçados
+TP_LABMASKS_DRAWNMASK_RADIUS;Raio
+TP_LABMASKS_DRAWNMASK_TRANSPARENCY;Transparência
+TP_LABMASKS_DRAWNMASK_SMOOTHNESS;Suavidade
+TP_LABMASKS_DRAWNMASK_ERASE;Modo borracha
+TP_LABMASKS_DRAWNMASK_HARDNESS;Dureza
+TP_LABMASKS_DRAWNMASK_INFO;%1 traçado(s)
+TP_LABMASKS_DRAWNMASK_INTERSECT_TOOLTIP;Interseccionar a máscara de pincel com outras máscaras
+TP_LABMASKS_DRAWNMASK_ADD_TOOLTIP;Adicionar a máscara de pincel acima de outras máscaras
+TP_LABMASKS_DRAWNMASK_ADD_BOUNDED_TOOLTIP;Adicionar a máscara de pincel acima de outras máscaras, mas apenas dentro da máscara de área ativa
+TP_LABMASKS_PARAMETRIC;Máscara paramétrica
 TP_LENSGEOM_AUTOCROP;Corte automático
 TP_LENSGEOM_FILL;Preenchimento automático
-TP_LENSGEOM_LABEL;Lente / Geometria
-TP_LENSPROFILE_CORRECTION_AUTOMATCH;Automaticamente
+TP_GEOM_LABEL;Geometria
+TP_LENS_LABEL;Lente
+TP_LENSPROFILE_CORRECTION_AUTOMATCH;Automaticamente da base de dados
+TP_LENSPROFILE_CORRECTION_EXIF;Embutido nos metadados
 TP_LENSPROFILE_CORRECTION_LCPFILE;Ficheiro LCP
-TP_LENSPROFILE_CORRECTION_MANUAL;Manualmente
+TP_LENSPROFILE_CORRECTION_MANUAL;Manualmente da base de dados
 TP_LENSPROFILE_LABEL;Correção de lente perfilada
 TP_LENSPROFILE_LENS_WARNING;Aviso: o fator de corte usado para o perfil da lente é maior que o fator de corte da câmera. Os resultados podem ficar errados.
-TP_LENSPROFILE_MODE_HEADER;Selecionar o perfil da lente:
+TP_LENSPROFILE_MODE_HEADER;Perfil da lente:
 TP_LENSPROFILE_USE_CA;Aberração cromática
 TP_LENSPROFILE_USE_GEOMETRIC;Geométrica
-TP_LENSPROFILE_USE_HEADER;Selecionar distorções para corrigir:
+TP_LENSPROFILE_USE_HEADER;Distorções para corrigir:
 TP_LENSPROFILE_USE_VIGNETTING;Vinhetagem
 TP_LOCALCONTRAST_CONTRAST;Contraste residual
 TP_LOCALCONTRAST_CURVE;Curva de contraste local
@@ -1730,6 +1861,8 @@ TP_PERSPECTIVE_AUTO;Correção automática
 TP_PERSPECTIVE_AUTO_BOTH_TOOLTIP;Horizontal e vertical
 TP_PERSPECTIVE_AUTO_HORIZONTAL_TOOLTIP;Horizontal
 TP_PERSPECTIVE_AUTO_VERTICAL_TOOLTIP;Vertical
+TP_PERSPECTIVE_CONTROL_LINES;Linhas de controle
+TP_PERSPECTIVE_CONTROL_LINES_TOOLTIP;<b>Ctrl</b>+<b>arrastar</b>: Desenhar nova linha\n<b>Cliqu-Direito</b>: Deletar linha
 TP_PERSPECTIVE_CROPFACTOR;Crop fator
 TP_PERSPECTIVE_FLENGTH;Distância focal
 TP_PERSPECTIVE_HORIZONTAL;Horizontal
@@ -1740,6 +1873,7 @@ TP_PFCURVE_CURVEEDITOR_CH;Matiz
 TP_PFCURVE_CURVEEDITOR_CH_TOOLTIP;Controla a Intensidade defringe por cor.\nMais alto = mais,\nMais baixo = menos.
 TP_PREPROCESS_DEADPIXFILT;Filtro de píxeis mortos
 TP_PREPROCESS_DEADPIXFILT_TOOLTIP;Tenta suprimir os píxeis mortos.
+TP_PREPROCESS_DYNROWNOISEFILTER;Filtro de ruído de linha dinâmico
 TP_PREPROCESS_GREENEQUIL;Equilíbrio verde
 TP_PREPROCESS_HOTPIXFILT;Filtro de pixel quente
 TP_PREPROCESS_HOTPIXFILT_TOOLTIP;Tenta suprimir os píxeis quentes.
@@ -1776,7 +1910,9 @@ TP_RAW_3PASSBEST;3 passagens (Superior)
 TP_RAW_4PASS;3 passagens+rápido
 TP_RAW_AHD;AHD
 TP_RAW_AMAZE;AMaZE
+TP_RAW_AMAZEBILINEAR;AMaZE+Bilinear
 TP_RAW_AMAZEVNG4;AMaZE+VNG4
+TP_RAW_BILINEAR;Bilinear
 TP_RAW_BORDER;Borda
 TP_RAW_DCB;DCB
 TP_RAW_DCBENHANCE;Aprimoramento DCB
@@ -1836,11 +1972,16 @@ TP_RAW_PIXELSHIFTSIGMA_TOOLTIP;O raio padrão de 1.0 geralmente se encaixa bem p
 TP_RAW_PIXELSHIFTSMOOTH;Transições suaves
 TP_RAW_PIXELSHIFTSMOOTH_TOOLTIP;Transições suaves entre áreas com movimento e áreas sem.\nDefina 0 para desabilitar a transição suave.\nDefina 1 para obter o resultado AMaZE/LMMSE do quadro selecionado (dependendo se "Usar LMMSE" estiver selecionado) ou a mediana de todos os quatro quadros se "Usar mediana" estiver selecionado.
 TP_RAW_RCD;RCD
+TP_RAW_RCDBILINEAR;RCD+Bilinear
 TP_RAW_RCDVNG4;RCD+VNG4
 TP_RAW_SENSOR_BAYER_LABEL;Sensor com Matriz Bayer
 TP_RAW_SENSOR_XTRANS_DMETHOD_TOOLTIP;3 passagens dá os melhores resultados (recomendado para imagens com ISO baixo).\n1 passagem é quase indistinguível do de 3 passagens para imagens com ISO alto e é mais rápido.\n+rápido obtêm-se menos artefatos em áreas
 TP_RAW_SENSOR_XTRANS_LABEL;Sensor com Matriz X-Trans
 TP_RAW_VNG4;VNG4
+TP_RAW_XTRANS;X-Trans
+TP_RAW_XTRANSFAST;X-Trans Rápido
+TP_RESET_DEFAULT;Restaurar para padrão
+TP_RESET_SAVED;Restaurar para o último salvo
 TP_RESIZE_ALLOW_UPSCALING;Permitir Aumentar Tamanho
 TP_RESIZE_APPLIESTO;Aplica-se a:
 TP_RESIZE_ALLOW_UPSCALING;Permitir Aumentar Tamanho
@@ -1888,20 +2029,39 @@ TP_SHARPENING_THRESHOLD;Limite
 TP_SHARPENING_USM;Máscara de Nitidez
 TP_SMOOTHING_LABEL;Suavização
 TP_SMOOTHING_LIST_TITLE;Parâmetros de suavização
+TP_SMOOTHING_MODE;Modo
+TP_SMOOTHING_MODE_GUIDED;Guiado
+TP_SMOOTHING_MODE_GAUSSIAN;Gaussiano
 TP_SMOOTHING_CHANNEL;Canal
 TP_SMOOTHING_CHANNEL_L;Luminância
 TP_SMOOTHING_CHANNEL_C;Crominância
 TP_SMOOTHING_CHANNEL_RGB;RGB
 TP_SMOOTHING_RADIUS;Raio
 TP_SMOOTHING_EPSILON;Detalhe
+TP_SMOOTHING_SIGMA;Raio
 TP_SMOOTHING_ITERATIONS;Iterações
 TP_SOFTLIGHT_LABEL;Luz Suave
 TP_SOFTLIGHT_STRENGTH;Intensidade
+TP_SPOT_COUNTLABEL;%1 ponto(s)
+TP_SPOT_ENTRYCHANGED;Ponto modificado
+TP_SPOT_HINT;Clique neste botão para poder operar na área de visualização.\n\nPara editar um ponto, passe o cursor sobre a marca branca localizando uma área editada, fazendo aparecer a geometria de edição. \n\nPara adicionar um ponto, pressione Ctrl e o botão esquerdo do mouse, arraste o círculo (a tecla Ctrl pode ser liberada) para um local de origem, depois solte o botão do mouse. \n/nPara mover o ponto de origem ou destino, passe por cima do centro do mesmo e arraste-o. \n\nO círculo interno (área de efeito máximo) e o círculo "pluma" podem ser redimensionados passando o cursor sobre eles (o círculo fica laranja) e arrastando-os (o círculo fica vermelho).\n\nQuando as mudanças estiverem feitas, clique com o botão direito fora de qualquer ponto para terminar o Modo de Edição de Pontos, ou clique neste botão novamente.
+TP_SPOT_LABEL;Remoção de ponto
+TP_SPOT_CUR_SPOT_LABEL;Ponto Atual
+TP_SPOT_SOURCE_X;Source X
+TP_SPOT_SOURCE_Y;Source Y
+TP_SPOT_TARGET_X;Target X
+TP_SPOT_TARGET_Y;Target Y
+TP_SPOT_RADIUS;Raio
+TP_SPOT_FEATHER;Pluma
+TP_SPOT_OPACITY;Opacidade
+TP_SPOT_DETAIL;Proteção de detalhes
 TP_TM_FATTAL_AMOUNT;Montante
 TP_TM_FATTAL_LABEL;Compressão de Amplitude Dinâmica(DRC)
 TP_TM_FATTAL_THRESHOLD;Detalhe
-TP_TONECURVE_LABEL;Tone Curvas
+TP_TM_FATTAL_SATCONTROL;Controle de saturação
+TP_TONECURVE_LABEL;Curvas de tom
 TP_TONECURVE_SATCURVE;Saturação
+TP_TONECURVE_PERCEPTUAL_STRENGTH;Força da curva perceptiva
 TP_TONE_EQUALIZER_BAND_0;Pretos
 TP_TONE_EQUALIZER_BAND_1;Sombras
 TP_TONE_EQUALIZER_BAND_2;Meios-Tons
@@ -1909,6 +2069,7 @@ TP_TONE_EQUALIZER_BAND_3;Realces
 TP_TONE_EQUALIZER_BAND_4;Brancos
 TP_TONE_EQUALIZER_DETAIL;Regularização
 TP_TONE_EQUALIZER_LABEL;Equalizador de Tons
+TP_TONE_EQUALIZER_SHOW_COLOR_MAP;Mostrar mapa tonal
 TP_VIGNETTING_AMOUNT;Montante
 TP_VIGNETTING_CENTER_X;Centro X
 TP_VIGNETTING_CENTER_Y;Centro Y
@@ -1919,6 +2080,7 @@ TP_WBALANCE_AUTO;Automático
 TP_WBALANCE_CAMERA;Câmera
 TP_WBALANCE_CLOUDY;Nublado
 TP_WBALANCE_CUSTOM;Personalizado
+TP_WBALANCE_CUSTOM_MULT;Multiplicadores customizados
 TP_WBALANCE_DAYLIGHT;Luz do dia (sol)
 TP_WBALANCE_EQBLUERED;Equalizador Azul/Vermelho
 TP_WBALANCE_EQBLUERED_TOOLTIP;Permite desviar do comportamento normal do "balanço de branco", modulando o balanço azul/vermelho.\nIsso pode ser útil ao fotografar condições:\na) estão longe do iluminante padrão (por exemplo, embaixo d'água),\nb) estão longe das condições em que as calibrações foram realizadas,\nc) onde as matrizes ou perfis ICC são inadequados.
@@ -1962,10 +2124,11 @@ TP_WBALANCE_TUNGSTEN;Tungstênio
 TP_WBALANCE_WATER1;Embaixo da Água 1
 TP_WBALANCE_WATER2;Embaixo da Água 2
 TP_WBALANCE_WATER_HEADER;Embaixo da Água
+TP_WBALANCE_PRESET;Predefinição de câmera
 ZOOMPANEL_100;(100%)
 ZOOMPANEL_NEWCROPWINDOW;Abrir nova mini-janela de detalhe
 ZOOMPANEL_ZOOM100;Zoom para 100%\nAtalho: <b>z</b>
 ZOOMPANEL_ZOOMFITCROPSCREEN;Ajustar o corte à tela\nAtalho: <b>f</b>
-ZOOMPANEL_ZOOMFITSCREEN;Ajustar toda a imagem à tela\nAtalho: <b>Alt</b>-<b>f</b>
+ZOOMPANEL_ZOOMFITSCREEN;Ajustar toda a imagem à tela\nAtalho: <b>f</b>
 ZOOMPANEL_ZOOMIN;Mais Zoom\nAtalho: <b>+</b>
 ZOOMPANEL_ZOOMOUT;Menos Zoom\nAtalho: <b>-</b>

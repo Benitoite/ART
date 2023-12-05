@@ -36,7 +36,6 @@
 #include "color.h"
 #include "calc_distort.h"
 #include "rt_math.h"
-#include "EdgePreservingDecomposition.h"
 #include "improccoordinator.h"
 #include "clutstore.h"
 #include "StopWatch.h"
@@ -51,6 +50,7 @@ using namespace procparams;
 extern const Settings* settings;
 
 ImProcFunctions::ImProcFunctions(const ProcParams* iparams, bool imultiThread):
+    monitor(nullptr),
     monitorTransform(nullptr),
     params(iparams),
     scale(1),
@@ -88,7 +88,7 @@ void ImProcFunctions::setScale (double iscale)
 }
 
 
-void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, RenderingIntent monitorIntent, bool softProof, bool gamutCheck)
+void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, RenderingIntent monitorIntent, bool softProof, GamutCheck gamutCheck)
 {
     // set up monitor transform
     if (monitorTransform) {
@@ -97,8 +97,7 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
     gamutWarning.reset(nullptr);
 
     monitorTransform = nullptr;
-
-    cmsHPROFILE monitor = nullptr;
+    monitor = nullptr;
 
     if (!monitorProfile.empty()) {
 #if !defined(__APPLE__) // No support for monitor profiles on OS X, all data is sRGB
@@ -112,17 +111,21 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
         MyMutex::MyLock lcmsLock (*lcmsMutex);
 
         cmsUInt32Number flags;
-        cmsHPROFILE iprof  = cmsCreateLab4Profile (nullptr);
+        //cmsHPROFILE iprof  = cmsCreateLab4Profile (nullptr);
+        cmsHPROFILE iprof = ICCStore::getInstance()->getProfile(params->icm.outputProfile);
+        if (!iprof) {
+            iprof = ICCStore::getInstance()->getsRGBProfile();
+        }
+        
         cmsHPROFILE gamutprof = nullptr;
         cmsUInt32Number gamutbpc = 0;
         RenderingIntent gamutintent = RI_RELATIVE;
 
         bool softProofCreated = false;
+        cmsHPROFILE oprof = nullptr;
+        RenderingIntent outIntent;
 
         if (softProof) {
-            cmsHPROFILE oprof = nullptr;
-            RenderingIntent outIntent;
-            
             flags = cmsFLAGS_SOFTPROOFING | cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE;
 
             if (!settings->printerProfile.empty()) {
@@ -131,12 +134,12 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
                     flags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
                 }
                 outIntent = settings->printerIntent;
-            } else {
-                oprof = ICCStore::getInstance()->getProfile(params->icm.outputProfile);
-                if (params->icm.outputBPC) {
-                    flags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
-                }
-                outIntent = params->icm.outputIntent;
+            // } else {
+            //     oprof = ICCStore::getInstance()->getProfile(params->icm.outputProfile);
+            //     if (params->icm.outputBPC) {
+            //         flags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
+            //     }
+            //     outIntent = params->icm.outputIntent;
             }
 
             if (oprof) {
@@ -168,9 +171,9 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
                 }
 
                 monitorTransform = cmsCreateProofingTransform (
-                                       iprof, TYPE_Lab_FLT,
+                    iprof, TYPE_RGB_FLT, //TYPE_Lab_FLT,
                                        monitor, TYPE_RGB_FLT,
-                                       softproof, //oprof,
+                                       softproof,
                                        monitorIntent, outIntent,
                                        flags
                                    );
@@ -183,30 +186,35 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
                     softProofCreated = true;
                 }
 
-                if (gamutCheck) {
-                    gamutprof = oprof;
-                    if (params->icm.outputBPC) {
-                        gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
-                    }
-                    gamutintent = outIntent;
-                }
+                // if (gamutCheck == GAMUT_CHECK_OUTPUT) {
+                //     gamutprof = oprof;
+                //     if (params->icm.outputBPC) {
+                //         gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
+                //     }
+                //     gamutintent = outIntent;
+                // }
             }
-        } else if (gamutCheck) {
-            // flags = cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE;
-            // if (settings->monitorBPC) {
-            //     flags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
-            // }
+        }
 
-            // monitorTransform = cmsCreateProofingTransform(iprof, TYPE_Lab_FLT, monitor, TYPE_RGB_8, monitor, monitorIntent, monitorIntent, flags);
-
-            // if (monitorTransform) {
-            //     softProofCreated = true;
-            // }
+        if (gamutCheck == GAMUT_CHECK_MONITOR) {
             gamutprof = monitor;
             if (settings->monitorBPC) {
                 gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
             }
             gamutintent = monitorIntent;
+        } else if (gamutCheck == GAMUT_CHECK_OUTPUT) {
+            if (!oprof) {
+                oprof = ICCStore::getInstance()->getProfile(params->icm.outputProfile);
+                if (params->icm.outputBPC) {
+                    flags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
+                }
+                outIntent = params->icm.outputIntent;
+            }
+            gamutprof = oprof;
+            if (params->icm.outputBPC) {
+                gamutbpc = cmsFLAGS_BLACKPOINTCOMPENSATION;
+            }
+            gamutintent = outIntent;
         }
 
         if (!softProofCreated) {
@@ -216,14 +224,15 @@ void ImProcFunctions::updateColorProfiles (const Glib::ustring& monitorProfile, 
                 flags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
             }
 
-            monitorTransform = cmsCreateTransform (iprof, TYPE_Lab_FLT, monitor, TYPE_RGB_FLT, monitorIntent, flags);
+            monitorTransform = cmsCreateTransform (iprof, TYPE_RGB_FLT, 
+                                                   monitor, TYPE_RGB_FLT, monitorIntent, flags);
         }
 
         if (gamutCheck && gamutprof) {
-            gamutWarning.reset(new GamutWarning(iprof, gamutprof, gamutintent, gamutbpc));
+            gamutWarning.reset(new GamutWarning(gamutprof, gamutintent, gamutbpc));
         }
 
-        cmsCloseProfile (iprof);
+//        cmsCloseProfile (iprof);
     }
 }
 
@@ -246,7 +255,7 @@ void ImProcFunctions::firstAnalysis (const Imagefloat* const original, const Pro
     if (multiThread) {
 
 #ifdef _OPENMP
-        const int numThreads = min (max (W * H / (int)histogram.getSize(), 1), omp_get_max_threads());
+        const int numThreads = min (max (W * H / (int)histogram.getSize(), 1), omp_get_num_procs());
         #pragma omp parallel num_threads(numThreads) if(numThreads>1)
 #endif
         {
@@ -728,8 +737,8 @@ double ImProcFunctions::getAutoDistor  (const Glib::ustring &fname, int thumb_si
             calcDistortion (thumbGray, rawGray, width, h_thumb, 4, dist_amount);
         }
 
-        delete thumbGray;
-        delete rawGray;
+        delete[] thumbGray;
+        delete[] rawGray;
         delete thumb;
         delete raw;
         return dist_amount;
@@ -869,7 +878,7 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         STEP_(channelMixer);
         STEP_(exposure);
         STEP_(hslEqualizer);
-        STEP_(toneEqualizer);
+        stop = STEP_s_(toneEqualizer);
         if (params->icm.workingProfile == "ProPhoto") {
             proPhotoBlue(img, multiThread);
         }
@@ -888,21 +897,37 @@ bool ImProcFunctions::process(Pipeline pipeline, Stage stage, Imagefloat *img)
         break;
     case Stage::STAGE_3:
         STEP_(creativeGradients);
-        STEP_(logEncoding);
-        STEP_(saturationVibrance);
-        dcpProfile(img, dcpProf, dcpApplyState, multiThread);
-        STEP_(toneCurve);
-        STEP_(rgbCurves);
-        STEP_(labAdjustments);
         stop = stop || STEP_s_(textureBoost);
         if (!stop) { 
+            STEP_(logEncoding);
+            STEP_(saturationVibrance);
+            dcpProfile(img, dcpProf, dcpApplyState, multiThread);
+            if (!params->filmSimulation.after_tone_curve) {
+                STEP_(filmSimulation);
+            }
+            STEP_(toneCurve);
+            if (params->filmSimulation.after_tone_curve) {
+                STEP_(filmSimulation);
+            }
+            STEP_(rgbCurves);
+            STEP_(labAdjustments);
+            // stop = stop || STEP_s_(textureBoost);
             STEP_(softLight);
         }
         stop = stop || STEP_s_(localContrast);
         if (!stop) {
-            STEP_(filmSimulation);
+            // STEP_(filmSimulation);
             STEP_(blackAndWhite);
             STEP_(filmGrain);
+        }
+        if (pipeline == Pipeline::PREVIEW && params->prsharpening.enabled) {
+            double s = scale;
+            int fw = full_width * s, fh = full_height * s;
+            int imw, imh;
+            double s2 = resizeScale(params, fw, fh, imw, imh);
+            scale = std::max(s * s2, 1.0);
+            STEP_s_(prsharpening);
+            scale = s;
         }
         break;
     }

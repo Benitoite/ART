@@ -24,10 +24,69 @@
 #include "sleef.h"
 #include "opthelper.h"
 #include "iccstore.h"
+#include "linalgebra.h"
 
 using namespace std;
 
 namespace rtengine {
+
+namespace {
+
+typedef Vec3f A3;
+
+// D50 <-> D65 adapted from darktable
+
+void XYZ_D50_to_D65(float &X, float &Y, float &Z)
+{
+    // Bradford adaptation matrix from http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
+    constexpr float M[3][3] = {
+        {  0.9555766f, -0.0230393f,  0.0631636f },
+        { -0.0282895f,  1.0099416f,  0.0210077f },
+        {  0.0122982f, -0.0204830f,  1.3299098f }
+    };
+    A3 res = dot_product(M, A3(X, Y, Z));
+    X = res[0];
+    Y = res[1];
+    Z = res[2];
+}
+
+
+void XYZ_D65_to_D50(float &X, float &Y, float &Z)
+{
+    // Bradford adaptation matrix from http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
+    constexpr float M[3][3] = {
+        {  1.0478112f,  0.0228866f, -0.0501270f },
+        {  0.0295424f,  0.9904844f, -0.0170491f },
+        { -0.0092345f,  0.0150436f,  0.7521316f }
+    };
+    A3 res = dot_product(M, A3(X, Y, Z));
+    X = res[0];
+    Y = res[1];
+    Z = res[2];
+}
+
+
+float PQ(float X)
+{
+    X = std::max(X, 1e-10f);
+    const float XX = std::pow(X*1e-4f, 0.1593017578125f);
+    return std::pow(
+        (0.8359375f + 18.8515625f*XX) / (1 + 18.6875f*XX),
+        134.034375f);
+}
+
+
+float PQ_inv(float X)
+{
+    X = std::max(X, 1e-10f);
+    const auto XX = std::pow(X, 7.460772656268214e-03f);
+    return 1e4f * std::pow(
+        (0.8359375f - XX) / (18.6875f*XX - 18.8515625f),
+        6.277394636015326f);
+}
+
+} // namespace
+
 
 extern const Settings* settings;
 
@@ -48,12 +107,6 @@ LUTf Color::denoiseIGammaTab;
 
 LUTf Color::igammatab_24_17;
 LUTf Color::gammatab_24_17a;
-LUTf Color::gammatab_13_2;
-LUTf Color::igammatab_13_2;
-LUTf Color::gammatab_115_2;
-LUTf Color::igammatab_115_2;
-LUTf Color::gammatab_145_3;
-LUTf Color::igammatab_145_3;
 
 /*
  * Munsell Lch correction
@@ -100,6 +153,9 @@ LUTf Color::_10GY30, Color::_10GY40, Color::_10GY50, Color::_10GY60, Color::_10G
 LUTf Color::_75GY30, Color::_75GY40, Color::_75GY50, Color::_75GY60, Color::_75GY70, Color::_75GY80;
 LUTf Color::_5GY30, Color::_5GY40, Color::_5GY50, Color::_5GY60, Color::_5GY70, Color::_5GY80;
 
+LUTf Color::jzazbz_pq_;
+LUTf Color::jzazbz_pq_inv_;
+
 #ifdef _DEBUG
 MunsellDebugInfo::MunsellDebugInfo()
 {
@@ -136,12 +192,9 @@ void Color::init ()
 
     igammatab_24_17(maxindex, 0);
     gammatab_24_17a(maxindex, LUT_CLIP_ABOVE | LUT_CLIP_BELOW);
-    gammatab_13_2(maxindex, 0);
-    igammatab_13_2(maxindex, 0);
-    gammatab_115_2(maxindex, 0);
-    igammatab_115_2(maxindex, 0);
-    gammatab_145_3(maxindex, 0);
-    igammatab_145_3(maxindex, 0);
+
+    jzazbz_pq_(maxindex, 0);
+    jzazbz_pq_inv_(maxindex, 0);
 
 #ifdef _OPENMP
     #pragma omp parallel sections
@@ -224,28 +277,8 @@ void Color::init ()
         // we can put other as gamma g=2.6 slope=11, etc.
         // but noting to do with real gamma !!!: it's only for data Lab # data RGB
         // finally I opted for gamma55 and with options we can change
-
-        switch(settings->denoiselabgamma) {
-            case 0:
-                for (int i = 0; i < maxindex; i++) {
-                    denoiseGammaTab[i] = 65535.0 * gamma26_11 (i / 65535.0);
-                }
-
-                break;
-
-            case 1:
-                for (int i = 0; i < maxindex; i++) {
-                    denoiseGammaTab[i] = 65535.0 * gamma4 (i / 65535.0);
-                }
-
-                break;
-
-            default:
-                for (int i = 0; i < maxindex; i++) {
-                    denoiseGammaTab[i] = 65535.0 * gamma55 (i / 65535.0);
-                }
-
-                break;
+        for (int i = 0; i < maxindex; i++) {
+            denoiseGammaTab[i] = 65535.0 * gamma55 (i / 65535.0);
         }
 
 #ifdef _OPENMP
@@ -256,75 +289,8 @@ void Color::init ()
         // but noting to do with real gamma !!!: it's only for data Lab # data RGB
         // finally I opted for gamma55 and with options we can change
 
-        switch(settings->denoiselabgamma) {
-            case 0:
-                for (int i = 0; i < maxindex; i++) {
-                    denoiseIGammaTab[i] = 65535.0 * igamma26_11 (i / 65535.0);
-                }
-
-                break;
-
-            case 1:
-                for (int i = 0; i < maxindex; i++) {
-                    denoiseIGammaTab[i] = 65535.0 * igamma4 (i / 65535.0);
-                }
-
-                break;
-
-            default:
-                for (int i = 0; i < maxindex; i++) {
-                    denoiseIGammaTab[i] = 65535.0 * igamma55 (i / 65535.0);
-                }
-
-                break;
-        }
-
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-
         for (int i = 0; i < maxindex; i++) {
-            gammatab_13_2[i] = 65535.0 * gamma13_2 (i / 65535.0);
-        }
-
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-
-        for (int i = 0; i < maxindex; i++) {
-            igammatab_13_2[i] = 65535.0 * igamma13_2 (i / 65535.0);
-        }
-
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-
-        for (int i = 0; i < maxindex; i++) {
-            gammatab_115_2[i] = 65535.0 * gamma115_2 (i / 65535.0);
-        }
-
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-
-        for (int i = 0; i < maxindex; i++) {
-            igammatab_115_2[i] = 65535.0 * igamma115_2 (i / 65535.0);
-        }
-
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-
-        for (int i = 0; i < maxindex; i++) {
-            gammatab_145_3[i] = 65535.0 * gamma145_3 (i / 65535.0);
-        }
-
-#ifdef _OPENMP
-        #pragma omp section
-#endif
-
-        for (int i = 0; i < maxindex; i++) {
-            igammatab_145_3[i] = 65535.0 * igamma145_3 (i / 65535.0);
+            denoiseIGammaTab[i] = 65535.0 * igamma55 (i / 65535.0);
         }
 
 #ifdef _OPENMP
@@ -352,6 +318,14 @@ void Color::init ()
         #pragma omp section
 #endif
         linearGammaTRC = cmsBuildGamma(nullptr, 1.0);
+
+#ifdef _OPENMP
+        #pragma omp section
+#endif
+        for (int i = 0; i < maxindex; ++i) {
+            jzazbz_pq_[i] = PQ(float(i)/65535.f);
+            jzazbz_pq_inv_[i] = PQ_inv(float(i)/65535.f);
+        }
     }
 }
 
@@ -368,6 +342,8 @@ void Color::rgb2lab01 (const Glib::ustring &profile, const Glib::ustring &profil
     cmsHPROFILE oprof = nullptr;
     if (workingSpace) {
         oprof = ICCStore::getInstance()->workingSpace(profileW);
+    } else if (profile == procparams::ColorManagementParams::NoICMString) {
+        oprof = ICCStore::getInstance()->getsRGBProfile();
     } else {
         oprof = ICCStore::getInstance()->getProfile(profile);
     }
@@ -1242,8 +1218,11 @@ void Color::interpolateRGBColor (float realL, float iplow, float iphigh, int alg
     Color::xyz2rgb(X, Y, Z, ro, go, bo, rgb_xyz);// ro go bo in gamut
 }
 
-void Color::calcGamma (double pwr, double ts, int mode, GammaValues &gamma)
+void Color::compute_LCMS_tone_curve_params(double gamma, double slope, LMCSToneCurveParams &params)
 {
+    double ts = slope;
+    double pwr = 1.0 / gamma;
+    
     //from Dcraw (D.Coffin)
     int i;
     double g[6], bnd[2] = {0., 0.};
@@ -1277,17 +1256,15 @@ void Color::calcGamma (double pwr, double ts, int mode, GammaValues &gamma)
         g[5] = 1. / (g[1] * SQR(g[3]) / 2. + 1. - g[2] - g[3] - g[2] * g[3] * (log(g[3]) - 1.)) - 1.;
     }
 
-    if (!mode--) {
-        gamma[0] = g[0];
-        gamma[1] = g[1];
-        gamma[2] = g[2];
-        gamma[3] = g[3];
-        gamma[4] = g[4];
-        gamma[5] = g[5];
-        gamma[6] = 0.;
-        return;
-    }
+    params[0] = gamma;
+    params[1] = 1. / (1.0 + g[4]);
+    params[2] = g[4] / (1.0 + g[4]);
+    params[3] = 1. / std::max(slope, 1e-9);
+    params[4] = g[3] * ts;
+    params[5] = 0.;
+    params[6] = 0.;
 }
+
 void Color::gammaf2lut (LUTf &gammacurve, float gamma, float start, float slope, float divisor, float factor)
 {
 #ifdef __SSE2__
@@ -1409,6 +1386,9 @@ void Color::Lab2XYZ(vfloat L, vfloat a, vfloat b, vfloat &x, vfloat &y, vfloat &
 
 inline float Color::computeXYZ2Lab(float f)
 {
+    if (xisnanf(f)) {
+        return f;
+    }
     if (f < 0.f) {
         return 327.68 * ((kappa * f / MAXVALF + 16.0) / 116.0);
     } else if (f > 65535.f) {
@@ -1421,6 +1401,9 @@ inline float Color::computeXYZ2Lab(float f)
 
 inline float Color::computeXYZ2LabY(float f)
 {
+    if (xisnanf(f)) {
+        return f;
+    }
     if (f < 0.f) {
         return 327.68 * (kappa * f / MAXVALF);
     } else if (f > 65535.f) {
@@ -1992,14 +1975,18 @@ void Color::AllMunsellLch(bool lumaMuns, float Lprov1, float Loldd, float HH, fl
 
                 if(correctionHue != 0.0) {
                     int idx = zo - 1;
+#ifdef _OPENMP                    
                     #pragma omp critical (maxdhue)
+#endif
                     {
                         munsDbgInfo->maxdhue[idx] = MAX(munsDbgInfo->maxdhue[idx], absCorrectionHue);
                     }
                 }
 
                 if(absCorrectionHue > 0.45)
+#ifdef _OPENMP
                     #pragma omp atomic
+#endif
                     munsDbgInfo->depass++;        //verify if no bug in calculation
 
 #endif
@@ -2040,14 +2027,18 @@ void Color::AllMunsellLch(bool lumaMuns, float Lprov1, float Loldd, float HH, fl
 
                         if(correctlum != 0.0) {
                             int idx = zo - 1;
+#ifdef _OPENMP                            
                             #pragma omp critical (maxdhuelum)
+#endif
                             {
                                 munsDbgInfo->maxdhuelum[idx] = MAX(munsDbgInfo->maxdhuelum[idx], absCorrectLum);
                             }
                         }
 
                         if(absCorrectLum > 0.35)
+#ifdef _OPENMP
                             #pragma omp atomic
+#endif              
                             munsDbgInfo->depassLum++;    //verify if no bug in calculation
 
 #endif
@@ -2678,7 +2669,7 @@ void Color::LabGamutMunsell(float *labL, float *laba, float *labb, const int N, 
 #ifdef _DEBUG
     t2e.set();
 
-    if (settings->verbose) {
+    if (settings->verbose > 1) {
         printf("Color::LabGamutMunsell (correction performed in %d usec):\n", t2e.etime(t1e));
         printf("   Gamut              : G1negat=%iiter G165535=%iiter \n", negat, moreRGB);
 
@@ -6786,7 +6777,7 @@ void Color::initMunsell ()
 #ifdef _DEBUG
     t2e.set();
 
-    if (settings->verbose) {
+    if (settings->verbose > 1) {
         printf("Lutf Munsell  %d usec\n", t2e.etime(t1e));
     }
 
@@ -6808,10 +6799,10 @@ inline void filmlike_clip_rgb_tone(float *r, float *g, float *b, const float L)
 
 } // namespace
 
-void Color::filmlike_clip(float *r, float *g, float *b)
+void Color::filmlike_clip(float *r, float *g, float *b, float Lmax)
 {
     // This is Adobe's hue-stable film-like curve with a diagonal, ie only used for clipping. Can probably be further optimized.
-    const float L = 65535.0;
+    const float L = Lmax;//65535.0;
 
     if (*r >= *g) {
         if (*g > *b) {         // Case 1: r >= g >  b
@@ -6850,5 +6841,181 @@ void Color::hsl2yuv(float h, float s, float &u, float &v)
     u = s * sincosval.x;
     v = s * sincosval.y;
 }
+
+
+void Color::xyz2jzazbz(float X, float Y, float Z, float &Jz, float &az, float &bz)
+{
+    const auto get_PQ =
+        [&](float x) -> float
+        {
+            return (x >= 0.f && x <= 1.f) ? jzazbz_pq_[x * 65535.f] : PQ(x);
+        };
+    
+    XYZ_D50_to_D65(X, Y, Z);
+    auto Lp = get_PQ(0.674207838f*X + 0.382799340f*Y - 0.047570458f*Z);
+    auto Mp = get_PQ(0.149284160f*X + 0.739628340f*Y + 0.083327300f*Z);
+    auto Sp = get_PQ(0.070941080f*X + 0.174768000f*Y + 0.670970020f*Z);
+    auto Iz = 0.5f * (Lp + Mp);
+    az = 3.524000f*Lp - 4.066708f*Mp + 0.542708f*Sp;
+    bz = 0.199076f*Lp + 1.096799f*Mp - 1.295875f*Sp;
+    Jz = (0.44f * Iz) / (1.f - 0.56f*Iz) - 1.6295499532821566e-11f;
+}
+
+void Color::jzazbz2xyz(float Jz, float az, float bz, float &X, float &Y, float &Z)
+{
+    const auto get_PQ_inv =
+        [&](float x) -> float
+        {
+            return (x >= 0.f && x <= 1.f) ? jzazbz_pq_inv_[x * 65535.f] : PQ_inv(x);
+        };
+
+    Jz = Jz + 1.6295499532821566e-11f;
+    auto Iz = Jz / (0.44f + 0.56f*Jz);
+    auto L = get_PQ_inv(Iz + 1.386050432715393e-1f*az + 5.804731615611869e-2f*bz);
+    auto M = get_PQ_inv(Iz - 1.386050432715393e-1f*az - 5.804731615611891e-2f*bz);
+    auto S = get_PQ_inv(Iz - 9.601924202631895e-2f*az - 8.118918960560390e-1f*bz);
+    X = + 1.661373055774069e+00f*L - 9.145230923250668e-01f*M + 2.313620767186147e-01f*S;
+    Y = - 3.250758740427037e-01f*L + 1.571847038366936e+00f*M - 2.182538318672940e-01f*S;
+    Z = - 9.098281098284756e-02f*L - 3.127282905230740e-01f*M + 1.522766561305260e+00f*S;
+
+    XYZ_D65_to_D50(X, Y, Z);
+}
+
+
+//-----------------------------------------------------------------------------
+// oklab color space from https://bottosson.github.io/posts/oklab/
+//-----------------------------------------------------------------------------
+
+void Color::xyz2oklab(float X, float Y, float Z, float &L, float &a, float &b)
+{
+    XYZ_D50_to_D65(X, Y, Z);
+    
+    constexpr float M1[3][3] = {
+        {0.8189330101f, 0.3618667424f, -0.1288597137f},
+        {0.0329845436f, 0.9293118715f, 0.0361456387f},
+        {0.0482003018f, 0.2643662691f, 0.6338517070f}        
+    };
+    
+    A3 lms = dot_product(M1, A3(X, Y, Z));
+    for (int i = 0; i < 3; ++i) {
+        lms[i] = xcbrtf(lms[i]);
+    }
+    
+    constexpr float M2[3][3] = {
+        {0.2104542553f, 0.7936177850f, -0.0040720468f},
+        {1.9779984951f, -2.4285922050f, 0.4505937099f},
+        {0.0259040371f, 0.7827717662f, -0.8086757660f}
+    };
+
+    lms = dot_product(M2, lms);
+    
+    L = lms[0];
+    a = lms[1];
+    b = lms[2];
+}
+
+
+void Color::oklab2xyz(float L, float a, float b, float &X, float &Y, float &Z)
+{
+    constexpr float M2_inv[3][3] = {
+        {1.f, 0.39633779f, 0.21580376f},
+        {1.00000001f, -0.10556134f, -0.06385417f},
+        {1.00000005f, -0.08948418f, -1.29148554f}
+    };
+
+    A3 lms = dot_product(M2_inv, A3(L, a, b));
+    for (int i = 0; i < 3; ++i) {
+        lms[i] = SQR(lms[i])*lms[i];
+    }
+
+    constexpr float M1_inv[3][3] = {
+        {1.22701385f, -0.55779998f, 0.28125615f},
+        {-0.04058018f, 1.11225687f, -0.07167668f},
+        {-0.07638128f, -0.42148198f, 1.58616322}
+    };
+
+    lms = dot_product(M1_inv, lms);
+    X = lms[0];
+    Y = lms[1];
+    Z = lms[2];
+    
+    XYZ_D65_to_D50(X, Y, Z);
+}
+
+
+// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2100-2-201807-I!!PDF-F.pdf
+// Perceptual Quantization / SMPTE standard ST.2084
+float Color::eval_PQ_curve(float x, bool oetf)
+{
+    constexpr float M1 = 2610.0 / 16384.0;
+    constexpr float M2 = (2523.0 / 4096.0) * 128.0;
+    constexpr float C1 = 3424.0 / 4096.0;
+    constexpr float C2 = (2413.0 / 4096.0) * 32.0;
+    constexpr float C3 = (2392.0 / 4096.0) * 32.0;
+
+    if (x == 0.f) {
+        return 0.f;
+    }
+
+    float res = 0.f;
+    if (oetf) {
+        // assume 1.0 is 100 nits, normalise so that 1.0 is 10000 nits
+        float p = std::pow(std::max(x, 0.f) / 100.f, M1);
+        float num = C1 + C2 * p;
+        float den = 1.f + C3 * p;
+        res = std::pow(num / den, M2);
+    } else {
+        float p = std::pow(x, 1.f / M2);
+        float num = std::max(p - C1, 0.f);
+        float den = C2 - C3 * p;
+        res = std::pow(num / den, 1.f / M1) * 100.f;
+    }
+    return res;
+}
+
+
+// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2100-2-201807-I!!PDF-F.pdf
+// Hybrid Log-Gamma
+float Color::eval_HLG_curve(float x, bool oetf)
+{
+    constexpr float A = 0.17883277f;
+    constexpr float B = 0.28466892f; // 1.f - 4.f * A
+    constexpr float C = 0.55991072953f; // 0.5f - A * std::log(4.f * A)
+
+    if (x == 0.f) {
+        return 0.f;
+    }
+
+    float res = 0.f;
+    if (oetf) {
+        // assume 1.0 is 100 nits, normalise so that 1.0 is 1000 nits
+        float e = LIM01(x / 10.f);
+        res = (e <= 1.f/12.f) ? std::sqrt(3.f * e) : A * std::log(12.f * e - B) + C;
+    } else {
+        res = (x <= 0.5f) ? SQR(x) / 3.f : (std::exp((x - C) / A) + B) / 12.f;
+        res *= 10.f;
+    }
+
+    return res;
+}
+
+
+float Color::eval_ACEScct_curve(float x, bool forward)
+{
+    if (forward) {
+        if (x <= 0.078125f) {
+            return 10.5402377416545f * x + 0.0729055341958355f;
+        } else {
+            return (std::log2(x) + 9.72f) / 17.52f;
+        }
+    } else {
+        if (x <= 0.155251141552511f) {
+            return (x - 0.0729055341958355f) / 10.5402377416545f;
+        } else {
+            return std::exp2(x * 17.52f - 9.72f);
+        }
+    }
+}
+
 
 } // namespace rtengine

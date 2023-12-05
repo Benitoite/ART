@@ -34,6 +34,8 @@ protected:
     Adjuster* centerX;
     Adjuster* centerY;
 
+    rtengine::procparams::VignettingParams initial_params;
+
 public:
 
     Vignetting();
@@ -43,7 +45,9 @@ public:
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

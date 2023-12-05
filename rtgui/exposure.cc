@@ -28,11 +28,13 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 
 Exposure::Exposure():
-    FoldableToolPanel(this, "exposure", M("TP_EXPOSURE_LABEL"), false, true)
+    FoldableToolPanel(this, "exposure", M("TP_EXPOSURE_LABEL"), false, true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
     EvBlack = m->newEvent(AUTOEXP, "HISTORY_MSG_EXPOSURE_BLACK");
+    EvHRBlur = m->newEvent(DARKFRAME, "HISTORY_MSG_EXPOSURE_HRBLUR");
 
 //-------------- Highlight Reconstruction -----------------
     pack_start (*Gtk::manage (new  Gtk::HSeparator()));
@@ -41,6 +43,7 @@ Exposure::Exposure():
     hrmode->append(M("TP_HLREC_OFF"));
     hrmode->append(M("TP_HLREC_BLEND"));
     hrmode->append(M("TP_HLREC_COLOR"));
+    hrmode->append(M("TP_HLREC_COLORBLEND"));
 
     hrmode->set_active(ExposureParams::HR_OFF);
     Gtk::HBox *hlrbox = Gtk::manage(new Gtk::HBox());
@@ -50,6 +53,10 @@ Exposure::Exposure():
     pack_start (*hlrbox);
 
     hrmode->signal_changed().connect ( sigc::mem_fun(*this, &Exposure::hrmodeChanged) );
+
+    hrblur = Gtk::manage(new Adjuster(M("TP_EXPOSURE_HRBLUR"), 0, 3, 1, 0));
+    pack_start(*hrblur);
+    hrblur->setAdjusterListener(this);
 
     //----------- Exposure Compensation ---------------------
     pack_start(*Gtk::manage(new Gtk::HSeparator()));
@@ -75,6 +82,8 @@ void Exposure::read(const ProcParams* pp)
     expcomp->setValue(pp->exposure.expcomp);
     hrmode->set_active(pp->exposure.hrmode);
     black->setValue(pp->exposure.black);
+    hrblur->setValue(pp->exposure.hrblur);
+    showHRBlur();
 
     enableListener();
 }
@@ -86,6 +95,7 @@ void Exposure::write(ProcParams *pp)
     pp->exposure.expcomp = expcomp->getValue();
     pp->exposure.hrmode = ExposureParams::HighlightReconstruction(hrmode->get_active_row_number());
     pp->exposure.black = black->getValue();
+    pp->exposure.hrblur = hrblur->getValue();
 }
 
 void Exposure::hrmodeChanged ()
@@ -93,6 +103,7 @@ void Exposure::hrmodeChanged ()
     if (listener && getEnabled()) {
         listener->panelChanged(EvHRMethod, hrmode->get_active_text());
     }
+    showHRBlur();
 }
 
 
@@ -105,6 +116,7 @@ void Exposure::setRaw(bool raw)
         hrmode->set_active(0);
         hrmode->set_sensitive(false);
     }
+    showHRBlur();
     enableListener();
 }
 
@@ -113,6 +125,9 @@ void Exposure::setDefaults(const ProcParams* defParams)
 {
     expcomp->setDefault(defParams->exposure.expcomp);
     black->setDefault(defParams->exposure.black);
+    hrblur->setDefault(defParams->exposure.hrblur);
+
+    initial_params = defParams->exposure;
 }
 
 
@@ -129,6 +144,8 @@ void Exposure::adjusterChanged(Adjuster* a, double newval)
         listener->panelChanged (EvExpComp, costr);
     } else if (a == black) {
         listener->panelChanged(EvBlack, a->getTextValue());
+    } else if (a == hrblur) {
+        listener->panelChanged(EvHRBlur, a->getTextValue());
     }
 }
 
@@ -142,6 +159,29 @@ void Exposure::trimValues (rtengine::procparams::ProcParams* pp)
 {
     expcomp->trimValue(pp->exposure.expcomp);
     black->trimValue(pp->exposure.black);
+    hrblur->trimValue(pp->exposure.hrblur);
 }
 
 
+void Exposure::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.exposure = initial_params;
+    }
+    pp.exposure.enabled = getEnabled();
+    read(&pp);
+}
+
+
+void Exposure::showHRBlur()
+{
+    hrblur->set_visible(hrmode->get_active_row_number() == 2);
+}
+
+
+void Exposure::registerShortcuts(ToolShortcutManager *mgr)
+{
+    mgr->addShortcut(GDK_KEY_e, this, expcomp);
+    mgr->addShortcut(GDK_KEY_q, this, black);
+}

@@ -57,6 +57,8 @@ class BatchQueuePanel : public Gtk::VBox,
 
     Gtk::CheckButton *apply_batch_profile_;
     ProfileStoreComboBox *profiles_cb_;
+    sigc::connection apply_batch_profile_conn_;
+    sigc::connection profiles_cb_conn_;
 
     std::atomic<bool> queueShouldRun;
 
@@ -77,6 +79,8 @@ public:
     void queueSizeChanged(int qsize, bool queueRunning, bool queueError, const Glib::ustring& queueErrorMessage) override;
     bool canStartNext() override;
 
+    void refreshProfiles();
+
 private:
     void startBatchProc ();
     void stopBatchProc ();
@@ -88,6 +92,8 @@ private:
     void formatChanged(const Glib::ustring& format) override;
     void updateTab (int qsize, int forceOrientation = 0); // forceOrientation=0: base on options / 1: horizontal / 2: vertical
     void applyBatchProfileToggled();
+
+    rtengine::procparams::MultiPartialProfile bqprof_;
 };
 #endif
 

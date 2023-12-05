@@ -16,23 +16,21 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _DYNAMICPROFILE_H_
-#define _DYNAMICPROFILE_H_
+#pragma once
 
 #include <glibmm.h>
 #include <vector>
 #include "../rtgui/options.h"
 
-class DynamicProfileRule
-{
+class DynamicProfileRule {
 public:
     template <class T>
     struct Range {
         T min;
         T max;
-        explicit Range (T l = T(), T u = T()): min (l), max (u) {}
+        explicit Range(T l=T(), T u=T()): min(l), max(u) {}
 
-        bool operator() (T val) const
+        bool operator()(T val) const
         {
             return val >= min && val <= max;
         }
@@ -41,15 +39,24 @@ public:
     struct Optional {
         Glib::ustring value;
         bool enabled;
-        explicit Optional (const Glib::ustring v = "", bool e = false):
-            value (v), enabled (e) {}
+        explicit Optional(const Glib::ustring v="", bool e=false):
+            value(v), enabled(e) {}
 
-        bool operator() (const Glib::ustring &val) const;
+        bool operator()(const Glib::ustring &val) const;
+    };
+
+    struct CustomMetadata {
+        std::vector<std::pair<std::string, std::string>> value;
+        bool enabled;
+
+        explicit CustomMetadata(bool e=false): value(), enabled(e) {}
+
+        bool operator()(const rtengine::FramesMetaData *m) const;
     };
 
     DynamicProfileRule();
-    bool matches (const rtengine::FramesMetaData *im) const;
-    bool operator< (const DynamicProfileRule &other) const;
+    bool matches(const rtengine::FramesMetaData *im) const;
+    bool operator<(const DynamicProfileRule &other) const;
 
     int serial_number;
     Range<int> iso;
@@ -60,11 +67,14 @@ public:
     Optional camera;
     Optional lens;
     Optional imagetype;
+    Optional filetype;
+    Optional software;
+    CustomMetadata customdata;
     Glib::ustring profilepath;
 };
 
-class DynamicProfileRules
-{
+
+class DynamicProfileRules {
 protected:
     /** cache for dynamic profile rules */
     std::vector<DynamicProfileRule> dynamicRules;
@@ -81,5 +91,3 @@ public:
 private:
     static Glib::ustring builtin_rules_file_;
 };
-
-#endif // _DYNAMICPROFILE_H_

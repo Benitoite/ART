@@ -17,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __GUI_UTILS_
-#define __GUI_UTILS_
+#pragma once
 
 #include <functional>
 #include <map>
@@ -48,9 +47,7 @@ gboolean acquireGUI(void* data);
 void setExpandAlignProperties(Gtk::Widget *widget, bool hExpand, bool vExpand, enum Gtk::Align hAlign, enum Gtk::Align vAlign);
 Gtk::Border getPadding(const Glib::RefPtr<Gtk::StyleContext> style);
 
-class IdleRegister final :
-    public rtengine::NonCopyable
-{
+class IdleRegister final: public rtengine::NonCopyable {
 public:
     ~IdleRegister();
 
@@ -85,8 +82,7 @@ private:
  *     }
  *   </code>
  */
-class GThreadLock
-{
+class GThreadLock {
 public:
     GThreadLock()
     {
@@ -103,8 +99,7 @@ public:
  *
  * Will relock on destruction.
  */
-class GThreadUnLock
-{
+class GThreadUnLock {
 public:
     GThreadUnLock()
     {
@@ -118,8 +113,7 @@ public:
 
 #pragma GCC diagnostic pop
 
-class ConnectionBlocker
-{
+class ConnectionBlocker {
 public:
     explicit ConnectionBlocker (Gtk::Widget *associatedWidget, sigc::connection& connection) : connection (associatedWidget ? &connection : nullptr), wasBlocked(false)
     {
@@ -145,8 +139,7 @@ private:
 /**
  * @brief Glue box to control visibility of the MyExpender's content ; also handle the frame around it
  */
-class ExpanderBox: public Gtk::EventBox
-{
+class ExpanderBox: public Gtk::EventBox {
 private:
     Gtk::Container *pC;
 
@@ -178,8 +171,7 @@ public:
  *
  * Warning: once you've instantiated this class with a text label or a widget label, you won't be able to revert to the other solution.
  */
-class MyExpander : public Gtk::VBox
-{
+class MyExpander : public Gtk::VBox {
 public:
     typedef sigc::signal<void> type_signal_enabled_toggled;
 private:
@@ -216,6 +208,9 @@ protected:
     RTImage* statusImage;       /// Image to display the opened/closed status (if useEnabled is false) of the enabled/disabled status (if useEnabled is true)
     Gtk::Label* label;          /// Text to display in the header, next to the arrow image ; can be NULL if the "widget" version of the ctor has been used
     bool useEnabled;            /// Set whether to handle an enabled/disabled feature and display the appropriate images
+
+    Gtk::Overlay *overlay_;
+    Gtk::Widget *overlay_label_;
 
 public:
 
@@ -288,9 +283,8 @@ public:
 /**
  * @brief subclass of Gtk::ScrolledWindow in order to handle the scrollwheel
  */
-class MyScrolledWindow : public Gtk::ScrolledWindow
-{
-
+class MyScrolledWindow: public Gtk::ScrolledWindow {
+public:
     bool on_scroll_event (GdkEventScroll* event) override;
     void get_preferred_width_vfunc (int& minimum_width, int& natural_width) const override;
     void get_preferred_height_vfunc (int& minimum_height, int& natural_height) const override;
@@ -303,8 +297,7 @@ public:
 /**
  * @brief subclass of Gtk::ScrolledWindow in order to handle the large toolbars (wider than available space)
  */
-class MyScrolledToolbar : public Gtk::ScrolledWindow
-{
+class MyScrolledToolbar: public Gtk::ScrolledWindow {
 
     bool on_scroll_event (GdkEventScroll* event) override;
     void get_preferred_height_vfunc (int& minimum_height, int& natural_height) const override;
@@ -316,8 +309,7 @@ public:
 /**
  * @brief subclass of Gtk::ComboBox in order to handle the scrollwheel
  */
-class MyComboBox : public Gtk::ComboBox
-{
+class MyComboBox: public Gtk::ComboBox {
     int naturalWidth, minimumWidth;
 
     bool on_scroll_event (GdkEventScroll* event) override;
@@ -333,8 +325,7 @@ public:
 /**
  * @brief subclass of Gtk::ComboBoxText in order to handle the scrollwheel
  */
-class MyComboBoxText : public Gtk::ComboBoxText
-{
+class MyComboBoxText: public Gtk::ComboBoxText {
     int naturalWidth, minimumWidth;
     sigc::connection myConnection;
 
@@ -353,8 +344,7 @@ public:
 /**
  * @brief subclass of Gtk::SpinButton in order to handle the scrollwheel
  */
-class MySpinButton : public Gtk::SpinButton
-{
+class MySpinButton: public Gtk::SpinButton {
 
 protected:
     bool on_scroll_event (GdkEventScroll* event) override;
@@ -368,8 +358,7 @@ public:
 /**
  * @brief subclass of Gtk::HScale in order to handle the scrollwheel
  */
-class MyHScale : public Gtk::HScale
-{
+class MyHScale: public Gtk::HScale {
 
     bool on_scroll_event (GdkEventScroll* event) override;
     bool on_key_press_event (GdkEventKey* event) override;
@@ -466,15 +455,13 @@ typedef enum RTNav {
 /**
  * @brief Handle the switch between text and image to be displayed in the HBox (to be used in a button/toolpanel)
  */
-class TextOrIcon : public Gtk::HBox
-{
+class TextOrIcon: public Gtk::HBox {
 
 public:
     TextOrIcon (const Glib::ustring &filename, const Glib::ustring &labelTx, const Glib::ustring &tooltipTx);
 };
 
-class MyImageMenuItem : public Gtk::MenuItem
-{
+class MyImageMenuItem: public Gtk::MenuItem {
 private:
     Gtk::Grid *box;
     RTImage *image;
@@ -486,8 +473,7 @@ public:
     const Gtk::Label* getLabel () const;
 };
 
-class MyProgressBar : public Gtk::ProgressBar
-{
+class MyProgressBar: public Gtk::ProgressBar {
 private:
     int w;
 
@@ -505,8 +491,7 @@ public:
 /**
  * @brief Define a gradient milestone
  */
-class GradientMilestone
-{
+class GradientMilestone {
 public:
     double position;
     double r;
@@ -524,8 +509,7 @@ public:
     }
 };
 
-class RefCount
-{
+class RefCount {
 private:
     int refCount;
 public:
@@ -549,8 +533,7 @@ public:
 /**
  * @brief Handle back buffers as automatically as possible, and suitable to be used with Glib::RefPtr
  */
-class BackBuffer : public RefCount
-{
+class BackBuffer: public RefCount {
 
 protected:
     int x, y, w, h;  // Rectangle where the colored bar has to be drawn
@@ -647,4 +630,5 @@ inline Gtk::Window& getToplevelWindow (Gtk::Widget* widget)
     return *static_cast<Gtk::Window*> (widget->get_toplevel ());
 }
 
-#endif
+
+void setTreeViewCssProvider(Gtk::TreeView *tree);

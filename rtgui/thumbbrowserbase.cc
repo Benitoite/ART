@@ -29,7 +29,9 @@
 using namespace std;
 
 ThumbBrowserBase::ThumbBrowserBase ()
-    : location(THLOC_FILEBROWSER), inspector(nullptr), isInspectorActive(false), eventTime(0), lastClicked(nullptr), anchor(nullptr), previewHeight(options.thumbSize), numOfCols(1), arrangement(TB_Horizontal)
+    : location(THLOC_FILEBROWSER), inspector(nullptr), isInspectorActive(false), eventTime(0), lastClicked(nullptr), anchor(nullptr), previewHeight(options.thumbSize), numOfCols(1), arrangement(TB_Horizontal),
+      use_hscroll_(true),
+      use_vscroll_(true)
 {
     inW = -1;
     inH = -1;
@@ -42,6 +44,7 @@ ThumbBrowserBase::ThumbBrowserBase ()
     attach (hscroll, 0, 1, 1, 1);
 
     internal.setParent (this);
+    internal.set_can_focus(true);
 
     show_all ();
 
@@ -56,12 +59,16 @@ void ThumbBrowserBase::scrollChanged ()
     {
         MYWRITERLOCK(l, entryRW);
 
+        double dx, dy;
+        getScrollPosition(dx, dy);
+        int x = dx, y = dy;
+
         for (size_t i = 0; i < fd.size(); i++) {
-            fd[i]->setOffset ((int)(hscroll.get_value()), (int)(vscroll.get_value()));
+            fd[i]->setOffset(x, y);
         }
     }
 
-    internal.setPosition ((int)(hscroll.get_value()), (int)(vscroll.get_value()));
+    // internal.setPosition ((int)(hscroll.get_value()), (int)(vscroll.get_value()));
 
     if (!internal.isDirty()) {
         internal.setDirty ();
@@ -78,10 +85,19 @@ void ThumbBrowserBase::scroll (int direction, double deltaX, double deltaY)
         delta = deltaY;
     }
     if (direction == GDK_SCROLL_SMOOTH && delta == 0.0) {
-        // sometimes this case happens. To avoid scrolling the wrong direction in this case, we just do nothing    
+        // sometimes this case happens. To avoid scrolling the wrong direction in this case, we just do nothing
+        // This is probably no longer necessary now that coef is no longer quantized to +/-1.0 but why waste CPU cycles?
         return;
     }
-    double coef = direction == GDK_SCROLL_DOWN || (direction == GDK_SCROLL_SMOOTH && delta > 0.0) ? +1.0 : -1.0;
+    //GDK_SCROLL_SMOOTH can come in as many events with small deltas, don't quantize these to +/-1.0 so trackpads work well
+    double coef;
+    if(direction == GDK_SCROLL_SMOOTH) {
+        coef = delta;
+    } else if (direction == GDK_SCROLL_DOWN) {
+        coef = +1.0;
+    } else {
+        coef = -1.0;
+    }
 
     // GUI already acquired when here
     if (direction == GDK_SCROLL_UP || direction == GDK_SCROLL_DOWN || direction == GDK_SCROLL_SMOOTH) {
@@ -565,11 +581,20 @@ void ThumbBrowserBase::configScrollBars ()
             ha->set_page_size(iw);
             if (iw >= inW) {
                 hscroll.hide();
+                use_hscroll_ = false;
             } else {
                 hscroll.show();
+                use_hscroll_ = true;
             }
         } else {
             hscroll.hide();
+            use_hscroll_ = false;
+            // int px, py;
+            // internal.getPosition(px, py);
+            // if (px > 0) {
+            //     internal.setPosition(0, py);
+            //     queue_draw();
+            // }
         }
 
         auto va = vscroll.get_adjustment();
@@ -582,9 +607,13 @@ void ThumbBrowserBase::configScrollBars ()
 
         if (ih >= inH) {
             vscroll.hide();
+            use_vscroll_ = false;
         } else {
             vscroll.show();
+            use_vscroll_ = true;
         }
+
+        scrollChanged();
     }
 }
 
@@ -735,6 +764,8 @@ void ThumbBrowserBase::Internal::on_style_updated()
     texts = style->get_color(Gtk::STATE_FLAG_SELECTED);
     bgn = style->get_background_color(Gtk::STATE_FLAG_NORMAL);
     bgs = style->get_background_color(Gtk::STATE_FLAG_SELECTED);
+    bgp = style->get_background_color(Gtk::STATE_FLAG_PRELIGHT);
+    hl = style->get_color(Gtk::STATE_FLAG_ACTIVE);
 }
 
 void ThumbBrowserBase::Internal::on_realize()
@@ -751,6 +782,8 @@ void ThumbBrowserBase::Internal::on_realize()
     texts = style->get_color(Gtk::STATE_FLAG_SELECTED);
     bgn = style->get_background_color(Gtk::STATE_FLAG_NORMAL);
     bgs = style->get_background_color(Gtk::STATE_FLAG_SELECTED);
+    bgp = style->get_background_color(Gtk::STATE_FLAG_PRELIGHT);
+    hl = style->get_color(Gtk::STATE_FLAG_ACTIVE);
 
     set_can_focus(true);
     add_events(Gdk::EXPOSURE_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK | Gdk::SCROLL_MASK | Gdk::SMOOTH_SCROLL_MASK | Gdk::KEY_PRESS_MASK);
@@ -787,7 +820,8 @@ void ThumbBrowserBase::on_style_updated ()
     refreshThumbImages ();
 }
 
-ThumbBrowserBase::Internal::Internal () : ofsX(0), ofsY(0), parent(nullptr), dirty(true)
+ThumbBrowserBase::Internal::Internal () : //ofsX(0), ofsY(0),
+                                          parent(nullptr), dirty(true)
 {
     Glib::RefPtr<Gtk::StyleContext> style = get_style_context();
     set_name("FileCatalog");
@@ -798,11 +832,19 @@ void ThumbBrowserBase::Internal::setParent (ThumbBrowserBase* p)
     parent = p;
 }
 
-void ThumbBrowserBase::Internal::setPosition (int x, int y)
-{
-    ofsX = x;
-    ofsY = y;
-}
+// void ThumbBrowserBase::Internal::setPosition (int x, int y)
+// {
+//     ofsX = x;
+//     ofsY = y;
+// }
+
+
+// void ThumbBrowserBase::Internal::getPosition(int &x, int &y)
+// {
+//     x = ofsX;
+//     y = ofsY;
+// }
+
 
 bool ThumbBrowserBase::Internal::on_key_press_event (GdkEventKey* event)
 {
@@ -1042,7 +1084,7 @@ void ThumbBrowserBase::zoomChanged (bool zoomIn)
         MYWRITERLOCK(l, entryRW);
 
         for (size_t i = 0; i < fd.size(); i++) {
-            fd[i]->resize (previewHeight);
+            fd[i]->resize(previewHeight);
         }
     }
 
@@ -1132,19 +1174,25 @@ void ThumbBrowserBase::enableTabMode(bool enable)
 
 void ThumbBrowserBase::initEntry (ThumbBrowserEntryBase* entry)
 {
-    entry->setOffset ((int)(hscroll.get_value()), (int)(vscroll.get_value()));
+    double x, y;
+    getScrollPosition(x, y);
+    entry->setOffset(x, y);
 }
 
 void ThumbBrowserBase::getScrollPosition (double& h, double& v)
 {
-    h = hscroll.get_value ();
-    v = vscroll.get_value ();
+    h = use_hscroll_ ? hscroll.get_value() : 0;
+    v = use_vscroll_ ? vscroll.get_value() : 0;
 }
 
 void ThumbBrowserBase::setScrollPosition (double h, double v)
 {
-    hscroll.set_value (h > hscroll.get_adjustment()->get_upper() ? hscroll.get_adjustment()->get_upper() : h);
-    vscroll.set_value (v > vscroll.get_adjustment()->get_upper() ? vscroll.get_adjustment()->get_upper() : v);
+    if (use_hscroll_) {
+        hscroll.set_value(h > hscroll.get_adjustment()->get_upper() ? hscroll.get_adjustment()->get_upper() : h);
+    }
+    if (use_vscroll_) {
+        vscroll.set_value (v > vscroll.get_adjustment()->get_upper() ? vscroll.get_adjustment()->get_upper() : v);
+    }
 }
 
 // needed for auto-height in single tab
@@ -1182,3 +1230,10 @@ void ThumbBrowserBase::redrawEntryNeeded(ThumbBrowserEntryBase* entry)
 }
 
 
+void ThumbBrowserBase::getFocus()
+{
+    internal.grab_focus();
+    if (!fd.empty() && selected.empty()) {
+        selectFirst(false);
+    }
+}

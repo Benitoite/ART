@@ -31,6 +31,8 @@ protected:
     Adjuster* thresh;
     //Adjuster* edge;
 
+    rtengine::procparams::ImpulseDenoiseParams initial_params;
+
 public:
 
     ImpulseDenoise();
@@ -42,7 +44,9 @@ public:
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
     void enabledChanged  () override;
 
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

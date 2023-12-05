@@ -34,6 +34,10 @@
 #include "../rtgui/editid.h"
 #include "settings.h"
 #include "LUT.h"
+#include "tweakoperator.h"
+#include "gainmap.h"
+#include "array2D.h"
+
 /**
  * @file
  * This file contains the main functionality of the RawTherapee engine.
@@ -54,9 +58,7 @@ class ImageSource;
   * This class provides functions to obtain exif and IPTC metadata information
   * from any of the sub-frame of an image file
   */
-class FramesMetaData
-{
-
+class FramesMetaData {
 public:
     /** @return Returns the number of frame contained in the file based on Metadata */
     virtual unsigned int getFrameCount() const = 0;
@@ -107,6 +109,8 @@ public:
     /** @return the sample format based on MetaData */
     virtual IIOSampleFormat getSampleFormat() const = 0;
 
+    virtual std::string getSoftware() const = 0;
+
     /** Functions to convert between floating point and string representation of shutter and aperture */
     static std::string apertureToString (double aperture);
     /** Functions to convert between floating point and string representation of shutter and aperture */
@@ -130,6 +134,9 @@ public:
 
     virtual Glib::ustring getFileName() const = 0;
     virtual int getRating() const = 0;
+    virtual std::vector<GainMap> getGainMaps() const = 0;
+    virtual void getDimensions(int &w, int &h) const = 0;
+    virtual bool isDNG() const { return false; }
 };
 
 /** This listener interface is used to indicate the progress of time consuming operations */
@@ -252,9 +259,10 @@ public:
     virtual void sizeChanged(int w, int h, int ow, int oh) = 0;
 };
 
+class HistogramObservable;
+
 /** This listener is used when the histogram of the final image has changed. */
-class HistogramListener
-{
+class HistogramListener {
 public:
     virtual ~HistogramListener() = default;
     /** This member function is called when the histogram of the final image has changed.
@@ -277,8 +285,42 @@ public:
         const LUTu& histGreenRaw,
         const LUTu& histBlueRaw,
         const LUTu& histChroma,
-        const LUTu& histLRETI
+        const LUTu& histLRETI,
+        int vectorscopeScale,
+        const array2D<int>& vectorscopeHC,
+        const array2D<int>& vectorscopeHS,
+        int waveformScale,
+        const array2D<int>& waveformRed,
+        const array2D<int>& waveformGreen,
+        const array2D<int>& waveformBlue,
+        const array2D<int>& waveformLuma
     ) = 0;
+    /** Tells which observable is notifying the listener. */
+    virtual void setObservable(HistogramObservable* observable) = 0;
+    /** Returns if the listener wants the histogram to be updated. */
+    virtual bool updateHistogram() const = 0;
+    /** Returns if the listener wants the raw histogram to be updated. */
+    virtual bool updateHistogramRaw() const = 0;
+    /** Returns if the listener wants the H-C vectorscope to be updated. */
+    virtual bool updateVectorscopeHC() const = 0;
+    /** Returns if the listener wants the H-S vectorscope to be updated. */
+    virtual bool updateVectorscopeHS() const = 0;
+    /** Returns if the listener wants the waveform to be updated. */
+    virtual bool updateWaveform() const  = 0;
+};
+
+class HistogramObservable {
+public:
+    /** Tells the observable to update the histogram data. */
+    virtual void requestUpdateHistogram() = 0;
+    /** Tells the observable to update the raw histogram data. */
+    virtual void requestUpdateHistogramRaw() = 0;
+    /** Tells the observable to update the H-C vectorscope data. */
+    virtual void requestUpdateVectorscopeHC() = 0;
+    /** Tells the observable to update the H-S vectorscope data. */
+    virtual void requestUpdateVectorscopeHS() = 0;
+    /** Tells the observable to update the waveform data. */
+    virtual void requestUpdateWaveform() = 0;
 };
 
 /** This listener is used when the auto exposure has been recomputed (e.g. when the clipping ratio changed). */
@@ -296,7 +338,7 @@ public:
       * @param hlrecons set to true if HighLight Reconstruction is enabled */
     virtual void autoExpChanged(double brightness, int bright, int contrast, int black, int hlcompr, int hlcomprthresh, bool hlrecons) {}
 
-    virtual void autoMatchedToneCurveChanged(procparams::ToneCurveParams::TcMode curveMode, const std::vector<double>& curve) = 0;
+    virtual void autoMatchedToneCurveChanged(const std::vector<double> &curve, const std::vector<double> &curve2) = 0;
 };
 
 
@@ -359,6 +401,13 @@ public :
     virtual void autoContrastChanged (double autoContrast) = 0;
 };
 
+class FilmNegListener
+{
+public:
+    virtual ~FilmNegListener() = default;
+    virtual void filmRefValuesChanged(const procparams::FilmNegativeParams::RGB &refInput, const procparams::FilmNegativeParams::RGB &refOutput) = 0;
+};
+
 /** This class represents a detailed part of the image (looking through a kind of window).
   * It can be created and destroyed with the appropriate members of StagedImageProcessor.
   * Several crops can be assigned to the same image.   */
@@ -382,6 +431,13 @@ public:
     virtual void destroy () {}
 };
 
+
+enum GamutCheck {
+    GAMUT_CHECK_OFF,
+    GAMUT_CHECK_OUTPUT,
+    GAMUT_CHECK_MONITOR
+};
+
 /** This is a staged, cached image processing manager with partial image update support.  */
 class StagedImageProcessor {
 
@@ -389,6 +445,14 @@ public:
     /** Returns the initial image corresponding to the image processor.
       * @return the initial image corresponding to the image processor */
     virtual InitialImage* getInitialImage () = 0;
+    /** Set the TweakOperator
+      * @param tOperator is a pointer to the object that will alter the ProcParams for the rendering */
+    virtual void        setTweakOperator (TweakOperator *tOperator) = 0;
+    /** Unset the TweakOperator
+      * @param tOperator is a pointer to the object that were altering the ProcParams for the rendering
+      *        It will only unset the tweak operator if tOperator is the same than the currently set operator.
+      *        If it doesn't match, the currently set TweakOperator will remain set. */
+    virtual void        unsetTweakOperator (TweakOperator *tOperator) = 0;
     /** Returns the current processing parameters.
       * @param dst is the location where the image processing parameters are copied (it is assumed that the memory is allocated by the caller) */
     virtual void        getParams (procparams::ProcParams* dst) = 0;
@@ -443,7 +507,6 @@ public:
     virtual void        getCamWB    (double& temp, double& green) = 0;
     virtual void        getSpotWB  (int x, int y, int rectSize, double& temp, double& green) = 0;
     virtual void        getAutoCrop (double ratio, int &x, int &y, int &w, int &h) = 0;
-    virtual bool        getFilmNegativeExponents(int xA, int yA, int xB, int yB, std::array<float, 3>& newExps) = 0;
 
     virtual bool getDeltaELCH(EditUniqueID id, int x, int y, float &L, float &C, float &H) = 0;
 
@@ -464,11 +527,11 @@ public:
     virtual void        setImageTypeListener    (ImageTypeListener* l) = 0;
     virtual void setAutoLogListener(AutoLogListener *l) = 0;
     virtual void setAutoDeconvRadiusListener(AutoDeconvRadiusListener *l) = 0;
+    virtual void setFilmNegListener(FilmNegListener* l) = 0;
 
     virtual void        setMonitorProfile       (const Glib::ustring& monitorProfile, RenderingIntent intent) = 0;
     virtual void        getMonitorProfile       (Glib::ustring& monitorProfile, RenderingIntent& intent) const = 0;
-    virtual void        setSoftProofing         (bool softProof, bool gamutCheck) = 0;
-    virtual void        getSoftProofing         (bool &softProof, bool &gamutCheck) = 0;
+    virtual void setSoftProofing(bool softProof, GamutCheck gamutCheck) = 0;
     virtual void        setSharpMask            (bool sharpMask) = 0;
 
     virtual ~StagedImageProcessor () {}

@@ -24,11 +24,12 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-RAWExposure::RAWExposure () : FoldableToolPanel(this, "rawexposure", M("TP_EXPOS_WHITEPOINT_LABEL"), false, true)
+RAWExposure::RAWExposure () : FoldableToolPanel(this, "rawexposure", M("TP_EXPOS_WHITEPOINT_LABEL"), false, true, true)
 {
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
     
-    PexPos = Gtk::manage(new Adjuster (M("TP_RAWEXPOS_LINEAR"), 0.1, 16.0, 0.01, 1));
+    PexPos = Gtk::manage(new Adjuster (M("TP_RAWEXPOS_LINEAR"), 0.1, 32.0, 0.01, 1));
     PexPos->setAdjusterListener (this);
 
     if (PexPos->delay < options.adjusterMaxDelay) {
@@ -79,4 +80,12 @@ void RAWExposure::trimValues (rtengine::procparams::ProcParams* pp)
 {
 
     PexPos->trimValue(pp->raw.expos);
+}
+
+
+void RAWExposure::toolReset(bool to_initial)
+{
+    disableListener();
+    PexPos->resetValue(to_initial);
+    enableListener();
 }

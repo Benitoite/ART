@@ -44,7 +44,7 @@ inline uint16_t DNG_FloatToHalf(float f)
 }
 
 // From DNG SDK dng_utils.h
-inline float DNG_HalfToFloat(uint16_t halfValue)
+inline uint32_t DNG_HalfToFloat_i(uint16_t halfValue)
 {
     int32_t sign     = (halfValue >> 15) & 0x00000001;
     int32_t exponent = (halfValue >> 10) & 0x0000001f;
@@ -79,14 +79,14 @@ inline float DNG_HalfToFloat(uint16_t halfValue)
 }
 
 
-inline float DNG_HalfToFloat_f(uint16_t halfValue)
+inline float DNG_HalfToFloat(uint16_t halfValue)
 {
     union {
         float f;
         uint32_t i;
     } tmp;
 
-    tmp.i = DNG_HalfToFloat(halfValue);
+    tmp.i = DNG_HalfToFloat_i(halfValue);
     return tmp.f;
 }
 

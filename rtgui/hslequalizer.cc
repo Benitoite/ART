@@ -45,10 +45,11 @@ void hsv2rgb01(float h, float s, float v, float &r, float &g, float &b)
 } // namespace
 
 HSLEqualizer::HSLEqualizer():
-    FoldableToolPanel(this, "hslequalizer", M("TP_HSVEQUALIZER_LABEL"), false, true)
+    FoldableToolPanel(this, "hslequalizer", M("TP_HSVEQUALIZER_LABEL"), false, true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvHSLSmoothing = m->newEvent(RGBCURVE, "HISTORY_MSG_HSL_SMOOTHING");
+    EvToolReset.set_action(RGBCURVE);
     
     std::vector<GradientMilestone> bottomMilestones;
     for (int i = 0; i < 7; i++) {
@@ -62,17 +63,17 @@ HSLEqualizer::HSLEqualizer():
     curveEditorG->setCurveListener(this);
 
     hshape = static_cast<FlatCurveEditor *>(curveEditorG->addCurve(CT_Flat, M("TP_HSVEQUALIZER_HUE")));
-    hshape->setEditID(EUID_HSV_H, BT_SINGLEPLANE_FLOAT);
+    hshape->setEditID(EUID_HSL_H, BT_SINGLEPLANE_FLOAT);
     hshape->setBottomBarBgGradient(bottomMilestones);
     hshape->setCurveColorProvider(this, 1);
 
     sshape = static_cast<FlatCurveEditor *>(curveEditorG->addCurve(CT_Flat, M("TP_HSVEQUALIZER_SAT")));
-    sshape->setEditID(EUID_HSV_S, BT_SINGLEPLANE_FLOAT);
+    sshape->setEditID(EUID_HSL_S, BT_SINGLEPLANE_FLOAT);
     sshape->setBottomBarBgGradient(bottomMilestones);
     sshape->setCurveColorProvider(this, 2);
 
     lshape = static_cast<FlatCurveEditor *>(curveEditorG->addCurve(CT_Flat, M("TP_HSVEQUALIZER_VAL")));
-    lshape->setEditID(EUID_HSV_V, BT_SINGLEPLANE_FLOAT);
+    lshape->setEditID(EUID_HSL_V, BT_SINGLEPLANE_FLOAT);
     lshape->setBottomBarBgGradient(bottomMilestones);
     lshape->setCurveColorProvider(this, 3);
 
@@ -85,6 +86,16 @@ HSLEqualizer::HSLEqualizer():
 
     pack_start(*curveEditorG, Gtk::PACK_SHRINK, 4);
     pack_start(*smoothing);
+
+    default_flat_curve_ = { FCT_MinMaxCPoints };
+    // Point for RGBCMY colors
+    for (int i = 0; i < 6; i++) {
+        default_flat_curve_.push_back((1. / 6.) * i);
+        default_flat_curve_.push_back(0.5);
+        default_flat_curve_.push_back(0.35);
+        default_flat_curve_.push_back(0.35);
+    }
+    
 }
 
 
@@ -98,6 +109,10 @@ void HSLEqualizer::read(const ProcParams *pp)
 {
     disableListener();
 
+    hshape->setCurve(default_flat_curve_);
+    sshape->setCurve(default_flat_curve_);
+    lshape->setCurve(default_flat_curve_);
+    
     hshape->setCurve(pp->hsl.hCurve);
     sshape->setCurve(pp->hsl.sCurve);
     lshape->setCurve(pp->hsl.lCurve);
@@ -211,4 +226,22 @@ void HSLEqualizer::enabledChanged()
             listener->panelChanged(EvHSVEqEnabled, M("GENERAL_DISABLED"));
         }
     }
+}
+
+
+void HSLEqualizer::setDefaults(const ProcParams *def)
+{
+    smoothing->setDefault(def->hsl.smoothing);
+    initial_params = def->hsl;
+}
+
+
+void HSLEqualizer::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.hsl = initial_params;
+    }
+    pp.hsl.enabled = getEnabled();
+    read(&pp);
 }

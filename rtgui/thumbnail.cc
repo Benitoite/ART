@@ -36,32 +36,20 @@
 #include "ppversion.h"
 #include "version.h"
 #include "../rtengine/metadata.h"
+#include "thumbimgcache.h"
 
 using namespace rtengine::procparams;
 
-Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, CacheImageData* cf)
+Thumbnail::Thumbnail(CacheManager* cm, const Glib::ustring& fname, CacheImageData* cf)
     : fname(fname), cfs(*cf), cachemgr(cm), ref(1), enqueueNumber(0), tpp(nullptr),
       pparamsValid(false), needsReProcessing(true), imageLoading(false), lastImg(nullptr),
-      lastW(0), lastH(0), lastScale(0), initial_(false)
+      lastW(0), lastH(0), lastScale(0), initial_(false), first_process_(true)
 {
-
-    loadProcParams (false);
+    loadProcParams(false);
 
     // should be safe to use the unprotected version of loadThumbnail, since we are in the constructor
-    _loadThumbnail ();
-    generateExifDateTimeStrings ();
-
-    // if (cfs.rankOld >= 0) {
-    //     // rank and inTrash were found in cache (old style), move them over to pparams
-
-    //     // try to load the last saved parameters from the cache or from the paramfile file
-    //     createProcParamsForUpdate(false, false); // this can execute customprofilebuilder to generate param file
-
-    //     // TODO? should we call notifylisterners_procParamsChanged here?
-
-    //     setRank(cfs.rankOld);
-    //     setInTrash(cfs.inTrashOld);
-    // }
+    _loadThumbnail(true, options.thumb_lazy_caching);
+    generateExifDateTimeStrings();
 
     loadRating();
 
@@ -72,29 +60,33 @@ Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, CacheImageDa
 Thumbnail::Thumbnail (CacheManager* cm, const Glib::ustring& fname, const std::string& md5)
     : fname(fname), cachemgr(cm), ref(1), enqueueNumber(0), tpp(nullptr), pparamsValid(false),
       needsReProcessing(true), imageLoading(false), lastImg(nullptr),
-      lastW(0), lastH(0), lastScale(0.0), initial_(true)
+      lastW(0), lastH(0), lastScale(0.0), initial_(true), first_process_(true)
 {
 
 
     cfs.md5 = md5;
     loadProcParams ();
-    _generateThumbnailImage ();
+    //initial_ = !pparamsValid;
+    _generateThumbnailImage(true, options.thumb_lazy_caching);
     cfs.recentlySaved = false;
 
     initial_ = false;
+    // if (cfs.thumbImgType == CacheImageData::QUICK_THUMBNAIL && pparamsValid) {
+    //     cfs.thumbImgType = CacheImageData::FULL_THUMBNAIL;
+    // }
 
     delete tpp;
     tpp = nullptr;
 }
 
-void Thumbnail::_generateThumbnailImage(bool save_in_cache)
+void Thumbnail::_generateThumbnailImage(bool save_in_cache, bool info_only)
 {
     //  delete everything loaded into memory
     delete tpp;
     tpp = nullptr;
     delete [] lastImg;
     lastImg = nullptr;
-    tw = -1;
+    tw = options.maxThumbnailWidth;
     th = options.maxThumbnailHeight;
     imgRatio = -1.;
 
@@ -109,25 +101,20 @@ void Thumbnail::_generateThumbnailImage(bool save_in_cache)
     cfs.exifValid = false;
     cfs.timeValid = false;
 
+    first_process_ = true;
+
     if (ext.lowercase() == "jpg" || ext.lowercase() == "jpeg") {
         infoFromImage (fname);
-        tpp = rtengine::Thumbnail::loadFromImage (fname, tw, th, 1, pparams.master.wb.equal);
+        tpp = rtengine::Thumbnail::loadFromImage (fname, tw, th, -1, pparams.master.wb.equal);
 
         if (tpp) {
             cfs.format = FT_Jpeg;
         }
     } else if (ext.lowercase() == "png") {
-        tpp = rtengine::Thumbnail::loadFromImage (fname, tw, th, 1, pparams.master.wb.equal);
+        tpp = rtengine::Thumbnail::loadFromImage (fname, tw, th, -1, pparams.master.wb.equal);
 
         if (tpp) {
             cfs.format = FT_Png;
-        }
-    } else if (ext.lowercase() == "tif" || ext.lowercase() == "tiff") {
-        infoFromImage (fname);
-        tpp = rtengine::Thumbnail::loadFromImage (fname, tw, th, 1, pparams.master.wb.equal);
-
-        if (tpp) {
-            cfs.format = FT_Tiff;
         }
     } else {
         // RAW works like this:
@@ -144,7 +131,12 @@ void Thumbnail::_generateThumbnailImage(bool save_in_cache)
 
         if ( tpp == nullptr ) {
             quick = false;
-            tpp = rtengine::Thumbnail::loadFromRaw (fname, sensorType, tw, th, 1, pparams.master.wb.equal, TRUE);
+            if (!info_only) {
+                tpp = rtengine::Thumbnail::loadFromRaw (fname, sensorType, tw, th, 1, pparams.master.wb.equal, TRUE);
+            } else {
+                tpp = rtengine::Thumbnail::loadInfoFromRaw(fname, sensorType, tw, th, 1);
+                save_in_cache = false;
+            }
         }
 
         cfs.sensortype = sensorType;
@@ -152,6 +144,28 @@ void Thumbnail::_generateThumbnailImage(bool save_in_cache)
             cfs.format = FT_Raw;
             cfs.thumbImgType = quick ? CacheImageData::QUICK_THUMBNAIL : CacheImageData::FULL_THUMBNAIL;
             infoFromImage (fname);
+            if (!quick) {
+                cfs.width = tpp->full_width;
+                cfs.height = tpp->full_height;
+            }
+        }
+    }
+
+    if (!tpp && (ext.lowercase() == "tif" || ext.lowercase() == "tiff")) {
+        infoFromImage (fname);
+        tpp = rtengine::Thumbnail::loadFromImage (fname, tw, th, -1, pparams.master.wb.equal);
+
+        if (tpp) {
+            cfs.format = FT_Tiff;
+        }
+    }
+    
+    if (!tpp) {
+        // try a custom loader
+        tpp = rtengine::Thumbnail::loadFromImage(fname, tw, th, -1, pparams.master.wb.equal);
+        if (tpp) {
+            cfs.format = FT_Custom;
+            infoFromImage(fname);
         }
     }
 
@@ -192,15 +206,15 @@ const ProcParams& Thumbnail::getProcParamsU ()
         pp->applyTo(pparams.master);
         //pparams = *(ProfileStore::getInstance()->getDefaultProcParams (getType() == FT_Raw));
 
-        if (pparams.master.wb.method == "Camera") {
-            double ct;
-            getCamWB (ct, pparams.master.wb.green);
-            pparams.master.wb.temperature = ct;
-        } else if (pparams.master.wb.method == "Auto") {
-            double ct;
-            getAutoWB(ct, pparams.master.wb.green, pparams.master.wb.equal);
-            pparams.master.wb.temperature = ct;
-        }
+        // if (pparams.master.wb.method == WBParams::CAMERA) {
+        //     double ct;
+        //     getCamWB (ct, pparams.master.wb.green);
+        //     pparams.master.wb.temperature = ct;
+        // } else if (pparams.master.wb.method == WBParams::AUTO) {
+        //     double ct;
+        //     getAutoWB(ct, pparams.master.wb.green, pparams.master.wb.equal);
+        //     pparams.master.wb.temperature = ct;
+        // }
     }
 
     return pparams.master; // there is no valid pp to return, but we have to return something
@@ -291,25 +305,25 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
     const CacheImageData* cfs = getCacheImageData();
     Glib::ustring defaultPparamsPath = options.findProfilePath(defProf);
     const bool create = (!hasProcParams() || force);
-    const bool run_cpb = false; //!options.CPBPath.empty() && !defaultPparamsPath.empty() && cfs && cfs->exifValid && create;
+    const bool run_cpb = !options.CPBPath.empty() && !defaultPparamsPath.empty() && cfs && cfs->exifValid && create;
 
     const Glib::ustring outFName =
         (options.paramsLoadLocation == PLL_Input && options.saveParamsFile) ?
-        fname + paramFileExtension :
+        options.getParamFile(fname) :
         getCacheFileName("profiles", paramFileExtension);
 
     if (!run_cpb) {
-        if (defProf == DEFPROFILE_DYNAMIC && create && cfs && cfs->exifValid) {
+        if (defProf == Options::DEFPROFILE_DYNAMIC && create && cfs && cfs->exifValid) {
             auto imageMetaData = getMetaData();
             auto pp = ProfileStore::getInstance()->loadDynamicProfile(imageMetaData.get());
             ProcParams params;
-            if (pp->applyTo(params) && params.save(outFName) == 0) {
+            if (pp->applyTo(params) && params.save(cachemgr->getProgressListener(), outFName) == 0) {
                 loadProcParams();
             }
-        } else if (create && defProf != DEFPROFILE_DYNAMIC) {
+        } else if (create && defProf != Options::DEFPROFILE_DYNAMIC) {
             const PartialProfile *p = ProfileStore::getInstance()->getProfile(defProf);
             ProcParams params;
-            if (p && p->applyTo(params) && params.save(outFName) == 0) {
+            if (p && p->applyTo(params) && params.save(cachemgr->getProgressListener(), outFName) == 0) {
                 loadProcParams();
             }
         }
@@ -318,16 +332,16 @@ rtengine::procparams::ProcParams* Thumbnail::createProcParamsForUpdate(bool retu
         Glib::ustring tmpFileName( Glib::build_filename(options.cacheBaseDir, Glib::ustring::compose("CPB_temp_%1.txt", index++)) );
 
         CPBDump(tmpFileName, fname, outFName,
-                defaultPparamsPath == DEFPROFILE_INTERNAL ? DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension), cfs, flaggingMode);
+                defaultPparamsPath == Options::DEFPROFILE_INTERNAL ? Options::DEFPROFILE_INTERNAL : Glib::build_filename(defaultPparamsPath, Glib::path_get_basename(defProf) + paramFileExtension), cfs, flaggingMode);
         
         // For the filename etc. do NOT use streams, since they are not UTF8 safe
         Glib::ustring cmdLine = options.CPBPath + Glib::ustring(" \"") + tmpFileName + Glib::ustring("\"");
 
-        if (options.rtSettings.verbose) {
+        if (options.rtSettings.verbose > 1) {
             printf("Custom profile builder's command line: %s\n", Glib::ustring(cmdLine).c_str());
         }
 
-        bool success = ExtProgStore::spawnCommandSync (cmdLine);
+        bool success = ExtProg::spawnCommandSync(cmdLine);
 
         // Now they SHOULD be there (and potentially "partial"), so try to load them and store it as a full procparam
         if (success) {
@@ -371,20 +385,20 @@ void Thumbnail::loadProcParams(bool load_rating)
 
     if (options.paramsLoadLocation == PLL_Input) {
         // try to load it from params file next to the image file
-        int ppres = pparams.load (fname + paramFileExtension);
+        int ppres = pparams.load(cachemgr->getProgressListener(), options.getParamFile(fname));
         pparamsValid = !ppres && pparams.master.ppVersion >= 220;
 
         // if no success, try to load the cached version of the procparams
         if (!pparamsValid) {
-            pparamsValid = !pparams.load (getCacheFileName ("profiles", paramFileExtension));
+            pparamsValid = !pparams.load(cachemgr->getProgressListener(), getCacheFileName ("profiles", paramFileExtension));
         }
     } else {
         // try to load it from cache
-        pparamsValid = !pparams.load (getCacheFileName ("profiles", paramFileExtension));
+        pparamsValid = !pparams.load(cachemgr->getProgressListener(), getCacheFileName ("profiles", paramFileExtension));
 
         // if no success, try to load it from params file next to the image file
         if (!pparamsValid) {
-            int ppres = pparams.load (fname + paramFileExtension);
+            int ppres = pparams.load(cachemgr->getProgressListener(), options.getParamFile(fname));
             pparamsValid = !ppres && pparams.master.ppVersion >= 220;
         }
     }
@@ -436,10 +450,11 @@ void Thumbnail::clearProcParams (int whoClearedIt)
             g_remove (fname_.c_str ());
 
             // remove param file located next to the file
-            fname_ = fname + paramFileExtension;
-            g_remove (fname_.c_str ());
+            // fname_ = fname + paramFileExtension;
+            // g_remove (fname_.c_str ());
 
-            fname_ = removeExtension(fname) + paramFileExtension;
+            // fname_ = removeExtension(fname) + paramFileExtension;
+            fname_ = options.getParamFile(fname);
             g_remove (fname_.c_str ());
 
             if (cfs.format == FT_Raw && options.internalThumbIfUntouched && cfs.thumbImgType != CacheImageData::QUICK_THUMBNAIL) {
@@ -515,7 +530,7 @@ void Thumbnail::imageDeveloped ()
     cfs.save (getCacheFileName ("data", ".txt"));
 
     if (options.saveParamsCache) {
-        pparams.save (getCacheFileName ("profiles", paramFileExtension));
+        pparams.save (cachemgr->getProgressListener(), getCacheFileName ("profiles", paramFileExtension));
     }
 }
 
@@ -606,6 +621,12 @@ void Thumbnail::getThumbnailSize (int &w, int &h, const rtengine::procparams::Pr
     } else {
         w = tw_ * h / th_;
     }
+
+    if (w > options.maxThumbnailWidth) {
+        float s = float(options.maxThumbnailWidth)/w;
+        w = options.maxThumbnailWidth;
+        h = std::max(int(h * s), 1);
+    }
 }
 
 void Thumbnail::getFinalSize (const rtengine::procparams::ProcParams& pparams, int& w, int& h)
@@ -630,10 +651,22 @@ void Thumbnail::getFinalSize (const rtengine::procparams::ProcParams& pparams, i
     }
 }
 
-void Thumbnail::getOriginalSize (int& w, int& h)
+void Thumbnail::getOriginalSize(int &w, int &h, bool consider_coarse)
 {
-    w = tw;
-    h = th;
+    if (cfs.width < 0) {
+        try {
+            rtengine::Exiv2Metadata meta(fname);
+            meta.load();
+            meta.getDimensions(cfs.width, cfs.height);
+        } catch (std::exception &) {}
+    }
+    w = cfs.width;
+    h = cfs.height;
+    if (consider_coarse && pparamsValid) {
+        if (pparams.master.coarse.rotate == 90 || pparams.master.coarse.rotate == 270) {
+            std::swap(w, h);
+        }
+    }
 }
 
 rtengine::IImage8* Thumbnail::processThumbImage (const rtengine::procparams::ProcParams& pparams, int h, double& scale)
@@ -646,6 +679,8 @@ rtengine::IImage8* Thumbnail::processThumbImage (const rtengine::procparams::Pro
 
         if ( tpp == nullptr ) {
             return nullptr;
+        } else if (options.thumb_lazy_caching) {
+            _saveThumbnail();
         }
     }
 
@@ -655,9 +690,23 @@ rtengine::IImage8* Thumbnail::processThumbImage (const rtengine::procparams::Pro
         // RAW internal thumbnail, no profile yet: just do some rotation etc.
         image = tpp->quickProcessImage (pparams, h, rtengine::TI_Nearest);
     } else {
-        // Full thumbnail: apply profile
-        // image = tpp->processImage (pparams, h, rtengine::TI_Bilinear, cfs.getCamera(), cfs.focalLen, cfs.focalLen35mm, cfs.focusDist, cfs.shutter, cfs.fnumber, cfs.iso, cfs.expcomp, scale );
-        image = tpp->processImage (pparams, static_cast<rtengine::eSensorType>(cfs.sensortype), h, rtengine::TI_Bilinear, &cfs, scale );
+        auto fn = getCacheFileName("images", "");
+        if (first_process_) {
+            image = art::thumbimgcache::load(fn, pparams, h);
+            if (!image) {
+                first_process_ = false;
+            }
+        }
+        if (!image) {
+            if (options.rtSettings.verbose) {
+                std::cout << "full thumb processing: " << fname << std::endl;
+            }
+            // Full thumbnail: apply profile
+            image = tpp->processImage(pparams, static_cast<rtengine::eSensorType>(cfs.sensortype), h, rtengine::TI_Bilinear, &cfs, scale );
+            art::thumbimgcache::store(fn, pparams, image);
+        } else if (options.rtSettings.verbose) {
+            std::cout << "cached thumb image: " << fname << std::endl;
+        }
     }
 
     tpp->getDimensions(lastW, lastH, lastScale);
@@ -685,6 +734,7 @@ rtengine::IImage8* Thumbnail::upgradeThumbImage (const rtengine::procparams::Pro
     // rtengine::IImage8* image = tpp->processImage (pparams, h, rtengine::TI_Bilinear, cfs.getCamera(), cfs.focalLen, cfs.focalLen35mm, cfs.focusDist, cfs.shutter, cfs.fnumber, cfs.iso, cfs.expcomp,  scale );
     rtengine::IImage8* image = tpp->processImage (pparams, static_cast<rtengine::eSensorType>(cfs.sensortype), h, rtengine::TI_Bilinear, &cfs, scale );
     tpp->getDimensions(lastW, lastH, lastScale);
+    art::thumbimgcache::store(getCacheFileName("images", ""), pparams, image);
 
     delete tpp;
     tpp = nullptr;
@@ -693,7 +743,6 @@ rtengine::IImage8* Thumbnail::upgradeThumbImage (const rtengine::procparams::Pro
 
 void Thumbnail::generateExifDateTimeStrings ()
 {
-
     exifString = "";
     dateTimeString = "";
 
@@ -703,41 +752,24 @@ void Thumbnail::generateExifDateTimeStrings ()
 
     exifString = Glib::ustring::compose ("f/%1 %2s %3%4 %5mm", Glib::ustring(rtengine::FramesData::apertureToString(cfs.fnumber)), Glib::ustring(rtengine::FramesData::shutterToString(cfs.shutter)), M("QINFO_ISO"), cfs.iso, Glib::ustring::format(std::setw(3), std::fixed, std::setprecision(2), cfs.focalLen));
 
-    if (options.fbShowExpComp && cfs.expcomp != "0.00" && cfs.expcomp != "") { // don't show exposure compensation if it is 0.00EV;old cache iles do not have ExpComp, so value will not be displayed.
-        exifString = Glib::ustring::compose ("%1 %2EV", exifString, cfs.expcomp);    // append exposure compensation to exifString
+    if (options.fbShowExpComp && cfs.expcomp != "0.00" && cfs.expcomp != "") {
+        exifString = Glib::ustring::compose ("%1 %2EV", exifString, cfs.expcomp);
     }
 
-    std::string dateFormat = options.dateFormat;
     std::ostringstream ostr;
-    bool spec = false;
 
-    for (size_t i = 0; i < dateFormat.size(); i++)
-        if (spec && dateFormat[i] == 'y') {
-            ostr << cfs.year;
-            spec = false;
-        } else if (spec && dateFormat[i] == 'm') {
-            ostr << (int)cfs.month;
-            spec = false;
-        } else if (spec && dateFormat[i] == 'd') {
-            ostr << (int)cfs.day;
-            spec = false;
-        } else if (dateFormat[i] == '%') {
-            spec = true;
-        } else {
-            ostr << (char)dateFormat[i];
-            spec = false;
-        }
-
-    ostr << " " << (int)cfs.hour;
-    ostr << ":" << std::setw(2) << std::setfill('0') << (int)cfs.min;
-    ostr << ":" << std::setw(2) << std::setfill('0') << (int)cfs.sec;
-
-    dateTimeString = ostr.str ();
+    if (g_date_valid_dmy(int(cfs.day), GDateMonth(cfs.month), cfs.year)) {
+        Glib::Date d(cfs.day, Glib::Date::Month(cfs.month), cfs.year);
+        ostr << std::string(d.format_string(options.dateFormat));    
+        ostr << " " << std::setw(2) << std::setfill('0') << int(cfs.hour);
+        ostr << ":" << std::setw(2) << std::setfill('0') << int(cfs.min);
+        ostr << ":" << std::setw(2) << std::setfill('0') << int(cfs.sec);
+    }
+    dateTimeString = ostr.str();
 }
 
-const Glib::ustring& Thumbnail::getExifString ()
+const Glib::ustring& Thumbnail::getExifString()
 {
-
     return exifString;
 }
 
@@ -747,16 +779,16 @@ const Glib::ustring& Thumbnail::getDateTimeString ()
     return dateTimeString;
 }
 
-void Thumbnail::getAutoWB (double& temp, double& green, double equal)
-{
-    if (cfs.redAWBMul != -1.0) {
-        rtengine::ColorTemp ct(cfs.redAWBMul, cfs.greenAWBMul, cfs.blueAWBMul, equal);
-        temp = ct.getTemp();
-        green = ct.getGreen();
-    } else {
-        temp = green = -1.0;
-    }
-}
+// void Thumbnail::getAutoWB (double& temp, double& green, double equal)
+// {
+//     if (cfs.redAWBMul != -1.0) {
+//         rtengine::ColorTemp ct(cfs.redAWBMul, cfs.greenAWBMul, cfs.blueAWBMul, equal);
+//         temp = ct.getTemp();
+//         green = ct.getGreen();
+//     } else {
+//         temp = green = -1.0;
+//     }
+// }
 
 
 ThFileType Thumbnail::getType ()
@@ -801,6 +833,7 @@ int Thumbnail::infoFromImage (const Glib::ustring& fname)
         cfs.camMake      = idata->getMake();
         cfs.camModel     = idata->getModel();
         cfs.rating = idata->getRating();
+        cfs.timestamp = idata->getDateTimeAsTS();
 
         if (idata->getOrientation() == "Rotate 90 CW") {
             deg = 90;
@@ -820,10 +853,12 @@ int Thumbnail::infoFromImage (const Glib::ustring& fname)
     idx = fname.rfind('.');
 
     if(idx != std::string::npos) {
-        cfs.filetype = fname.substr(idx + 1);
+        cfs.filetype = fname.substr(idx + 1).uppercase();
     } else {
         cfs.filetype = "";
     }
+
+    idata->getDimensions(cfs.width, cfs.height);
 
     delete idata;
     return deg;
@@ -837,7 +872,7 @@ int Thumbnail::infoFromImage (const Glib::ustring& fname)
  *  - embedded profile (full thumbnail only)
  *  - LiveThumbData section of the data file
  */
-void Thumbnail::_loadThumbnail(bool firstTrial)
+void Thumbnail::_loadThumbnail(bool firstTrial, bool info_only)
 {
 
     needsReProcessing = true;
@@ -858,7 +893,7 @@ void Thumbnail::_loadThumbnail(bool firstTrial)
     succ = succ && tpp->readImage (getCacheFileName ("images", ""));
 
     if (!succ && firstTrial) {
-        _generateThumbnailImage(false);
+        _generateThumbnailImage(false, info_only);
         return;
 
         // if (cfs.supported && firstTrial) {
@@ -953,10 +988,9 @@ void Thumbnail::updateCache (bool updatePParams, bool updateCacheImageData)
 
     if (updatePParams && pparamsValid) {
         pparams.save (
-            options.saveParamsFile  ? fname + paramFileExtension : "",
-            options.saveParamsCache ? getCacheFileName ("profiles", paramFileExtension) : "",
-            true
-        );
+            cachemgr->getProgressListener(),
+            options.saveParamsFile  ? options.getParamFile(fname) : "",
+            options.saveParamsCache ? getCacheFileName ("profiles", paramFileExtension) : "");
     }
 
     if (updateCacheImageData) {
@@ -1007,74 +1041,6 @@ void Thumbnail::removeThumbnailListener (ThumbnailListener* tnl)
     }
 }
 
-// Calculates the standard filename for the automatically named batch result
-// and opens it in OS default viewer
-// destination: 1=Batch conf. file; 2=batch out dir; 3=RAW dir
-// Return: Success?
-bool Thumbnail::openDefaultViewer(int destination)
-{
-
-#ifdef WIN32
-    Glib::ustring openFName;
-
-    if (destination == 1) {
-        openFName = Glib::ustring::compose ("%1.%2", BatchQueue::calcAutoFileNameBase(fname), options.saveFormatBatch.format);
-
-        if (Glib::file_test (openFName, Glib::FILE_TEST_EXISTS)) {
-            wchar_t *wfilename = (wchar_t*)g_utf8_to_utf16 (openFName.c_str(), -1, NULL, NULL, NULL);
-            ShellExecuteW(NULL, L"open", wfilename, NULL, NULL, SW_SHOWMAXIMIZED );
-            g_free(wfilename);
-        } else {
-            printf("%s not found\n", openFName.data());
-            return false;
-        }
-    } else {
-        openFName = destination == 3 ? fname
-                    : Glib::ustring::compose ("%1.%2", BatchQueue::calcAutoFileNameBase(fname), options.saveFormatBatch.format);
-
-        printf("Opening %s\n", openFName.c_str());
-
-        if (Glib::file_test (openFName, Glib::FILE_TEST_EXISTS)) {
-            // Output file exists, so open explorer and select output file
-            wchar_t* org = (wchar_t*)g_utf8_to_utf16 (Glib::ustring::compose("/select,\"%1\"", openFName).c_str(), -1, NULL, NULL, NULL);
-            wchar_t* par = new wchar_t[wcslen(org) + 1];
-            wcscpy(par, org);
-
-            // In this case the / disturbs
-            wchar_t* p = par + 1; // skip the first backslash
-
-            while (*p != 0) {
-                if (*p == L'/') {
-                    *p = L'\\';
-                }
-
-                p++;
-            }
-
-            ShellExecuteW(NULL, L"open", L"explorer.exe", par, NULL, SW_SHOWNORMAL );
-
-            delete[] par;
-            g_free(org);
-        } else if (Glib::file_test (Glib::path_get_dirname(openFName), Glib::FILE_TEST_EXISTS)) {
-            // Out file does not exist, but directory
-            wchar_t *wfilename = (wchar_t*)g_utf8_to_utf16 (Glib::path_get_dirname(openFName).c_str(), -1, NULL, NULL, NULL);
-            ShellExecuteW(NULL, L"explore", wfilename, NULL, NULL, SW_SHOWNORMAL );
-            g_free(wfilename);
-        } else {
-            printf("File and dir not found\n");
-            return false;
-        }
-    }
-
-    return true;
-
-#else
-    // TODO: Add more OSes here
-    printf("Automatic opening not supported on this OS\n");
-    return false;
-#endif
-
-}
 
 bool Thumbnail::imageLoad(bool loading)
 {
@@ -1129,16 +1095,20 @@ std::string xmp_color2label(int color)
 
 void Thumbnail::saveRating()
 {
+    if (!rating_.edited()) {
+        return;
+    }
+    
     if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PROCPARAMS) {
-        if (rating_.rank != pparams.master.rank) {
+        if (rating_.rank.edited && rating_.rank != pparams.master.rank) {
             pparams.master.rank = rating_.rank;
             pparamsValid = true;
         }
-        if (rating_.color != pparams.master.colorlabel) {
+        if (rating_.color.edited && rating_.color != pparams.master.colorlabel) {
             pparams.master.colorlabel = rating_.color;
             pparamsValid = true;
         }
-        if (rating_.trash != pparams.master.inTrash) {
+        if (rating_.trash.edited && rating_.trash != pparams.master.inTrash) {
             pparams.master.inTrash = rating_.trash;
             pparamsValid = true;
         }
@@ -1155,23 +1125,12 @@ void Thumbnail::saveRating()
             rtengine::Exiv2Metadata meta;
             meta.xmpData() = std::move(xmp);
             meta.saveToXmp(fn);
-            // if (options.rtSettings.verbose) {
-            //     std::cout << "saving rating for " << fname << ": "
-            //               << "Xmp.xmp.Rating=";
-            //     if (rating_.trash ? rating_.trash.edited : rating_.rank.edited) {
-            //         std::cout << xmp["Xmp.xmp.Rating"].toString();
-            //     } else {
-            //         std::cout << "";
-            //     }
-            //     std::cout << ", Xmp.xmp.Label=";
-            //     if (rating_.color.edited) {
-            //         std::cout << xmp["Xmp.xmp.Label"].toString();
-            //     }
-            //     std::cout << std::endl;
-            // }
         } catch (std::exception &exc) {
             std::cerr << "ERROR saving thumbnail rating data to " << fn
                       << ": " << exc.what() << std::endl;
+            if (cachemgr->getProgressListener()) {
+                cachemgr->getProgressListener()->error(Glib::ustring::compose(M("METADATA_SAVE_ERROR"), fn, exc.what()));
+            }
         }
     }
 }
@@ -1179,31 +1138,47 @@ void Thumbnail::saveRating()
 
 void Thumbnail::loadRating()
 {
+    bool update_rating_xmp = false;
     rating_ = Rating();
+    if (cfs.exifValid) {
+        if (cfs.getRating() < 0) {
+            rating_.trash.value = true;
+        } else {
+            rating_.rank.value = rtengine::LIM(cfs.getRating(), 0, 5);
+        }
+    } else {
+        auto md = getMetaData();
+        if (md && md->hasExif()) {
+            if (md->getRating() < 0) {
+                rating_.trash.value = true;
+            } else {
+                rating_.rank.value = rtengine::LIM(md->getRating(), 0, 5);
+            }
+            update_rating_xmp = md->getRating() != 0;
+        }
+    }
     if (options.thumbnail_rating_mode == Options::ThumbnailRatingMode::PROCPARAMS) {
         if (pparamsValid) {
-            rating_.rank.value = pparams.master.rank;
+            if (pparams.master.rank >= 0) {
+                rating_.rank.value = pparams.master.rank;
+            }
             rating_.color.value = pparams.master.colorlabel;
             rating_.trash.value = pparams.master.inTrash;
         }
     } else {
-        // if (cfs.exifValid) {
-        //     if (cfs.rating < 0) {
-        //         rating_.trash.value = true;
-        //     } else {
-        //         rating_.rank.value = rtengine::LIM(cfs.rating, 0, 5);
-        //     }
-        // }
         try {
             auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
             auto pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Rating"));
             if (pos != xmp.end()) {
-                int r = pos->toLong();
+                int r = rtengine::exiv2_to_long(*pos);
                 if (r < 0) {
                     rating_.trash.value = true;
                 } else {
                     rating_.rank.value = rtengine::LIM(r, 0, 5);
                 }
+            } else if (update_rating_xmp) {
+                rating_.trash.edited = true;
+                rating_.rank.edited = true;
             }
             pos = xmp.findKey(Exiv2::XmpKey("Xmp.xmp.Label"));
             if (pos != xmp.end()) {
@@ -1213,7 +1188,10 @@ void Thumbnail::loadRating()
             std::cerr << "ERROR loading thumbnail rating data from "
                       << getXmpSidecarPath(fname)
                       << ": " << exc.what() << std::endl;
-        }        
+            if (cachemgr->getProgressListener()) {
+                cachemgr->getProgressListener()->error(Glib::ustring::compose(M("METADATA_LOAD_ERROR"), getXmpSidecarPath(fname), exc.what()));
+            }
+        }    
     }
 }
 
@@ -1224,7 +1202,7 @@ void Thumbnail::saveMetadata()
         return;
     }
 
-    if (pparams.master.exif.empty() && pparams.master.iptc.empty()) {
+    if (pparams.master.metadata.exif.empty() && pparams.master.metadata.iptc.empty()) {
         return;
     }
 
@@ -1233,23 +1211,26 @@ void Thumbnail::saveMetadata()
         auto xmp = rtengine::Exiv2Metadata::getXmpSidecar(fname);
         rtengine::Exiv2Metadata meta;
         meta.xmpData() = std::move(xmp);
-        meta.setExif(pparams.master.exif);
-        meta.setIptc(pparams.master.iptc);
+        meta.setExif(pparams.master.metadata.exif);
+        meta.setIptc(pparams.master.metadata.iptc);
         meta.saveToXmp(fn);
-        if (options.rtSettings.verbose) {
+        if (options.rtSettings.verbose > 1) {
             std::cout << "saved edited metadata for " << fname << " to "
                       << fn << std::endl;
         }
     } catch (std::exception &exc) {
         std::cerr << "ERROR saving metadata for " << fname << " to " << fn
                   << ": " << exc.what() << std::endl;
+        if (cachemgr->getProgressListener()) {
+            cachemgr->getProgressListener()->error(Glib::ustring::compose(M("METADATA_SAVE_ERROR"), fn, exc.what()));
+        }
     }
 }
 
 
 std::shared_ptr<rtengine::FramesMetaData> Thumbnail::getMetaData()
 {
-    rtengine::FramesMetaData* imageMetaData = rtengine::FramesMetaData::fromFile (fname);
+    rtengine::FramesMetaData* imageMetaData = rtengine::FramesMetaData::fromFile(fname);
     return std::shared_ptr<rtengine::FramesMetaData>(imageMetaData);
 }
 

@@ -24,6 +24,7 @@ using namespace rtengine::procparams;
 
 
 ToolVBox::ToolVBox() {
+    set_orientation(Gtk::ORIENTATION_VERTICAL);
 //GTK318
 #if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 20
     set_spacing(1);       // Vertical space between tools
@@ -33,6 +34,7 @@ ToolVBox::ToolVBox() {
 }
 
 ToolParamBlock::ToolParamBlock() {
+    set_orientation(Gtk::ORIENTATION_VERTICAL);
 //GTK318
 #if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 20
     set_spacing(2);       // Vertical space between parameters in a single tool
@@ -41,7 +43,16 @@ ToolParamBlock::ToolParamBlock() {
 //GTK318
 }
 
-FoldableToolPanel::FoldableToolPanel(Gtk::Box* content, Glib::ustring toolName, Glib::ustring UILabel, bool need11, bool useEnabled) : ToolPanel(toolName, need11), parentContainer(nullptr), exp(nullptr), lastEnabled(true)
+Gtk::SizeRequestMode ToolParamBlock::get_request_mode_vfunc () const
+{
+    return Gtk::SIZE_REQUEST_HEIGHT_FOR_WIDTH;
+}
+
+FoldableToolPanel::FoldableToolPanel(Gtk::Box *content, const Glib::ustring &toolName, const Glib::ustring &UILabel, bool need11, bool useEnabled, bool useReset):
+    ToolPanel(toolName, need11),
+    parentContainer(nullptr),
+    exp(nullptr),
+    lastEnabled(true)
 {
     if (!content) {
         return;
@@ -51,8 +62,9 @@ FoldableToolPanel::FoldableToolPanel(Gtk::Box* content, Glib::ustring toolName, 
         EvToolEnabled = ProcEventMapper::getInstance()->newEvent(0, UILabel);
     }
 
+    imageEvBox = nullptr;
 //  exp->set_use_markup (true);
-    if (need11) {
+    if (need11 || useReset) {
         Gtk::HBox *titleHBox = Gtk::manage(new Gtk::HBox());
 
         Gtk::Label *label = Gtk::manage(new Gtk::Label());
@@ -60,9 +72,29 @@ FoldableToolPanel::FoldableToolPanel(Gtk::Box* content, Glib::ustring toolName, 
         label->set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
         titleHBox->pack_start(*label, Gtk::PACK_EXPAND_WIDGET, 0);
 
-        RTImage *image = Gtk::manage (new RTImage("one-to-one-small.png"));
-        image->set_tooltip_text(M("TP_GENERAL_11SCALE_TOOLTIP"));
-        titleHBox->pack_end(*image, Gtk::PACK_SHRINK, 0);
+        RTImage *image = nullptr;
+
+        if (useReset) {
+            EvToolReset = ProcEventMapper::getInstance()->newEvent(0, UILabel);
+            
+            image = Gtk::manage(new RTImage("undo-small.png"));
+            image->set_tooltip_markup(M("TP_GENERAL_TOOL_RESET_TOOLTIP") + "\n" + M("ADJUSTER_RESET_TO_DEFAULT"));
+
+            imageEvBox = Gtk::manage(new Gtk::EventBox());
+            imageEvBox->set_name("MyExpanderStatus");
+            imageEvBox->add(*image);
+            imageEvBox->set_above_child(true);
+            imageEvBox->signal_button_release_event().connect(sigc::mem_fun(this, &FoldableToolPanel::on_reset_change));
+            imageEvBox->signal_enter_notify_event().connect(sigc::mem_fun(this, &FoldableToolPanel::on_enter_leave_reset), false);
+            imageEvBox->signal_leave_notify_event().connect(sigc::mem_fun(this, &FoldableToolPanel::on_enter_leave_reset), false);
+            titleHBox->pack_end(*imageEvBox, Gtk::PACK_SHRINK, 0);
+        }
+
+        if (need11) {
+            image = Gtk::manage (new RTImage("one-to-one-small.png"));
+            image->set_tooltip_text(M("TP_GENERAL_11SCALE_TOOLTIP"));
+            titleHBox->pack_end(*image, Gtk::PACK_SHRINK, 0);
+        }
 
         exp = Gtk::manage (new MyExpander (useEnabled, titleHBox));
     } else {
@@ -157,4 +189,35 @@ void FoldableToolPanel::enabledChanged()
             listener->panelChanged(EvToolEnabled, M("GENERAL_DISABLED"));
         }
     }
+}
+
+
+bool FoldableToolPanel::on_reset_change(GdkEventButton *event)
+{
+    if (event->button == 1) {
+        bool to_initial = event->state & GDK_CONTROL_MASK;
+        toolReset(to_initial);
+        if (listener && (!exp->getUseEnabled() || getEnabled()) && EvToolReset.get_action()) {
+            listener->panelChanged(EvToolReset, to_initial ? M("TP_RESET_SAVED") : M("TP_RESET_DEFAULT"));
+        }
+        return true;
+    }
+
+    return false;
+}
+
+
+bool FoldableToolPanel::on_enter_leave_reset(GdkEventCrossing *event)
+{
+    if (imageEvBox->is_sensitive()) {
+        if (event->type == GDK_ENTER_NOTIFY) {
+            imageEvBox->set_state(Gtk::STATE_PRELIGHT);
+            imageEvBox->queue_draw();
+        } else if (event->type == GDK_LEAVE_NOTIFY) {
+            imageEvBox->set_state(Gtk::STATE_NORMAL);
+            imageEvBox->queue_draw();
+        }
+    }
+
+    return true;
 }

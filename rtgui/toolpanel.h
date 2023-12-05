@@ -24,11 +24,13 @@
 #include <glibmm.h>
 #include "../rtengine/rtengine.h"
 #include "../rtengine/procparams.h"
+#include "../rtengine/tweakoperator.h"
 #include "guiutils.h"
 #include "multilangmgr.h"
 #include "paramsedited.h"
 #include "edit.h"
 #include "pparamschangelistener.h"
+#include "shortcutmanager.h"
 
 class ToolPanel;
 class FoldableToolPanel;
@@ -37,19 +39,27 @@ class ToolPanelListener
 {
 public:
     virtual ~ToolPanelListener() = default;
+    /// @brief Ask to refresh the preview not triggered by a parameter change (e.g. 'On Preview' editing).
+    virtual void refreshPreview(const rtengine::ProcEvent& event) = 0;
+    /// @brief Used to notify all listeners that a parameters has been effectively changed
     virtual void panelChanged(const rtengine::ProcEvent& event, const Glib::ustring& descr) = 0;
+    /// @brief Set the TweakOperator to the StagedImageProcessor, to let some tool enter into special modes
+    virtual void setTweakOperator (rtengine::TweakOperator *tOperator) = 0;
+    /// @brief Unset the TweakOperator to the StagedImageProcessor
+    virtual void unsetTweakOperator (rtengine::TweakOperator *tOperator) = 0;
 };
 
 /// @brief This class control the space around the group of tools inside a tab, as well as the space separating each tool. */
-class ToolVBox: public Gtk::VBox {
+class ToolVBox: public Gtk::Box {
 public:
     ToolVBox();
 };
 
 /// @brief This class control the space around a tool's block of parameter. */
-class ToolParamBlock: public Gtk::VBox {
+class ToolParamBlock: public Gtk::Box {
 public:
     ToolParamBlock();
+    Gtk::SizeRequestMode get_request_mode_vfunc () const override;
 };
 
 
@@ -73,6 +83,8 @@ public:
     virtual void setEditProvider(EditDataProvider *provider) {}
     virtual void read(const rtengine::procparams::ProcParams *pp) {}
     virtual void write(rtengine::procparams::ProcParams *pp) {}
+//    virtual void read(const rtengine::procparams::ProcParams* pp, const ParamsEdited* pedited = nullptr) {}
+//    virtual void write(rtengine::procparams::ProcParams* pp, ParamsEdited* pedited = nullptr) {}
     virtual void trimValues(rtengine::procparams::ProcParams *pp) {}
     virtual void setDefaults(const rtengine::procparams::ProcParams *defParams) {}
     virtual void autoOpenCurve() {}
@@ -104,8 +116,9 @@ public:
     }
 
     virtual Glib::ustring getToolName() { return toolName; }
-
     virtual PParamsChangeListener *getPParamsChangeListener() { return nullptr; }
+
+    virtual void registerShortcuts(ToolShortcutManager *mgr) {}
 };
 
 
@@ -119,10 +132,16 @@ protected:
     void foldThemAll (GdkEventButton* event);
     void enabled_toggled();
     rtengine::ProcEvent EvToolEnabled;
+    rtengine::ProcEvent EvToolReset;
+
+    Gtk::EventBox *imageEvBox;
+
+    bool on_enter_leave_reset(GdkEventCrossing *event);
+    bool on_reset_change(GdkEventButton *event);
 
 public:
 
-    FoldableToolPanel(Gtk::Box* content, Glib::ustring toolName, Glib::ustring UILabel, bool need11 = false, bool useEnabled = false);
+    FoldableToolPanel(Gtk::Box *content, const Glib::ustring &toolName, const Glib::ustring &UILabel, bool need11=false, bool useEnabled=false, bool useReset=false);
 
     MyExpander* getExpander() override
     {
@@ -190,6 +209,12 @@ public:
     {
         return exp->signal_enabled_toggled();
     }
+
+    virtual void toolReset(bool to_initial)
+    {
+    }
+
+    Glib::ustring getUILabel() const { return EvToolReset.get_message(); }
 };
 
 #endif

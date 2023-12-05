@@ -28,6 +28,7 @@
 PopUpCommon::PopUpCommon (Gtk::Button* thisButton, const Glib::ustring& label)
     : buttonImage (nullptr)
     , menu (nullptr)
+    , arrowButton(nullptr)
     , selected (-1) // -1 means that the button is invalid
 {
     button = thisButton;
@@ -79,7 +80,7 @@ bool PopUpCommon::addEntry (const Glib::ustring& fileName, const Glib::ustring& 
 
     // When there is at least 1 choice, we add the arrow button
     if (images.size() == 1) {
-        Gtk::Button* arrowButton = Gtk::manage( new Gtk::Button() );
+        arrowButton = Gtk::manage( new Gtk::Button() );
         Gtk::Image *arrowImage = Gtk::manage(new Gtk::Image());
         arrowImage->set_from_icon_name("pan-down-symbolic", Gtk::ICON_SIZE_BUTTON);
         setExpandAlignProperties(arrowButton, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_FILL);
@@ -180,4 +181,13 @@ void PopUpCommon::set_tooltip_text (const Glib::ustring &text)
 {
     buttonHint = text;
     setButtonHint();
+}
+
+
+void PopUpCommon::setRelief(Gtk::ReliefStyle s)
+{
+    button->set_relief(s);
+    if (arrowButton) {
+        arrowButton->set_relief(s);
+    }
 }

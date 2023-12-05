@@ -23,10 +23,16 @@
 #include <glibmm.h>
 #include <exiv2/exiv2.hpp>
 #include <memory>
+#include <unordered_set>
 #include "procparams.h"
 #include "cache.h"
 
 namespace rtengine {
+
+class ProgressListener;
+class Exiftool;
+
+long exiv2_to_long(const Exiv2::Metadatum &d);
 
 class Exiv2Metadata {
 public:
@@ -51,20 +57,32 @@ public:
     void setExif(const rtengine::procparams::ExifPairs &exif) { exif_ = exif; }
     void setIptc(const rtengine::procparams::IPTCPairs &iptc) { iptc_ = iptc; }
     
-    void saveToImage(const Glib::ustring &path) const;
+    void saveToImage(ProgressListener *pl, const Glib::ustring &path, bool preserve_all_tags) const;
     void saveToXmp(const Glib::ustring &path) const;
+
+    void setOutputRating(const rtengine::procparams::ProcParams &pparams, bool from_xmp_sidecar);
+
+    void setExifKeys(const std::vector<std::string> *keys);
+
+    void getDimensions(int &w, int &h) const;
+    std::unordered_map<std::string, std::string> getMakernotes() const;
+
+    Exiv2::ExifData getOutputExifData() const;
 
     static Glib::ustring xmpSidecarPath(const Glib::ustring &path);
     static Exiv2::XmpData getXmpSidecar(const Glib::ustring &path);
 
-    static void init(const Glib::ustring &base_dir);
+    static void init(const Glib::ustring &base_dir, const Glib::ustring &user_dir);
     static void cleanup();
+
+    static void embedProcParamsData(const Glib::ustring &fname, const std::string &data);
    
 private:
-    void do_merge_xmp(Exiv2::Image *dst) const;
+    static std::unordered_map<std::string, std::string> getExiftoolMakernotes(const Glib::ustring &path);
+    void do_merge_xmp(Exiv2::Image *dst, bool keep_all) const;
     void import_exif_pairs(Exiv2::ExifData &out) const;
     void import_iptc_pairs(Exiv2::IptcData &out) const;
-    void remove_unwanted(Exiv2::Image *dst) const;
+    void remove_unwanted(Exiv2::ExifData &dst) const;
     
     Glib::ustring src_;
     bool merge_xmp_;
@@ -74,10 +92,25 @@ private:
     Exiv2::ExifData exif_data_;
     Exiv2::IptcData iptc_data_;
     Exiv2::XmpData xmp_data_;
+    int rating_;
 
-    typedef std::pair<std::shared_ptr<Exiv2::Image>, Glib::TimeVal> CacheVal;
+    std::shared_ptr<std::unordered_set<std::string>> exif_keys_;
+
+    struct CacheVal {
+        std::shared_ptr<Exiv2::Image> image;
+        Glib::TimeVal image_mtime;
+        Glib::TimeVal xmp_mtime;
+        bool use_xmp;
+        CacheVal(): image(nullptr), image_mtime(), xmp_mtime(), use_xmp(false) {}
+    };
+    //typedef std::pair<std::shared_ptr<Exiv2::Image>, Glib::TimeVal> CacheVal;
     typedef Cache<Glib::ustring, CacheVal> ImageCache;
     static std::unique_ptr<ImageCache> cache_;
+    typedef std::pair<std::unordered_map<std::string, std::string>, Glib::TimeVal> JSONCacheVal;
+    typedef Cache<Glib::ustring, JSONCacheVal> JSONCache;
+    static std::unique_ptr<JSONCache> jsoncache_;
+
+    static std::unique_ptr<Exiftool> exiftool_;
 };
 
 } // namespace rtengine

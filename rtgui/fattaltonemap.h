@@ -23,23 +23,28 @@
 #include "adjuster.h"
 #include "toolpanel.h"
 
-class FattalToneMapping: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel
-{
-protected:
-    Adjuster *threshold;
-    Adjuster *amount;
-
-    rtengine::ProcEvent EvTMFattalAnchor;
-    
+class FattalToneMapping: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel {
 public:
-
     FattalToneMapping();
 
     void read(const rtengine::procparams::ProcParams* pp) override;
     void write(rtengine::procparams::ProcParams* pp) override;
     void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void adjusterChanged (Adjuster* a, double newval) override;
+    void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    void enabledChanged  () override;
+    void enabledChanged() override;
+
+    void toolReset(bool to_initial) override;
+    
+protected:
+    Adjuster *threshold;
+    Adjuster *amount;
+    Gtk::CheckButton *satcontrol;
+
+    rtengine::ProcEvent EvSatControl;
+
+    rtengine::procparams::FattalToneMappingParams initial_params;
+
+    void satcontrolChanged();
 };
 

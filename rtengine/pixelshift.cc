@@ -28,8 +28,11 @@
 #include "median.h"
 //#define BENCHMARK
 #include "StopWatch.h"
-namespace
-{
+
+using namespace std;
+using namespace rtengine;
+
+namespace {
 
 float greenDiff(float a, float b, float stddevFactor, float eperIso, float nreadIso, float prnu)
 {
@@ -291,10 +294,8 @@ void calcFrameBrightnessFactor(unsigned int frame, uint32_t datalen, LUTu *histo
 
 }
 
-}
+} // namespace
 
-using namespace std;
-using namespace rtengine;
 void RawImageSource::pixelshift(int winx, int winy, int winw, int winh, const RAWParams &rawParamsIn, unsigned int frame, const std::string &make, const std::string &model, float rawWpCorrection)
 {
 BENCHFUN
@@ -366,7 +367,7 @@ BENCHFUN
                     lmmse_interpolate_omp(winw, winh, rawData, red, green, blue, bayerParams.lmmse_iterations);
                 } else if (bayerParams.pixelShiftDemosaicMethod == bayerParams.getPSDemosaicMethodString(RAWParams::BayerSensor::PSDemosaicMethod::AMAZEVNG4)) {
                     RAWParams rawParamsTmp = rawParamsIn;
-                    rawParamsTmp.bayersensor.method = RAWParams::BayerSensor::getMethodString(RAWParams::BayerSensor::Method::AMAZEVNG4);
+                    rawParamsTmp.bayersensor.method = RAWParams::BayerSensor::Method::AMAZEVNG4;
                     dual_demosaic_RT (true, rawParamsTmp, winw, winh, rawData, red, green, blue, bayerParams.dualDemosaicContrast, true);
                 } else {
                     amaze_demosaic_RT(winx, winy, winw, winh, rawData, red, green, blue);

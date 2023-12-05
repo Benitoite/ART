@@ -28,11 +28,12 @@ using namespace rtengine;
 using namespace rtengine::procparams;
 
 Saturation::Saturation():
-    FoldableToolPanel(this, "saturation", M("TP_SATURATION_LABEL"), false, true)
+    FoldableToolPanel(this, "saturation", M("TP_SATURATION_LABEL"), false, true, true)
 {
     auto m = ProcEventMapper::getInstance();
     EvVibrance = m->newEvent(LUMINANCECURVE, "HISTORY_MSG_SATURATION_VIBRANCE");
     EvToolEnabled.set_action(LUMINANCECURVE);
+    EvToolReset.set_action(LUMINANCECURVE);
     // autolevels = nullptr;
     
     saturation = Gtk::manage (new Adjuster (M("TP_SATURATION_SATURATION"), -100, 100, 1, 0));
@@ -104,4 +105,24 @@ void Saturation::trimValues (rtengine::procparams::ProcParams* pp)
 {
     saturation->trimValue(pp->saturation.saturation);
     vibrance->trimValue(pp->saturation.vibrance);
+
+    initial_params = pp->saturation;
+}
+
+
+void Saturation::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.saturation = initial_params;
+    }
+    pp.saturation.enabled = getEnabled();
+    read(&pp);
+}
+
+
+void Saturation::registerShortcuts(ToolShortcutManager *mgr)
+{
+    mgr->addShortcut(GDK_KEY_s, this, saturation);
+    mgr->addShortcut(GDK_KEY_v, this, vibrance);
 }

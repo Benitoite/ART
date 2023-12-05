@@ -41,7 +41,7 @@ public:
         return parent_->box;
     }
 
-    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask) override
+    void getEvents(rtengine::ProcEvent &mask_list, rtengine::ProcEvent &parametric_mask, rtengine::ProcEvent &h_mask, rtengine::ProcEvent &c_mask, rtengine::ProcEvent &l_mask, rtengine::ProcEvent &blur, rtengine::ProcEvent &show, rtengine::ProcEvent &area_mask, rtengine::ProcEvent &deltaE_mask, rtengine::ProcEvent &contrastThreshold_mask, rtengine::ProcEvent &drawn_mask, rtengine::ProcEvent &mask_postprocess) override
     {
         mask_list = parent_->EvList;
         parametric_mask = parent_->EvParametricMask;
@@ -54,6 +54,7 @@ public:
         deltaE_mask = parent_->EvDeltaEMask;
         contrastThreshold_mask = parent_->EvContrastThresholdMask;
         drawn_mask = parent_->EvDrawnMask;
+        mask_postprocess = parent_->EvMaskPostprocess;
     }
 
     ToolPanelListener *listener() override
@@ -92,10 +93,10 @@ public:
         return true;
     }
 
-    bool resetPressed() override
+    bool resetPressed(int idx) override
     {
-        parent_->regionData = { LocalContrastParams::Region() };
-        parent_->labMasks->setMasks({ Mask() }, -1);
+        parent_->regionData[idx] = LocalContrastParams::Region();
+        //parent_->labMasks->setMasks({ Mask() }, -1);
         return true;
     }
     
@@ -165,7 +166,7 @@ private:
 // LocalContrast
 //-----------------------------------------------------------------------------
 
-LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_LOCALCONTRAST_LABEL"), false, true)
+LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_LOCALCONTRAST_LABEL"), false, true, true)
 {
     auto m = ProcEventMapper::getInstance();
     auto EVENT = DISPLAY;
@@ -184,6 +185,10 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
     EvDeltaEMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DELTAEMASK");
     EvContrastThresholdMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_CONTRASTTHRESHOLDMASK");
     EvDrawnMask = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_DRAWNMASK");
+    EvMaskPostprocess = m->newEvent(EVENT, "HISTORY_MSG_LOCALCONTRAST_MASK_POSTPROCESS");
+
+    EvToolEnabled.set_action(EVENT);
+    EvToolReset.set_action(EVENT);
     
     box = Gtk::manage(new Gtk::VBox());
 
@@ -191,7 +196,7 @@ LocalContrast::LocalContrast(): FoldableToolPanel(this, "localcontrast", M("TP_L
 
     const LocalContrastParams default_params;
     
-    cg = Gtk::manage(new CurveEditorGroup(options.lastColorToningCurvesDir, M("TP_LOCALCONTRAST_CURVE"), 0.7));
+    cg = Gtk::manage(new CurveEditorGroup(options.lastToneCurvesDir, M("TP_LOCALCONTRAST_CURVE"), 0.7));
     cg->setCurveListener(this);
     curve = static_cast<FlatCurveEditor *>(cg->addCurve(CT_Flat, "", nullptr, false, false));
     curve->setIdentityValue(0.);
@@ -219,10 +224,10 @@ void LocalContrast::read(const ProcParams *pp)
 
     auto m = pp->localContrast.labmasks;
     if (regionData.empty()) {
-        regionData.emplace_back(rtengine::LocalContrastParams::Region());
-        m.emplace_back(rtengine::Mask());
+        regionData.emplace_back(rtengine::procparams::LocalContrastParams::Region());
+        m.emplace_back(rtengine::procparams::Mask());
     }
-    labMasks->setMasks(m, pp->localContrast.showMask);
+    labMasks->setMasks(m, pp->localContrast.selectedRegion, pp->localContrast.showMask >= 0 && pp->localContrast.showMask == pp->localContrast.selectedRegion);
 
     enableListener();
 }
@@ -234,16 +239,17 @@ void LocalContrast::write(ProcParams *pp)
     regionGet(labMasks->getSelected());
     pp->localContrast.regions = regionData;
     labMasks->getMasks(pp->localContrast.labmasks, pp->localContrast.showMask);
+    pp->localContrast.selectedRegion = labMasks->getSelected();
     assert(pp->localContrast.regions.size() == pp->localContrast.labmasks.size());
     labMasks->updateSelected();
 }
 
 void LocalContrast::setDefaults(const ProcParams *defParams)
 {
-    // if (defParams->localContrast.regions.size() == 1) {
-    //     contrast->setDefault(defParams->localContrast.regions[0].contrast);
-    //     curve->setResetCurve(FlatCurveType(defParams->localContrast.regions[0].curve.at(0)), defParams->localContrast.regions[0].curve);
-    // }
+    contrast->setDefault(defParams->localContrast.regions[0].contrast);
+    curve->setResetCurve(FlatCurveType(defParams->localContrast.regions[0].curve.at(0)), defParams->localContrast.regions[0].curve);
+
+    initial_params = defParams->localContrast;
 }
 
 void LocalContrast::adjusterChanged(Adjuster* a, double newval)
@@ -269,6 +275,10 @@ void LocalContrast::enabledChanged ()
         } else {
             listener->panelChanged(EvLocalContrastEnabled, M("GENERAL_DISABLED"));
         }
+    }
+
+    if (listener && !getEnabled()) {
+        labMasks->switchOffEditMode();
     }
 }
 
@@ -346,4 +356,15 @@ void LocalContrast::setAreaDrawListener(AreaDrawListener *l)
 void LocalContrast::setDeltaEColorProvider(DeltaEColorProvider *p)
 {
     labMasks->setDeltaEColorProvider(p);
+}
+
+
+void LocalContrast::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.localContrast = initial_params;
+    }
+    pp.localContrast.enabled = getEnabled();
+    read(&pp);
 }

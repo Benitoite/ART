@@ -71,7 +71,10 @@ bool CurveEditor::reset()
     return subGroup->curveReset(this);
 }
 
-DiagonalCurveEditor::DiagonalCurveEditor (Glib::ustring text, CurveEditorGroup* ceGroup, CurveEditorSubGroup* ceSubGroup) : CurveEditor::CurveEditor(text, static_cast<CurveEditorGroup*>(ceGroup), ceSubGroup)
+DiagonalCurveEditor::DiagonalCurveEditor (Glib::ustring text, CurveEditorGroup* ceGroup, CurveEditorSubGroup* ceSubGroup) :
+    CurveEditor::CurveEditor(text, static_cast<CurveEditorGroup*>(ceGroup), ceSubGroup),
+    bp_(nullptr),
+    bp_id_(-1)
 {
 
     curveType->addEntry("curve-linear-small.png", M("CURVEEDITOR_LINEAR")); // 0 Linear
@@ -108,7 +111,7 @@ std::vector<double> DiagonalCurveEditor::getCurve ()
     case (DCT_NURBS):
         return curve = NURBSCurveEd;
 
-    case (DCT_CatumullRom):
+    case (DCT_CatmullRom):
         return curve = catmullRomCurveEd;
 
     default:
@@ -142,7 +145,7 @@ void DiagonalCurveEditor::setResetCurve(DiagonalCurveType cType, const std::vect
 
         break;
 
-    case (DCT_CatumullRom):
+    case (DCT_CatmullRom):
         if (resetCurve.size() && DiagonalCurveType(resetCurve.at(0)) == cType) {
             catmullRomResetCurve = resetCurve;
         }
@@ -455,7 +458,7 @@ void CurveEditor::showEditButton(bool yes)
 }
 
 
-bool CurveEditor::mouseOver(const int modifierKey)
+bool CurveEditor::mouseOver(int modifierKey)
 {
     EditDataProvider* provider = getEditProvider();
     subGroup->pipetteMouseOver(provider, modifierKey);
@@ -463,7 +466,7 @@ bool CurveEditor::mouseOver(const int modifierKey)
     return true; // return true will ask the preview to be redrawn, for the cursor
 }
 
-bool CurveEditor::button1Pressed(const int modifierKey)
+bool CurveEditor::button1Pressed(int modifierKey)
 {
     EditDataProvider* provider = getEditProvider();
 
@@ -488,7 +491,7 @@ bool CurveEditor::button1Released()
     return true;
 }
 
-bool CurveEditor::drag1(const int modifierKey)
+bool CurveEditor::drag1(int modifierKey)
 {
     EditDataProvider* provider = getEditProvider();
     subGroup->pipetteDrag(provider, modifierKey);
@@ -496,7 +499,7 @@ bool CurveEditor::drag1(const int modifierKey)
     return false;
 }
 
-CursorShape CurveEditor::getCursor(const int objectID)
+CursorShape CurveEditor::getCursor(int objectID)
 {
     if (remoteDrag) {
         return CSResizeHeight;

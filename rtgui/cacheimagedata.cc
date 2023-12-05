@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -23,13 +24,14 @@
 #include <locale.h>
 
 CacheImageData::CacheImageData ()
-    : md5(""), supported(false), format(FT_Invalid), rankOld(-1), inTrashOld(false), recentlySaved(false),
+    : md5(""), supported(false), format(FT_Invalid), recentlySaved(false),
       timeValid(false), year(0), month(0), day(0), hour(0), min(0), sec(0), exifValid(false), frameCount(1),
       fnumber(0.0), shutter(0.0), focalLen(0.0), focalLen35mm(0.0), focusDist(0.f), iso(0), isHDR (false),
       isPixelShift (false), sensortype(rtengine::ST_NONE), sampleFormat(rtengine::IIOSF_UNKNOWN),
-      rating(0),
+      rating(0), timestamp(-1),
       redAWBMul(-1.0), greenAWBMul(-1.0), blueAWBMul(-1.0),
-      rotate(0), thumbImgType(0)
+      rotate(0), thumbImgType(0),
+      width(-1), height(-1)
 {
 }
 
@@ -62,14 +64,6 @@ int CacheImageData::load (const Glib::ustring& fname)
                     format      = (ThFileType)keyFile.get_integer ("General", "Format");
                 }
 
-                if (keyFile.has_key ("General", "Rank")) {
-                    rankOld     = keyFile.get_integer ("General", "Rank");
-                }
-
-                if (keyFile.has_key ("General", "InTrash")) {
-                    inTrashOld  = keyFile.get_boolean ("General", "InTrash");
-                }
-
                 if (keyFile.has_key ("General", "RecentlySaved")) {
                     recentlySaved = keyFile.get_boolean ("General", "RecentlySaved");
                 }
@@ -100,6 +94,12 @@ int CacheImageData::load (const Glib::ustring& fname)
 
                 if (keyFile.has_key ("DateTime", "Sec")) {
                     sec     = keyFile.get_integer ("DateTime", "Sec");
+                }
+
+                if (g_date_valid_dmy(int(day), GDateMonth(month), year)) {
+                    timestamp = Glib::DateTime::create_utc(year, month, day, hour, min, sec).to_unix();
+                } else {
+                    timestamp = 0;
                 }
             }
 
@@ -172,14 +172,20 @@ int CacheImageData::load (const Glib::ustring& fname)
             }
 
             if (keyFile.has_group ("FileInfo")) {
-                if (keyFile.has_key ("FileInfo", "Filetype")) {
-                    filetype    = keyFile.get_string ("FileInfo", "Filetype");
+                if (keyFile.has_key("FileInfo", "Filetype")) {
+                    filetype = keyFile.get_string("FileInfo", "Filetype").uppercase();
                 }
                 if (keyFile.has_key ("FileInfo", "FrameCount")) {
                     frameCount  = static_cast<unsigned int>(keyFile.get_integer ("FileInfo", "FrameCount"));
                 }
                 if (keyFile.has_key ("FileInfo", "SampleFormat")) {
                     sampleFormat = (rtengine::IIO_Sample_Format)keyFile.get_integer ("FileInfo", "SampleFormat");
+                }
+                if (keyFile.has_key("FileInfo", "Width")) {
+                    width = keyFile.get_integer("FileInfo", "Width");
+                }
+                if (keyFile.has_key("FileInfo", "Height")) {
+                    height = keyFile.get_integer("FileInfo", "Height");
                 }
             }
 
@@ -271,6 +277,8 @@ int CacheImageData::save (const Glib::ustring& fname)
     keyFile.set_string  ("FileInfo", "Filetype", filetype);
     keyFile.set_integer ("FileInfo", "FrameCount", frameCount);
     keyFile.set_integer ("FileInfo", "SampleFormat", sampleFormat);
+    keyFile.set_integer("FileInfo", "Width", width);
+    keyFile.set_integer("FileInfo", "Height", height);
 
     if (format == FT_Raw) {
         keyFile.set_integer ("ExtraRawInfo", "ThumbImageType", thumbImgType);

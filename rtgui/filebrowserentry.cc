@@ -32,8 +32,6 @@
 
 #define CROPRESIZEBORDER 4
 
-//extern Glib::Threads::Thread* mainThread;
-
 bool FileBrowserEntry::iconsLoaded(false);
 Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::editedIcon;
 Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::recentlySavedIcon;
@@ -42,9 +40,10 @@ Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::hdr;
 Glib::RefPtr<Gdk::Pixbuf> FileBrowserEntry::ps;
 
 FileBrowserEntry::FileBrowserEntry (Thumbnail* thm, const Glib::ustring& fname)
-    : ThumbBrowserEntryBase (fname), wasInside(false), press_x(0), press_y(0), action_x(0), action_y(0), rot_deg(0.0), landscape(true), cropgl(nullptr), state(SNormal), crop_custom_ratio(0.f)
+    : ThumbBrowserEntryBase (fname), wasInside(false), press_x(0), press_y(0), action_x(0), action_y(0), rot_deg(0.0), coarse_rotate(0), cropgl(nullptr), state(SNormal), crop_custom_ratio(0.f)
 {
     refresh_status_ = RefreshStatus::READY;
+    refresh_disabled_ = true;
     thumbnail = thm;
 
     feih = new FileBrowserEntryIdleHelper;
@@ -55,6 +54,8 @@ FileBrowserEntry::FileBrowserEntry (Thumbnail* thm, const Glib::ustring& fname)
     italicstyle = thumbnail->getType() != FT_Raw;
     datetimeline = thumbnail->getDateTimeString ();
     exifline = thumbnail->getExifString ();
+
+    coarse_rotate = thumbnail->getProcParams().coarse.rotate;
 
     scale = 1;
 
@@ -97,7 +98,10 @@ void FileBrowserEntry::refreshThumbnailImage ()
         return;
     }
 
-    refresh_status_ = RefreshStatus::FULL;
+    if (refresh_status_ != RefreshStatus::PENDING) {
+        refresh_status_ = RefreshStatus::FULL;
+        parent->redrawEntryNeeded(this);
+    }
     // thumbImageUpdater->add (this, &updatepriority, false, this);
 }
 
@@ -108,7 +112,10 @@ void FileBrowserEntry::refreshQuickThumbnailImage ()
         return;
     }
 
-    refresh_status_ = RefreshStatus::QUICK;
+    if (refresh_status_ != RefreshStatus::PENDING) {
+        refresh_status_ = RefreshStatus::QUICK;
+        parent->redrawEntryNeeded(this);
+    }
     // Only make a (slow) processed preview if the picture has been edited at all
     // bool upgrade_to_processed = (!options.internalThumbIfUntouched || thumbnail->isPParamsValid());
     // thumbImageUpdater->add(this, &updatepriority, upgrade_to_processed, this);
@@ -118,7 +125,11 @@ void FileBrowserEntry::calcThumbnailSize ()
 {
 
     if (thumbnail) {
-        thumbnail->getThumbnailSize (prew, preh);
+        int ow = prew, oh = preh;
+        thumbnail->getThumbnailSize(prew, preh);
+        if (ow != prew || oh != preh || preview.size() != size_t(prew * preh * 3)) {
+            preview.clear();
+        }
     }
 }
 
@@ -166,14 +177,23 @@ std::vector<Glib::RefPtr<Gdk::Pixbuf>> FileBrowserEntry::getSpecificityIconsOnIm
 
 void FileBrowserEntry::customBackBufferUpdate (Cairo::RefPtr<Cairo::Context> c)
 {
-    if(scale != 1.0 && cropParams.enabled) { // somewhere in pipeline customBackBufferUpdate is called when scale == 1.0, which is nonsense for a thumb
+    if (cropParams.enabled) {
+        int w, h;
+        thumbnail->getOriginalSize(w, h, true);
+        double cur_scale = scale;
+        if (h > 0) {
+            cur_scale = double(preh) / double(h);
+        }
+        if (cur_scale == 1.0) { // somewhere in pipeline customBackBufferUpdate is called when scale == 1.0, which is nonsense for a thumb
+            return;
+        }
         if (state == SCropSelecting || state == SResizeH1 || state == SResizeH2 || state == SResizeW1 || state == SResizeW2 || state == SResizeTL || state == SResizeTR || state == SResizeBL || state == SResizeBR || state == SCropMove) {
-            drawCrop (c, prex, prey, prew, preh, 0, 0, scale, cropParams, true, false);
+            drawCrop (c, prex, prey, prew, preh, 0, 0, cur_scale, cropParams, true, false);
         } else {
-            rtengine::procparams::CropParams cparams = thumbnail->getProcParams().crop;
+            rtengine::procparams::CropParams cparams = cropParams;
             cparams.guide = "Frame";
             if (cparams.enabled && !thumbnail->isQuick()) { // Quick thumb have arbitrary sizes, so don't apply the crop
-                drawCrop (c, prex, prey, prew, preh, 0, 0, scale, cparams, true, false);
+                drawCrop (c, prex, prey, prew, preh, 0, 0, cur_scale, cparams, true, false);
             }
         }
     }
@@ -189,11 +209,14 @@ void FileBrowserEntry::getIconSize (int& w, int& h) const
 FileThumbnailButtonSet* FileBrowserEntry::getThumbButtonSet ()
 {
 
-    return (static_cast<FileThumbnailButtonSet*>(buttonSet));
+    return (static_cast<FileThumbnailButtonSet*>(buttonSet.get()));
 }
 
 void FileBrowserEntry::procParamsChanged (Thumbnail* thm, int whoChangedIt)
 {
+    MYWRITERLOCK(l, lockRW);
+
+    preview.clear();
 
     if ( thumbnail->isQuick() ) {
         refreshQuickThumbnailImage ();
@@ -201,11 +224,11 @@ void FileBrowserEntry::procParamsChanged (Thumbnail* thm, int whoChangedIt)
         refreshThumbnailImage ();
     }
 
-    if (whoChangedIt == EDITOR) {
-        update_refresh_status();
-        parent->redrawEntryNeeded(this);
-    }
+    // if (whoChangedIt == EDITOR) {
+    //     update_refresh_status();
+    // }
 }
+
 
 void FileBrowserEntry::updateImage(rtengine::IImage8* img, double scale, const rtengine::procparams::CropParams& cropParams)
 {
@@ -246,27 +269,24 @@ void FileBrowserEntry::_updateImage(rtengine::IImage8* img, double s, const rten
     scale = s;
     this->cropParams = cropParams;
 
-    bool newLandscape = img->getWidth() > img->getHeight();
     bool rotated = false;
+
+    if (thumbnail) {
+        int new_coarse_rotate = thumbnail->getProcParams().coarse.rotate;
+        rotated = new_coarse_rotate != coarse_rotate;
+        coarse_rotate = new_coarse_rotate;
+    }
 
     if (preh == img->getHeight ()) {
         prew = img->getWidth ();
 
-        GThreadLock lock;
-
-        // Check if image has been rotated since last time
-        rotated = preview != nullptr && newLandscape != landscape;
-
-        guint8* temp = preview;
-        preview = nullptr;
-        delete [] temp;
-        temp = new guint8 [prew * preh * 3];
-        memcpy (temp, img->getData(), prew * preh * 3);
-        preview = temp;
-        updateBackBuffer ();
+        preview.resize(prew * preh * 3);
+        std::copy(img->getData(), img->getData() + preview.size(), preview.begin());
+        {
+            GThreadLock lock;
+            updateBackBuffer();
+        }
     }
-
-    landscape = newLandscape;
 
     img->free ();
 
@@ -289,21 +309,21 @@ bool FileBrowserEntry::motionNotify (int x, int y)
     const int ix = x - startx - ofsX;
     const int iy = y - starty - ofsY;
 
-    Inspector* inspector = parent->getInspector();
+    Inspector *inspector = parent->getInspector();
 
-    if (selected && inspector && inspector->isActive() && !parent->isInTabMode()) {
+    if (options.thumbnail_inspector_hover /*&& selected*/ && inspector && inspector->isActive() && !parent->isInTabMode()) {
         const rtengine::Coord2D coord(getPosInImgSpace(x, y));
 
         if (coord.x != -1.) {
             if (!wasInside) {
                 inspector->switchImage(filename);
-                // idle_register.add(
-                //     [this]() -> bool
-                //     {
-                //         this->parent->selectEntry(this);
-                //         return false;
-                //     },
-                //     G_PRIORITY_LOW);
+                idle_register.add(
+                    [this]() -> bool
+                    {
+                        this->parent->selectEntry(this);
+                        return false;
+                    },
+                    G_PRIORITY_LOW);
                 wasInside = true;
             }
             inspector->mouseMove(coord, 0);
@@ -424,102 +444,109 @@ bool FileBrowserEntry::releaseNotify (int button, int type, int bstate, int x, i
     return b;
 }
 
-bool FileBrowserEntry::onArea (CursorArea a, int x, int y)
-{
+// bool FileBrowserEntry::onArea (CursorArea a, int x, int y)
+// {
 
-    if (!drawable || !preview) {
-        return false;
+//     if (!drawable || preview.empty()) {
+//         return false;
+//     }
+
+//     int x1 = (x - prex) / scale;
+//     int y1 = (y - prey) / scale;
+//     int cropResizeBorder = CROPRESIZEBORDER / scale;
+
+//     switch (a) {
+//     case CropImage:
+//         return x >= prex && x < prex + prew && y >= prey && y < prey + preh;
+
+//     case CropTopLeft:
+//         return cropParams.enabled &&
+//                y1 >= cropParams.y - cropResizeBorder &&
+//                y1 <= cropParams.y + cropResizeBorder &&
+//                x1 >= cropParams.x - cropResizeBorder &&
+//                x1 <= cropParams.x + cropResizeBorder;
+
+//     case CropTopRight:
+//         return cropParams.enabled &&
+//                y1 >= cropParams.y - cropResizeBorder &&
+//                y1 <= cropParams.y + cropResizeBorder &&
+//                x1 >= cropParams.x + cropParams.w - 1 - cropResizeBorder &&
+//                x1 <= cropParams.x + cropParams.w - 1 + cropResizeBorder;
+
+//     case CropBottomLeft:
+//         return cropParams.enabled &&
+//                y1 >= cropParams.y + cropParams.h - 1 - cropResizeBorder &&
+//                y1 <= cropParams.y + cropParams.h - 1 + cropResizeBorder &&
+//                x1 >= cropParams.x - cropResizeBorder &&
+//                x1 <= cropParams.x + cropResizeBorder;
+
+//     case CropBottomRight:
+//         return cropParams.enabled &&
+//                y1 >= cropParams.y + cropParams.h - 1 - cropResizeBorder &&
+//                y1 <= cropParams.y + cropParams.h - 1 + cropResizeBorder &&
+//                x1 >= cropParams.x + cropParams.w - 1 - cropResizeBorder &&
+//                x1 <= cropParams.x + cropParams.w - 1 + cropResizeBorder;
+
+//     case CropTop:
+//         return cropParams.enabled &&
+//                x1 > cropParams.x + cropResizeBorder &&
+//                x1 < cropParams.x + cropParams.w - 1 - cropResizeBorder &&
+//                y1 > cropParams.y - cropResizeBorder &&
+//                y1 < cropParams.y + cropResizeBorder;
+
+//     case CropBottom:
+//         return cropParams.enabled &&
+//                x1 > cropParams.x + cropResizeBorder &&
+//                x1 < cropParams.x + cropParams.w - 1 - cropResizeBorder &&
+//                y1 > cropParams.y + cropParams.h - 1 - cropResizeBorder &&
+//                y1 < cropParams.y + cropParams.h - 1 + cropResizeBorder;
+
+//     case CropLeft:
+//         return cropParams.enabled &&
+//                y1 > cropParams.y + cropResizeBorder &&
+//                y1 < cropParams.y + cropParams.h - 1 - cropResizeBorder &&
+//                x1 > cropParams.x - cropResizeBorder &&
+//                x1 < cropParams.x + cropResizeBorder;
+
+//     case CropRight:
+//         return cropParams.enabled &&
+//                y1 > cropParams.y + cropResizeBorder &&
+//                y1 < cropParams.y + cropParams.h - 1 - cropResizeBorder &&
+//                x1 > cropParams.x + cropParams.w - 1 - cropResizeBorder &&
+//                x1 < cropParams.x + cropParams.w - 1 + cropResizeBorder;
+
+//     case CropInside:
+//         return cropParams.enabled &&
+//                y1 > cropParams.y &&
+//                y1 < cropParams.y + cropParams.h - 1 &&
+//                x1 > cropParams.x &&
+//                x1 < cropParams.x + cropParams.w - 1;
+//     default: /* do nothing */ ;
+//     }
+
+//     return false;
+// }
+
+
+inline void FileBrowserEntry::update_refresh_status()
+{
+    if (refresh_disabled_) {
+        return;
     }
 
-    int x1 = (x - prex) / scale;
-    int y1 = (y - prey) / scale;
-    int cropResizeBorder = CROPRESIZEBORDER / scale;
-
-    switch (a) {
-    case CropImage:
-        return x >= prex && x < prex + prew && y >= prey && y < prey + preh;
-
-    case CropTopLeft:
-        return cropParams.enabled &&
-               y1 >= cropParams.y - cropResizeBorder &&
-               y1 <= cropParams.y + cropResizeBorder &&
-               x1 >= cropParams.x - cropResizeBorder &&
-               x1 <= cropParams.x + cropResizeBorder;
-
-    case CropTopRight:
-        return cropParams.enabled &&
-               y1 >= cropParams.y - cropResizeBorder &&
-               y1 <= cropParams.y + cropResizeBorder &&
-               x1 >= cropParams.x + cropParams.w - 1 - cropResizeBorder &&
-               x1 <= cropParams.x + cropParams.w - 1 + cropResizeBorder;
-
-    case CropBottomLeft:
-        return cropParams.enabled &&
-               y1 >= cropParams.y + cropParams.h - 1 - cropResizeBorder &&
-               y1 <= cropParams.y + cropParams.h - 1 + cropResizeBorder &&
-               x1 >= cropParams.x - cropResizeBorder &&
-               x1 <= cropParams.x + cropResizeBorder;
-
-    case CropBottomRight:
-        return cropParams.enabled &&
-               y1 >= cropParams.y + cropParams.h - 1 - cropResizeBorder &&
-               y1 <= cropParams.y + cropParams.h - 1 + cropResizeBorder &&
-               x1 >= cropParams.x + cropParams.w - 1 - cropResizeBorder &&
-               x1 <= cropParams.x + cropParams.w - 1 + cropResizeBorder;
-
-    case CropTop:
-        return cropParams.enabled &&
-               x1 > cropParams.x + cropResizeBorder &&
-               x1 < cropParams.x + cropParams.w - 1 - cropResizeBorder &&
-               y1 > cropParams.y - cropResizeBorder &&
-               y1 < cropParams.y + cropResizeBorder;
-
-    case CropBottom:
-        return cropParams.enabled &&
-               x1 > cropParams.x + cropResizeBorder &&
-               x1 < cropParams.x + cropParams.w - 1 - cropResizeBorder &&
-               y1 > cropParams.y + cropParams.h - 1 - cropResizeBorder &&
-               y1 < cropParams.y + cropParams.h - 1 + cropResizeBorder;
-
-    case CropLeft:
-        return cropParams.enabled &&
-               y1 > cropParams.y + cropResizeBorder &&
-               y1 < cropParams.y + cropParams.h - 1 - cropResizeBorder &&
-               x1 > cropParams.x - cropResizeBorder &&
-               x1 < cropParams.x + cropResizeBorder;
-
-    case CropRight:
-        return cropParams.enabled &&
-               y1 > cropParams.y + cropResizeBorder &&
-               y1 < cropParams.y + cropParams.h - 1 - cropResizeBorder &&
-               x1 > cropParams.x + cropParams.w - 1 - cropResizeBorder &&
-               x1 < cropParams.x + cropParams.w - 1 + cropResizeBorder;
-
-    case CropInside:
-        return cropParams.enabled &&
-               y1 > cropParams.y &&
-               y1 < cropParams.y + cropParams.h - 1 &&
-               x1 > cropParams.x &&
-               x1 < cropParams.x + cropParams.w - 1;
-    default: /* do nothing */ ;
-    }
-
-    return false;
-}
-
-
-void FileBrowserEntry::update_refresh_status()
-{
+    const bool upgrade = (!options.internalThumbIfUntouched || thumbnail->isPParamsValid());
+    
     switch (refresh_status_) {
     case RefreshStatus::QUICK:
-        refresh_status_ = RefreshStatus::PENDING;
-        // Only make a (slow) processed preview if the picture has been edited at all
-        thumbImageUpdater->add(this, &updatepriority, (!options.internalThumbIfUntouched || thumbnail->isPParamsValid()), this);
-        break;
     case RefreshStatus::FULL:
         refresh_status_ = RefreshStatus::PENDING;
-        thumbImageUpdater->add (this, &updatepriority, false, this);
+        // Only make a (slow) processed preview if the picture has been edited at all
+        thumbImageUpdater->add(this, &updatepriority, upgrade, this);
         break;
+    // case RefreshStatus::FULL:
+    //     refresh_status_ = RefreshStatus::PENDING;
+    //     thumbImageUpdater->add (this, &updatepriority, false, this);
+    //     break;
     default:
         break;
     }
@@ -627,3 +654,8 @@ void FileBrowserEntry::drawStraightenGuide (Cairo::RefPtr<Cairo::Context> cr)
     }
 }
 
+
+void FileBrowserEntry::enableThumbRefresh()
+{
+    refresh_disabled_ = false;
+}

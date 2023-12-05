@@ -81,9 +81,9 @@ public:
     {
         return save (fname);
     }
-    int saveAsPNG  (const Glib::ustring &fname, int bps = -1) const override
+    int saveAsPNG  (const Glib::ustring &fname, int bps = -1, bool uncompressed=false) const override
     {
-        return savePNG (fname, bps);
+        return savePNG (fname, bps, uncompressed);
     }
     int saveAsJPEG (const Glib::ustring &fname, int quality = 100, int subSamp = 3) const override
     {
@@ -107,7 +107,7 @@ public:
     void normalizeFloatTo65535(bool multithread=true);
     void calcCroppedHistogram(const ProcParams &params, float scale, LUTu & hist);
     void ExecCMSTransform(cmsHTRANSFORM hTransform);
-    void ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *labImage, int cx, int cy);
+    void ExecCMSTransform(cmsHTRANSFORM hTransform, const Imagefloat *img);//labImage, int cx, int cy);
 
     enum class Mode {
         RGB = 0, // r = red, g = green, b = blue

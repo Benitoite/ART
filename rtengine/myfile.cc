@@ -177,7 +177,7 @@ IMFILE* gfopen (const char* fname)
 }
 #endif //MYFILE_MMAP
 
-IMFILE* fopen (unsigned* buf, int size)
+IMFILE* fopen (unsigned* buf, ssize_t size)
 {
 
     IMFILE* mf = new IMFILE;
@@ -215,9 +215,9 @@ int fscanf (IMFILE* f, const char* s ...)
     // were parsed. However, only dcraw.cc code use it and only for "%f" and
     // "%d", so we make a dummy fscanf here just to support dcraw case.
     char buf[51], *endptr = nullptr;
-    int copy_sz = f->size - f->pos;
+    ssize_t copy_sz = f->size - f->pos;
 
-    if (copy_sz >= static_cast<int>(sizeof(buf))) {
+    if (copy_sz >= static_cast<ssize_t>(sizeof(buf))) {
         copy_sz = sizeof(buf) - 1;
     }
 
@@ -254,7 +254,7 @@ int fscanf (IMFILE* f, const char* s ...)
 }
 
 
-char* fgets (char* s, int n, IMFILE* f)
+char* fgets (char* s, ssize_t n, IMFILE* f)
 {
 
     if (f->pos >= f->size) {
@@ -262,7 +262,7 @@ char* fgets (char* s, int n, IMFILE* f)
         return nullptr;
     }
 
-    int i = 0;
+    ssize_t i = 0;
 
     do {
         s[i++] = f->data[f->pos++];

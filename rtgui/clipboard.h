@@ -40,6 +40,7 @@ private:
     std::vector<double> flatCurve;
     rtengine::procparams::AreaMask areaMask;
     rtengine::procparams::DrawnMask drawnMask;
+    rtengine::procparams::Mask mask;
 
 public:
     void setIPTC(const rtengine::procparams::IPTCPairs& iptcc)
@@ -59,13 +60,11 @@ public:
     }
 
     void setProcParams(const rtengine::procparams::ProcParams &pp)
-
     {
         if (!pparams) {
-            pparams.reset(new rtengine::procparams::ProcParams(pp));
-        } else {
-            *pparams = pp;
+            pparams.reset(new rtengine::procparams::ProcParams());
         }
+        *pparams = pp;
         has_pparams_ = true;
     }
     
@@ -160,6 +159,21 @@ public:
     void setDrawnMask(const rtengine::procparams::DrawnMask &dm)
     {
         drawnMask = dm;
+    }
+
+    bool hasMask() const
+    {
+        return mask != rtengine::procparams::Mask();
+    }
+
+    const rtengine::procparams::Mask &getMask()
+    {
+        return mask;
+    }
+
+    void setMask(const rtengine::procparams::Mask &m)
+    {
+        mask = m;
     }
     
     Clipboard();

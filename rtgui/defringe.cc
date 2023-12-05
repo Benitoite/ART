@@ -17,14 +17,16 @@
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "defringe.h"
+#include "../rtengine/refreshmap.h"
 #include <iomanip>
 #include <cmath>
 
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-Defringe::Defringe () : FoldableToolPanel(this, "defringe", M("TP_DEFRINGE_LABEL"), true, true)
+Defringe::Defringe () : FoldableToolPanel(this, "defringe", M("TP_DEFRINGE_LABEL"), false, true, true)
 {
+    EvToolReset.set_action(DETAIL);
 
     std::vector<GradientMilestone> bottomMilestones;
     float R, G, B;
@@ -57,7 +59,6 @@ Defringe::Defringe () : FoldableToolPanel(this, "defringe", M("TP_DEFRINGE_LABEL
     curveEditorPF->curveListComplete();
 
     pack_start (*curveEditorPF, Gtk::PACK_SHRINK, 4);
-
 }
 
 Defringe::~Defringe ()
@@ -101,7 +102,7 @@ void Defringe::read(const ProcParams* pp)
 void Defringe::autoOpenCurve ()
 {
     // WARNING: The following line won't work, since linear is a flat curve at 0.
-    // chshape->openIfNonlinear();
+    chshape->openIfNonlinear();
 }
 
 void Defringe::write(ProcParams* pp)
@@ -118,6 +119,8 @@ void Defringe::setDefaults(const ProcParams* defParams)
 
     radius->setDefault (defParams->defringe.radius);
     threshold->setDefault (defParams->defringe.threshold);
+
+    initial_params = defParams->defringe;
 }
 
 void Defringe::curveChanged ()
@@ -158,3 +161,13 @@ void Defringe::enabledChanged ()
     }
 }
 
+
+void Defringe::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.defringe = initial_params;
+    }
+    pp.defringe.enabled = getEnabled();
+    read(&pp);
+}

@@ -27,37 +27,65 @@
 #include "wbprovider.h"
 #include "../rtengine/procparams.h"
 
-class SpotWBListener
-{
+class SpotWBListener {
 public:
     virtual ~SpotWBListener() = default;
     virtual void spotWBRequested(int size) = 0;
 };
 
-class WhiteBalance : public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public rtengine::AutoWBListener
-{
 
-    enum WB_LabelType {
-        WBLT_GUI,
-        WBLT_PP
-    };
+class WhiteBalance: public ToolParamBlock, public AdjusterListener, public FoldableToolPanel, public rtengine::AutoWBListener {
+public:
+    WhiteBalance();
+    ~WhiteBalance() override;
 
-protected:
-    class MethodColumns : public Gtk::TreeModel::ColumnRecord
+    static void init();
+    static void cleanup();
+    void read(const rtengine::procparams::ProcParams* pp) override;
+    void write(rtengine::procparams::ProcParams* pp) override;
+    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
+    void updateMethodGui();
+    void methodChanged();
+    void spotPressed();
+    void spotSizeChanged();
+    void adjusterChanged(Adjuster* a, double newval) override;
+    void adjusterAutoToggled(Adjuster* a, bool newval) override;
+    int  getSize();
+    void setWBProvider(WBProvider* p)
     {
+        wbp = p;
+    }
+    void setSpotWBListener(SpotWBListener* l)
+    {
+        wblistener = l;
+    }
+    void setWB (int temp, double green);
+    void WBChanged(double temp, double green) override;
+
+    void trimValues(rtengine::procparams::ProcParams* pp) override;
+    void enabledChanged() override;
+
+    void toolReset(bool to_initial) override;
+    void registerShortcuts(ToolShortcutManager *mgr) override;
+
+private:
+    void fillMethods();
+    int getActiveMethod();
+    
+    class MethodColumns : public Gtk::TreeModel::ColumnRecord {
     public:
         Gtk::TreeModelColumn< Glib::RefPtr<Gdk::Pixbuf> > colIcon;
         Gtk::TreeModelColumn<Glib::ustring> colLabel;
-        Gtk::TreeModelColumn<int> colId;
+        Gtk::TreeModelColumn<int> colPreset;
         MethodColumns()
         {
             add(colIcon);
             add(colLabel);
-            add(colId);
+            add(colPreset);
         }
     };
 
-    static Glib::RefPtr<Gdk::Pixbuf> wbPixbufs[rtengine::toUnderlying(rtengine::procparams::WBEntry::Type::CUSTOM) + 1];
+    static std::vector<Glib::RefPtr<Gdk::Pixbuf>> wbPixbufs;
     Glib::RefPtr<Gtk::TreeStore> refTreeModel;
     MethodColumns methodColumns;
     MyComboBox* method;
@@ -66,60 +94,22 @@ protected:
     Adjuster* green;
     Adjuster* equal;
 
+    std::array<Adjuster *, 3> mult;
+    Gtk::VBox *tempBox;
+    Gtk::VBox *multBox;
+
     Gtk::Button* spotbutton;
     int opt;
-    double nextTemp;
-    double nextGreen;
-    WBProvider *wbp;  // pointer to a ToolPanelCoordinator object, or its subclass BatchToolPanelCoordinator
+    WBProvider *wbp;
     SpotWBListener* wblistener;
     sigc::connection methconn;
-    int custom_temp;
-    double custom_green;
-    double custom_equal;
 
     IdleRegister idle_register;
 
-    void cache_customWB    (int temp, double green); //cache custom WB setting to allow its recall
-    void cache_customTemp  (int temp);               //cache Temperature only to allow its recall
-    void cache_customGreen (double green);           //cache Green only to allow its recall
-    void cache_customEqual (double equal);           //cache Equal only to allow its recall
+    rtengine::procparams::WBParams initial_params;
 
-    int  setActiveMethod   (Glib::ustring label);
-    int _setActiveMethod   (Glib::ustring &label, Gtk::TreeModel::Children &children);
-
-    Gtk::TreeModel::Row                                   getActiveMethod();
-    unsigned int                                          findWBEntryId  (const Glib::ustring& label, enum WB_LabelType lblType = WBLT_GUI);
-    std::pair<bool, const rtengine::procparams::WBEntry&> findWBEntry    (const Glib::ustring& label, enum WB_LabelType lblType = WBLT_GUI);
-
-public:
-
-    WhiteBalance ();
-    ~WhiteBalance () override;
-
-    static void init    ();
-    static void cleanup ();
-    void read(const rtengine::procparams::ProcParams* pp) override;
-    void write(rtengine::procparams::ProcParams* pp) override;
-    void setDefaults(const rtengine::procparams::ProcParams* defParams) override;
-    void optChanged ();
-    void spotPressed ();
-    void spotSizeChanged ();
-    void adjusterChanged(Adjuster* a, double newval) override;
-    void adjusterAutoToggled(Adjuster* a, bool newval) override;
-    int  getSize ();
-    void setWBProvider (WBProvider* p)
-    {
-        wbp = p;
-    }
-    void setSpotWBListener (SpotWBListener* l)
-    {
-        wblistener = l;
-    }
-    void setWB (int temp, double green);
-    void WBChanged           (double temp, double green) override;
-
-    void trimValues          (rtengine::procparams::ProcParams* pp) override;
-    void enabledChanged() override;
+    rtengine::ProcEvent EvWBMult;
+    std::vector<WBPreset> presets;
 };
 
 #endif

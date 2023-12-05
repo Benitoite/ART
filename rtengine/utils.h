@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -21,8 +22,7 @@
 #include <type_traits>
 #include <glibmm/ustring.h>
 
-namespace rtengine
-{
+namespace rtengine {
 
 // Update a point of a Cairo::Surface by accessing the raw data
 void poke255_uc(unsigned char*& dest, unsigned char r, unsigned char g, unsigned char b);
@@ -54,7 +54,9 @@ bool hasPngExtension(const Glib::ustring& filename);
 
 void swab(const void* from, void* to, ssize_t n);
 
-}
+std::string getMD5(const Glib::ustring &fname, bool extended=false);
+
+} // namespace rtengine
 
 #if __SIZEOF_WCHAR_T__ == 4
 Glib::ustring utf32_to_utf8(wchar_t* UTF32Buffer, size_t sizeOfUTF32Buffer);

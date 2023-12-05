@@ -33,7 +33,7 @@
 #include "stdimagesource.h"
 #include <glib/gstdio.h>
 #include "rawimage.h"
-#include "jpeg.h"
+#include "rtjpeg.h"
 #include "../rtgui/ppversion.h"
 #include "improccoordinator.h"
 #include "settings.h"
@@ -44,15 +44,9 @@
 
 namespace {
 
-bool checkRawImageThumb (const rtengine::RawImage& raw_image)
-{
-    return raw_image.checkThumbOk();
-}
-
-
 void scale_colors (rtengine::RawImage *ri, float scale_mul[4], float cblack[4], bool multiThread)
 {
-    DCraw::dcrawImage_t image = ri->get_image();
+    rtengine::RawImage::ImageType image = ri->get_image();
     const int height = ri->get_iheight();
     const int width = ri->get_iwidth();
     const int top_margin = ri->get_topmargin();
@@ -186,17 +180,12 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
 
     StdImageSource imgSrc;
 
-    if (imgSrc.load (fname)) {
+    if (imgSrc.load(fname, std::max(w, 0), std::max(h, 0))) {
         return nullptr;
     }
 
     ImageIO* img = imgSrc.getImageIO();
 
-    // agriggio -- hotfix for #3794, to be revised once a proper solution is implemented
-    if (std::max(img->getWidth(), img->getHeight()) / std::min(img->getWidth(), img->getHeight()) >= 10) {
-        return nullptr;
-    }
-    
     Thumbnail* tpp = new Thumbnail ();
 
     unsigned char* data;
@@ -217,13 +206,26 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
     tpp->colorMatrix[1][1] = 1.0;
     tpp->colorMatrix[2][2] = 1.0;
 
-    if (fixwh == 1) {
+    if (fixwh < 0 && w > 0 && h > 0) {
+        int ww = h * img->getWidth() / img->getHeight();
+        int hh = w * img->getHeight() / img->getWidth();
+        if (ww <= w) {
+            w = ww;
+            tpp->scale = double(img->getHeight()) / h;
+        } else {
+            h = hh;
+            tpp->scale = double(img->getWidth()) / w;
+        }
+    } else if (fixwh == 1) {
         w = h * img->getWidth() / img->getHeight();
         tpp->scale = (double)img->getHeight() / h;
     } else {
         h = w * img->getHeight() / img->getWidth();
         tpp->scale = (double)img->getWidth() / w;
     }
+
+    h = std::max(h, 1);
+    w = std::max(w, 1);
 
     // bilinear interpolation
     if (tpp->thumbImg) {
@@ -234,32 +236,10 @@ Thumbnail* Thumbnail::loadFromImage (const Glib::ustring& fname, int &w, int &h,
     // we want the same image type than the source file
     tpp->thumbImg = resizeToSameType (w, h, TI_Bilinear, img);
 
-    // histogram computation
-    tpp->aeHistCompression = 3;
-    tpp->aeHistogram (65536 >> tpp->aeHistCompression);
-
     double avg_r = 0;
     double avg_g = 0;
     double avg_b = 0;
     int n = 0;
-
-    if (img->getType() == rtengine::sImage8) {
-        Image8 *image = static_cast<Image8*> (img);
-        image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
-    } else if (img->getType() == sImage16) {
-        Image16 *image = static_cast<Image16*> (img);
-        image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
-    } else if (img->getType() == sImagefloat) {
-        Imagefloat *image = static_cast<Imagefloat*> (img);
-        image->computeHistogramAutoWB (avg_r, avg_g, avg_b, n, tpp->aeHistogram, tpp->aeHistCompression);
-    } else {
-        printf ("loadFromImage: Unsupported image type \"%s\"!\n", img->getType());
-    }
-
-    // ProcParams paramsForAutoExp; // Dummy for constructor
-    // ImProcFunctions ipf (&paramsForAutoExp, false);
-    // ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
-    // tpp->aeValid = true;
 
     if (n > 0) {
         ColorTemp cTemp;
@@ -288,11 +268,11 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType 
     tpp->colorMatrix[1][1] = 1.0;
     tpp->colorMatrix[2][2] = 1.0;
 
-    RawImage *ri = new RawImage (fname);
+    RawImage *ri = new RawImage(fname);
     unsigned int imageNum = 0;
-    int r = ri->loadRaw (false, imageNum, false);
+    int r = ri->loadRaw(false, imageNum, false);
 
-    if ( r ) {
+    if (r) {
         delete tpp;
         delete ri;
         sensorType = ST_NONE;
@@ -301,32 +281,15 @@ Thumbnail* Thumbnail::loadQuickFromRaw (const Glib::ustring& fname, eSensorType 
 
     sensorType = ri->getSensorType();
 
-    Image8* img = new Image8 ();
-    // No sample format detection occurred earlier, so we set them here,
-    // as they are mandatory for the setScanline method
-    img->setSampleFormat (IIOSF_UNSIGNED_CHAR);
-    img->setSampleArrangement (IIOSA_CHUNKY);
-
-    int err = 1;
-
-    // See if it is something we support
-    if (checkRawImageThumb (*ri)) {
-        const char* data ((const char*)fdata (ri->get_thumbOffset(), ri->get_file()));
-
-        if ( (unsigned char)data[1] == 0xd8 ) {
-            err = img->loadJPEGFromMemory (data, ri->get_thumbLength());
-        } else if (ri->is_ppmThumb()) {
-            err = img->loadPPMFromMemory (data, ri->get_thumbWidth(), ri->get_thumbHeight(), ri->get_thumbSwap(), ri->get_thumbBPS());
-        }
-    }
+    Image8 *img = ri->getThumbnail();
 
     // did we succeed?
-    if ( err ) {
+    if (!img) {
         if (options.rtSettings.verbose) {
             std::cout << "Could not extract thumb from " << fname.c_str() << std::endl;
         }
         delete tpp;
-        delete img;
+        //delete img;
         delete ri;
         return nullptr;
     }
@@ -386,7 +349,7 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
     RawImage *ri = new RawImage (fname);
     unsigned int tempImageNum = 0;
 
-    int r = ri->loadRaw (1, tempImageNum, 0);
+    int r = ri->loadRaw(true, tempImageNum, false, nullptr, 1.0, false);
 
     if ( r ) {
         delete ri;
@@ -397,7 +360,7 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
     if (ri->getFrameCount() == 7) {
         // special case for Hasselblad H6D-100cMS pixelshift files
         // first frame is not bayer, load second frame
-        int r = ri->loadRaw (1, 1, 0);
+        int r = ri->loadRaw(true, 1, false, nullptr, 1.0, false);
 
         if ( r ) {
             delete ri;
@@ -409,6 +372,11 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
 
     int width = ri->get_width();
     int height = ri->get_height();
+    int iwidth = ri->get_iwidth();
+    int iheight = ri->get_iheight();
+    int left_margin = ri->get_leftmargin();
+    int top_margin = ri->get_topmargin();
+    
     rtengine::Thumbnail* tpp = new rtengine::Thumbnail;
 
     tpp->isRaw = true;
@@ -437,6 +405,7 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
     //tpp->defGain = 1.0 / min(ri->get_pre_mul(0), ri->get_pre_mul(1), ri->get_pre_mul(2));
     tpp->defGain = max (scale_mul[0], scale_mul[1], scale_mul[2], scale_mul[3]) / min (scale_mul[0], scale_mul[1], scale_mul[2], scale_mul[3]);
     tpp->defGain *= std::pow(2, ri->getBaselineExposure());
+    tpp->scaleGain = scale_mul[0] / pre_mul[0]; // used to reconstruct scale_mul from filmnegativethumb.cc
 
     tpp->gammaCorrected = true;
 
@@ -483,26 +452,26 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
     int tmpw = (width - 2) / hskip;
     int tmph = (height - 2) / vskip;
 
-    DCraw::dcrawImage_t image = ri->get_image();
+    rtengine::RawImage::ImageType image = ri->get_image();
 
     Imagefloat* tmpImg = new Imagefloat (tmpw, tmph);
 
     if (ri->getSensorType() == ST_BAYER) {
         // demosaicing! (sort of)
         for (int row = 1, y = 0; row < height - 1 && y < tmph; row += vskip, y++) {
-            rofs = row * width;
+            rofs = (row + top_margin) * iwidth;
 
             for (int col = firstgreen, x = 0; col < width - 1 && x < tmpw; col += hskip, x++) {
-                int ofs = rofs + col;
+                int ofs = rofs + col + left_margin;
                 int g = image[ofs][1];
                 int r, b;
 
                 if (FISRED (filter, row, col + 1)) {
                     r = (image[ofs + 1    ][0] + image[ofs - 1    ][0]) >> 1;
-                    b = (image[ofs + width][2] + image[ofs - width][2]) >> 1;
+                    b = (image[ofs + iwidth][2] + image[ofs - iwidth][2]) >> 1;
                 } else {
                     b = (image[ofs + 1    ][2] + image[ofs - 1    ][2]) >> 1;
-                    r = (image[ofs + width][0] + image[ofs - width][0]) >> 1;
+                    r = (image[ofs + iwidth][0] + image[ofs - iwidth][0]) >> 1;
                 }
 
                 tmpImg->r (y, x) = r;
@@ -512,28 +481,28 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
         }
     } else if (ri->get_colors() == 1) {
         for (int row = 1, y = 0; row < height - 1 && y < tmph; row += vskip, y++) {
-            rofs = row * width;
+            rofs = (row + top_margin) * iwidth;
 
             for (int col = firstgreen, x = 0; col < width - 1 && x < tmpw; col
                     += hskip, x++) {
-                int ofs = rofs + col;
+                int ofs = rofs + col + left_margin;
                 tmpImg->r (y, x) = tmpImg->g (y, x) = tmpImg->b (y, x) = image[ofs][0];
             }
         }
     } else {
         if (ri->getSensorType() == ST_FUJI_XTRANS) {
             for ( int row = 1, y = 0; row < height - 1 && y < tmph; row += vskip, y++) {
-                rofs = row * width;
+                rofs = (row + top_margin) * iwidth;
 
                 for ( int col = 1, x = 0; col < width - 1 && x < tmpw; col += hskip, x++ ) {
-                    int ofs = rofs + col;
+                    int ofs = rofs + col + left_margin;
                     float sum[3] = {};
                     int c;
 
                     for (int v = -1; v <= 1; v++) {
                         for (int h = -1; h <= 1; h++) {
                             c = ri->XTRANSFC (row + v, col + h);
-                            sum[c] += image[ofs + v * width + h][c];
+                            sum[c] += image[ofs + v * iwidth + h][c];
                         }
                     }
 
@@ -561,11 +530,11 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 }
             }
         } else {
-            int iwidth = ri->get_iwidth();
-            int iheight = ri->get_iheight();
-            int left_margin = ri->get_leftmargin();
+            // int iwidth = ri->get_iwidth();
+            // int iheight = ri->get_iheight();
+            // int left_margin = ri->get_leftmargin();
             firstgreen += left_margin;
-            int top_margin = ri->get_topmargin();
+            // int top_margin = ri->get_topmargin();
             int wmax = tmpw;
             int hmax = tmph;
 
@@ -667,18 +636,8 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
         tpp->scale = (double) height / (rotate_90 ? w : h);
     }
     if(!forHistogramMatching) { // we don't need this for histogram matching
-
-        // generate histogram for auto exposure, also calculate autoWB
-        tpp->aeHistCompression = 3;
-        tpp->aeHistogram(65536 >> tpp->aeHistCompression);
-        tpp->aeHistogram.clear();
-
-        const unsigned int add = filter ? 1 : 4 / ri->get_colors();
-
         double pixSum[3] = {0.0};
         unsigned int n[3] = {0};
-        const double compression = pow(2.0, tpp->aeHistCompression);
-        const double camWb[3] = {tpp->camwbRed / compression, tpp->camwbGreen / compression, tpp->camwbBlue / compression};
         const double clipval = 64000.0 / tpp->defGain;
 
         for (int i = 32; i < height - 32; i++) {
@@ -693,11 +652,7 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 end = width - 32;
             }
 
-            if (ri->get_colors() == 1) {
-                for (int j = start; j < end; j++) {
-                    tpp->aeHistogram[image[i * width + j][0] >> tpp->aeHistCompression]++;
-                }
-            } else if (ri->getSensorType() == ST_BAYER) {
+            if (ri->getSensorType() == ST_BAYER) {
                 int c0 = ri->FC(i, start);
                 int c1 = ri->FC(i, start + 1);
                 int j = start;
@@ -707,13 +662,11 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 double pixSum1 = 0.0;
                 for (; j < end - 1; j+=2) {
                     double v0 = image[i * width + j][c0];
-                    tpp->aeHistogram[(int)(camWb[c0] * v0)]++;
                     if (v0 <= clipval) {
                         pixSum0 += v0;
                         n0++;
                     }
                     double v1 = image[i * width + j + 1][c1];
-                    tpp->aeHistogram[(int)(camWb[c1] * v1)]++;
                     if (v1 <= clipval) {
                         pixSum1 += v1;
                         n1++;
@@ -721,7 +674,6 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 }
                 if (j < end) {
                     double v0 = image[i * width + j][c0];
-                    tpp->aeHistogram[(int)(camWb[c0] * v0)]++;
                     if (v0 <= clipval) {
                         pixSum0 += v0;
                         n0++;
@@ -740,7 +692,6 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 for (; j < end - 5; j += 6) {
                     for(int cc = 0; cc < 6; ++cc) {
                         double d = image[i * width + j + cc][c[cc]];
-                        tpp->aeHistogram[(int)(camWb[c[cc]] * d)]++;
                         if (d <= clipval) {
                             pixSum[c[cc]] += d;
                             n[c[cc]]++;
@@ -750,21 +701,18 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                 for (; j < end; j++) {
                     if (ri->ISXTRANSGREEN (i, j)) {
                         double d = image[i * width + j][1];
-                        tpp->aeHistogram[(int)(camWb[1] * d)]++;
                         if (d <= clipval) {
                             pixSum[1] += d;
                             n[1]++;
                         }
                     } else if (ri->ISXTRANSRED (i, j)) {
                         double d = image[i * width + j][0];
-                        tpp->aeHistogram[(int)(camWb[0] * d)]++;
                         if (d <= clipval) {
                             pixSum[0] += d;
                             n[0]++;
                         }
                     } else if (ri->ISXTRANSBLUE (i, j)) {
                         double d = image[i * width + j][2];
-                        tpp->aeHistogram[(int)(camWb[2] * d)]++;
                         if (d <= clipval) {
                             pixSum[2] += d;
                             n[2]++;
@@ -783,20 +731,14 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
                         pixSum[1] += g;
                         n[1]++;
                     }
-                    tpp->aeHistogram[((int)g) >> tpp->aeHistCompression] += add;
                     double b = image[i * width + j][2];
                     if (b <= clipval) {
                         pixSum[2] += b;
                         n[2]++;
                     }
-                    tpp->aeHistogram[((int) (b * 0.5f)) >> tpp->aeHistCompression] += add;
                 }
             }
         }
-        // ProcParams paramsForAutoExp; // Dummy for constructor
-        // ImProcFunctions ipf (&paramsForAutoExp, false);
-        // ipf.getAutoExp (tpp->aeHistogram, tpp->aeHistCompression, 0.02, tpp->aeExposureCompensation, tpp->aeLightness, tpp->aeContrast, tpp->aeBlack, tpp->aeHighlightCompression, tpp->aeHighlightCompressionThreshold);
-        // tpp->aeValid = true;
 
         if (ri->get_colors() == 1) {
             pixSum[0] = pixSum[1] = pixSum[2] = 1.;
@@ -829,6 +771,9 @@ Thumbnail* Thumbnail::loadFromRaw (const Glib::ustring& fname, eSensorType &sens
         }
 
     tpp->init();
+
+    RawImageSource::computeFullSize(ri, TR_NONE, tpp->full_width, tpp->full_height);
+    
     delete ri;
     return tpp;
 }
@@ -865,14 +810,6 @@ Thumbnail::Thumbnail () :
     autoWBTemp (2700),
     autoWBGreen (1.0),
     wbEqual (-1.0),
-    aeHistCompression (3),
-    aeValid(false),
-    aeExposureCompensation(0.0),
-    aeLightness(0),
-    aeContrast(0),
-    aeBlack(0),
-    aeHighlightCompression(0),
-    aeHighlightCompressionThreshold(0),
     embProfileLength (0),
     embProfileData (nullptr),
     embProfile (nullptr),
@@ -884,8 +821,11 @@ Thumbnail::Thumbnail () :
     scaleForSave (8192),
     gammaCorrected (false),
     colorMatrix{},
+    scaleGain(1.0),
     sensorType(ST_NONE),
-    isRaw(false)
+    isRaw(false),
+    full_width(-1),
+    full_height(-1)
 {
 }
 
@@ -893,7 +833,6 @@ Thumbnail::~Thumbnail ()
 {
 
     delete thumbImg;
-    //delete [] aeHistogram;
     delete [] embProfileData;
 
     if (embProfile) {
@@ -949,20 +888,31 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     }
 
     // compute WB multipliers
-    ColorTemp currWB = ColorTemp (params.wb.temperature, params.wb.green, params.wb.equal, params.wb.method);
+    ColorTemp currWB;
 
     if (!params.wb.enabled) {
         currWB = ColorTemp();
-    } else if (params.wb.method == "Camera") {
+    } else if (params.wb.method == WBParams::CAMERA || params.wb.method == WBParams::CUSTOM_MULT) {
+        double cr = camwbRed;
+        double cg = camwbGreen;
+        double cb = camwbBlue;
+        if (params.wb.method == WBParams::CUSTOM_MULT) {
+            cr = redMultiplier / params.wb.mult[0];
+            cg = greenMultiplier / params.wb.mult[1];
+            cb = blueMultiplier / params.wb.mult[2];
+        }
         //recall colorMatrix is rgb_cam
-        double cam_r = colorMatrix[0][0] * camwbRed + colorMatrix[0][1] * camwbGreen + colorMatrix[0][2] * camwbBlue;
-        double cam_g = colorMatrix[1][0] * camwbRed + colorMatrix[1][1] * camwbGreen + colorMatrix[1][2] * camwbBlue;
-        double cam_b = colorMatrix[2][0] * camwbRed + colorMatrix[2][1] * camwbGreen + colorMatrix[2][2] * camwbBlue;
+        double cam_r = colorMatrix[0][0] * cr + colorMatrix[0][1] * cg + colorMatrix[0][2] * cb;
+        double cam_g = colorMatrix[1][0] * cr + colorMatrix[1][1] * cg + colorMatrix[1][2] * cb;
+        double cam_b = colorMatrix[2][0] * cr + colorMatrix[2][1] * cg + colorMatrix[2][2] * cb;
         currWB = ColorTemp (cam_r, cam_g, cam_b, params.wb.equal);
-    } else if (params.wb.method == "Auto") {
+    } else if (params.wb.method == WBParams::AUTO) {
         currWB = ColorTemp (autoWBTemp, autoWBGreen, wbEqual, "Custom");
+    } else if (params.wb.method == WBParams::CUSTOM_TEMP) {
+        currWB = ColorTemp(params.wb.temperature, params.wb.green, params.wb.equal, "Custom");
+    } else if (params.wb.method == WBParams::CUSTOM_MULT_LEGACY) {
+        currWB = ColorTemp(params.wb.mult[0], params.wb.mult[1], params.wb.mult[2], 1.0);
     }
-
     double rm, gm, bm;
     if (currWB.getTemp() < 0) {
         rm = redMultiplier;
@@ -1004,10 +954,16 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         rwidth = int (size_t (thumbImg->getWidth()) * size_t (rheight) / size_t (thumbImg->getHeight()));
     }
 
+    rwidth = std::max(rwidth, 1);
+    rheight = std::max(rheight, 1);
 
     Imagefloat* baseImg = resizeTo<Imagefloat> (rwidth, rheight, interp, thumbImg);
-    if (isRaw && params.filmNegative.enabled && (sensorType == ST_BAYER || sensorType == ST_FUJI_XTRANS)) {
-        processFilmNegative(params, baseImg, rwidth, rheight, rmi, gmi, bmi);
+    if (params.filmNegative.enabled) {
+        if (params.filmNegative.backCompat == FilmNegativeParams::BackCompat::V1) {
+            processFilmNegative(params, baseImg, rwidth, rheight);
+        } else if (params.filmNegative.backCompat == FilmNegativeParams::BackCompat::V2) {
+            processFilmNegativeV2(params, baseImg, rwidth, rheight);
+        }
     }
     baseImg->assignColorSpace(params.icm.workingProfile);
 
@@ -1048,7 +1004,14 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         }
     }
 
-    // if luma denoise has to be done for thumbnails, it should be right here
+    int fw = baseImg->getWidth();
+    int fh = baseImg->getHeight();
+
+    ImProcFunctions ipf (&params, forHistogramMatching); // enable multithreading when forHistogramMatching is true
+
+    if (params.filmNegative.enabled && params.filmNegative.backCompat == FilmNegativeParams::BackCompat::CURRENT && params.filmNegative.colorSpace == FilmNegativeParams::ColorSpace::INPUT) {
+        ipf.filmNegativeProcess(baseImg, baseImg, params.filmNegative);
+    }
 
     // perform color space transformation
 
@@ -1059,16 +1022,17 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
         StdImageSource::colorSpaceConversion (baseImg, params.icm, embProfile, thumbImg->getSampleFormat());
     }
 
-    int fw = baseImg->getWidth();
-    int fh = baseImg->getHeight();
-
-    ImProcFunctions ipf (&params, forHistogramMatching); // enable multithreading when forHistogramMatching is true
+    if (params.filmNegative.enabled && params.filmNegative.backCompat == FilmNegativeParams::BackCompat::CURRENT && params.filmNegative.colorSpace != FilmNegativeParams::ColorSpace::INPUT) {
+        ipf.filmNegativeProcess(baseImg, baseImg, params.filmNegative);
+    }
+     
     int origFW;
     int origFH;
     double tscale = 0.0;
     getDimensions (origFW, origFH, tscale);
     ipf.setScale((origFW * tscale) / rwidth);
-    ipf.updateColorProfiles (ICCStore::getInstance()->getDefaultMonitorProfileName(), options.rtSettings.monitorIntent, false, false);
+    //ipf.updateColorProfiles (ICCStore::getInstance()->getDefaultMonitorProfileName(), options.rtSettings.monitorIntent, false, false);
+    ipf.setMonitorTransform(ICCStore::getInstance()->getThumbnailMonitorTransform());
 
     LUTu hist16 (65536);
 
@@ -1105,9 +1069,9 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     Image8 *readyImg = nullptr;
     if (forMonitor) {
         readyImg = new Image8 (fw, fh);
-        ipf.lab2monitorRgb(baseImg, readyImg);
+        ipf.rgb2monitor(baseImg, readyImg, true);
     } else {
-        readyImg = ipf.lab2rgb(baseImg, 0, 0, fw, fh, params.icm, false);
+        readyImg = ipf.rgb2out(baseImg, 0, 0, fw, fh, params.icm, false);
     }
     delete baseImg;
 
@@ -1119,6 +1083,9 @@ IImage8* Thumbnail::processImage (const procparams::ProcParams& params, eSensorT
     }
 
     myscale = 1.0 / myscale;
+
+    ipf.setMonitorTransform(nullptr);
+    
     return readyImg;
 }
 
@@ -1224,6 +1191,8 @@ void Thumbnail::getSpotWB (const procparams::ProcParams& params, int xp, int yp,
     rtemp = ct.getTemp ();
     rgreen = ct.getGreen ();
 }
+
+
 void Thumbnail::transformPixel (int x, int y, int tran, int& tx, int& ty)
 {
 
@@ -1649,42 +1618,6 @@ bool Thumbnail::readData  (const Glib::ustring& fname)
                 blueAWBMul          = keyFile.get_double ("LiveThumbData", "BlueAWBMul");
             }
 
-            if (keyFile.has_key ("LiveThumbData", "AEHistCompression")) {
-                aeHistCompression   = keyFile.get_integer ("LiveThumbData", "AEHistCompression");
-            }
-
-            aeValid = true;
-            if (keyFile.has_key ("LiveThumbData", "AEExposureCompensation")) {
-                aeExposureCompensation = keyFile.get_double ("LiveThumbData", "AEExposureCompensation");
-            } else {
-                aeValid = false;
-            }
-            if (keyFile.has_key ("LiveThumbData", "AELightness")) {
-                aeLightness   = keyFile.get_integer ("LiveThumbData", "AELightness");
-            } else {
-                aeValid = false;
-            }
-            if (keyFile.has_key ("LiveThumbData", "AEContrast")) {
-                aeContrast   = keyFile.get_integer ("LiveThumbData", "AEContrast");
-            } else {
-                aeValid = false;
-            }
-            if (keyFile.has_key ("LiveThumbData", "AEBlack")) {
-                aeBlack   = keyFile.get_integer ("LiveThumbData", "AEBlack");
-            } else {
-                aeValid = false;
-            }
-            if (keyFile.has_key ("LiveThumbData", "AEHighlightCompression")) {
-                aeHighlightCompression   = keyFile.get_integer ("LiveThumbData", "AEHighlightCompression");
-            } else {
-                aeValid = false;
-            }
-            if (keyFile.has_key ("LiveThumbData", "AEHighlightCompressionThreshold")) {
-                aeHighlightCompressionThreshold   = keyFile.get_integer ("LiveThumbData", "AEHighlightCompressionThreshold");
-            } else {
-                aeValid = false;
-            }
-
             if (keyFile.has_key ("LiveThumbData", "RedMultiplier")) {
                 redMultiplier       = keyFile.get_double ("LiveThumbData", "RedMultiplier");
             }
@@ -1722,6 +1655,10 @@ bool Thumbnail::readData  (const Glib::ustring& fname)
                         colorMatrix[i][j] = cm[ix++];
                     }
             }
+
+            if (keyFile.has_key("LiveThumbData", "ScaleGain")) {
+                scaleGain = keyFile.get_double("LiveThumbData", "ScaleGain");
+            }
         }
 
         return true;
@@ -1758,12 +1695,6 @@ bool Thumbnail::writeData  (const Glib::ustring& fname)
         keyFile.set_double  ("LiveThumbData", "RedAWBMul", redAWBMul);
         keyFile.set_double  ("LiveThumbData", "GreenAWBMul", greenAWBMul);
         keyFile.set_double  ("LiveThumbData", "BlueAWBMul", blueAWBMul);
-        keyFile.set_double  ("LiveThumbData", "AEExposureCompensation", aeExposureCompensation);
-        keyFile.set_integer ("LiveThumbData", "AELightness", aeLightness);
-        keyFile.set_integer ("LiveThumbData", "AEContrast", aeContrast);
-        keyFile.set_integer ("LiveThumbData", "AEBlack", aeBlack);
-        keyFile.set_integer ("LiveThumbData", "AEHighlightCompression", aeHighlightCompression);
-        keyFile.set_integer ("LiveThumbData", "AEHighlightCompressionThreshold", aeHighlightCompressionThreshold);
         keyFile.set_double  ("LiveThumbData", "RedMultiplier", redMultiplier);
         keyFile.set_double  ("LiveThumbData", "GreenMultiplier", greenMultiplier);
         keyFile.set_double  ("LiveThumbData", "BlueMultiplier", blueMultiplier);
@@ -1772,7 +1703,8 @@ bool Thumbnail::writeData  (const Glib::ustring& fname)
         keyFile.set_integer ("LiveThumbData", "ScaleForSave", scaleForSave);
         keyFile.set_boolean ("LiveThumbData", "GammaCorrected", gammaCorrected);
         Glib::ArrayHandle<double> cm ((double*)colorMatrix, 9, Glib::OWNERSHIP_NONE);
-        keyFile.set_double_list ("LiveThumbData", "ColorMatrix", cm);
+        keyFile.set_double_list("LiveThumbData", "ColorMatrix", cm);
+        keyFile.set_double("LiveThumbData", "ScaleGain", scaleGain);
 
         keyData = keyFile.to_data ();
 
@@ -1863,5 +1795,131 @@ unsigned char* Thumbnail::getImage8Data()
 
     return nullptr;
 }
+
+
+Thumbnail* Thumbnail::loadInfoFromRaw(const Glib::ustring &fname, eSensorType &sensorType, int &w, int &h, int fixwh)
+{
+    RawImage *ri = new RawImage(fname);
+    unsigned int tempImageNum = 0;
+
+    int r = ri->loadRaw(false, tempImageNum, false, nullptr, 1.0, false);
+
+    if (r) {
+        delete ri;
+        sensorType = ST_NONE;
+        return nullptr;
+    }
+
+    if (ri->getFrameCount() == 7) {
+        // special case for Hasselblad H6D-100cMS pixelshift files
+        // first frame is not bayer, load second frame
+        int r = ri->loadRaw(false, 1, false, nullptr, 1.0, false);
+
+        if (r) {
+            delete ri;
+            sensorType = ST_NONE;
+            return nullptr;
+        }
+    }
+    sensorType = ri->getSensorType();
+
+    int width = ri->get_width();
+    int height = ri->get_height();
+    rtengine::Thumbnail *tpp = new rtengine::Thumbnail;
+
+    tpp->isRaw = true;
+    tpp->sensorType = sensorType;
+    tpp->embProfile = nullptr;
+    tpp->embProfileData = nullptr;
+    tpp->embProfileLength = 0;
+
+    tpp->redMultiplier = ri->get_pre_mul (0);
+    tpp->greenMultiplier = ri->get_pre_mul (1);
+    tpp->blueMultiplier = ri->get_pre_mul (2);
+
+    tpp->camwbRed = 1.0;
+    tpp->camwbGreen = 1.0;
+    tpp->camwbBlue = 1.0;
+    tpp->defGain = 1.0;
+
+    float pre_mul[4], scale_mul[4], cblack[4];
+    ri->get_colorsCoeff (pre_mul, scale_mul, cblack, false);
+    tpp->defGain = max(scale_mul[0], scale_mul[1], scale_mul[2], scale_mul[3]) / min (scale_mul[0], scale_mul[1], scale_mul[2], scale_mul[3]);
+    tpp->defGain *= std::pow(2, ri->getBaselineExposure());
+    
+    int skip = 1;
+    int firstgreen = 1;
+
+    if (ri->get_FujiWidth() != 0) {
+        if (fixwh == 1) { // fix height, scale width
+            skip = ((ri->get_height() - ri->get_FujiWidth()) / sqrt (0.5) - firstgreen - 1) / h;
+        } else {
+            skip = (ri->get_FujiWidth() / sqrt (0.5) - firstgreen - 1) / w;
+        }
+    } else {
+        if (fixwh == 1) { // fix height, scale width
+            skip = (ri->get_height() - firstgreen - 1) / h;
+        } else {
+            skip = (ri->get_width() - firstgreen - 1) / w;
+        }
+    }
+
+    if (skip % 2) {
+        skip--;
+    }
+
+    if (skip < 2) {
+        skip = 2;
+    }
+
+    int hskip = skip, vskip = skip;
+
+    if (!ri->get_model().compare ("D1X")) {
+        hskip *= 2;
+    }
+
+    int tmpw = (width - 2) / hskip;
+    int tmph = (height - 2) / vskip;
+
+
+    if (ri->get_FujiWidth() != 0) {
+        int fw = ri->get_FujiWidth() / hskip;
+        double step = sqrt (0.5);
+        int wide = fw / step;
+        int high = (tmph - fw) / step;
+        tmpw = wide;
+        tmph = high;
+    }
+
+    const bool rotate_90 =
+        true
+        && (
+            ri->get_rotateDegree() == 90
+            || ri->get_rotateDegree() == 270
+        );
+
+    if (rotate_90) {
+        std::swap (tmpw, tmph);
+    }
+
+    if (fixwh == 1) { // fix height, scale width
+        w = tmpw * h / tmph;
+    } else {
+        h = tmph * w / tmpw;
+    }
+
+
+    if (ri->get_FujiWidth() != 0) {
+        tpp->scale = (double) (height - ri->get_FujiWidth()) * 2.0 / (rotate_90 ? w : h);
+    } else {
+        tpp->scale = (double) height / (rotate_90 ? w : h);
+    }
+
+    RawImageSource::computeFullSize(ri, TR_NONE, tpp->full_width, tpp->full_height);
+    
+    delete ri;
+    return tpp;
+}
+
 
 } // namespace rtengine

@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,11 +17,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _FILEPANEL_
-#define _FILEPANEL_
+#pragma once
 
 #include <gtkmm.h>
-//#include "batchtoolpanelcoord.h"
 #include "filecatalog.h"
 #include "dirbrowser.h"
 #include "fileselectionlistener.h"
@@ -29,15 +28,13 @@
 #include "pparamschangelistener.h"
 #include "history.h"
 #include "filterpanel.h"
-//#include "exportpanel.h"
 #include "progressconnector.h"
 
 class RTWindow;
 
 class FilePanel final :
     public Gtk::HPaned,
-    public FileSelectionListener
-{
+    public FileSelectionListener {
 public:
     FilePanel ();
     ~FilePanel () override;
@@ -49,7 +46,6 @@ public:
 
     DirBrowser* dirBrowser;
     FilterPanel* filterPanel;
-    // ExportPanel* exportPanel;
     FileCatalog* fileCatalog;
     Gtk::Paned *ribbonPane;
 
@@ -71,14 +67,22 @@ public:
     void saveOptions ();
 
     // interface fileselectionlistener
-    bool fileSelected(Thumbnail* thm) override;
+    Result fileSelected(Thumbnail* thm) override;
     bool addBatchQueueJobs(const std::vector<BatchQueueEntry*>& entries) override;
 
-    void optionsChanged         ();
+    void optionsChanged();
     bool imageLoaded( Thumbnail* thm, ProgressConnector<rtengine::InitialImage*> * );
 
     bool handleShortcutKey (GdkEventKey* event);
     void updateTPVScrollbar (bool hide);
+
+    void showRightBox(bool yes);
+
+    bool isInspectorVisible() const;
+
+    bool on_button_release_event(GdkEventButton *event) override;
+
+    RTWindow *getParent() { return parent; }
 
 private:
     void on_NB_switch_page(Gtk::Widget* page, guint page_num);
@@ -105,6 +109,3 @@ private:
     IdleRegister idle_register;
     int pane_pos_;
 };
-
-#endif
-

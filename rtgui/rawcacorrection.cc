@@ -24,9 +24,11 @@
 using namespace rtengine;
 using namespace rtengine::procparams;
 
-RAWCACorr::RAWCACorr () : FoldableToolPanel(this, "rawcacorrection", M("TP_RAWCACORR_LABEL"), false, true)
+RAWCACorr::RAWCACorr () : FoldableToolPanel(this, "rawcacorrection", M("TP_RAWCACORR_LABEL"), false, true, true)
 {
     EvToolEnabled.set_action(DARKFRAME);
+    EvToolReset.set_action(DARKFRAME);
+    
     auto m = ProcEventMapper::getInstance();
     EvPreProcessCAAutoiterations = m->newEvent(DARKFRAME, "HISTORY_MSG_RAWCACORR_AUTOIT");
     EvPreProcessCAColourshift = m->newEvent(DARKFRAME, "HISTORY_MSG_RAWCACORR_COLORSHIFT");
@@ -152,6 +154,8 @@ void RAWCACorr::setDefaults(const rtengine::procparams::ProcParams* defParams)
     caAutoiterations->setDefault( defParams->raw.caautoiterations);
     caRed->setDefault( defParams->raw.cared);
     caBlue->setDefault( defParams->raw.cablue);
+
+    initial_params = defParams->raw;
 }
 
 
@@ -161,4 +165,15 @@ void RAWCACorr::trimValues (rtengine::procparams::ProcParams* pp)
     caAutoiterations->trimValue(pp->raw.caautoiterations);
     caRed->trimValue(pp->raw.cared);
     caBlue->trimValue(pp->raw.cablue);
+}
+
+
+void RAWCACorr::toolReset(bool to_initial)
+{
+    ProcParams pp;
+    if (to_initial) {
+        pp.raw = initial_params;
+    }
+    pp.raw.enable_ca = getEnabled();
+    read(&pp);
 }

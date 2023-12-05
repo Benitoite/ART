@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -20,18 +21,18 @@
 #define _FILTERPANEL_
 
 #include <gtkmm.h>
+#include "dateentry.h"
 #include "exiffiltersettings.h"
 
-class FilterPanelListener
-{
+
+class FilterPanelListener {
 public:
     virtual ~FilterPanelListener() = default;
     virtual void exifFilterChanged () = 0;
 };
 
-class FilterPanel : public Gtk::VBox
-{
 
+class FilterPanel: public Gtk::VBox {
 protected:
     Gtk::ListViewText*      filetype;
     Gtk::ListViewText*      camera;
@@ -45,6 +46,8 @@ protected:
     Gtk::Entry* focalTo;
     Gtk::Entry* isoFrom;
     Gtk::Entry* isoTo;
+    DateEntry *dateFrom;
+    DateEntry *dateTo;
     Gtk::CheckButton* enabled;
     Gtk::CheckButton* enaFNumber;
     Gtk::CheckButton* enaShutter;
@@ -54,26 +57,26 @@ protected:
     Gtk::CheckButton* enaCamera;
     Gtk::CheckButton* enaLens;
     Gtk::CheckButton* enaFiletype;
+    Gtk::CheckButton *enaDate;
 
-    int conns;
-    sigc::connection sChange[22];
+    std::vector<sigc::connection> sChange;
 
     ExifFilterSettings curefs;
     FilterPanelListener* listener;
 
 public:
-    FilterPanel ();
+    FilterPanel();
 
-    void setFilterPanelListener (FilterPanelListener* l)
+    void setFilterPanelListener(FilterPanelListener *l)
     {
         listener = l;
     }
 
-    void setFilter (ExifFilterSettings& defefs, bool updateLists);
-    ExifFilterSettings getFilter ();
-    bool isEnabled ();
+    void setFilter(ExifFilterSettings &defefs, bool update);
+    ExifFilterSettings getFilter(bool full_data=true);
+    bool isEnabled();
 
-    void valueChanged ();
+    void valueChanged();
     void setEnabled(bool enabledState)
     {
         enabled->set_active(enabledState);

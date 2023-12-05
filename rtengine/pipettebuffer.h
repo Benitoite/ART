@@ -23,6 +23,8 @@
 #include "array2D.h"
 #include "iimage.h"
 #include "coord.h"
+#include "imagefloat.h"
+#include "labimage.h"
 
 namespace rtengine
 {

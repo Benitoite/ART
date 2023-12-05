@@ -68,6 +68,8 @@ protected:
     rtengine::ProcEvent EvDemosaicAutoContrast;
     rtengine::ProcEvent EvDemosaicContrast;
     rtengine::ProcEvent EvDemosaicPixelshiftDemosaicMethod;
+
+    rtengine::procparams::RAWParams::BayerSensor initial_params;
 public:
 
     BayerProcess ();
@@ -87,6 +89,8 @@ public:
     void pixelShiftDemosaicMethodChanged();
     void autoContrastChanged (double autoContrast) override;
     void FrameCountChanged(int n, int frameNum) override;
+
+    void toolReset(bool to_initial) override;
 };
 
 #endif

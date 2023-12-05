@@ -33,6 +33,8 @@ private:
     Adjuster *vibrance;
 
     rtengine::ProcEvent EvVibrance;
+
+    rtengine::procparams::SaturationParams initial_params;
     
 public:
     Saturation();
@@ -45,4 +47,7 @@ public:
 
     void adjusterChanged(Adjuster* a, double newval) override;
     void adjusterAutoToggled(Adjuster* a, bool newval) override;
+
+    void toolReset(bool to_initial) override;
+    void registerShortcuts(ToolShortcutManager *mgr) override;
 };

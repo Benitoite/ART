@@ -1,4 +1,5 @@
-/*
+/* -*- C++ -*-
+ *  
  *  This file is part of RawTherapee.
  *
  *  Copyright (c) 2004-2010 Gabor Horvath <hgabor@rawtherapee.com>
@@ -16,8 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with RawTherapee.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _CACHEIMAGEDATA_
-#define _CACHEIMAGEDATA_
+#pragma once
 
 #include <glibmm.h>
 #include "options.h"
@@ -34,8 +34,6 @@ public:
     Glib::ustring  version;
     bool  supported;
     ThFileType  format;
-    char  rankOld; // old implementation of rank
-    bool  inTrashOld; // old implementation of inTrash
     bool  recentlySaved;
 
     // time/date info
@@ -64,6 +62,7 @@ public:
     Glib::ustring filetype;
     Glib::ustring expcomp;
     int rating;
+    time_t timestamp;
 
     // store a copy of the autoWB's multipliers computed in Thumbnail::_generateThumbnailImage
     // they are not stored in the cache file by this class, but by rtengine::Thumbnail
@@ -79,6 +78,9 @@ public:
         QUICK_THUMBNAIL = 1  // was the thumbnail generated from embedded jpeg
     };
 
+    int width;
+    int height;
+
     CacheImageData ();
 
     int load (const Glib::ustring& fname);
@@ -92,7 +94,7 @@ public:
     unsigned int getFrameCount () const override { return frameCount; }
     bool hasExif() const override  { return false; }
     tm getDateTime() const override { return tm{}; }
-    time_t getDateTimeAsTS() const override { return time_t(-1); }
+    time_t getDateTimeAsTS() const override { return timeValid ? timestamp : time_t(-1); }
     int getISOSpeed() const override { return iso; }
     double getFNumber() const override { return fnumber; }
     double getFocalLen() const override { return focalLen; }
@@ -109,6 +111,13 @@ public:
     bool getHDR() const override { return isHDR; }
     std::string getImageType() const override { return isPixelShift ? "PS" : isHDR ? "HDR" : "STD"; }
     rtengine::IIOSampleFormat getSampleFormat() const override { return sampleFormat; }
+    std::string getSoftware() const override { return ""; }
     int getRating() const override { return rating; }
+    std::vector<rtengine::GainMap> getGainMaps() const override
+    { return std::vector<rtengine::GainMap>(); }
+    void getDimensions(int &w, int &h) const override
+    {
+        w = width;
+        h = height;
+    }
 };
-#endif

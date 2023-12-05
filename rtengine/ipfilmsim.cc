@@ -22,6 +22,11 @@
 #include "curves.h"
 #include "color.h"
 #include "clutstore.h"
+#include "../rtgui/multilangmgr.h"
+
+#ifdef _OPENMP
+# include <omp.h>
+#endif
 
 namespace rtengine {
 
@@ -33,24 +38,34 @@ void ImProcFunctions::filmSimulation(Imagefloat *img)
 
     img->setMode(Imagefloat::Mode::RGB, multiThread);
 
-    HaldCLUTApplication hald_clut(params->filmSimulation.clutFilename, params->icm.workingProfile);
-    constexpr int TS = 112;
-    hald_clut.init(float(params->filmSimulation.strength)/100.f, TS);
-
-    if (hald_clut) {
 #ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
+    int num_threads = multiThread ? omp_get_max_threads() : 1;
+#else
+    int num_threads = 1;
 #endif
-        for (int y = 0; y < img->getHeight(); ++y) {
-            for (int jj = 0; jj < img->getWidth(); jj += TS) {
-                int jstart = jj;
-                float *r = img->r(y)+jstart;
-                float *g = img->g(y)+jstart;
-                float *b = img->b(y)+jstart;
-                int tW = min(jj + TS, img->getWidth());
-                hald_clut(r, g, b, 0, jstart, tW, 1);
+    CLUTApplication clut(params->filmSimulation.clutFilename, params->icm.workingProfile, float(params->filmSimulation.strength)/100.f, num_threads);
+
+    if (clut) {
+        CLUTApplication::Quality q = CLUTApplication::Quality::HIGH;
+        switch (cur_pipeline) {
+        case Pipeline::THUMBNAIL:
+            q = CLUTApplication::Quality::LOW;
+            break;
+        case Pipeline::PREVIEW:
+            if (scale > 1) {
+                q = CLUTApplication::Quality::MEDIUM;
             }
+            break;
+        default:
+            break;
         }
+        if (clut.set_param_values(params->filmSimulation.lut_params, q)) {
+            clut(img);
+        } else if (plistener) {
+            plistener->error(Glib::ustring::compose(M("TP_FILMSIMULATION_LABEL") + " - " + M("ERROR_MSG_INVALID_LUT_PARAMS"), params->filmSimulation.clutFilename));
+        }
+    } else if (plistener) {
+        plistener->error(Glib::ustring::compose(M("TP_FILMSIMULATION_LABEL") + " - " + M("ERROR_MSG_FILE_READ"), params->filmSimulation.clutFilename.empty() ? "(" + M("GENERAL_NONE") + ")" : params->filmSimulation.clutFilename));
     }
 }
 

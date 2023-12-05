@@ -22,6 +22,7 @@
 #include "saveformatpanel.h"
 #include "multilangmgr.h"
 #include "guiutils.h"
+#include "../rtengine/imgiomanager.h"
 
 namespace
 {
@@ -38,13 +39,12 @@ const std::array<std::pair<const char*, SaveFormat>, 7> sf_templates = {{
 
 }
 
-SaveFormatPanel::SaveFormatPanel () : listener (nullptr)
+
+SaveFormatPanel::SaveFormatPanel(): listener(nullptr)
 {
-
-
+    extrafmts_ = rtengine::ImageIOManager::getInstance()->getSaveFormats();
+    
     // ---------------------  FILE FORMAT SELECTOR
-
-
     Gtk::Grid* hb1 = Gtk::manage (new Gtk::Grid ());
     hb1->set_column_spacing(5);
     hb1->set_row_spacing(5);
@@ -58,15 +58,16 @@ SaveFormatPanel::SaveFormatPanel () : listener (nullptr)
     for (const auto& sf_template : sf_templates) {
         format->append(sf_template.first);
     }
+    for (auto &p : extrafmts_) {
+        format->append(p.second.label);
+    }
 
     hb1->attach (*flab, 0, 0, 1, 1);
     hb1->attach (*format, 1, 0, 1, 1);
     hb1->show_all();
 
     // ---------------------  JPEG OPTIONS
-
-
-    jpegOpts = Gtk::manage (new Gtk::Grid ());
+    jpegOpts = new Gtk::Grid();
     jpegOpts->set_column_spacing(15);
     jpegOpts->set_row_spacing(5);
     setExpandAlignProperties(jpegOpts, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
@@ -93,8 +94,6 @@ SaveFormatPanel::SaveFormatPanel () : listener (nullptr)
     jpegOpts->show_all ();
 
     // ---------------------  TIFF OPTIONS
-
-
     tiffUncompressed = new Gtk::CheckButton (M("SAVEDLG_TIFFUNCOMPRESSED"));
     setExpandAlignProperties(tiffUncompressed, true, false, Gtk::ALIGN_FILL, Gtk::ALIGN_CENTER);
     tiffUncompressed->signal_toggled().connect( sigc::mem_fun(*this, &SaveFormatPanel::formatChanged));
@@ -102,8 +101,6 @@ SaveFormatPanel::SaveFormatPanel () : listener (nullptr)
 
 
     // ---------------------  MAIN BOX
-
-
     savesPP = Gtk::manage (new Gtk::CheckButton (M("SAVEDLG_SAVESPP")));
     savesPP->signal_toggled().connect( sigc::mem_fun(*this, &SaveFormatPanel::formatChanged));
     savesPP->show_all();
@@ -112,17 +109,24 @@ SaveFormatPanel::SaveFormatPanel () : listener (nullptr)
     set_row_spacing(5);
 
     attach (*hb1, 0, 0, 1, 1);
-    attach (*jpegOpts, 0, 1, 1, 1);
-    attach (*tiffUncompressed, 0, 2, 1, 1);
+    //attach (*jpegOpts, 0, 1, 1, 1);
+    //attach (*tiffUncompressed, 0, 2, 1, 1);
     attach (*savesPP, 0, 4, 1, 2);
-}
-SaveFormatPanel::~SaveFormatPanel ()
-{
-    delete jpegQual;
-    delete tiffUncompressed;
+
+    format->set_active(0);
+    formatChanged();
 }
 
-void SaveFormatPanel::init (SaveFormat &sf)
+
+SaveFormatPanel::~SaveFormatPanel ()
+{
+    delete tiffUncompressed;
+    delete jpegOpts;
+    delete jpegQual;
+}
+
+
+void SaveFormatPanel::init(SaveFormat &sf)
 {
     FormatChangeListener* const tmp = listener;
     listener = nullptr;
@@ -151,6 +155,13 @@ void SaveFormatPanel::init (SaveFormat &sf)
             index = {weight, i};
         }
     }
+    for (size_t i = 0; i < extrafmts_.size(); ++i) {
+        int w = 10 * (sf.format == extrafmts_[i].first);
+
+        if (w > index.first) {
+            index = {w, i + sf_templates.size()};
+        }
+    }
 
     format->set_active(index.second);
 
@@ -159,8 +170,11 @@ void SaveFormatPanel::init (SaveFormat &sf)
     savesPP->set_active(sf.saveParams);
     tiffUncompressed->set_active(sf.tiffUncompressed);
 
+    formatChanged();
+
     listener = tmp;
 }
+
 
 SaveFormat SaveFormatPanel::getFormat ()
 {
@@ -170,6 +184,8 @@ SaveFormat SaveFormatPanel::getFormat ()
 
     if (sel < sf_templates.size()) {
         sf = sf_templates[sel].second;
+    } else if (sel - sf_templates.size() < extrafmts_.size()) {
+        sf.format = extrafmts_[sel - sf_templates.size()].first;
     }
 
     sf.jpegQuality = jpegQual->getValue();
@@ -180,45 +196,74 @@ SaveFormat SaveFormatPanel::getFormat ()
     return sf;
 }
 
+
 void SaveFormatPanel::formatChanged ()
 {
     const unsigned int act = format->get_active_row_number();
 
-    if (act >= sf_templates.size()) {
+    Glib::ustring fr = "";
+    
+    if (act < sf_templates.size()) {
+        fr = sf_templates[act].second.format;
+
+        removeIfThere(this, jpegOpts, false);
+        removeIfThere(this, tiffUncompressed, false);
+
+        if (fr == "jpg") {
+            attach (*jpegOpts, 0, 1, 1, 1);
+            // jpegOpts->show_all();
+            // tiffUncompressed->hide();
+        } else if (fr == "png") {
+            // jpegOpts->hide();
+            // tiffUncompressed->hide();
+        } else if (fr == "tif") {
+            attach (*tiffUncompressed, 0, 2, 1, 1);
+            // jpegOpts->hide();
+            // tiffUncompressed->show_all();
+        }
+    } else if (act - sf_templates.size() < extrafmts_.size()) {
+        fr = extrafmts_[act - sf_templates.size()].first;
+
+        removeIfThere(this, jpegOpts, false);
+        removeIfThere(this, tiffUncompressed, false);        
+    } else {
         return;
     }
 
-    const Glib::ustring& fr = sf_templates[act].second.format;
-
-    if (fr == "jpg") {
-        jpegOpts->show_all();
-        tiffUncompressed->hide();
-    } else if (fr == "png") {
-        jpegOpts->hide();
-        tiffUncompressed->hide();
-    } else if (fr == "tif") {
-        jpegOpts->hide();
-        tiffUncompressed->show_all();
-    }
-
     if (listener) {
-        listener->formatChanged (fr);
+        listener->formatChanged(fr);
     }
 }
+
 
 void SaveFormatPanel::adjusterChanged(Adjuster* a, double newval)
 {
     const unsigned int act = format->get_active_row_number();
 
-    if (act >= sf_templates.size()) {
-        return;
-    }
-
     if (listener) {
-        listener->formatChanged(sf_templates[act].second.format);
+        if (act < sf_templates.size()) {
+            listener->formatChanged(sf_templates[act].second.format);
+        } else if (act - sf_templates.size() < extrafmts_.size()) {
+            listener->formatChanged(extrafmts_[act - sf_templates.size()].first);
+        }
     }
 }
 
+
 void SaveFormatPanel::adjusterAutoToggled(Adjuster* a, bool newval)
 {
+}
+
+
+Glib::ustring SaveFormatPanel::getExtension()
+{
+    const unsigned int sel = format->get_active_row_number();
+
+    if (sel < sf_templates.size()) {
+        return sf_templates[sel].second.format;
+    } else if (sel - sf_templates.size() < extrafmts_.size()) {
+        return extrafmts_[sel - sf_templates.size()].second.extension;
+    }
+
+    return "";
 }

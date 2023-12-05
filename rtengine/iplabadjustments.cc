@@ -206,6 +206,20 @@ void lab_adjustments(const ImProcData &im, Imagefloat *img, LUTf &lcurve, LUTf &
         }
     }
 
+    if (histLCurve) {
+        histLCurve->clear();
+        const int compression = log2(32768.f / histLCurve->getSize());
+#ifdef _OPENMP
+#       pragma omp parallel for if (multiThread)
+#endif
+        for (int y = 0; y < H; ++y) {
+            for (int x = 0; x < W; ++x) {
+                int L = LIM(int(img->g(y, x)), 0, 32768);
+                (*histLCurve)[L >> compression]++;
+            }
+        }
+    }
+
     const float chroma = (params->labCurve.chromaticity + 100.0f) / 100.0f;
 #ifdef __SSE2__
     const vfloat chromav = F2V(chroma);
@@ -237,19 +251,6 @@ void lab_adjustments(const ImProcData &im, Imagefloat *img, LUTf &lcurve, LUTf &
             L = lcurve[L];
             a = (acurve[a + 32768.f] - 32768.f) * chroma;
             b = (bcurve[b + 32768.f] - 32768.f) * chroma;
-        }
-    }
-
-    if (histLCurve) {
-        const float f = histLCurve->getSize() / 100.f;
-#ifdef _OPENMP
-#       pragma omp parallel for if (multiThread)
-#endif
-        for (int y = 0; y < H; ++y) {
-            for (int x = 0; x < W; ++x) {
-                float L = img->g(y, x) / 327.68f;
-                (*histLCurve)[L * f]++;
-            }
         }
     }
 }

@@ -58,6 +58,8 @@ public:
 
     void trimValues(rtengine::procparams::ProcParams* pp) override;
 
+    void toolReset(bool to_initial) override;
+
 private:
     void fitBoxScale();
     int getComputedWidth();
@@ -89,6 +91,7 @@ private:
     MySpinButton *ppi;
     Gtk::Label *size_info_1;
     Gtk::Label *size_info_2;
+    Gtk::HBox *unitBox;
     Gtk::VBox *endBox;
     int maxw, maxh;
     int cropw, croph;
@@ -100,5 +103,7 @@ private:
     IdleRegister idle_register;
 
     static constexpr int MAX_SCALE = 16; // 16 to match the main preview max scale of 1600%
+
+    rtengine::procparams::ResizeParams initial_params;
 };
 
